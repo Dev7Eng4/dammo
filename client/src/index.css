@@ -55,6 +55,11 @@
   --color-surface: #161b22;
   --color-surface-elevated: #1c2128;
   --color-border: #30363d;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #38bdf8;
 }
 
 @layer base {
@@ -83,6 +88,6 @@
   }
 
   .card-surface {
-    @apply rounded-2xl border border-border bg-surface p-6;
+    @apply rounded-2xl border border-border bg-surface;
   }
 }

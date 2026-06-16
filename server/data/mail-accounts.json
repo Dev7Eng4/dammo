@@ -1,0 +1,535 @@
+{
+  "accounts": [
+    {
+      "id": "e4554249-16c2-4f03-ad01-1b2377105e31",
+      "email": "demo@yopmail.com",
+      "provider": "Gmail",
+      "status": "active",
+      "purpose": "",
+      "linkedPlatforms": [],
+      "recoveryEmail": "dem1o@yopmail.com",
+      "notes": ""
+    },
+    {
+      "id": "27128bcf-7478-4ca4-90d2-544ca03ad4d1",
+      "email": "prod.sys.a1@gmail.com",
+      "provider": "Gmail",
+      "status": "active",
+      "purpose": "Main YT Channel",
+      "linkedPlatforms": [
+        "youtube",
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.master@prodops.io",
+      "recoveryPhone": "+1 (555) 012-3456",
+      "notes": "Channel monetized on Oct 12. Requires VPN login via SG node to avoid flags."
+    },
+    {
+      "id": "dd124f6b-1425-4c90-b588-c2185ee30ad6",
+      "email": "scrape.bot.v2@outlook.com",
+      "provider": "Outlook",
+      "status": "need_verify",
+      "purpose": "Data Ingestion",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.bot@pro.do",
+      "recoveryPhone": "+1 (555) 234-5678",
+      "notes": "Automated scraping account. SMS verification pending on recovery phone."
+    },
+    {
+      "id": "99ffd195-fb7f-4373-9652-10bf8ad3f6b7",
+      "email": "legacy.test.09@yahoo.com",
+      "provider": "Yahoo",
+      "status": "suspended",
+      "purpose": "Old FB Campaigns",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "None",
+      "recoveryPhone": "",
+      "notes": "Suspended due to policy violation. Do not use for new campaigns."
+    },
+    {
+      "id": "53e55681-ef2f-44b4-91a6-af57d2b9b454",
+      "email": "account.4@icloud.com",
+      "provider": "iCloud",
+      "status": "need_verify",
+      "purpose": "Backup Account",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.4@backup.io",
+      "recoveryPhone": "+1 (555) 104-004",
+      "notes": "Auto-generated mock account #4."
+    },
+    {
+      "id": "161b9fc1-10bd-49fd-a9df-2aff91d541f2",
+      "email": "account.5@gmail.com",
+      "provider": "Gmail",
+      "status": "suspended",
+      "purpose": "Multi Platform",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.5@backup.io",
+      "recoveryPhone": "+1 (555) 105-005",
+      "notes": "Auto-generated mock account #5."
+    },
+    {
+      "id": "9ef3b41e-05af-46ea-8f45-1e64d48cdebc",
+      "email": "account.6@outlook.com",
+      "provider": "Outlook",
+      "status": "active",
+      "purpose": "Legacy Campaign",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.6@backup.io",
+      "recoveryPhone": "+1 (555) 106-006",
+      "notes": "Auto-generated mock account #6."
+    },
+    {
+      "id": "fbad1a81-ad3c-4962-83a8-1768ea441ff8",
+      "email": "account.7@yahoo.com",
+      "provider": "Yahoo",
+      "status": "need_verify",
+      "purpose": "Test Sandbox",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.7@backup.io",
+      "recoveryPhone": "+1 (555) 107-007",
+      "notes": "Auto-generated mock account #7."
+    },
+    {
+      "id": "2806bc8b-5c06-41b0-81cb-2c7493aff93f",
+      "email": "account.8@proton.me",
+      "provider": "Proton",
+      "status": "suspended",
+      "purpose": "YT Shorts Batch",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.8@backup.io",
+      "recoveryPhone": "+1 (555) 108-008",
+      "notes": "Auto-generated mock account #8."
+    },
+    {
+      "id": "b14acb7b-cd4c-4f98-99be-a8e882f14362",
+      "email": "account.9@icloud.com",
+      "provider": "iCloud",
+      "status": "active",
+      "purpose": "TikTok Daily",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.9@backup.io",
+      "recoveryPhone": "+1 (555) 109-009",
+      "notes": "Auto-generated mock account #9."
+    },
+    {
+      "id": "44a43d35-c6e5-4f73-9718-3c7f0276bc49",
+      "email": "account.10@gmail.com",
+      "provider": "Gmail",
+      "status": "need_verify",
+      "purpose": "FB Reels Promo",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.10@backup.io",
+      "recoveryPhone": "+1 (555) 110-010",
+      "notes": "Auto-generated mock account #10."
+    },
+    {
+      "id": "077f57ec-f93b-49d2-9ec1-713d8d01fd6b",
+      "email": "account.11@outlook.com",
+      "provider": "Outlook",
+      "status": "suspended",
+      "purpose": "Content Scraping",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.11@backup.io",
+      "recoveryPhone": "+1 (555) 111-011",
+      "notes": "Auto-generated mock account #11."
+    },
+    {
+      "id": "118a8d4c-5885-4bef-87d0-f68503511f67",
+      "email": "account.12@yahoo.com",
+      "provider": "Yahoo",
+      "status": "active",
+      "purpose": "Backup Account",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.12@backup.io",
+      "recoveryPhone": "+1 (555) 112-012",
+      "notes": "Auto-generated mock account #12."
+    },
+    {
+      "id": "0f455aba-928b-4e25-a271-7834cc4be455",
+      "email": "account.13@proton.me",
+      "provider": "Proton",
+      "status": "need_verify",
+      "purpose": "Multi Platform",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.13@backup.io",
+      "recoveryPhone": "+1 (555) 113-013",
+      "notes": "Auto-generated mock account #13."
+    },
+    {
+      "id": "c24bf332-d310-4bb6-af7e-8c50636243be",
+      "email": "account.14@icloud.com",
+      "provider": "iCloud",
+      "status": "suspended",
+      "purpose": "Legacy Campaign",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.14@backup.io",
+      "recoveryPhone": "+1 (555) 114-014",
+      "notes": "Auto-generated mock account #14."
+    },
+    {
+      "id": "fad62cb3-1d1b-4a0c-b5c0-92aebd55524f",
+      "email": "account.15@gmail.com",
+      "provider": "Gmail",
+      "status": "active",
+      "purpose": "Test Sandbox",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.15@backup.io",
+      "recoveryPhone": "+1 (555) 115-015",
+      "notes": "Auto-generated mock account #15."
+    },
+    {
+      "id": "f1e9c918-894d-474c-9d21-9e547e421c7d",
+      "email": "account.16@outlook.com",
+      "provider": "Outlook",
+      "status": "need_verify",
+      "purpose": "YT Shorts Batch",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.16@backup.io",
+      "recoveryPhone": "+1 (555) 116-016",
+      "notes": "Auto-generated mock account #16."
+    },
+    {
+      "id": "d1641c8c-8829-4186-8879-59ca538e53fc",
+      "email": "account.17@yahoo.com",
+      "provider": "Yahoo",
+      "status": "suspended",
+      "purpose": "TikTok Daily",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.17@backup.io",
+      "recoveryPhone": "+1 (555) 117-017",
+      "notes": "Auto-generated mock account #17."
+    },
+    {
+      "id": "22f527c8-5936-49c3-af14-83b236167597",
+      "email": "account.18@proton.me",
+      "provider": "Proton",
+      "status": "active",
+      "purpose": "FB Reels Promo",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.18@backup.io",
+      "recoveryPhone": "+1 (555) 118-018",
+      "notes": "Auto-generated mock account #18."
+    },
+    {
+      "id": "ed6ed44b-65a4-40a3-8bb7-fe4d7fc024c8",
+      "email": "account.19@icloud.com",
+      "provider": "iCloud",
+      "status": "need_verify",
+      "purpose": "Content Scraping",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.19@backup.io",
+      "recoveryPhone": "+1 (555) 119-019",
+      "notes": "Auto-generated mock account #19."
+    },
+    {
+      "id": "9c64453a-646d-4e3f-9279-8a0480503c7f",
+      "email": "account.20@gmail.com",
+      "provider": "Gmail",
+      "status": "suspended",
+      "purpose": "Backup Account",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.20@backup.io",
+      "recoveryPhone": "+1 (555) 120-020",
+      "notes": "Auto-generated mock account #20."
+    },
+    {
+      "id": "1acf5c30-eacd-4cb8-9450-63d426383c21",
+      "email": "account.21@outlook.com",
+      "provider": "Outlook",
+      "status": "active",
+      "purpose": "Multi Platform",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.21@backup.io",
+      "recoveryPhone": "+1 (555) 121-021",
+      "notes": "Auto-generated mock account #21."
+    },
+    {
+      "id": "bb302d88-9cb8-4e24-8ad7-95e9905ca39d",
+      "email": "account.22@yahoo.com",
+      "provider": "Yahoo",
+      "status": "need_verify",
+      "purpose": "Legacy Campaign",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.22@backup.io",
+      "recoveryPhone": "+1 (555) 122-022",
+      "notes": "Auto-generated mock account #22."
+    },
+    {
+      "id": "453f37e8-fbb8-4472-8577-d853558cf774",
+      "email": "account.23@proton.me",
+      "provider": "Proton",
+      "status": "suspended",
+      "purpose": "Test Sandbox",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.23@backup.io",
+      "recoveryPhone": "+1 (555) 123-023",
+      "notes": "Auto-generated mock account #23."
+    },
+    {
+      "id": "6ec849a0-bbb7-426e-9506-766bf787212b",
+      "email": "account.24@icloud.com",
+      "provider": "iCloud",
+      "status": "active",
+      "purpose": "YT Shorts Batch",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.24@backup.io",
+      "recoveryPhone": "+1 (555) 124-024",
+      "notes": "Auto-generated mock account #24."
+    },
+    {
+      "id": "b34e7793-254f-44b3-8ff1-f0ea6c88c0c1",
+      "email": "account.25@gmail.com",
+      "provider": "Gmail",
+      "status": "need_verify",
+      "purpose": "TikTok Daily",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.25@backup.io",
+      "recoveryPhone": "+1 (555) 125-025",
+      "notes": "Auto-generated mock account #25."
+    },
+    {
+      "id": "e3131db2-fa25-4b3e-b317-825b60d9d604",
+      "email": "account.26@outlook.com",
+      "provider": "Outlook",
+      "status": "suspended",
+      "purpose": "FB Reels Promo",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.26@backup.io",
+      "recoveryPhone": "+1 (555) 126-026",
+      "notes": "Auto-generated mock account #26."
+    },
+    {
+      "id": "aa5b4ace-8565-4f1e-a5f6-243f2f651c22",
+      "email": "account.27@yahoo.com",
+      "provider": "Yahoo",
+      "status": "active",
+      "purpose": "Content Scraping",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.27@backup.io",
+      "recoveryPhone": "+1 (555) 127-027",
+      "notes": "Auto-generated mock account #27."
+    },
+    {
+      "id": "64e85069-b545-4249-8b2c-d910d312ce22",
+      "email": "account.28@proton.me",
+      "provider": "Proton",
+      "status": "need_verify",
+      "purpose": "Backup Account",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.28@backup.io",
+      "recoveryPhone": "+1 (555) 128-028",
+      "notes": "Auto-generated mock account #28."
+    },
+    {
+      "id": "253784b0-b148-4035-bf8f-f465cfa1c383",
+      "email": "account.29@icloud.com",
+      "provider": "iCloud",
+      "status": "suspended",
+      "purpose": "Multi Platform",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.29@backup.io",
+      "recoveryPhone": "+1 (555) 129-029",
+      "notes": "Auto-generated mock account #29."
+    },
+    {
+      "id": "dff065e7-7191-4d5a-933d-7fdeb4c9fca3",
+      "email": "account.30@gmail.com",
+      "provider": "Gmail",
+      "status": "active",
+      "purpose": "Legacy Campaign",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.30@backup.io",
+      "recoveryPhone": "+1 (555) 130-030",
+      "notes": "Auto-generated mock account #30."
+    },
+    {
+      "id": "dadbdcb0-cd6b-46cb-9fcd-aaf01bcb9dc4",
+      "email": "account.31@outlook.com",
+      "provider": "Outlook",
+      "status": "need_verify",
+      "purpose": "Test Sandbox",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.31@backup.io",
+      "recoveryPhone": "+1 (555) 131-031",
+      "notes": "Auto-generated mock account #31."
+    },
+    {
+      "id": "a3f1c1f1-4917-43bf-8f6c-e6004ac17d0b",
+      "email": "account.32@yahoo.com",
+      "provider": "Yahoo",
+      "status": "suspended",
+      "purpose": "YT Shorts Batch",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.32@backup.io",
+      "recoveryPhone": "+1 (555) 132-032",
+      "notes": "Auto-generated mock account #32."
+    },
+    {
+      "id": "1233fb2f-a646-4582-afc1-4d5c20f7c02b",
+      "email": "account.33@proton.me",
+      "provider": "Proton",
+      "status": "active",
+      "purpose": "TikTok Daily",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.33@backup.io",
+      "recoveryPhone": "+1 (555) 133-033",
+      "notes": "Auto-generated mock account #33."
+    },
+    {
+      "id": "c7e695d0-9d2c-4fd0-b158-828577b0d195",
+      "email": "account.34@icloud.com",
+      "provider": "iCloud",
+      "status": "need_verify",
+      "purpose": "FB Reels Promo",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.34@backup.io",
+      "recoveryPhone": "+1 (555) 134-034",
+      "notes": "Auto-generated mock account #34."
+    },
+    {
+      "id": "9907a1b6-dc16-40ca-897b-330685977577",
+      "email": "account.35@gmail.com",
+      "provider": "Gmail",
+      "status": "suspended",
+      "purpose": "Content Scraping",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.35@backup.io",
+      "recoveryPhone": "+1 (555) 135-035",
+      "notes": "Auto-generated mock account #35."
+    },
+    {
+      "id": "2546d8a1-1d5f-4cf0-bc11-f905122571bf",
+      "email": "account.36@outlook.com",
+      "provider": "Outlook",
+      "status": "active",
+      "purpose": "Backup Account",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.36@backup.io",
+      "recoveryPhone": "+1 (555) 136-036",
+      "notes": "Auto-generated mock account #36."
+    },
+    {
+      "id": "e6a7cbdc-eac1-442e-b7d9-1633ad817e21",
+      "email": "account.37@yahoo.com",
+      "provider": "Yahoo",
+      "status": "need_verify",
+      "purpose": "Multi Platform",
+      "linkedPlatforms": [
+        "tiktok"
+      ],
+      "recoveryEmail": "rec.37@backup.io",
+      "recoveryPhone": "+1 (555) 137-037",
+      "notes": "Auto-generated mock account #37."
+    },
+    {
+      "id": "fc02b329-9e65-4ed8-8abd-014a91ed2595",
+      "email": "account.38@proton.me",
+      "provider": "Proton",
+      "status": "suspended",
+      "purpose": "Legacy Campaign",
+      "linkedPlatforms": [
+        "facebook"
+      ],
+      "recoveryEmail": "rec.38@backup.io",
+      "recoveryPhone": "+1 (555) 138-038",
+      "notes": "Auto-generated mock account #38."
+    },
+    {
+      "id": "bb22d2f3-68f1-4f70-aea5-3a6ca3fc1ffd",
+      "email": "account.39@icloud.com",
+      "provider": "iCloud",
+      "status": "active",
+      "purpose": "Test Sandbox",
+      "linkedPlatforms": [
+        "web"
+      ],
+      "recoveryEmail": "rec.39@backup.io",
+      "recoveryPhone": "+1 (555) 139-039",
+      "notes": "Auto-generated mock account #39."
+    },
+    {
+      "id": "60e73e7f-3553-410a-aba0-433accbaebe2",
+      "email": "account.40@gmail.com",
+      "provider": "Gmail",
+      "status": "need_verify",
+      "purpose": "YT Shorts Batch",
+      "linkedPlatforms": [
+        "youtube"
+      ],
+      "recoveryEmail": "rec.40@backup.io",
+      "recoveryPhone": "+1 (555) 140-040",
+      "notes": "Auto-generated mock account #40."
+    }
+  ]
+}

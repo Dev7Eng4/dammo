@@ -1,0 +1,2982 @@
+{
+  "channels": [
+    {
+      "name": "Tech Nexus Daily",
+      "handle": "@technexusdaily",
+      "youtubeUrl": "https://youtube.com/@technexusdaily",
+      "type": "own_content",
+      "niche": "Technology",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.tech1@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/tech_raw/",
+      "contentProjectId": "PRJ-TND-09",
+      "notes": "Recent B-roll flagged. Adjusted source folder exclusion rules. Monitor next upload.",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Automated upload successful"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:36.190Z",
+      "id": "96d53e08-b753-42dc-918c-bbdfa3c8f39f",
+      "createdAt": "2026-06-13T15:12:38.024Z"
+    },
+    {
+      "name": "Crypto Insights Pro",
+      "handle": "@cryptoinsights",
+      "youtubeUrl": "https://youtube.com/@cryptoinsights",
+      "type": "client",
+      "niche": "Finance",
+      "language": "EN-UK",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "finance.ops@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/finance_raw/",
+      "contentProjectId": "PRJ-CIP-04",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Monetization review submitted"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:36.190Z",
+      "id": "b29f68c4-c646-42f3-ab96-66ef082f4963",
+      "createdAt": "2026-06-13T15:12:38.024Z"
+    },
+    {
+      "name": "Gaming Highlights V2",
+      "handle": "@gamingv2_archive",
+      "youtubeUrl": "https://youtube.com/@gamingv2_archive",
+      "type": "content_selling",
+      "niche": "Gaming",
+      "language": "ES-ES",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "suspended",
+      "linkedEmail": "gaming.archive@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/gaming_archive/",
+      "contentProjectId": "PRJ-GHV2-01",
+      "notes": "Channel suspended pending appeal. Do not schedule uploads.",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Channel suspended by YouTube"
+        }
+      ],
+      "lastUploadAt": "2026-05-17T15:12:36.190Z",
+      "id": "52bc5779-4106-4ebd-a4c3-e7a6cae678d0",
+      "createdAt": "2026-06-13T15:12:38.024Z"
+    },
+    {
+      "id": "d97794ba-0801-442f-a170-9618e741a393",
+      "name": "Education Channel 4",
+      "handle": "@education4",
+      "youtubeUrl": "https://youtube.com/@education4",
+      "type": "client",
+      "niche": "Education",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.education4@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/education4/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-05-13T15:12:38.024Z"
+    },
+    {
+      "id": "5524061e-0839-4796-b2e9-464f091d1c5e",
+      "name": "Sports Channel 5",
+      "handle": "@sports5",
+      "youtubeUrl": "https://youtube.com/@sports5",
+      "type": "content_selling",
+      "niche": "Sports",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.sports5@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/sports5/",
+      "contentProjectId": "PRJ-SPORTS5",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-05-12T15:12:38.024Z"
+    },
+    {
+      "id": "aa8348c7-1957-4d5e-b7bb-739d1b00c580",
+      "name": "Music Channel 6",
+      "handle": "@music6",
+      "youtubeUrl": "https://youtube.com/@music6",
+      "type": "own_content",
+      "niche": "Music",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.music6@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/music6/",
+      "contentProjectId": "PRJ-MUSIC6",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-05-11T15:12:38.024Z"
+    },
+    {
+      "id": "e221e4ff-b5a8-40ff-bf7a-939794a803d2",
+      "name": "Travel Channel 7",
+      "handle": "@travel7",
+      "youtubeUrl": "https://youtube.com/@travel7",
+      "type": "client",
+      "niche": "Travel",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.travel7@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/travel7/",
+      "contentProjectId": "PRJ-TRAVEL7",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-05-10T15:12:38.024Z"
+    },
+    {
+      "id": "482a06f5-3f0f-47cc-ba6a-6866c7b5c8bc",
+      "name": "Technology Channel 8",
+      "handle": "@technology8",
+      "youtubeUrl": "https://youtube.com/@technology8",
+      "type": "content_selling",
+      "niche": "Technology",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.technology8@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/technology8/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-05-09T15:12:38.024Z"
+    },
+    {
+      "id": "f0f8c796-f20e-4469-b316-b3097526a5db",
+      "name": "Finance Channel 9",
+      "handle": "@finance9",
+      "youtubeUrl": "https://youtube.com/@finance9",
+      "type": "own_content",
+      "niche": "Finance",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.finance9@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/finance9/",
+      "contentProjectId": "PRJ-FINANCE9",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-05-08T15:12:38.024Z"
+    },
+    {
+      "id": "32e72ca2-57be-4062-b511-803517942618",
+      "name": "Gaming Channel 10",
+      "handle": "@gaming10",
+      "youtubeUrl": "https://youtube.com/@gaming10",
+      "type": "client",
+      "niche": "Gaming",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.gaming10@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/gaming10/",
+      "contentProjectId": "PRJ-GAMING10",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-05-07T15:12:38.024Z"
+    },
+    {
+      "id": "b5b6340e-0625-4112-9e1d-e1f2fc2c35ff",
+      "name": "Lifestyle Channel 11",
+      "handle": "@lifestyle11",
+      "youtubeUrl": "https://youtube.com/@lifestyle11",
+      "type": "content_selling",
+      "niche": "Lifestyle",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle11@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle11/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-05-06T15:12:38.024Z"
+    },
+    {
+      "id": "8fb9a657-f438-4ebb-b0b3-ba013798eb44",
+      "name": "Education Channel 12",
+      "handle": "@education12",
+      "youtubeUrl": "https://youtube.com/@education12",
+      "type": "own_content",
+      "niche": "Education",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.education12@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/education12/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-05-05T15:12:38.024Z"
+    },
+    {
+      "id": "46870963-3b28-405a-8844-9c669c675ef2",
+      "name": "Sports Channel 13",
+      "handle": "@sports13",
+      "youtubeUrl": "https://youtube.com/@sports13",
+      "type": "client",
+      "niche": "Sports",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.sports13@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/sports13/",
+      "contentProjectId": "PRJ-SPORTS13",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-05-04T15:12:38.024Z"
+    },
+    {
+      "id": "59d884b5-c951-4aa1-bdb0-eff96734f7e5",
+      "name": "Music Channel 14",
+      "handle": "@music14",
+      "youtubeUrl": "https://youtube.com/@music14",
+      "type": "content_selling",
+      "niche": "Music",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.music14@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/music14/",
+      "contentProjectId": "PRJ-MUSIC14",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-05-03T15:12:38.024Z"
+    },
+    {
+      "id": "ebdc12a8-6eae-4088-8e33-8919c2e00b71",
+      "name": "Travel Channel 15",
+      "handle": "@travel15",
+      "youtubeUrl": "https://youtube.com/@travel15",
+      "type": "own_content",
+      "niche": "Travel",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.travel15@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/travel15/",
+      "contentProjectId": "PRJ-TRAVEL15",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-05-02T15:12:38.024Z"
+    },
+    {
+      "id": "c5a47b21-4445-4587-8799-64c51dd5df7b",
+      "name": "Technology Channel 16",
+      "handle": "@technology16",
+      "youtubeUrl": "https://youtube.com/@technology16",
+      "type": "client",
+      "niche": "Technology",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.technology16@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/technology16/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-05-01T15:12:38.024Z"
+    },
+    {
+      "id": "3f7fd665-b368-41e6-ba51-8f188abf377c",
+      "name": "Finance Channel 17",
+      "handle": "@finance17",
+      "youtubeUrl": "https://youtube.com/@finance17",
+      "type": "content_selling",
+      "niche": "Finance",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "suspended",
+      "linkedEmail": "ops.finance17@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/finance17/",
+      "contentProjectId": "PRJ-FINANCE1",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-30T15:12:38.024Z"
+    },
+    {
+      "id": "99bc3be8-5d76-4f50-ac5f-f431936114e2",
+      "name": "Gaming Channel 18",
+      "handle": "@gaming18",
+      "youtubeUrl": "https://youtube.com/@gaming18",
+      "type": "own_content",
+      "niche": "Gaming",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.gaming18@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/gaming18/",
+      "contentProjectId": "PRJ-GAMING18",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-29T15:12:38.024Z"
+    },
+    {
+      "id": "62d9cca2-9825-41d6-a95e-7a6699e0ca4d",
+      "name": "Lifestyle Channel 19",
+      "handle": "@lifestyle19",
+      "youtubeUrl": "https://youtube.com/@lifestyle19",
+      "type": "client",
+      "niche": "Lifestyle",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle19@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle19/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-28T15:12:38.024Z"
+    },
+    {
+      "id": "3cbe86d7-443f-42e9-9e94-cabcabfb3707",
+      "name": "Education Channel 20",
+      "handle": "@education20",
+      "youtubeUrl": "https://youtube.com/@education20",
+      "type": "content_selling",
+      "niche": "Education",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.education20@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/education20/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-27T15:12:38.024Z"
+    },
+    {
+      "id": "9b9fe41b-3d2b-485e-bbe3-f5901707f507",
+      "name": "Sports Channel 21",
+      "handle": "@sports21",
+      "youtubeUrl": "https://youtube.com/@sports21",
+      "type": "own_content",
+      "niche": "Sports",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.sports21@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/sports21/",
+      "contentProjectId": "PRJ-SPORTS21",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-26T15:12:38.024Z"
+    },
+    {
+      "id": "7bbe47fc-7805-4ce3-b74d-fcfb9a7627b9",
+      "name": "Music Channel 22",
+      "handle": "@music22",
+      "youtubeUrl": "https://youtube.com/@music22",
+      "type": "client",
+      "niche": "Music",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.music22@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/music22/",
+      "contentProjectId": "PRJ-MUSIC22",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-25T15:12:38.024Z"
+    },
+    {
+      "id": "1aab0e12-9a27-4e8e-81ff-142186561eb7",
+      "name": "Travel Channel 23",
+      "handle": "@travel23",
+      "youtubeUrl": "https://youtube.com/@travel23",
+      "type": "content_selling",
+      "niche": "Travel",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.travel23@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/travel23/",
+      "contentProjectId": "PRJ-TRAVEL23",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-24T15:12:38.024Z"
+    },
+    {
+      "id": "0b113296-8aab-48e7-81f7-b1b4681c999a",
+      "name": "Technology Channel 24",
+      "handle": "@technology24",
+      "youtubeUrl": "https://youtube.com/@technology24",
+      "type": "own_content",
+      "niche": "Technology",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.technology24@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/technology24/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-23T15:12:38.024Z"
+    },
+    {
+      "id": "2dadfd41-13e6-4869-9f50-05652cfac613",
+      "name": "Finance Channel 25",
+      "handle": "@finance25",
+      "youtubeUrl": "https://youtube.com/@finance25",
+      "type": "client",
+      "niche": "Finance",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.finance25@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/finance25/",
+      "contentProjectId": "PRJ-FINANCE2",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-22T15:12:38.024Z"
+    },
+    {
+      "id": "f7d63a59-5a6f-418d-98ab-c283f85d43e4",
+      "name": "Gaming Channel 26",
+      "handle": "@gaming26",
+      "youtubeUrl": "https://youtube.com/@gaming26",
+      "type": "content_selling",
+      "niche": "Gaming",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.gaming26@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/gaming26/",
+      "contentProjectId": "PRJ-GAMING26",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-21T15:12:38.024Z"
+    },
+    {
+      "id": "71661f1d-aec9-480d-8e97-bd84def1d52f",
+      "name": "Lifestyle Channel 27",
+      "handle": "@lifestyle27",
+      "youtubeUrl": "https://youtube.com/@lifestyle27",
+      "type": "own_content",
+      "niche": "Lifestyle",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle27@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle27/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-20T15:12:38.024Z"
+    },
+    {
+      "id": "f3273289-13d1-4fac-9272-fc1245061397",
+      "name": "Education Channel 28",
+      "handle": "@education28",
+      "youtubeUrl": "https://youtube.com/@education28",
+      "type": "client",
+      "niche": "Education",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.education28@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/education28/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-19T15:12:38.024Z"
+    },
+    {
+      "id": "ba961824-29ca-47a7-b6d7-679a6952fb09",
+      "name": "Sports Channel 29",
+      "handle": "@sports29",
+      "youtubeUrl": "https://youtube.com/@sports29",
+      "type": "content_selling",
+      "niche": "Sports",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.sports29@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/sports29/",
+      "contentProjectId": "PRJ-SPORTS29",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-18T15:12:38.024Z"
+    },
+    {
+      "id": "5babe953-fc2f-420f-bdf8-a513d9a915a8",
+      "name": "Music Channel 30",
+      "handle": "@music30",
+      "youtubeUrl": "https://youtube.com/@music30",
+      "type": "own_content",
+      "niche": "Music",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.music30@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/music30/",
+      "contentProjectId": "PRJ-MUSIC30",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-17T15:12:38.024Z"
+    },
+    {
+      "id": "6144c88e-c135-44a8-b0aa-886236fcb009",
+      "name": "Travel Channel 31",
+      "handle": "@travel31",
+      "youtubeUrl": "https://youtube.com/@travel31",
+      "type": "client",
+      "niche": "Travel",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.travel31@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/travel31/",
+      "contentProjectId": "PRJ-TRAVEL31",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-16T15:12:38.024Z"
+    },
+    {
+      "id": "7775c261-d954-41ce-ab81-a7a047eb4b13",
+      "name": "Technology Channel 32",
+      "handle": "@technology32",
+      "youtubeUrl": "https://youtube.com/@technology32",
+      "type": "content_selling",
+      "niche": "Technology",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.technology32@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/technology32/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-15T15:12:38.024Z"
+    },
+    {
+      "id": "7cfcabf0-7c1c-484b-aa0c-0ae629e535bd",
+      "name": "Finance Channel 33",
+      "handle": "@finance33",
+      "youtubeUrl": "https://youtube.com/@finance33",
+      "type": "own_content",
+      "niche": "Finance",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.finance33@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/finance33/",
+      "contentProjectId": "PRJ-FINANCE3",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-14T15:12:38.024Z"
+    },
+    {
+      "id": "23f7c968-fd43-4c5c-ab2d-e8df0231b6d3",
+      "name": "Gaming Channel 34",
+      "handle": "@gaming34",
+      "youtubeUrl": "https://youtube.com/@gaming34",
+      "type": "client",
+      "niche": "Gaming",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "suspended",
+      "linkedEmail": "ops.gaming34@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/gaming34/",
+      "contentProjectId": "PRJ-GAMING34",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-13T15:12:38.024Z"
+    },
+    {
+      "id": "2b9ed55e-4b49-408d-8f50-b21fde483278",
+      "name": "Lifestyle Channel 35",
+      "handle": "@lifestyle35",
+      "youtubeUrl": "https://youtube.com/@lifestyle35",
+      "type": "content_selling",
+      "niche": "Lifestyle",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle35@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle35/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-12T15:12:38.024Z"
+    },
+    {
+      "id": "d1a3f2d7-2d83-44ba-be48-ccbf3eba8127",
+      "name": "Education Channel 36",
+      "handle": "@education36",
+      "youtubeUrl": "https://youtube.com/@education36",
+      "type": "own_content",
+      "niche": "Education",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.education36@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/education36/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-11T15:12:38.024Z"
+    },
+    {
+      "id": "c2bab073-9281-4f55-b3be-2f8ee77b887f",
+      "name": "Sports Channel 37",
+      "handle": "@sports37",
+      "youtubeUrl": "https://youtube.com/@sports37",
+      "type": "client",
+      "niche": "Sports",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.sports37@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/sports37/",
+      "contentProjectId": "PRJ-SPORTS37",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-10T15:12:38.024Z"
+    },
+    {
+      "id": "28ca3dd7-2c42-40e1-97fc-c78100e36cab",
+      "name": "Music Channel 38",
+      "handle": "@music38",
+      "youtubeUrl": "https://youtube.com/@music38",
+      "type": "content_selling",
+      "niche": "Music",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.music38@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/music38/",
+      "contentProjectId": "PRJ-MUSIC38",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-09T15:12:38.024Z"
+    },
+    {
+      "id": "3e275ccd-e312-4bab-9878-dd7f1f345a55",
+      "name": "Travel Channel 39",
+      "handle": "@travel39",
+      "youtubeUrl": "https://youtube.com/@travel39",
+      "type": "own_content",
+      "niche": "Travel",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.travel39@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/travel39/",
+      "contentProjectId": "PRJ-TRAVEL39",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-08T15:12:38.024Z"
+    },
+    {
+      "id": "362084ba-77cb-468c-b435-56de7e3843c7",
+      "name": "Technology Channel 40",
+      "handle": "@technology40",
+      "youtubeUrl": "https://youtube.com/@technology40",
+      "type": "client",
+      "niche": "Technology",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.technology40@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/technology40/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-07T15:12:38.024Z"
+    },
+    {
+      "id": "a24eedd7-c729-490a-b017-d087548c56c1",
+      "name": "Finance Channel 41",
+      "handle": "@finance41",
+      "youtubeUrl": "https://youtube.com/@finance41",
+      "type": "content_selling",
+      "niche": "Finance",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.finance41@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/finance41/",
+      "contentProjectId": "PRJ-FINANCE4",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-06T15:12:38.024Z"
+    },
+    {
+      "id": "75782b8f-09bf-4ab2-9d50-1192e49ac454",
+      "name": "Gaming Channel 42",
+      "handle": "@gaming42",
+      "youtubeUrl": "https://youtube.com/@gaming42",
+      "type": "own_content",
+      "niche": "Gaming",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.gaming42@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/gaming42/",
+      "contentProjectId": "PRJ-GAMING42",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-05T15:12:38.024Z"
+    },
+    {
+      "id": "6702e28e-15a5-41e5-aae6-0d184b1a2e2e",
+      "name": "Lifestyle Channel 43",
+      "handle": "@lifestyle43",
+      "youtubeUrl": "https://youtube.com/@lifestyle43",
+      "type": "client",
+      "niche": "Lifestyle",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle43@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle43/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-04T15:12:38.024Z"
+    },
+    {
+      "id": "76d6ca7d-4c96-406a-8986-c0adac4ad25d",
+      "name": "Education Channel 44",
+      "handle": "@education44",
+      "youtubeUrl": "https://youtube.com/@education44",
+      "type": "content_selling",
+      "niche": "Education",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.education44@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/education44/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-03T15:12:38.024Z"
+    },
+    {
+      "id": "a45e4016-b7c8-4ae8-8aa3-5bbb870b11bf",
+      "name": "Sports Channel 45",
+      "handle": "@sports45",
+      "youtubeUrl": "https://youtube.com/@sports45",
+      "type": "own_content",
+      "niche": "Sports",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.sports45@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/sports45/",
+      "contentProjectId": "PRJ-SPORTS45",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-02T15:12:38.024Z"
+    },
+    {
+      "id": "c0b15a96-8869-413e-8e06-e75d128ee4b2",
+      "name": "Music Channel 46",
+      "handle": "@music46",
+      "youtubeUrl": "https://youtube.com/@music46",
+      "type": "client",
+      "niche": "Music",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.music46@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/music46/",
+      "contentProjectId": "PRJ-MUSIC46",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-01T15:12:38.024Z"
+    },
+    {
+      "id": "4a5adb75-cbd6-4588-bd56-b2689f600094",
+      "name": "Travel Channel 47",
+      "handle": "@travel47",
+      "youtubeUrl": "https://youtube.com/@travel47",
+      "type": "content_selling",
+      "niche": "Travel",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.travel47@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/travel47/",
+      "contentProjectId": "PRJ-TRAVEL47",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-03-31T15:12:38.024Z"
+    },
+    {
+      "id": "c2fcdaf5-f7ad-4a6d-b32c-68edcd8ecb5f",
+      "name": "Technology Channel 48",
+      "handle": "@technology48",
+      "youtubeUrl": "https://youtube.com/@technology48",
+      "type": "own_content",
+      "niche": "Technology",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.technology48@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/technology48/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-03-30T15:12:38.024Z"
+    },
+    {
+      "id": "42bbad3d-0048-4349-b296-505d1b3dcff0",
+      "name": "Finance Channel 49",
+      "handle": "@finance49",
+      "youtubeUrl": "https://youtube.com/@finance49",
+      "type": "client",
+      "niche": "Finance",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.finance49@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/finance49/",
+      "contentProjectId": "PRJ-FINANCE4",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-03-29T15:12:38.024Z"
+    },
+    {
+      "id": "96567733-7667-48cb-8d13-5e9b7b368d9f",
+      "name": "Gaming Channel 50",
+      "handle": "@gaming50",
+      "youtubeUrl": "https://youtube.com/@gaming50",
+      "type": "content_selling",
+      "niche": "Gaming",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.gaming50@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/gaming50/",
+      "contentProjectId": "PRJ-GAMING50",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-03-28T15:12:38.024Z"
+    },
+    {
+      "id": "19ee72bc-3741-48ae-bb07-c04c5050b83d",
+      "name": "Lifestyle Channel 51",
+      "handle": "@lifestyle51",
+      "youtubeUrl": "https://youtube.com/@lifestyle51",
+      "type": "own_content",
+      "niche": "Lifestyle",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "suspended",
+      "linkedEmail": "ops.lifestyle51@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle51/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-03-27T15:12:38.024Z"
+    },
+    {
+      "id": "d28a7dcd-b5d2-40e3-9657-8f942c1d1cce",
+      "name": "Education Channel 52",
+      "handle": "@education52",
+      "youtubeUrl": "https://youtube.com/@education52",
+      "type": "client",
+      "niche": "Education",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.education52@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/education52/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-03-26T15:12:38.024Z"
+    },
+    {
+      "id": "489f6525-2b60-4e35-bdeb-3fc55981f7df",
+      "name": "Sports Channel 53",
+      "handle": "@sports53",
+      "youtubeUrl": "https://youtube.com/@sports53",
+      "type": "content_selling",
+      "niche": "Sports",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.sports53@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/sports53/",
+      "contentProjectId": "PRJ-SPORTS53",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-03-25T15:12:38.024Z"
+    },
+    {
+      "id": "1d804d0d-2eaa-469c-af3c-4cb39deeeb61",
+      "name": "Music Channel 54",
+      "handle": "@music54",
+      "youtubeUrl": "https://youtube.com/@music54",
+      "type": "own_content",
+      "niche": "Music",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.music54@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/music54/",
+      "contentProjectId": "PRJ-MUSIC54",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-03-24T15:12:38.024Z"
+    },
+    {
+      "id": "5cb92971-38c5-4710-b523-e51d9cb151f8",
+      "name": "Travel Channel 55",
+      "handle": "@travel55",
+      "youtubeUrl": "https://youtube.com/@travel55",
+      "type": "client",
+      "niche": "Travel",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.travel55@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/travel55/",
+      "contentProjectId": "PRJ-TRAVEL55",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-03-23T15:12:38.024Z"
+    },
+    {
+      "id": "135a1e3c-5fa9-4269-8bc5-2e1f90908513",
+      "name": "Technology Channel 56",
+      "handle": "@technology56",
+      "youtubeUrl": "https://youtube.com/@technology56",
+      "type": "content_selling",
+      "niche": "Technology",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.technology56@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/technology56/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-03-22T15:12:38.024Z"
+    },
+    {
+      "id": "b6f7496f-860b-44d0-a55d-f8379d54d01b",
+      "name": "Finance Channel 57",
+      "handle": "@finance57",
+      "youtubeUrl": "https://youtube.com/@finance57",
+      "type": "own_content",
+      "niche": "Finance",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.finance57@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/finance57/",
+      "contentProjectId": "PRJ-FINANCE5",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-03-21T15:12:38.024Z"
+    },
+    {
+      "id": "d5490474-b4ed-412e-8432-ac7df485376c",
+      "name": "Gaming Channel 58",
+      "handle": "@gaming58",
+      "youtubeUrl": "https://youtube.com/@gaming58",
+      "type": "client",
+      "niche": "Gaming",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.gaming58@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/gaming58/",
+      "contentProjectId": "PRJ-GAMING58",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-03-20T15:12:38.024Z"
+    },
+    {
+      "id": "7e76ea8f-4f9c-4c43-a3c0-762bcaf1c9e4",
+      "name": "Lifestyle Channel 59",
+      "handle": "@lifestyle59",
+      "youtubeUrl": "https://youtube.com/@lifestyle59",
+      "type": "content_selling",
+      "niche": "Lifestyle",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle59@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle59/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-03-19T15:12:38.024Z"
+    },
+    {
+      "id": "f3561d36-5ff2-499c-a231-06e9db4a9afe",
+      "name": "Education Channel 60",
+      "handle": "@education60",
+      "youtubeUrl": "https://youtube.com/@education60",
+      "type": "own_content",
+      "niche": "Education",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.education60@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/education60/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-05-17T15:12:38.024Z"
+    },
+    {
+      "id": "f0695296-fb10-424f-824b-2375d5f70f9d",
+      "name": "Sports Channel 61",
+      "handle": "@sports61",
+      "youtubeUrl": "https://youtube.com/@sports61",
+      "type": "client",
+      "niche": "Sports",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.sports61@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/sports61/",
+      "contentProjectId": "PRJ-SPORTS61",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-05-16T15:12:38.024Z"
+    },
+    {
+      "id": "d7b222bc-dcd3-48fe-b6c1-4285ceeb63f9",
+      "name": "Music Channel 62",
+      "handle": "@music62",
+      "youtubeUrl": "https://youtube.com/@music62",
+      "type": "content_selling",
+      "niche": "Music",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.music62@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/music62/",
+      "contentProjectId": "PRJ-MUSIC62",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-05-15T15:12:38.024Z"
+    },
+    {
+      "id": "5ca007cf-1bfb-453f-be2f-2bf334025f2d",
+      "name": "Travel Channel 63",
+      "handle": "@travel63",
+      "youtubeUrl": "https://youtube.com/@travel63",
+      "type": "own_content",
+      "niche": "Travel",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.travel63@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/travel63/",
+      "contentProjectId": "PRJ-TRAVEL63",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-05-14T15:12:38.024Z"
+    },
+    {
+      "id": "9cda2ff2-150e-4e7d-a185-0f2467144933",
+      "name": "Technology Channel 64",
+      "handle": "@technology64",
+      "youtubeUrl": "https://youtube.com/@technology64",
+      "type": "client",
+      "niche": "Technology",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.technology64@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/technology64/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-05-13T15:12:38.024Z"
+    },
+    {
+      "id": "cc050510-0b8d-49fd-a92a-3652d79aae29",
+      "name": "Finance Channel 65",
+      "handle": "@finance65",
+      "youtubeUrl": "https://youtube.com/@finance65",
+      "type": "content_selling",
+      "niche": "Finance",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.finance65@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/finance65/",
+      "contentProjectId": "PRJ-FINANCE6",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-05-12T15:12:38.024Z"
+    },
+    {
+      "id": "6ce29861-5e00-4c91-9046-fe60dc1e3329",
+      "name": "Gaming Channel 66",
+      "handle": "@gaming66",
+      "youtubeUrl": "https://youtube.com/@gaming66",
+      "type": "own_content",
+      "niche": "Gaming",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.gaming66@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/gaming66/",
+      "contentProjectId": "PRJ-GAMING66",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-05-11T15:12:38.024Z"
+    },
+    {
+      "id": "6dcfb3df-cf07-4137-8f49-9a816f8451d3",
+      "name": "Lifestyle Channel 67",
+      "handle": "@lifestyle67",
+      "youtubeUrl": "https://youtube.com/@lifestyle67",
+      "type": "client",
+      "niche": "Lifestyle",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle67@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle67/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-05-10T15:12:38.024Z"
+    },
+    {
+      "id": "ddcb9344-6422-41b1-9f4b-fe18a4a004c2",
+      "name": "Education Channel 68",
+      "handle": "@education68",
+      "youtubeUrl": "https://youtube.com/@education68",
+      "type": "content_selling",
+      "niche": "Education",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "suspended",
+      "linkedEmail": "ops.education68@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/education68/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-05-09T15:12:38.024Z"
+    },
+    {
+      "id": "fddc702e-6238-4035-9b10-9f661eca6122",
+      "name": "Sports Channel 69",
+      "handle": "@sports69",
+      "youtubeUrl": "https://youtube.com/@sports69",
+      "type": "own_content",
+      "niche": "Sports",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.sports69@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/sports69/",
+      "contentProjectId": "PRJ-SPORTS69",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-05-08T15:12:38.024Z"
+    },
+    {
+      "id": "50e35eea-9f1c-4f5c-986a-33d85e8819f5",
+      "name": "Music Channel 70",
+      "handle": "@music70",
+      "youtubeUrl": "https://youtube.com/@music70",
+      "type": "client",
+      "niche": "Music",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.music70@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/music70/",
+      "contentProjectId": "PRJ-MUSIC70",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-05-07T15:12:38.024Z"
+    },
+    {
+      "id": "45241640-4014-4a53-9671-0b9efa9244e9",
+      "name": "Travel Channel 71",
+      "handle": "@travel71",
+      "youtubeUrl": "https://youtube.com/@travel71",
+      "type": "content_selling",
+      "niche": "Travel",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.travel71@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/travel71/",
+      "contentProjectId": "PRJ-TRAVEL71",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-05-06T15:12:38.024Z"
+    },
+    {
+      "id": "5e2acc3f-e013-4698-aa39-ddf9220591dc",
+      "name": "Technology Channel 72",
+      "handle": "@technology72",
+      "youtubeUrl": "https://youtube.com/@technology72",
+      "type": "own_content",
+      "niche": "Technology",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.technology72@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/technology72/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-05-05T15:12:38.024Z"
+    },
+    {
+      "id": "a719a58f-3f2b-454e-9086-c1e7d5e3752d",
+      "name": "Finance Channel 73",
+      "handle": "@finance73",
+      "youtubeUrl": "https://youtube.com/@finance73",
+      "type": "client",
+      "niche": "Finance",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.finance73@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/finance73/",
+      "contentProjectId": "PRJ-FINANCE7",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-05-04T15:12:38.024Z"
+    },
+    {
+      "id": "39067575-ea83-4bfd-9067-95f60c1f7e5a",
+      "name": "Gaming Channel 74",
+      "handle": "@gaming74",
+      "youtubeUrl": "https://youtube.com/@gaming74",
+      "type": "content_selling",
+      "niche": "Gaming",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.gaming74@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/gaming74/",
+      "contentProjectId": "PRJ-GAMING74",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-05-03T15:12:38.024Z"
+    },
+    {
+      "id": "2c8ef0fe-b1ec-4725-99e0-222fc2719a2b",
+      "name": "Lifestyle Channel 75",
+      "handle": "@lifestyle75",
+      "youtubeUrl": "https://youtube.com/@lifestyle75",
+      "type": "own_content",
+      "niche": "Lifestyle",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle75@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle75/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-05-02T15:12:38.024Z"
+    },
+    {
+      "id": "110b5071-29b6-4f6e-882e-27bb6bebe982",
+      "name": "Education Channel 76",
+      "handle": "@education76",
+      "youtubeUrl": "https://youtube.com/@education76",
+      "type": "client",
+      "niche": "Education",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.education76@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/education76/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-05-01T15:12:38.024Z"
+    },
+    {
+      "id": "c49fdf00-9961-48f3-8939-4aa654b1e579",
+      "name": "Sports Channel 77",
+      "handle": "@sports77",
+      "youtubeUrl": "https://youtube.com/@sports77",
+      "type": "content_selling",
+      "niche": "Sports",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.sports77@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/sports77/",
+      "contentProjectId": "PRJ-SPORTS77",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-30T15:12:38.024Z"
+    },
+    {
+      "id": "fd12bfdf-dede-48c6-9d05-7f0a75de6961",
+      "name": "Music Channel 78",
+      "handle": "@music78",
+      "youtubeUrl": "https://youtube.com/@music78",
+      "type": "own_content",
+      "niche": "Music",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.music78@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/music78/",
+      "contentProjectId": "PRJ-MUSIC78",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-29T15:12:38.024Z"
+    },
+    {
+      "id": "5d69575d-fa9f-48e6-b3a5-c78325e21da2",
+      "name": "Travel Channel 79",
+      "handle": "@travel79",
+      "youtubeUrl": "https://youtube.com/@travel79",
+      "type": "client",
+      "niche": "Travel",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.travel79@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/travel79/",
+      "contentProjectId": "PRJ-TRAVEL79",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-28T15:12:38.024Z"
+    },
+    {
+      "id": "475982e8-66e9-4e04-a97d-880ba86bf94f",
+      "name": "Technology Channel 80",
+      "handle": "@technology80",
+      "youtubeUrl": "https://youtube.com/@technology80",
+      "type": "content_selling",
+      "niche": "Technology",
+      "language": "FR-FR",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.technology80@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/technology80/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-27T15:12:38.024Z"
+    },
+    {
+      "id": "c7e4d98b-f78e-4baf-b47f-611eb5ff84b0",
+      "name": "Finance Channel 81",
+      "handle": "@finance81",
+      "youtubeUrl": "https://youtube.com/@finance81",
+      "type": "own_content",
+      "niche": "Finance",
+      "language": "DE-DE",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.finance81@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/finance81/",
+      "contentProjectId": "PRJ-FINANCE8",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-26T15:12:38.024Z"
+    },
+    {
+      "id": "c5073de3-e194-4f8f-a7ee-7045d51c8ae9",
+      "name": "Gaming Channel 82",
+      "handle": "@gaming82",
+      "youtubeUrl": "https://youtube.com/@gaming82",
+      "type": "client",
+      "niche": "Gaming",
+      "language": "PT-BR",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.gaming82@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/gaming82/",
+      "contentProjectId": "PRJ-GAMING82",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-25T15:12:38.024Z"
+    },
+    {
+      "id": "2316c442-da67-4e41-9ab2-33f6dac6bff5",
+      "name": "Lifestyle Channel 83",
+      "handle": "@lifestyle83",
+      "youtubeUrl": "https://youtube.com/@lifestyle83",
+      "type": "content_selling",
+      "niche": "Lifestyle",
+      "language": "JA-JP",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle83@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle83/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-24T15:12:38.024Z"
+    },
+    {
+      "id": "73915cbd-ddb4-433e-9bcc-08dddbabe460",
+      "name": "Education Channel 84",
+      "handle": "@education84",
+      "youtubeUrl": "https://youtube.com/@education84",
+      "type": "own_content",
+      "niche": "Education",
+      "language": "EN-US",
+      "monetizationStatus": "monetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.education84@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/education84/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-23T15:12:38.024Z"
+    },
+    {
+      "id": "3d00db0a-4288-4ff6-b32a-d4e332d698ce",
+      "name": "Sports Channel 85",
+      "handle": "@sports85",
+      "youtubeUrl": "https://youtube.com/@sports85",
+      "type": "client",
+      "niche": "Sports",
+      "language": "EN-UK",
+      "monetizationStatus": "monetized",
+      "healthScore": "medium",
+      "status": "suspended",
+      "linkedEmail": "ops.sports85@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/sports85/",
+      "contentProjectId": "PRJ-SPORTS85",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-22T15:12:38.024Z"
+    },
+    {
+      "id": "89913dd5-0c0a-4025-aaae-4f3971623938",
+      "name": "Music Channel 86",
+      "handle": "@music86",
+      "youtubeUrl": "https://youtube.com/@music86",
+      "type": "content_selling",
+      "niche": "Music",
+      "language": "ES-ES",
+      "monetizationStatus": "monetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.music86@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/music86/",
+      "contentProjectId": "PRJ-MUSIC86",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-21T15:12:38.024Z"
+    },
+    {
+      "id": "5e1bb175-f87b-48f6-919d-bf5d091cfbf3",
+      "name": "Travel Channel 87",
+      "handle": "@travel87",
+      "youtubeUrl": "https://youtube.com/@travel87",
+      "type": "own_content",
+      "niche": "Travel",
+      "language": "FR-FR",
+      "monetizationStatus": "in_review",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.travel87@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/travel87/",
+      "contentProjectId": "PRJ-TRAVEL87",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-20T15:12:38.024Z"
+    },
+    {
+      "id": "0a930132-da12-4e0e-8ce3-e6cb10672341",
+      "name": "Technology Channel 88",
+      "handle": "@technology88",
+      "youtubeUrl": "https://youtube.com/@technology88",
+      "type": "client",
+      "niche": "Technology",
+      "language": "DE-DE",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.technology88@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/technology88/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-19T15:12:38.024Z"
+    },
+    {
+      "id": "eff3091c-5388-42a4-8311-c3283a13a9c2",
+      "name": "Finance Channel 89",
+      "handle": "@finance89",
+      "youtubeUrl": "https://youtube.com/@finance89",
+      "type": "content_selling",
+      "niche": "Finance",
+      "language": "PT-BR",
+      "monetizationStatus": "in_review",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.finance89@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/finance89/",
+      "contentProjectId": "PRJ-FINANCE8",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-18T15:12:38.024Z"
+    },
+    {
+      "id": "cfbbbb48-9274-405f-997b-af61c85cb683",
+      "name": "Gaming Channel 90",
+      "handle": "@gaming90",
+      "youtubeUrl": "https://youtube.com/@gaming90",
+      "type": "own_content",
+      "niche": "Gaming",
+      "language": "JA-JP",
+      "monetizationStatus": "in_review",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.gaming90@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/gaming90/",
+      "contentProjectId": "PRJ-GAMING90",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-17T15:12:38.024Z"
+    },
+    {
+      "id": "0ff591d4-0341-4079-9f87-3a3d6dd86d40",
+      "name": "Lifestyle Channel 91",
+      "handle": "@lifestyle91",
+      "youtubeUrl": "https://youtube.com/@lifestyle91",
+      "type": "client",
+      "niche": "Lifestyle",
+      "language": "EN-US",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle91@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle91/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-16T15:12:38.024Z"
+    },
+    {
+      "id": "9850258f-74a6-4a64-a807-263bce750346",
+      "name": "Education Channel 92",
+      "handle": "@education92",
+      "youtubeUrl": "https://youtube.com/@education92",
+      "type": "content_selling",
+      "niche": "Education",
+      "language": "EN-UK",
+      "monetizationStatus": "in_review",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.education92@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/education92/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-15T15:12:38.024Z"
+    },
+    {
+      "id": "768c4b8d-0d52-459f-b349-d5ebe0e7ec0c",
+      "name": "Sports Channel 93",
+      "handle": "@sports93",
+      "youtubeUrl": "https://youtube.com/@sports93",
+      "type": "own_content",
+      "niche": "Sports",
+      "language": "ES-ES",
+      "monetizationStatus": "in_review",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.sports93@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/sports93/",
+      "contentProjectId": "PRJ-SPORTS93",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-14T15:12:38.024Z"
+    },
+    {
+      "id": "126b8174-a5fb-44c3-9f62-acb5eed76e99",
+      "name": "Music Channel 94",
+      "handle": "@music94",
+      "youtubeUrl": "https://youtube.com/@music94",
+      "type": "client",
+      "niche": "Music",
+      "language": "FR-FR",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.music94@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/music94/",
+      "contentProjectId": "PRJ-MUSIC94",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-13T15:12:38.024Z"
+    },
+    {
+      "id": "72b6c1f4-8aa7-461d-9e6e-f02fc246161e",
+      "name": "Travel Channel 95",
+      "handle": "@travel95",
+      "youtubeUrl": "https://youtube.com/@travel95",
+      "type": "content_selling",
+      "niche": "Travel",
+      "language": "DE-DE",
+      "monetizationStatus": "in_review",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.travel95@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/travel95/",
+      "contentProjectId": "PRJ-TRAVEL95",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-12T15:12:38.024Z"
+    },
+    {
+      "id": "37ae41fd-aba1-48bf-ac2e-9e584367a66b",
+      "name": "Technology Channel 96",
+      "handle": "@technology96",
+      "youtubeUrl": "https://youtube.com/@technology96",
+      "type": "own_content",
+      "niche": "Technology",
+      "language": "PT-BR",
+      "monetizationStatus": "in_review",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.technology96@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/technology96/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-11T15:12:38.024Z"
+    },
+    {
+      "id": "f4097b69-e821-4d9c-b9e5-000d5b1a3e03",
+      "name": "Finance Channel 97",
+      "handle": "@finance97",
+      "youtubeUrl": "https://youtube.com/@finance97",
+      "type": "client",
+      "niche": "Finance",
+      "language": "JA-JP",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.finance97@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/finance97/",
+      "contentProjectId": "PRJ-FINANCE9",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-10T15:12:38.024Z"
+    },
+    {
+      "id": "a6d7e1c6-5e39-4539-9351-e6eecb3407cb",
+      "name": "Gaming Channel 98",
+      "handle": "@gaming98",
+      "youtubeUrl": "https://youtube.com/@gaming98",
+      "type": "content_selling",
+      "niche": "Gaming",
+      "language": "EN-US",
+      "monetizationStatus": "in_review",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.gaming98@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/gaming98/",
+      "contentProjectId": "PRJ-GAMING98",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-09T15:12:38.024Z"
+    },
+    {
+      "id": "7211bdfb-730f-47f6-8778-9975b35c8328",
+      "name": "Lifestyle Channel 99",
+      "handle": "@lifestyle99",
+      "youtubeUrl": "https://youtube.com/@lifestyle99",
+      "type": "own_content",
+      "niche": "Lifestyle",
+      "language": "EN-UK",
+      "monetizationStatus": "limited",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle99@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle99/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.024Z",
+      "createdAt": "2026-04-08T15:12:38.024Z"
+    },
+    {
+      "id": "d6f3b6f4-cc95-48d7-9530-ab0fd4527a14",
+      "name": "Education Channel 100",
+      "handle": "@education100",
+      "youtubeUrl": "https://youtube.com/@education100",
+      "type": "client",
+      "niche": "Education",
+      "language": "ES-ES",
+      "monetizationStatus": "limited",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.education100@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/education100/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.024Z",
+      "createdAt": "2026-04-07T15:12:38.024Z"
+    },
+    {
+      "id": "75243ff8-aa30-4786-a6b4-c705ed7c839a",
+      "name": "Sports Channel 101",
+      "handle": "@sports101",
+      "youtubeUrl": "https://youtube.com/@sports101",
+      "type": "content_selling",
+      "niche": "Sports",
+      "language": "FR-FR",
+      "monetizationStatus": "limited",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.sports101@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/sports101/",
+      "contentProjectId": "PRJ-SPORTS10",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-11T15:12:38.024Z",
+      "createdAt": "2026-04-06T15:12:38.024Z"
+    },
+    {
+      "id": "1cdd9dd3-9e0f-41b5-85a2-3027fb8384a2",
+      "name": "Music Channel 102",
+      "handle": "@music102",
+      "youtubeUrl": "https://youtube.com/@music102",
+      "type": "own_content",
+      "niche": "Music",
+      "language": "DE-DE",
+      "monetizationStatus": "limited",
+      "healthScore": "high",
+      "status": "suspended",
+      "linkedEmail": "ops.music102@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/music102/",
+      "contentProjectId": "PRJ-MUSIC102",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-16T15:12:38.024Z",
+      "createdAt": "2026-04-05T15:12:38.024Z"
+    },
+    {
+      "id": "2da0c69e-b44a-4084-9d91-e21ebba5fb44",
+      "name": "Travel Channel 103",
+      "handle": "@travel103",
+      "youtubeUrl": "https://youtube.com/@travel103",
+      "type": "client",
+      "niche": "Travel",
+      "language": "PT-BR",
+      "monetizationStatus": "limited",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.travel103@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/travel103/",
+      "contentProjectId": "PRJ-TRAVEL10",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-15T15:12:38.024Z",
+      "createdAt": "2026-04-04T15:12:38.024Z"
+    },
+    {
+      "id": "39b808ef-dfbd-44e3-abd3-7580d9ad0d59",
+      "name": "Technology Channel 104",
+      "handle": "@technology104",
+      "youtubeUrl": "https://youtube.com/@technology104",
+      "type": "content_selling",
+      "niche": "Technology",
+      "language": "JA-JP",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.technology104@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/technology104/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Content Selling upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-14T15:12:38.024Z",
+      "createdAt": "2026-04-03T15:12:38.024Z"
+    },
+    {
+      "id": "96f3ae90-3b54-456b-bffb-ad0df7fb4185",
+      "name": "Finance Channel 105",
+      "handle": "@finance105",
+      "youtubeUrl": "https://youtube.com/@finance105",
+      "type": "own_content",
+      "niche": "Finance",
+      "language": "EN-US",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.finance105@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/finance105/",
+      "contentProjectId": "PRJ-FINANCE1",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Own Content upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-13T15:12:38.025Z",
+      "createdAt": "2026-04-02T15:12:38.025Z"
+    },
+    {
+      "id": "6ab22d7b-1dd2-42ac-9cc8-5d94910c1dec",
+      "name": "Gaming Channel 106",
+      "handle": "@gaming106",
+      "youtubeUrl": "https://youtube.com/@gaming106",
+      "type": "client",
+      "niche": "Gaming",
+      "language": "EN-UK",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.gaming106@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/gaming106/",
+      "contentProjectId": "PRJ-GAMING10",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "Client upload completed"
+        }
+      ],
+      "lastUploadAt": "2026-06-12T15:12:38.025Z",
+      "createdAt": "2026-04-01T15:12:38.025Z"
+    },
+    {
+      "id": "67d8416b-c2e0-479d-9cbb-7051c9602289",
+      "name": "Lifestyle Channel 107",
+      "handle": "@lifestyle107",
+      "youtubeUrl": "https://youtube.com/@lifestyle107",
+      "type": "content_selling",
+      "niche": "Lifestyle",
+      "language": "ES-ES",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle107@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle107/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-06T15:12:38.025Z",
+      "createdAt": "2026-03-31T15:12:38.025Z"
+    },
+    {
+      "id": "ba0bb78f-cdc8-412a-b8a2-4a083c3a14a6",
+      "name": "Education Channel 108",
+      "handle": "@education108",
+      "youtubeUrl": "https://youtube.com/@education108",
+      "type": "own_content",
+      "niche": "Education",
+      "language": "FR-FR",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.education108@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/education108/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-05T15:12:38.025Z",
+      "createdAt": "2026-03-30T15:12:38.025Z"
+    },
+    {
+      "id": "172320a4-f0a4-4e60-b430-9f6dce5e4616",
+      "name": "Sports Channel 109",
+      "handle": "@sports109",
+      "youtubeUrl": "https://youtube.com/@sports109",
+      "type": "client",
+      "niche": "Sports",
+      "language": "DE-DE",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.sports109@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/sports109/",
+      "contentProjectId": "PRJ-SPORTS10",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-04T15:12:38.025Z",
+      "createdAt": "2026-03-29T15:12:38.025Z"
+    },
+    {
+      "id": "bddfd3df-757d-4702-b9df-bcf5a0c7000f",
+      "name": "Music Channel 110",
+      "handle": "@music110",
+      "youtubeUrl": "https://youtube.com/@music110",
+      "type": "content_selling",
+      "niche": "Music",
+      "language": "PT-BR",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.music110@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/music110/",
+      "contentProjectId": "PRJ-MUSIC110",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-08T15:12:38.025Z",
+      "createdAt": "2026-03-28T15:12:38.025Z"
+    },
+    {
+      "id": "62441e52-6170-4645-862d-60c39551bc6a",
+      "name": "Travel Channel 111",
+      "handle": "@travel111",
+      "youtubeUrl": "https://youtube.com/@travel111",
+      "type": "own_content",
+      "niche": "Travel",
+      "language": "JA-JP",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.travel111@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/travel111/",
+      "contentProjectId": "PRJ-TRAVEL11",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-07T15:12:38.025Z",
+      "createdAt": "2026-03-27T15:12:38.025Z"
+    },
+    {
+      "id": "635dae50-622b-4364-b28b-d104382b292e",
+      "name": "Technology Channel 112",
+      "handle": "@technology112",
+      "youtubeUrl": "https://youtube.com/@technology112",
+      "type": "client",
+      "niche": "Technology",
+      "language": "EN-US",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.technology112@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/technology112/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-06T15:12:38.025Z",
+      "createdAt": "2026-03-26T15:12:38.025Z"
+    },
+    {
+      "id": "8d983bc2-cbd0-4891-8a95-a7ff40b58289",
+      "name": "Finance Channel 113",
+      "handle": "@finance113",
+      "youtubeUrl": "https://youtube.com/@finance113",
+      "type": "content_selling",
+      "niche": "Finance",
+      "language": "EN-UK",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.finance113@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/finance113/",
+      "contentProjectId": "PRJ-FINANCE1",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-05T15:12:38.025Z",
+      "createdAt": "2026-03-25T15:12:38.025Z"
+    },
+    {
+      "id": "ebe8fd1a-ba50-4e83-9e02-005b5197b523",
+      "name": "Gaming Channel 114",
+      "handle": "@gaming114",
+      "youtubeUrl": "https://youtube.com/@gaming114",
+      "type": "own_content",
+      "niche": "Gaming",
+      "language": "ES-ES",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.gaming114@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/gaming114/",
+      "contentProjectId": "PRJ-GAMING11",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-04T15:12:38.025Z",
+      "createdAt": "2026-03-24T15:12:38.025Z"
+    },
+    {
+      "id": "8084e38d-1187-49e2-885d-c1218a39c6db",
+      "name": "Lifestyle Channel 115",
+      "handle": "@lifestyle115",
+      "youtubeUrl": "https://youtube.com/@lifestyle115",
+      "type": "client",
+      "niche": "Lifestyle",
+      "language": "FR-FR",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle115@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle115/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-08T15:12:38.025Z",
+      "createdAt": "2026-03-23T15:12:38.025Z"
+    },
+    {
+      "id": "f5eb6647-ad38-493c-b1f3-ae41b81faa82",
+      "name": "Education Channel 116",
+      "handle": "@education116",
+      "youtubeUrl": "https://youtube.com/@education116",
+      "type": "content_selling",
+      "niche": "Education",
+      "language": "DE-DE",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.education116@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/education116/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-07T15:12:38.025Z",
+      "createdAt": "2026-03-22T15:12:38.025Z"
+    },
+    {
+      "id": "2097c3d8-2b3f-4f3c-9390-8a99ca215ac2",
+      "name": "Sports Channel 117",
+      "handle": "@sports117",
+      "youtubeUrl": "https://youtube.com/@sports117",
+      "type": "own_content",
+      "niche": "Sports",
+      "language": "PT-BR",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.sports117@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/sports117/",
+      "contentProjectId": "PRJ-SPORTS11",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-06T15:12:38.025Z",
+      "createdAt": "2026-03-21T15:12:38.025Z"
+    },
+    {
+      "id": "a132f8b1-63f3-473b-b6fe-9ba33250bb0e",
+      "name": "Music Channel 118",
+      "handle": "@music118",
+      "youtubeUrl": "https://youtube.com/@music118",
+      "type": "client",
+      "niche": "Music",
+      "language": "JA-JP",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.music118@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/music118/",
+      "contentProjectId": "PRJ-MUSIC118",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-05T15:12:38.025Z",
+      "createdAt": "2026-03-20T15:12:38.025Z"
+    },
+    {
+      "id": "31376881-389a-44f3-af5d-d3119ae8e326",
+      "name": "Travel Channel 119",
+      "handle": "@travel119",
+      "youtubeUrl": "https://youtube.com/@travel119",
+      "type": "content_selling",
+      "niche": "Travel",
+      "language": "EN-US",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "suspended",
+      "linkedEmail": "ops.travel119@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/travel119/",
+      "contentProjectId": "PRJ-TRAVEL11",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-04T15:12:38.025Z",
+      "createdAt": "2026-03-19T15:12:38.025Z"
+    },
+    {
+      "id": "a1b7b080-6fba-484c-841f-97efa6da6e36",
+      "name": "Technology Channel 120",
+      "handle": "@technology120",
+      "youtubeUrl": "https://youtube.com/@technology120",
+      "type": "own_content",
+      "niche": "Technology",
+      "language": "EN-UK",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.technology120@company.com",
+      "uploadSchedule": "1x / Week",
+      "sourceMapping": "/mnt/nas/technology120/",
+      "contentProjectId": "PRJ-TECHNOLO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-08T15:12:38.025Z",
+      "createdAt": "2026-05-17T15:12:38.025Z"
+    },
+    {
+      "id": "7af89085-e7fd-438b-997c-110de301ab46",
+      "name": "Finance Channel 121",
+      "handle": "@finance121",
+      "youtubeUrl": "https://youtube.com/@finance121",
+      "type": "client",
+      "niche": "Finance",
+      "language": "ES-ES",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.finance121@company.com",
+      "uploadSchedule": "2x / Week",
+      "sourceMapping": "/mnt/nas/finance121/",
+      "contentProjectId": "PRJ-FINANCE1",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-07T15:12:38.025Z",
+      "createdAt": "2026-05-16T15:12:38.025Z"
+    },
+    {
+      "id": "a0a4832f-3dfa-4ec1-8f4f-917458362741",
+      "name": "Gaming Channel 122",
+      "handle": "@gaming122",
+      "youtubeUrl": "https://youtube.com/@gaming122",
+      "type": "content_selling",
+      "niche": "Gaming",
+      "language": "FR-FR",
+      "monetizationStatus": "demonetized",
+      "healthScore": "low",
+      "status": "active",
+      "linkedEmail": "ops.gaming122@company.com",
+      "uploadSchedule": "3x / Week",
+      "sourceMapping": "/mnt/nas/gaming122/",
+      "contentProjectId": "PRJ-GAMING12",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-06T15:12:38.025Z",
+      "createdAt": "2026-06-14T15:12:38.025Z"
+    },
+    {
+      "id": "93a4146a-6237-4455-a9cf-5f5bd2b543a2",
+      "name": "Lifestyle Channel 123",
+      "handle": "@lifestyle123",
+      "youtubeUrl": "https://youtube.com/@lifestyle123",
+      "type": "own_content",
+      "niche": "Lifestyle",
+      "language": "DE-DE",
+      "monetizationStatus": "demonetized",
+      "healthScore": "high",
+      "status": "active",
+      "linkedEmail": "ops.lifestyle123@company.com",
+      "uploadSchedule": "4x / Week",
+      "sourceMapping": "/mnt/nas/lifestyle123/",
+      "contentProjectId": "PRJ-LIFESTYL",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-05T15:12:38.025Z",
+      "createdAt": "2026-06-16T15:12:38.025Z"
+    },
+    {
+      "id": "f7ecd6c0-ffd0-4fbd-ba4c-f8413a7adb3d",
+      "name": "Education Channel 124",
+      "handle": "@education124",
+      "youtubeUrl": "https://youtube.com/@education124",
+      "type": "client",
+      "niche": "Education",
+      "language": "PT-BR",
+      "monetizationStatus": "demonetized",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "ops.education124@company.com",
+      "uploadSchedule": "5x / Week",
+      "sourceMapping": "/mnt/nas/education124/",
+      "contentProjectId": "PRJ-EDUCATIO",
+      "recentActivity": [
+        {
+          "at": "15:12",
+          "message": "No uploads scheduled"
+        }
+      ],
+      "lastUploadAt": "2026-06-04T15:12:38.025Z",
+      "createdAt": "2026-06-15T15:12:38.025Z"
+    }
+  ]
+}

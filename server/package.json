@@ -3,13 +3,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/main.js"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.5",
+    "@hono/zod-validator": "^0.8.0",
+    "hono": "^4.12.25",
+    "xlsx": "^0.18.5",
+    "youtube-dl-exec": "^3.1.7",
+    "zod": "^4.4.3"
   }
 }

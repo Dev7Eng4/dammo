@@ -1,0 +1,14 @@
+{
+  "sourceId": "3b727a7f-5c99-498f-9ef8-eed4d7eaa267",
+  "channelId": "UCRb1Jyy2QyelNcIqZwUX4Ig",
+  "fetchedAt": "2026-06-16T17:00:54.756Z",
+  "videos": [
+    {
+      "id": "test1",
+      "title": "Test Video",
+      "url": "https://youtube.com/watch?v=test1",
+      "viewCount": 100,
+      "duration": 60
+    }
+  ]
+}

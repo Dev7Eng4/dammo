@@ -1,0 +1,251 @@
+import { AppError } from '../../shared/http/errors.js';
+import { generateId } from '../../shared/id.js';
+import {
+  buildMinimalName,
+  parseSourceUrl,
+} from '../../shared/platform/url-parser.js';
+import { paginate } from '../../shared/types/pagination.js';
+import { fetchYoutubeChannelMetadata } from '../../infrastructure/youtube/youtube-channel-fetcher.js';
+import {
+  fetchAllYoutubeChannelVideos,
+} from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
+import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
+import { sourceChannelsRepository } from './source-channels.repository.js';
+import { sourceVideosRepository } from './source-videos.repository.js';
+import type {
+  CreateSourceChannelInput,
+  SourceChannel,
+  SourcePlatform,
+  SourcePurpose,
+  SourceRiskLevel,
+  SourceVideoDurationFilter,
+} from './source-channels.types.js';
+
+function filterSources(
+  sources: SourceChannel[],
+  platform?: SourcePlatform,
+  purpose?: SourcePurpose,
+  risk?: SourceRiskLevel,
+  query?: string,
+): SourceChannel[] {
+  let results = sources;
+
+  if (platform) {
+    results = results.filter((s) => s.platform === platform);
+  }
+
+  if (purpose) {
+    results = results.filter((s) => s.purpose === purpose);
+  }
+
+  if (risk) {
+    results = results.filter((s) => s.riskLevel === risk);
+  }
+
+  if (query?.trim()) {
+    const q = query.trim().toLowerCase();
+    results = results.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.url.toLowerCase().includes(q) ||
+        s.niche.toLowerCase().includes(q) ||
+        s.fullUrl.toLowerCase().includes(q),
+    );
+  }
+
+  return results;
+}
+
+async function fetchYoutubeSourceData(fullUrl: string) {
+  const metadata = await fetchYoutubeChannelMetadata(fullUrl);
+  const videos = await fetchAllYoutubeChannelVideos(fullUrl);
+  return { metadata, videos };
+}
+
+function filterVideosByDuration(
+  videos: YoutubeChannelVideo[],
+  duration: SourceVideoDurationFilter,
+): YoutubeChannelVideo[] {
+  if (duration === 'all') return videos;
+
+  return videos.filter((video) => {
+    const seconds = video.duration;
+    if (seconds === undefined) return false;
+
+    switch (duration) {
+      case 'under_1m':
+        return seconds < 60;
+      case '1m_10m':
+        return seconds >= 60 && seconds < 600;
+      case '10m_30m':
+        return seconds >= 600 && seconds < 1800;
+      case 'over_30m':
+        return seconds >= 1800;
+    }
+  });
+}
+
+export class SourceChannelsService {
+  listPaginated(
+    platform: SourcePlatform | undefined,
+    purpose: SourcePurpose | undefined,
+    risk: SourceRiskLevel | undefined,
+    query: string | undefined,
+    page: number,
+    limit: number,
+  ) {
+    const filtered = filterSources(
+      sourceChannelsRepository.findAll(),
+      platform,
+      purpose,
+      risk,
+      query,
+    );
+    return paginate(filtered, page, limit);
+  }
+
+  getById(id: string): SourceChannel {
+    const source = sourceChannelsRepository.findById(id);
+    if (!source) {
+      throw new AppError('Source channel not found', 404, 'NOT_FOUND');
+    }
+    return source;
+  }
+
+  getVideos(
+    id: string,
+    page: number,
+    limit: number,
+    duration: SourceVideoDurationFilter,
+  ) {
+    this.getById(id);
+
+    const store = sourceVideosRepository.read(id);
+    if (!store) {
+      return paginate<YoutubeChannelVideo>([], page, limit);
+    }
+
+    const filtered = filterVideosByDuration(store.videos, duration);
+    return paginate(filtered, page, limit);
+  }
+
+  async refresh(id: string): Promise<{ item: SourceChannel; videos: YoutubeChannelVideo[] }> {
+    const source = this.getById(id);
+
+    if (source.platform !== 'youtube') {
+      throw new AppError('Only YouTube sources can be updated', 400, 'UNSUPPORTED_PLATFORM');
+    }
+
+    try {
+      const { metadata, videos } = await fetchYoutubeSourceData(source.fullUrl);
+
+      sourceVideosRepository.write(id, {
+        sourceId: id,
+        channelId: metadata.channelId,
+        fetchedAt: new Date().toISOString(),
+        videos,
+      });
+
+      const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+      const updated = sourceChannelsRepository.update(id, (current) => ({
+        ...current,
+        name: metadata.name,
+        url: handle,
+        niche: metadata.niche,
+        videoCount: metadata.videoCount,
+        subscriberCount: metadata.subscriberCount,
+        description: metadata.description,
+        channelId: metadata.channelId,
+        metadataFetchedAt: new Date().toISOString(),
+      }));
+
+      if (!updated) {
+        throw new AppError('Source channel not found', 404, 'NOT_FOUND');
+      }
+
+      return { item: updated, videos };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(`Failed to update source: ${detail}`, 502, 'SOURCE_REFRESH_FAILED');
+    }
+  }
+
+  async create(input: CreateSourceChannelInput): Promise<SourceChannel> {
+    if (!input.url.trim()) {
+      throw new AppError('URL is required');
+    }
+
+    const { platform, url, fullUrl } = parseSourceUrl(input.url);
+
+    const exists = sourceChannelsRepository
+      .findAll()
+      .some((s) => s.fullUrl.toLowerCase() === fullUrl.toLowerCase());
+    if (exists) {
+      throw new AppError('Source URL already exists', 400, 'DUPLICATE_URL');
+    }
+
+    const id = generateId();
+    let name: string;
+    let niche: string;
+    let videoCount: number | undefined;
+    let subscriberCount: number | undefined;
+    let description: string | undefined;
+    let channelId: string | undefined;
+    let metadataFetchedAt: string | undefined;
+    let displayUrl = url;
+
+    if (platform === 'youtube') {
+      try {
+        const { metadata, videos } = await fetchYoutubeSourceData(fullUrl);
+        name = metadata.name;
+        niche = metadata.niche;
+        videoCount = metadata.videoCount;
+        subscriberCount = metadata.subscriberCount;
+        description = metadata.description;
+        channelId = metadata.channelId;
+        displayUrl = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+        metadataFetchedAt = new Date().toISOString();
+
+        sourceVideosRepository.write(id, {
+          sourceId: id,
+          channelId,
+          fetchedAt: metadataFetchedAt,
+          videos,
+        });
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        throw new AppError(
+          `Failed to fetch YouTube channel data: ${detail}`,
+          502,
+          'YOUTUBE_FETCH_FAILED',
+        );
+      }
+    } else {
+      name = buildMinimalName(url, platform);
+      niche = 'Unknown';
+    }
+
+    const source: SourceChannel = {
+      id,
+      platform,
+      name,
+      url: displayUrl,
+      fullUrl,
+      niche,
+      purpose: 'trend_tracking',
+      riskLevel: 'low',
+      mappedOwnedChannels: [],
+      activeProjects: [],
+      videoCount,
+      subscriberCount,
+      description,
+      channelId,
+      metadataFetchedAt,
+    };
+
+    return sourceChannelsRepository.prepend(source);
+  }
+}
+
+export const sourceChannelsService = new SourceChannelsService();
