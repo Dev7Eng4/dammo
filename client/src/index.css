@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  --color-secondary-50: #ecfeff;
+  --color-secondary-100: #cffafe;
+  --color-secondary-200: #a5f3fc;
+  --color-secondary-300: #67e8f9;
+  --color-secondary-400: #22d3ee;
+  --color-secondary-500: #06b6d4;
+  --color-secondary-600: #0891b2;
+  --color-secondary-700: #0e7490;
+  --color-secondary-800: #155e75;
+  --color-secondary-900: #164e63;
+  --color-secondary-950: #083344;
+
+  --color-tertiary-50: #fff7ed;
+  --color-tertiary-100: #ffedd5;
+  --color-tertiary-200: #fed7aa;
+  --color-tertiary-300: #fdba74;
+  --color-tertiary-400: #fb923c;
+  --color-tertiary-500: #d16900;
+  --color-tertiary-600: #c2410c;
+  --color-tertiary-700: #9a3412;
+  --color-tertiary-800: #7c2d12;
+  --color-tertiary-900: #431407;
+  --color-tertiary-950: #291100;
+
+  --color-neutral-50: #f6f7f8;
+  --color-neutral-100: #eceef0;
+  --color-neutral-200: #d8dce0;
+  --color-neutral-300: #b4bcc4;
+  --color-neutral-400: #8b949e;
+  --color-neutral-500: #6e7681;
+  --color-neutral-600: #57606a;
+  --color-neutral-700: #424a53;
+  --color-neutral-800: #30363d;
+  --color-neutral-900: #21262d;
+  --color-neutral-950: #0d1117;
+
+  --color-background: #0b0e14;
+  --color-surface: #161b22;
+  --color-surface-elevated: #1c2128;
+  --color-border: #30363d;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background-color: var(--color-background);
+    color: var(--color-neutral-100);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .text-headline {
+    @apply text-4xl font-semibold tracking-tight text-neutral-50;
+  }
+
+  .text-body {
+    @apply text-base text-neutral-200;
+  }
+
+  .text-label {
+    @apply text-sm font-medium text-neutral-300;
+  }
+
+  .card-surface {
+    @apply rounded-2xl border border-border bg-surface p-6;
+  }
+}
