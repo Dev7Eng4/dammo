@@ -10,6 +10,7 @@ import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-c
 import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
+import { reupVideoCreatorService } from './reup-video-creator.service.js';
 import { buildUploadScheduleLabel } from './upload-schedule.js';
 import type {
   CreateYoutubeChannelInput,
@@ -87,12 +88,14 @@ type ChannelConfigInput = Pick<
   | 'mailAccountId'
   | 'type'
   | 'sourceChannelIds'
-  | 'reupVideoSourceId'
-  | 'reupAudioSourceId'
   | 'backgroundFootageSourceId'
   | 'uploadFrequency'
   | 'publishTimes'
 >;
+
+function isReupChannelType(type: YoutubeChannelType): boolean {
+  return type === 'reup_audio' || type === 'reup_video';
+}
 
 function buildSourceMapping(sourceChannelIds: string[] | undefined): string {
   const ids = [...new Set((sourceChannelIds ?? []).map((id) => id.trim()).filter(Boolean))];
@@ -114,28 +117,20 @@ function validateChannelConfig(input: ChannelConfigInput): {
   sourceMapping: string;
   uploadSchedule: string;
   backgroundFootageSourceId?: string;
-  reupVideoSourceId?: string;
-  reupAudioSourceId?: string;
 } {
   const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
   if (!mailAccount) {
     throw new AppError('Mail account not found', 404, 'MAIL_NOT_FOUND');
   }
 
-  const sourceMapping = buildSourceMapping(input.sourceChannelIds);
-
-  if (input.type === 'reup') {
-    const videoSourceId = input.reupVideoSourceId?.trim();
-    const audioSourceId = input.reupAudioSourceId?.trim();
-    if (!videoSourceId || !audioSourceId) {
-      throw new AppError('Reup channels require video and audio sources', 400, 'VALIDATION_ERROR');
+  if (isReupChannelType(input.type)) {
+    const sourceIds = (input.sourceChannelIds ?? []).map((id) => id.trim()).filter(Boolean);
+    if (sourceIds.length === 0) {
+      throw new AppError('Reup channels require at least one source channel', 400, 'VALIDATION_ERROR');
     }
-    if (videoSourceId === audioSourceId) {
-      throw new AppError('Video and audio sources must be different', 400, 'VALIDATION_ERROR');
-    }
-    requireSourceWithPurpose(videoSourceId, 'reup', 'Video source');
-    requireSourceWithPurpose(audioSourceId, 'reup', 'Audio source');
   }
+
+  const sourceMapping = buildSourceMapping(input.sourceChannelIds);
 
   const backgroundFootageSourceId = input.backgroundFootageSourceId?.trim();
   if (backgroundFootageSourceId) {
@@ -148,12 +143,6 @@ function validateChannelConfig(input: ChannelConfigInput): {
     linkedEmail: mailAccount.email,
     sourceMapping,
     uploadSchedule,
-    ...(input.type === 'reup'
-      ? {
-          reupVideoSourceId: input.reupVideoSourceId?.trim(),
-          reupAudioSourceId: input.reupAudioSourceId?.trim(),
-        }
-      : {}),
     ...(backgroundFootageSourceId ? { backgroundFootageSourceId } : {}),
   };
 }
@@ -295,7 +284,7 @@ export class YoutubeChannelsService {
         youtubeUrl: fullUrl,
         type: input.type,
         niche: metadata.niche,
-        language: 'EN-US',
+        language: input.targetAudience,
         monetizationStatus: 'in_review',
         healthScore: 'medium',
         status: 'active',
@@ -307,8 +296,6 @@ export class YoutubeChannelsService {
         createdAt: new Date().toISOString(),
         uploadFrequency: input.uploadFrequency,
         publishTimes: input.publishTimes,
-        ...(config.reupVideoSourceId ? { reupVideoSourceId: config.reupVideoSourceId } : {}),
-        ...(config.reupAudioSourceId ? { reupAudioSourceId: config.reupAudioSourceId } : {}),
         ...(config.backgroundFootageSourceId
           ? { backgroundFootageSourceId: config.backgroundFootageSourceId }
           : {}),
@@ -335,6 +322,7 @@ export class YoutubeChannelsService {
       const next: YoutubeChannel = {
         ...current,
         type: input.type,
+        language: input.targetAudience,
         linkedEmail: config.linkedEmail,
         sourceMapping: config.sourceMapping,
         uploadSchedule: config.uploadSchedule,
@@ -342,18 +330,15 @@ export class YoutubeChannelsService {
         publishTimes: input.publishTimes,
       };
 
-      if (input.type === 'reup') {
-        next.reupVideoSourceId = config.reupVideoSourceId;
-        next.reupAudioSourceId = config.reupAudioSourceId;
-      } else {
-        delete next.reupVideoSourceId;
-        delete next.reupAudioSourceId;
-      }
-
       if (config.backgroundFootageSourceId) {
         next.backgroundFootageSourceId = config.backgroundFootageSourceId;
       } else {
         delete next.backgroundFootageSourceId;
+      }
+
+      if (!isReupChannelType(input.type)) {
+        delete next.reupVideoSourceId;
+        delete next.reupAudioSourceId;
       }
 
       return next;
@@ -364,6 +349,10 @@ export class YoutubeChannelsService {
     }
 
     return updated;
+  }
+
+  async createVideos(id: string) {
+    return reupVideoCreatorService.createVideos(id);
   }
 }
 

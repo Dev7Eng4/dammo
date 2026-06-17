@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Input } from '../ui';
-import type { YoutubeChannel } from '../../types/youtubeChannel';
+import { formatTargetAudienceLabel, type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { MonetizationPill } from './MonetizationPill';
 
@@ -148,8 +148,8 @@ export function YoutubeChannelDetailPanel({ channel, loading, onClose }: Youtube
                 <Input readOnly value={channel.niche} className="h-9 rounded-lg text-sm" />
               </div>
               <div>
-                <FieldLabel>Language</FieldLabel>
-                <Input readOnly value={channel.language} className="h-9 rounded-lg text-sm" />
+                <FieldLabel>Target Audience</FieldLabel>
+                <Input readOnly value={formatTargetAudienceLabel(channel.language)} className="h-9 rounded-lg text-sm" />
               </div>
             </div>
           </div>

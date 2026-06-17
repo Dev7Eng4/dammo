@@ -7,11 +7,13 @@ import {
   createEmptyPublishTimes,
   getPublishTimeSlotCount,
   UPLOAD_FREQUENCY_OPTIONS,
+  TARGET_AUDIENCE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { AddYoutubeChannelFormValues } from '../../types/youtubeChannel';
+import { isReupYoutubeChannelType } from '../../types/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface AddYoutubeChannelModalProps {
@@ -24,9 +26,8 @@ const defaultValues: AddYoutubeChannelFormValues = {
   mailAccountId: '',
   channelUrl: '',
   type: '',
+  targetAudience: '',
   sourceChannelIds: [],
-  reupVideoSourceId: '',
-  reupAudioSourceId: '',
   backgroundFootageSourceId: '',
   uploadFrequency: '',
   publishTimes: [],
@@ -85,14 +86,11 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   });
 
   const channelType = watch('type');
+  const isReupType = isReupYoutubeChannelType(channelType);
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
   const sourceOptions = useMemo(() => sources.map(toSourceOption), [sources]);
-  const reupSourceOptions = useMemo(
-    () => sources.filter((s) => s.purpose === 'reup').map(toSourceOption),
-    [sources],
-  );
   const backgroundFootageOptions = useMemo(
     () => sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
     [sources],
@@ -135,13 +133,6 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   );
 
   useEffect(() => {
-    if (channelType !== 'reup') {
-      setValue('reupVideoSourceId', '');
-      setValue('reupAudioSourceId', '');
-    }
-  }, [channelType, setValue]);
-
-  useEffect(() => {
     setValue('publishTimes', createEmptyPublishTimes(publishTimeSlotCount));
   }, [publishTimeSlotCount, setValue]);
 
@@ -152,7 +143,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   }
 
   async function onSubmit(values: AddYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency) return;
+    if (!values.type || !values.uploadFrequency || !values.targetAudience) return;
 
     setApiError(null);
     try {
@@ -160,17 +151,12 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         mailAccountId: values.mailAccountId,
         channelUrl: values.channelUrl.trim(),
         type: values.type,
+        targetAudience: values.targetAudience,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannelIds.length > 0 ? { sourceChannelIds: values.sourceChannelIds } : {}),
         ...(values.backgroundFootageSourceId
           ? { backgroundFootageSourceId: values.backgroundFootageSourceId }
-          : {}),
-        ...(values.type === 'reup'
-          ? {
-              reupVideoSourceId: values.reupVideoSourceId,
-              reupAudioSourceId: values.reupAudioSourceId,
-            }
           : {}),
       });
       reset(defaultValues);
@@ -273,6 +259,32 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         </FormField>
 
         <FormField
+          label="Target Audience"
+          htmlFor="target-audience"
+          error={errors.targetAudience?.message}
+          className="min-w-0"
+        >
+          <Controller
+            name="targetAudience"
+            control={control}
+            rules={{ required: 'Target audience is required' }}
+            render={({ field }) => (
+              <Select
+                id="target-audience"
+                options={TARGET_AUDIENCE_OPTIONS}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Select target audience"
+                disabled={isSubmitting}
+                className="w-full"
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
           label="Background Footage"
           htmlFor="background-footage"
           optional
@@ -299,82 +311,20 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           />
         </FormField>
 
-        {channelType === 'reup' ? (
-          <>
-            <FormField
-              label="Video Source"
-              htmlFor="reup-video-source"
-              error={errors.reupVideoSourceId?.message}
-              className="min-w-0"
-            >
-              <Controller
-                name="reupVideoSourceId"
-                control={control}
-                rules={{ required: channelType === 'reup' ? 'Video source is required' : false }}
-                render={({ field }) => (
-                  <Select
-                    id="reup-video-source"
-                    options={reupSourceOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder={optionsLoading ? 'Loading sources...' : 'Select video source'}
-                    searchPlaceholder="Search video sources..."
-                    searchable
-                    disabled={isSubmitting || optionsLoading}
-                    className="w-full"
-                    triggerClassName={selectTriggerClass}
-                  />
-                )}
-              />
-            </FormField>
-
-            <FormField
-              label="Audio Source"
-              htmlFor="reup-audio-source"
-              error={errors.reupAudioSourceId?.message}
-              className="min-w-0"
-            >
-              <Controller
-                name="reupAudioSourceId"
-                control={control}
-                rules={{
-                  required: channelType === 'reup' ? 'Audio source is required' : false,
-                  validate: (value, formValues) =>
-                    channelType !== 'reup' ||
-                    !value ||
-                    value !== formValues.reupVideoSourceId ||
-                    'Video and audio sources must be different',
-                }}
-                render={({ field }) => (
-                  <Select
-                    id="reup-audio-source"
-                    options={reupSourceOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder={optionsLoading ? 'Loading sources...' : 'Select audio source'}
-                    searchPlaceholder="Search audio sources..."
-                    searchable
-                    disabled={isSubmitting || optionsLoading}
-                    className="w-full"
-                    triggerClassName={selectTriggerClass}
-                  />
-                )}
-              />
-            </FormField>
-          </>
-        ) : null}
-
         <FormField
           label="Source Channels"
           htmlFor="source-channel"
-          optional
+          optional={!isReupType}
+          error={errors.sourceChannelIds?.message}
           className="min-w-0 sm:col-span-2"
         >
           <Controller
             name="sourceChannelIds"
             control={control}
+            rules={{
+              validate: (value) =>
+                !isReupType || value.length > 0 || 'Source channels are required',
+            }}
             render={({ field }) => (
               <MultiSelect
                 id="source-channel"

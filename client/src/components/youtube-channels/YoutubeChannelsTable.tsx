@@ -1,4 +1,4 @@
-import { YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel, type YoutubeChannelType } from '../../types/youtubeChannel';
+import { formatTargetAudienceLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type StoredYoutubeChannelType, type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { HealthIndicator } from './HealthIndicator';
 import { MonetizationPill } from './MonetizationPill';
@@ -12,8 +12,8 @@ interface YoutubeChannelsTableProps {
   onToggleAll: () => void;
 }
 
-function typeLabel(type: YoutubeChannelType): string {
-  return YOUTUBE_CHANNEL_TYPE_LABELS[type];
+function typeLabel(type: StoredYoutubeChannelType): string {
+  return YOUTUBE_CHANNEL_TYPE_LABELS[type] ?? type;
 }
 
 function ChannelAvatar({ name }: { name: string }) {
@@ -100,7 +100,9 @@ export function YoutubeChannelsTable({
             <tr
               key={channel.id}
               onClick={() => onSelect(channel.id)}
-              className="border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50"
+              className={`border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50 ${
+                selectedIds.has(channel.id) ? 'bg-primary-500/10' : ''
+              }`}
             >
               <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                 <input
@@ -126,7 +128,7 @@ export function YoutubeChannelsTable({
               </td>
               <td className="py-3 pr-4 text-neutral-300">{typeLabel(channel.type)}</td>
               <td className="py-3 pr-4 text-neutral-400">
-                {channel.niche} ({channel.language})
+                {channel.niche} ({formatTargetAudienceLabel(channel.language)})
               </td>
               <td className="py-3 pr-4">
                 <MonetizationPill status={channel.monetizationStatus} />

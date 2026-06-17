@@ -14,6 +14,7 @@ export interface SelectProps {
   disabled?: boolean;
   id?: string;
   className?: string;
+  triggerClassName?: string;
 }
 
 export function Select({
@@ -27,6 +28,7 @@ export function Select({
   disabled,
   id,
   className,
+  triggerClassName,
 }: SelectProps) {
   return (
     <DropdownSelect
@@ -40,7 +42,7 @@ export function Select({
       searchPlaceholder={searchPlaceholder}
       disabled={disabled}
       className="w-full"
-      triggerClassName={cn('h-10 w-full min-w-0 rounded-lg px-3 py-0', className)}
+      triggerClassName={cn('h-10 w-full min-w-0 rounded-lg px-3 py-0', triggerClassName ?? className)}
       menuClassName="z-50"
     />
   );

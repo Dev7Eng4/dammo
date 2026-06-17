@@ -5,15 +5,19 @@ interface YoutubeChannelsToolbarProps {
   typeFilter: YoutubeChannelTypeFilter;
   monetizationFilter: YoutubeMonetizationFilter;
   search: string;
+  canCreateVideo?: boolean;
+  createVideoDisabledReason?: string;
+  creatingVideo?: boolean;
   onTypeFilterChange: (value: YoutubeChannelTypeFilter) => void;
   onMonetizationFilterChange: (value: YoutubeMonetizationFilter) => void;
   onSearchChange: (value: string) => void;
   onAddChannel: () => void;
+  onCreateVideo?: () => void;
 }
 
 const typeOptions: { value: YoutubeChannelTypeFilter; label: string }[] = [
   { value: 'all', label: 'All Types' },
-  ...(['content', 'reup', 'content_sale'] as const).map((value) => ({
+  ...(['content', 'reup_audio', 'reup_video', 'content_sale'] as const).map((value) => ({
     value,
     label: YOUTUBE_CHANNEL_TYPE_LABELS[value],
   })),
@@ -31,10 +35,14 @@ export function YoutubeChannelsToolbar({
   typeFilter,
   monetizationFilter,
   search,
+  canCreateVideo,
+  createVideoDisabledReason,
+  creatingVideo,
   onTypeFilterChange,
   onMonetizationFilterChange,
   onSearchChange,
   onAddChannel,
+  onCreateVideo,
 }: YoutubeChannelsToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -67,6 +75,22 @@ export function YoutubeChannelsToolbar({
       </div>
 
       <div className="flex items-center gap-3">
+        {onCreateVideo ? (
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg"
+            onClick={onCreateVideo}
+            disabled={creatingVideo}
+            title={!creatingVideo && !canCreateVideo ? createVideoDisabledReason : undefined}
+          >
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 10 4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14" />
+              <rect x="3" y="6" width="12" height="12" rx="2" />
+            </svg>
+            {creatingVideo ? 'Creating…' : 'Create Video'}
+          </Button>
+        ) : null}
         <button type="button" className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200">
           <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

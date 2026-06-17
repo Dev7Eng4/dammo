@@ -1,6 +1,28 @@
 {
   "channels": [
     {
+      "id": "fcf12fb4-178f-46ec-97a0-4e8c2b861038",
+      "name": "Life Wisdom After 70",
+      "handle": "@LifeWisdomAfter70",
+      "youtubeUrl": "https://youtube.com/@LifeWisdomAfter70",
+      "type": "reup_video",
+      "niche": "Welcome to Life Wisdom After 70 💛",
+      "language": "ja",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "demo@yopmail.com",
+      "uploadSchedule": "1 video every 3 days at 23:15",
+      "sourceMapping": "https://youtube.com/@%E3%82%B5%E3%83%A9%E3%83%80%E3%81%AE%E3%81%8A%E9%87%91%E7%9B%B8%E8%AB%87%E6%89%80, https://youtube.com/@%E3%82%B5%E3%83%A9%E3%83%80%E3%81%AE%E3%81%8A%E9%87%91%E7%9B%B8%E8%AB%87%E6%89%80",
+      "contentProjectId": "PRJ-LIFEWISD",
+      "recentActivity": [],
+      "createdAt": "2026-06-17T16:15:31.603Z",
+      "uploadFrequency": "every_3_days",
+      "publishTimes": [
+        "23:15"
+      ]
+    },
+    {
       "id": "55ee9eeb-5cc6-4ae7-8377-f5e0fb40f97b",
       "name": "MrBeast",
       "handle": "@MrBeast",
@@ -18,7 +40,10 @@
       "recentActivity": [],
       "createdAt": "2026-06-17T10:32:27.167Z",
       "uploadFrequency": "daily_2",
-      "publishTimes": ["09:00", "18:00"]
+      "publishTimes": [
+        "09:00",
+        "18:00"
+      ]
     }
   ]
 }

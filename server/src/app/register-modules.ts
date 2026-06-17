@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { isAppError } from '../shared/http/errors.js';
+import { createChromeProfilesRoutes } from '../modules/chrome-profiles/chrome-profiles.routes.js';
 import { createDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
 import { createHealthRoutes } from '../modules/health/health.routes.js';
 import { createMailAccountsRoutes } from '../modules/mail-accounts/mail-accounts.routes.js';
@@ -16,6 +17,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/youtube-channels`, createYoutubeChannelsRoutes());
   app.route(`${prefix}/source-channels`, createSourceChannelsRoutes());
   app.route(`${prefix}/render-queue`, createRenderQueueRoutes());
+  app.route(`${prefix}/chrome-profiles`, createChromeProfilesRoutes());
 }
 
 export function registerModules(app: Hono) {

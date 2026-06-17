@@ -1,8 +1,16 @@
-import type { UploadFrequency, YoutubeChannelType } from '../types/youtubeChannel';
+import type { TargetAudience, UploadFrequency, YoutubeChannelType } from '../types/youtubeChannel';
+
+export const TARGET_AUDIENCE_OPTIONS: { value: TargetAudience; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'ko', label: 'Korean' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'es', label: 'Spanish' },
+];
 
 export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType; label: string }[] = [
   { value: 'content', label: 'Content' },
-  { value: 'reup', label: 'Reup' },
+  { value: 'reup_audio', label: 'Reup Audio' },
+  { value: 'reup_video', label: 'Reup Video' },
   { value: 'content_sale', label: 'Content Sale' },
 ];
 

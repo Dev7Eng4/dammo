@@ -1,6 +1,13 @@
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 
-export type YoutubeChannelType = 'content' | 'reup' | 'content_sale';
+export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
+
+/** @deprecated Legacy persisted value */
+export type LegacyYoutubeChannelType = 'reup';
+
+export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannelType;
+
+export type TargetAudience = 'en' | 'ko' | 'ja' | 'es';
 export type UploadFrequency =
   | 'every_5_days'
   | 'every_3_days'
@@ -22,7 +29,7 @@ export interface YoutubeChannel {
   name: string;
   handle: string;
   youtubeUrl: string;
-  type: YoutubeChannelType;
+  type: StoredYoutubeChannelType;
   niche: string;
   language: string;
   monetizationStatus: MonetizationStatus;
@@ -60,9 +67,8 @@ export interface CreateYoutubeChannelInput {
   mailAccountId: string;
   channelUrl: string;
   type: YoutubeChannelType;
+  targetAudience: TargetAudience;
   sourceChannelIds?: string[];
-  reupVideoSourceId?: string;
-  reupAudioSourceId?: string;
   backgroundFootageSourceId?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
@@ -71,9 +77,8 @@ export interface CreateYoutubeChannelInput {
 export interface UpdateYoutubeChannelInput {
   mailAccountId: string;
   type: YoutubeChannelType;
+  targetAudience: TargetAudience;
   sourceChannelIds?: string[];
-  reupVideoSourceId?: string;
-  reupAudioSourceId?: string;
   backgroundFootageSourceId?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];

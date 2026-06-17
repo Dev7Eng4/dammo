@@ -4,3 +4,7 @@ dist
 .env.*
 *.log
 .DS_Store
+
+# Chrome profile data (local Playwright user data)
+server/data/chrome-profiles/
+server/data/chrome-profiles.json

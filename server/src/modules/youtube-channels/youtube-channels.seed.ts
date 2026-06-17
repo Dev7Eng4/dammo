@@ -21,8 +21,10 @@ function typeLabel(type: YoutubeChannelType): string {
   switch (type) {
     case 'content':
       return 'Content';
-    case 'reup':
-      return 'Reup';
+    case 'reup_audio':
+      return 'Reup Audio';
+    case 'reup_video':
+      return 'Reup Video';
     case 'content_sale':
       return 'Content Sale';
   }
@@ -51,7 +53,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     name: 'Crypto Insights Pro',
     handle: '@cryptoinsights',
     youtubeUrl: 'https://youtube.com/@cryptoinsights',
-    type: 'reup',
+    type: 'reup_video',
     niche: 'Finance',
     language: 'EN-UK',
     monetizationStatus: 'in_review',
@@ -86,7 +88,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
 
 const niches = ['Technology', 'Finance', 'Gaming', 'Lifestyle', 'Education', 'Sports', 'Music', 'Travel'];
 const languages = ['EN-US', 'EN-UK', 'ES-ES', 'FR-FR', 'DE-DE', 'PT-BR', 'JA-JP'];
-const types: YoutubeChannelType[] = ['content', 'reup', 'content_sale'];
+const types: YoutubeChannelType[] = ['content', 'reup_audio', 'reup_video', 'content_sale'];
 const healthScores: HealthScore[] = ['high', 'medium', 'low'];
 const statuses: YoutubeChannelStatus[] = ['active', 'suspended'];
 

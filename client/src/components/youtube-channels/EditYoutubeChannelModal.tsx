@@ -7,11 +7,13 @@ import {
   createEmptyPublishTimes,
   getPublishTimeSlotCount,
   UPLOAD_FREQUENCY_OPTIONS,
+  TARGET_AUDIENCE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
-import type { EditYoutubeChannelFormValues, YoutubeChannel } from '../../types/youtubeChannel';
+import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel } from '../../types/youtubeChannel';
+import { isReupYoutubeChannelType, parseStoredTargetAudience } from '../../types/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface EditYoutubeChannelModalProps {
@@ -26,6 +28,10 @@ function toSourceOption(source: SourceChannel) {
     value: source.id,
     label: `${source.name} (${source.url})`,
   };
+}
+
+function normalizeChannelType(type: StoredYoutubeChannelType): EditYoutubeChannelFormValues['type'] {
+  return type === 'reup' ? 'reup_video' : type;
 }
 
 function parseSourceChannelIds(sourceMapping: string, sources: SourceChannel[]): string[] {
@@ -77,24 +83,22 @@ export function EditYoutubeChannelModal({
   const [formReady, setFormReady] = useState(false);
 
   const {
-    register,
     handleSubmit,
     control,
     reset,
     watch,
     setValue,
+    getValues,
+    register,
     formState: { errors, isSubmitting },
   } = useForm<EditYoutubeChannelFormValues>();
 
   const channelType = watch('type');
+  const isReupType = isReupYoutubeChannelType(channelType);
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
   const sourceOptions = useMemo(() => sources.map(toSourceOption), [sources]);
-  const reupSourceOptions = useMemo(
-    () => sources.filter((s) => s.purpose === 'reup').map(toSourceOption),
-    [sources],
-  );
   const backgroundFootageOptions = useMemo(
     () => sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
     [sources],
@@ -150,10 +154,9 @@ export function EditYoutubeChannelModal({
 
         reset({
           mailAccountId: mailAccount?.id ?? '',
-          type: channel.type,
+          type: normalizeChannelType(channel.type),
+          targetAudience: parseStoredTargetAudience(channel.language),
           sourceChannelIds: parseSourceChannelIds(channel.sourceMapping, sourceList.items),
-          reupVideoSourceId: channel.reupVideoSourceId ?? '',
-          reupAudioSourceId: channel.reupAudioSourceId ?? '',
           backgroundFootageSourceId: channel.backgroundFootageSourceId ?? '',
           uploadFrequency: frequency,
           publishTimes,
@@ -172,18 +175,12 @@ export function EditYoutubeChannelModal({
   );
 
   useEffect(() => {
-    if (!formReady || channelType === 'reup') return;
-    setValue('reupVideoSourceId', '');
-    setValue('reupAudioSourceId', '');
-  }, [channelType, formReady, setValue]);
-
-  useEffect(() => {
     if (!formReady) return;
-    setValue('publishTimes', (current) => {
-      if (current.length === publishTimeSlotCount) return current;
-      return createEmptyPublishTimes(publishTimeSlotCount);
-    });
-  }, [publishTimeSlotCount, formReady, setValue]);
+    const current = getValues('publishTimes');
+    if (current.length !== publishTimeSlotCount) {
+      setValue('publishTimes', createEmptyPublishTimes(publishTimeSlotCount));
+    }
+  }, [publishTimeSlotCount, formReady, setValue, getValues]);
 
   function handleClose() {
     setApiError(null);
@@ -191,24 +188,19 @@ export function EditYoutubeChannelModal({
   }
 
   async function onSubmit(values: EditYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency) return;
+    if (!values.type || !values.uploadFrequency || !values.targetAudience) return;
 
     setApiError(null);
     try {
       const { item } = await updateYoutubeChannel(channel.id, {
         mailAccountId: values.mailAccountId,
         type: values.type,
+        targetAudience: values.targetAudience,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannelIds.length > 0 ? { sourceChannelIds: values.sourceChannelIds } : {}),
         ...(values.backgroundFootageSourceId
           ? { backgroundFootageSourceId: values.backgroundFootageSourceId }
-          : {}),
-        ...(values.type === 'reup'
-          ? {
-              reupVideoSourceId: values.reupVideoSourceId,
-              reupAudioSourceId: values.reupAudioSourceId,
-            }
           : {}),
       });
       onSuccess(item);
@@ -305,6 +297,32 @@ export function EditYoutubeChannelModal({
           />
         </FormField>
 
+        <FormField
+          label="Target Audience"
+          htmlFor="edit-target-audience"
+          error={errors.targetAudience?.message}
+          className="min-w-0"
+        >
+          <Controller
+            name="targetAudience"
+            control={control}
+            rules={{ required: 'Target audience is required' }}
+            render={({ field }) => (
+              <Select
+                id="edit-target-audience"
+                options={TARGET_AUDIENCE_OPTIONS}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Select target audience"
+                disabled={isSubmitting}
+                className="w-full"
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
         <FormField label="Background Footage" htmlFor="edit-background-footage" optional className="min-w-0">
           <Controller
             name="backgroundFootageSourceId"
@@ -327,77 +345,20 @@ export function EditYoutubeChannelModal({
           />
         </FormField>
 
-        {channelType === 'reup' ? (
-          <>
-            <FormField
-              label="Video Source"
-              htmlFor="edit-reup-video-source"
-              error={errors.reupVideoSourceId?.message}
-              className="min-w-0"
-            >
-              <Controller
-                name="reupVideoSourceId"
-                control={control}
-                rules={{ required: channelType === 'reup' ? 'Video source is required' : false }}
-                render={({ field }) => (
-                  <Select
-                    id="edit-reup-video-source"
-                    options={reupSourceOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder={optionsLoading ? 'Loading sources...' : 'Select video source'}
-                    searchPlaceholder="Search video sources..."
-                    searchable
-                    disabled={isSubmitting || optionsLoading}
-                    className="w-full"
-                    triggerClassName={selectTriggerClass}
-                  />
-                )}
-              />
-            </FormField>
-
-            <FormField
-              label="Audio Source"
-              htmlFor="edit-reup-audio-source"
-              error={errors.reupAudioSourceId?.message}
-              className="min-w-0"
-            >
-              <Controller
-                name="reupAudioSourceId"
-                control={control}
-                rules={{
-                  required: channelType === 'reup' ? 'Audio source is required' : false,
-                  validate: (value, formValues) =>
-                    channelType !== 'reup' ||
-                    !value ||
-                    value !== formValues.reupVideoSourceId ||
-                    'Video and audio sources must be different',
-                }}
-                render={({ field }) => (
-                  <Select
-                    id="edit-reup-audio-source"
-                    options={reupSourceOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder={optionsLoading ? 'Loading sources...' : 'Select audio source'}
-                    searchPlaceholder="Search audio sources..."
-                    searchable
-                    disabled={isSubmitting || optionsLoading}
-                    className="w-full"
-                    triggerClassName={selectTriggerClass}
-                  />
-                )}
-              />
-            </FormField>
-          </>
-        ) : null}
-
-        <FormField label="Source Channels" htmlFor="edit-source-channel" optional className="min-w-0 sm:col-span-2">
+        <FormField
+          label="Source Channels"
+          htmlFor="edit-source-channel"
+          optional={!isReupType}
+          error={errors.sourceChannelIds?.message}
+          className="min-w-0 sm:col-span-2"
+        >
           <Controller
             name="sourceChannelIds"
             control={control}
+            rules={{
+              validate: (value) =>
+                !isReupType || value.length > 0 || 'Source channels are required',
+            }}
             render={({ field }) => (
               <MultiSelect
                 id="edit-source-channel"

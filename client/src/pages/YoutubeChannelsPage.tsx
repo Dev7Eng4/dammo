@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
+import { fetchYoutubeChannels, fetchYoutubeChannelStats, createYoutubeChannelVideos } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
+import { useToast } from '../components/ui';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList } from '../hooks';
 import type {
   YoutubeChannelStats,
   YoutubeChannelTypeFilter,
   YoutubeMonetizationFilter,
 } from '../types/youtubeChannel';
+import { isStoredReupChannelType } from '../types/youtubeChannel';
 
 const LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function YoutubeChannelsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [stats, setStats] = useState<YoutubeChannelStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -26,6 +29,7 @@ export function YoutubeChannelsPage() {
   const [search, setSearch] = useState('');
   const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [creatingVideo, setCreatingVideo] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -39,8 +43,15 @@ export function YoutubeChannelsPage() {
     },
     limit: LIMIT,
     refreshKey: channelsRefreshKey,
-    onFetched: () => setSelectedIds(new Set()),
   });
+
+  const selectedChannel =
+    selectedIds.size === 1
+      ? list.items.find((channel) => selectedIds.has(channel.id)) ?? null
+      : null;
+  const canClickCreateVideo = selectedChannel !== null;
+  const canCreateVideo =
+    canClickCreateVideo && isStoredReupChannelType(selectedChannel.type);
 
   useAbortableEffect(async (signal) => {
     setStatsLoading(true);
@@ -56,27 +67,35 @@ export function YoutubeChannelsPage() {
     }
   }, []);
 
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
   function handleTypeFilterChange(next: YoutubeChannelTypeFilter) {
     list.markLoading();
     setTypeFilter(next);
     list.resetPage();
+    clearSelection();
   }
 
   function handleMonetizationFilterChange(next: YoutubeMonetizationFilter) {
     list.markLoading();
     setMonetizationFilter(next);
     list.resetPage();
+    clearSelection();
   }
 
   function handleSearchChange(value: string) {
     list.markLoading();
     setSearch(typeof value === 'string' ? value : '');
     list.resetPage();
+    clearSelection();
   }
 
   function handlePageChange(nextPage: number) {
     list.markLoading();
     list.setPage(nextPage);
+    clearSelection();
   }
 
   function handleSelect(id: string) {
@@ -85,10 +104,8 @@ export function YoutubeChannelsPage() {
 
   function handleToggleRow(id: string) {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+      if (prev.has(id) && prev.size === 1) return new Set();
+      return new Set([id]);
     });
   }
 
@@ -111,6 +128,32 @@ export function YoutubeChannelsPage() {
       .catch(() => setStats(null));
   }
 
+  async function handleCreateVideo() {
+    if (!selectedChannel) {
+      toast.error('Select exactly one channel using the checkbox');
+      return;
+    }
+    if (!isStoredReupChannelType(selectedChannel.type)) {
+      toast.error('Create Video is only available for Reup Audio or Reup Video channels');
+      return;
+    }
+
+    setCreatingVideo(true);
+    try {
+      const result = await createYoutubeChannelVideos(selectedChannel.id);
+      const count = result.items.length;
+      toast.success(
+        count === 1
+          ? `Created video from ${result.items[0].videoId}`
+          : `Created ${count} video(s)`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create video');
+    } finally {
+      setCreatingVideo(false);
+    }
+  }
+
   return (
     <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -121,10 +164,20 @@ export function YoutubeChannelsPage() {
               typeFilter={typeFilter}
               monetizationFilter={monetizationFilter}
               search={search}
+              canCreateVideo={canClickCreateVideo}
+              createVideoDisabledReason={
+                !canClickCreateVideo
+                  ? 'Select one channel using the checkbox'
+                  : !canCreateVideo
+                    ? 'Only Reup Audio or Reup Video channels can create videos'
+                    : undefined
+              }
+              creatingVideo={creatingVideo}
               onTypeFilterChange={handleTypeFilterChange}
               onMonetizationFilterChange={handleMonetizationFilterChange}
               onSearchChange={handleSearchChange}
               onAddChannel={() => setShowAddModal(true)}
+              onCreateVideo={handleCreateVideo}
             />
           </div>
           {list.error ? (

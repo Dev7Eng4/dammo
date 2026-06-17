@@ -1,11 +1,5 @@
 import { generateId } from '../../shared/id.js';
-import type {
-  SourceChannel,
-  SourceChannelsStore,
-  SourcePlatform,
-  SourcePurpose,
-  SourceRiskLevel,
-} from './source-channels.types.js';
+import type { SourceChannel, SourceChannelsStore, SourcePlatform, SourcePurpose, SourceRiskLevel } from './source-channels.types.js';
 
 const platforms: SourcePlatform[] = ['youtube', 'tiktok', 'facebook'];
 const purposes: SourcePurpose[] = [
@@ -17,16 +11,7 @@ const purposes: SourcePurpose[] = [
   'background_footage',
 ];
 const riskLevels: SourceRiskLevel[] = ['low', 'medium', 'high'];
-const niches = [
-  'Consumer Electronics',
-  'Gadget Reviews',
-  'Life Hacks',
-  'Finance News',
-  'Fitness',
-  'Travel Vlogs',
-  'Cooking',
-  'Gaming',
-];
+const niches = ['Consumer Electronics', 'Gadget Reviews', 'Life Hacks', 'Finance News', 'Fitness', 'Travel Vlogs', 'Cooking', 'Gaming'];
 
 const featuredSources: Omit<SourceChannel, 'id'>[] = [
   {
@@ -92,7 +77,7 @@ const featuredSources: Omit<SourceChannel, 'id'>[] = [
 ];
 
 export function generateSeedSources(): SourceChannelsStore {
-  const sources: SourceChannel[] = featuredSources.map((source) => ({
+  const sources: SourceChannel[] = featuredSources.map(source => ({
     ...source,
     id: generateId(),
   }));
@@ -141,5 +126,5 @@ export function generateSeedSources(): SourceChannelsStore {
     });
   }
 
-  return { sources };
+  return { sources: [] };
 }

@@ -14,3 +14,4 @@ export {
   type UsePaginatedListOptions,
   type UsePaginatedListResult,
 } from './usePaginatedList';
+export { useFloatingMenuPosition } from './useFloatingMenuPosition';

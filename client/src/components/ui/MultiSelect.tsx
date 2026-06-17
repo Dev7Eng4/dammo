@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useFloatingMenuPosition } from '../../hooks';
 import { cn } from '../../lib/cn';
 import type { DropdownSelectOption } from './DropdownSelect';
 
@@ -79,8 +81,11 @@ export function MultiSelect<T extends string>({
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef);
   const selectedOptions = value
     .map((v) => options.find((o) => o.value === v))
     .filter((opt): opt is DropdownSelectOption<T> => opt != null);
@@ -123,20 +128,93 @@ export function MultiSelect<T extends string>({
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen((wasOpen) => {
-          if (wasOpen) onBlur?.();
-          return false;
-        });
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen((wasOpen) => {
+        if (wasOpen) onBlur?.();
+        return false;
+      });
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onBlur]);
 
+  const menu = open ? (
+    <div
+      ref={menuRef}
+      style={menuStyle}
+      className={cn(
+        'rounded-xl border border-border bg-surface-elevated shadow-lg',
+        searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
+        menuClassName,
+      )}
+    >
+      {searchable ? (
+        <div className="shrink-0 border-b border-border p-2">
+          <div className="relative">
+            <svg
+              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-neutral-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.preventDefault();
+              }}
+              placeholder={searchPlaceholder}
+              className="h-8 w-full rounded-lg border border-border bg-surface pl-8 pr-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
+            />
+          </div>
+        </div>
+      ) : null}
+      <div className={cn(searchable ? 'scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
+        {filteredOptions.length > 0 ? (
+          filteredOptions.map((opt) => {
+            const selected = value.includes(opt.value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => toggleOption(opt.value)}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-neutral-800 disabled:opacity-50',
+                  selected ? 'text-secondary-400' : 'text-neutral-200',
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded border',
+                    selected ? 'border-secondary-400 bg-secondary-400/20' : 'border-neutral-600',
+                  )}
+                >
+                  {selected ? <CheckIcon className="size-3 text-secondary-400" /> : null}
+                </span>
+                <span className="min-w-0 truncate">{opt.label}</span>
+              </button>
+            );
+          })
+        ) : (
+          <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div ref={ref} className={cn('relative', className)}>
+    <div ref={containerRef} className={cn('relative', className)}>
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         disabled={disabled}
@@ -179,75 +257,7 @@ export function MultiSelect<T extends string>({
         </span>
         <ChevronDownIcon className="size-3.5 shrink-0 text-neutral-500" />
       </button>
-      {open ? (
-        <div
-          className={cn(
-            'absolute top-full z-30 mt-1 min-w-full rounded-xl border border-border bg-surface-elevated shadow-lg',
-            searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
-            menuClassName,
-          )}
-        >
-          {searchable ? (
-            <div className="shrink-0 border-b border-border p-2">
-              <div className="relative">
-                <svg
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-neutral-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.preventDefault();
-                  }}
-                  placeholder={searchPlaceholder}
-                  className="h-8 w-full rounded-lg border border-border bg-surface pl-8 pr-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
-                />
-              </div>
-            </div>
-          ) : null}
-          <div className={cn(searchable ? 'scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((opt) => {
-                const selected = value.includes(opt.value);
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    disabled={opt.disabled}
-                    onClick={() => toggleOption(opt.value)}
-                    className={cn(
-                      'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-neutral-800 disabled:opacity-50',
-                      selected ? 'text-secondary-400' : 'text-neutral-200',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'flex size-4 shrink-0 items-center justify-center rounded border',
-                        selected ? 'border-secondary-400 bg-secondary-400/20' : 'border-neutral-600',
-                      )}
-                    >
-                      {selected ? <CheckIcon className="size-3 text-secondary-400" /> : null}
-                    </span>
-                    <span className="min-w-0 truncate">{opt.label}</span>
-                  </button>
-                );
-              })
-            ) : (
-              <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
-            )}
-          </div>
-        </div>
-      ) : null}
+      {menu ? createPortal(menu, document.body) : null}
     </div>
   );
 }

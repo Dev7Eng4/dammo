@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { useFloatingMenuPosition } from '../../hooks';
 import { cn } from '../../lib/cn';
 
 export interface DropdownSelectOption<T extends string = string> {
@@ -63,8 +65,11 @@ export function DropdownSelect<T extends string>({
 }: DropdownSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef);
   const selected = options.find((o) => o.value === value);
   const activeLabel = selected ? optionLabel(selected.label) : (placeholder ?? optionLabel(options[0]?.label ?? ''));
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -81,6 +86,9 @@ export function DropdownSelect<T extends string>({
 
   function openMenu() {
     setSearchQuery('');
+    // #region agent log
+    fetch('http://127.0.0.1:7763/ingest/a15224e6-d015-4543-8083-92c5cbe0ee93',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e44d83'},body:JSON.stringify({sessionId:'e44d83',location:'DropdownSelect.tsx:openMenu',message:'select opened',data:{scrollbarWidth:window.innerWidth-document.documentElement.clientWidth,bodyOverflow:getComputedStyle(document.body).overflowY,docOverflow:getComputedStyle(document.documentElement).overflowY},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+    // #endregion
     setOpen(true);
   }
 
@@ -92,25 +100,90 @@ export function DropdownSelect<T extends string>({
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen((wasOpen) => {
-          if (wasOpen) onBlur?.();
-          return false;
-        });
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen((wasOpen) => {
+        if (wasOpen) onBlur?.();
+        return false;
+      });
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onBlur]);
 
+  const menu = open ? (
+    <div
+      ref={menuRef}
+      style={menuStyle}
+      className={cn(
+        'rounded-xl border border-border bg-surface-elevated shadow-lg',
+        searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
+        menuClassName,
+      )}
+    >
+      {searchable ? (
+        <div className="shrink-0 border-b border-border p-2">
+          <div className="relative">
+            <svg
+              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-neutral-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.preventDefault();
+              }}
+              placeholder={searchPlaceholder}
+              className="h-8 w-full rounded-lg border border-border bg-surface pl-8 pr-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
+            />
+          </div>
+        </div>
+      ) : null}
+      <div className={cn(searchable ? 'scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
+        {filteredOptions.length > 0 ? (
+          filteredOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={opt.disabled}
+              onClick={() => {
+                onChange(opt.value);
+                closeMenu();
+              }}
+              className={cn(
+                'w-full px-3 py-2 text-left text-sm hover:bg-neutral-800 disabled:opacity-50',
+                value === opt.value ? 'text-secondary-400' : 'text-neutral-200',
+              )}
+            >
+              {optionLabel(opt.label)}
+            </button>
+          ))
+        ) : (
+          <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div ref={ref} className={cn('relative', className)}>
+    <div ref={containerRef} className={cn('relative', className)}>
       {label ? (
         <span className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-neutral-500">
           {label}
         </span>
       ) : null}
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         disabled={disabled}
@@ -140,67 +213,7 @@ export function DropdownSelect<T extends string>({
         </span>
         <ChevronDownIcon className="size-3.5 shrink-0 text-neutral-500" />
       </button>
-      {open ? (
-        <div
-          className={cn(
-            'absolute top-full z-30 mt-1 min-w-full rounded-xl border border-border bg-surface-elevated shadow-lg',
-            searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
-            menuClassName,
-          )}
-        >
-          {searchable ? (
-            <div className="shrink-0 border-b border-border p-2">
-              <div className="relative">
-                <svg
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-neutral-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.preventDefault();
-                  }}
-                  placeholder={searchPlaceholder}
-                  className="h-8 w-full rounded-lg border border-border bg-surface pl-8 pr-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
-                />
-              </div>
-            </div>
-          ) : null}
-          <div className={cn(searchable ? 'scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={opt.disabled}
-                  onClick={() => {
-                    onChange(opt.value);
-                    closeMenu();
-                  }}
-                  className={cn(
-                    'w-full px-3 py-2 text-left text-sm hover:bg-neutral-800 disabled:opacity-50',
-                    value === opt.value ? 'text-secondary-400' : 'text-neutral-200',
-                  )}
-                >
-                  {optionLabel(opt.label)}
-                </button>
-              ))
-            ) : (
-              <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
-            )}
-          </div>
-        </div>
-      ) : null}
+      {menu ? createPortal(menu, document.body) : null}
     </div>
   );
 }

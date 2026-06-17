@@ -43,6 +43,11 @@ export function createYoutubeChannelsRoutes() {
     return c.json(result);
   });
 
+  app.post('/:id/create-videos', async (c) => {
+    const result = await youtubeChannelsService.createVideos(c.req.param('id'));
+    return c.json(result);
+  });
+
   app.post('/:id/sync-videos', async (c) => {
     const result = await youtubeChannelsService.syncVideos(c.req.param('id'));
     return c.json(result);

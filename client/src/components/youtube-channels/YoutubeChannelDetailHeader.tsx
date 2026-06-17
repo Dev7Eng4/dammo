@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui';
-import { YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel } from '../../types/youtubeChannel';
+import { formatTargetAudienceLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { MonetizationPill } from './MonetizationPill';
 
@@ -8,16 +8,22 @@ interface YoutubeChannelDetailHeaderProps {
   channel: YoutubeChannel;
   syncing?: boolean;
   syncError?: string | null;
+  creatingVideo?: boolean;
+  canCreateVideo?: boolean;
   onSync?: () => void;
   onEdit?: () => void;
+  onCreateVideo?: () => void;
 }
 
 export function YoutubeChannelDetailHeader({
   channel,
   syncing,
   syncError,
+  creatingVideo,
+  canCreateVideo,
   onSync,
   onEdit,
+  onCreateVideo,
 }: YoutubeChannelDetailHeaderProps) {
   const initial = channel.name.charAt(0).toUpperCase();
 
@@ -58,6 +64,16 @@ export function YoutubeChannelDetailHeader({
               Edit
             </Button>
           ) : null}
+          {onCreateVideo ? (
+            <Button
+              variant="outlined"
+              className="rounded-lg"
+              disabled={!canCreateVideo || creatingVideo}
+              onClick={onCreateVideo}
+            >
+              {creatingVideo ? 'Creating…' : 'Create Video'}
+            </Button>
+          ) : null}
           {onSync ? (
             <div>
               <Button className="rounded-lg" disabled={syncing} onClick={onSync}>
@@ -86,8 +102,8 @@ export function YoutubeChannelDetailHeader({
           <p className="mt-2 text-sm font-medium text-neutral-100">{channel.niche}</p>
         </div>
         <div className="card-surface px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Language</p>
-          <p className="mt-2 text-sm font-medium text-neutral-100">{channel.language}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Target Audience</p>
+          <p className="mt-2 text-sm font-medium text-neutral-100">{formatTargetAudienceLabel(channel.language)}</p>
         </div>
         <div className="card-surface px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Linked Email</p>

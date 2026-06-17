@@ -12,51 +12,39 @@ const uploadFrequencySchema = z.enum([
 
 const publishTimeSchema = z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format');
 
+const youtubeChannelTypeSchema = z.enum(['content', 'reup_audio', 'reup_video', 'content_sale']);
+
+const targetAudienceSchema = z.enum(['en', 'ko', 'ja', 'es']);
+
 const channelConfigFields = {
   mailAccountId: z.string().min(1),
-  type: z.enum(['content', 'reup', 'content_sale']),
+  type: youtubeChannelTypeSchema,
+  targetAudience: targetAudienceSchema,
   sourceChannelIds: z.array(z.string().min(1)).optional(),
-  reupVideoSourceId: z.string().optional(),
-  reupAudioSourceId: z.string().optional(),
   backgroundFootageSourceId: z.string().optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
 };
 
+function isReupChannelType(type: z.infer<typeof youtubeChannelTypeSchema>): boolean {
+  return type === 'reup_audio' || type === 'reup_video';
+}
+
 function applyChannelConfigRefine(
   data: {
-    type: 'content' | 'reup' | 'content_sale';
-    reupVideoSourceId?: string;
-    reupAudioSourceId?: string;
+    type: z.infer<typeof youtubeChannelTypeSchema>;
+    sourceChannelIds?: string[];
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
   },
   ctx: z.RefinementCtx,
 ) {
-  if (data.type === 'reup') {
-    if (!data.reupVideoSourceId?.trim()) {
+  if (isReupChannelType(data.type)) {
+    if (!data.sourceChannelIds?.length) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Video source is required for reup channels',
-        path: ['reupVideoSourceId'],
-      });
-    }
-    if (!data.reupAudioSourceId?.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Audio source is required for reup channels',
-        path: ['reupAudioSourceId'],
-      });
-    }
-    if (
-      data.reupVideoSourceId?.trim() &&
-      data.reupAudioSourceId?.trim() &&
-      data.reupVideoSourceId === data.reupAudioSourceId
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Video and audio sources must be different',
-        path: ['reupAudioSourceId'],
+        message: 'Source channels are required for reup channels',
+        path: ['sourceChannelIds'],
       });
     }
   }
@@ -83,7 +71,7 @@ export const updateYoutubeChannelSchema = z
   .superRefine(applyChannelConfigRefine);
 
 export const listYoutubeChannelsQuerySchema = z.object({
-  type: z.enum(['content', 'reup', 'content_sale']).optional(),
+  type: youtubeChannelTypeSchema.optional(),
   monetization: z.enum(['monetized', 'in_review', 'demonetized', 'limited']).optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

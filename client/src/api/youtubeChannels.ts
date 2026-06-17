@@ -11,6 +11,7 @@ import type {
   YoutubeChannelTypeFilter,
   YoutubeMonetizationFilter,
   YoutubeVideoCommentsResponse,
+  CreateReupVideosResponse,
 } from '../types/youtubeChannel';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
@@ -85,5 +86,12 @@ export function fetchYoutubeVideoComments(
   return fetchJson<YoutubeVideoCommentsResponse>(
     `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/comments`,
     withSignal(undefined, options),
+  );
+}
+
+export function createYoutubeChannelVideos(id: string) {
+  return fetchJson<CreateReupVideosResponse>(
+    `${API_V1}/youtube-channels/${id}/create-videos`,
+    { method: 'POST' },
   );
 }

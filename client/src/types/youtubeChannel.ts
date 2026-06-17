@@ -1,4 +1,46 @@
-export type YoutubeChannelType = 'content' | 'reup' | 'content_sale';
+export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
+
+/** @deprecated Legacy persisted value; mapped to reup_video in forms */
+export type LegacyYoutubeChannelType = 'reup';
+
+export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannelType;
+
+export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
+
+export function isReupYoutubeChannelType(
+  type: YoutubeChannelType | '',
+): type is ReupYoutubeChannelType {
+  return type === 'reup_audio' || type === 'reup_video';
+}
+
+export function isStoredReupChannelType(type: StoredYoutubeChannelType): boolean {
+  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+}
+
+export type TargetAudience = 'en' | 'ko' | 'ja' | 'es';
+
+export const TARGET_AUDIENCE_LABELS: Record<TargetAudience, string> = {
+  en: 'English',
+  ko: 'Korean',
+  ja: 'Japanese',
+  es: 'Spanish',
+};
+
+const LEGACY_LANGUAGE_TO_TARGET: Record<string, TargetAudience> = {
+  'EN-US': 'en',
+  'EN-UK': 'en',
+  'JA-JP': 'ja',
+  'ES-ES': 'es',
+};
+
+export function parseStoredTargetAudience(value: string): TargetAudience | '' {
+  if (value in TARGET_AUDIENCE_LABELS) return value as TargetAudience;
+  return LEGACY_LANGUAGE_TO_TARGET[value] ?? '';
+}
+
+export function formatTargetAudienceLabel(value: string): string {
+  return TARGET_AUDIENCE_LABELS[value as TargetAudience] ?? value;
+}
 export type UploadFrequency =
   | 'every_5_days'
   | 'every_3_days'
@@ -20,7 +62,7 @@ export interface YoutubeChannel {
   name: string;
   handle: string;
   youtubeUrl: string;
-  type: YoutubeChannelType;
+  type: StoredYoutubeChannelType;
   niche: string;
   language: string;
   monetizationStatus: MonetizationStatus;
@@ -60,10 +102,12 @@ export interface YoutubeChannelStats {
 
 export type YoutubeChannelTypeFilter = 'all' | YoutubeChannelType;
 
-export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType, string> = {
+export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType | 'reup', string> = {
   content: 'Content',
-  reup: 'Reup',
+  reup_audio: 'Reup Audio',
+  reup_video: 'Reup Video',
   content_sale: 'Content Sale',
+  reup: 'Reup',
 };
 export type YoutubeMonetizationFilter = 'all' | MonetizationStatus;
 
@@ -95,13 +139,24 @@ export interface YoutubeVideoCommentsResponse {
   items: YoutubeVideoComment[];
 }
 
+export interface ReupVideoOutputItem {
+  link: string;
+  channelId: string;
+  language: string;
+  videoId: string;
+  outputPath: string;
+}
+
+export interface CreateReupVideosResponse {
+  items: ReupVideoOutputItem[];
+}
+
 export interface CreateYoutubeChannelPayload {
   mailAccountId: string;
   channelUrl: string;
   type: YoutubeChannelType;
+  targetAudience: TargetAudience;
   sourceChannelIds?: string[];
-  reupVideoSourceId?: string;
-  reupAudioSourceId?: string;
   backgroundFootageSourceId?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
@@ -113,9 +168,8 @@ export interface AddYoutubeChannelFormValues {
   mailAccountId: string;
   channelUrl: string;
   type: YoutubeChannelType | '';
+  targetAudience: TargetAudience | '';
   sourceChannelIds: string[];
-  reupVideoSourceId: string;
-  reupAudioSourceId: string;
   backgroundFootageSourceId: string;
   uploadFrequency: UploadFrequency | '';
   publishTimes: string[];
