@@ -20,6 +20,6 @@ export interface MailAccountsStore {
 
 export interface CreateMailAccountInput {
   email: string;
-  password: string;
-  recoveryEmail: string;
+  password?: string;
+  recoveryEmail?: string;
 }

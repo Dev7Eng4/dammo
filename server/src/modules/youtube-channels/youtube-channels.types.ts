@@ -1,4 +1,13 @@
-export type YoutubeChannelType = 'own_content' | 'client' | 'content_selling';
+import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
+
+export type YoutubeChannelType = 'content' | 'reup' | 'content_sale';
+export type UploadFrequency =
+  | 'every_5_days'
+  | 'every_3_days'
+  | 'every_2_days'
+  | 'daily_1'
+  | 'daily_2'
+  | 'daily_3';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
@@ -23,6 +32,11 @@ export interface YoutubeChannel {
   uploadSchedule: string;
   sourceMapping: string;
   contentProjectId: string;
+  reupVideoSourceId?: string;
+  reupAudioSourceId?: string;
+  backgroundFootageSourceId?: string;
+  uploadFrequency?: UploadFrequency;
+  publishTimes?: string[];
   notes?: string;
   recentActivity: YoutubeChannelActivity[];
   lastUploadAt?: string;
@@ -45,5 +59,22 @@ export interface YoutubeChannelStats {
 export interface CreateYoutubeChannelInput {
   mailAccountId: string;
   channelUrl: string;
-  sourceChannelId: string;
+  type: YoutubeChannelType;
+  sourceChannelIds?: string[];
+  reupVideoSourceId?: string;
+  reupAudioSourceId?: string;
+  backgroundFootageSourceId?: string;
+  uploadFrequency: UploadFrequency;
+  publishTimes: string[];
+}
+
+export interface UpdateYoutubeChannelInput {
+  mailAccountId: string;
+  type: YoutubeChannelType;
+  sourceChannelIds?: string[];
+  reupVideoSourceId?: string;
+  reupAudioSourceId?: string;
+  backgroundFootageSourceId?: string;
+  uploadFrequency: UploadFrequency;
+  publishTimes: string[];
 }

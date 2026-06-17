@@ -4,6 +4,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import {
   createYoutubeChannelSchema,
   listYoutubeChannelsQuerySchema,
+  updateYoutubeChannelSchema,
 } from './youtube-channels.schema.js';
 import { youtubeChannelsService } from './youtube-channels.service.js';
 
@@ -18,12 +19,40 @@ export function createYoutubeChannelsRoutes() {
     return c.json({ item }, 201);
   });
 
+  app.patch('/:id', zValidator('json', updateYoutubeChannelSchema), (c) => {
+    const body = c.req.valid('json');
+    const item = youtubeChannelsService.update(c.req.param('id'), body);
+    return c.json({ item });
+  });
+
   app.get('/', zValidator('query', listYoutubeChannelsQuerySchema), (c) => {
     const { type, monetization, q, page, limit } = c.req.valid('query');
     return c.json(youtubeChannelsService.listPaginated(type, monetization, q, page, limit));
   });
 
-  app.get('/:id', (c) => c.json(youtubeChannelsService.getById(c.req.param('id'))));
+  app.get('/:id/videos/:videoId/comments', async (c) => {
+    const result = await youtubeChannelsService.getVideoComments(
+      c.req.param('id'),
+      c.req.param('videoId'),
+    );
+    return c.json(result);
+  });
+
+  app.get('/:id/videos', async (c) => {
+    const result = await youtubeChannelsService.getVideos(c.req.param('id'));
+    return c.json(result);
+  });
+
+  app.post('/:id/sync-videos', async (c) => {
+    const result = await youtubeChannelsService.syncVideos(c.req.param('id'));
+    return c.json(result);
+  });
+
+  // Detail page: always fetch live metadata from YouTube
+  app.get('/:id', async (c) => {
+    const item = await youtubeChannelsService.getLiveById(c.req.param('id'));
+    return c.json(item);
+  });
 
   app.onError((err, c) => {
     if (isAppError(err)) {

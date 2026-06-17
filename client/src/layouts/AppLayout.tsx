@@ -8,7 +8,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="scrollbar-thin flex-1 overflow-y-auto overscroll-contain p-6">
           <Outlet />
         </main>
       </div>

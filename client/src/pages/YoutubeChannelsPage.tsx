@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { fetchYoutubeChannel, fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
-import { YoutubeChannelDetailPanel } from '../components/youtube-channels/YoutubeChannelDetailPanel';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
+import { useAbortableEffect, useDebouncedValue, usePaginatedList } from '../hooks';
 import type {
-  YoutubeChannel,
   YoutubeChannelStats,
   YoutubeChannelTypeFilter,
   YoutubeMonetizationFilter,
@@ -17,121 +17,70 @@ const LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function YoutubeChannelsPage() {
-  const [channels, setChannels] = useState<YoutubeChannel[]>([]);
+  const navigate = useNavigate();
   const [stats, setStats] = useState<YoutubeChannelStats | null>(null);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedChannel, setSelectedChannel] = useState<YoutubeChannel | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<YoutubeChannelTypeFilter>('all');
   const [monetizationFilter, setMonetizationFilter] = useState<YoutubeMonetizationFilter>('all');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
-  const loadStats = useCallback(async () => {
+  const list = usePaginatedList({
+    fetcher: ({ type, monetization, query, page, limit, signal }) =>
+      fetchYoutubeChannels(type, monetization, query, page, limit, { signal }),
+    query: {
+      type: typeFilter,
+      monetization: monetizationFilter,
+      query: debouncedSearch,
+    },
+    limit: LIMIT,
+    refreshKey: channelsRefreshKey,
+    onFetched: () => setSelectedIds(new Set()),
+  });
+
+  useAbortableEffect(async (signal) => {
     setStatsLoading(true);
+
     try {
-      const data = await fetchYoutubeChannelStats();
+      const data = await fetchYoutubeChannelStats({ signal });
       setStats(data);
     } catch {
+      if (signal.aborted) return;
       setStats(null);
     } finally {
-      setStatsLoading(false);
+      if (!signal.aborted) setStatsLoading(false);
     }
   }, []);
 
-  const loadChannels = useCallback(
-    async (
-      type: YoutubeChannelTypeFilter,
-      monetization: YoutubeMonetizationFilter,
-      query: string,
-      currentPage: number,
-    ) => {
-      setLoading(true);
-      try {
-        const data = await fetchYoutubeChannels(type, monetization, query, currentPage, LIMIT);
-        setChannels(data.items);
-        setTotal(data.total);
-        setPage(data.page);
-        setTotalPages(data.totalPages);
-        setSelectedIds(new Set());
-      } catch {
-        setChannels([]);
-        setTotal(0);
-        setTotalPages(1);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
-  useEffect(() => {
-    loadChannels(typeFilter, monetizationFilter, debouncedSearch, page);
-  }, [typeFilter, monetizationFilter, debouncedSearch, page, loadChannels]);
-
-  useEffect(() => {
-    if (!selectedId) {
-      setSelectedChannel(null);
-      return;
-    }
-
-    setDetailLoading(true);
-    fetchYoutubeChannel(selectedId)
-      .then(setSelectedChannel)
-      .catch(() => setSelectedChannel(null))
-      .finally(() => setDetailLoading(false));
-  }, [selectedId]);
-
   function handleTypeFilterChange(next: YoutubeChannelTypeFilter) {
+    list.markLoading();
     setTypeFilter(next);
-    setPage(1);
-    setSelectedId(null);
-    setSelectedChannel(null);
+    list.resetPage();
   }
 
   function handleMonetizationFilterChange(next: YoutubeMonetizationFilter) {
+    list.markLoading();
     setMonetizationFilter(next);
-    setPage(1);
-    setSelectedId(null);
-    setSelectedChannel(null);
+    list.resetPage();
   }
 
   function handleSearchChange(value: string) {
-    setSearch(value);
-    setPage(1);
-    setSelectedId(null);
-    setSelectedChannel(null);
+    list.markLoading();
+    setSearch(typeof value === 'string' ? value : '');
+    list.resetPage();
   }
 
   function handlePageChange(nextPage: number) {
-    setPage(nextPage);
-    setSelectedId(null);
-    setSelectedChannel(null);
+    list.markLoading();
+    list.setPage(nextPage);
   }
 
   function handleSelect(id: string) {
-    setSelectedId(id);
-  }
-
-  function handleClosePanel() {
-    setSelectedId(null);
-    setSelectedChannel(null);
+    navigate(`/youtube-channels/${id}`);
   }
 
   function handleToggleRow(id: string) {
@@ -144,22 +93,26 @@ export function YoutubeChannelsPage() {
   }
 
   function handleToggleAll() {
-    if (selectedIds.size === channels.length) {
+    if (selectedIds.size === list.items.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(channels.map((c) => c.id)));
+      setSelectedIds(new Set(list.items.map((c) => c.id)));
     }
   }
 
   function handleAddSuccess() {
     setShowAddModal(false);
-    setPage(1);
-    loadStats();
-    loadChannels(typeFilter, monetizationFilter, debouncedSearch, 1);
+    list.markLoading();
+    list.resetPage();
+    setChannelsRefreshKey((key) => key + 1);
+
+    void fetchYoutubeChannelStats()
+      .then(setStats)
+      .catch(() => setStats(null));
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row">
+    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <YoutubeChannelStatCards data={stats} loading={statsLoading} />
@@ -174,44 +127,28 @@ export function YoutubeChannelsPage() {
               onAddChannel={() => setShowAddModal(true)}
             />
           </div>
+          {list.error ? (
+            <p className="mt-2 text-xs text-danger">{list.error}</p>
+          ) : null}
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
             <YoutubeChannelsTable
-              channels={channels}
-              selectedId={selectedId}
+              channels={list.items}
               selectedIds={selectedIds}
-              loading={loading}
+              loading={list.loading}
               onSelect={handleSelect}
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
             />
             <MailAccountsPagination
-              page={page}
-              limit={LIMIT}
-              total={total}
-              totalPages={totalPages}
+              page={list.page}
+              limit={list.limit}
+              total={list.total}
+              totalPages={list.totalPages}
               onPageChange={handlePageChange}
             />
           </div>
         </div>
       </div>
-
-      {(selectedId || detailLoading) ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close detail panel"
-            onClick={handleClosePanel}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm lg:static lg:z-auto lg:max-w-none">
-            <YoutubeChannelDetailPanel
-              channel={selectedChannel}
-              loading={detailLoading}
-              onClose={handleClosePanel}
-            />
-          </div>
-        </>
-      ) : null}
 
       <AddYoutubeChannelModal
         open={showAddModal}

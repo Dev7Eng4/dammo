@@ -62,6 +62,10 @@ async function fetchYoutubeSourceData(fullUrl: string) {
   return { metadata, videos };
 }
 
+const EIGHT_MINUTES_SEC = 8 * 60;
+const THIRTY_MINUTES_SEC = 30 * 60;
+const SIXTY_MINUTES_SEC = 60 * 60;
+
 function filterVideosByDuration(
   videos: YoutubeChannelVideo[],
   duration: SourceVideoDurationFilter,
@@ -73,14 +77,16 @@ function filterVideosByDuration(
     if (seconds === undefined) return false;
 
     switch (duration) {
-      case 'under_1m':
-        return seconds < 60;
-      case '1m_10m':
-        return seconds >= 60 && seconds < 600;
-      case '10m_30m':
-        return seconds >= 600 && seconds < 1800;
-      case 'over_30m':
-        return seconds >= 1800;
+      case 'under_8m':
+        return seconds < EIGHT_MINUTES_SEC;
+      case '8m_30m':
+        return seconds >= EIGHT_MINUTES_SEC && seconds <= THIRTY_MINUTES_SEC;
+      case '30m_60m':
+        return seconds > THIRTY_MINUTES_SEC && seconds <= SIXTY_MINUTES_SEC;
+      case 'over_60m':
+        return seconds > SIXTY_MINUTES_SEC;
+      default:
+        return false;
     }
   });
 }
@@ -233,7 +239,7 @@ export class SourceChannelsService {
       url: displayUrl,
       fullUrl,
       niche,
-      purpose: 'trend_tracking',
+      purpose: input.purpose,
       riskLevel: 'low',
       mappedOwnedChannels: [],
       activeProjects: [],

@@ -19,7 +19,9 @@ function mapResponse(data: YtdlpChannelResponse): Omit<YoutubeChannelMetadata, '
   const handle = extractHandle(data);
   const videoCount =
     data.playlist_count ??
-    (Array.isArray(data.entries) ? data.entries.length : undefined);
+    (Array.isArray(data.entries)
+      ? data.entries.filter((entry) => entry !== null && typeof entry === 'object').length
+      : undefined);
 
   return {
     name,
@@ -40,6 +42,7 @@ export async function fetchYoutubeChannelMetadata(channelUrl: string): Promise<Y
       flatPlaylist: true,
       skipDownload: true,
       noWarnings: true,
+      ignoreErrors: true,
     });
 
     const data = raw as YtdlpChannelResponse;

@@ -1,89 +1,64 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { exportMailAccountsExcel, fetchMailAccount, fetchMailAccounts } from '../api/mailAccounts';
 import { AddMailModal } from '../components/mail-accounts/AddMailModal';
 import { MailAccountDetailPanel } from '../components/mail-accounts/MailAccountDetailPanel';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { MailAccountsTable } from '../components/mail-accounts/MailAccountsTable';
 import { MailAccountsToolbar } from '../components/mail-accounts/MailAccountsToolbar';
-import type { MailAccount, MailAccountFilter } from '../types/mailAccount';
+import { useFetchedItem, usePaginatedList } from '../hooks';
+import type { MailAccountFilter } from '../types/mailAccount';
 
 const LIMIT = 20;
 
 export function MailAccountsPage() {
-  const [accounts, setAccounts] = useState<MailAccount[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedAccount, setSelectedAccount] = useState<MailAccount | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<MailAccountFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const loadAccounts = useCallback(async (currentFilter: MailAccountFilter, currentPage: number) => {
-    setLoading(true);
-    try {
-      const data = await fetchMailAccounts(currentFilter, '', currentPage, LIMIT);
-      setAccounts(data.items);
-      setTotal(data.total);
-      setPage(data.page);
-      setTotalPages(data.totalPages);
-      setSelectedIds(new Set());
-    } catch {
-      setAccounts([]);
-      setTotal(0);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const list = usePaginatedList({
+    fetcher: ({ filter: currentFilter, page, limit, signal }) =>
+      fetchMailAccounts(currentFilter, '', page, limit, { signal }),
+    query: { filter },
+    limit: LIMIT,
+    onFetched: () => setSelectedIds(new Set()),
+  });
 
-  useEffect(() => {
-    loadAccounts(filter, page);
-  }, [filter, page, loadAccounts]);
+  const detail = useFetchedItem((id, signal) => fetchMailAccount(id, { signal }));
 
-  useEffect(() => {
-    if (!selectedId) {
-      setSelectedAccount(null);
-      return;
-    }
-
-    setDetailLoading(true);
-    fetchMailAccount(selectedId)
-      .then(setSelectedAccount)
-      .catch(() => setSelectedAccount(null))
-      .finally(() => setDetailLoading(false));
-  }, [selectedId]);
+  function clearSelection() {
+    setSelectedId(null);
+    detail.clear();
+  }
 
   function handleFilterChange(nextFilter: MailAccountFilter) {
+    list.markLoading();
     setFilter(nextFilter);
-    setPage(1);
-    setSelectedId(null);
-    setSelectedAccount(null);
+    list.resetPage();
+    clearSelection();
   }
 
   function handlePageChange(nextPage: number) {
-    setPage(nextPage);
-    setSelectedId(null);
-    setSelectedAccount(null);
+    list.markLoading();
+    list.setPage(nextPage);
+    clearSelection();
   }
 
   function handleAddSuccess() {
-    setPage(1);
-    loadAccounts(filter, 1);
+    list.markLoading();
+    list.resetPage();
+    list.refresh();
   }
 
   function handleSelect(id: string) {
     setSelectedId(id);
+    detail.load(id);
   }
 
   function handleClosePanel() {
-    setSelectedId(null);
-    setSelectedAccount(null);
+    clearSelection();
   }
 
   function handleToggleRow(id: string) {
@@ -96,10 +71,10 @@ export function MailAccountsPage() {
   }
 
   function handleToggleAll() {
-    if (selectedIds.size === accounts.length) {
+    if (selectedIds.size === list.items.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(accounts.map((a) => a.id)));
+      setSelectedIds(new Set(list.items.map((a) => a.id)));
     }
   }
 
@@ -121,7 +96,7 @@ export function MailAccountsPage() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <MailAccountsToolbar
-            total={total}
+            total={list.total}
             filter={filter}
             onFilterChange={handleFilterChange}
             onAddMail={() => setShowAddModal(true)}
@@ -131,28 +106,31 @@ export function MailAccountsPage() {
           {exportError ? (
             <p className="mt-2 text-xs text-danger">{exportError}</p>
           ) : null}
+          {list.error ? (
+            <p className="mt-2 text-xs text-danger">{list.error}</p>
+          ) : null}
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
             <MailAccountsTable
-              accounts={accounts}
+              accounts={list.items}
               selectedId={selectedId}
               selectedIds={selectedIds}
-              loading={loading}
+              loading={list.loading}
               onSelect={handleSelect}
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
             />
             <MailAccountsPagination
-              page={page}
-              limit={LIMIT}
-              total={total}
-              totalPages={totalPages}
+              page={list.page}
+              limit={list.limit}
+              total={list.total}
+              totalPages={list.totalPages}
               onPageChange={handlePageChange}
             />
           </div>
         </div>
       </div>
 
-      {(selectedId || detailLoading) ? (
+      {(selectedId || detail.loading) ? (
         <>
           <button
             type="button"
@@ -162,8 +140,8 @@ export function MailAccountsPage() {
           />
           <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm lg:static lg:z-auto lg:max-w-none">
             <MailAccountDetailPanel
-              account={selectedAccount}
-              loading={detailLoading}
+              account={detail.item}
+              loading={detail.loading}
               onClose={handleClosePanel}
             />
           </div>

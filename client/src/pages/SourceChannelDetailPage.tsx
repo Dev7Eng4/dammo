@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   fetchSourceChannel,
@@ -12,90 +12,49 @@ import {
 } from '../components/source-channels/SourceChannelDetailHeader';
 import { SourceChannelVideosTable } from '../components/source-channels/SourceChannelVideosTable';
 import { SourceChannelVideosToolbar } from '../components/source-channels/SourceChannelVideosToolbar';
-import type { SourceChannel, SourceChannelVideo, SourceVideoDurationFilter } from '../types/sourceChannel';
+import { useAbortableEffect, usePaginatedList } from '../hooks';
+import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceChannel';
 
 const VIDEO_LIMIT = 20;
 
 export function SourceChannelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [source, setSource] = useState<SourceChannel | null>(null);
-  const [videos, setVideos] = useState<SourceChannelVideo[]>([]);
-  const [videoPage, setVideoPage] = useState(1);
-  const [videoTotal, setVideoTotal] = useState(0);
-  const [videoTotalPages, setVideoTotalPages] = useState(1);
   const [durationFilter, setDurationFilter] = useState<SourceVideoDurationFilter>('all');
   const [loading, setLoading] = useState(true);
-  const [videosLoading, setVideosLoading] = useState(true);
-  const [videosError, setVideosError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  const [notFound, setNotFound] = useState(!id);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
+  const videos = usePaginatedList({
+    fetcher: ({ page, limit, duration, signal }) =>
+      fetchSourceChannelVideos(id!, page, limit, duration, { signal }),
+    query: { duration: durationFilter },
+    limit: VIDEO_LIMIT,
+    enabled: Boolean(id),
+  });
 
-    let cancelled = false;
+  useAbortableEffect(
+    async (signal) => {
+      if (!id) return;
 
-    setLoading(true);
-    setNotFound(false);
-    setRefreshError(null);
+      setLoading(true);
+      setNotFound(false);
 
-    fetchSourceChannel(id)
-      .then((data) => {
-        if (!cancelled) setSource(data);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSource(null);
-          setNotFound(true);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    let cancelled = false;
-
-    setVideosLoading(true);
-    setVideosError(null);
-
-    fetchSourceChannelVideos(id, videoPage, VIDEO_LIMIT, durationFilter)
-      .then((data) => {
-        if (!cancelled) {
-          setVideos(data.items);
-          setVideoTotal(data.total);
-          setVideoPage(data.page);
-          setVideoTotalPages(data.totalPages);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setVideos([]);
-          setVideoTotal(0);
-          setVideoTotalPages(1);
-          setVideosError(err instanceof Error ? err.message : 'Failed to load videos');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setVideosLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id, videoPage, durationFilter]);
+      try {
+        const data = await fetchSourceChannel(id, { signal });
+        setSource(data);
+      } catch {
+        if (signal.aborted) return;
+        setSource(null);
+        setNotFound(true);
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
+    },
+    [id],
+    { enabled: Boolean(id) },
+  );
 
   async function handleRefreshSource() {
     if (!id) return;
@@ -106,12 +65,9 @@ export function SourceChannelDetailPage() {
     try {
       const { item } = await refreshSourceChannel(id);
       setSource(item);
-      setVideoPage(1);
-      const data = await fetchSourceChannelVideos(id, 1, VIDEO_LIMIT, durationFilter);
-      setVideos(data.items);
-      setVideoTotal(data.total);
-      setVideoPage(data.page);
-      setVideoTotalPages(data.totalPages);
+      videos.markLoading();
+      videos.resetPage();
+      videos.refresh();
     } catch (err) {
       setRefreshError(err instanceof Error ? err.message : 'Failed to update source');
     } finally {
@@ -120,11 +76,12 @@ export function SourceChannelDetailPage() {
   }
 
   function handleDurationFilterChange(next: SourceVideoDurationFilter) {
+    videos.markLoading();
     setDurationFilter(next);
-    setVideoPage(1);
+    videos.resetPage();
   }
 
-  if (notFound) {
+  if (!id || notFound) {
     return (
       <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
         <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
@@ -152,23 +109,26 @@ export function SourceChannelDetailPage() {
         )}
 
         <div className="mt-4 card-surface px-5 pt-3 pb-4">
-          {source?.platform === 'youtube' || videosLoading ? (
+          {source?.platform === 'youtube' || videos.loading ? (
             <>
               <SourceChannelVideosToolbar
                 durationFilter={durationFilter}
                 onDurationFilterChange={handleDurationFilterChange}
               />
               <SourceChannelVideosTable
-                videos={videos}
-                loading={videosLoading}
-                error={videosError}
+                videos={videos.items}
+                loading={videos.loading}
+                error={videos.error}
               />
               <MailAccountsPagination
-                page={videoPage}
-                limit={VIDEO_LIMIT}
-                total={videoTotal}
-                totalPages={videoTotalPages}
-                onPageChange={setVideoPage}
+                page={videos.page}
+                limit={videos.limit}
+                total={videos.total}
+                totalPages={videos.totalPages}
+                onPageChange={(nextPage) => {
+                  videos.markLoading();
+                  videos.setPage(nextPage);
+                }}
               />
             </>
           ) : (

@@ -73,10 +73,10 @@ export class MailAccountsService {
 
   create(input: CreateMailAccountInput): MailAccount {
     const email = input.email.trim().toLowerCase();
-    const recoveryEmail = input.recoveryEmail.trim();
+    const recoveryEmail = (input.recoveryEmail ?? '').trim();
 
-    if (!email || !recoveryEmail || !input.password) {
-      throw new AppError('Email, password, and recovery email are required');
+    if (!email) {
+      throw new AppError('Email is required');
     }
 
     const exists = mailAccountsRepository.findAll().some((a) => a.email.toLowerCase() === email);

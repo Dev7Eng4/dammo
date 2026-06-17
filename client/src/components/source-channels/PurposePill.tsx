@@ -68,3 +68,8 @@ export function PurposePill({ purpose, className }: PurposePillProps) {
 export function purposeLabel(purpose: SourcePurpose): string {
   return config[purpose].label;
 }
+
+export const SOURCE_PURPOSE_OPTIONS = (Object.keys(config) as SourcePurpose[]).map((value) => ({
+  value,
+  label: config[value].label,
+}));

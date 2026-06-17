@@ -40,6 +40,10 @@ function ChevronDownIcon({ className }: { className?: string }) {
   );
 }
 
+function optionLabel(label: string): string {
+  return typeof label === 'string' ? label : '';
+}
+
 export function DropdownSelect<T extends string>({
   options,
   value,
@@ -62,11 +66,11 @@ export function DropdownSelect<T extends string>({
   const ref = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const selected = options.find((o) => o.value === value);
-  const activeLabel = selected?.label ?? placeholder ?? options[0]?.label ?? '';
+  const activeLabel = selected ? optionLabel(selected.label) : (placeholder ?? optionLabel(options[0]?.label ?? ''));
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredOptions =
     searchable && normalizedQuery
-      ? options.filter((opt) => opt.label.toLowerCase().includes(normalizedQuery))
+      ? options.filter((opt) => optionLabel(opt.label).toLowerCase().includes(normalizedQuery))
       : options;
 
   function closeMenu() {
@@ -116,7 +120,7 @@ export function DropdownSelect<T extends string>({
           else openMenu();
         }}
         className={cn(
-          'inline-flex min-w-[9rem] items-center justify-between gap-2 rounded-lg border border-border bg-surface-elevated px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800',
+          'inline-flex min-w-[9rem] cursor-pointer items-center justify-between gap-2 rounded-lg border border-border bg-surface-elevated px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800',
           'transition-colors focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30',
           'disabled:cursor-not-allowed disabled:opacity-50',
           !selected && placeholder ? 'text-neutral-500' : null,
@@ -140,7 +144,7 @@ export function DropdownSelect<T extends string>({
         <div
           className={cn(
             'absolute top-full z-30 mt-1 min-w-full rounded-xl border border-border bg-surface-elevated shadow-lg',
-            searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'max-h-60 overflow-y-auto overscroll-contain py-1',
+            searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
             menuClassName,
           )}
         >
@@ -172,7 +176,7 @@ export function DropdownSelect<T extends string>({
               </div>
             </div>
           ) : null}
-          <div className={cn(searchable ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
+          <div className={cn(searchable ? 'scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt) => (
                 <button
@@ -188,7 +192,7 @@ export function DropdownSelect<T extends string>({
                     value === opt.value ? 'text-secondary-400' : 'text-neutral-200',
                   )}
                 >
-                  {opt.label}
+                  {optionLabel(opt.label)}
                 </button>
               ))
             ) : (

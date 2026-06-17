@@ -19,12 +19,12 @@ function daysAgo(days: number): string {
 
 function typeLabel(type: YoutubeChannelType): string {
   switch (type) {
-    case 'own_content':
-      return 'Own Content';
-    case 'client':
-      return 'Client';
-    case 'content_selling':
-      return 'Content Selling';
+    case 'content':
+      return 'Content';
+    case 'reup':
+      return 'Reup';
+    case 'content_sale':
+      return 'Content Sale';
   }
 }
 
@@ -33,7 +33,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     name: 'Tech Nexus Daily',
     handle: '@technexusdaily',
     youtubeUrl: 'https://youtube.com/@technexusdaily',
-    type: 'own_content',
+    type: 'content',
     niche: 'Technology',
     language: 'EN-US',
     monetizationStatus: 'monetized',
@@ -51,7 +51,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     name: 'Crypto Insights Pro',
     handle: '@cryptoinsights',
     youtubeUrl: 'https://youtube.com/@cryptoinsights',
-    type: 'client',
+    type: 'reup',
     niche: 'Finance',
     language: 'EN-UK',
     monetizationStatus: 'in_review',
@@ -68,7 +68,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     name: 'Gaming Highlights V2',
     handle: '@gamingv2_archive',
     youtubeUrl: 'https://youtube.com/@gamingv2_archive',
-    type: 'content_selling',
+    type: 'content_sale',
     niche: 'Gaming',
     language: 'ES-ES',
     monetizationStatus: 'demonetized',
@@ -86,7 +86,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
 
 const niches = ['Technology', 'Finance', 'Gaming', 'Lifestyle', 'Education', 'Sports', 'Music', 'Travel'];
 const languages = ['EN-US', 'EN-UK', 'ES-ES', 'FR-FR', 'DE-DE', 'PT-BR', 'JA-JP'];
-const types: YoutubeChannelType[] = ['own_content', 'client', 'content_selling'];
+const types: YoutubeChannelType[] = ['content', 'reup', 'content_sale'];
 const healthScores: HealthScore[] = ['high', 'medium', 'low'];
 const statuses: YoutubeChannelStatus[] = ['active', 'suspended'];
 

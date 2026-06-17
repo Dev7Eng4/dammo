@@ -2,12 +2,20 @@ import { z } from 'zod';
 
 export const createSourceChannelSchema = z.object({
   url: z.string().min(1),
+  purpose: z.enum([
+    'trend_tracking',
+    'idea_reference',
+    'licensed_source',
+    'competitor_tracking',
+    'reup',
+    'background_footage',
+  ]),
 });
 
 export const sourceChannelVideosQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  duration: z.enum(['all', 'under_1m', '1m_10m', '10m_30m', 'over_30m']).default('all'),
+  duration: z.enum(['all', 'under_8m', '8m_30m', '30m_60m', 'over_60m']).default('all'),
 });
 
 export const listSourceChannelsQuerySchema = z.object({

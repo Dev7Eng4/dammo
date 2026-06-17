@@ -15,6 +15,8 @@ export interface YoutubeChannelVideo {
   title: string;
   url: string;
   viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
   duration?: number;
 }
 
@@ -24,6 +26,8 @@ export interface YtdlpVideoEntry {
   webpage_url?: string;
   url?: string;
   view_count?: number;
+  like_count?: number;
+  comment_count?: number;
   duration?: number;
 }
 

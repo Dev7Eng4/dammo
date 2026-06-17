@@ -1,4 +1,5 @@
 import { API_V1 } from './config';
+import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   CreateMailAccountPayload,
   MailAccount,
@@ -6,31 +7,29 @@ import type {
   MailAccountsResponse,
 } from '../types/mailAccount';
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Request failed: ${res.status}`);
-  }
-  return res.json() as Promise<T>;
-}
-
 export function fetchMailAccounts(
   filter: MailAccountFilter = 'all',
   query = '',
   page = 1,
   limit = 20,
+  options?: FetchOptions,
 ) {
   const params = new URLSearchParams();
   if (filter !== 'all') params.set('status', filter);
   if (query.trim()) params.set('q', query.trim());
   params.set('page', String(page));
   params.set('limit', String(limit));
-  return fetchJson<MailAccountsResponse>(`${API_V1}/mail-accounts?${params}`);
+  return fetchJson<MailAccountsResponse>(
+    `${API_V1}/mail-accounts?${params}`,
+    withSignal(undefined, options),
+  );
 }
 
-export function fetchMailAccount(id: string) {
-  return fetchJson<MailAccount>(`${API_V1}/mail-accounts/${id}`);
+export function fetchMailAccount(id: string, options?: FetchOptions) {
+  return fetchJson<MailAccount>(
+    `${API_V1}/mail-accounts/${id}`,
+    withSignal(undefined, options),
+  );
 }
 
 export function createMailAccount(payload: CreateMailAccountPayload) {

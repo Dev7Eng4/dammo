@@ -1,5 +1,5 @@
 import { Button, DropdownSelect } from '../ui';
-import type { YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../../types/youtubeChannel';
+import { YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannelTypeFilter, type YoutubeMonetizationFilter } from '../../types/youtubeChannel';
 
 interface YoutubeChannelsToolbarProps {
   typeFilter: YoutubeChannelTypeFilter;
@@ -13,9 +13,10 @@ interface YoutubeChannelsToolbarProps {
 
 const typeOptions: { value: YoutubeChannelTypeFilter; label: string }[] = [
   { value: 'all', label: 'All Types' },
-  { value: 'own_content', label: 'Own Content' },
-  { value: 'client', label: 'Client' },
-  { value: 'content_selling', label: 'Content Selling' },
+  ...(['content', 'reup', 'content_sale'] as const).map((value) => ({
+    value,
+    label: YOUTUBE_CHANNEL_TYPE_LABELS[value],
+  })),
 ];
 
 const monetizationOptions: { value: YoutubeMonetizationFilter; label: string }[] = [
@@ -57,8 +58,8 @@ export function YoutubeChannelsToolbar({
           </svg>
           <input
             type="search"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={typeof search === 'string' ? search : ''}
+            onChange={(e) => onSearchChange(e.currentTarget.value)}
             placeholder="Filter channels..."
             className="h-8 w-48 rounded-lg border border-border bg-surface-elevated pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 lg:w-56"
           />

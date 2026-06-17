@@ -49,9 +49,17 @@ export interface HealthAlert {
   severity: AlertSeverity;
 }
 
+export type SearchResultType =
+  | 'mail_account'
+  | 'youtube_channel'
+  | 'source_channel'
+  | 'project'
+  | 'account'
+  | 'render';
+
 export interface SearchResult {
   id: string;
-  type: 'project' | 'account' | 'render';
+  type: SearchResultType;
   label: string;
   path: string;
 }

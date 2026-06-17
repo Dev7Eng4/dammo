@@ -3,12 +3,18 @@ import { generateId } from '../../shared/id.js';
 import { parseSourceUrl } from '../../shared/platform/url-parser.js';
 import { paginate } from '../../shared/types/pagination.js';
 import { fetchYoutubeChannelMetadata } from '../../infrastructure/youtube/youtube-channel-fetcher.js';
+import { fetchAllYoutubeChannelVideos } from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
+import { fetchYoutubeVideoComments } from '../../infrastructure/youtube/youtube-video-comments-fetcher.js';
+import type { YoutubeVideoComment } from '../../infrastructure/youtube/youtube-comment.types.js';
+import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
+import { buildUploadScheduleLabel } from './upload-schedule.js';
 import type {
   CreateYoutubeChannelInput,
   MonetizationStatus,
+  UpdateYoutubeChannelInput,
   YoutubeChannel,
   YoutubeChannelStats,
   YoutubeChannelType,
@@ -58,6 +64,110 @@ function buildProjectId(handle: string): string {
   return `PRJ-${slug || 'NEW'}`;
 }
 
+function requireSourceWithPurpose(
+  sourceId: string,
+  purpose: 'reup' | 'background_footage',
+  fieldLabel: string,
+): void {
+  const source = sourceChannelsRepository.findById(sourceId);
+  if (!source) {
+    throw new AppError('Source channel not found', 404, 'SOURCE_NOT_FOUND');
+  }
+  if (source.purpose !== purpose) {
+    throw new AppError(
+      `${fieldLabel} must be a source channel with purpose "${purpose}"`,
+      400,
+      'INVALID_SOURCE_PURPOSE',
+    );
+  }
+}
+
+type ChannelConfigInput = Pick<
+  CreateYoutubeChannelInput,
+  | 'mailAccountId'
+  | 'type'
+  | 'sourceChannelIds'
+  | 'reupVideoSourceId'
+  | 'reupAudioSourceId'
+  | 'backgroundFootageSourceId'
+  | 'uploadFrequency'
+  | 'publishTimes'
+>;
+
+function buildSourceMapping(sourceChannelIds: string[] | undefined): string {
+  const ids = [...new Set((sourceChannelIds ?? []).map((id) => id.trim()).filter(Boolean))];
+  if (ids.length === 0) return '';
+
+  const mappings: string[] = [];
+  for (const sourceChannelId of ids) {
+    const source = sourceChannelsRepository.findById(sourceChannelId);
+    if (!source) {
+      throw new AppError('Source channel not found', 404, 'SOURCE_NOT_FOUND');
+    }
+    mappings.push(source.fullUrl);
+  }
+  return mappings.join(', ');
+}
+
+function validateChannelConfig(input: ChannelConfigInput): {
+  linkedEmail: string;
+  sourceMapping: string;
+  uploadSchedule: string;
+  backgroundFootageSourceId?: string;
+  reupVideoSourceId?: string;
+  reupAudioSourceId?: string;
+} {
+  const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
+  if (!mailAccount) {
+    throw new AppError('Mail account not found', 404, 'MAIL_NOT_FOUND');
+  }
+
+  const sourceMapping = buildSourceMapping(input.sourceChannelIds);
+
+  if (input.type === 'reup') {
+    const videoSourceId = input.reupVideoSourceId?.trim();
+    const audioSourceId = input.reupAudioSourceId?.trim();
+    if (!videoSourceId || !audioSourceId) {
+      throw new AppError('Reup channels require video and audio sources', 400, 'VALIDATION_ERROR');
+    }
+    if (videoSourceId === audioSourceId) {
+      throw new AppError('Video and audio sources must be different', 400, 'VALIDATION_ERROR');
+    }
+    requireSourceWithPurpose(videoSourceId, 'reup', 'Video source');
+    requireSourceWithPurpose(audioSourceId, 'reup', 'Audio source');
+  }
+
+  const backgroundFootageSourceId = input.backgroundFootageSourceId?.trim();
+  if (backgroundFootageSourceId) {
+    requireSourceWithPurpose(backgroundFootageSourceId, 'background_footage', 'Background footage');
+  }
+
+  const uploadSchedule = buildUploadScheduleLabel(input.uploadFrequency, input.publishTimes);
+
+  return {
+    linkedEmail: mailAccount.email,
+    sourceMapping,
+    uploadSchedule,
+    ...(input.type === 'reup'
+      ? {
+          reupVideoSourceId: input.reupVideoSourceId?.trim(),
+          reupAudioSourceId: input.reupAudioSourceId?.trim(),
+        }
+      : {}),
+    ...(backgroundFootageSourceId ? { backgroundFootageSourceId } : {}),
+  };
+}
+
+function assertEmailAvailableForChannel(email: string, channelId?: string): void {
+  const normalized = email.toLowerCase();
+  const taken = youtubeChannelsRepository
+    .findAll()
+    .some((c) => c.id !== channelId && c.linkedEmail.toLowerCase() === normalized);
+  if (taken) {
+    throw new AppError('Email already linked to another channel', 400, 'DUPLICATE_EMAIL');
+  }
+}
+
 export class YoutubeChannelsService {
   getStats(): YoutubeChannelStats {
     const channels = youtubeChannelsRepository.findAll();
@@ -96,16 +206,71 @@ export class YoutubeChannelsService {
     return channel;
   }
 
-  async create(input: CreateYoutubeChannelInput): Promise<YoutubeChannel> {
-    const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
-    if (!mailAccount) {
-      throw new AppError('Mail account not found', 404, 'MAIL_NOT_FOUND');
-    }
+  async getLiveById(id: string): Promise<YoutubeChannel> {
+    const channel = this.getById(id);
+    try {
+      const metadata = await fetchYoutubeChannelMetadata(channel.youtubeUrl);
+      const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
 
-    const source = sourceChannelsRepository.findById(input.sourceChannelId);
-    if (!source) {
-      throw new AppError('Source channel not found', 404, 'SOURCE_NOT_FOUND');
+      return {
+        ...channel,
+        name: metadata.name,
+        handle,
+        niche: metadata.niche,
+      };
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(
+        `Failed to fetch YouTube channel metadata: ${detail}`,
+        502,
+        'YOUTUBE_FETCH_FAILED',
+      );
     }
+  }
+
+  private async fetchVideos(channel: YoutubeChannel): Promise<YoutubeChannelVideo[]> {
+    try {
+      return await fetchAllYoutubeChannelVideos(channel.youtubeUrl);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(`Failed to fetch YouTube channel videos: ${detail}`, 502, 'YOUTUBE_FETCH_FAILED');
+    }
+  }
+
+  async getVideos(id: string): Promise<{ items: YoutubeChannelVideo[] }> {
+    const channel = this.getById(id);
+    const items = await this.fetchVideos(channel);
+    return { items };
+  }
+
+  async syncVideos(id: string): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[] }> {
+    const channel = this.getById(id);
+    const videos = await this.fetchVideos(channel);
+    return { item: channel, videos };
+  }
+
+  async getVideoComments(
+    channelId: string,
+    videoId: string,
+  ): Promise<{ items: YoutubeVideoComment[] }> {
+    this.getById(channelId);
+
+    try {
+      const items = await fetchYoutubeVideoComments(videoId);
+      return { items };
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(
+        `Failed to fetch YouTube video comments: ${detail}`,
+        502,
+        'YOUTUBE_FETCH_FAILED',
+      );
+    }
+  }
+
+  async create(input: CreateYoutubeChannelInput): Promise<YoutubeChannel> {
+    const config = validateChannelConfig(input);
+    assertEmailAvailableForChannel(config.linkedEmail);
 
     const { platform, fullUrl } = parseSourceUrl(input.channelUrl);
     if (platform !== 'youtube') {
@@ -128,18 +293,25 @@ export class YoutubeChannelsService {
         name: metadata.name,
         handle,
         youtubeUrl: fullUrl,
-        type: 'own_content',
+        type: input.type,
         niche: metadata.niche,
         language: 'EN-US',
         monetizationStatus: 'in_review',
         healthScore: 'medium',
         status: 'active',
-        linkedEmail: mailAccount.email,
-        uploadSchedule: '',
-        sourceMapping: source.fullUrl,
+        linkedEmail: config.linkedEmail,
+        uploadSchedule: config.uploadSchedule,
+        sourceMapping: config.sourceMapping,
         contentProjectId: buildProjectId(handle),
         recentActivity: [],
         createdAt: new Date().toISOString(),
+        uploadFrequency: input.uploadFrequency,
+        publishTimes: input.publishTimes,
+        ...(config.reupVideoSourceId ? { reupVideoSourceId: config.reupVideoSourceId } : {}),
+        ...(config.reupAudioSourceId ? { reupAudioSourceId: config.reupAudioSourceId } : {}),
+        ...(config.backgroundFootageSourceId
+          ? { backgroundFootageSourceId: config.backgroundFootageSourceId }
+          : {}),
       };
 
       return youtubeChannelsRepository.prepend(channel);
@@ -152,6 +324,46 @@ export class YoutubeChannelsService {
         'YOUTUBE_FETCH_FAILED',
       );
     }
+  }
+
+  update(id: string, input: UpdateYoutubeChannelInput): YoutubeChannel {
+    this.getById(id);
+    const config = validateChannelConfig(input);
+    assertEmailAvailableForChannel(config.linkedEmail, id);
+
+    const updated = youtubeChannelsRepository.update(id, (current) => {
+      const next: YoutubeChannel = {
+        ...current,
+        type: input.type,
+        linkedEmail: config.linkedEmail,
+        sourceMapping: config.sourceMapping,
+        uploadSchedule: config.uploadSchedule,
+        uploadFrequency: input.uploadFrequency,
+        publishTimes: input.publishTimes,
+      };
+
+      if (input.type === 'reup') {
+        next.reupVideoSourceId = config.reupVideoSourceId;
+        next.reupAudioSourceId = config.reupAudioSourceId;
+      } else {
+        delete next.reupVideoSourceId;
+        delete next.reupAudioSourceId;
+      }
+
+      if (config.backgroundFootageSourceId) {
+        next.backgroundFootageSourceId = config.backgroundFootageSourceId;
+      } else {
+        delete next.backgroundFootageSourceId;
+      }
+
+      return next;
+    });
+
+    if (!updated) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    return updated;
   }
 }
 

@@ -1,6 +1,71 @@
 {
   "sources": [
     {
+      "id": "76db95bd-efa1-4644-9732-57bbbe165161",
+      "platform": "tiktok",
+      "name": "testpurposefix",
+      "url": "@testpurposefix",
+      "fullUrl": "https://tiktok.com/@testpurposefix",
+      "niche": "Unknown",
+      "purpose": "background_footage",
+      "riskLevel": "low",
+      "mappedOwnedChannels": [],
+      "activeProjects": []
+    },
+    {
+      "id": "9dab5b6a-5969-4926-8b36-87c5f82fefff",
+      "platform": "tiktok",
+      "name": "testpurposeuser3",
+      "url": "@testpurposeuser3",
+      "fullUrl": "https://tiktok.com/@testpurposeuser3",
+      "niche": "Unknown",
+      "purpose": "trend_tracking",
+      "riskLevel": "low",
+      "mappedOwnedChannels": [],
+      "activeProjects": []
+    },
+    {
+      "id": "ae3099b0-7b47-412a-b937-3ee5cfa161e3",
+      "platform": "tiktok",
+      "name": "testpurposeuser2",
+      "url": "@testpurposeuser2",
+      "fullUrl": "https://tiktok.com/@testpurposeuser2",
+      "niche": "Unknown",
+      "purpose": "trend_tracking",
+      "riskLevel": "low",
+      "mappedOwnedChannels": [],
+      "activeProjects": []
+    },
+    {
+      "id": "15228fbb-c32b-4350-928a-7260bb3347b3",
+      "platform": "tiktok",
+      "name": "testpurposeuser",
+      "url": "@testpurposeuser",
+      "fullUrl": "https://tiktok.com/@testpurposeuser",
+      "niche": "Unknown",
+      "purpose": "background_footage",
+      "riskLevel": "low",
+      "mappedOwnedChannels": [],
+      "activeProjects": []
+    },
+    {
+      "id": "abf6029d-84b4-4227-b743-a29e96c6e759",
+      "platform": "youtube",
+      "name": "THE JAPAN WALK",
+      "url": "@TheJapanWalk",
+      "fullUrl": "https://youtube.com/@TheJapanWalk",
+      "niche": "General",
+      "purpose": "background_footage",
+      "riskLevel": "low",
+      "mappedOwnedChannels": [],
+      "activeProjects": [],
+      "videoCount": 147,
+      "subscriberCount": 14100,
+      "description": "As someone living in Japan, we want to share what life here is like through immersive walking tours. Whether you're planning a trip or just curious, our videos provide a glimpse into Japan’s culture, food, streets, and hidden gems. Join us as we explore everything that makes Japan special!\n",
+      "channelId": "UCaamGI_gFoce5WiUKhZ3UfA",
+      "metadataFetchedAt": "2026-06-17T10:45:16.724Z"
+    },
+    {
       "id": "10294887-31b2-4920-beac-fee8f950cf86",
       "platform": "youtube",
       "name": "Ladder Theory",

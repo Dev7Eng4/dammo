@@ -1,24 +1,23 @@
 import { API_V1 } from './config';
+import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   CreateYoutubeChannelPayload,
+  UpdateYoutubeChannelPayload,
   YoutubeChannel,
+  YoutubeChannelVideo,
+  YoutubeChannelVideosResponse,
   YoutubeChannelsResponse,
   YoutubeChannelStats,
   YoutubeChannelTypeFilter,
   YoutubeMonetizationFilter,
+  YoutubeVideoCommentsResponse,
 } from '../types/youtubeChannel';
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Request failed: ${res.status}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-export function fetchYoutubeChannelStats() {
-  return fetchJson<YoutubeChannelStats>(`${API_V1}/youtube-channels/stats`);
+export function fetchYoutubeChannelStats(options?: FetchOptions) {
+  return fetchJson<YoutubeChannelStats>(
+    `${API_V1}/youtube-channels/stats`,
+    withSignal(undefined, options),
+  );
 }
 
 export function fetchYoutubeChannels(
@@ -27,6 +26,7 @@ export function fetchYoutubeChannels(
   query = '',
   page = 1,
   limit = 20,
+  options?: FetchOptions,
 ) {
   const params = new URLSearchParams();
   if (type !== 'all') params.set('type', type);
@@ -34,11 +34,17 @@ export function fetchYoutubeChannels(
   if (query.trim()) params.set('q', query.trim());
   params.set('page', String(page));
   params.set('limit', String(limit));
-  return fetchJson<YoutubeChannelsResponse>(`${API_V1}/youtube-channels?${params}`);
+  return fetchJson<YoutubeChannelsResponse>(
+    `${API_V1}/youtube-channels?${params}`,
+    withSignal(undefined, options),
+  );
 }
 
-export function fetchYoutubeChannel(id: string) {
-  return fetchJson<YoutubeChannel>(`${API_V1}/youtube-channels/${id}`);
+export function fetchYoutubeChannel(id: string, options?: FetchOptions) {
+  return fetchJson<YoutubeChannel>(
+    `${API_V1}/youtube-channels/${id}`,
+    withSignal(undefined, options),
+  );
 }
 
 export function createYoutubeChannel(payload: CreateYoutubeChannelPayload) {
@@ -47,4 +53,37 @@ export function createYoutubeChannel(payload: CreateYoutubeChannelPayload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+}
+
+export function updateYoutubeChannel(id: string, payload: UpdateYoutubeChannelPayload) {
+  return fetchJson<{ item: YoutubeChannel }>(`${API_V1}/youtube-channels/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchYoutubeChannelVideos(id: string, options?: FetchOptions) {
+  return fetchJson<YoutubeChannelVideosResponse>(
+    `${API_V1}/youtube-channels/${id}/videos`,
+    withSignal(undefined, options),
+  );
+}
+
+export function syncYoutubeChannelVideos(id: string) {
+  return fetchJson<{ item: YoutubeChannel; videos: YoutubeChannelVideo[] }>(
+    `${API_V1}/youtube-channels/${id}/sync-videos`,
+    { method: 'POST' },
+  );
+}
+
+export function fetchYoutubeVideoComments(
+  channelId: string,
+  videoId: string,
+  options?: FetchOptions,
+) {
+  return fetchJson<YoutubeVideoCommentsResponse>(
+    `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/comments`,
+    withSignal(undefined, options),
+  );
 }

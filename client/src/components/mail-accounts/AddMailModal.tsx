@@ -79,7 +79,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
 
         <div>
           <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Password
+            Password <span className="text-neutral-500">(optional)</span>
           </label>
           <Input
             id="password"
@@ -87,7 +87,6 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
             placeholder="••••••••"
             className="h-10 rounded-lg"
             {...register('password', {
-              required: 'Password is required',
               minLength: { value: 6, message: 'Password must be at least 6 characters' },
             })}
           />
@@ -98,7 +97,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
 
         <div>
           <label htmlFor="recoveryEmail" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Mail khôi phục
+            Mail khôi phục <span className="text-neutral-500">(optional)</span>
           </label>
           <Input
             id="recoveryEmail"
@@ -106,7 +105,6 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
             placeholder="recovery@example.com"
             className="h-10 rounded-lg"
             {...register('recoveryEmail', {
-              required: 'Recovery email is required',
               pattern: { value: EMAIL_PATTERN, message: 'Invalid email address' },
             })}
           />

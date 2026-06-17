@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchSourceChannels } from '../api/sourceChannels';
+import { createSourceChannel, fetchSourceChannels } from '../api/sourceChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddSourceChannelModal } from '../components/source-channels/AddSourceChannelModal';
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
+import { useToast } from '../components/ui';
+import { useDebouncedValue, usePaginatedList } from '../hooks';
 import type {
-  SourceChannel,
+  CreateSourceChannelPayload,
   SourcePlatformFilter,
   SourcePurposeFilter,
   SourceRiskFilter,
@@ -17,84 +19,72 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function SourceChannelsPage() {
   const navigate = useNavigate();
-  const [sources, setSources] = useState<SourceChannel[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   const [platformFilter, setPlatformFilter] = useState<SourcePlatformFilter>('all');
   const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('all');
   const [riskFilter, setRiskFilter] = useState<SourceRiskFilter>('all');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
-  const loadSources = useCallback(
-    async (
-      platform: SourcePlatformFilter,
-      purpose: SourcePurposeFilter,
-      risk: SourceRiskFilter,
-      query: string,
-      currentPage: number,
-    ) => {
-      setLoading(true);
-      try {
-        const data = await fetchSourceChannels(platform, purpose, risk, query, currentPage, LIMIT);
-        setSources(data.items);
-        setTotal(data.total);
-        setPage(data.page);
-        setTotalPages(data.totalPages);
-      } catch {
-        setSources([]);
-        setTotal(0);
-        setTotalPages(1);
-      } finally {
-        setLoading(false);
-      }
+  const list = usePaginatedList({
+    fetcher: ({ platform, purpose, risk, query, page, limit, signal }) =>
+      fetchSourceChannels(platform, purpose, risk, query, page, limit, { signal }),
+    query: {
+      platform: platformFilter,
+      purpose: purposeFilter,
+      risk: riskFilter,
+      query: debouncedSearch,
     },
-    [],
-  );
-
-  useEffect(() => {
-    loadSources(platformFilter, purposeFilter, riskFilter, debouncedSearch, page);
-  }, [platformFilter, purposeFilter, riskFilter, debouncedSearch, page, loadSources]);
+    limit: LIMIT,
+  });
 
   function handlePlatformFilterChange(next: SourcePlatformFilter) {
+    list.markLoading();
     setPlatformFilter(next);
-    setPage(1);
+    list.resetPage();
   }
 
   function handlePurposeFilterChange(next: SourcePurposeFilter) {
+    list.markLoading();
     setPurposeFilter(next);
-    setPage(1);
+    list.resetPage();
   }
 
   function handleRiskFilterChange(next: SourceRiskFilter) {
+    list.markLoading();
     setRiskFilter(next);
-    setPage(1);
+    list.resetPage();
   }
 
   function handleSearchChange(value: string) {
-    setSearch(value);
-    setPage(1);
+    list.markLoading();
+    setSearch(typeof value === 'string' ? value : '');
+    list.resetPage();
   }
 
   function handlePageChange(nextPage: number) {
-    setPage(nextPage);
+    list.markLoading();
+    list.setPage(nextPage);
   }
 
   function handleSelect(id: string) {
     navigate(`/source-channels/${id}`);
   }
 
-  function handleAddSuccess() {
-    setPage(1);
-    loadSources(platformFilter, purposeFilter, riskFilter, debouncedSearch, 1);
+  function handleAddSource(payload: CreateSourceChannelPayload) {
+    void (async () => {
+      try {
+        const { item } = await createSourceChannel(payload);
+        toast.success(`Source channel "${item.name}" added successfully`);
+        list.markLoading();
+        list.resetPage();
+        list.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to add source channel');
+      }
+    })();
   }
 
   return (
@@ -112,13 +102,16 @@ export function SourceChannelsPage() {
             onSearchChange={handleSearchChange}
             onAddSource={() => setShowAddModal(true)}
           />
+          {list.error ? (
+            <p className="mt-2 text-xs text-danger">{list.error}</p>
+          ) : null}
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
-            <SourceChannelsTable sources={sources} loading={loading} onSelect={handleSelect} />
+            <SourceChannelsTable sources={list.items} loading={list.loading} onSelect={handleSelect} />
             <MailAccountsPagination
-              page={page}
-              limit={LIMIT}
-              total={total}
-              totalPages={totalPages}
+              page={list.page}
+              limit={list.limit}
+              total={list.total}
+              totalPages={list.totalPages}
               onPageChange={handlePageChange}
             />
           </div>
@@ -128,7 +121,7 @@ export function SourceChannelsPage() {
       <AddSourceChannelModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
+        onAdd={handleAddSource}
       />
     </div>
   );

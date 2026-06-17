@@ -24,14 +24,14 @@ export interface MailAccountsResponse {
 
 export interface CreateMailAccountPayload {
   email: string;
-  password: string;
-  recoveryEmail: string;
+  password?: string;
+  recoveryEmail?: string;
 }
 
 export type MailAccountFilter = 'all' | MailAccountStatus;
 
 export interface AddMailFormValues {
   email: string;
-  password: string;
-  recoveryEmail: string;
+  password?: string;
+  recoveryEmail?: string;
 }

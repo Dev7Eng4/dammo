@@ -63,6 +63,17 @@
 }
 
 @layer base {
+  :root {
+    --scrollbar-size: 6px;
+    --scrollbar-thumb: color-mix(in srgb, var(--color-neutral-500) 32%, transparent);
+    --scrollbar-thumb-hover: var(--color-neutral-500);
+    --scrollbar-track: transparent;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
   body {
     margin: 0;
     min-height: 100svh;
@@ -71,6 +82,43 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }
 
@@ -89,5 +137,11 @@
 
   .card-surface {
     @apply rounded-2xl border border-border bg-surface;
+  }
+
+  .scrollbar-thin {
+    --scrollbar-size: 5px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   }
 }

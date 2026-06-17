@@ -7,11 +7,11 @@ interface SourceChannelVideosToolbarProps {
 }
 
 const durationOptions: { value: SourceVideoDurationFilter; label: string }[] = [
-  { value: 'all', label: 'All Durations' },
-  { value: 'under_1m', label: 'Under 1 min' },
-  { value: '1m_10m', label: '1 – 10 min' },
-  { value: '10m_30m', label: '10 – 30 min' },
-  { value: 'over_30m', label: 'Over 30 min' },
+  { value: 'all', label: 'All durations' },
+  { value: 'under_8m', label: 'Under 8 minutes' },
+  { value: '8m_30m', label: '8 – 30 minutes' },
+  { value: '30m_60m', label: '30 – 60 minutes' },
+  { value: 'over_60m', label: 'Over 60 minutes' },
 ];
 
 export function SourceChannelVideosToolbar({

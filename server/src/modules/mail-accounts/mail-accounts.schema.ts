@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const createMailAccountSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
-  recoveryEmail: z.string().email(),
+  password: z.string().min(6).or(z.literal('')).optional(),
+  recoveryEmail: z.string().email().or(z.literal('')).optional(),
 });
 
 export const listMailAccountsQuerySchema = z.object({

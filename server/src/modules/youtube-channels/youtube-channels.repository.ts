@@ -55,6 +55,26 @@ export class YoutubeChannelsRepository {
     );
     return channel;
   }
+
+  update(id: string, updater: (channel: YoutubeChannel) => YoutubeChannel): YoutubeChannel | null {
+    let updated: YoutubeChannel | null = null;
+
+    updateJson(
+      paths.youtubeChannels,
+      (store) => {
+        const index = store.channels.findIndex((c) => c.id === id);
+        if (index === -1) return store;
+
+        updated = updater(store.channels[index]);
+        const channels = [...store.channels];
+        channels[index] = updated;
+        return { channels };
+      },
+      loadStore(),
+    );
+
+    return updated;
+  }
 }
 
 export const youtubeChannelsRepository = new YoutubeChannelsRepository();

@@ -1,12 +1,10 @@
-import { cn } from '../../lib/cn';
-import type { YoutubeChannel, YoutubeChannelType } from '../../types/youtubeChannel';
+import { YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel, type YoutubeChannelType } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { HealthIndicator } from './HealthIndicator';
 import { MonetizationPill } from './MonetizationPill';
 
 interface YoutubeChannelsTableProps {
   channels: YoutubeChannel[];
-  selectedId: string | null;
   selectedIds: Set<string>;
   loading?: boolean;
   onSelect: (id: string) => void;
@@ -15,14 +13,7 @@ interface YoutubeChannelsTableProps {
 }
 
 function typeLabel(type: YoutubeChannelType): string {
-  switch (type) {
-    case 'own_content':
-      return 'Own Content';
-    case 'client':
-      return 'Client';
-    case 'content_selling':
-      return 'Content Selling';
-  }
+  return YOUTUBE_CHANNEL_TYPE_LABELS[type];
 }
 
 function ChannelAvatar({ name }: { name: string }) {
@@ -36,7 +27,6 @@ function ChannelAvatar({ name }: { name: string }) {
 
 export function YoutubeChannelsTable({
   channels,
-  selectedId,
   selectedIds,
   loading,
   onSelect,
@@ -53,6 +43,7 @@ export function YoutubeChannelsTable({
             <tr className="border-b border-border text-xs text-neutral-500">
               <th className="pb-3 pr-4 w-8" />
               <th className="pb-3 pr-4 font-medium">CHANNEL</th>
+              <th className="pb-3 pr-4 font-medium">LINKED EMAIL</th>
               <th className="pb-3 pr-4 font-medium">TYPE</th>
               <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
               <th className="pb-3 pr-4 font-medium">MONETIZATION</th>
@@ -63,7 +54,7 @@ export function YoutubeChannelsTable({
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={7} className="py-3">
+                <td colSpan={8} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -96,6 +87,7 @@ export function YoutubeChannelsTable({
               />
             </th>
             <th className="pb-3 pr-4 font-medium">CHANNEL</th>
+            <th className="pb-3 pr-4 font-medium">LINKED EMAIL</th>
             <th className="pb-3 pr-4 font-medium">TYPE</th>
             <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
             <th className="pb-3 pr-4 font-medium">MONETIZATION</th>
@@ -108,10 +100,7 @@ export function YoutubeChannelsTable({
             <tr
               key={channel.id}
               onClick={() => onSelect(channel.id)}
-              className={cn(
-                'border-b border-border/50 cursor-pointer transition-colors',
-                selectedId === channel.id ? 'bg-primary-500/10' : 'hover:bg-surface-elevated/50',
-              )}
+              className="border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50"
             >
               <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                 <input
@@ -129,6 +118,11 @@ export function YoutubeChannelsTable({
                     <p className="truncate text-xs text-neutral-500">{channel.handle}</p>
                   </div>
                 </div>
+              </td>
+              <td className="py-3 pr-4">
+                <p className="max-w-[14rem] truncate font-mono text-xs text-neutral-400">
+                  {channel.linkedEmail}
+                </p>
               </td>
               <td className="py-3 pr-4 text-neutral-300">{typeLabel(channel.type)}</td>
               <td className="py-3 pr-4 text-neutral-400">

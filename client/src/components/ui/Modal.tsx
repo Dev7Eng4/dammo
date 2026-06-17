@@ -8,9 +8,10 @@ export interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  bodyClassName?: string;
 }
 
-export function Modal({ open, onClose, title, children, footer, className }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, className, bodyClassName }: ModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -56,7 +57,7 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
             </svg>
           </button>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className={cn('px-5 py-4', bodyClassName)}>{children}</div>
         {footer ? (
           <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
             {footer}

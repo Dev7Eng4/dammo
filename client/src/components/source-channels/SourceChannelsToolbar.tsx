@@ -89,8 +89,8 @@ export function SourceChannelsToolbar({
           </svg>
           <input
             type="search"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={typeof search === 'string' ? search : ''}
+            onChange={(e) => onSearchChange(e.currentTarget.value)}
             placeholder="Filter sources..."
             className="h-8 w-48 rounded-lg border border-border bg-surface-elevated pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 lg:w-56"
           />

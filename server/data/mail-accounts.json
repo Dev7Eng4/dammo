@@ -1,6 +1,16 @@
 {
   "accounts": [
     {
+      "id": "60072119-807e-435d-8b31-ae41f42c5905",
+      "email": "duongbich9n7@gmail.com",
+      "provider": "Gmail",
+      "status": "active",
+      "purpose": "",
+      "linkedPlatforms": [],
+      "recoveryEmail": "",
+      "notes": ""
+    },
+    {
       "id": "e4554249-16c2-4f03-ad01-1b2377105e31",
       "email": "demo@yopmail.com",
       "provider": "Gmail",

@@ -66,10 +66,14 @@ export interface SourceChannelsResponse {
 export type SourcePlatformFilter = 'all' | SourcePlatform;
 export type SourcePurposeFilter = 'all' | SourcePurpose;
 export type SourceRiskFilter = 'all' | SourceRiskLevel;
-export type SourceVideoDurationFilter = 'all' | 'under_1m' | '1m_10m' | '10m_30m' | 'over_30m';
+export type SourceVideoDurationFilter = 'all' | 'under_8m' | '8m_30m' | '30m_60m' | 'over_60m';
 
 export interface CreateSourceChannelPayload {
   url: string;
+  purpose: SourcePurpose;
 }
 
-export type AddSourceChannelFormValues = CreateSourceChannelPayload;
+export interface AddSourceChannelFormValues {
+  url: string;
+  purpose: SourcePurpose | '';
+}

@@ -129,7 +129,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+      <nav className="scrollbar-thin flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 py-3">
         {navItems.map((item) => (
           <NavItem
             key={item.id}

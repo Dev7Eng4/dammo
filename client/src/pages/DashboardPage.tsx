@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { fetchDashboardData } from '../api/dashboard';
 import { AccountSummaryCard } from '../components/dashboard/AccountSummary';
 import { ActiveRenderCard } from '../components/dashboard/ActiveRenderCard';
@@ -7,6 +7,7 @@ import { HealthAlerts } from '../components/dashboard/HealthAlerts';
 import { QuickActions } from '../components/dashboard/QuickActions';
 import { RecentProjectsTable } from '../components/dashboard/RecentProjectsTable';
 import { StatCards } from '../components/dashboard/StatCards';
+import { useAbortableEffect } from '../hooks';
 import type { DashboardData } from '../types/dashboard';
 
 const emptyData: DashboardData = {
@@ -23,11 +24,19 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchDashboardData()
-      .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load dashboard'))
-      .finally(() => setLoading(false));
+  useAbortableEffect(async (signal) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const nextData = await fetchDashboardData({ signal });
+      setData(nextData);
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
   }, []);
 
   if (error) {

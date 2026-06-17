@@ -1,8 +1,23 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { isAbortError } from '../api/http';
 import { SearchInput } from '../components/ui';
 import { cn } from '../lib/cn';
 import { fetchSearch } from '../api/dashboard';
-import type { SearchResult } from '../types/dashboard';
+import type { SearchResult, SearchResultType } from '../types/dashboard';
+
+const SEARCH_TYPE_LABELS: Record<SearchResultType, string> = {
+  mail_account: 'Mail account',
+  youtube_channel: 'YouTube channel',
+  source_channel: 'Source channel',
+  project: 'Project',
+  account: 'Account',
+  render: 'Render',
+};
+
+function toSearchText(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
 
 function IconButton({ children, badge, className }: { children: React.ReactNode; badge?: boolean; className?: string }) {
   return (
@@ -25,19 +40,30 @@ export function Header() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const searchControllerRef = useRef<AbortController | null>(null);
 
   async function handleSearch(value: string) {
-    setQuery(value);
-    if (!value.trim()) {
+    const nextQuery = toSearchText(value);
+    setQuery(nextQuery);
+
+    searchControllerRef.current?.abort();
+
+    if (!nextQuery.trim()) {
       setResults([]);
       setShowResults(false);
       return;
     }
+
+    const controller = new AbortController();
+    searchControllerRef.current = controller;
+
     try {
-      const data = await fetchSearch(value);
+      const data = await fetchSearch(nextQuery, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setResults(data.results);
       setShowResults(true);
-    } catch {
+    } catch (err) {
+      if (isAbortError(err)) return;
       setResults([]);
     }
   }
@@ -61,13 +87,17 @@ export function Header() {
         {showResults && results.length > 0 ? (
           <div className="absolute top-full z-50 mt-1 w-full rounded-xl border border-border bg-surface-elevated py-1 shadow-lg">
             {results.map((item) => (
-              <div
-                key={item.id}
-                className="px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-800"
+              <Link
+                key={`${item.type}-${item.id}`}
+                to={item.path}
+                className="block px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-800"
+                onMouseDown={(e) => e.preventDefault()}
               >
-                <span className="text-xs text-neutral-500 capitalize">{item.type}</span>
-                <p>{item.label}</p>
-              </div>
+                <span className="text-xs text-neutral-500">
+                  {SEARCH_TYPE_LABELS[item.type] ?? item.type}
+                </span>
+                <p className="truncate">{toSearchText(item.label)}</p>
+              </Link>
             ))}
           </div>
         ) : null}

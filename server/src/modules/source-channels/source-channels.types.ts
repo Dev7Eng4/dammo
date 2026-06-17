@@ -7,7 +7,7 @@ export type SourcePurpose =
   | 'reup'
   | 'background_footage';
 export type SourceRiskLevel = 'low' | 'medium' | 'high';
-export type SourceVideoDurationFilter = 'all' | 'under_1m' | '1m_10m' | '10m_30m' | 'over_30m';
+export type SourceVideoDurationFilter = 'all' | 'under_8m' | '8m_30m' | '30m_60m' | 'over_60m';
 
 export interface MappedOwnedChannel {
   id: string;
@@ -61,4 +61,5 @@ export interface SourceVideosStore {
 
 export interface CreateSourceChannelInput {
   url: string;
+  purpose: SourcePurpose;
 }

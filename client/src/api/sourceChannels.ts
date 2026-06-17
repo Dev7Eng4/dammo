@@ -1,4 +1,5 @@
 import { API_V1 } from './config';
+import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   CreateSourceChannelPayload,
   SourceChannel,
@@ -11,15 +12,6 @@ import type {
   SourceVideoDurationFilter,
 } from '../types/sourceChannel';
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Request failed: ${res.status}`);
-  }
-  return res.json() as Promise<T>;
-}
-
 export function fetchSourceChannels(
   platform: SourcePlatformFilter = 'all',
   purpose: SourcePurposeFilter = 'all',
@@ -27,6 +19,7 @@ export function fetchSourceChannels(
   query = '',
   page = 1,
   limit = 20,
+  options?: FetchOptions,
 ) {
   const params = new URLSearchParams();
   if (platform !== 'all') params.set('platform', platform);
@@ -35,11 +28,17 @@ export function fetchSourceChannels(
   if (query.trim()) params.set('q', query.trim());
   params.set('page', String(page));
   params.set('limit', String(limit));
-  return fetchJson<SourceChannelsResponse>(`${API_V1}/source-channels?${params}`);
+  return fetchJson<SourceChannelsResponse>(
+    `${API_V1}/source-channels?${params}`,
+    withSignal(undefined, options),
+  );
 }
 
-export function fetchSourceChannel(id: string) {
-  return fetchJson<SourceChannel>(`${API_V1}/source-channels/${id}`);
+export function fetchSourceChannel(id: string, options?: FetchOptions) {
+  return fetchJson<SourceChannel>(
+    `${API_V1}/source-channels/${id}`,
+    withSignal(undefined, options),
+  );
 }
 
 export function fetchSourceChannelVideos(
@@ -47,6 +46,7 @@ export function fetchSourceChannelVideos(
   page = 1,
   limit = 20,
   duration: SourceVideoDurationFilter = 'all',
+  options?: FetchOptions,
 ) {
   const params = new URLSearchParams({
     page: String(page),
@@ -55,6 +55,7 @@ export function fetchSourceChannelVideos(
   });
   return fetchJson<SourceChannelVideosResponse>(
     `${API_V1}/source-channels/${id}/videos?${params}`,
+    withSignal(undefined, options),
   );
 }
 
