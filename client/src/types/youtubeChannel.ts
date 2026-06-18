@@ -81,6 +81,7 @@ export interface YoutubeChannel {
   recentActivity: YoutubeChannelActivity[];
   lastUploadAt?: string;
   createdAt: string;
+  channelId?: string;
 }
 
 export interface YoutubeChannelsResponse {

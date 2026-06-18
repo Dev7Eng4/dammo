@@ -7,8 +7,14 @@ function extractHandle(data: YtdlpChannelResponse): string {
   if (uploaderId.startsWith('@')) return uploaderId;
 
   const channelUrl = data.channel_url ?? data.uploader_url ?? '';
-  const handleMatch = channelUrl.match(/@[\w.-]+/);
-  if (handleMatch) return handleMatch[0];
+  const handleMatch = channelUrl.match(/@([^/?#]+)/);
+  if (handleMatch) {
+    try {
+      return `@${decodeURIComponent(handleMatch[1])}`;
+    } catch {
+      return `@${handleMatch[1]}`;
+    }
+  }
 
   if (data.channel_id) return data.channel_id;
   return '@unknown';

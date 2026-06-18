@@ -8,12 +8,74 @@ export interface NormalizedSourceUrl {
   fullUrl: string;
 }
 
-function ensureProtocol(raw: string): string {
-  const trimmed = raw.trim();
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (trimmed.startsWith('@')) return `https://youtube.com/${trimmed}`;
-  if (trimmed.startsWith('/')) return trimmed;
-  return trimmed;
+function decodeUrlSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+function stripQueryAndHash(value: string): string {
+  return value.split(/[?#]/)[0] ?? value;
+}
+
+function normalizeYoutubePath(path: string): { url: string; fullUrl: string } {
+  const cleaned = stripQueryAndHash(path);
+  const decoded = decodeUrlSegment(cleaned);
+
+  if (decoded.startsWith('channel/') || decoded.startsWith('c/')) {
+    return {
+      url: decoded,
+      fullUrl: `https://youtube.com/${decoded}`,
+    };
+  }
+
+  const handle = decoded.startsWith('@') ? decoded : `@${decoded.replace(/^@/, '')}`;
+  return {
+    url: handle,
+    fullUrl: `https://youtube.com/${handle}`,
+  };
+}
+
+export function canonicalizeSourceUrl(url: string): string {
+  const trimmed = stripQueryAndHash(url.trim());
+  const lower = trimmed.toLowerCase();
+  const withoutProtocol = lower.replace(/^https?:\/\//, '');
+  const withoutWww = withoutProtocol.replace(/^www\./, '');
+
+  if (withoutWww.startsWith('@')) {
+    return `https://youtube.com/${decodeUrlSegment(withoutWww)}`;
+  }
+
+  if (withoutWww.startsWith('youtube.com/') || withoutWww.startsWith('youtu.be/')) {
+    const path = withoutWww
+      .replace(/^youtube\.com\//, '')
+      .replace(/^youtu\.be\//, '')
+      .replace(/\/$/, '');
+    const { fullUrl } = normalizeYoutubePath(path);
+    return fullUrl.toLowerCase();
+  }
+
+  if (withoutWww.startsWith('tiktok.com/')) {
+    const path = decodeUrlSegment(withoutWww.replace(/^tiktok\.com\//, '').replace(/\/$/, ''));
+    const handle = path.startsWith('@') ? path : `@${path.replace(/^@/, '')}`;
+    return `https://tiktok.com/${handle}`.toLowerCase();
+  }
+
+  if (withoutWww.startsWith('facebook.com/') || withoutWww.startsWith('fb.com/')) {
+    const path = decodeUrlSegment(
+      withoutWww.replace(/^facebook\.com/, '').replace(/^fb\.com/, '').replace(/\/$/, ''),
+    );
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `https://facebook.com${normalizedPath}`.toLowerCase();
+  }
+
+  if (lower.startsWith('@')) {
+    return `https://youtube.com/${decodeUrlSegment(lower)}`;
+  }
+
+  return decodeUrlSegment(lower).replace(/\/$/, '');
 }
 
 export function detectPlatform(raw: string): SourcePlatform {
@@ -44,17 +106,13 @@ export function detectPlatform(raw: string): SourcePlatform {
 
 export function normalizeSourceUrl(raw: string, platform?: SourcePlatform): NormalizedSourceUrl {
   const detected = platform ?? detectPlatform(raw);
-  let value = raw.trim();
+  let value = stripQueryAndHash(raw.trim());
   value = value.replace(/^https?:\/\//i, '');
 
   if (detected === 'youtube') {
     if (value.startsWith('@')) {
-      const handle = value;
-      return {
-        platform: 'youtube',
-        url: handle,
-        fullUrl: `https://youtube.com/${handle}`,
-      };
+      const { url, fullUrl } = normalizeYoutubePath(value);
+      return { platform: 'youtube', url, fullUrl };
     }
 
     value = value.replace(/^(www\.)?youtube\.com\/?/i, '');
@@ -64,16 +122,13 @@ export function normalizeSourceUrl(raw: string, platform?: SourcePlatform): Norm
       value = `@${value.replace(/^@/, '')}`;
     }
 
-    const path = value.startsWith('@') ? value : value;
-    return {
-      platform: 'youtube',
-      url: path.startsWith('@') ? path : `@${path}`,
-      fullUrl: `https://youtube.com/${path.startsWith('@') ? path : path}`,
-    };
+    const { url, fullUrl } = normalizeYoutubePath(value);
+    return { platform: 'youtube', url, fullUrl };
   }
 
   if (detected === 'tiktok') {
     value = value.replace(/^(www\.)?tiktok\.com\/?/i, '');
+    value = decodeUrlSegment(value);
     if (!value.startsWith('@')) {
       value = `@${value.replace(/^@/, '')}`;
     }
@@ -86,6 +141,7 @@ export function normalizeSourceUrl(raw: string, platform?: SourcePlatform): Norm
 
   value = value.replace(/^(www\.)?facebook\.com\/?/i, '');
   value = value.replace(/^(www\.)?fb\.com\/?/i, '');
+  value = decodeUrlSegment(value);
   if (!value.startsWith('/')) {
     value = `/${value.replace(/^\//, '')}`;
   }

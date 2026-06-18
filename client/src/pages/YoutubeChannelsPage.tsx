@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchYoutubeChannels, fetchYoutubeChannelStats, createYoutubeChannelVideos } from '../api/youtubeChannels';
+import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
-import { useToast } from '../components/ui';
-import { useAbortableEffect, useDebouncedValue, usePaginatedList } from '../hooks';
+import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
 import type {
   YoutubeChannelStats,
   YoutubeChannelTypeFilter,
@@ -20,7 +19,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function YoutubeChannelsPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { enqueueTask } = useTaskQueue();
   const [stats, setStats] = useState<YoutubeChannelStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -29,7 +28,6 @@ export function YoutubeChannelsPage() {
   const [search, setSearch] = useState('');
   const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [creatingVideo, setCreatingVideo] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -128,30 +126,20 @@ export function YoutubeChannelsPage() {
       .catch(() => setStats(null));
   }
 
-  async function handleCreateVideo() {
-    if (!selectedChannel) {
-      toast.error('Select exactly one channel using the checkbox');
-      return;
-    }
-    if (!isStoredReupChannelType(selectedChannel.type)) {
-      toast.error('Create Video is only available for Reup Audio or Reup Video channels');
-      return;
-    }
+  function handleCreateVideo() {
+    if (!selectedChannel) return;
+    if (!isStoredReupChannelType(selectedChannel.type)) return;
 
-    setCreatingVideo(true);
-    try {
-      const result = await createYoutubeChannelVideos(selectedChannel.id);
-      const count = result.items.length;
-      toast.success(
-        count === 1
-          ? `Created video from ${result.items[0].videoId}`
-          : `Created ${count} video(s)`,
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create video');
-    } finally {
-      setCreatingVideo(false);
-    }
+    void enqueueTask({
+      type: 'create_video',
+      title: `Creating video: ${selectedChannel.name}`,
+      subtitle: selectedChannel.handle,
+      payload: {
+        channelId: selectedChannel.id,
+        channelName: selectedChannel.name,
+        channelHandle: selectedChannel.handle,
+      },
+    });
   }
 
   return (
@@ -164,7 +152,7 @@ export function YoutubeChannelsPage() {
               typeFilter={typeFilter}
               monetizationFilter={monetizationFilter}
               search={search}
-              canCreateVideo={canClickCreateVideo}
+              canCreateVideo={canCreateVideo}
               createVideoDisabledReason={
                 !canClickCreateVideo
                   ? 'Select one channel using the checkbox'
@@ -172,7 +160,6 @@ export function YoutubeChannelsPage() {
                     ? 'Only Reup Audio or Reup Video channels can create videos'
                     : undefined
               }
-              creatingVideo={creatingVideo}
               onTypeFilterChange={handleTypeFilterChange}
               onMonetizationFilterChange={handleMonetizationFilterChange}
               onSearchChange={handleSearchChange}

@@ -1,0 +1,18 @@
+{
+  "records": [
+    {
+      "channelId": "85184f4f-6c28-4c3e-a6a4-985689b51840",
+      "videoUrl": "https://www.youtube.com/watch?v=vtXnpSzu0Ck",
+      "videoId": "vtXnpSzu0Ck",
+      "outputPath": "D:\\dammo\\server\\data\\renders\\reup\\85184f4f-6c28-4c3e-a6a4-985689b51840_vtXnpSzu0Ck_reup.mp4",
+      "processedAt": "2026-06-17T18:48:15.258Z"
+    },
+    {
+      "channelId": "fcf12fb4-178f-46ec-97a0-4e8c2b861038",
+      "videoUrl": "https://www.youtube.com/watch?v=vtXnpSzu0Ck",
+      "videoId": "vtXnpSzu0Ck",
+      "outputPath": "D:\\dammo\\server\\data\\renders\\reup\\fcf12fb4-178f-46ec-97a0-4e8c2b861038_vtXnpSzu0Ck_reup.mp4",
+      "processedAt": "2026-06-17T18:25:55.513Z"
+    }
+  ]
+}

@@ -17,6 +17,7 @@ export const paths = {
   reupVideoHistory: path.join(env.dataDir, 'reup-video-history.json'),
   reupVideoDownloadsDir: path.join(env.dataDir, 'renders', 'downloads'),
   reupVideoOutputDir: path.join(env.dataDir, 'renders', 'reup'),
+  taskQueueDir: path.join(env.dataDir, 'task-queue'),
 };
 
 export function sourceVideosFile(sourceId: string): string {
@@ -37,6 +38,7 @@ export function ensureDataDirs(): void {
     paths.chromeProfilesDir,
     paths.reupVideoDownloadsDir,
     paths.reupVideoOutputDir,
+    paths.taskQueueDir,
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) {

@@ -1,6 +1,6 @@
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
-import { parseSourceUrl } from '../../shared/platform/url-parser.js';
+import { parseSourceUrl, canonicalizeSourceUrl } from '../../shared/platform/url-parser.js';
 import { paginate } from '../../shared/types/pagination.js';
 import { fetchYoutubeChannelMetadata } from '../../infrastructure/youtube/youtube-channel-fetcher.js';
 import { fetchAllYoutubeChannelVideos } from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
@@ -266,22 +266,34 @@ export class YoutubeChannelsService {
       throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
     }
 
+    const canonicalUrl = canonicalizeSourceUrl(fullUrl);
+
     const exists = youtubeChannelsRepository
       .findAll()
-      .some((c) => c.youtubeUrl.toLowerCase() === fullUrl.toLowerCase());
+      .some((c) => canonicalizeSourceUrl(c.youtubeUrl) === canonicalUrl);
     if (exists) {
       throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
     }
 
     try {
       const metadata = await fetchYoutubeChannelMetadata(fullUrl);
+
+      const duplicateById = youtubeChannelsRepository
+        .findAll()
+        .some((c) => c.channelId && c.channelId === metadata.channelId);
+      if (duplicateById) {
+        throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
+      }
+
       const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+      const youtubeUrl = `https://youtube.com/${handle}`;
 
       const channel: YoutubeChannel = {
         id: generateId(),
         name: metadata.name,
         handle,
-        youtubeUrl: fullUrl,
+        youtubeUrl,
+        channelId: metadata.channelId,
         type: input.type,
         niche: metadata.niche,
         language: input.targetAudience,

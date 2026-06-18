@@ -15,3 +15,4 @@ export {
   type UsePaginatedListResult,
 } from './usePaginatedList';
 export { useFloatingMenuPosition } from './useFloatingMenuPosition';
+export { useTaskQueue, TaskQueueProvider } from './useTaskQueue';

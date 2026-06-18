@@ -1,0 +1,410 @@
+{
+  "id": "3f0bf9b7-1097-49b0-a99c-c54fa03a2336",
+  "type": "create_video",
+  "status": "completed",
+  "title": "Creating video: Comic Stats",
+  "subtitle": "@ComicStats",
+  "progress": 100,
+  "payload": {
+    "channelId": "85184f4f-6c28-4c3e-a6a4-985689b51840",
+    "channelName": "Comic Stats",
+    "channelHandle": "@ComicStats"
+  },
+  "createdAt": "2026-06-17T18:46:28.733Z",
+  "updatedAt": "2026-06-17T18:48:15.297Z",
+  "progressLabel": "Done",
+  "livePhase": "done",
+  "logs": [
+    {
+      "at": "01:46:30",
+      "level": "info",
+      "message": "Downloading source video vtXnpSzu0Ck..."
+    },
+    {
+      "at": "01:46:32",
+      "level": "ok",
+      "message": "Download complete → D:\\dammo\\server\\data\\renders\\downloads\\vtXnpSzu0Ck.mp4"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Starting FFmpeg reup processing..."
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "built with gcc 15.2.0 (Rev8, Built by MSYS2 project)"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-openal --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libavutil      60.  8.100 / 60.  8.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libavcodec     62. 11.100 / 62. 11.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libavformat    62.  3.100 / 62.  3.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libavdevice    62.  1.100 / 62.  1.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libavfilter    11.  4.100 / 11.  4.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libswscale      9.  1.100 /  9.  1.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "libswresample   6.  1.100 /  6.  1.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'D:\\dammo\\server\\data\\renders\\downloads\\vtXnpSzu0Ck.mp4':"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Metadata:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "major_brand     : mp42"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "minor_version   : 0"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "compatible_brands: isommp42"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "encoder         : Google"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Duration: 00:26:19.49, start: 0.000000, bitrate: 222 kb/s"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream #0:0[0x1](und): Video: h264 (Main) (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 640x360 [SAR 1:1 DAR 16:9], 124 kb/s, 30 fps, 30 tbr, 15360 tbn (default)"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Metadata:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "handler_name    : ISO Media file produced by Google Inc."
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "vendor_id       : [0][0][0][0]"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 96 kb/s (default)"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Metadata:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "handler_name    : ISO Media file produced by Google Inc."
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "vendor_id       : [0][0][0][0]"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream mapping:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream #0:0 -> #0:0 (h264 (native) -> h264 (libx264))"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream #0:1 -> #0:1 (aac (native) -> aac (native))"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Press [q] to stop, [?] for help"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] using SAR=1/1"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] profile High, level 2.1, 4:2:0, 8-bit"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] 264 - core 165 r3223 0480cb0 - H.264/MPEG-4 AVC codec - Copyleft 2003-2025 - http://www.videolan.org/x264.html - options: cabac=1 ref=2 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=6 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=8 lookahead_threads=1 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=1 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc_lookahead=30 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Output #0, mp4, to 'D:\\dammo\\server\\data\\renders\\reup\\85184f4f-6c28-4c3e-a6a4-985689b51840_vtXnpSzu0Ck_reup.mp4':"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Metadata:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "major_brand     : mp42"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "minor_version   : 0"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "compatible_brands: isommp42"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "encoder         : Lavf62.3.100"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream #0:0(und): Video: h264 (avc1 / 0x31637661), yuv420p(tv, bt709, progressive), 448x252 [SAR 1:1 DAR 16:9], q=2-31, 30 fps, 15360 tbn (default)"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Metadata:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "encoder         : Lavc62.11.100 libx264"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "handler_name    : ISO Media file produced by Google Inc."
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "vendor_id       : [0][0][0][0]"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Side data:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "Metadata:"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "encoder         : Lavc62.11.100 aac"
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "handler_name    : ISO Media file produced by Google Inc."
+    },
+    {
+      "at": "01:46:32",
+      "level": "exec",
+      "message": "vendor_id       : [0][0][0][0]"
+    },
+    {
+      "at": "01:48:14",
+      "level": "exec",
+      "message": "frame=  482 fps=0.0 q=29.0 size=     256KiB time=00:00:16.00 bitrate= 131.1kbits/s speed=30.8x elapsed=0:00:00.51    \rframe= 1082 fps=1053 q=29.0 size=     512KiB time=00:00:36.00 bitrate= 116.5kbits/s speed=  35x elapsed=0:00:01.02    \rframe= 1601 fps=1034 q=29.0 size=     768KiB time=00:00:53.30 bitrate= 118.0kbits/s speed=34.4x elapsed=0:00:01.54    \rframe= 2113 fps=1023 q=29.0 size=    1024KiB time=00:01:10.36 bitrate= 119.2kbits/s speed=34.1x elapsed=0:00:02.06    \rframe= 2724 fps=1055 q=29.0 size=    1536KiB time=00:01:30.73 bitrate= 138.7kbits/s speed=35.1x elapsed=0:00:02.58    \rframe= 3202 fps=1033 q=29.0 size=    1792KiB time=00:01:46.66 bitrate= 137.6kbits/s speed=34.4x elapsed=0:00:03.10    \rframe= 3408 fps=943 q=29.0 size=    2048KiB time=00:01:53.53 bitrate= 147.8kbits/s speed=31.4x elapsed=0:00:03.61    \rframe= 3619 fps=879 q=29.0 size=    2048KiB time=00:02:00.56 bitrate= 139.2kbits/s speed=29.3x elapsed=0:00:04.11    \rframe= 3835 fps=828 q=29.0 size=    2304KiB time=00:02:07.76 bitrate= 147.7kbits/s speed=27.6x elapsed=0:00:04.63    \rframe= 4051 fps=787 q=29.0 size=    2304KiB time=00:02:14.96 bitrate= 139.8kbits/s speed=26.2x elapsed=0:00:05.14    \rframe= 4275 fps=754 q=29.0 size=    2304KiB time=00:02:22.43 bitrate= 132.5kbits/s speed=25.1x elapsed=0:00:05.66    \rframe= 4508 fps=728 q=29.0 size=    2560KiB time=00:02:30.20 bitrate= 139.6kbits/s speed=24.3x elapsed=0:00:06.19    \rframe= 4730 fps=705 q=29.0 size=    2560KiB time=00:02:37.60 bitrate= 133.1kbits/s speed=23.5x elapsed=0:00:06.71    \rframe= 4949 fps=683 q=29.0 size=    2816KiB time=00:02:44.90 bitrate= 139.9kbits/s speed=22.8x elapsed=0:00:07.24    \rframe= 5166 fps=667 q=29.0 size=    3072KiB time=00:02:52.13 bitrate= 146.2kbits/s speed=22.2x elapsed=0:00:07.74    \rframe= 5380 fps=651 q=29.0 size=    3072KiB time=00:02:59.26 bitrate= 140.4kbits/s speed=21.7x elapsed=0:00:08.26    \rframe= 5614 fps=640 q=29.0 size=    3328KiB time=00:03:07.06 bitrate= 145.7kbits/s speed=21.3x elapsed=0:00:08.77    \rframe= 5833 fps=627 q=29.0 size=    3328KiB time=00:03:14.36 bitrate= 140.3kbits/s speed=20.9x elapsed=0:00:09.29    \rframe= 5998 fps=611 q=29.0 size=    3328KiB time=00:03:19.86 bitrate= 136.4kbits/s speed=20.3x elapsed=0:00:09.82    \rframe= 6162 fps=597 q=29.0 size=    3584KiB time=00:03:25.33 bitrate= 143.0kbits/s speed=19.9x elapsed=0:00:10.33    \rframe= 6353 fps=586 q=29.0 size=    3584KiB time=00:03:31.70 bitrate= 138.7kbits/s speed=19.5x elapsed=0:00:10.84    \rframe= 6599 fps=581 q=29.0 size=    3840KiB time=00:03:39.90 bitrate= 143.1kbits/s speed=19.4x elapsed=0:00:11.36    \rframe= 6852 fps=577 q=29.0 size=    3840KiB time=00:03:48.33 bitrate= 137.8kbits/s speed=19.2x elapsed=0:00:11.87    \rframe= 7068 fps=570 q=29.0 size=    4096KiB time=00:03:55.53 bitrate= 142.5kbits/s speed=  19x elapsed=0:00:12.39    \rframe= 7281 fps=565 q=29.0 size=    4096KiB time=00:04:02.63 bitrate= 138.3kbits/s speed=18.8x elapsed=0:00:12.89    \rframe= 7504 fps=559 q=29.0 size=    4352KiB time=00:04:10.06 bitrate= 142.6kbits/s speed=18.6x elapsed=0:00:13.41    \rframe= 7713 fps=554 q=29.0 size=    4352KiB time=00:04:17.03 bitrate= 138.7kbits/s speed=18.4x elapsed=0:00:13.93    \rframe= 7933 fps=549 q=29.0 size=    4608KiB time=00:04:24.33 bitrate= 142.8kbits/s speed=18.3x elapsed=0:00:14.44    \rframe= 8140 fps=544 q=29.0 size=    4608KiB time=00:04:31.26 bitrate= 139.2kbits/s speed=18.1x elapsed=0:00:14.96    \rframe= 8364 fps=540 q=29.0 size=    4864KiB time=00:04:38.73 bitrate= 143.0kbits/s speed=  18x elapsed=0:00:15.48    \rframe= 8571 fps=536 q=29.0 size=    4864KiB time=00:04:45.63 bitrate= 139.5kbits/s speed=17.9x elapsed=0:00:15.99    \rframe= 8770 fps=531 q=29.0 size=    5120KiB time=00:04:52.26 bitrate= 143.5kbits/s speed=17.7x elapsed=0:00:16.52    \rframe= 8978 fps=527 q=29.0 size=    5120KiB time=00:04:59.16 bitrate= 140.2kbits/s speed=17.6x elapsed=0:00:17.03    \rframe= 9208 fps=525 q=29.0 size=    5376KiB time=00:05:06.86 bitrate= 143.5kbits/s speed=17.5x elapsed=0:00:17.54    \rframe= 9397 fps=520 q=29.0 size=    5376KiB time=00:05:13.16 bitrate= 140.6kbits/s speed=17.3x elapsed=0:00:18.06    \rframe= 9609 fps=517 q=29.0 size=    5632KiB time=00:05:20.23 bitrate= 144.1kbits/s speed=17.2x elapsed=0:00:18.58    \rframe= 9756 fps=511 q=29.0 size=    5632KiB time=00:05:25.13 bitrate= 141.9kbits/s speed=  17x elapsed=0:00:19.09    \rframe= 9952 fps=507 q=29.0 size=    5632KiB time=00:05:31.66 bitrate= 139.1kbits/s speed=16.9x elapsed=0:00:19.61    \rframe=10176 fps=505 q=29.0 size=    5888KiB time=00:05:39.13 bitrate= 142.2kbits/s speed=16.8x elapsed=0:00:20.13    \rframe=10409 fps=504 q=29.0 size=    5888KiB time=00:05:46.90 bitrate= 139.0kbits/s speed=16.8x elapsed=0:00:20.66    \rframe=10612 fps=501 q=29.0 size=    6144KiB time=00:05:53.66 bitrate= 142.3kbits/s speed=16.7x elapsed=0:00:21.17    \rframe=10834 fps=499 q=29.0 size=    6144KiB time=00:06:01.06 bitrate= 139.4kbits/s speed=16.6x elapsed=0:00:21.69    \rframe=11053 fps=497 q=29.0 size=    6400KiB time=00:06:08.36 bitrate= 142.3kbits/s speed=16.6x elapsed=0:00:22.22    \rframe=11281 fps=496 q=29.0 size=    6400KiB time=00:06:15.96 bitrate= 139.5kbits/s speed=16.5x elapsed=0:00:22.72    \rframe=11511 fps=495 q=29.0 size=    6656KiB time=00:06:23.63 bitrate= 142.1kbits/s speed=16.5x elapsed=0:00:23.25    \rframe=11720 fps=493 q=29.0 size=    6656KiB time=00:06:30.60 bitrate= 139.6kbits/s speed=16.4x elapsed=0:00:23.76    \rframe=11980 fps=493 q=29.0 size=    6912KiB time=00:06:39.26 bitrate= 141.8kbits/s speed=16.4x elapsed=0:00:24.28    \rframe=12479 fps=503 q=29.0 size=    7168KiB time=00:06:55.90 bitrate= 141.2kbits/s speed=16.8x elapsed=0:00:24.80    \rframe=13075 fps=516 q=29.0 size=    7424KiB time=00:07:15.76 bitrate= 139.6kbits/s speed=17.2x elapsed=0:00:25.31    \rframe=13627 fps=528 q=29.0 size=    7936KiB time=00:07:34.16 bitrate= 143.1kbits/s speed=17.6x elapsed=0:00:25.83    \rframe=14118 fps=536 q=29.0 size=    8192KiB time=00:07:50.53 bitrate= 142.6kbits/s speed=17.9x elapsed=0:00:26.34    \rframe=14651 fps=545 q=29.0 size=    8448KiB time=00:08:08.30 bitrate= 141.7kbits/s speed=18.2x elapsed=0:00:26.86    \rframe=15189 fps=555 q=29.0 size=    8704KiB time=00:08:26.23 bitrate= 140.9kbits/s speed=18.5x elapsed=0:00:27.37    \rframe=15390 fps=552 q=29.0 size=    8960KiB time=00:08:32.93 bitrate= 143.1kbits/s speed=18.4x elapsed=0:00:27.88    \rframe=15604 fps=549 q=29.0 size=    8960KiB time=00:08:40.06 bitrate= 141.1kbits/s speed=18.3x elapsed=0:00:28.39    \rframe=15816 fps=547 q=29.0 size=    9216KiB time=00:08:47.13 bitrate= 143.2kbits/s speed=18.2x elapsed=0:00:28.92    \rframe=16026 fps=545 q=29.0 size=    9216KiB time=00:08:54.13 bitrate= 141.3kbits/s speed=18.1x elapsed=0:00:29.43    \rframe=16241 fps=542 q=29.0 size=    9472KiB time=00:09:01.30 bitrate= 143.3kbits/s speed=18.1x elapsed=0:00:29.95    \rframe=16458 fps=540 q=29.0 size=    9472KiB time=00:09:08.53 bitrate= 141.5kbits/s speed=  18x elapsed=0:00:30.47    \rframe=16679 fps=538 q=29.0 size=    9728KiB time=00:09:15.86 bitrate= 143.4kbits/s speed=17.9x elapsed=0:00:31.00    \rframe=16862 fps=535 q=29.0 size=    9728KiB time=00:09:22.00 bitrate= 141.8kbits/s speed=17.8x elapsed=0:00:31.51    \rframe=17004 fps=531 q=29.0 size=    9984KiB time=00:09:26.73 bitrate= 144.3kbits/s speed=17.7x elapsed=0:00:32.03    \rframe=17222 fps=529 q=29.0 size=    9984KiB time=00:09:34.00 bitrate= 142.5kbits/s speed=17.6x elapsed=0:00:32.55    \rframe=17441 fps=527 q=29.0 size=   10240KiB time=00:09:41.26 bitrate= 144.3kbits/s speed=17.6x elapsed=0:00:33.06    \rframe=17656 fps=526 q=29.0 size=   10240KiB time=00:09:48.46 bitrate= 142.6kbits/s speed=17.5x elapsed=0:00:33.58    \rframe=17882 fps=524 q=29.0 size=   10496KiB time=00:09:56.00 bitrate= 144.3kbits/s speed=17.5x elapsed=0:00:34.09    \rframe=18099 fps=523 q=29.0 size=   10496KiB time=00:10:03.23 bitrate= 142.5kbits/s speed=17.4x elapsed=0:00:34.61    \rframe=18298 fps=521 q=29.0 size=   10752KiB time=00:10:09.86 bitrate= 144.4kbits/s speed=17.4x elapsed=0:00:35.13    \rframe=18525 fps=520 q=29.0 size=   10752KiB time=00:10:17.43 bitrate= 142.7kbits/s speed=17.3x elapsed=0:00:35.64    \rframe=18763 fps=519 q=29.0 size=   11008KiB time=00:10:25.36 bitrate= 144.2kbits/s speed=17.3x elapsed=0:00:36.15    \rframe=18945 fps=517 q=29.0 size=   11008KiB time=00:10:31.43 bitrate= 142.8kbits/s speed=17.2x elapsed=0:00:36.66    \rframe=19148 fps=515 q=29.0 size=   11264KiB time=00:10:38.20 bitrate= 144.6kbits/s speed=17.2x elapsed=0:00:37.17    \rframe=19356 fps=513 q=29.0 size=   11264KiB time=00:10:45.13 bitrate= 143.0kbits/s speed=17.1x elapsed=0:00:37.70    \rframe=19570 fps=512 q=29.0 size=   11520KiB time=00:10:52.26 bitrate= 144.7kbits/s speed=17.1x elapsed=0:00:38.21    \rframe=19808 fps=511 q=29.0 size=   11520KiB time=00:11:00.20 bitrate= 142.9kbits/s speed=  17x elapsed=0:00:38.73    \rframe=20028 fps=510 q=29.0 size=   11776KiB time=00:11:07.53 bitrate= 144.5kbits/s speed=  17x elapsed=0:00:39.24    \rframe=20232 fps=509 q=29.0 size=   11776KiB time=00:11:14.30 bitrate= 143.1kbits/s speed=  17x elapsed=0:00:39.76    \rframe=20428 fps=507 q=29.0 size=   11776KiB time=00:11:20.86 bitrate= 141.7kbits/s speed=16.9x elapsed=0:00:40.27    \rframe=20668 fps=507 q=29.0 size=   12032KiB time=00:11:28.86 bitrate= 143.1kbits/s speed=16.9x elapsed=0:00:40.79    \rframe=20855 fps=505 q=29.0 size=   12032KiB time=00:11:35.06 bitrate= 141.8kbits/s speed=16.8x elapsed=0:00:41.31    \rframe=21083 fps=504 q=29.0 size=   12288KiB time=00:11:42.70 bitrate= 143.3kbits/s speed=16.8x elapsed=0:00:41.82    \rframe=21321 fps=503 q=29.0 size=   12288KiB time=00:11:50.63 bitrate= 141.7kbits/s speed=16.8x elapsed=0:00:42.34    \rframe=21513 fps=502 q=29.0 size=   12544KiB time=00:11:57.03 bitrate= 143.3kbits/s speed=16.7x elapsed=0:00:42.86    \rframe=21745 fps=501 q=29.0 size=   12544KiB time=00:12:04.76 bitrate= 141.8kbits/s speed=16.7x elapsed=0:00:43.38    \rframe=21967 fps=500 q=29.0 size=   12800KiB time=00:12:12.16 bitrate= 143.2kbits/s speed=16.7x elapsed=0:00:43.89    \rframe=22169 fps=499 q=29.0 size=   12800KiB time=00:12:18.90 bitrate= 141.9kbits/s speed=16.6x elapsed=0:00:44.41    \rframe=22352 fps=498 q=29.0 size=   13056KiB time=00:12:25.00 bitrate= 143.6kbits/s speed=16.6x elapsed=0:00:44.91    \rframe=22578 fps=497 q=29.0 size=   13056KiB time=00:12:32.53 bitrate= 142.1kbits/s speed=16.6x elapsed=0:00:45.43    \rframe=22823 fps=497 q=29.0 size=   13312KiB time=00:12:40.70 bitrate= 143.4kbits/s speed=16.6x elapsed=0:00:45.95    \rframe=23037 fps=496 q=29.0 size=   13312KiB time=00:12:47.83 bitrate= 142.0kbits/s speed=16.5x elapsed=0:00:46.47    \rframe=23255 fps=495 q=29.0 size=   13568KiB time=00:12:55.10 bitrate= 143.4kbits/s speed=16.5x elapsed=0:00:47.00    \rframe=23457 fps=494 q=29.0 size=   13568KiB time=00:13:01.83 bitrate= 142.2kbits/s speed=16.5x elapsed=0:00:47.51    \rframe=23691 fps=493 q=29.0 size=   13824KiB time=00:13:09.63 bitrate= 143.4kbits/s speed=16.4x elapsed=0:00:48.03    \rframe=23884 fps=492 q=29.0 size=   13824KiB time=00:13:16.06 bitrate= 142.3kbits/s speed=16.4x elapsed=0:00:48.54    \rframe=24100 fps=491 q=29.0 size=   14080KiB time=00:13:23.26 bitrate= 143.6kbits/s speed=16.4x elapsed=0:00:49.06    \rframe=24303 fps=490 q=29.0 size=   14080KiB time=00:13:30.03 bitrate= 142.4kbits/s speed=16.3x elapsed=0:00:49.57    \rframe=24526 fps=490 q=29.0 size=   14336KiB time=00:13:37.46 bitrate= 143.7kbits/s speed=16.3x elapsed=0:00:50.08    \rframe=24729 fps=489 q=29.0 size=   14336KiB time=00:13:44.23 bitrate= 142.5kbits/s speed=16.3x elapsed=0:00:50.60    \rframe=24954 fps=488 q=29.0 size=   14592KiB time=00:13:51.73 bitrate= 143.7kbits/s speed=16.3x elapsed=0:00:51.11    \rframe=25178 fps=488 q=29.0 size=   14592KiB time=00:13:59.20 bitrate= 142.4kbits/s speed=16.3x elapsed=0:00:51.63    \rframe=25406 fps=487 q=29.0 size=   14848KiB time=00:14:06.80 bitrate= 143.6kbits/s speed=16.2x elapsed=0:00:52.15    \rframe=25613 fps=486 q=29.0 size=   14848KiB time=00:14:13.70 bitrate= 142.5kbits/s speed=16.2x elapsed=0:00:52.66    \rframe=25828 fps=486 q=29.0 size=   15104KiB time=00:14:20.86 bitrate= 143.7kbits/s speed=16.2x elapsed=0:00:53.17    \rframe=26021 fps=485 q=29.0 size=   15104KiB time=00:14:27.30 bitrate= 142.7kbits/s speed=16.2x elapsed=0:00:53.69    \rframe=26235 fps=484 q=29.0 size=   15104KiB time=00:14:34.43 bitrate= 141.5kbits/s speed=16.1x elapsed=0:00:54.21    \rframe=26442 fps=483 q=29.0 size=   15360KiB time=00:14:41.33 bitrate= 142.8kbits/s speed=16.1x elapsed=0:00:54.72    \rframe=26675 fps=483 q=29.0 size=   15360KiB time=00:14:49.10 bitrate= 141.5kbits/s speed=16.1x elapsed=0:00:55.25    \rframe=26871 fps=482 q=29.0 size=   15616KiB time=00:14:55.63 bitrate= 142.8kbits/s speed=16.1x elapsed=0:00:55.76    \rframe=27092 fps=481 q=29.0 size=   15616KiB time=00:15:03.00 bitrate= 141.7kbits/s speed=  16x elapsed=0:00:56.28    \rframe=27296 fps=481 q=29.0 size=   15872KiB time=00:15:09.80 bitrate= 142.9kbits/s speed=  16x elapsed=0:00:56.79    \rframe=27507 fps=480 q=29.0 size=   15872KiB time=00:15:16.83 bitrate= 141.8kbits/s speed=  16x elapsed=0:00:57.31    \rframe=27719 fps=479 q=29.0 size=   16128KiB time=00:15:23.90 bitrate= 143.0kbits/s speed=  16x elapsed=0:00:57.83    \rframe=27938 fps=479 q=29.0 size=   16128KiB time=00:15:31.20 bitrate= 141.9kbits/s speed=  16x elapsed=0:00:58.34    \rframe=28161 fps=478 q=29.0 size=   16384KiB time=00:15:38.63 bitrate= 143.0kbits/s speed=15.9x elapsed=0:00:58.86    \rframe=28374 fps=478 q=29.0 size=   16384KiB time=00:15:45.73 bitrate= 141.9kbits/s speed=15.9x elapsed=0:00:59.37    \rframe=28588 fps=477 q=29.0 size=   16640KiB time=00:15:52.86 bitrate= 143.1kbits/s speed=15.9x elapsed=0:00:59.89    \rframe=28814 fps=477 q=29.0 size=   16640KiB time=00:16:00.40 bitrate= 141.9kbits/s speed=15.9x elapsed=0:01:00.40    \rframe=29027 fps=476 q=29.0 size=   16896KiB time=00:16:07.50 bitrate= 143.1kbits/s speed=15.9x elapsed=0:01:00.92    \rframe=29249 fps=476 q=29.0 size=   16896KiB time=00:16:14.90 bitrate= 142.0kbits/s speed=15.9x elapsed=0:01:01.44    \rframe=29446 fps=475 q=29.0 size=   17152KiB time=00:16:21.46 bitrate= 143.2kbits/s speed=15.8x elapsed=0:01:01.95    \rframe=29643 fps=474 q=29.0 size=   17152KiB time=00:16:28.03 bitrate= 142.2kbits/s speed=15.8x elapsed=0:01:02.47    \rframe=29865 fps=474 q=29.0 size=   17408KiB time=00:16:35.43 bitrate= 143.3kbits/s speed=15.8x elapsed=0:01:02.98    \rframe=30089 fps=474 q=29.0 size=   17408KiB time=00:16:42.90 bitrate= 142.2kbits/s speed=15.8x elapsed=0:01:03.50    \rframe=30279 fps=473 q=29.0 size=   17664KiB time=00:16:49.23 bitrate= 143.4kbits/s speed=15.8x elapsed=0:01:04.02    \rframe=30495 fps=473 q=29.0 size=   17664KiB time=00:16:56.43 bitrate= 142.4kbits/s speed=15.8x elapsed=0:01:04.53    \rframe=30711 fps=472 q=29.0 size=   17920KiB time=00:17:03.63 bitrate= 143.4kbits/s speed=15.7x elapsed=0:01:05.03    \rframe=30942 fps=472 q=29.0 size=   17920KiB time=00:17:11.33 bitrate= 142.3kbits/s speed=15.7x elapsed=0:01:05.56    \rframe=31155 fps=471 q=29.0 size=   18176KiB time=00:17:18.43 bitrate= 143.4kbits/s speed=15.7x elapsed=0:01:06.08    \rframe=31361 fps=471 q=29.0 size=   18176KiB time=00:17:25.26 bitrate= 142.4kbits/s speed=15.7x elapsed=0:01:06.59    \rframe=31574 fps=470 q=29.0 size=   18432KiB time=00:17:32.40 bitrate= 143.5kbits/s speed=15.7x elapsed=0:01:07.11    \rframe=31774 fps=470 q=29.0 size=   18432KiB time=00:17:39.06 bitrate= 142.6kbits/s speed=15.7x elapsed=0:01:07.63    \rframe=31974 fps=469 q=29.0 size=   18432KiB time=00:17:45.73 bitrate= 141.7kbits/s speed=15.6x elapsed=0:01:08.14    \rframe=32159 fps=468 q=29.0 size=   18688KiB time=00:17:51.90 bitrate= 142.8kbits/s speed=15.6x elapsed=0:01:08.66    \rframe=32408 fps=468 q=29.0 size=   18688KiB time=00:18:00.20 bitrate= 141.7kbits/s speed=15.6x elapsed=0:01:09.19    \rframe=32646 fps=468 q=29.0 size=   18944KiB time=00:18:08.13 bitrate= 142.6kbits/s speed=15.6x elapsed=0:01:09.71    \rframe=32876 fps=468 q=29.0 size=   18944KiB time=00:18:15.80 bitrate= 141.6kbits/s speed=15.6x elapsed=0:01:10.23    \rframe=33087 fps=468 q=29.0 size=   19200KiB time=00:18:22.83 bitrate= 142.6kbits/s speed=15.6x elapsed=0:01:10.74    \rframe=33297 fps=467 q=29.0 size=   19200KiB time=00:18:29.83 bitrate= 141.7kbits/s speed=15.6x elapsed=0:01:11.26    \rframe=33520 fps=467 q=29.0 size=   19456KiB time=00:18:37.26 bitrate= 142.7kbits/s speed=15.6x elapsed=0:01:11.78    \rframe=33736 fps=467 q=29.0 size=   19456KiB time=00:18:44.46 bitrate= 141.7kbits/s speed=15.6x elapsed=0:01:12.30    \rframe=33976 fps=467 q=29.0 size=   19712KiB time=00:18:52.46 bitrate= 142.6kbits/s speed=15.6x elapsed=0:01:12.80    \rframe=34200 fps=466 q=29.0 size=   19968KiB time=00:18:59.93 bitrate= 143.5kbits/s speed=15.5x elapsed=0:01:13.32    \rframe=34427 fps=466 q=29.0 size=   19968KiB time=00:19:07.50 bitrate= 142.6kbits/s speed=15.5x elapsed=0:01:13.84    \rframe=34655 fps=466 q=29.0 size=   20224KiB time=00:19:15.10 bitrate= 143.4kbits/s speed=15.5x elapsed=0:01:14.36    \rframe=34877 fps=466 q=29.0 size=   20224KiB time=00:19:22.50 bitrate= 142.5kbits/s speed=15.5x elapsed=0:01:14.87    \rframe=35063 fps=465 q=29.0 size=   20480KiB time=00:19:28.70 bitrate= 143.6kbits/s speed=15.5x elapsed=0:01:15.39    \rframe=35305 fps=465 q=29.0 size=   20480KiB time=00:19:36.76 bitrate= 142.6kbits/s speed=15.5x elapsed=0:01:15.90    \rframe=35525 fps=465 q=29.0 size=   20736KiB time=00:19:44.10 bitrate= 143.5kbits/s speed=15.5x elapsed=0:01:16.41    \rframe=35755 fps=465 q=29.0 size=   20736KiB time=00:19:51.76 bitrate= 142.5kbits/s speed=15.5x elapsed=0:01:16.94    \rframe=35964 fps=464 q=29.0 size=   20992KiB time=00:19:58.73 bitrate= 143.5kbits/s speed=15.5x elapsed=0:01:17.45    \rframe=36203 fps=464 q=29.0 size=   20992KiB time=00:20:06.70 bitrate= 142.5kbits/s speed=15.5x elapsed=0:01:17.97    \rframe=36440 fps=464 q=29.0 size=   21248KiB time=00:20:14.60 bitrate= 143.3kbits/s speed=15.5x elapsed=0:01:18.48    \rframe=36674 fps=464 q=29.0 size=   21248KiB time=00:20:22.40 bitrate= 142.4kbits/s speed=15.5x elapsed=0:01:19.00    \rframe=36895 fps=464 q=29.0 size=   21504KiB time=00:20:29.76 bitrate= 143.2kbits/s speed=15.5x elapsed=0:01:19.51    \rframe=37120 fps=464 q=29.0 size=   21504KiB time=00:20:37.23 bitrate= 142.4kbits/s speed=15.5x elapsed=0:01:20.03    \rframe=37368 fps=464 q=29.0 size=   21760KiB time=00:20:45.53 bitrate= 143.1kbits/s speed=15.5x elapsed=0:01:20.55    \rframe=37609 fps=464 q=29.0 size=   21760KiB time=00:20:53.56 bitrate= 142.2kbits/s speed=15.5x elapsed=0:01:21.06    \rframe=37823 fps=464 q=29.0 size=   22016KiB time=00:21:00.70 bitrate= 143.1kbits/s speed=15.5x elapsed=0:01:21.58    \rframe=38025 fps=463 q=29.0 size=   22016KiB time=00:21:07.43 bitrate= 142.3kbits/s speed=15.4x elapsed=0:01:22.10    \rframe=38248 fps=463 q=29.0 size=   22272KiB time=00:21:14.86 bitrate= 143.1kbits/s speed=15.4x elapsed=0:01:22.62    \rframe=38479 fps=463 q=29.0 size=   22272KiB time=00:21:22.56 bitrate= 142.3kbits/s speed=15.4x elapsed=0:01:23.14    \rframe=38700 fps=463 q=29.0 size=   22528KiB time=00:21:29.93 bitrate= 143.1kbits/s speed=15.4x elapsed=0:01:23.66    \rframe=38944 fps=463 q=29.0 size=   22528KiB time=00:21:38.06 bitrate= 142.2kbits/s speed=15.4x elapsed=0:01:24.17    \rframe=39156 fps=462 q=29.0 size=   22784KiB time=00:21:45.13 bitrate= 143.0kbits/s speed=15.4x elapsed=0:01:24.68    \rframe=39379 fps=462 q=29.0 size=   22784KiB time=00:21:52.56 bitrate= 142.2kbits/s speed=15.4x elapsed=0:01:25.19    \rframe=39593 fps=462 q=29.0 size=   23040KiB time=00:21:59.70 bitrate= 143.0kbits/s speed=15.4x elapsed=0:01:25.71    \rframe=39987 fps=464 q=29.0 size=   23296KiB time=00:22:12.83 bitrate= 143.2kbits/s speed=15.5x elapsed=0:01:26.23    \rframe=40494 fps=467 q=29.0 size=   23552KiB time=00:22:29.73 bitrate= 142.9kbits/s speed=15.6x elapsed=0:01:26.75    \rframe=40987 fps=470 q=29.0 size=   23808KiB time=00:22:46.16 bitrate= 142.8kbits/s speed=15.7x elapsed=0:01:27.26    \rframe=41281 fps=470 q=29.0 size=   24064KiB time=00:22:55.96 bitrate= 143.3kbits/s speed=15.7x elapsed=0:01:27.77    \rframe=41486 fps=470 q=29.0 size=   24064KiB time=00:23:02.80 bitrate= 142.6kbits/s speed=15.7x elapsed=0:01:28.30    \rframe=41680 fps=469 q=29.0 size=   24320KiB time=00:23:09.26 bitrate= 143.4kbits/s speed=15.6x elapsed=0:01:28.81    \rframe=41897 fps=469 q=29.0 size=   24320KiB time=00:23:16.50 bitrate= 142.7kbits/s speed=15.6x elapsed=0:01:29.33    \rframe=42111 fps=469 q=29.0 size=   24576KiB time=00:23:23.63 bitrate= 143.4kbits/s speed=15.6x elapsed=0:01:29.84    \rframe=42316 fps=468 q=29.0 size=   24576KiB time=00:23:30.46 bitrate= 142.7kbits/s speed=15.6x elapsed=0:01:30.36    \rframe=42552 fps=468 q=29.0 size=   24832KiB time=00:23:38.33 bitrate= 143.4kbits/s speed=15.6x elapsed=0:01:30.88    \rframe=42747 fps=468 q=29.0 size=   24832KiB time=00:23:44.83 bitrate= 142.8kbits/s speed=15.6x elapsed=0:01:31.39    \rframe=42882 fps=467 q=29.0 size=   24832KiB time=00:23:49.33 bitrate= 142.3kbits/s speed=15.5x elapsed=0:01:31.91    \rframe=43071 fps=466 q=29.0 size=   25088KiB time=00:23:55.63 bitrate= 143.2kbits/s speed=15.5x elapsed=0:01:32.44    \rframe=43305 fps=466 q=26.0 size=   25088KiB time=00:24:03.43 bitrate= 142.4kbits/s speed=15.5x elapsed=0:01:32.95    \rframe=43521 fps=466 q=29.0 size=   25344KiB time=00:24:10.63 bitrate= 143.1kbits/s speed=15.5x elapsed=0:01:33.46    \rframe=43730 fps=465 q=29.0 size=   25344KiB time=00:24:17.60 bitrate= 142.4kbits/s speed=15.5x elapsed=0:01:33.98    \rframe=43946 fps=465 q=29.0 size=   25600KiB time=00:24:24.80 bitrate= 143.2kbits/s speed=15.5x elapsed=0:01:34.49    \rframe=44156 fps=465 q=29.0 size=   25600KiB time=00:24:31.80 bitrate= 142.5kbits/s speed=15.5x elapsed=0:01:35.01    \rframe=44354 fps=464 q=29.0 size=   25856KiB time=00:24:38.40 bitrate= 143.3kbits/s speed=15.5x elapsed=0:01:35.52    \rframe=44552 fps=464 q=29.0 size=   25856KiB time=00:24:45.00 bitrate= 142.6kbits/s speed=15.5x elapsed=0:01:36.04    \rframe=44775 fps=464 q=29.0 size=   26112KiB time=00:24:52.40 bitrate= 143.3kbits/s speed=15.5x elapsed=0:01:36.55    \rframe=44999 fps=464 q=29.0 size=   26112KiB time=00:24:59.90 bitrate= 142.6kbits/s speed=15.4x elapsed=0:01:37.08    \rframe=45201 fps=463 q=29.0 size=   26368KiB time=00:25:06.63 bitrate= 143.4kbits/s speed=15.4x elapsed=0:01:37.59    \rframe=45409 fps=463 q=29.0 size=   26368KiB time=00:25:13.56 bitrate= 142.7kbits/s speed=15.4x elapsed=0:01:38.10    \rframe=45632 fps=463 q=29.0 size=   26624KiB time=00:25:21.00 bitrate= 143.4kbits/s speed=15.4x elapsed=0:01:38.61    \rframe=45857 fps=463 q=29.0 size=   26880KiB time=00:25:28.50 bitrate= 144.1kbits/s speed=15.4x elapsed=0:01:39.13    \rframe=46054 fps=462 q=29.0 size=   26880KiB time=00:25:35.06 bitrate= 143.4kbits/s speed=15.4x elapsed=0:01:39.64    \rframe=46273 fps=462 q=29.0 size=   27136KiB time=00:25:42.36 bitrate= 144.1kbits/s speed=15.4x elapsed=0:01:40.16    \rframe=46494 fps=462 q=29.0 size=   27392KiB time=00:25:49.73 bitrate= 144.8kbits/s speed=15.4x elapsed=0:01:40.68    \rframe=46705 fps=462 q=29.0 size=   27392KiB time=00:25:56.76 bitrate= 144.1kbits/s speed=15.4x elapsed=0:01:41.19    \rframe=46920 fps=461 q=29.0 size=   27648KiB time=00:26:03.93 bitrate= 144.8kbits/s speed=15.4x elapsed=0:01:41.71    \rframe=47127 fps=461 q=29.0 size=   27648KiB time=00:26:10.83 bitrate= 144.2kbits/s speed=15.4x elapsed=0:01:42.23    \r[out#0/mp4 @ 000001b7e7ace7c0] video:3189KiB audio:24785KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 5.986071%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "frame=47382 fps=461 q=-1.0 Lsize=   29648KiB time=00:26:19.33 bitrate= 153.8kbits/s speed=15.4x elapsed=0:01:42.68"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] frame I:233   Avg QP:13.63  size:  2930"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] frame P:12075 Avg QP:17.17  size:   129"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] frame B:35074 Avg QP:23.72  size:    29"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] consecutive B-frames:  1.0%  0.6%  0.9% 97.5%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] mb I  I16..4: 22.4% 64.5% 13.2%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] mb P  I16..4:  1.2%  1.2%  0.0%  P16..4:  5.2%  0.8%  0.3%  0.0%  0.0%    skip:91.2%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] mb B  I16..4:  0.1%  0.1%  0.0%  B16..8:  0.8%  0.0%  0.0%  direct: 0.7%  skip:98.3%  L0:36.1% L1:60.0% BI: 3.9%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] 8x8 transform intra:54.8% inter:98.9%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] coded y,uvDC,uvAC intra: 29.8% 47.4% 11.0% inter: 0.2% 1.5% 0.0%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] i16 v,h,dc,p: 16% 41%  4% 39%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 23% 35% 17%  4%  5%  4%  5%  4%  4%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 24% 34%  7%  4% 11%  6%  9%  3%  2%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] i8c dc,h,v,p: 41% 33% 10% 16%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] Weighted P-Frames: Y:0.5% UV:0.3%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] ref P L0: 84.2% 15.8%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] ref B L0: 81.4% 18.6%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] ref B L1: 95.8%  4.2%"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[libx264 @ 000001b7e76f4840] kb/s:16.54"
+    },
+    {
+      "at": "01:48:15",
+      "level": "exec",
+      "message": "[aac @ 000001b7e7ec7380] Qavg: 649.444"
+    },
+    {
+      "at": "01:48:15",
+      "level": "ok",
+      "message": "Output saved → D:\\dammo\\server\\data\\renders\\reup\\85184f4f-6c28-4c3e-a6a4-985689b51840_vtXnpSzu0Ck_reup.mp4"
+    }
+  ],
+  "result": {
+    "items": [
+      {
+        "link": "https://www.youtube.com/watch?v=vtXnpSzu0Ck",
+        "channelId": "85184f4f-6c28-4c3e-a6a4-985689b51840",
+        "language": "ja",
+        "videoId": "vtXnpSzu0Ck",
+        "outputPath": "D:\\dammo\\server\\data\\renders\\reup\\85184f4f-6c28-4c3e-a6a4-985689b51840_vtXnpSzu0Ck_reup.mp4"
+      }
+    ]
+  }
+}

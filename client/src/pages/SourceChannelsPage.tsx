@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createSourceChannel, fetchSourceChannels } from '../api/sourceChannels';
+import { fetchSourceChannels } from '../api/sourceChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddSourceChannelModal } from '../components/source-channels/AddSourceChannelModal';
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
-import { useToast } from '../components/ui';
+import { useTaskQueue } from '../hooks/useTaskQueue';
 import { useDebouncedValue, usePaginatedList } from '../hooks';
 import type {
   CreateSourceChannelPayload,
@@ -19,7 +19,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function SourceChannelsPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { enqueueTask } = useTaskQueue();
   const [platformFilter, setPlatformFilter] = useState<SourcePlatformFilter>('all');
   const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('all');
   const [riskFilter, setRiskFilter] = useState<SourceRiskFilter>('all');
@@ -74,17 +74,27 @@ export function SourceChannelsPage() {
   }
 
   function handleAddSource(payload: CreateSourceChannelPayload) {
-    void (async () => {
-      try {
-        const { item } = await createSourceChannel(payload);
-        toast.success(`Source channel "${item.name}" added successfully`);
-        list.markLoading();
-        list.resetPage();
-        list.refresh();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to add source channel');
-      }
-    })();
+    void enqueueTask(
+      {
+        type: 'add_source',
+        title: `Importing: ${payload.url}`,
+        subtitle: payload.purpose,
+        payload: {
+          url: payload.url,
+          purpose: payload.purpose,
+        },
+      },
+      {
+        onComplete: () => {
+          list.markLoading();
+          list.resetPage();
+          list.refresh();
+        },
+      },
+    ).catch((err) => {
+      // enqueue errors surface via toast in context if we add handling; for now silent
+      console.error(err);
+    });
   }
 
   return (

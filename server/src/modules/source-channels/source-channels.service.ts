@@ -2,6 +2,7 @@ import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
 import {
   buildMinimalName,
+  canonicalizeSourceUrl,
   parseSourceUrl,
 } from '../../shared/platform/url-parser.js';
 import { paginate } from '../../shared/types/pagination.js';
@@ -157,6 +158,7 @@ export class SourceChannelsService {
         ...current,
         name: metadata.name,
         url: handle,
+        fullUrl: `https://youtube.com/${handle}`,
         niche: metadata.niche,
         videoCount: metadata.videoCount,
         subscriberCount: metadata.subscriberCount,
@@ -183,10 +185,11 @@ export class SourceChannelsService {
     }
 
     const { platform, url, fullUrl } = parseSourceUrl(input.url);
+    const canonicalUrl = canonicalizeSourceUrl(fullUrl);
 
     const exists = sourceChannelsRepository
       .findAll()
-      .some((s) => s.fullUrl.toLowerCase() === fullUrl.toLowerCase());
+      .some((s) => canonicalizeSourceUrl(s.fullUrl) === canonicalUrl);
     if (exists) {
       throw new AppError('Source URL already exists', 400, 'DUPLICATE_URL');
     }
@@ -200,10 +203,19 @@ export class SourceChannelsService {
     let channelId: string | undefined;
     let metadataFetchedAt: string | undefined;
     let displayUrl = url;
+    let storedFullUrl = fullUrl;
 
     if (platform === 'youtube') {
       try {
         const { metadata, videos } = await fetchYoutubeSourceData(fullUrl);
+
+        const duplicateChannel = sourceChannelsRepository
+          .findAll()
+          .some((s) => s.channelId && s.channelId === metadata.channelId);
+        if (duplicateChannel) {
+          throw new AppError('Source channel already exists', 400, 'DUPLICATE_CHANNEL');
+        }
+
         name = metadata.name;
         niche = metadata.niche;
         videoCount = metadata.videoCount;
@@ -211,6 +223,7 @@ export class SourceChannelsService {
         description = metadata.description;
         channelId = metadata.channelId;
         displayUrl = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+        storedFullUrl = `https://youtube.com/${displayUrl}`;
         metadataFetchedAt = new Date().toISOString();
 
         sourceVideosRepository.write(id, {
@@ -220,6 +233,7 @@ export class SourceChannelsService {
           videos,
         });
       } catch (err) {
+        if (err instanceof AppError) throw err;
         const detail = err instanceof Error ? err.message : 'Unknown error';
         throw new AppError(
           `Failed to fetch YouTube channel data: ${detail}`,
@@ -237,7 +251,7 @@ export class SourceChannelsService {
       platform,
       name,
       url: displayUrl,
-      fullUrl,
+      fullUrl: storedFullUrl,
       niche,
       purpose: input.purpose,
       riskLevel: 'low',

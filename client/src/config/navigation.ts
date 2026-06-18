@@ -8,6 +8,7 @@ export const navItems = [
   { id: 'chrome-profiles', label: 'Chrome Profiles', path: '/chrome-profiles', icon: 'browser' },
   { id: 'projects', label: 'Content Projects', path: '/content-projects', icon: 'projects' },
   { id: 'factory', label: 'Video Factory', path: '/video-factory', icon: 'factory' },
+  { id: 'task-queue', label: 'Active Jobs', path: '/task-queue', icon: 'task-queue' },
   { id: 'queue', label: 'Render Queue', path: '/render-queue', icon: 'queue' },
   { id: 'excel', label: 'Excel Import/Export', path: '/excel-import-export', icon: 'excel' },
 ] as const;

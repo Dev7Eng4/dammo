@@ -8,6 +8,7 @@ import { createMailAccountsRoutes } from '../modules/mail-accounts/mail-accounts
 import { createRenderQueueRoutes } from '../modules/render-queue/render-queue.routes.js';
 import { createSearchRoutes } from '../modules/search/search.routes.js';
 import { createSourceChannelsRoutes } from '../modules/source-channels/source-channels.routes.js';
+import { createTaskQueueRoutes } from '../modules/task-queue/task-queue.routes.js';
 import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube-channels.routes.js';
 
 function mountApiRoutes(app: Hono, prefix: string) {
@@ -17,6 +18,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/youtube-channels`, createYoutubeChannelsRoutes());
   app.route(`${prefix}/source-channels`, createSourceChannelsRoutes());
   app.route(`${prefix}/render-queue`, createRenderQueueRoutes());
+  app.route(`${prefix}/task-queue`, createTaskQueueRoutes());
   app.route(`${prefix}/chrome-profiles`, createChromeProfilesRoutes());
 }
 

@@ -2,6 +2,7 @@ import { paths } from '../../config/paths.js';
 import { processReupVideo, buildReupOutputPath } from '../../infrastructure/ffmpeg/reup-video-processor.js';
 import { downloadYoutubeVideo } from '../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../shared/http/errors.js';
+import { canonicalizeSourceUrl } from '../../shared/platform/url-parser.js';
 import { sourceVideosRepository } from '../source-channels/source-videos.repository.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import type { SourceChannel, SourceVideoRecord } from '../source-channels/source-channels.types.js';
@@ -13,20 +14,21 @@ import type {
   ReupVideoTask,
 } from './reup-video.types.js';
 import type { StoredYoutubeChannelType, YoutubeChannel } from './youtube-channels.types.js';
+import { taskQueueRepository } from '../task-queue/task-queue.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
+
+interface CreateVideosOptions {
+  taskJobId?: string;
+}
 
 function isReupChannelType(type: StoredYoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
 }
 
-function normalizeUrl(url: string): string {
-  return url.trim().toLowerCase().replace(/\/$/, '');
-}
-
 function resolveSourceChannelsFromMapping(sourceMapping: string): SourceChannel[] {
   const urls = sourceMapping
     .split(',')
-    .map((part) => normalizeUrl(part))
+    .map((part) => canonicalizeSourceUrl(part))
     .filter(Boolean);
 
   if (urls.length === 0) return [];
@@ -34,7 +36,7 @@ function resolveSourceChannelsFromMapping(sourceMapping: string): SourceChannel[
   const urlSet = new Set(urls);
   return sourceChannelsRepository
     .findAll()
-    .filter((source) => urlSet.has(normalizeUrl(source.fullUrl)));
+    .filter((source) => urlSet.has(canonicalizeSourceUrl(source.fullUrl)));
 }
 
 interface SourceVideoWithSource extends SourceVideoRecord {
@@ -71,7 +73,7 @@ function buildTasks(channel: YoutubeChannel, videos: SourceVideoWithSource[]): R
 }
 
 export class ReupVideoCreatorService {
-  async createVideos(channelId: string): Promise<CreateReupVideosResult> {
+  async createVideos(channelId: string, options?: CreateVideosOptions): Promise<CreateReupVideosResult> {
     const channel = youtubeChannelsRepository.findById(channelId);
     if (!channel) {
       throw new AppError('Channel not found', 404, 'NOT_FOUND');
@@ -107,11 +109,45 @@ export class ReupVideoCreatorService {
     const items: ReupVideoOutputItem[] = [];
 
     for (const task of tasks) {
-      const downloadPath = await downloadYoutubeVideo(task.link, paths.reupVideoDownloadsDir);
-      const outputPath = buildReupOutputPath(channel.id, task.videoId, paths.reupVideoOutputDir);
-      await processReupVideo(downloadPath, outputPath);
+      const taskJobId = options?.taskJobId;
 
-      reupVideoHistoryRepository.markProcessed({
+      try {
+        if (taskJobId) {
+          taskQueueRepository.setLivePhase(taskJobId, 'downloading');
+          taskQueueRepository.appendLogMessage(
+            taskJobId,
+            'info',
+            `Downloading source video ${task.videoId}...`,
+          );
+        }
+
+        const downloadPath = await downloadYoutubeVideo(task.link, paths.reupVideoDownloadsDir);
+        const outputPath = buildReupOutputPath(channel.id, task.videoId, paths.reupVideoOutputDir);
+
+        if (taskJobId) {
+          taskQueueRepository.appendLogMessage(
+            taskJobId,
+            'ok',
+            `Download complete → ${downloadPath}`,
+          );
+          taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+          taskQueueRepository.appendLogMessage(taskJobId, 'exec', 'Starting FFmpeg reup processing...');
+        }
+
+        await processReupVideo(downloadPath, outputPath, {
+          onStderrLine: taskJobId
+            ? (line) => {
+                const level = /error/i.test(line) ? 'err' : 'exec';
+                taskQueueRepository.appendLogMessage(taskJobId, level, line);
+              }
+            : undefined,
+        });
+
+        if (taskJobId) {
+          taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Output saved → ${outputPath}`);
+        }
+
+        reupVideoHistoryRepository.markProcessed({
         channelId: channel.id,
         videoUrl: task.link,
         videoId: task.videoId,
@@ -119,13 +155,29 @@ export class ReupVideoCreatorService {
         processedAt: new Date().toISOString(),
       });
 
-      items.push({
-        link: task.link,
-        channelId: channel.id,
-        language: channel.language,
-        videoId: task.videoId,
-        outputPath,
-      });
+        items.push({
+          link: task.link,
+          channelId: channel.id,
+          language: channel.language,
+          videoId: task.videoId,
+          outputPath,
+        });
+      } catch (err) {
+        if (taskJobId) {
+          const message =
+            err instanceof AppError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : 'Video processing failed';
+          taskQueueRepository.appendLogMessage(taskJobId, 'err', message);
+        }
+        throw err;
+      }
+    }
+
+    if (options?.taskJobId) {
+      taskQueueRepository.setLivePhase(options.taskJobId, 'done');
     }
 
     return { items };

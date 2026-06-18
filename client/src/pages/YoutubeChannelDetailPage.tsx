@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { isAbortError } from '../api/http';
 import {
-  createYoutubeChannelVideos,
   fetchYoutubeChannel,
   fetchYoutubeChannelVideos,
   syncYoutubeChannelVideos,
 } from '../api/youtubeChannels';
-import { useToast } from '../components/ui';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { EditYoutubeChannelModal } from '../components/youtube-channels/EditYoutubeChannelModal';
 import {
@@ -16,7 +14,7 @@ import {
 } from '../components/youtube-channels/YoutubeChannelDetailHeader';
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
 import { VideoCommentsDrawer } from '../components/youtube-channels/VideoCommentsDrawer';
-import { useAbortableEffect, useClientPaginatedList } from '../hooks';
+import { useAbortableEffect, useClientPaginatedList, useTaskQueue } from '../hooks';
 import type { YoutubeChannel, YoutubeChannelVideo } from '../types/youtubeChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 
@@ -24,7 +22,7 @@ const VIDEO_LIMIT = 20;
 
 export function YoutubeChannelDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
+  const { enqueueTask } = useTaskQueue();
   const [channel, setChannel] = useState<YoutubeChannel | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(!id);
@@ -36,7 +34,6 @@ export function YoutubeChannelDetailPage() {
   const [videoResetKey, setVideoResetKey] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [creatingVideo, setCreatingVideo] = useState(false);
 
   const videos = useClientPaginatedList(allVideos, {
     limit: VIDEO_LIMIT,
@@ -88,23 +85,19 @@ export function YoutubeChannelDetailPage() {
     { enabled: Boolean(id) },
   );
 
-  async function handleCreateVideo() {
+  function handleCreateVideo() {
     if (!id || !channel || !isStoredReupChannelType(channel.type)) return;
 
-    setCreatingVideo(true);
-    try {
-      const result = await createYoutubeChannelVideos(id);
-      const count = result.items.length;
-      toast.success(
-        count === 1
-          ? `Created video from ${result.items[0].videoId}`
-          : `Created ${count} video(s)`,
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create video');
-    } finally {
-      setCreatingVideo(false);
-    }
+    void enqueueTask({
+      type: 'create_video',
+      title: `Creating video: ${channel.name}`,
+      subtitle: channel.handle,
+      payload: {
+        channelId: id,
+        channelName: channel.name,
+        channelHandle: channel.handle,
+      },
+    });
   }
 
   async function handleSyncVideos() {
@@ -152,7 +145,6 @@ export function YoutubeChannelDetailPage() {
               channel={channel}
               syncing={syncing}
               syncError={syncError}
-              creatingVideo={creatingVideo}
               canCreateVideo={isStoredReupChannelType(channel.type)}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}

@@ -83,6 +83,13 @@ function NavIconSvg({ icon }: { icon: NavIcon }) {
           <path d="m4.9 4.9 2.9 2.9" />
         </svg>
       );
+    case 'task-queue':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="4" y="4" width="12" height="12" rx="2" />
+          <rect x="8" y="8" width="12" height="12" rx="2" />
+        </svg>
+      );
     case 'excel':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

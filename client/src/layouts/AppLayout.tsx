@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { TaskQueuePopup } from '../components/task-queue/TaskQueuePopup';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
@@ -12,6 +13,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <TaskQueuePopup />
     </div>
   );
 }

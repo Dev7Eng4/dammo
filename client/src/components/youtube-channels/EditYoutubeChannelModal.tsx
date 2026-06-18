@@ -14,6 +14,7 @@ import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel } from '../../types/youtubeChannel';
 import { isReupYoutubeChannelType, parseStoredTargetAudience } from '../../types/youtubeChannel';
+import { canonicalizeSourceUrl } from '../../utils/canonicalizeSourceUrl';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface EditYoutubeChannelModalProps {
@@ -37,9 +38,11 @@ function normalizeChannelType(type: StoredYoutubeChannelType): EditYoutubeChanne
 function parseSourceChannelIds(sourceMapping: string, sources: SourceChannel[]): string[] {
   if (!sourceMapping.trim()) return [];
 
-  const urls = sourceMapping.split(',').map((part) => part.trim().toLowerCase());
+  const urls = new Set(
+    sourceMapping.split(',').map((part) => canonicalizeSourceUrl(part.trim())),
+  );
   return sources
-    .filter((source) => urls.includes(source.fullUrl.toLowerCase()))
+    .filter((source) => urls.has(canonicalizeSourceUrl(source.fullUrl)))
     .map((source) => source.id);
 }
 

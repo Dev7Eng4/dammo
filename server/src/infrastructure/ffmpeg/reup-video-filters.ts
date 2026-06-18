@@ -5,7 +5,7 @@ import {
 
 /**
  * Crop keeps the center region after removing cropPercent from each axis.
- * blurPercent maps to gblur sigma relative to the shorter post-crop edge.
+ * gblur sigma is a fixed float (FFmpeg does not accept iw/ih expressions for sigma).
  */
 export function buildReupVideoFilterGraph(
   blurPercent: number = REUP_VIDEO_BLUR_PERCENT,
@@ -13,7 +13,7 @@ export function buildReupVideoFilterGraph(
 ): string {
   const keepRatio = (100 - cropPercent) / 100;
   const crop = `crop=iw*${keepRatio}:ih*${keepRatio}:(iw-ow)/2:(ih-oh)/2`;
-  const blurSigma = `max(1\\,min(iw\\,ih)*${blurPercent}/1000)`;
-  const blur = `gblur=sigma=${blurSigma}`;
+  const sigma = Math.max(1, blurPercent);
+  const blur = `gblur=sigma=${sigma}`;
   return `${crop},${blur}`;
 }
