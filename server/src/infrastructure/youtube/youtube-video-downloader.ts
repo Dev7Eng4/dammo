@@ -2,35 +2,35 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeDl } from 'youtube-dl-exec';
 import { AppError } from '../../shared/http/errors.js';
+import { findFileByPrefix } from './youtube-download-utils.js';
+import { requireYoutubeVideoId } from './youtube-url.js';
 
-function extractVideoId(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    const v = parsed.searchParams.get('v');
-    if (v) return v;
-    const shortsMatch = parsed.pathname.match(/\/shorts\/([^/]+)/);
-    if (shortsMatch?.[1]) return shortsMatch[1];
-    return null;
-  } catch {
-    return null;
-  }
+export type YoutubeVideoQuality = 'hd' | 'best';
+
+const HD_FORMAT = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best';
+const BEST_FORMAT = 'mp4/best[ext=mp4]/best';
+
+function resolveFormat(quality: YoutubeVideoQuality): string {
+  return quality === 'hd' ? HD_FORMAT : BEST_FORMAT;
 }
 
-export async function downloadYoutubeVideo(url: string, outputDir: string): Promise<string> {
+export async function downloadYoutubeVideo(
+  url: string,
+  outputDir: string,
+  options?: { quality?: YoutubeVideoQuality; outputBasename?: string },
+): Promise<string> {
   await fs.mkdir(outputDir, { recursive: true });
 
-  const videoId = extractVideoId(url);
-  if (!videoId) {
-    throw new AppError('Invalid YouTube video URL', 400, 'INVALID_VIDEO_URL');
-  }
-
-  const outputTemplate = path.join(outputDir, `${videoId}.%(ext)s`);
-  const expectedMp4 = path.join(outputDir, `${videoId}.mp4`);
+  const videoId = requireYoutubeVideoId(url);
+  const quality = options?.quality ?? 'best';
+  const basename = options?.outputBasename ?? videoId;
+  const outputTemplate = path.join(outputDir, `${basename}.%(ext)s`);
+  const expectedMp4 = path.join(outputDir, `${basename}.mp4`);
 
   try {
     await youtubeDl(url, {
       output: outputTemplate,
-      format: 'mp4/best[ext=mp4]/best',
+      format: resolveFormat(quality),
       mergeOutputFormat: 'mp4',
       noWarnings: true,
       ignoreErrors: false,
@@ -44,11 +44,10 @@ export async function downloadYoutubeVideo(url: string, outputDir: string): Prom
     await fs.access(expectedMp4);
     return expectedMp4;
   } catch {
-    const files = await fs.readdir(outputDir);
-    const match = files.find((file) => file.startsWith(`${videoId}.`));
+    const match = await findFileByPrefix(outputDir, `${basename}.`);
     if (!match) {
       throw new AppError('Downloaded video file not found', 502, 'YOUTUBE_DOWNLOAD_FAILED');
     }
-    return path.join(outputDir, match);
+    return match;
   }
 }

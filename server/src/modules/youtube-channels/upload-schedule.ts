@@ -11,6 +11,10 @@ export function getPublishTimeSlotCount(frequency: UploadFrequency): number {
   }
 }
 
+export function normalizeUploadSchedule(times: string[]): string[] {
+  return times.map((time) => time.trim()).filter(Boolean);
+}
+
 export function buildUploadScheduleLabel(frequency: UploadFrequency, times: string[]): string {
   const formattedTimes = times.join(', ');
   switch (frequency) {

@@ -13,15 +13,12 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "prod.sys.a1@gmail.com",
-      "uploadSchedule": "1 video every 2 days at 02:41",
+      "uploadSchedule": ["02:41"],
       "sourceMapping": "https://youtube.com/@サラダのお金相談所",
       "contentProjectId": "PRJ-COMICSTA",
       "recentActivity": [],
       "createdAt": "2026-06-17T18:42:03.479Z",
-      "uploadFrequency": "every_2_days",
-      "publishTimes": [
-        "02:41"
-      ]
+      "uploadFrequency": "every_2_days"
     },
     {
       "id": "fcf12fb4-178f-46ec-97a0-4e8c2b861038",
@@ -35,15 +32,12 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "demo@yopmail.com",
-      "uploadSchedule": "1 video every 3 days at 23:15",
+      "uploadSchedule": ["23:15"],
       "sourceMapping": "https://youtube.com/@サラダのお金相談所",
       "contentProjectId": "PRJ-LIFEWISD",
       "recentActivity": [],
       "createdAt": "2026-06-17T16:15:31.603Z",
-      "uploadFrequency": "every_3_days",
-      "publishTimes": [
-        "23:15"
-      ]
+      "uploadFrequency": "every_3_days"
     },
     {
       "id": "55ee9eeb-5cc6-4ae7-8377-f5e0fb40f97b",
@@ -52,21 +46,17 @@
       "youtubeUrl": "https://youtube.com/@MrBeast",
       "type": "content",
       "niche": "SUBSCRIBE FOR A COOKIE!",
-      "language": "EN-US",
+      "language": "en",
       "monetizationStatus": "in_review",
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "duongbich9n7@gmail.com",
-      "uploadSchedule": "2 videos per day at 09:00, 18:00",
+      "uploadSchedule": ["09:00", "18:00"],
       "sourceMapping": "",
       "contentProjectId": "PRJ-MRBEAST",
       "recentActivity": [],
       "createdAt": "2026-06-17T10:32:27.167Z",
-      "uploadFrequency": "daily_2",
-      "publishTimes": [
-        "09:00",
-        "18:00"
-      ]
+      "uploadFrequency": "daily_2"
     }
   ]
 }

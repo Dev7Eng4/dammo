@@ -1,6 +1,7 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { isUuid } from '../../shared/id.js';
+import { normalizeChannelLanguage } from './channel-language.js';
 import { generateSeedChannels } from './youtube-channels.seed.js';
 import type { YoutubeChannel, YoutubeChannelsStore } from './youtube-channels.types.js';
 
@@ -38,11 +39,19 @@ function loadStore(): YoutubeChannelsStore {
 
 export class YoutubeChannelsRepository {
   findAll(): YoutubeChannel[] {
-    return loadStore().channels;
+    return loadStore().channels.map((channel) => ({
+      ...channel,
+      language: normalizeChannelLanguage(channel.language),
+    }));
   }
 
   findById(id: string): YoutubeChannel | null {
-    return loadStore().channels.find((c) => c.id === id) ?? null;
+    const channel = loadStore().channels.find((c) => c.id === id) ?? null;
+    if (!channel) return null;
+    return {
+      ...channel,
+      language: normalizeChannelLanguage(channel.language),
+    };
   }
 
   prepend(channel: YoutubeChannel): YoutubeChannel {

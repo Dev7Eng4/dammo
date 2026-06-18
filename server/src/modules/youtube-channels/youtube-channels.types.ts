@@ -1,3 +1,5 @@
+import type { ChannelLanguage } from './channel-language.js';
+export type { ChannelLanguage } from './channel-language.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 
 export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
@@ -7,7 +9,6 @@ export type LegacyYoutubeChannelType = 'reup';
 
 export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannelType;
 
-export type TargetAudience = 'en' | 'ko' | 'ja' | 'es';
 export type UploadFrequency =
   | 'every_5_days'
   | 'every_3_days'
@@ -31,19 +32,18 @@ export interface YoutubeChannel {
   youtubeUrl: string;
   type: StoredYoutubeChannelType;
   niche: string;
-  language: string;
+  language: ChannelLanguage;
   monetizationStatus: MonetizationStatus;
   healthScore: HealthScore;
   status: YoutubeChannelStatus;
   linkedEmail: string;
-  uploadSchedule: string;
+  uploadSchedule: string[];
   sourceMapping: string;
   contentProjectId: string;
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSourceId?: string;
   uploadFrequency?: UploadFrequency;
-  publishTimes?: string[];
   notes?: string;
   recentActivity: YoutubeChannelActivity[];
   lastUploadAt?: string;
@@ -68,7 +68,7 @@ export interface CreateYoutubeChannelInput {
   mailAccountId: string;
   channelUrl: string;
   type: YoutubeChannelType;
-  targetAudience: TargetAudience;
+  language: ChannelLanguage;
   sourceChannelIds?: string[];
   backgroundFootageSourceId?: string;
   uploadFrequency: UploadFrequency;
@@ -78,7 +78,7 @@ export interface CreateYoutubeChannelInput {
 export interface UpdateYoutubeChannelInput {
   mailAccountId: string;
   type: YoutubeChannelType;
-  targetAudience: TargetAudience;
+  language: ChannelLanguage;
   sourceChannelIds?: string[];
   backgroundFootageSourceId?: string;
   uploadFrequency: UploadFrequency;

@@ -37,12 +37,12 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     youtubeUrl: 'https://youtube.com/@technexusdaily',
     type: 'content',
     niche: 'Technology',
-    language: 'EN-US',
+    language: 'en',
     monetizationStatus: 'monetized',
     healthScore: 'high',
     status: 'active',
     linkedEmail: 'ops.tech1@company.com',
-    uploadSchedule: '3x / Week',
+    uploadSchedule: ['10:00'],
     sourceMapping: '/mnt/nas/tech_raw/',
     contentProjectId: 'PRJ-TND-09',
     notes: 'Recent B-roll flagged. Adjusted source folder exclusion rules. Monitor next upload.',
@@ -55,12 +55,12 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     youtubeUrl: 'https://youtube.com/@cryptoinsights',
     type: 'reup_video',
     niche: 'Finance',
-    language: 'EN-UK',
+    language: 'en',
     monetizationStatus: 'in_review',
     healthScore: 'medium',
     status: 'active',
     linkedEmail: 'finance.ops@company.com',
-    uploadSchedule: '2x / Week',
+    uploadSchedule: ['14:00', '20:00'],
     sourceMapping: '/mnt/nas/finance_raw/',
     contentProjectId: 'PRJ-CIP-04',
     recentActivity: [{ at: daysAgo(2).slice(11, 16), message: 'Monetization review submitted' }],
@@ -72,12 +72,12 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
     youtubeUrl: 'https://youtube.com/@gamingv2_archive',
     type: 'content_sale',
     niche: 'Gaming',
-    language: 'ES-ES',
+    language: 'es',
     monetizationStatus: 'demonetized',
     healthScore: 'low',
     status: 'suspended',
     linkedEmail: 'gaming.archive@company.com',
-    uploadSchedule: '1x / Week',
+    uploadSchedule: ['09:00'],
     sourceMapping: '/mnt/nas/gaming_archive/',
     contentProjectId: 'PRJ-GHV2-01',
     notes: 'Channel suspended pending appeal. Do not schedule uploads.',
@@ -87,7 +87,7 @@ const featuredChannels: Omit<YoutubeChannel, 'id' | 'createdAt'>[] = [
 ];
 
 const niches = ['Technology', 'Finance', 'Gaming', 'Lifestyle', 'Education', 'Sports', 'Music', 'Travel'];
-const languages = ['EN-US', 'EN-UK', 'ES-ES', 'FR-FR', 'DE-DE', 'PT-BR', 'JA-JP'];
+const languages: Array<'en' | 'ko' | 'ja' | 'es'> = ['en', 'ko', 'ja', 'es'];
 const types: YoutubeChannelType[] = ['content', 'reup_audio', 'reup_video', 'content_sale'];
 const healthScores: HealthScore[] = ['high', 'medium', 'low'];
 const statuses: YoutubeChannelStatus[] = ['active', 'suspended'];
@@ -128,7 +128,7 @@ export function generateSeedChannels(): YoutubeChannelsStore {
       healthScore: healthScores[i % healthScores.length],
       status: i % 17 === 0 ? 'suspended' : statuses[0],
       linkedEmail: `ops.${slug}@company.com`,
-      uploadSchedule: `${(i % 5) + 1}x / Week`,
+      uploadSchedule: [`${String(8 + (i % 12)).padStart(2, '0')}:00`],
       sourceMapping: `/mnt/nas/${slug}/`,
       contentProjectId: `PRJ-${slug.toUpperCase().slice(0, 8)}`,
       recentActivity: [

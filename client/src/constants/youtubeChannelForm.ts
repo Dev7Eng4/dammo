@@ -1,11 +1,14 @@
-import type { TargetAudience, UploadFrequency, YoutubeChannelType } from '../types/youtubeChannel';
+import type { UploadFrequency, YoutubeChannelLanguage, YoutubeChannelType } from '../types/youtubeChannel';
 
-export const TARGET_AUDIENCE_OPTIONS: { value: TargetAudience; label: string }[] = [
+export const YOUTUBE_CHANNEL_LANGUAGE_OPTIONS: { value: YoutubeChannelLanguage; label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'ko', label: 'Korean' },
   { value: 'ja', label: 'Japanese' },
   { value: 'es', label: 'Spanish' },
 ];
+
+/** @deprecated Use YOUTUBE_CHANNEL_LANGUAGE_OPTIONS */
+export const TARGET_AUDIENCE_OPTIONS = YOUTUBE_CHANNEL_LANGUAGE_OPTIONS;
 
 export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType; label: string }[] = [
   { value: 'content', label: 'Content' },
@@ -61,4 +64,29 @@ export function buildUploadScheduleLabel(frequency: UploadFrequency, times: stri
 
 export function createEmptyPublishTimes(count: number): string[] {
   return Array.from({ length: count }, () => '');
+}
+
+export function getChannelUploadTimes(channel: {
+  uploadSchedule?: string[] | string;
+}): string[] {
+  if (Array.isArray(channel.uploadSchedule)) {
+    return channel.uploadSchedule;
+  }
+  if (typeof channel.uploadSchedule === 'string') {
+    const matches = channel.uploadSchedule.match(/\d{2}:\d{2}/g);
+    return matches ?? [];
+  }
+  return [];
+}
+
+export function formatChannelUploadSchedule(channel: {
+  uploadFrequency?: UploadFrequency;
+  uploadSchedule?: string[] | string;
+}): string {
+  const times = getChannelUploadTimes(channel);
+  if (times.length === 0) return '';
+  if (channel.uploadFrequency) {
+    return buildUploadScheduleLabel(channel.uploadFrequency, times);
+  }
+  return times.join(', ');
 }

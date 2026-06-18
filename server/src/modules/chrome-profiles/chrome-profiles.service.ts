@@ -29,6 +29,19 @@ export class ChromeProfilesService {
     return profile;
   }
 
+  pickSubProfile(): ChromeProfile {
+    const subs = chromeProfilesRepository.findByRole('sub');
+    if (subs.length === 0) {
+      throw new AppError(
+        'No sub Chrome profile available. Create sub profiles first.',
+        409,
+        'NO_SUB_PROFILE',
+      );
+    }
+    const index = Math.floor(Math.random() * subs.length);
+    return subs[index];
+  }
+
   async create(input: CreateChromeProfileInput): Promise<ChromeProfile> {
     return this.createProfile(input.name.trim(), 'sub', 'prepend');
   }

@@ -18,10 +18,22 @@ export const paths = {
   reupVideoDownloadsDir: path.join(env.dataDir, 'renders', 'downloads'),
   reupVideoOutputDir: path.join(env.dataDir, 'renders', 'reup'),
   taskQueueDir: path.join(env.dataDir, 'task-queue'),
+  mediaDownloadsDir: path.join(env.dataDir, 'media-downloads'),
+  prompts: path.join(env.dataDir, 'prompts.json'),
+  promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
+  promptsDir: path.join(env.dataDir, 'prompts'),
 };
 
 export function sourceVideosFile(sourceId: string): string {
   return path.join(paths.sourcesDir, `${sourceId}.json`);
+}
+
+export function mediaDownloadDir(platform: string, mediaId: string): string {
+  return path.join(paths.mediaDownloadsDir, platform, mediaId);
+}
+
+export function promptTemplateFile(language: string, key: string): string {
+  return path.join(paths.promptsDir, language, `${key}.js`);
 }
 
 export function chromeProfileDir(profileId: string): string {
@@ -39,6 +51,8 @@ export function ensureDataDirs(): void {
     paths.reupVideoDownloadsDir,
     paths.reupVideoOutputDir,
     paths.taskQueueDir,
+    paths.mediaDownloadsDir,
+    paths.promptsDir,
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) {

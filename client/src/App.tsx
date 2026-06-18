@@ -6,6 +6,7 @@ import { ChromeProfilesPage } from './pages/ChromeProfilesPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MailAccountsPage } from './pages/MailAccountsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { PromptsPage } from './pages/PromptsPage';
 import { RenderQueuePage } from './pages/RenderQueuePage';
 import { SourceChannelDetailPage } from './pages/SourceChannelDetailPage';
 import { SourceChannelsPage } from './pages/SourceChannelsPage';
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="facebook-assets" element={<PlaceholderPage />} />
               <Route path="source-channels" element={<SourceChannelsPage />} />
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
+              <Route path="prompts" element={<PromptsPage />} />
               <Route path="chrome-profiles" element={<ChromeProfilesPage />} />
               <Route path="content-projects" element={<PlaceholderPage />} />
               <Route path="video-factory" element={<VideoFactoryPage />} />

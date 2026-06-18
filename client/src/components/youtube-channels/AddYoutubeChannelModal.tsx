@@ -7,7 +7,7 @@ import {
   createEmptyPublishTimes,
   getPublishTimeSlotCount,
   UPLOAD_FREQUENCY_OPTIONS,
-  TARGET_AUDIENCE_OPTIONS,
+  YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
@@ -26,7 +26,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   mailAccountId: '',
   channelUrl: '',
   type: '',
-  targetAudience: '',
+  language: '',
   sourceChannelIds: [],
   backgroundFootageSourceId: '',
   uploadFrequency: '',
@@ -143,7 +143,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   }
 
   async function onSubmit(values: AddYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency || !values.targetAudience) return;
+    if (!values.type || !values.uploadFrequency || !values.language) return;
 
     setApiError(null);
     try {
@@ -151,7 +151,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         mailAccountId: values.mailAccountId,
         channelUrl: values.channelUrl.trim(),
         type: values.type,
-        targetAudience: values.targetAudience,
+        language: values.language,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannelIds.length > 0 ? { sourceChannelIds: values.sourceChannelIds } : {}),
@@ -259,23 +259,23 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         </FormField>
 
         <FormField
-          label="Target Audience"
-          htmlFor="target-audience"
-          error={errors.targetAudience?.message}
+          label="Language"
+          htmlFor="channel-language"
+          error={errors.language?.message}
           className="min-w-0"
         >
           <Controller
-            name="targetAudience"
+            name="language"
             control={control}
-            rules={{ required: 'Target audience is required' }}
+            rules={{ required: 'Language is required' }}
             render={({ field }) => (
               <Select
-                id="target-audience"
-                options={TARGET_AUDIENCE_OPTIONS}
+                id="channel-language"
+                options={YOUTUBE_CHANNEL_LANGUAGE_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select target audience"
+                placeholder="Select language"
                 disabled={isSubmitting}
                 className="w-full"
                 triggerClassName={selectTriggerClass}

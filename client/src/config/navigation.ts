@@ -5,6 +5,7 @@ export const navItems = [
   { id: 'tiktok', label: 'TikTok Accounts', path: '/tiktok-accounts', icon: 'tiktok' },
   { id: 'facebook', label: 'Facebook Assets', path: '/facebook-assets', icon: 'facebook' },
   { id: 'source', label: 'Source Channels', path: '/source-channels', icon: 'source' },
+  { id: 'prompts', label: 'Prompts', path: '/prompts', icon: 'prompt' },
   { id: 'chrome-profiles', label: 'Chrome Profiles', path: '/chrome-profiles', icon: 'browser' },
   { id: 'projects', label: 'Content Projects', path: '/content-projects', icon: 'projects' },
   { id: 'factory', label: 'Video Factory', path: '/video-factory', icon: 'factory' },

@@ -17,29 +17,46 @@ export function isStoredReupChannelType(type: StoredYoutubeChannelType): boolean
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
 }
 
-export type TargetAudience = 'en' | 'ko' | 'ja' | 'es';
+export type YoutubeChannelLanguage = 'en' | 'ko' | 'ja' | 'es';
 
-export const TARGET_AUDIENCE_LABELS: Record<TargetAudience, string> = {
+/** @deprecated Use YoutubeChannelLanguage */
+export type TargetAudience = YoutubeChannelLanguage;
+
+export const YOUTUBE_CHANNEL_LANGUAGE_LABELS: Record<YoutubeChannelLanguage, string> = {
   en: 'English',
   ko: 'Korean',
   ja: 'Japanese',
   es: 'Spanish',
 };
 
-const LEGACY_LANGUAGE_TO_TARGET: Record<string, TargetAudience> = {
+/** @deprecated Use YOUTUBE_CHANNEL_LANGUAGE_LABELS */
+export const TARGET_AUDIENCE_LABELS = YOUTUBE_CHANNEL_LANGUAGE_LABELS;
+
+const LEGACY_LANGUAGE_MAP: Record<string, YoutubeChannelLanguage> = {
   'EN-US': 'en',
   'EN-UK': 'en',
   'JA-JP': 'ja',
+  'KO-KR': 'ko',
   'ES-ES': 'es',
 };
 
-export function parseStoredTargetAudience(value: string): TargetAudience | '' {
-  if (value in TARGET_AUDIENCE_LABELS) return value as TargetAudience;
-  return LEGACY_LANGUAGE_TO_TARGET[value] ?? '';
+export function parseStoredChannelLanguage(value: string): YoutubeChannelLanguage | '' {
+  if (value in YOUTUBE_CHANNEL_LANGUAGE_LABELS) return value as YoutubeChannelLanguage;
+  return LEGACY_LANGUAGE_MAP[value] ?? '';
 }
 
+/** @deprecated Use parseStoredChannelLanguage */
+export function parseStoredTargetAudience(value: string): YoutubeChannelLanguage | '' {
+  return parseStoredChannelLanguage(value);
+}
+
+export function formatChannelLanguageLabel(value: string): string {
+  return YOUTUBE_CHANNEL_LANGUAGE_LABELS[value as YoutubeChannelLanguage] ?? value;
+}
+
+/** @deprecated Use formatChannelLanguageLabel */
 export function formatTargetAudienceLabel(value: string): string {
-  return TARGET_AUDIENCE_LABELS[value as TargetAudience] ?? value;
+  return formatChannelLanguageLabel(value);
 }
 export type UploadFrequency =
   | 'every_5_days'
@@ -64,19 +81,18 @@ export interface YoutubeChannel {
   youtubeUrl: string;
   type: StoredYoutubeChannelType;
   niche: string;
-  language: string;
+  language: YoutubeChannelLanguage;
   monetizationStatus: MonetizationStatus;
   healthScore: HealthScore;
   status: YoutubeChannelStatus;
   linkedEmail: string;
-  uploadSchedule: string;
+  uploadSchedule: string[];
   sourceMapping: string;
   contentProjectId: string;
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSourceId?: string;
   uploadFrequency?: UploadFrequency;
-  publishTimes?: string[];
   notes?: string;
   recentActivity: YoutubeChannelActivity[];
   lastUploadAt?: string;
@@ -145,7 +161,11 @@ export interface ReupVideoOutputItem {
   channelId: string;
   language: string;
   videoId: string;
+  youtubeVideoId: string;
   outputPath: string;
+  audioPath?: string;
+  transcriptPath?: string;
+  videoPath?: string;
 }
 
 export interface CreateReupVideosResponse {
@@ -156,7 +176,7 @@ export interface CreateYoutubeChannelPayload {
   mailAccountId: string;
   channelUrl: string;
   type: YoutubeChannelType;
-  targetAudience: TargetAudience;
+  language: YoutubeChannelLanguage;
   sourceChannelIds?: string[];
   backgroundFootageSourceId?: string;
   uploadFrequency: UploadFrequency;
@@ -169,7 +189,7 @@ export interface AddYoutubeChannelFormValues {
   mailAccountId: string;
   channelUrl: string;
   type: YoutubeChannelType | '';
-  targetAudience: TargetAudience | '';
+  language: YoutubeChannelLanguage | '';
   sourceChannelIds: string[];
   backgroundFootageSourceId: string;
   uploadFrequency: UploadFrequency | '';

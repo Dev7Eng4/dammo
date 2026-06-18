@@ -1,14 +1,27 @@
-{
-  "name": "dammo",
-  "private": true,
-  "scripts": {
-    "dev": "concurrently -k -n server,client -c blue,green \"pnpm --filter server dev\" \"pnpm exec wait-on tcp:127.0.0.1:3000 && pnpm --filter client dev\"",
-    "build": "pnpm --filter server build && pnpm --filter client build",
-    "start": "pnpm --filter server start"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.2",
-    "wait-on": "^8.0.3"
-  }
-}
-
+{
+
+  "name": "dammo",
+
+  "private": true,
+
+  "scripts": {
+
+    "dev": "concurrently -k -n server,client -c blue,green \"pnpm --filter server dev\" \"pnpm exec wait-on tcp:127.0.0.1:8099 && pnpm --filter client dev\"",
+
+    "build": "pnpm --filter server build && pnpm --filter client build",
+
+    "start": "pnpm --filter server start"
+
+  },
+
+  "devDependencies": {
+
+    "concurrently": "^9.1.2",
+
+    "wait-on": "^8.0.3"
+
+  }
+
+}
+
+

@@ -23,7 +23,12 @@ export interface ReupVideoOutputItem {
   channelId: string;
   language: string;
   videoId: string;
+  youtubeVideoId: string;
   outputPath: string;
+  audioPath?: string;
+  transcriptPath?: string;
+  srtPath?: string;
+  videoPath?: string;
 }
 
 export interface CreateReupVideosResult {

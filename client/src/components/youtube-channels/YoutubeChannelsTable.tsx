@@ -1,4 +1,4 @@
-import { formatTargetAudienceLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type StoredYoutubeChannelType, type YoutubeChannel } from '../../types/youtubeChannel';
+import { formatChannelLanguageLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type StoredYoutubeChannelType, type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { HealthIndicator } from './HealthIndicator';
 import { MonetizationPill } from './MonetizationPill';
@@ -128,7 +128,7 @@ export function YoutubeChannelsTable({
               </td>
               <td className="py-3 pr-4 text-neutral-300">{typeLabel(channel.type)}</td>
               <td className="py-3 pr-4 text-neutral-400">
-                {channel.niche} ({formatTargetAudienceLabel(channel.language)})
+                {channel.niche} ({formatChannelLanguageLabel(channel.language)})
               </td>
               <td className="py-3 pr-4">
                 <MonetizationPill status={channel.monetizationStatus} />

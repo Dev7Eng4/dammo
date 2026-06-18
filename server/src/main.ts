@@ -4,9 +4,15 @@ import { ensureDataDirs } from './config/paths.js';
 import { env } from './config/env.js';
 import { startRenderQueueWorker } from './modules/render-queue/render-queue.worker.js';
 import { startTaskQueueWorker } from './modules/task-queue/task-queue.worker.js';
+import { promptsRepository } from './modules/prompts/prompts.repository.js';
+import { ensurePromptsDir } from './modules/prompts/prompts.file-store.js';
+import { verifySystemChrome } from './infrastructure/chrome/verify-chrome.js';
 
 export function startServer() {
   ensureDataDirs();
+  promptsRepository.ensureStoreFile();
+  void ensurePromptsDir();
+  void verifySystemChrome();
 
   const app = createApp();
 

@@ -1,11 +1,9 @@
-import { paths } from '../../config/paths.js';
-import { processReupVideo, buildReupOutputPath } from '../../infrastructure/ffmpeg/reup-video-processor.js';
-import { downloadYoutubeVideo } from '../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../shared/http/errors.js';
 import { canonicalizeSourceUrl } from '../../shared/platform/url-parser.js';
 import { sourceVideosRepository } from '../source-channels/source-videos.repository.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import type { SourceChannel, SourceVideoRecord } from '../source-channels/source-channels.types.js';
+import { downloadReupAssets } from './reup-asset-downloader.js';
 import { reupVideoHistoryRepository } from './reup-video-history.repository.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-video.constants.js';
 import type {
@@ -23,6 +21,10 @@ interface CreateVideosOptions {
 
 function isReupChannelType(type: StoredYoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+}
+
+function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
+  return type === 'reup_audio';
 }
 
 function resolveSourceChannelsFromMapping(sourceMapping: string): SourceChannel[] {
@@ -107,6 +109,7 @@ export class ReupVideoCreatorService {
     }
 
     const items: ReupVideoOutputItem[] = [];
+    const isAudioChannel = isReupAudioChannel(channel.type);
 
     for (const task of tasks) {
       const taskJobId = options?.taskJobId;
@@ -117,50 +120,59 @@ export class ReupVideoCreatorService {
           taskQueueRepository.appendLogMessage(
             taskJobId,
             'info',
-            `Downloading source video ${task.videoId}...`,
+            isAudioChannel
+              ? `Downloading audio + transcript (${task.language}) for source video ${task.videoId}...`
+              : `Downloading source video ${task.videoId}...`,
           );
         }
 
-        const downloadPath = await downloadYoutubeVideo(task.link, paths.reupVideoDownloadsDir);
-        const outputPath = buildReupOutputPath(channel.id, task.videoId, paths.reupVideoOutputDir);
+        const downloaded = await downloadReupAssets(task.link, channel.type, channel.language);
 
         if (taskJobId) {
-          taskQueueRepository.appendLogMessage(
-            taskJobId,
-            'ok',
-            `Download complete → ${downloadPath}`,
-          );
-          taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-          taskQueueRepository.appendLogMessage(taskJobId, 'exec', 'Starting FFmpeg reup processing...');
-        }
-
-        await processReupVideo(downloadPath, outputPath, {
-          onStderrLine: taskJobId
-            ? (line) => {
-                const level = /error/i.test(line) ? 'err' : 'exec';
-                taskQueueRepository.appendLogMessage(taskJobId, level, line);
-              }
-            : undefined,
-        });
-
-        if (taskJobId) {
-          taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Output saved → ${outputPath}`);
+          if (isAudioChannel) {
+            taskQueueRepository.appendLogMessage(
+              taskJobId,
+              'ok',
+              `Audio saved → ${downloaded.audioPath}`,
+            );
+            taskQueueRepository.appendLogMessage(
+              taskJobId,
+              'ok',
+              `Transcript saved → ${downloaded.transcriptPath}`,
+            );
+            taskQueueRepository.appendLogMessage(
+              taskJobId,
+              'ok',
+              `SRT cleaned → ${downloaded.srtPath}`,
+            );
+          } else {
+            taskQueueRepository.appendLogMessage(
+              taskJobId,
+              'ok',
+              `Video saved → ${downloaded.videoPath}`,
+            );
+          }
         }
 
         reupVideoHistoryRepository.markProcessed({
-        channelId: channel.id,
-        videoUrl: task.link,
-        videoId: task.videoId,
-        outputPath,
-        processedAt: new Date().toISOString(),
-      });
+          channelId: channel.id,
+          videoUrl: task.link,
+          videoId: task.videoId,
+          outputPath: downloaded.primaryPath,
+          processedAt: new Date().toISOString(),
+        });
 
         items.push({
           link: task.link,
           channelId: channel.id,
           language: channel.language,
           videoId: task.videoId,
-          outputPath,
+          youtubeVideoId: downloaded.youtubeVideoId,
+          outputPath: downloaded.primaryPath,
+          ...(downloaded.audioPath ? { audioPath: downloaded.audioPath } : {}),
+          ...(downloaded.transcriptPath ? { transcriptPath: downloaded.transcriptPath } : {}),
+          ...(downloaded.srtPath ? { srtPath: downloaded.srtPath } : {}),
+          ...(downloaded.videoPath ? { videoPath: downloaded.videoPath } : {}),
         });
       } catch (err) {
         if (taskJobId) {

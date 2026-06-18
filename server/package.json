@@ -6,8 +6,11 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
-    "playwright:install": "playwright install chromium",
-    "chrome-profiles:reset-subs": "tsx src/scripts/reset-sub-profiles.ts"
+    "chrome:verify": "tsx src/infrastructure/chrome/verify-chrome.ts",
+    "chrome-profiles:reset-subs": "tsx src/scripts/reset-sub-profiles.ts",
+    "download:video": "tsx src/scripts/download-video.ts",
+    "download:audio": "tsx src/scripts/download-audio.ts",
+    "download:transcript": "tsx src/scripts/download-transcript.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

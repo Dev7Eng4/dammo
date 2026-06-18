@@ -14,12 +14,12 @@ const publishTimeSchema = z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format
 
 const youtubeChannelTypeSchema = z.enum(['content', 'reup_audio', 'reup_video', 'content_sale']);
 
-const targetAudienceSchema = z.enum(['en', 'ko', 'ja', 'es']);
+const channelLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
 
 const channelConfigFields = {
   mailAccountId: z.string().min(1),
   type: youtubeChannelTypeSchema,
-  targetAudience: targetAudienceSchema,
+  language: channelLanguageSchema,
   sourceChannelIds: z.array(z.string().min(1)).optional(),
   backgroundFootageSourceId: z.string().optional(),
   uploadFrequency: uploadFrequencySchema,

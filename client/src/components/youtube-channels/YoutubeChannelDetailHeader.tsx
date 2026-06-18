@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui';
-import { formatTargetAudienceLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel } from '../../types/youtubeChannel';
+import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm';
+import { formatChannelLanguageLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { MonetizationPill } from './MonetizationPill';
 
@@ -102,17 +103,17 @@ export function YoutubeChannelDetailHeader({
           <p className="mt-2 text-sm font-medium text-neutral-100">{channel.niche}</p>
         </div>
         <div className="card-surface px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Target Audience</p>
-          <p className="mt-2 text-sm font-medium text-neutral-100">{formatTargetAudienceLabel(channel.language)}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Language</p>
+          <p className="mt-2 text-sm font-medium text-neutral-100">{formatChannelLanguageLabel(channel.language)}</p>
         </div>
         <div className="card-surface px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Linked Email</p>
           <p className="mt-2 truncate text-sm font-mono text-neutral-100">{channel.linkedEmail}</p>
         </div>
-        {channel.uploadSchedule ? (
+        {formatChannelUploadSchedule(channel) ? (
           <div className="card-surface px-4 py-3 sm:col-span-2 lg:col-span-4">
             <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Upload Schedule</p>
-            <p className="mt-2 text-sm font-medium text-neutral-100">{channel.uploadSchedule}</p>
+            <p className="mt-2 text-sm font-medium text-neutral-100">{formatChannelUploadSchedule(channel)}</p>
           </div>
         ) : null}
       </div>

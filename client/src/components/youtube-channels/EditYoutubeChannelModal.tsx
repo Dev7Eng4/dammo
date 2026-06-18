@@ -5,15 +5,16 @@ import { fetchSourceChannels } from '../../api/sourceChannels';
 import { fetchYoutubeChannels, updateYoutubeChannel } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
+  getChannelUploadTimes,
   getPublishTimeSlotCount,
   UPLOAD_FREQUENCY_OPTIONS,
-  TARGET_AUDIENCE_OPTIONS,
+  YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel } from '../../types/youtubeChannel';
-import { isReupYoutubeChannelType, parseStoredTargetAudience } from '../../types/youtubeChannel';
+import { isReupYoutubeChannelType, parseStoredChannelLanguage } from '../../types/youtubeChannel';
 import { canonicalizeSourceUrl } from '../../utils/canonicalizeSourceUrl';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
@@ -150,15 +151,14 @@ export function EditYoutubeChannelModal({
 
         const frequency = channel.uploadFrequency ?? '';
         const slotCount = getPublishTimeSlotCount(frequency);
+        const savedTimes = getChannelUploadTimes(channel);
         const publishTimes =
-          channel.publishTimes && channel.publishTimes.length === slotCount
-            ? channel.publishTimes
-            : createEmptyPublishTimes(slotCount);
+          savedTimes.length === slotCount ? savedTimes : createEmptyPublishTimes(slotCount);
 
         reset({
           mailAccountId: mailAccount?.id ?? '',
           type: normalizeChannelType(channel.type),
-          targetAudience: parseStoredTargetAudience(channel.language),
+          language: parseStoredChannelLanguage(channel.language),
           sourceChannelIds: parseSourceChannelIds(channel.sourceMapping, sourceList.items),
           backgroundFootageSourceId: channel.backgroundFootageSourceId ?? '',
           uploadFrequency: frequency,
@@ -191,14 +191,14 @@ export function EditYoutubeChannelModal({
   }
 
   async function onSubmit(values: EditYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency || !values.targetAudience) return;
+    if (!values.type || !values.uploadFrequency || !values.language) return;
 
     setApiError(null);
     try {
       const { item } = await updateYoutubeChannel(channel.id, {
         mailAccountId: values.mailAccountId,
         type: values.type,
-        targetAudience: values.targetAudience,
+        language: values.language,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannelIds.length > 0 ? { sourceChannelIds: values.sourceChannelIds } : {}),
@@ -301,23 +301,23 @@ export function EditYoutubeChannelModal({
         </FormField>
 
         <FormField
-          label="Target Audience"
-          htmlFor="edit-target-audience"
-          error={errors.targetAudience?.message}
+          label="Language"
+          htmlFor="edit-channel-language"
+          error={errors.language?.message}
           className="min-w-0"
         >
           <Controller
-            name="targetAudience"
+            name="language"
             control={control}
-            rules={{ required: 'Target audience is required' }}
+            rules={{ required: 'Language is required' }}
             render={({ field }) => (
               <Select
-                id="edit-target-audience"
-                options={TARGET_AUDIENCE_OPTIONS}
+                id="edit-channel-language"
+                options={YOUTUBE_CHANNEL_LANGUAGE_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select target audience"
+                placeholder="Select language"
                 disabled={isSubmitting}
                 className="w-full"
                 triggerClassName={selectTriggerClass}

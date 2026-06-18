@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Input } from '../ui';
-import { formatTargetAudienceLabel, type YoutubeChannel } from '../../types/youtubeChannel';
+import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm';
+import { formatChannelLanguageLabel, type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { MonetizationPill } from './MonetizationPill';
 
@@ -148,8 +149,8 @@ export function YoutubeChannelDetailPanel({ channel, loading, onClose }: Youtube
                 <Input readOnly value={channel.niche} className="h-9 rounded-lg text-sm" />
               </div>
               <div>
-                <FieldLabel>Target Audience</FieldLabel>
-                <Input readOnly value={formatTargetAudienceLabel(channel.language)} className="h-9 rounded-lg text-sm" />
+                <FieldLabel>Language</FieldLabel>
+                <Input readOnly value={formatChannelLanguageLabel(channel.language)} className="h-9 rounded-lg text-sm" />
               </div>
             </div>
           </div>
@@ -159,7 +160,7 @@ export function YoutubeChannelDetailPanel({ channel, loading, onClose }: Youtube
             <div className="space-y-3">
               <div>
                 <FieldLabel>Upload Schedule</FieldLabel>
-                <Input readOnly value={channel.uploadSchedule} className="h-9 rounded-lg text-sm" />
+                <Input readOnly value={formatChannelUploadSchedule(channel)} className="h-9 rounded-lg text-sm" />
               </div>
               <div>
                 <FieldLabel>Source Mapping</FieldLabel>

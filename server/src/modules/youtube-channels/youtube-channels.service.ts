@@ -11,7 +11,8 @@ import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repositor
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { reupVideoCreatorService } from './reup-video-creator.service.js';
-import { buildUploadScheduleLabel } from './upload-schedule.js';
+import { normalizeChannelLanguage } from './channel-language.js';
+import { normalizeUploadSchedule } from './upload-schedule.js';
 import type {
   CreateYoutubeChannelInput,
   MonetizationStatus,
@@ -115,7 +116,7 @@ function buildSourceMapping(sourceChannelIds: string[] | undefined): string {
 function validateChannelConfig(input: ChannelConfigInput): {
   linkedEmail: string;
   sourceMapping: string;
-  uploadSchedule: string;
+  uploadSchedule: string[];
   backgroundFootageSourceId?: string;
 } {
   const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
@@ -137,7 +138,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     requireSourceWithPurpose(backgroundFootageSourceId, 'background_footage', 'Background footage');
   }
 
-  const uploadSchedule = buildUploadScheduleLabel(input.uploadFrequency, input.publishTimes);
+  const uploadSchedule = normalizeUploadSchedule(input.publishTimes);
 
   return {
     linkedEmail: mailAccount.email,
@@ -192,7 +193,10 @@ export class YoutubeChannelsService {
     if (!channel) {
       throw new AppError('Channel not found', 404, 'NOT_FOUND');
     }
-    return channel;
+    return {
+      ...channel,
+      language: normalizeChannelLanguage(channel.language),
+    };
   }
 
   async getLiveById(id: string): Promise<YoutubeChannel> {
@@ -296,7 +300,7 @@ export class YoutubeChannelsService {
         channelId: metadata.channelId,
         type: input.type,
         niche: metadata.niche,
-        language: input.targetAudience,
+        language: input.language,
         monetizationStatus: 'in_review',
         healthScore: 'medium',
         status: 'active',
@@ -307,7 +311,6 @@ export class YoutubeChannelsService {
         recentActivity: [],
         createdAt: new Date().toISOString(),
         uploadFrequency: input.uploadFrequency,
-        publishTimes: input.publishTimes,
         ...(config.backgroundFootageSourceId
           ? { backgroundFootageSourceId: config.backgroundFootageSourceId }
           : {}),
@@ -334,12 +337,11 @@ export class YoutubeChannelsService {
       const next: YoutubeChannel = {
         ...current,
         type: input.type,
-        language: input.targetAudience,
+        language: input.language,
         linkedEmail: config.linkedEmail,
         sourceMapping: config.sourceMapping,
         uploadSchedule: config.uploadSchedule,
         uploadFrequency: input.uploadFrequency,
-        publishTimes: input.publishTimes,
       };
 
       if (config.backgroundFootageSourceId) {
