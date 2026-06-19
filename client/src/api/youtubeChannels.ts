@@ -103,3 +103,14 @@ export function createYoutubeChannelVideosForAll() {
     { method: 'POST' },
   );
 }
+
+export function createYoutubeChannelVideosForChannels(channelIds: string[]) {
+  return fetchJson<CreateReupVideosBatchResponse>(
+    `${API_V1}/youtube-channels/create-videos`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelIds }),
+    },
+  );
+}

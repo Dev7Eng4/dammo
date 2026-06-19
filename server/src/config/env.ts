@@ -14,4 +14,8 @@ export const env = {
   geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
   chromeChannel: (process.env.CHROME_CHANNEL ?? 'chrome') as 'chrome' | 'chrome-beta' | 'msedge',
   chromeExecutablePath: process.env.CHROME_EXECUTABLE_PATH ?? '',
+  /** yt-dlp: e.g. "chrome", "chrome:Profile 1", "edge" */
+  youtubeCookiesFromBrowser: process.env.YOUTUBE_COOKIES_FROM_BROWSER ?? '',
+  /** yt-dlp: path to Netscape cookies.txt */
+  youtubeCookiesFile: process.env.YOUTUBE_COOKIES_FILE ?? '',
 };

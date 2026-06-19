@@ -1,40 +1,49 @@
 {
   "prompts": [
     {
+      "id": "1885887e-76ac-482c-a669-0e53406aa7d9",
+      "key": "step_4",
+      "language": "ja",
+      "name": "Create MetaData Step 4",
+      "category": "meta",
+      "createdAt": "2026-06-19T09:49:23.497Z",
+      "updatedAt": "2026-06-19T09:49:23.497Z"
+    },
+    {
+      "id": "02ce07f1-4462-4076-922f-38320ac496b2",
+      "key": "step_3",
+      "language": "ja",
+      "name": "Create MetaData Step 3",
+      "category": "meta",
+      "createdAt": "2026-06-19T09:48:13.809Z",
+      "updatedAt": "2026-06-19T09:48:13.809Z"
+    },
+    {
+      "id": "e228f541-d433-4dc8-bdd7-60b462e46e57",
+      "key": "step_2",
+      "language": "ja",
+      "name": "Create MetaData Step 2",
+      "category": "meta",
+      "createdAt": "2026-06-19T09:47:57.600Z",
+      "updatedAt": "2026-06-19T09:47:57.600Z"
+    },
+    {
+      "id": "dc461869-8f38-4ac0-8b7a-2d89d96aa3fd",
+      "key": "step_1",
+      "language": "ja",
+      "name": "Create MetaData Step 1",
+      "category": "meta",
+      "createdAt": "2026-06-19T09:47:36.259Z",
+      "updatedAt": "2026-06-19T09:47:36.259Z"
+    },
+    {
       "id": "4b097367-b5d7-4376-bb65-f742b6bf791a",
-      "key": "update_transcrip_ja",
+      "key": "update_transcript",
       "language": "ja",
       "name": "Update Transcript Japan",
       "category": "transcript",
       "createdAt": "2026-06-18T10:29:36.758Z",
-      "updatedAt": "2026-06-18T10:29:36.758Z"
-    },
-    {
-      "id": "ab12c63f-c6fc-4917-b49c-8e3e4c81c91c",
-      "key": "reup_script_copy",
-      "language": "en",
-      "name": "Reup Script (copy)",
-      "category": "transcript",
-      "createdAt": "2026-06-18T03:25:47.029Z",
-      "updatedAt": "2026-06-18T04:11:48.816Z"
-    },
-    {
-      "id": "901c870f-24d2-472a-a350-b34098f55106",
-      "key": "reup_script",
-      "language": "en",
-      "name": "Reup Script",
-      "category": "transcript",
-      "createdAt": "2026-06-18T02:51:35.535Z",
-      "updatedAt": "2026-06-18T04:12:19.254Z"
-    },
-    {
-      "id": "f7778f43-7df2-41fb-9932-9912d73638e5",
-      "key": "reup_script",
-      "language": "ja",
-      "name": "Reup Script",
-      "category": "transcript",
-      "createdAt": "2026-06-18T02:37:28.445Z",
-      "updatedAt": "2026-06-18T07:28:24.557Z"
+      "updatedAt": "2026-06-19T09:46:45.428Z"
     }
   ]
 }

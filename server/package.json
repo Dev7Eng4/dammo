@@ -10,7 +10,8 @@
     "chrome-profiles:reset-subs": "tsx src/scripts/reset-sub-profiles.ts",
     "download:video": "tsx src/scripts/download-video.ts",
     "download:audio": "tsx src/scripts/download-audio.ts",
-    "download:transcript": "tsx src/scripts/download-transcript.ts"
+    "download:transcript": "tsx src/scripts/download-transcript.ts",
+    "create-videos": "tsx src/scripts/create-videos.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
@@ -20,10 +21,11 @@
   "dependencies": {
     "@hono/node-server": "^2.0.5",
     "@hono/zod-validator": "^0.8.0",
+    "@inquirer/checkbox": "^4.3.2",
     "hono": "^4.12.25",
+    "playwright": "^1.52.0",
     "xlsx": "^0.18.5",
     "youtube-dl-exec": "^3.1.7",
-    "playwright": "^1.52.0",
     "zod": "^4.4.3"
   }
 }

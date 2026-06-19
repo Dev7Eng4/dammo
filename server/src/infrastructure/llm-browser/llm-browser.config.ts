@@ -10,6 +10,8 @@ export const LLM_PROVIDER_CONFIGS: Record<LlmBrowserProvider, LlmProviderConfig>
       responseBlocks: 'div[data-message-author-role="assistant"]',
       responseCodeBlocks: 'div[data-message-author-role="assistant"] pre code',
       generatingIndicator: '[data-testid="stop-button"], button[aria-label="Stop streaming"]',
+      conversationScrollContainer: 'main, [class*="overflow-y-auto"]',
+      copyResponseButton: 'button[data-testid="copy-turn-action-button"]',
     },
     setup: {
       modeButton: 'button[data-testid="model-switcher-dropdown-button"]',
@@ -23,9 +25,11 @@ export const LLM_PROVIDER_CONFIGS: Record<LlmBrowserProvider, LlmProviderConfig>
       // Placeholder selectors — refine after testing live DOM
       promptInput: 'div.ql-editor[contenteditable="true"], rich-textarea .ql-editor, div[contenteditable="true"].textarea',
       sendButton: 'button[aria-label="Send message"], button.send-button, button[mattooltip="Send message"]',
-      responseBlocks: 'message-content.model-response-text, .model-response-text, .response-content',
+      responseBlocks: '.model-response-text',
       responseCodeBlocks: 'code[data-test-id="code-content"]',
       generatingIndicator: 'button[aria-label="Stop"], .stop-button',
+      conversationScrollContainer: 'main, .conversation-container, [class*="overflow-y-auto"]',
+      copyResponseButton: 'copy-button button',
     },
     setup: {
       modeButton: 'button[aria-label*="model"], button.mode-switcher',

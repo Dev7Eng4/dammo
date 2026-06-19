@@ -2,11 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeDl } from 'youtube-dl-exec';
 import { AppError } from '../../shared/http/errors.js';
+import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { findFileByPrefix } from './youtube-download-utils.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
 async function fetchThumbnailFromMetadata(url: string, outputDir: string): Promise<string> {
   const raw = await youtubeDl(url, {
+    ...getYoutubeDlCommonOptions(),
     dumpSingleJson: true,
     skipDownload: true,
     noWarnings: true,
@@ -39,6 +41,7 @@ export async function downloadYoutubeThumbnail(url: string, outputDir: string): 
 
   try {
     await youtubeDl(url, {
+      ...getYoutubeDlCommonOptions(),
       output: outputTemplate,
       skipDownload: true,
       writeThumbnail: true,

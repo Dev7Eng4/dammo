@@ -68,18 +68,32 @@ export async function getChromeProfilePage(profileId: string): Promise<Page> {
   }
 }
 
-export async function closeChromeProfile(profileId: string): Promise<void> {
+export async function closeChromeProfile(profileId: string): Promise<boolean> {
   const context = activeContexts.get(profileId);
-  if (!context) return;
+  if (!context) return false;
 
-  activeContexts.delete(profileId);
-  await context.close().catch(() => undefined);
+  clearLlmBrowserSessionsForProfile(profileId);
+
+  try {
+    await context.close();
+    return true;
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.warn(`[chrome-profile] failed to close profile ${profileId}: ${detail}`);
+    return false;
+  } finally {
+    activeContexts.delete(profileId);
+  }
 }
 
-export async function closeChromeProfiles(profileIds: string[]): Promise<void> {
+export async function closeChromeProfiles(profileIds: string[]): Promise<string[]> {
+  const closed: string[] = [];
   for (const profileId of profileIds) {
-    await closeChromeProfile(profileId);
+    if (await closeChromeProfile(profileId)) {
+      closed.push(profileId);
+    }
   }
+  return closed;
 }
 
 async function waitForInitialPage(context: BrowserContext): Promise<Page> {

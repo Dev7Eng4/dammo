@@ -1,4 +1,5 @@
 import { youtubeDl } from 'youtube-dl-exec';
+import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import type {
   YoutubeVideoComment,
   YtdlpCommentEntry,
@@ -88,6 +89,7 @@ function nestComments(flat: YtdlpCommentEntry[]): YoutubeVideoComment[] {
 export async function fetchYoutubeVideoComments(videoId: string): Promise<YoutubeVideoComment[]> {
   try {
     const raw = await youtubeDl(buildVideoUrl(videoId), {
+      ...getYoutubeDlCommonOptions(),
       dumpSingleJson: true,
       skipDownload: true,
       noWarnings: true,

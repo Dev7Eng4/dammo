@@ -4,11 +4,13 @@ import { fetchSourceChannels } from '../api/sourceChannels';
 import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
+import { EditYoutubeChannelModal } from '../components/youtube-channels/EditYoutubeChannelModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
 import type {
+  YoutubeChannel,
   YoutubeChannelStats,
   YoutubeChannelTypeFilter,
   YoutubeMonetizationFilter,
@@ -30,6 +32,7 @@ export function YoutubeChannelsPage() {
   const [search, setSearch] = useState('');
   const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [sources, setSources] = useState<SourceChannel[]>([]);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
@@ -46,22 +49,33 @@ export function YoutubeChannelsPage() {
     refreshKey: channelsRefreshKey,
   });
 
-  const selectedChannel =
-    selectedIds.size === 1
-      ? list.items.find((channel) => selectedIds.has(channel.id)) ?? null
-      : null;
+  const selectedChannels = list.items.filter((channel) => selectedIds.has(channel.id));
+  const selectedChannel = selectedIds.size === 1 ? selectedChannels[0] ?? null : null;
   const isBulkCreate = selectedIds.size === 0;
+  const allSelectedAreReup =
+    selectedChannels.length > 0 &&
+    selectedChannels.every((channel) => isStoredReupChannelType(channel.type));
   const canCreateVideo =
     isBulkCreate ||
-    (selectedIds.size === 1 && selectedChannel !== null && isStoredReupChannelType(selectedChannel.type));
+    (selectedIds.size === 1 && selectedChannel !== null && isStoredReupChannelType(selectedChannel.type)) ||
+    (selectedIds.size > 1 && allSelectedAreReup);
   const createVideoDisabledReason =
-    selectedIds.size > 1
-      ? 'Select at most one channel, or none to create for all reup channels'
+    selectedIds.size > 1 && !allSelectedAreReup
+      ? 'All selected channels must be Reup Audio or Reup Video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
         ? 'Only Reup Audio or Reup Video channels can create videos'
         : isBulkCreate
           ? 'Tạo video cho tất cả reup channels'
-          : undefined;
+          : selectedIds.size > 1
+            ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
+            : undefined;
+  const canEdit = selectedIds.size === 1;
+  const editDisabledReason =
+    selectedIds.size === 0
+      ? 'Select a channel to edit'
+      : selectedIds.size > 1
+        ? 'Select exactly one channel to edit'
+        : undefined;
 
   useAbortableEffect(async (signal) => {
     setStatsLoading(true);
@@ -124,8 +138,10 @@ export function YoutubeChannelsPage() {
 
   function handleToggleRow(id: string) {
     setSelectedIds((prev) => {
-      if (prev.has(id) && prev.size === 1) return new Set();
-      return new Set([id]);
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   }
 
@@ -148,6 +164,16 @@ export function YoutubeChannelsPage() {
       .catch(() => setStats(null));
   }
 
+  function handleEditSuccess(_updated?: YoutubeChannel) {
+    setShowEditModal(false);
+    list.markLoading();
+    setChannelsRefreshKey((key) => key + 1);
+
+    void fetchYoutubeChannelStats()
+      .then(setStats)
+      .catch(() => setStats(null));
+  }
+
   function handleCreateVideo() {
     if (selectedIds.size === 0) {
       void enqueueTask({
@@ -155,6 +181,18 @@ export function YoutubeChannelsPage() {
         title: 'Creating videos for all reup channels',
         subtitle: 'Bulk reup run',
         payload: { allReupChannels: true },
+      });
+      return;
+    }
+
+    if (selectedIds.size > 1) {
+      if (!allSelectedAreReup) return;
+
+      void enqueueTask({
+        type: 'create_video',
+        title: `Creating videos for ${selectedIds.size} channels`,
+        subtitle: `${selectedIds.size} selected channels`,
+        payload: { channelIds: Array.from(selectedIds) },
       });
       return;
     }
@@ -191,6 +229,9 @@ export function YoutubeChannelsPage() {
               onSearchChange={handleSearchChange}
               onAddChannel={() => setShowAddModal(true)}
               onCreateVideo={handleCreateVideo}
+              canEdit={canEdit}
+              editDisabledReason={editDisabledReason}
+              onEdit={() => setShowEditModal(true)}
             />
           </div>
           {list.error ? (
@@ -222,6 +263,15 @@ export function YoutubeChannelsPage() {
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddSuccess}
       />
+
+      {selectedChannel ? (
+        <EditYoutubeChannelModal
+          open={showEditModal}
+          channel={selectedChannel}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={handleEditSuccess}
+        />
+      ) : null}
     </div>
   );
 }

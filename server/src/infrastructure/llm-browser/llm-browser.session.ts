@@ -45,9 +45,21 @@ export function setLlmBrowserSessionStatus(
   profileId: string,
   provider: LlmBrowserProvider,
   status: LlmSessionStatus,
+  extra?: Pick<LlmBrowserSession, 'pendingBaselineBlockCount'>,
 ): LlmBrowserSession {
   const session = requireLlmBrowserSession(profileId, provider);
-  const next = { ...session, status };
+  const next = { ...session, status, ...extra };
+  sessions.set(sessionKey(profileId, provider), next);
+  return next;
+}
+
+export function clearLlmBrowserSessionPendingBaseline(
+  profileId: string,
+  provider: LlmBrowserProvider,
+): LlmBrowserSession {
+  const session = requireLlmBrowserSession(profileId, provider);
+  const { pendingBaselineBlockCount: _removed, ...rest } = session;
+  const next = rest as LlmBrowserSession;
   sessions.set(sessionKey(profileId, provider), next);
   return next;
 }

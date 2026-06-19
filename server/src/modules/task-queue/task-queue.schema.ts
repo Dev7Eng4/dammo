@@ -15,13 +15,21 @@ const addSourcePayloadSchema = z.object({
 const createVideoPayloadSchema = z
   .object({
     channelId: z.string().min(1).optional(),
+    channelIds: z.array(z.string().min(1)).min(1).optional(),
     allReupChannels: z.boolean().optional(),
     channelName: z.string().optional(),
     channelHandle: z.string().optional(),
   })
   .refine(
-    (data) => (data.allReupChannels === true && !data.channelId) || (Boolean(data.channelId) && !data.allReupChannels),
-    { message: 'Provide channelId or allReupChannels, not both' },
+    (data) => {
+      const modes = [
+        data.allReupChannels === true,
+        Boolean(data.channelId),
+        Boolean(data.channelIds?.length),
+      ].filter(Boolean).length;
+      return modes === 1;
+    },
+    { message: 'Provide exactly one of channelId, channelIds, or allReupChannels' },
   );
 
 export const enqueueTaskSchema = z.discriminatedUnion('type', [

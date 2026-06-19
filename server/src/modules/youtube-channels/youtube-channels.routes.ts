@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import {
+  createVideosBatchSchema,
   createYoutubeChannelSchema,
   listYoutubeChannelsQuerySchema,
   updateYoutubeChannelSchema,
@@ -44,7 +45,20 @@ export function createYoutubeChannelsRoutes() {
   });
 
   app.post('/create-videos', async (c) => {
-    const result = await youtubeChannelsService.createVideosForAllReupChannels();
+    const contentType = c.req.header('content-type') ?? '';
+    let channelIds: string[] | undefined;
+
+    if (contentType.includes('application/json')) {
+      const parsed = createVideosBatchSchema.safeParse(await c.req.json());
+      if (!parsed.success) {
+        return c.json({ error: parsed.error.message }, 400);
+      }
+      channelIds = parsed.data.channelIds;
+    }
+
+    const result = channelIds?.length
+      ? await youtubeChannelsService.createVideosForChannels(channelIds)
+      : await youtubeChannelsService.createVideosForAllReupChannels();
     return c.json(result);
   });
 

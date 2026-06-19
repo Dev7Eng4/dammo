@@ -1,5 +1,6 @@
 import { getLlmBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
+  clearLlmBrowserSessionPendingBaseline,
   getLlmBrowserSession,
   setLlmBrowserSessionStatus,
   upsertLlmBrowserSession,
@@ -13,11 +14,7 @@ import type {
   LlmSetupConfig,
 } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
-import {
-  getChromeProfilePage,
-  isChromeProfileOpen,
-  openChromeProfile,
-} from '../chrome-profiles/chrome-profile.runner.js';
+import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 
 function assertProfileOpen(profileId: string): void {
@@ -61,7 +58,7 @@ export class LlmBrowserService {
     profileId: string,
     provider: LlmBrowserProvider,
     prompt: string,
-    sendOptions?: LlmSendPromptOptions,
+    sendOptions?: LlmSendPromptOptions
   ): Promise<LlmBrowserSession> {
     assertProfileOpen(profileId);
     assertLlmSession(profileId, provider);
@@ -71,30 +68,33 @@ export class LlmBrowserService {
 
     setLlmBrowserSessionStatus(profileId, provider, 'sending');
     try {
-      await handler.sendPrompt(page, prompt, sendOptions);
-      return setLlmBrowserSessionStatus(profileId, provider, 'waiting');
+      console.log('🚀 ~ LlmBrowserService ~ send ~ sendOptions:');
+      const { baselineBlockCount } = await handler.sendPrompt(page, prompt, sendOptions);
+      console.log('🚀 ~ LlmBrowserService ~ send ~ baselineBlockCount:', baselineBlockCount);
+      return setLlmBrowserSessionStatus(profileId, provider, 'waiting', { pendingBaselineBlockCount: baselineBlockCount });
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, provider, 'idle');
       throw err;
     }
   }
 
-  async getResponse(
-    profileId: string,
-    provider: LlmBrowserProvider,
-    options?: LlmReceiveResponseOptions,
-  ): Promise<LlmBrowserResponse> {
+  async getResponse(profileId: string, provider: LlmBrowserProvider, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
     assertProfileOpen(profileId);
-    assertLlmSession(profileId, provider);
+    const session = assertLlmSession(profileId, provider);
 
     const handler = getLlmBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
 
     try {
-      const response = await handler.receiveResponse(page, options);
+      const response = await handler.receiveResponse(page, {
+        ...options,
+        baselineBlockCount: options?.baselineBlockCount ?? session.pendingBaselineBlockCount,
+      });
+      clearLlmBrowserSessionPendingBaseline(profileId, provider);
       setLlmBrowserSessionStatus(profileId, provider, 'idle');
       return response;
     } catch (err) {
+      clearLlmBrowserSessionPendingBaseline(profileId, provider);
       setLlmBrowserSessionStatus(profileId, provider, 'idle');
       throw err;
     }
@@ -105,15 +105,19 @@ export class LlmBrowserService {
     provider: LlmBrowserProvider,
     prompt: string,
     config?: LlmSetupConfig,
-    options?: LlmReceiveResponseOptions & LlmSendPromptOptions,
+    options?: LlmReceiveResponseOptions & LlmSendPromptOptions
   ): Promise<LlmBrowserResponse> {
     if (config && (config.mode || config.model)) {
       await this.setup(profileId, provider, config);
     }
 
-    const { submitWith, timeoutMs, stableMs } = options ?? {};
-    await this.send(profileId, provider, prompt, { submitWith });
-    return this.getResponse(profileId, provider, { timeoutMs, stableMs });
+    const { submitWith, pasteStrategy, timeoutMs, stableMs } = options ?? {};
+    const handler = getLlmBrowserHandler(provider);
+    const page = await getChromeProfilePage(profileId);
+    await handler.readConversationIfNeeded(page);
+    await this.send(profileId, provider, prompt, { submitWith, pasteStrategy });
+    const response = await this.getResponse(profileId, provider, { timeoutMs, stableMs });
+    return response;
   }
 }
 

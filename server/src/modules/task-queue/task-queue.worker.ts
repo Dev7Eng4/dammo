@@ -39,6 +39,15 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
     return result;
   }
 
+  if (payload.channelIds?.length) {
+    updateProgress(job.id, 15, `Processing ${payload.channelIds.length} channel(s)`);
+    const result = await reupVideoCreatorService.createVideosForChannels(payload.channelIds, {
+      taskJobId: job.id,
+    });
+    updateProgress(job.id, 90, 'Finishing');
+    return result;
+  }
+
   updateProgress(job.id, 15, 'Downloading assets');
   const result = await reupVideoCreatorService.createVideos(payload.channelId!, {
     taskJobId: job.id,

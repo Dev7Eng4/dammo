@@ -380,6 +380,10 @@ export class YoutubeChannelsService {
   async createVideosForAllReupChannels() {
     return reupVideoCreatorService.createVideosForAllReupChannels();
   }
+
+  async createVideosForChannels(channelIds: string[]) {
+    return reupVideoCreatorService.createVideosForChannels(channelIds);
+  }
 }
 
 export const youtubeChannelsService = new YoutubeChannelsService();

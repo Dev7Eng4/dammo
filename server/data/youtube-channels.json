@@ -6,14 +6,16 @@
       "handle": "@ComicStats",
       "youtubeUrl": "https://youtube.com/@ComicStats",
       "channelId": "UCRb1Jyy2QyelNcIqZwUX4Ig",
-      "type": "reup_video",
+      "type": "reup_audio",
       "niche": "General",
       "language": "ja",
       "monetizationStatus": "in_review",
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "prod.sys.a1@gmail.com",
-      "uploadSchedule": ["02:41"],
+      "uploadSchedule": [
+        "02:41"
+      ],
       "sourceMapping": "https://youtube.com/@サラダのお金相談所",
       "contentProjectId": "PRJ-COMICSTA",
       "recentActivity": [],
@@ -32,7 +34,9 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "demo@yopmail.com",
-      "uploadSchedule": ["23:15"],
+      "uploadSchedule": [
+        "23:15"
+      ],
       "sourceMapping": "https://youtube.com/@サラダのお金相談所",
       "contentProjectId": "PRJ-LIFEWISD",
       "recentActivity": [],
@@ -51,7 +55,10 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "duongbich9n7@gmail.com",
-      "uploadSchedule": ["09:00", "18:00"],
+      "uploadSchedule": [
+        "09:00",
+        "18:00"
+      ],
       "sourceMapping": "",
       "contentProjectId": "PRJ-MRBEAST",
       "recentActivity": [],

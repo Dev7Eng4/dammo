@@ -1,5 +1,7 @@
 import type { Locator, Page } from 'playwright';
 
+export type PasteStrategy = 'human' | 'direct';
+
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -64,44 +66,130 @@ export async function humanType(page: Page, locator: Locator, text: string): Pro
   await humanTypeSequential(page, locator, text);
 }
 
+async function getInputTextLength(locator: Locator): Promise<number> {
+  return locator.evaluate((el) => {
+    const target = el as HTMLElement;
+    if (target.isContentEditable) return (target.textContent ?? '').length;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) return target.value.length;
+    return 0;
+  });
+}
+
+async function clearInput(locator: Locator): Promise<void> {
+  await locator.evaluate((el) => {
+    const target = el as HTMLElement;
+    target.focus();
+    if (target.isContentEditable) {
+      target.textContent = '';
+      target.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      return;
+    }
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+      target.value = '';
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+}
+
+async function setInputTextContent(locator: Locator, text: string): Promise<void> {
+  await locator.evaluate((el, content) => {
+    const target = el as HTMLElement;
+    target.focus();
+    if (target.isContentEditable) {
+      target.textContent = content;
+      target.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      return;
+    }
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+      target.value = content;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, text);
+}
+
+export async function waitForInputText(locator: Locator, minLength: number, timeoutMs = 15_000): Promise<number> {
+  const deadline = Date.now() + timeoutMs;
+  let length = 0;
+
+  while (Date.now() < deadline) {
+    length = await getInputTextLength(locator);
+    if (length >= minLength) return length;
+    await randomDelay(100, 200);
+  }
+
+  return length;
+}
+
+function logPasteResult(method: string, promptLength: number, inputLength: number): void {
+  console.log(`[human-paste] method=${method} promptLength=${promptLength} inputLength=${inputLength}`);
+}
+
+export async function setInputTextDirect(page: Page, locator: Locator, text: string): Promise<void> {
+  await humanClick(page, locator);
+  await randomDelay(120, 300);
+  await clearInput(locator);
+  await setInputTextContent(locator, text);
+  await randomDelay(150, 350);
+}
+
 export async function humanTypeSequential(page: Page, locator: Locator, text: string): Promise<void> {
   await humanClick(page, locator);
   await randomDelay(120, 300);
+  await clearInput(locator);
 
   try {
     await locator.pressSequentially(text, { delay: randomInt(40, 120) });
   } catch {
-    await locator.evaluate((el, content) => {
-      const target = el as HTMLElement;
-      target.focus();
-      if (target.isContentEditable) {
-        target.textContent = content;
-        target.dispatchEvent(new InputEvent('input', { bubbles: true }));
-        return;
-      }
-      if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
-        target.value = content;
-        target.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    }, text);
+    await setInputTextContent(locator, text);
   }
 
   await randomDelay(150, 350);
 }
 
-export async function humanPaste(page: Page, locator: Locator, text: string): Promise<void> {
+export async function humanPaste(
+  page: Page,
+  locator: Locator,
+  text: string,
+  options?: { pasteStrategy?: PasteStrategy },
+): Promise<void> {
+  const strategy = options?.pasteStrategy ?? 'human';
+  const promptLength = text.length;
+
+  if (strategy === 'direct') {
+    await setInputTextDirect(page, locator, text);
+    const inputLength = await getInputTextLength(locator);
+    logPasteResult('direct', promptLength, inputLength);
+    if (inputLength < promptLength) {
+      throw new Error(`Direct fill incomplete: expected ${promptLength}, got ${inputLength}`);
+    }
+    return;
+  }
+
   try {
     await humanClick(page, locator);
     await randomDelay(120, 300);
+    await clearInput(locator);
     await page.evaluate(async (content) => {
       await navigator.clipboard.writeText(content);
     }, text);
     await randomDelay(80, 180);
     const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
     await page.keyboard.press(`${modifier}+v`, { delay: randomInt(30, 90) });
-    await randomDelay(150, 350);
+    const inputLength = await waitForInputText(locator, promptLength);
+    logPasteResult('clipboard', promptLength, inputLength);
+
+    if (inputLength < promptLength) {
+      await setInputTextDirect(page, locator, text);
+      const finalLength = await getInputTextLength(locator);
+      logPasteResult('clipboard-fallback-direct', promptLength, finalLength);
+      if (finalLength < promptLength) {
+        throw new Error(`Paste incomplete after fallback: expected ${promptLength}, got ${finalLength}`);
+      }
+    }
   } catch {
     await humanTypeSequential(page, locator, text);
+    const inputLength = await getInputTextLength(locator);
+    logPasteResult('sequential', promptLength, inputLength);
   }
 }
 
@@ -113,6 +201,69 @@ export async function humanScroll(page: Page, deltaY: number): Promise<void> {
     await page.mouse.wheel(0, stepDelta + randomInt(-8, 8));
     await randomDelay(40, 120);
   }
+}
+
+export async function humanReadLatestResponse(
+  page: Page,
+  locator: Locator,
+  containerSelector?: string,
+): Promise<void> {
+  const fallbackSelector = containerSelector ?? '';
+
+  const scrollEvaluate = async () => {
+    await locator.evaluate((el, selector) => {
+      let node = el.parentElement;
+      while (node) {
+        const overflowY = getComputedStyle(node).overflowY;
+        if (
+          (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+          node.scrollHeight > node.clientHeight + 4
+        ) {
+          node.scrollTop = node.scrollHeight;
+          return;
+        }
+        node = node.parentElement;
+      }
+
+      if (selector) {
+        const parts = selector.split(',');
+        for (let i = 0; i < parts.length; i++) {
+          const candidate = parts[i].trim();
+          if (!candidate) continue;
+          const container = document.querySelector(candidate);
+          if (!container) continue;
+          const containerOverflowY = getComputedStyle(container).overflowY;
+          if (
+            (containerOverflowY === 'auto' || containerOverflowY === 'scroll' || containerOverflowY === 'overlay') &&
+            container.scrollHeight > container.clientHeight + 4
+          ) {
+            container.scrollTop = container.scrollHeight;
+            return;
+          }
+        }
+      }
+
+      el.scrollIntoView({ block: 'end' });
+    }, fallbackSelector);
+  };
+
+  for (let pass = 0; pass < 3; pass += 1) {
+    await scrollEvaluate();
+    await randomDelay(250, 500);
+  }
+
+  const viewport = page.viewportSize() ?? { width: 1280, height: 720 };
+  const x = randomInt(Math.floor(viewport.width * 0.25), Math.floor(viewport.width * 0.75));
+  const y = randomInt(Math.floor(viewport.height * 0.25), Math.floor(viewport.height * 0.55));
+  await humanMove(page, x, y);
+  await randomDelay(200, 400);
+
+  await humanScroll(page, randomInt(150, 350));
+  await scrollEvaluate();
+  await randomDelay(400, 800);
+  await humanScroll(page, randomInt(100, 200));
+  await scrollEvaluate();
+  await randomDelay(1_000, 2_500);
 }
 
 export async function humanPressEnter(page: Page): Promise<void> {

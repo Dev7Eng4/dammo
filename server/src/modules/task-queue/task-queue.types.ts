@@ -4,7 +4,7 @@ export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancel
 
 export type TaskLogLevel = 'info' | 'exec' | 'ok' | 'err';
 
-export type TaskLivePhase = 'downloading' | 'ffmpeg' | 'done';
+export type TaskLivePhase = 'downloading' | 'ffmpeg' | 'metadata' | 'done';
 
 export interface TaskLogEntry {
   at: string;
@@ -19,6 +19,7 @@ export interface AddSourceTaskPayload {
 
 export interface CreateVideoTaskPayload {
   channelId?: string;
+  channelIds?: string[];
   allReupChannels?: boolean;
   channelName?: string;
   channelHandle?: string;

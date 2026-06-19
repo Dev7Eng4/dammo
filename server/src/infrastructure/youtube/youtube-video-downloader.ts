@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeDl } from 'youtube-dl-exec';
 import { AppError } from '../../shared/http/errors.js';
+import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { findFileByPrefix } from './youtube-download-utils.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
@@ -29,6 +30,7 @@ export async function downloadYoutubeVideo(
 
   try {
     await youtubeDl(url, {
+      ...getYoutubeDlCommonOptions(),
       output: outputTemplate,
       format: resolveFormat(quality),
       mergeOutputFormat: 'mp4',

@@ -1,8 +1,18 @@
+import path from 'node:path';
 import { AppError } from '../../shared/http/errors.js';
 import { sourceVideosRepository } from '../source-channels/source-videos.repository.js';
 import type { SourceChannel, SourceVideoRecord } from '../source-channels/source-channels.types.js';
 import { resolveSourceChannelsFromMapping } from './youtube-channel-sources.js';
-import { downloadReupAssets } from './reup-asset-downloader.js';
+import { cleanSrt } from '../../infrastructure/subtitle/clean-srt.js';
+import type { TranscriptLanguage } from '../../infrastructure/youtube/youtube-transcript-downloader.js';
+import {
+  downloadReupAssets,
+  downloadReupAudioAssets,
+} from './reup-asset-downloader.js';
+import { updateTranscriptWithLlm } from './reup-transcript-updater.js';
+import { runMetaStep1 } from './reup-meta-step1.js';
+import { runMetaPipelineAfterStep1 } from './reup-meta-pipeline.js';
+import type { MetaStep1MicroSegment, MetaStep3Output, MetaStep4Output } from './reup-metadata.types.js';
 import { reupVideoHistoryRepository } from './reup-video-history.repository.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-video.constants.js';
 import type {
@@ -47,12 +57,7 @@ function collectSourceVideos(sources: SourceChannel[]): SourceVideoWithSource[] 
   return videos;
 }
 
-const SKIP_ON_CREATE_CODES = new Set([
-  'NO_SOURCE_MAPPING',
-  'SOURCE_NOT_FOUND',
-  'NO_SOURCE_VIDEOS',
-  'NO_UNPROCESSED_VIDEOS',
-]);
+const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);
 
 function isSkippableCreateError(err: unknown): err is AppError {
   return err instanceof AppError && Boolean(err.code && SKIP_ON_CREATE_CODES.has(err.code));
@@ -99,6 +104,7 @@ export class ReupVideoCreatorService {
     }
 
     const tasks = buildTasks(channel, allVideos);
+    console.log('🚀 ~ ReupVideoCreatorService ~ createVideos ~ tasks:', tasks);
     if (tasks.length === 0) {
       throw new AppError('No unprocessed source videos available', 400, 'NO_UNPROCESSED_VIDEOS');
     }
@@ -110,49 +116,318 @@ export class ReupVideoCreatorService {
       const taskJobId = options?.taskJobId;
 
       try {
-        if (taskJobId) {
-          taskQueueRepository.setLivePhase(taskJobId, 'downloading');
-          taskQueueRepository.appendLogMessage(
-            taskJobId,
-            'info',
-            isAudioChannel
-              ? `Downloading audio + transcript (${task.language}) for source video ${task.videoId}...`
-              : `Downloading source video ${task.videoId}...`,
-          );
-        }
+        let outputItem: ReupVideoOutputItem;
 
-        const downloaded = await downloadReupAssets(task.link, channel.type, channel.language);
+        if (isAudioChannel) {
+          if (taskJobId) {
+            taskQueueRepository.setLivePhase(taskJobId, 'downloading');
+            taskQueueRepository.appendLogMessage(
+              taskJobId,
+              'info',
+              `Downloading thumbnail + audio + transcript (${task.language}) for source video ${task.videoId}...`,
+            );
+          }
 
-        if (taskJobId) {
-          if (isAudioChannel) {
+          const downloaded = await downloadReupAudioAssets(task.link, channel.language);
+
+          if (taskJobId) {
+            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail saved → ${downloaded.thumbnailPath}`);
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Audio saved → ${downloaded.audioPath}`);
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → ${downloaded.transcriptPath}`);
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SRT cleaned → ${downloaded.srtPath}`);
-          } else {
+          }
+
+          if (taskJobId) {
+            taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Cleaning transcript → SRT...');
+          }
+
+          const srtPath = await cleanSrt(downloaded.transcriptPath);
+
+          if (taskJobId) {
+            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SRT cleaned → ${srtPath}`);
+          }
+
+          let updatedSrtPath: string | undefined;
+          let metaStep1MicroSegments: MetaStep1MicroSegment[] | undefined;
+          let metaStep3Output: MetaStep3Output | undefined;
+          let metaStep4Output: MetaStep4Output | undefined;
+          if (channel.language === 'ja') {
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'info',
+                `Updating transcript via LLM (${channel.language})...`,
+              );
+            }
+
+            updatedSrtPath = await updateTranscriptWithLlm(srtPath, channel.language as TranscriptLanguage, {
+              onProgress: taskJobId
+                ? progress => {
+                    const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                    const profileLabel = progress.profileName;
+
+                    if (progress.status === 'started') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `LLM batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                      );
+                      return;
+                    }
+
+                    if (progress.status === 'retry') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `LLM batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                      );
+                      return;
+                    }
+
+                    if (progress.status === 'fallback') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `LLM batch ${label} on ${profileLabel} fallback to original`,
+                      );
+                      return;
+                    }
+
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'ok',
+                      `LLM batch ${label} on ${profileLabel} done`,
+                    );
+                  }
+                : undefined,
+            });
+
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript updated → ${updatedSrtPath}`);
+            }
+
+            if (taskJobId) {
+              taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 1...');
+            }
+
+            metaStep1MicroSegments = await runMetaStep1(updatedSrtPath, channel.language, {
+              onProgress: taskJobId
+                ? progress => {
+                    const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                    const profileLabel = progress.profileName;
+
+                    if (progress.status === 'started') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `Meta step 1 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                      );
+                      return;
+                    }
+
+                    if (progress.status === 'retry') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `Meta step 1 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                      );
+                      return;
+                    }
+
+                    if (progress.status === 'fallback') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `Meta step 1 batch ${label} on ${profileLabel} fallback to raw segment`,
+                      );
+                      return;
+                    }
+
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'ok',
+                      `Meta step 1 batch ${label} on ${profileLabel} done`,
+                    );
+                  }
+                : undefined,
+            });
+
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'ok',
+                `Metadata step 1 done → ${metaStep1MicroSegments.length} micro_segments`,
+              );
+              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Running metadata pipeline (steps 2–4)...');
+            }
+
+            const metaPipelineResult = await runMetaPipelineAfterStep1(
+              metaStep1MicroSegments,
+              channel.language,
+              downloaded.youtubeVideoId,
+              {
+                outputDir: path.dirname(updatedSrtPath),
+                onStep2Progress: taskJobId
+                  ? progress => {
+                      const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                      const profileLabel = progress.profileName;
+
+                      if (progress.status === 'started') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                        );
+                        return;
+                      }
+
+                      if (progress.status === 'retry') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                        );
+                        return;
+                      }
+
+                      if (progress.status === 'fallback') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 2 batch ${label} on ${profileLabel} fallback to micro_segments`,
+                        );
+                        return;
+                      }
+
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'ok',
+                        `Meta step 2 batch ${label} on ${profileLabel} done`,
+                      );
+                    }
+                  : undefined,
+                onStep3Progress: taskJobId
+                  ? progress => {
+                      const profileLabel = progress.profileName;
+
+                      if (progress.status === 'retry') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 3 on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                        );
+                        return;
+                      }
+
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `Meta step 3 on ${profileLabel} (attempt ${progress.attempt})...`,
+                      );
+                    }
+                  : undefined,
+                onStep4Progress: taskJobId
+                  ? progress => {
+                      const profileLabel = progress.profileName;
+
+                      if (progress.status === 'retry') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 4 on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                        );
+                        return;
+                      }
+
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `Meta step 4 on ${profileLabel} (attempt ${progress.attempt})...`,
+                      );
+                    }
+                  : undefined,
+              },
+            );
+
+            metaStep3Output = metaPipelineResult.step3;
+            metaStep4Output = metaPipelineResult.step4;
+
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'ok',
+                `Metadata step 3 done → ${metaStep3Output.chapters.length} chapters, title: ${metaStep3Output.metadata.title}`,
+              );
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'ok',
+                `Metadata step 4 done → hero image prompt ready (${metaStep4Output.hero_image_package.conflict_type})`,
+              );
+            }
+          }
+
+          reupVideoHistoryRepository.markProcessed({
+            channelId: channel.id,
+            videoUrl: task.link,
+            videoId: task.videoId,
+            outputPath: downloaded.audioPath,
+            processedAt: new Date().toISOString(),
+          });
+
+          outputItem = {
+            link: task.link,
+            channelId: channel.id,
+            language: channel.language,
+            videoId: task.videoId,
+            youtubeVideoId: downloaded.youtubeVideoId,
+            outputPath: downloaded.audioPath,
+            thumbnailPath: downloaded.thumbnailPath,
+            audioPath: downloaded.audioPath,
+            ...(updatedSrtPath
+              ? {
+                  updatedSrtPath,
+                  ...(metaStep1MicroSegments ? { metaStep1MicroSegments } : {}),
+                  ...(metaStep3Output ? { metaStep3Output } : {}),
+                  ...(metaStep4Output ? { metaStep4Output } : {}),
+                }
+              : { transcriptPath: downloaded.transcriptPath, srtPath }),
+          };
+        } else {
+          if (taskJobId) {
+            taskQueueRepository.setLivePhase(taskJobId, 'downloading');
+            taskQueueRepository.appendLogMessage(
+              taskJobId,
+              'info',
+              `Downloading source video ${task.videoId}...`,
+            );
+          }
+
+          const downloaded = await downloadReupAssets(task.link, channel.type, channel.language);
+
+          if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Video saved → ${downloaded.videoPath}`);
           }
+
+          reupVideoHistoryRepository.markProcessed({
+            channelId: channel.id,
+            videoUrl: task.link,
+            videoId: task.videoId,
+            outputPath: downloaded.primaryPath,
+            processedAt: new Date().toISOString(),
+          });
+
+          outputItem = {
+            link: task.link,
+            channelId: channel.id,
+            language: channel.language,
+            videoId: task.videoId,
+            youtubeVideoId: downloaded.youtubeVideoId,
+            outputPath: downloaded.primaryPath,
+            ...(downloaded.videoPath ? { videoPath: downloaded.videoPath } : {}),
+          };
         }
 
-        reupVideoHistoryRepository.markProcessed({
-          channelId: channel.id,
-          videoUrl: task.link,
-          videoId: task.videoId,
-          outputPath: downloaded.primaryPath,
-          processedAt: new Date().toISOString(),
-        });
-
-        items.push({
-          link: task.link,
-          channelId: channel.id,
-          language: channel.language,
-          videoId: task.videoId,
-          youtubeVideoId: downloaded.youtubeVideoId,
-          outputPath: downloaded.primaryPath,
-          ...(downloaded.audioPath ? { audioPath: downloaded.audioPath } : {}),
-          ...(downloaded.transcriptPath ? { transcriptPath: downloaded.transcriptPath } : {}),
-          ...(downloaded.srtPath ? { srtPath: downloaded.srtPath } : {}),
-          ...(downloaded.videoPath ? { videoPath: downloaded.videoPath } : {}),
-        });
+        items.push(outputItem);
       } catch (err) {
         if (taskJobId) {
           const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Video processing failed';
@@ -169,28 +444,52 @@ export class ReupVideoCreatorService {
     return { items };
   }
 
-  async createVideosForAllReupChannels(options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
-    const reupChannels = youtubeChannelsRepository.findAll().filter(channel => isReupChannelType(channel.type));
-
-    if (reupChannels.length === 0) {
-      throw new AppError('No reup channels found', 400, 'NO_REUP_CHANNELS');
+  async createVideosForChannels(channelIds: string[], options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
+    console.log('🚀 ~ ReupVideoCreatorService ~ createVideosForChannels ~ channelIds:', channelIds);
+    if (channelIds.length === 0) {
+      throw new AppError('No channels specified', 400, 'NO_CHANNELS');
     }
 
     const taskJobId = options?.taskJobId;
     const channels: ReupVideoBatchChannelResult[] = [];
     const items: ReupVideoOutputItem[] = [];
-    const total = reupChannels.length;
+    const total = channelIds.length;
 
-    for (let index = 0; index < reupChannels.length; index++) {
-      const channel = reupChannels[index];
+    for (let index = 0; index < channelIds.length; index++) {
+      const channelId = channelIds[index];
       const position = index + 1;
+      const channel = youtubeChannelsRepository.findById(channelId);
+
+      if (!channel) {
+        channels.push({
+          channelId,
+          channelName: channelId,
+          status: 'skipped',
+          reason: 'Channel not found',
+        });
+
+        if (taskJobId) {
+          taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipped unknown channel: ${channelId}`);
+        }
+        continue;
+      }
+
+      if (!isReupChannelType(channel.type)) {
+        channels.push({
+          channelId: channel.id,
+          channelName: channel.name,
+          status: 'skipped',
+          reason: 'Only reup audio or reup video channels can create videos',
+        });
+
+        if (taskJobId) {
+          taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipped ${channel.name}: not a reup channel`);
+        }
+        continue;
+      }
 
       if (taskJobId) {
-        taskQueueRepository.appendLogMessage(
-          taskJobId,
-          'info',
-          `Processing channel ${position}/${total}: ${channel.name}`,
-        );
+        taskQueueRepository.appendLogMessage(taskJobId, 'info', `Processing channel ${position}/${total}: ${channel.name}`);
       }
 
       try {
@@ -208,11 +507,7 @@ export class ReupVideoCreatorService {
         items.push(...result.items);
 
         if (taskJobId) {
-          taskQueueRepository.appendLogMessage(
-            taskJobId,
-            'ok',
-            `Created video for ${channel.name} (${result.items.length} item(s))`,
-          );
+          taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Created video for ${channel.name} (${result.items.length} item(s))`);
         }
       } catch (err) {
         if (isSkippableCreateError(err)) {
@@ -249,6 +544,19 @@ export class ReupVideoCreatorService {
     }
 
     return { channels, items };
+  }
+
+  async createVideosForAllReupChannels(options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
+    const reupChannelIds = youtubeChannelsRepository
+      .findAll()
+      .filter(channel => isReupChannelType(channel.type))
+      .map(channel => channel.id);
+
+    if (reupChannelIds.length === 0) {
+      throw new AppError('No reup channels found', 400, 'NO_REUP_CHANNELS');
+    }
+
+    return this.createVideosForChannels(reupChannelIds, options);
   }
 }
 

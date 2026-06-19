@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
-import { fetchYoutubeChannels, updateYoutubeChannel } from '../../api/youtubeChannels';
+import { updateYoutubeChannel } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
   getChannelUploadTimes,
@@ -47,6 +47,16 @@ function parseSourceChannelIds(sourceMapping: string, sources: SourceChannel[]):
     .map((source) => source.id);
 }
 
+const defaultValues: EditYoutubeChannelFormValues = {
+  mailAccountId: '',
+  type: '',
+  language: '',
+  sourceChannelIds: [],
+  backgroundFootageSourceId: '',
+  uploadFrequency: '',
+  publishTimes: [],
+};
+
 function FormField({
   label,
   htmlFor,
@@ -82,7 +92,7 @@ export function EditYoutubeChannelModal({
 }: EditYoutubeChannelModalProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
-  const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
+  const [mailAccountId, setMailAccountId] = useState('');
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [formReady, setFormReady] = useState(false);
 
@@ -95,7 +105,7 @@ export function EditYoutubeChannelModal({
     getValues,
     register,
     formState: { errors, isSubmitting },
-  } = useForm<EditYoutubeChannelFormValues>();
+  } = useForm<EditYoutubeChannelFormValues>({ defaultValues });
 
   const channelType = watch('type');
   const isReupType = isReupYoutubeChannelType(channelType);
@@ -112,6 +122,7 @@ export function EditYoutubeChannelModal({
     async (signal) => {
       if (!open) {
         setFormReady(false);
+        setMailAccountId('');
         return;
       }
 
@@ -119,34 +130,16 @@ export function EditYoutubeChannelModal({
       setFormReady(false);
 
       try {
-        const [mails, sourceList, channels] = await Promise.all([
+        const [mails, sourceList] = await Promise.all([
           fetchMailAccounts('all', '', 1, 100, { signal }),
           fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal }),
-          fetchYoutubeChannels('all', 'all', '', 1, 100, { signal }),
         ]);
-
-        const usedEmails = new Set(
-          channels.items
-            .filter((item) => item.id !== channel.id)
-            .map((item) => item.linkedEmail.toLowerCase()),
-        );
 
         const mailAccount = mails.items.find(
           (account) => account.email.toLowerCase() === channel.linkedEmail.toLowerCase(),
         );
 
-        setMailOptions(
-          mails.items
-            .filter(
-              (account) =>
-                account.id === mailAccount?.id ||
-                !usedEmails.has(account.email.toLowerCase()),
-            )
-            .map((account) => ({
-              value: account.id,
-              label: account.email,
-            })),
-        );
+        setMailAccountId(mailAccount?.id ?? '');
         setSources(sourceList.items);
 
         const frequency = channel.uploadFrequency ?? '';
@@ -167,7 +160,7 @@ export function EditYoutubeChannelModal({
         setFormReady(true);
       } catch {
         if (signal.aborted) return;
-        setMailOptions([]);
+        setMailAccountId('');
         setSources([]);
       } finally {
         if (!signal.aborted) setOptionsLoading(false);
@@ -191,12 +184,12 @@ export function EditYoutubeChannelModal({
   }
 
   async function onSubmit(values: EditYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency || !values.language) return;
+    if (!values.type || !values.uploadFrequency || !values.language || !mailAccountId) return;
 
     setApiError(null);
     try {
       const { item } = await updateYoutubeChannel(channel.id, {
-        mailAccountId: values.mailAccountId,
+        mailAccountId,
         type: values.type,
         language: values.language,
         uploadFrequency: values.uploadFrequency,
@@ -230,7 +223,7 @@ export function EditYoutubeChannelModal({
           <Button
             size="sm"
             className="rounded-lg"
-            disabled={isSubmitting || optionsLoading || !formReady || mailOptions.length === 0}
+            disabled={isSubmitting || optionsLoading || !formReady || !mailAccountId}
             form="edit-youtube-channel-form"
             type="submit"
           >
@@ -244,33 +237,10 @@ export function EditYoutubeChannelModal({
         onSubmit={handleSubmit(onSubmit)}
         className="grid grid-cols-1 gap-4 sm:grid-cols-2"
       >
-        <FormField label="Linked Email" htmlFor="edit-mail-account" error={errors.mailAccountId?.message} className="min-w-0">
-          <Controller
-            name="mailAccountId"
-            control={control}
-            rules={{ required: 'Email is required' }}
-            render={({ field }) => (
-              <Select
-                id="edit-mail-account"
-                options={mailOptions}
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                placeholder={
-                  optionsLoading
-                    ? 'Loading emails...'
-                    : mailOptions.length === 0
-                      ? 'No available email accounts'
-                      : 'Select email account'
-                }
-                searchPlaceholder="Search email..."
-                searchable
-                disabled={isSubmitting || optionsLoading || mailOptions.length === 0}
-                className="w-full"
-                triggerClassName={selectTriggerClass}
-              />
-            )}
-          />
+        <FormField label="Linked Email" className="min-w-0">
+          <div className="flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300">
+            <span className="truncate">{channel.linkedEmail}</span>
+          </div>
         </FormField>
 
         <FormField label="Channel" className="min-w-0">
@@ -366,7 +336,7 @@ export function EditYoutubeChannelModal({
               <MultiSelect
                 id="edit-source-channel"
                 options={sourceOptions}
-                value={field.value}
+                value={field.value ?? []}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 placeholder={optionsLoading ? 'Loading sources...' : 'Select source channels'}
@@ -429,6 +399,11 @@ export function EditYoutubeChannelModal({
           : null}
 
         {apiError ? <p className="text-xs text-danger sm:col-span-2">{apiError}</p> : null}
+        {!optionsLoading && formReady && !mailAccountId ? (
+          <p className="text-xs text-danger sm:col-span-2">
+            Linked mail account not found. Cannot save changes.
+          </p>
+        ) : null}
       </form>
     </Modal>
   );

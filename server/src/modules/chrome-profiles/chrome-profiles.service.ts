@@ -30,6 +30,10 @@ export class ChromeProfilesService {
   }
 
   pickSubProfile(): ChromeProfile {
+    return this.pickSubProfiles(1)[0];
+  }
+
+  pickSubProfiles(count: number): ChromeProfile[] {
     const subs = chromeProfilesRepository.findByRole('sub');
     if (subs.length === 0) {
       throw new AppError(
@@ -38,8 +42,14 @@ export class ChromeProfilesService {
         'NO_SUB_PROFILE',
       );
     }
-    const index = Math.floor(Math.random() * subs.length);
-    return subs[index];
+    if (count > subs.length) {
+      throw new AppError(
+        `Need at least ${count} sub Chrome profile(s), but only ${subs.length} available.`,
+        409,
+        'NO_SUB_PROFILE',
+      );
+    }
+    return subs.slice(0, count);
   }
 
   async create(input: CreateChromeProfileInput): Promise<ChromeProfile> {
@@ -94,6 +104,33 @@ export class ChromeProfilesService {
       throw new AppError('Chrome profile not found', 404, 'NOT_FOUND');
     }
     return profile;
+  }
+
+  async closeSubProfiles(profileIds: string[]): Promise<void> {
+    if (profileIds.length === 0) return;
+
+    const uniqueIds = [...new Set(profileIds)];
+    const names = uniqueIds.map(id => this.getById(id).name);
+    console.log(`[chrome-profile] đóng ${uniqueIds.length} profile (${names.join(', ')})...`);
+
+    const closedIds = await closeChromeProfiles(uniqueIds);
+    const closedNames = closedIds.map(id => this.getById(id).name);
+
+    if (closedNames.length > 0) {
+      console.log(`[chrome-profile] đã đóng: ${closedNames.join(', ')}`);
+    }
+
+    const skipped = uniqueIds.filter(id => !closedIds.includes(id));
+    if (skipped.length > 0) {
+      const skippedNames = skipped.map(id => this.getById(id).name);
+      console.log(`[chrome-profile] không mở / đã đóng trước đó: ${skippedNames.join(', ')}`);
+    }
+  }
+
+  async closeAllSubProfiles(): Promise<void> {
+    const subs = chromeProfilesRepository.findByRole('sub');
+    if (subs.length === 0) return;
+    await this.closeSubProfiles(subs.map(profile => profile.id));
   }
 
   async resetSubProfiles(): Promise<ResetSubProfilesResult> {

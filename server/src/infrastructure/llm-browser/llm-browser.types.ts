@@ -14,6 +14,8 @@ export interface LlmDomSelectors {
   responseBlocks: string;
   responseCodeBlocks?: string;
   generatingIndicator?: string;
+  conversationScrollContainer?: string;
+  copyResponseButton?: string;
 }
 
 export interface LlmProviderConfig {
@@ -31,10 +33,18 @@ export interface LlmSetupConfig {
 export interface LlmReceiveResponseOptions {
   timeoutMs?: number;
   stableMs?: number;
+  /** Baseline block count trước khi submit prompt; mặc định lấy từ session sau send. */
+  baselineBlockCount?: number;
 }
 
 export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
+  /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
+  pasteStrategy?: 'human' | 'direct';
+}
+
+export interface LlmSendPromptResult {
+  baselineBlockCount: number;
 }
 
 export interface LlmBrowserResponse {
@@ -49,4 +59,6 @@ export interface LlmBrowserSession {
   provider: LlmBrowserProvider;
   openedAt: string;
   status: LlmSessionStatus;
+  /** Snapshot số block trước khi submit prompt lần gửi gần nhất. */
+  pendingBaselineBlockCount?: number;
 }

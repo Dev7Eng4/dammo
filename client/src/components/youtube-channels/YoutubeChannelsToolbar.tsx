@@ -8,11 +8,14 @@ interface YoutubeChannelsToolbarProps {
   canCreateVideo?: boolean;
   createVideoDisabledReason?: string;
   creatingVideo?: boolean;
+  canEdit?: boolean;
+  editDisabledReason?: string;
   onTypeFilterChange: (value: YoutubeChannelTypeFilter) => void;
   onMonetizationFilterChange: (value: YoutubeMonetizationFilter) => void;
   onSearchChange: (value: string) => void;
   onAddChannel: () => void;
   onCreateVideo?: () => void;
+  onEdit?: () => void;
 }
 
 const typeOptions: { value: YoutubeChannelTypeFilter; label: string }[] = [
@@ -38,11 +41,14 @@ export function YoutubeChannelsToolbar({
   canCreateVideo,
   createVideoDisabledReason,
   creatingVideo,
+  canEdit,
+  editDisabledReason,
   onTypeFilterChange,
   onMonetizationFilterChange,
   onSearchChange,
   onAddChannel,
   onCreateVideo,
+  onEdit,
 }: YoutubeChannelsToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -89,6 +95,18 @@ export function YoutubeChannelsToolbar({
               <rect x="3" y="6" width="12" height="12" rx="2" />
             </svg>
             {creatingVideo ? 'Creating…' : 'Create Video'}
+          </Button>
+        ) : null}
+        {onEdit ? (
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg"
+            onClick={onEdit}
+            disabled={!canEdit}
+            title={!canEdit ? editDisabledReason : undefined}
+          >
+            Edit
           </Button>
         ) : null}
         <button type="button" className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200">

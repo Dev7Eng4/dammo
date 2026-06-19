@@ -1,4 +1,5 @@
 import { youtubeDl } from 'youtube-dl-exec';
+import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import type { YoutubeChannelVideo, YtdlpChannelResponse, YtdlpVideoEntry } from './youtube-channel.types.js';
 
 const DEFAULT_LIMIT = 20;
@@ -14,6 +15,7 @@ const UNAVAILABLE_TITLE_MARKERS = [
 ];
 
 const ytdlpBaseOptions = {
+  ...getYoutubeDlCommonOptions(),
   skipDownload: true,
   noWarnings: true,
   ignoreErrors: true,
