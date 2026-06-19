@@ -78,7 +78,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
   const sourceId = getTaskSourceId(job);
   const isFailed = job.status === 'failed';
   const showProgress = job.status === 'running' || job.status === 'completed' || job.status === 'failed';
-  const isSelectable = job.type === 'create_video' && Boolean(onSelect);
+  const isSelectable = Boolean(onSelect);
 
   function handleCardClick() {
     if (isSelectable) onSelect?.(job);

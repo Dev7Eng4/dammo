@@ -51,6 +51,11 @@ export interface YoutubeChannel {
   channelId?: string;
 }
 
+/** Resolved from sourceMapping / source IDs; included in list API responses. */
+export type YoutubeChannelListItem = YoutubeChannel & {
+  sourceNames: string[];
+};
+
 export interface YoutubeChannelsStore {
   channels: YoutubeChannel[];
 }

@@ -29,8 +29,18 @@ async function processAddSource(job: TaskJob): Promise<unknown> {
 
 async function processCreateVideo(job: TaskJob): Promise<unknown> {
   const payload = job.payload as CreateVideoTaskPayload;
+
+  if (payload.allReupChannels) {
+    updateProgress(job.id, 15, 'Processing all reup channels');
+    const result = await reupVideoCreatorService.createVideosForAllReupChannels({
+      taskJobId: job.id,
+    });
+    updateProgress(job.id, 90, 'Finishing');
+    return result;
+  }
+
   updateProgress(job.id, 15, 'Downloading assets');
-  const result = await reupVideoCreatorService.createVideos(payload.channelId, {
+  const result = await reupVideoCreatorService.createVideos(payload.channelId!, {
     taskJobId: job.id,
   });
   updateProgress(job.id, 90, 'Finishing');

@@ -1,6 +1,5 @@
 import { API_V1 } from './config';
-import { fetchJson, withSignal, type FetchOptions } from './http';
-import type {
+import { fetchJson, withSignal, type FetchOptions } from './http';import type {
   CreateSourceChannelPayload,
   SourceChannel,
   SourceChannelsResponse,
@@ -10,6 +9,7 @@ import type {
   SourcePurposeFilter,
   SourceRiskFilter,
   SourceVideoDurationFilter,
+  UpdateSourceChannelPayload,
 } from '../types/sourceChannel';
 
 export function fetchSourceChannels(
@@ -67,9 +67,29 @@ export function createSourceChannel(payload: CreateSourceChannelPayload) {
   });
 }
 
+export function updateSourceChannel(id: string, payload: UpdateSourceChannelPayload) {
+  return fetchJson<{ item: SourceChannel }>(`${API_V1}/source-channels/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function refreshSourceChannel(id: string) {
   return fetchJson<{ item: SourceChannel; videos: SourceChannelVideo[] }>(
     `${API_V1}/source-channels/${id}/refresh`,
     { method: 'POST' },
   );
+}
+
+export async function deleteSourceChannel(id: string) {
+  const res = await fetch(`${API_V1}/source-channels/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const error =
+      body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
+        ? (body as { error: string }).error
+        : `Request failed: ${res.status}`;
+    throw new Error(error);
+  }
 }

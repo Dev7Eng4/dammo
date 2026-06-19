@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/cn';
+import { getTaskDetailLine } from '../../utils/taskQueue';
 import type { TaskJob, TaskLogEntry } from '../../types/taskQueue';
 
 interface TaskJobLiveOutputPanelProps {
@@ -57,9 +58,28 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
+function getEmptyPanelMessage(job: TaskJob): string {
+  if (job.status === 'running') {
+    const label = job.progressLabel ?? 'Processing';
+    return `${label} (${job.progress}%)`;
+  }
+  if (job.status === 'failed') {
+    return job.error ?? 'Task failed';
+  }
+  if (job.status === 'completed') {
+    return getTaskDetailLine(job);
+  }
+  if (job.status === 'queued') {
+    return 'Pending worker availability';
+  }
+  return 'No output available';
+}
+
 export function TaskJobLiveOutputPanel({ job, onClose }: TaskJobLiveOutputPanelProps) {
   const consoleRef = useRef<HTMLDivElement>(null);
   const logs = job.logs ?? [];
+  const panelTitle = job.status === 'running' ? 'Live Output' : 'Job Detail';
+  const emptyMessage = getEmptyPanelMessage(job);
 
   useEffect(() => {
     const el = consoleRef.current;
@@ -71,7 +91,7 @@ export function TaskJobLiveOutputPanel({ job, onClose }: TaskJobLiveOutputPanelP
     <aside className="flex h-full w-full flex-col border-l border-border bg-surface lg:w-96 xl:w-[28rem]">
       <div className="flex items-start justify-between gap-2 border-b border-border p-4">
         <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Live Output</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{panelTitle}</p>
           <h2 className="mt-1 truncate text-sm font-semibold text-neutral-100">{job.title}</h2>
           {job.livePhase ? (
             <p className="mt-0.5 text-xs capitalize text-neutral-500">{job.livePhase}</p>
@@ -97,7 +117,14 @@ export function TaskJobLiveOutputPanel({ job, onClose }: TaskJobLiveOutputPanelP
         className="flex-1 overflow-y-auto bg-neutral-900 p-4 font-mono text-[11px] leading-relaxed"
       >
         {logs.length === 0 ? (
-          <p className="text-neutral-500">Waiting for output...</p>
+          <p
+            className={cn(
+              'whitespace-pre-wrap break-all',
+              job.status === 'failed' ? 'text-danger' : 'text-neutral-500',
+            )}
+          >
+            {emptyMessage}
+          </p>
         ) : (
           <div className="space-y-0.5">
             {logs.map((entry, index) => (

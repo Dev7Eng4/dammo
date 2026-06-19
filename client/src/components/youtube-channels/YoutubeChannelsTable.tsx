@@ -1,10 +1,13 @@
 import { formatChannelLanguageLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type StoredYoutubeChannelType, type YoutubeChannel } from '../../types/youtubeChannel';
+import type { SourceChannel } from '../../types/sourceChannel';
+import { formatChannelSources } from '../../utils/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { HealthIndicator } from './HealthIndicator';
 import { MonetizationPill } from './MonetizationPill';
 
 interface YoutubeChannelsTableProps {
   channels: YoutubeChannel[];
+  sources: SourceChannel[];
   selectedIds: Set<string>;
   loading?: boolean;
   onSelect: (id: string) => void;
@@ -27,6 +30,7 @@ function ChannelAvatar({ name }: { name: string }) {
 
 export function YoutubeChannelsTable({
   channels,
+  sources,
   selectedIds,
   loading,
   onSelect,
@@ -45,6 +49,7 @@ export function YoutubeChannelsTable({
               <th className="pb-3 pr-4 font-medium">CHANNEL</th>
               <th className="pb-3 pr-4 font-medium">LINKED EMAIL</th>
               <th className="pb-3 pr-4 font-medium">TYPE</th>
+              <th className="pb-3 pr-4 font-medium">SOURCE</th>
               <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
               <th className="pb-3 pr-4 font-medium">MONETIZATION</th>
               <th className="pb-3 pr-4 font-medium">HEALTH</th>
@@ -54,7 +59,7 @@ export function YoutubeChannelsTable({
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={8} className="py-3">
+                <td colSpan={9} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -89,6 +94,7 @@ export function YoutubeChannelsTable({
             <th className="pb-3 pr-4 font-medium">CHANNEL</th>
             <th className="pb-3 pr-4 font-medium">LINKED EMAIL</th>
             <th className="pb-3 pr-4 font-medium">TYPE</th>
+            <th className="pb-3 pr-4 font-medium">SOURCE</th>
             <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
             <th className="pb-3 pr-4 font-medium">MONETIZATION</th>
             <th className="pb-3 pr-4 font-medium">HEALTH</th>
@@ -127,6 +133,14 @@ export function YoutubeChannelsTable({
                 </p>
               </td>
               <td className="py-3 pr-4 text-neutral-300">{typeLabel(channel.type)}</td>
+              <td className="py-3 pr-4">
+                <p
+                  className="max-w-[12rem] truncate text-xs text-neutral-400"
+                  title={formatChannelSources(channel, sources)}
+                >
+                  {formatChannelSources(channel, sources)}
+                </p>
+              </td>
               <td className="py-3 pr-4 text-neutral-400">
                 {channel.niche} ({formatChannelLanguageLabel(channel.language)})
               </td>

@@ -19,13 +19,13 @@ export function TaskQueuePopup() {
   const activeCount = summary.running + summary.queued;
 
   function openFullQueue() {
-    setPopupView('minimized');
+    setPopupView('closed');
     navigate('/task-queue');
   }
 
-  if (popupView === 'closed' && activeCount === 0) return null;
+  if (popupView === 'closed') return null;
 
-  if (popupView === 'minimized' || (popupView === 'closed' && activeCount > 0)) {
+  if (popupView === 'minimized') {
     return (
       <TaskQueueMinimizedFab activeCount={activeCount} onClick={() => setPopupView('open')} />
     );
@@ -67,7 +67,7 @@ export function TaskQueuePopup() {
             <button
               type="button"
               className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
-              onClick={() => setPopupView(activeCount > 0 ? 'minimized' : 'closed')}
+              onClick={() => setPopupView('closed')}
               aria-label="Close"
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">

@@ -9,10 +9,6 @@ import type { TaskJobListItem } from '../types/taskQueue';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-function findAutoSelectJobId(jobs: TaskJobListItem[]): string | null {
-  return jobs.find((job) => job.type === 'create_video' && job.status === 'running')?.id ?? null;
-}
-
 export function TaskQueuePage() {
   const { toast } = useToast();
   const {
@@ -23,6 +19,7 @@ export function TaskQueuePage() {
     togglePause,
     paused,
     refresh,
+    refreshJob,
     setLiveJobId,
     getJobDetail,
   } = useTaskQueue();
@@ -43,23 +40,22 @@ export function TaskQueuePage() {
   );
 
   useEffect(() => {
-    if (selectedJobId) return;
-    const autoId = findAutoSelectJobId(jobs);
-    if (autoId) setSelectedJobId(autoId);
-  }, [jobs, selectedJobId]);
-
-  useEffect(() => {
     if (!selectedJobId) {
       setLiveJobId(null);
       return;
     }
     const job = jobs.find((entry) => entry.id === selectedJobId);
-    if (job?.type === 'create_video' && job.status === 'running') {
+    if (job?.status === 'running') {
       setLiveJobId(selectedJobId);
       return;
     }
     setLiveJobId(null);
   }, [jobs, selectedJobId, setLiveJobId]);
+
+  useEffect(() => {
+    if (!selectedJobId) return;
+    void refreshJob(selectedJobId).catch(() => undefined);
+  }, [selectedJobId, refreshJob]);
 
   async function handleCopyPath(path: string) {
     try {
@@ -71,8 +67,7 @@ export function TaskQueuePage() {
   }
 
   function handleSelectJob(job: TaskJobListItem) {
-    if (job.type !== 'create_video') return;
-    setSelectedJobId(job.id);
+    setSelectedJobId((current) => (current === job.id ? null : job.id));
   }
 
   function handleClosePanel() {
@@ -118,11 +113,11 @@ export function TaskQueuePage() {
         </div>
       </div>
 
-      {selectedJob && selectedJob.type === 'create_video' ? (
+      {selectedJob ? (
         <>
           <button
             type="button"
-            aria-label="Close live output panel"
+            aria-label="Close job detail panel"
             onClick={handleClosePanel}
             className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           />

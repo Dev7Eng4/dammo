@@ -150,8 +150,11 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       }
       handlers?.onComplete?.(merged);
     } else if (job.status === 'failed') {
-      toastRef.current.error(job.error ?? 'Task failed');
-      handlers?.onFail?.(merged);
+      if (handlers?.onFail) {
+        handlers.onFail(merged);
+      } else {
+        toastRef.current.error(job.error ?? 'Task failed');
+      }
     }
     handlersRef.current.delete(job.id);
   }, []);

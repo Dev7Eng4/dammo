@@ -98,6 +98,8 @@ export interface YoutubeChannel {
   lastUploadAt?: string;
   createdAt: string;
   channelId?: string;
+  /** Resolved server-side for list responses */
+  sourceNames?: string[];
 }
 
 export interface YoutubeChannelsResponse {
@@ -169,6 +171,21 @@ export interface ReupVideoOutputItem {
 }
 
 export interface CreateReupVideosResponse {
+  items: ReupVideoOutputItem[];
+}
+
+export type ReupVideoBatchChannelStatus = 'created' | 'skipped' | 'failed';
+
+export interface ReupVideoBatchChannelResult {
+  channelId: string;
+  channelName: string;
+  status: ReupVideoBatchChannelStatus;
+  items?: ReupVideoOutputItem[];
+  reason?: string;
+}
+
+export interface CreateReupVideosBatchResponse {
+  channels: ReupVideoBatchChannelResult[];
   items: ReupVideoOutputItem[];
 }
 

@@ -73,6 +73,26 @@ export class SourceChannelsRepository {
 
     return updated;
   }
+
+  remove(id: string): boolean {
+    let removed = false;
+
+    updateJson(
+      paths.sourceChannels,
+      (store) => {
+        const index = store.sources.findIndex((s) => s.id === id);
+        if (index === -1) return store;
+
+        removed = true;
+        const sources = [...store.sources];
+        sources.splice(index, 1);
+        return { sources };
+      },
+      loadStore(),
+    );
+
+    return removed;
+  }
 }
 
 export const sourceChannelsRepository = new SourceChannelsRepository();

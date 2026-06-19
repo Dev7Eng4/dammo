@@ -35,3 +35,12 @@ export const listSourceChannelsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
+
+export const updateSourceChannelSchema = z
+  .object({
+    notes: z.string().max(500).optional(),
+    bumpRisk: z.literal(true).optional(),
+  })
+  .refine((data) => data.bumpRisk === true || data.notes !== undefined, {
+    message: 'Provide notes or bumpRisk',
+  });

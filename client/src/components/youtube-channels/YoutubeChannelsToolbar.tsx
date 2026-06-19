@@ -81,8 +81,8 @@ export function YoutubeChannelsToolbar({
             size="sm"
             className="rounded-lg"
             onClick={onCreateVideo}
-            disabled={creatingVideo}
-            title={!creatingVideo && !canCreateVideo ? createVideoDisabledReason : undefined}
+            disabled={creatingVideo || !canCreateVideo}
+            title={!creatingVideo ? createVideoDisabledReason : undefined}
           >
             <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m15 10 4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14" />

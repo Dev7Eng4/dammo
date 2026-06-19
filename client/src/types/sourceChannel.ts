@@ -73,6 +73,11 @@ export interface CreateSourceChannelPayload {
   purpose: SourcePurpose;
 }
 
+export interface UpdateSourceChannelPayload {
+  notes?: string;
+  bumpRisk?: true;
+}
+
 export interface AddSourceChannelFormValues {
   url: string;
   purpose: SourcePurpose | '';

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchSourceChannels } from '../api/sourceChannels';
+import { fetchSourceChannels, updateSourceChannel, deleteSourceChannel } from '../api/sourceChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddSourceChannelModal } from '../components/source-channels/AddSourceChannelModal';
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
+import { useToast } from '../components/ui';
 import { useTaskQueue } from '../hooks/useTaskQueue';
 import { useDebouncedValue, usePaginatedList } from '../hooks';
 import type {
@@ -19,12 +20,16 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function SourceChannelsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
   const [platformFilter, setPlatformFilter] = useState<SourcePlatformFilter>('all');
   const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('all');
   const [riskFilter, setRiskFilter] = useState<SourceRiskFilter>('all');
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [bumpingRiskId, setBumpingRiskId] = useState<string | null>(null);
+  const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -90,11 +95,61 @@ export function SourceChannelsPage() {
           list.resetPage();
           list.refresh();
         },
+        onFail: (job) => {
+          const err = job.error ?? '';
+          if (err.includes('already exists')) {
+            toast.error('Source đã tồn tại');
+          } else {
+            toast.error(err || 'Không thể thêm source');
+          }
+        },
       },
     ).catch((err) => {
-      // enqueue errors surface via toast in context if we add handling; for now silent
       console.error(err);
     });
+  }
+
+  async function handleBumpRisk(id: string) {
+    setBumpingRiskId(id);
+    try {
+      await updateSourceChannel(id, { bumpRisk: true });
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to increase risk level');
+    } finally {
+      setBumpingRiskId(null);
+    }
+  }
+
+  async function handleNotesChange(id: string, notes: string) {
+    const source = list.items.find((item) => item.id === id);
+    if (!source || (source.notes ?? '') === notes) return;
+
+    setSavingNotesId(id);
+    try {
+      await updateSourceChannel(id, { notes });
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save note');
+    } finally {
+      setSavingNotesId(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const source = list.items.find((item) => item.id === id);
+    if (!source) return;
+
+    setDeletingId(id);
+    try {
+      await deleteSourceChannel(id);
+      toast.success(`Deleted source "${source.name}"`);
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete source');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -116,7 +171,17 @@ export function SourceChannelsPage() {
             <p className="mt-2 text-xs text-danger">{list.error}</p>
           ) : null}
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
-            <SourceChannelsTable sources={list.items} loading={list.loading} onSelect={handleSelect} />
+            <SourceChannelsTable
+              sources={list.items}
+              loading={list.loading}
+              bumpingRiskId={bumpingRiskId}
+              savingNotesId={savingNotesId}
+              deletingId={deletingId}
+              onSelect={handleSelect}
+              onBumpRisk={handleBumpRisk}
+              onNotesChange={handleNotesChange}
+              onDelete={handleDelete}
+            />
             <MailAccountsPagination
               page={list.page}
               limit={list.limit}

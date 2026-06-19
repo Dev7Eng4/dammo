@@ -12,6 +12,7 @@ import {
 } from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 import { sourceChannelsRepository } from './source-channels.repository.js';
+import { findChannelsUsingSource } from './source-channel-usage.js';
 import { sourceVideosRepository } from './source-videos.repository.js';
 import type {
   CreateSourceChannelInput,
@@ -20,7 +21,16 @@ import type {
   SourcePurpose,
   SourceRiskLevel,
   SourceVideoDurationFilter,
+  UpdateSourceChannelInput,
 } from './source-channels.types.js';
+
+const RISK_ORDER: SourceRiskLevel[] = ['low', 'medium', 'high'];
+
+function nextRiskLevel(current: SourceRiskLevel): SourceRiskLevel | null {
+  const index = RISK_ORDER.indexOf(current);
+  if (index === -1 || index >= RISK_ORDER.length - 1) return null;
+  return RISK_ORDER[index + 1];
+}
 
 function filterSources(
   sources: SourceChannel[],
@@ -265,6 +275,54 @@ export class SourceChannelsService {
     };
 
     return sourceChannelsRepository.prepend(source);
+  }
+
+  update(id: string, input: UpdateSourceChannelInput): SourceChannel {
+    const source = this.getById(id);
+
+    if (input.bumpRisk) {
+      const bumped = nextRiskLevel(source.riskLevel);
+      if (!bumped) {
+        throw new AppError('Risk level is already at maximum', 400, 'MAX_RISK_REACHED');
+      }
+    }
+
+    const updated = sourceChannelsRepository.update(id, (current) => {
+      const next = { ...current };
+
+      if (input.bumpRisk) {
+        const bumped = nextRiskLevel(current.riskLevel);
+        if (bumped) next.riskLevel = bumped;
+      }
+
+      if (input.notes !== undefined) {
+        next.notes = input.notes;
+      }
+
+      return next;
+    });
+
+    if (!updated) {
+      throw new AppError('Source channel not found', 404, 'NOT_FOUND');
+    }
+
+    return updated;
+  }
+
+  delete(id: string): void {
+    const source = this.getById(id);
+    const usedBy = findChannelsUsingSource(source);
+
+    if (usedBy.length > 0) {
+      const names = usedBy.map((channel) => channel.name).join(', ');
+      throw new AppError(`Source is used by: ${names}`, 400, 'SOURCE_IN_USE');
+    }
+
+    sourceVideosRepository.delete(id);
+
+    if (!sourceChannelsRepository.remove(id)) {
+      throw new AppError('Source channel not found', 404, 'NOT_FOUND');
+    }
   }
 }
 

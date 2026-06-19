@@ -16,6 +16,13 @@ export class SourceVideosRepository {
     writeJson(sourceVideosFile(sourceId), store);
     return store;
   }
+
+  delete(sourceId: string): void {
+    const file = sourceVideosFile(sourceId);
+    if (fs.existsSync(file)) {
+      fs.unlinkSync(file);
+    }
+  }
 }
 
 export const sourceVideosRepository = new SourceVideosRepository();

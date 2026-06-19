@@ -11,6 +11,7 @@ import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repositor
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { reupVideoCreatorService } from './reup-video-creator.service.js';
+import { resolveSourceNamesForChannel } from './youtube-channel-sources.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import type {
@@ -185,7 +186,14 @@ export class YoutubeChannelsService {
     limit: number,
   ) {
     const filtered = filterChannels(youtubeChannelsRepository.findAll(), type, monetization, query);
-    return paginate(filtered, page, limit);
+    const result = paginate(filtered, page, limit);
+    return {
+      ...result,
+      items: result.items.map((channel) => ({
+        ...channel,
+        sourceNames: resolveSourceNamesForChannel(channel),
+      })),
+    };
   }
 
   getById(id: string): YoutubeChannel {
@@ -367,6 +375,10 @@ export class YoutubeChannelsService {
 
   async createVideos(id: string) {
     return reupVideoCreatorService.createVideos(id);
+  }
+
+  async createVideosForAllReupChannels() {
+    return reupVideoCreatorService.createVideosForAllReupChannels();
   }
 }
 

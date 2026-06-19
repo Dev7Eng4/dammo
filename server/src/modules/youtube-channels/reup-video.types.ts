@@ -34,3 +34,18 @@ export interface ReupVideoOutputItem {
 export interface CreateReupVideosResult {
   items: ReupVideoOutputItem[];
 }
+
+export type ReupVideoBatchChannelStatus = 'created' | 'skipped' | 'failed';
+
+export interface ReupVideoBatchChannelResult {
+  channelId: string;
+  channelName: string;
+  status: ReupVideoBatchChannelStatus;
+  items?: ReupVideoOutputItem[];
+  reason?: string;
+}
+
+export interface CreateReupVideosBatchResult {
+  channels: ReupVideoBatchChannelResult[];
+  items: ReupVideoOutputItem[];
+}

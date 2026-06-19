@@ -12,12 +12,7 @@ export function timeToMs(time: string): number {
   const normalized = time.trim().replace(',', '.');
   const [hours, minutes, rest] = normalized.split(':');
   const [seconds, millis = '0'] = rest.split('.');
-  return (
-    Number(hours) * 3_600_000 +
-    Number(minutes) * 60_000 +
-    Number(seconds) * 1_000 +
-    Number(millis.padEnd(3, '0').slice(0, 3))
-  );
+  return Number(hours) * 3_600_000 + Number(minutes) * 60_000 + Number(seconds) * 1_000 + Number(millis.padEnd(3, '0').slice(0, 3));
 }
 
 export function msToTime(ms: number): string {
@@ -41,7 +36,7 @@ export function splitJapaneseText(text: string, maxLen = MAX_LENGTH_PER_SCREEN):
 export function processSubtitles(subtitles: SubtitleBlock[]): SubtitleBlock[] {
   const result: SubtitleBlock[] = [];
 
-  subtitles.forEach((sub) => {
+  subtitles.forEach(sub => {
     const textToSplit = sub.text.replace(/\n/g, '');
 
     if (textToSplit.length <= MAX_LENGTH_PER_SCREEN) {
@@ -82,8 +77,6 @@ export function processSubtitles(subtitles: SubtitleBlock[]): SubtitleBlock[] {
 }
 
 export async function cleanSrt(vttPath: string): Promise<string> {
-  console.log('[clean-srt] cleaning subtitle:', vttPath);
-
   let text = (await fs.readFile(vttPath, 'utf8')).replace(/\r/g, '');
 
   text = text
@@ -97,7 +90,7 @@ export async function cleanSrt(vttPath: string): Promise<string> {
 
   const blocks = text
     .split(/(?=\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3})/)
-    .map((block) => block.trim())
+    .map(block => block.trim())
     .filter(Boolean);
 
   const cleanedBlocks: SubtitleBlock[] = [];
@@ -106,16 +99,16 @@ export async function cleanSrt(vttPath: string): Promise<string> {
   for (const block of blocks) {
     const [timeLine, ...lines] = block
       .split('\n')
-      .map((line) => line.trim())
+      .map(line => line.trim())
       .filter(Boolean);
 
     if (!timeLine || !timeLine.includes('-->') || lines.join(' ').trim() === '') continue;
 
-    const parts = timeLine.split('-->').map((part) => part.trim());
+    const parts = timeLine.split('-->').map(part => part.trim());
     const rawStart = parts[0];
     const rawEnd = parts[1];
 
-    const newLines = lines.filter((line) => !prevLines.includes(line));
+    const newLines = lines.filter(line => !prevLines.includes(line));
 
     if (newLines.length > 0) {
       const cleanedText = newLines.join('\n');

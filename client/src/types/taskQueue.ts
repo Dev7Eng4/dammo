@@ -18,7 +18,8 @@ export interface AddSourceTaskPayload {
 }
 
 export interface CreateVideoTaskPayload {
-  channelId: string;
+  channelId?: string;
+  allReupChannels?: boolean;
   channelName?: string;
   channelHandle?: string;
 }

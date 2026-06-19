@@ -63,3 +63,8 @@ export interface CreateSourceChannelInput {
   url: string;
   purpose: SourcePurpose;
 }
+
+export interface UpdateSourceChannelInput {
+  notes?: string;
+  bumpRisk?: true;
+}

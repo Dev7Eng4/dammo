@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchSourceChannels } from '../api/sourceChannels';
 import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
@@ -12,6 +13,7 @@ import type {
   YoutubeChannelTypeFilter,
   YoutubeMonetizationFilter,
 } from '../types/youtubeChannel';
+import type { SourceChannel } from '../types/sourceChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 
 const LIMIT = 20;
@@ -28,6 +30,7 @@ export function YoutubeChannelsPage() {
   const [search, setSearch] = useState('');
   const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [sources, setSources] = useState<SourceChannel[]>([]);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -47,9 +50,18 @@ export function YoutubeChannelsPage() {
     selectedIds.size === 1
       ? list.items.find((channel) => selectedIds.has(channel.id)) ?? null
       : null;
-  const canClickCreateVideo = selectedChannel !== null;
+  const isBulkCreate = selectedIds.size === 0;
   const canCreateVideo =
-    canClickCreateVideo && isStoredReupChannelType(selectedChannel.type);
+    isBulkCreate ||
+    (selectedIds.size === 1 && selectedChannel !== null && isStoredReupChannelType(selectedChannel.type));
+  const createVideoDisabledReason =
+    selectedIds.size > 1
+      ? 'Select at most one channel, or none to create for all reup channels'
+      : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
+        ? 'Only Reup Audio or Reup Video channels can create videos'
+        : isBulkCreate
+          ? 'Tạo video cho tất cả reup channels'
+          : undefined;
 
   useAbortableEffect(async (signal) => {
     setStatsLoading(true);
@@ -64,6 +76,16 @@ export function YoutubeChannelsPage() {
       if (!signal.aborted) setStatsLoading(false);
     }
   }, []);
+
+  useAbortableEffect(async (signal) => {
+    try {
+      const data = await fetchSourceChannels('all', 'all', 'all', '', 1, 200, { signal });
+      setSources(data.items);
+    } catch {
+      if (signal.aborted) return;
+      setSources([]);
+    }
+  }, [channelsRefreshKey]);
 
   function clearSelection() {
     setSelectedIds(new Set());
@@ -127,6 +149,16 @@ export function YoutubeChannelsPage() {
   }
 
   function handleCreateVideo() {
+    if (selectedIds.size === 0) {
+      void enqueueTask({
+        type: 'create_video',
+        title: 'Creating videos for all reup channels',
+        subtitle: 'Bulk reup run',
+        payload: { allReupChannels: true },
+      });
+      return;
+    }
+
     if (!selectedChannel) return;
     if (!isStoredReupChannelType(selectedChannel.type)) return;
 
@@ -153,13 +185,7 @@ export function YoutubeChannelsPage() {
               monetizationFilter={monetizationFilter}
               search={search}
               canCreateVideo={canCreateVideo}
-              createVideoDisabledReason={
-                !canClickCreateVideo
-                  ? 'Select one channel using the checkbox'
-                  : !canCreateVideo
-                    ? 'Only Reup Audio or Reup Video channels can create videos'
-                    : undefined
-              }
+              createVideoDisabledReason={createVideoDisabledReason}
               onTypeFilterChange={handleTypeFilterChange}
               onMonetizationFilterChange={handleMonetizationFilterChange}
               onSearchChange={handleSearchChange}
@@ -173,6 +199,7 @@ export function YoutubeChannelsPage() {
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
             <YoutubeChannelsTable
               channels={list.items}
+              sources={sources}
               selectedIds={selectedIds}
               loading={list.loading}
               onSelect={handleSelect}
