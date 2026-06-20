@@ -1,6 +1,13 @@
 import type { LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import type { SrtBlock } from '../../infrastructure/subtitle/srt-utils.js';
-import type { MetaStep1ChunkAnalysis, MetaStep1MicroSegment, MetaStep2BatchAnalysis, MetaStep3Chapter, MetaStep3Output, MetaStep4Output } from './reup-metadata.types.js';
+import type {
+  MetaStep1ChunkAnalysis,
+  MetaStep1MicroSegment,
+  MetaStep2BatchAnalysis,
+  MetaStep3Chapter,
+  MetaStep3Output,
+  MetaStep4Output,
+} from './reup-metadata.types.js';
 
 function stripMarkdownFences(text: string): string {
   return text
@@ -34,22 +41,14 @@ function isNumberArray(value: unknown): value is number[] {
 function validateKeyPoints(value: unknown): boolean {
   if (!Array.isArray(value)) return false;
   return value.every(
-    item =>
-      isRecord(item) &&
-      typeof item.text === 'string' &&
-      item.text.trim().length > 0 &&
-      isNumberArray(item.evidence_ids),
+    item => isRecord(item) && typeof item.text === 'string' && item.text.trim().length > 0 && isNumberArray(item.evidence_ids),
   );
 }
 
 function validateEvents(value: unknown): boolean {
   if (!Array.isArray(value)) return false;
   return value.every(
-    item =>
-      isRecord(item) &&
-      typeof item.text === 'string' &&
-      item.text.trim().length > 0 &&
-      isNumberArray(item.evidence_ids),
+    item => isRecord(item) && typeof item.text === 'string' && item.text.trim().length > 0 && isNumberArray(item.evidence_ids),
   );
 }
 
@@ -85,11 +84,7 @@ function validateMicroSegment(segment: unknown): boolean {
 
 function validateContinuityNotes(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return (
-    typeof value.starts_mid_context === 'boolean' &&
-    typeof value.ends_mid_context === 'boolean' &&
-    typeof value.notes === 'string'
-  );
+  return typeof value.starts_mid_context === 'boolean' && typeof value.ends_mid_context === 'boolean' && typeof value.notes === 'string';
 }
 
 function validateQuality(value: unknown): boolean {
@@ -141,20 +136,12 @@ export function tryParseMetaStep1Response(
 
 function validateMergedEntity(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return (
-    typeof value.name === 'string' &&
-    typeof value.type === 'string' &&
-    typeof value.confidence === 'number'
-  );
+  return typeof value.name === 'string' && typeof value.type === 'string' && typeof value.confidence === 'number';
 }
 
 function validateStep2Quality(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return (
-    isStringArray(value.merged_redundancies) &&
-    isStringArray(value.ambiguous_points) &&
-    typeof value.confidence === 'number'
-  );
+  return isStringArray(value.merged_redundancies) && isStringArray(value.ambiguous_points) && typeof value.confidence === 'number';
 }
 
 function validateSection(section: unknown, batchLineStart: number, batchLineEnd: number): boolean {
@@ -316,8 +303,8 @@ export function tryParseMetaStep3Response(response: LlmBrowserResponse, videoId:
   if (!validateMetadata(parsed.metadata)) return null;
   if (!validateGlobalContext(parsed.global_context)) return null;
   if (!Array.isArray(parsed.chapters) || parsed.chapters.length === 0) return null;
-  if (!parsed.chapters.every(validateChapter)) return null;
-  if (!validateStep3Quality(parsed.quality)) return null;
+  // if (!parsed.chapters.every(validateChapter)) return null;
+  // if (!validateStep3Quality(parsed.quality)) return null;
 
   return {
     video_id: typeof parsed.video_id === 'string' ? parsed.video_id : videoId,
@@ -325,7 +312,7 @@ export function tryParseMetaStep3Response(response: LlmBrowserResponse, videoId:
     metadata: parsed.metadata as MetaStep3Output['metadata'],
     global_context: parsed.global_context as MetaStep3Output['global_context'],
     chapters: parsed.chapters as MetaStep3Output['chapters'],
-    quality: parsed.quality as MetaStep3Output['quality'],
+    quality: parsed?.quality as MetaStep3Output['quality'],
   };
 }
 

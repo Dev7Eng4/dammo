@@ -24,7 +24,7 @@ const BATCH_SIZE = 150;
 const MIN_LAST_BATCH = 70;
 const MAX_CONCURRENT_PROFILES = 5;
 const MAX_BATCH_RETRIES = 3;
-const BATCH_DELAY_MS = 2_000;
+const BATCH_DELAY_MS = 1_500;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -45,12 +45,7 @@ export interface RunMetaStep1Options {
   onProgress?: (progress: MetaStep1Progress) => void;
 }
 
-function logBatchValidationFailure(
-  batchIndex: number,
-  totalBatches: number,
-  attempt: number,
-  reason: string,
-): void {
+function logBatchValidationFailure(batchIndex: number, totalBatches: number, attempt: number, reason: string): void {
   console.warn(`[meta-step1] batch ${batchIndex}/${totalBatches} attempt ${attempt}: validation failed (${reason})`);
 }
 
@@ -68,7 +63,10 @@ function createFallbackResult(batchBlocks: SrtBlock[], processingChunkId: string
         segment_id: `${processingChunkId}-fallback`,
         line_start: lineStart,
         line_end: lineEnd,
-        summary: batchBlocks.map(block => block.text).join(' ').slice(0, 500),
+        summary: batchBlocks
+          .map(block => block.text)
+          .join(' ')
+          .slice(0, 500),
         key_points: [],
         events: [],
         entities: [],

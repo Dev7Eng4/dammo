@@ -87,13 +87,10 @@ export async function closeChromeProfile(profileId: string): Promise<boolean> {
 }
 
 export async function closeChromeProfiles(profileIds: string[]): Promise<string[]> {
-  const closed: string[] = [];
-  for (const profileId of profileIds) {
-    if (await closeChromeProfile(profileId)) {
-      closed.push(profileId);
-    }
-  }
-  return closed;
+  const results = await Promise.all(
+    profileIds.map(async profileId => (await closeChromeProfile(profileId) ? profileId : null)),
+  );
+  return results.filter((id): id is string => id !== null);
 }
 
 async function waitForInitialPage(context: BrowserContext): Promise<Page> {

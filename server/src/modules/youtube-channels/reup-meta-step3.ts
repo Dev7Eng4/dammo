@@ -46,12 +46,7 @@ function resolveStep3PromptKey(language: PromptLanguage): string {
   return prompt.key;
 }
 
-async function persistStep3Output(
-  parsed: MetaStep3Output,
-  videoId: string,
-  language: PromptLanguage,
-  outputDir?: string,
-): Promise<void> {
+async function persistStep3Output(parsed: MetaStep3Output, videoId: string, language: PromptLanguage, outputDir?: string): Promise<void> {
   if (!outputDir) return;
 
   const outputPath = path.join(outputDir, 'meta.step3.json');
@@ -109,11 +104,7 @@ export async function executeMetaStep3(
     }
   }
 
-  throw new AppError(
-    `Metadata step 3 failed after ${MAX_RETRIES} attempts: ${lastReason}`,
-    502,
-    'META_STEP3_FAILED',
-  );
+  throw new AppError(`Metadata step 3 failed after ${MAX_RETRIES} attempts: ${lastReason}`, 502, 'META_STEP3_FAILED');
 }
 
 export async function runMetaStep3(
@@ -130,13 +121,7 @@ export async function runMetaStep3(
   try {
     await llmBrowserService.open(profile.id, provider);
 
-    return executeMetaStep3(
-      { profileId: profile.id, profileName: profile.name, provider },
-      synthesisInput,
-      language,
-      videoId,
-      options,
-    );
+    return executeMetaStep3({ profileId: profile.id, profileName: profile.name, provider }, synthesisInput, language, videoId, options);
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }

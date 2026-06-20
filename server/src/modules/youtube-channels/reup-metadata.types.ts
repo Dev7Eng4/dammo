@@ -56,13 +56,13 @@ export interface MetaStep1Quality {
 }
 
 export interface MetaStep1ChunkAnalysis {
-  processing_chunk_id: string;
+  processing_chunk_id?: string;
   line_start: number;
   line_end: number;
-  overall_summary: string;
+  overall_summary?: string;
   micro_segments: MetaStep1MicroSegment[];
-  continuity_notes: MetaStep1ContinuityNotes;
-  quality: MetaStep1Quality;
+  continuity_notes?: MetaStep1ContinuityNotes;
+  quality?: MetaStep1Quality;
 }
 
 export interface MetaStep1Output {
@@ -101,10 +101,10 @@ export interface MetaStep2Quality {
 }
 
 export interface MetaStep2BatchAnalysis {
-  video_id: string;
-  group_id: string;
+  video_id?: string;
+  group_id?: string;
   sections: MetaStep2Section[];
-  quality: MetaStep2Quality;
+  quality?: MetaStep2Quality;
 }
 
 export interface MetaStep2Output {
@@ -114,9 +114,7 @@ export interface MetaStep2Output {
   sections: MetaStep2Section[];
 }
 
-export type MetaSynthesisInput =
-  | { micro_segments: MetaStep1MicroSegment[] }
-  | { sections: MetaStep2Section[] };
+export type MetaSynthesisInput = { micro_segments: MetaStep1MicroSegment[] } | { sections: MetaStep2Section[] };
 
 export interface MetaStep3StructuredSection {
   heading: string;

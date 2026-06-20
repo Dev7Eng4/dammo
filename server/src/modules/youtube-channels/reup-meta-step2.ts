@@ -10,12 +10,7 @@ import { promptsRepository } from '../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import { tryParseMetaStep2Response } from './reup-meta-response.js';
-import type {
-  MetaStep1MicroSegment,
-  MetaStep2BatchAnalysis,
-  MetaStep2Output,
-  MetaStep2Section,
-} from './reup-metadata.types.js';
+import type { MetaStep1MicroSegment, MetaStep2BatchAnalysis, MetaStep2Output, MetaStep2Section } from './reup-metadata.types.js';
 
 const META_STEP2_KEY = 'step_2';
 const BATCH_SIZE = 12;
@@ -61,20 +56,11 @@ export interface RunMetaStep2Options {
   onProgress?: (progress: MetaStep2Progress) => void;
 }
 
-function logBatchValidationFailure(
-  batchIndex: number,
-  totalBatches: number,
-  attempt: number,
-  reason: string,
-): void {
+function logBatchValidationFailure(batchIndex: number, totalBatches: number, attempt: number, reason: string): void {
   console.warn(`[meta-step2] batch ${batchIndex}/${totalBatches} attempt ${attempt}: validation failed (${reason})`);
 }
 
-function createFallbackResult(
-  batchMicroSegments: MetaStep1MicroSegment[],
-  groupId: string,
-  videoId: string,
-): MetaStep2BatchAnalysis {
+function createFallbackResult(batchMicroSegments: MetaStep1MicroSegment[], groupId: string, videoId: string): MetaStep2BatchAnalysis {
   return {
     video_id: videoId,
     group_id: groupId,
@@ -129,9 +115,7 @@ async function processBatchWithRetry(
     });
 
     try {
-      const userPrompt = await executePromptTemplate(language, promptKey, [
-        JSON.stringify(batchMicroSegments, null, 2),
-      ]);
+      const userPrompt = await executePromptTemplate(language, promptKey, [JSON.stringify(batchMicroSegments, null, 2)]);
       const response = await llmBrowserService.chat(profile.id, provider, userPrompt, undefined, {
         submitWith: 'enter',
         pasteStrategy: 'direct',
@@ -198,9 +182,7 @@ export async function runMetaStep2(
   const workerCount = Math.min(MAX_CONCURRENT_PROFILES, totalBatches);
   const profiles = chromeProfilesService.pickSubProfiles(workerCount);
 
-  console.log(
-    `[meta-step2] Mở ${workerCount} Chrome profile cho ${totalBatches} batch (${profiles.map(p => p.name).join(', ')})...`,
-  );
+  console.log(`[meta-step2] Mở ${workerCount} Chrome profile cho ${totalBatches} batch (${profiles.map(p => p.name).join(', ')})...`);
 
   const results: MetaStep2BatchAnalysis[] = new Array(totalBatches);
   let nextBatchIndex = 0;

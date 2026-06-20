@@ -68,6 +68,6 @@ export async function runMetaPipelineAfterStep1(
 
     return { step3, step4 };
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    // await chromeProfilesService.closeSubProfiles([profile.id]);
   }
 }

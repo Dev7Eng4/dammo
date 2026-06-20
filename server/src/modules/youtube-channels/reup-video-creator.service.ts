@@ -5,10 +5,7 @@ import type { SourceChannel, SourceVideoRecord } from '../source-channels/source
 import { resolveSourceChannelsFromMapping } from './youtube-channel-sources.js';
 import { cleanSrt } from '../../infrastructure/subtitle/clean-srt.js';
 import type { TranscriptLanguage } from '../../infrastructure/youtube/youtube-transcript-downloader.js';
-import {
-  downloadReupAssets,
-  downloadReupAudioAssets,
-} from './reup-asset-downloader.js';
+import { downloadReupAssets, downloadReupAudioAssets } from './reup-asset-downloader.js';
 import { updateTranscriptWithLlm } from './reup-transcript-updater.js';
 import { runMetaStep1 } from './reup-meta-step1.js';
 import { runMetaPipelineAfterStep1 } from './reup-meta-pipeline.js';
@@ -152,11 +149,7 @@ export class ReupVideoCreatorService {
           let metaStep4Output: MetaStep4Output | undefined;
           if (channel.language === 'ja') {
             if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'info',
-                `Updating transcript via LLM (${channel.language})...`,
-              );
+              taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${channel.language})...`);
             }
 
             updatedSrtPath = await updateTranscriptWithLlm(srtPath, channel.language as TranscriptLanguage, {
@@ -184,19 +177,11 @@ export class ReupVideoCreatorService {
                     }
 
                     if (progress.status === 'fallback') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `LLM batch ${label} on ${profileLabel} fallback to original`,
-                      );
+                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `LLM batch ${label} on ${profileLabel} fallback to original`);
                       return;
                     }
 
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'ok',
-                      `LLM batch ${label} on ${profileLabel} done`,
-                    );
+                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `LLM batch ${label} on ${profileLabel} done`);
                   }
                 : undefined,
             });
@@ -243,11 +228,7 @@ export class ReupVideoCreatorService {
                       return;
                     }
 
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'ok',
-                      `Meta step 1 batch ${label} on ${profileLabel} done`,
-                    );
+                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 1 batch ${label} on ${profileLabel} done`);
                   }
                 : undefined,
             });
@@ -299,11 +280,7 @@ export class ReupVideoCreatorService {
                         return;
                       }
 
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'ok',
-                        `Meta step 2 batch ${label} on ${profileLabel} done`,
-                      );
+                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
                     }
                   : undefined,
                 onStep3Progress: taskJobId
@@ -395,11 +372,7 @@ export class ReupVideoCreatorService {
         } else {
           if (taskJobId) {
             taskQueueRepository.setLivePhase(taskJobId, 'downloading');
-            taskQueueRepository.appendLogMessage(
-              taskJobId,
-              'info',
-              `Downloading source video ${task.videoId}...`,
-            );
+            taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading source video ${task.videoId}...`);
           }
 
           const downloaded = await downloadReupAssets(task.link, channel.type, channel.language);
@@ -445,7 +418,6 @@ export class ReupVideoCreatorService {
   }
 
   async createVideosForChannels(channelIds: string[], options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
-    console.log('🚀 ~ ReupVideoCreatorService ~ createVideosForChannels ~ channelIds:', channelIds);
     if (channelIds.length === 0) {
       throw new AppError('No channels specified', 400, 'NO_CHANNELS');
     }
