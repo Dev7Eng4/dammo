@@ -1,0 +1,40 @@
+{
+  "video_id": "video_01",
+  "final_summary": {
+    "overview": "夫のケイジと結婚して5年目を迎え、2人の男の子にも恵まれて幸せな家庭を築いている主人公の女性。ケイジは浮気もせずまっすぐに自分を愛してくれる完璧な夫ですが、主人公の心には今も忘れられない「結婚前のトラブル」の記憶が残っています。2人は大学2年生の時から交際を始め、野球部に所属するケイジの部活帰りを待って手をつないで帰るなど、純粋な恋愛を重ねてきました。そして大学卒業を間近に控えたある日、ケイジから突然プロポーズを受け、喜びの中で彼の美しい母親が待つ実家へと挨拶に赴くことになります。",
+    "key_takeaways": [
+      "結婚5年目で子宝にも恵まれ、一見すると非常に幸せな夫婦関係",
+      "大学2年時から一途に育んできた、純愛の歴史と深い信頼関係",
+      "幸せな現在とは裏腹に、主人公の心に影を落とす結婚前の大きなトラブル"
+    ],
+    "story_flow": [
+      "結婚5年目で2人の子供に恵まれ、幸せに暮らす現在の夫婦生活",
+      "大学2年生の時に始まった、野球部のケイジとの甘酸っぱい恋愛の日々",
+      "大学4年生の卒業間近、指輪のないまっすぐなプロポーズ",
+      "緊張と喜びが入り混じる中、スレンダーで美人なケイジの母親の実家へ挨拶"
+    ]
+  },
+  "metadata": {
+    "title": "愛する夫との完璧な結婚生活。しかし、私の心はあの「結婚前の出来事」に囚われたまま…",
+    "title_candidates": [
+      "愛する夫との完璧な結婚生活。しかし、私の心はあの「結婚前の出来事」に囚われたまま…",
+      "一途に愛してくれる夫と2人の子供。幸せなはずの私が、どうしても忘れられない過去の記憶",
+      "大学からの純愛を経てプロポーズ。幸せの絶頂だった挨拶の日に起きたこと"
+    ],
+    "description": "結婚5年目、一途に私を愛してくれる夫と2人の息子に囲まれ、とても幸せな毎日を送っています。大学時代からの純愛を実らせ、卒業を前に受けたプロポーズ。しかし、そんな完璧な幸せの中にいても、私の心から消えない「結婚前のトラブル」がありました。すべては、あの美しい義母の待つ実家へ挨拶に行った日から始まります。",
+    "tags": ["人間関係", "家族の物語", "結婚生活", "過去の秘密"],
+    "hook_angle": "幸せな現在の裏に隠された、結婚前の消えないトラウマへの好奇心"
+  },
+  "hero_image_prompt": {
+    "concept": "A nostalgic and slightly melancholic scene of a young university couple walking together near a Japanese train station at dusk.",
+    "main_subject": "A young Japanese university couple holding hands, walking side by side after sunset.",
+    "supporting_elements": [
+      "The young man is carrying a baseball equipment bag on his shoulder.",
+      "A suburban Japanese train station entrance in the background.",
+      "Soft, warm twilight glow from streetlights lighting the pathway.",
+      "A subtle, lingering sense of shadow or uncertainty in the distance."
+    ],
+    "prompt": "Cinematic film-like composition. A young Japanese couple in their university years walking side by side, holding hands on a path leading to a suburban train station at twilight. The young man has athletic proportions, wearing a subtle sports jacket and carrying a baseball gear bag over his shoulder. The young woman walks closely beside him with a natural, gentle expression, yet there is a subtle undercurrent of mixed emotions. Realistic human proportions, low-key dramatic lighting with a shallow depth of field. Muted color grading with soft evening tones, catching the warm, hazy glow of streetlamps. The background shows the distant architecture of a quiet Japanese station platform under a darkening sky, creating visual depth from the foreground couple to the midground path and the distant structure. No text, no captions, no subtitles, no logos, no UI, no readable documents.",
+    "negative_prompt": "no text, no captions, no subtitles, no speech bubbles, no logos, no watermark, no UI, no readable documents, no readable phone screen text, no distorted hands, no extra fingers, no duplicate faces, no deformed anatomy, no blurry face, no low-resolution, no random extra characters, no unrelated objects, no exaggerated horror, no gore, no sexualized content, vivid neon colors, anime style, fantasy effects, cartoon distortion."
+  }
+}

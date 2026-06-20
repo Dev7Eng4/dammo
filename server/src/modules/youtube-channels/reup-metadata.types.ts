@@ -1,5 +1,39 @@
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 
+export type MetaStep1BeatRole = 'setup' | 'conflict' | 'reveal' | 'reaction' | 'reversal' | 'resolution' | 'explanation' | 'transition';
+
+export interface MetaStep1Beat {
+  range: [number, number];
+  role: MetaStep1BeatRole;
+  event: string;
+  emotion: string;
+}
+
+export interface MetaStep1Character {
+  name: string;
+  role: string;
+  relationship: string;
+}
+
+export interface MetaStep1CarryForward {
+  last_event: string;
+  active_conflict: string;
+  open_threads: string[];
+  important_visuals: string[];
+}
+
+export interface MetaStep1ChunkDigest {
+  range: unknown;
+  digest: unknown;
+  beats: unknown;
+  characters: unknown;
+  key_facts: unknown;
+  conflicts_and_reveals: unknown;
+  emotion_arc: unknown;
+  visual_anchors: unknown;
+  carry_forward: unknown;
+}
+
 export interface MetaStep1KeyPoint {
   text: string;
   evidence_ids: number[];
@@ -69,7 +103,20 @@ export interface MetaStep1Output {
   videoId: string;
   language: PromptLanguage;
   generatedAt: string;
-  micro_segments: MetaStep1MicroSegment[];
+  chunk_digests: MetaStep1ChunkDigest[];
+}
+
+export interface MetaStep2StoryBlock {
+  source_chunk_ids: unknown;
+  range: unknown;
+  story_block_summary: unknown;
+  major_beats: unknown;
+  main_characters: unknown;
+  core_conflicts: unknown;
+  important_reveals: unknown;
+  emotional_arc: unknown;
+  visual_candidates: unknown;
+  open_threads: unknown;
 }
 
 export interface MetaStep2MergedEntity {
@@ -111,23 +158,65 @@ export interface MetaStep2Output {
   videoId: string;
   language: PromptLanguage;
   generatedAt: string;
-  sections: MetaStep2Section[];
+  story_blocks: MetaStep2StoryBlock[];
 }
 
-export type MetaSynthesisInput = { micro_segments: MetaStep1MicroSegment[] } | { sections: MetaStep2Section[] };
+export type MetaSynthesisInput =
+  | { micro_segments: MetaStep1MicroSegment[] }
+  | { sections: MetaStep2Section[] }
+  | { chunk_digests: MetaStep1ChunkDigest[] }
+  | { story_blocks: MetaStep2StoryBlock[] };
 
+export interface MetaStep3HeroImagePrompt {
+  prompt: unknown;
+  concept?: unknown;
+  main_subject?: unknown;
+  supporting_elements?: unknown;
+  negative_prompt?: unknown;
+}
+
+export interface MetaStep3FinalSummary {
+  overview: unknown;
+  key_takeaways: unknown;
+  story_flow: unknown;
+}
+
+export interface MetaStep3Metadata {
+  title: unknown;
+  description: unknown;
+  tags: unknown;
+  title_candidates?: unknown;
+  hook_angle?: unknown;
+}
+
+export interface MetaStep3Output {
+  final_summary: MetaStep3FinalSummary;
+  metadata: MetaStep3Metadata;
+  hero_image_prompt: MetaStep3HeroImagePrompt;
+}
+
+export interface MetaStep3PersistedOutput {
+  videoId: string;
+  language: PromptLanguage;
+  generatedAt: string;
+  result: MetaStep3Output;
+}
+
+/** @deprecated Legacy step 3 chaptering — kept for step 4 types only */
 export interface MetaStep3StructuredSection {
   heading: string;
   bullets: string[];
 }
 
-export interface MetaStep3FinalSummary {
+/** @deprecated Legacy step 3 final summary */
+export interface MetaStep3LegacyFinalSummary {
   overview: string;
   key_takeaways: string[];
   structured_sections: MetaStep3StructuredSection[];
 }
 
-export interface MetaStep3Metadata {
+/** @deprecated Legacy step 3 metadata */
+export interface MetaStep3LegacyMetadata {
   title: string;
   description: string;
   tags: string[];
@@ -136,6 +225,7 @@ export interface MetaStep3Metadata {
   search_suppression_notes: string[];
 }
 
+/** @deprecated Legacy step 3 global context */
 export interface MetaStep3GlobalContext {
   niche: string;
   tone: string;
@@ -144,6 +234,7 @@ export interface MetaStep3GlobalContext {
   language: string;
 }
 
+/** @deprecated Legacy step 3 chapter */
 export interface MetaStep3Chapter {
   chapter_id: string;
   title: string;
@@ -160,6 +251,7 @@ export interface MetaStep3Chapter {
   visual_beats: string[];
 }
 
+/** @deprecated Legacy step 3 quality */
 export interface MetaStep3Quality {
   merged_redundancies: string[];
   ambiguous_points: string[];
@@ -167,20 +259,14 @@ export interface MetaStep3Quality {
   confidence: number;
 }
 
-export interface MetaStep3Output {
+/** @deprecated Legacy step 3 output — kept for step 4 parser only */
+export interface MetaStep3LegacyOutput {
   video_id: string;
-  final_summary: MetaStep3FinalSummary;
-  metadata: MetaStep3Metadata;
+  final_summary: MetaStep3LegacyFinalSummary;
+  metadata: MetaStep3LegacyMetadata;
   global_context: MetaStep3GlobalContext;
   chapters: MetaStep3Chapter[];
   quality: MetaStep3Quality;
-}
-
-export interface MetaStep3PersistedOutput {
-  videoId: string;
-  language: PromptLanguage;
-  generatedAt: string;
-  result: MetaStep3Output;
 }
 
 export type MetaStep4CharacterImportance = 'primary' | 'secondary' | 'supporting';
@@ -318,5 +404,4 @@ export interface MetaStep4PersistedOutput {
 
 export interface MetaPipelineResult {
   step3: MetaStep3Output;
-  step4: MetaStep4Output;
 }

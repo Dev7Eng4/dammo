@@ -3,47 +3,47 @@ import { llmBrowserService } from '../llm-browser/llm-browser.service.js';
 import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import { executeMetaStep3, type MetaStep3Progress } from './reup-meta-step3.js';
-import { executeMetaStep4, type MetaStep4Progress } from './reup-meta-step4.js';
 import type { MetaLlmSession } from './reup-meta-session.js';
 import { runMetaStep2, type MetaStep2Progress } from './reup-meta-step2.js';
-import type { MetaPipelineResult, MetaStep1MicroSegment, MetaSynthesisInput } from './reup-metadata.types.js';
-
-const STEP2_THRESHOLD = 12;
+import type {
+  MetaPipelineResult,
+  MetaStep1ChunkDigest,
+  MetaStep2StoryBlock,
+} from './reup-metadata.types.js';
 
 export interface RunMetaPipelineOptions {
   outputDir?: string;
   onStep2Progress?: (progress: MetaStep2Progress) => void;
   onStep3Progress?: (progress: MetaStep3Progress) => void;
-  onStep4Progress?: (progress: MetaStep4Progress) => void;
 }
 
 export async function runMetaPipelineAfterStep1(
-  microSegments: MetaStep1MicroSegment[],
+  chunkDigests: MetaStep1ChunkDigest[],
   language: PromptLanguage,
   videoId: string,
   options?: RunMetaPipelineOptions,
 ): Promise<MetaPipelineResult> {
-  let synthesisInput: MetaSynthesisInput;
+  let step3Items: MetaStep2StoryBlock[] | MetaStep1ChunkDigest[];
 
-  if (microSegments.length <= STEP2_THRESHOLD) {
-    console.log(`[meta-pipeline] skip step 2 (${microSegments.length} micro_segments)`);
-    synthesisInput = { micro_segments: microSegments };
+  if (chunkDigests.length < 2) {
+    console.log(`[meta-pipeline] skip step 2 (${chunkDigests.length} chunk_digests)`);
+    step3Items = chunkDigests;
   } else {
-    console.log(`[meta-pipeline] running step 2 (${microSegments.length} micro_segments)`);
+    console.log(`[meta-pipeline] running step 2 (${chunkDigests.length} chunk_digests)`);
 
-    const sections = await runMetaStep2(microSegments, language, videoId, {
+    const storyBlocks = await runMetaStep2(chunkDigests, language, videoId, {
       outputDir: options?.outputDir,
       onProgress: options?.onStep2Progress,
     });
 
-    synthesisInput = { sections };
-    console.log(`[meta-pipeline] step 2 done → ${sections.length} sections`);
+    step3Items = storyBlocks;
+    console.log(`[meta-pipeline] step 2 done → ${storyBlocks.length} story_blocks`);
   }
 
   const provider = promptsSettingsService.get().defaultLlmProvider;
   const profile = chromeProfilesService.pickSubProfile();
 
-  console.log(`[meta-pipeline] Mở Chrome profile ${profile.name} cho step 3 + 4...`);
+  console.log(`[meta-pipeline] Mở Chrome profile ${profile.name} cho step 3...`);
 
   try {
     await llmBrowserService.open(profile.id, provider);
@@ -55,18 +55,12 @@ export async function runMetaPipelineAfterStep1(
     };
 
     console.log('[meta-pipeline] running step 3...');
-    const step3 = await executeMetaStep3(session, synthesisInput, language, videoId, {
+    const step3 = await executeMetaStep3(session, step3Items, language, videoId, {
       outputDir: options?.outputDir,
       onProgress: options?.onStep3Progress,
     });
 
-    console.log('[meta-pipeline] running step 4 on same profile...');
-    const step4 = await executeMetaStep4(session, step3, language, videoId, {
-      outputDir: options?.outputDir,
-      onProgress: options?.onStep4Progress,
-    });
-
-    return { step3, step4 };
+    return { step3 };
   } finally {
     // await chromeProfilesService.closeSubProfiles([profile.id]);
   }

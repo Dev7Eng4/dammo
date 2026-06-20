@@ -5,6 +5,7 @@ import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
   LlmBrowserProvider,
   LlmBrowserResponse,
+  LlmTextProvider,
   LlmProviderConfig,
   LlmReceiveResponseOptions,
   LlmSendPromptOptions,
@@ -46,11 +47,11 @@ async function warmUpBeforeProvider(page: Page): Promise<void> {
   await randomDelay(800, 1_500);
 }
 
-function domTimeoutError(provider: LlmBrowserProvider, detail: string): AppError {
+function domTimeoutError(provider: LlmTextProvider, detail: string): AppError {
   return new AppError(`LLM DOM timeout (${provider}): ${detail}`, 502, 'LLM_DOM_TIMEOUT');
 }
 
-async function waitForFirstVisible(page: Page, provider: LlmBrowserProvider, selector: string, timeout = 30_000) {
+async function waitForFirstVisible(page: Page, provider: LlmTextProvider, selector: string, timeout = 30_000) {
   const selectors = selector.split(',').map(part => part.trim());
   const deadline = Date.now() + timeout;
   let lastError: unknown;
@@ -173,7 +174,7 @@ async function extractResponse(page: Page, config: LlmProviderConfig): Promise<{
   return { content, codeBlocks };
 }
 
-export function createLlmProviderHandler(provider: LlmBrowserProvider): LlmBrowserProviderHandler {
+export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserProviderHandler {
   const config = getLlmProviderConfig(provider);
 
   return {

@@ -1,4 +1,4 @@
-import type { MetaStep1MicroSegment, MetaStep3Output, MetaStep4Output } from './reup-metadata.types.js';
+import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output, MetaStep4Output } from './reup-metadata.types.js';
 
 export interface ReupVideoHistoryRecord {
   channelId: string;
@@ -32,9 +32,11 @@ export interface ReupVideoOutputItem {
   transcriptPath?: string;
   srtPath?: string;
   updatedSrtPath?: string;
-  metaStep1MicroSegments?: MetaStep1MicroSegment[];
+  metaStep1ChunkDigests?: MetaStep1ChunkDigest[];
+  metaStep2StoryBlocks?: MetaStep2StoryBlock[];
   metaStep3Output?: MetaStep3Output;
   metaStep4Output?: MetaStep4Output;
+  heroImagePath?: string;
   videoPath?: string;
 }
 

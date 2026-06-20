@@ -1,141 +1,182 @@
-export default (transcript, previousContext = '') => `
-You are a highly skilled Japanese transcript analyst.
+export default ({ lineStart, lineEnd, transcript, previousContext = '' }) => `
+You are a precise Japanese transcript analyst.
 
-Your task is to analyze ONE TECHNICAL PROCESSING BATCH of Japanese transcript lines.
+Your task is to compress ONE transcript chunk into a compact story digest for downstream final synthesis.
 
-Important:
-This input batch is NOT a chapter.
-It may contain multiple narrative beats, topic shifts, emotional changes, or chapter boundary candidates.
-
-━━━━━━━━━━━━━━━━━━
-## INPUT FORMAT
-━━━━━━━━━━━━━━━━━━
-- Transcript is formatted as numbered lines: [1], [2], [3], ...
-- Numbers are line IDs, NOT timestamps.
-- Timeline is handled outside by code.
+This is a technical chunk, NOT a chapter.
+Do NOT create metadata.
+Do NOT create a final summary.
+Do NOT create image prompts.
+Do NOT create a visual bible.
 
 ━━━━━━━━━━━━━━━━━━
-## OBJECTIVE
+## INPUT METADATA
 ━━━━━━━━━━━━━━━━━━
-Analyze this processing batch and divide it internally into smaller semantic units called micro_segments.
 
-Each micro_segment should represent one coherent narrative/topic/emotional beat.
-
-Do NOT treat the whole input as one chapter.
-Do NOT create final chapters.
-Only identify micro_segments and chapter boundary signals for downstream synthesis.
+Current Chunk Line Range:
+${lineStart} - ${lineEnd}
 
 ━━━━━━━━━━━━━━━━━━
-## SEGMENTATION RULES
+## PREVIOUS CONTEXT
 ━━━━━━━━━━━━━━━━━━
-Create a new micro_segment when there is a meaningful change in:
-- topic
-- event
-- speaker objective
-- emotional tone
-- narrative role
-- time/location/context
-- setup → conflict → reveal → reaction → resolution
 
-Do NOT create a new micro_segment for minor wording changes.
-Prefer 2–5 micro_segments per processing batch when appropriate.
-If the batch is very uniform, 1 micro_segment is acceptable.
-If the batch contains clear shifts, create multiple micro_segments.
+The following lines are the 10 lines immediately before the current chunk.
+Use them only for continuity and disambiguation.
 
-━━━━━━━━━━━━━━━━━━
-## STRICT RULES
-━━━━━━━━━━━━━━━━━━
-- Do NOT add new facts.
-- Do NOT hallucinate.
-- Do NOT invent visuals unless clearly grounded.
-- Do NOT create final chapters.
-- Do NOT assume the batch boundary is a chapter boundary.
-- Preserve meaning, nuance, entities, events, and emotional flow.
-- Use evidence line IDs wherever possible.
-
-━━━━━━━━━━━━━━━━━━
-## OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━
-Return ONLY valid JSON.
-Do not wrap in markdown code block.
-Do not add explanation.
-Do not add comments.
-
-Schema:
-
-{
-  "processing_chunk_id": string,
-  "line_start": number,
-  "line_end": number,
-  "overall_summary": string,
-  "micro_segments": [
-    {
-      "segment_id": string,
-      "line_start": number,
-      "line_end": number,
-      "summary": string,
-      "key_points": [
-        {
-          "text": string,
-          "evidence_ids": [number]
-        }
-      ],
-      "events": [
-        {
-          "text": string,
-          "evidence_ids": [number]
-        }
-      ],
-      "entities": [
-        {
-          "name": string,
-          "type": string,
-          "evidence_ids": [number],
-          "confidence": number
-        }
-      ],
-      "narrative_role": string,
-      "emotion": [string],
-      "topic": string,
-      "chapter_boundary_signal": {
-        "before_segment": string,
-        "after_segment": string,
-        "reason": string
-      },
-      "visual_cues": [
-        {
-          "text": string,
-          "source": "explicit" | "inferred"
-        }
-      ],
-      "confidence": number
-    }
-  ],
-  "continuity_notes": {
-    "starts_mid_context": boolean,
-    "ends_mid_context": boolean,
-    "notes": string
-  },
-  "quality": {
-    "ambiguous_points": [string],
-    "confidence": number
-  }
-}
-
-━━━━━━━━━━━━━━━━━━
-## STYLE
-━━━━━━━━━━━━━━━━━━
-- Write all text values in Japanese.
-- Keep wording concise and precise.
-- Use structured data over long prose.
-
-━━━━━━━━━━━━━━━━━━
-## DATA TO PROCESS
-━━━━━━━━━━━━━━━━━━
+Do NOT summarize previous context as if it belongs to the current chunk.
+Do NOT include previous-context-only events in the digest.
+Do NOT use previous context line IDs in output ranges.
 
 Previous Context:
 ${previousContext || 'None'}
 
-Transcript:
+━━━━━━━━━━━━━━━━━━
+## CURRENT TRANSCRIPT CHUNK
+━━━━━━━━━━━━━━━━━━
+
+Analyze ONLY these lines as the current chunk:
+
 ${transcript}
+
+━━━━━━━━━━━━━━━━━━
+## OBJECTIVE
+━━━━━━━━━━━━━━━━━━
+
+Create a compact digest that preserves only information useful for:
+- final video summary
+- YouTube metadata
+- one long-duration hero image prompt
+
+Keep:
+- main events
+- important character actions
+- character relationships
+- conflict, reveal, reversal, decision, resolution
+- emotional flow
+- visually useful anchors such as documents, phone, family table, hospital, office, evidence object, money, photo, room, or confrontation scene
+
+Remove:
+- repeated wording
+- minor filler
+- excessive evidence details
+- minor side comments
+- line-by-line explanation
+- debug notes unless essential
+
+━━━━━━━━━━━━━━━━━━
+## STRICT RULES
+━━━━━━━━━━━━━━━━━━
+
+- Return ONLY valid JSON.
+- No markdown code block.
+- No comments.
+- No trailing commas.
+- Do not invent facts.
+- Do not add external knowledge.
+- Do not create final chapters.
+- Do not treat this chunk as a full story unless it clearly is.
+- Use only the current transcript lines for output ranges.
+- Output text values should be Japanese, except enum values.
+- Keep the output compact.
+- If a character name is unknown, describe the role concisely, such as "妻", "夫", "義母", "上司", "主人公".
+- If a visual detail is not clearly grounded, do not include it.
+
+━━━━━━━━━━━━━━━━━━
+## OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━
+
+{
+  "range": [number, number],
+  "digest": "string",
+  "beats": [
+    {
+      "range": [number, number],
+      "role": "setup | conflict | reveal | reaction | reversal | resolution | explanation | transition",
+      "event": "string",
+      "emotion": "string"
+    }
+  ],
+  "characters": [
+    {
+      "name": "string",
+      "role": "string",
+      "relationship": "string"
+    }
+  ],
+  "key_facts": ["string"],
+  "conflicts_and_reveals": ["string"],
+  "emotion_arc": "string",
+  "visual_anchors": ["string"],
+  "carry_forward": {
+    "last_event": "string",
+    "active_conflict": "string",
+    "open_threads": ["string"],
+    "important_visuals": ["string"]
+  }
+}
+
+━━━━━━━━━━━━━━━━━━
+## FIELD RULES
+━━━━━━━━━━━━━━━━━━
+
+range:
+- Must be exactly [${lineStart}, ${lineEnd}].
+
+digest:
+- Japanese.
+- Max 450 Japanese characters.
+- Summarize the current chunk only.
+- Do not include previous-context-only events.
+
+beats:
+- Max 5 items.
+- Each beat should represent a meaningful event, emotional change, reveal, conflict, or transition.
+- Do not split for minor wording changes.
+- range must stay inside [${lineStart}, ${lineEnd}].
+- role must be one of:
+  setup, conflict, reveal, reaction, reversal, resolution, explanation, transition.
+
+characters:
+- Max 6 items.
+- Include only important characters appearing or clearly referenced in the current chunk.
+- Keep role and relationship concise.
+- Do not include minor unnamed people unless important.
+
+key_facts:
+- Max 5 items.
+- Include only facts important for understanding the story later.
+
+conflicts_and_reveals:
+- Max 5 items.
+- Include accusations, betrayal, hidden truth, evidence, power shift, confrontation, reversal, or unresolved conflict.
+
+emotion_arc:
+- Japanese.
+- One concise sentence describing the emotional movement of the current chunk.
+
+visual_anchors:
+- Max 5 items.
+- Include concrete visual elements useful for a hero image.
+- Examples: "食卓での対立", "スマホのメッセージ", "封筒に入った書類", "病院の廊下", "会社の会議室".
+- Do not include readable text.
+- Do not invent objects.
+
+carry_forward:
+- last_event: the final important event in this chunk.
+- active_conflict: the main unresolved conflict at the end of this chunk.
+- open_threads: max 4 unresolved story questions or tensions.
+- important_visuals: max 4 visual elements worth remembering for later synthesis.
+
+━━━━━━━━━━━━━━━━━━
+## LENGTH LIMITS
+━━━━━━━━━━━━━━━━━━
+
+- digest: max 450 Japanese characters.
+- beats: max 5.
+- characters: max 6.
+- key_facts: max 5.
+- conflicts_and_reveals: max 5.
+- visual_anchors: max 5.
+- open_threads: max 4.
+- important_visuals: max 4.
 `;

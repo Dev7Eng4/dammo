@@ -1,10 +1,12 @@
 import type { LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import type { SrtBlock } from '../../infrastructure/subtitle/srt-utils.js';
 import type {
-  MetaStep1ChunkAnalysis,
-  MetaStep1MicroSegment,
-  MetaStep2BatchAnalysis,
+  MetaStep1BeatRole,
+  MetaStep1ChunkDigest,
+  MetaStep2StoryBlock,
   MetaStep3Chapter,
+  MetaStep3HeroImagePrompt,
+  MetaStep3LegacyOutput,
   MetaStep3Output,
   MetaStep4Output,
 } from './reup-metadata.types.js';
@@ -30,6 +32,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function hasRequiredKeys(value: unknown, keys: readonly string[]): boolean {
+  if (!isRecord(value)) return false;
+  return keys.every(key => key in value);
+}
+
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
 }
@@ -38,69 +45,73 @@ function isNumberArray(value: unknown): value is number[] {
   return Array.isArray(value) && value.every(item => typeof item === 'number' && Number.isFinite(item));
 }
 
-function validateKeyPoints(value: unknown): boolean {
-  if (!Array.isArray(value)) return false;
-  return value.every(
-    item => isRecord(item) && typeof item.text === 'string' && item.text.trim().length > 0 && isNumberArray(item.evidence_ids),
-  );
+const META_STEP1_BEAT_ROLES = new Set<MetaStep1BeatRole>([
+  'setup',
+  'conflict',
+  'reveal',
+  'reaction',
+  'reversal',
+  'resolution',
+  'explanation',
+  'transition',
+]);
+
+function validateBeatRange(value: unknown, batchLineStart: number, batchLineEnd: number): value is [number, number] {
+  if (!Array.isArray(value) || value.length !== 2) return false;
+  const [start, end] = value;
+  if (typeof start !== 'number' || typeof end !== 'number') return false;
+  if (start > end) return false;
+  return start >= batchLineStart && end <= batchLineEnd;
 }
 
-function validateEvents(value: unknown): boolean {
-  if (!Array.isArray(value)) return false;
-  return value.every(
-    item => isRecord(item) && typeof item.text === 'string' && item.text.trim().length > 0 && isNumberArray(item.evidence_ids),
-  );
-}
-
-function validateEntities(value: unknown): boolean {
-  if (!Array.isArray(value)) return false;
-  return value.every(
-    item =>
-      isRecord(item) &&
-      typeof item.name === 'string' &&
-      typeof item.type === 'string' &&
-      isNumberArray(item.evidence_ids) &&
-      typeof item.confidence === 'number',
-  );
-}
-
-function validateMicroSegment(segment: unknown): boolean {
-  if (!isRecord(segment)) return false;
+function validateBeat(value: unknown, batchLineStart: number, batchLineEnd: number): boolean {
+  if (!isRecord(value)) return false;
   return (
-    typeof segment.segment_id === 'string' &&
-    typeof segment.line_start === 'number' &&
-    typeof segment.line_end === 'number' &&
-    typeof segment.summary === 'string' &&
-    segment.summary.trim().length > 0 &&
-    validateKeyPoints(segment.key_points) &&
-    validateEvents(segment.events) &&
-    validateEntities(segment.entities) &&
-    typeof segment.narrative_role === 'string' &&
-    isStringArray(segment.emotion) &&
-    typeof segment.topic === 'string' &&
-    typeof segment.confidence === 'number'
+    validateBeatRange(value.range, batchLineStart, batchLineEnd) &&
+    typeof value.role === 'string' &&
+    META_STEP1_BEAT_ROLES.has(value.role as MetaStep1BeatRole) &&
+    typeof value.event === 'string' &&
+    value.event.trim().length > 0 &&
+    typeof value.emotion === 'string'
   );
 }
 
-function validateContinuityNotes(value: unknown): boolean {
+function validateCharacter(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return typeof value.starts_mid_context === 'boolean' && typeof value.ends_mid_context === 'boolean' && typeof value.notes === 'string';
+  return typeof value.name === 'string' && typeof value.role === 'string' && typeof value.relationship === 'string';
 }
 
-function validateQuality(value: unknown): boolean {
+function validateCarryForward(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return isStringArray(value.ambiguous_points) && typeof value.confidence === 'number';
+  return (
+    typeof value.last_event === 'string' &&
+    typeof value.active_conflict === 'string' &&
+    isStringArray(value.open_threads) &&
+    value.open_threads.length <= 4 &&
+    isStringArray(value.important_visuals) &&
+    value.important_visuals.length <= 4
+  );
 }
 
-export function tryParseMetaStep1Response(
-  response: LlmBrowserResponse,
-  batchBlocks: SrtBlock[],
-  processingChunkId: string,
-): MetaStep1ChunkAnalysis | null {
+function validateStringArrayMax(value: unknown, max: number): boolean {
+  return isStringArray(value) && value.length <= max && value.every(item => item.trim().length > 0);
+}
+
+const STEP1_REQUIRED_KEYS = [
+  'range',
+  'digest',
+  'beats',
+  'characters',
+  'key_facts',
+  'conflicts_and_reveals',
+  'emotion_arc',
+  'visual_anchors',
+  'carry_forward',
+] as const;
+
+export function tryParseMetaStep1Response(response: LlmBrowserResponse, batchBlocks: SrtBlock[]): MetaStep1ChunkDigest | null {
   if (batchBlocks.length === 0) return null;
 
-  const batchLineStart = batchBlocks[0].index;
-  const batchLineEnd = batchBlocks[batchBlocks.length - 1].index;
   const jsonText = extractJsonText(response);
 
   let parsed: unknown;
@@ -111,85 +122,61 @@ export function tryParseMetaStep1Response(
   }
 
   if (!isRecord(parsed)) return null;
-  if (!Array.isArray(parsed.micro_segments) || parsed.micro_segments.length === 0) return null;
-  if (!parsed.micro_segments.every(validateMicroSegment)) return null;
-  if (!validateContinuityNotes(parsed.continuity_notes)) return null;
-  if (!validateQuality(parsed.quality)) return null;
-  if (typeof parsed.overall_summary !== 'string' || parsed.overall_summary.trim().length === 0) return null;
+  if (!hasRequiredKeys(parsed, STEP1_REQUIRED_KEYS)) return null;
 
-  const lineStart = typeof parsed.line_start === 'number' ? parsed.line_start : batchLineStart;
-  const lineEnd = typeof parsed.line_end === 'number' ? parsed.line_end : batchLineEnd;
-  if (lineStart < batchLineStart || lineEnd > batchLineEnd || lineStart > lineEnd) {
-    return null;
-  }
-
-  return {
-    processing_chunk_id: processingChunkId,
-    line_start: lineStart,
-    line_end: lineEnd,
-    overall_summary: parsed.overall_summary.trim(),
-    micro_segments: parsed.micro_segments as MetaStep1ChunkAnalysis['micro_segments'],
-    continuity_notes: parsed.continuity_notes as MetaStep1ChunkAnalysis['continuity_notes'],
-    quality: parsed.quality as MetaStep1ChunkAnalysis['quality'],
-  };
+  return parsed as unknown as MetaStep1ChunkDigest;
 }
 
-function validateMergedEntity(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  return typeof value.name === 'string' && typeof value.type === 'string' && typeof value.confidence === 'number';
+function validateStringArrayMaxOptional(value: unknown, max: number): boolean {
+  if (!isStringArray(value) || value.length > max) return false;
+  return value.every(item => item.trim().length > 0);
 }
 
-function validateStep2Quality(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  return isStringArray(value.merged_redundancies) && isStringArray(value.ambiguous_points) && typeof value.confidence === 'number';
+function chunkDigestRangeId(digest: MetaStep1ChunkDigest): string {
+  const range = digest.range as [number, number];
+  return `${range[0]}-${range[1]}`;
 }
 
-function validateSection(section: unknown, batchLineStart: number, batchLineEnd: number): boolean {
-  if (!isRecord(section)) return false;
-  return (
-    typeof section.section_id === 'string' &&
-    typeof section.title === 'string' &&
-    section.title.trim().length > 0 &&
-    typeof section.summary === 'string' &&
-    section.summary.trim().length > 0 &&
-    isNumberArray(section.source_chunk_ids) &&
-    typeof section.start_line === 'number' &&
-    typeof section.end_line === 'number' &&
-    section.start_line >= batchLineStart &&
-    section.end_line <= batchLineEnd &&
-    section.start_line <= section.end_line &&
-    typeof section.narrative_role === 'string' &&
-    typeof section.emotion_arc === 'string' &&
-    isStringArray(section.main_points) &&
-    Array.isArray(section.merged_entities) &&
-    section.merged_entities.every(validateMergedEntity) &&
-    isStringArray(section.visual_beats) &&
-    typeof section.continuity_notes === 'string' &&
-    typeof section.confidence === 'number'
-  );
-}
-
-function resolveBatchLineRange(batchMicroSegments: MetaStep1MicroSegment[]): {
+function resolveChunkDigestBatchRange(batchChunkDigests: MetaStep1ChunkDigest[]): {
   batchLineStart: number;
   batchLineEnd: number;
+  expectedSourceChunkIds: string[];
 } | null {
-  if (batchMicroSegments.length === 0) return null;
+  if (batchChunkDigests.length === 0) return null;
+  const firstRange = batchChunkDigests[0].range as [number, number];
+  const lastRange = batchChunkDigests[batchChunkDigests.length - 1].range as [number, number];
   return {
-    batchLineStart: batchMicroSegments[0].line_start,
-    batchLineEnd: batchMicroSegments[batchMicroSegments.length - 1].line_end,
+    batchLineStart: firstRange[0],
+    batchLineEnd: lastRange[1],
+    expectedSourceChunkIds: batchChunkDigests.map(chunkDigestRangeId),
   };
 }
+
+function validateSourceChunkIds(value: unknown, expectedChunkIds: string[]): boolean {
+  if (!isStringArray(value) || value.length !== expectedChunkIds.length) return false;
+  const expected = new Set(expectedChunkIds);
+  return value.every(chunkId => expected.has(chunkId));
+}
+
+const STEP2_REQUIRED_KEYS = [
+  'source_chunk_ids',
+  'range',
+  'story_block_summary',
+  'major_beats',
+  'main_characters',
+  'core_conflicts',
+  'important_reveals',
+  'emotional_arc',
+  'visual_candidates',
+  'open_threads',
+] as const;
 
 export function tryParseMetaStep2Response(
   response: LlmBrowserResponse,
-  batchMicroSegments: MetaStep1MicroSegment[],
-  groupId: string,
-  videoId: string,
-): MetaStep2BatchAnalysis | null {
-  const lineRange = resolveBatchLineRange(batchMicroSegments);
-  if (!lineRange) return null;
+  batchChunkDigests: MetaStep1ChunkDigest[],
+): MetaStep2StoryBlock | null {
+  if (batchChunkDigests.length === 0) return null;
 
-  const { batchLineStart, batchLineEnd } = lineRange;
   const jsonText = extractJsonText(response);
 
   let parsed: unknown;
@@ -200,24 +187,58 @@ export function tryParseMetaStep2Response(
   }
 
   if (!isRecord(parsed)) return null;
-  if (!Array.isArray(parsed.sections) || parsed.sections.length === 0) return null;
-  if (!parsed.sections.every(section => validateSection(section, batchLineStart, batchLineEnd))) return null;
-  if (!validateStep2Quality(parsed.quality)) return null;
+  if (!hasRequiredKeys(parsed, STEP2_REQUIRED_KEYS)) return null;
+
+  return parsed as unknown as MetaStep2StoryBlock;
+}
+
+function validateStringArrayLength(value: unknown, min: number, max: number): boolean {
+  if (!isStringArray(value) || value.length < min || value.length > max) return false;
+  return value.every(item => item.trim().length > 0);
+}
+
+function validateStep3FinalSummary(value: unknown): boolean {
+  return hasRequiredKeys(value, ['overview', 'key_takeaways', 'story_flow']);
+}
+
+function validateStep3Metadata(value: unknown): boolean {
+  return hasRequiredKeys(value, ['title', 'description', 'tags']);
+}
+
+function validateHeroImagePrompt(value: unknown): boolean {
+  return hasRequiredKeys(value, ['prompt']);
+}
+
+export function tryParseMetaStep3Response(response: LlmBrowserResponse, videoId: string): MetaStep3Output | null {
+  const jsonText = extractJsonText(response);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed)) return null;
+  if (!hasRequiredKeys(parsed, ['final_summary', 'metadata', 'hero_image_prompt'])) return null;
+  if (!validateStep3FinalSummary(parsed.final_summary)) return null;
+  if (!validateStep3Metadata(parsed.metadata)) return null;
+  if (!validateHeroImagePrompt(parsed.hero_image_prompt)) return null;
 
   return {
-    video_id: typeof parsed.video_id === 'string' ? parsed.video_id : videoId,
-    group_id: typeof parsed.group_id === 'string' ? parsed.group_id : groupId,
-    sections: parsed.sections as MetaStep2BatchAnalysis['sections'],
-    quality: parsed.quality as MetaStep2BatchAnalysis['quality'],
+    final_summary: parsed.final_summary as MetaStep3Output['final_summary'],
+    metadata: parsed.metadata as MetaStep3Output['metadata'],
+    hero_image_prompt: parsed.hero_image_prompt as MetaStep3HeroImagePrompt,
   };
 }
 
+/** @deprecated Legacy step 3 validators — kept for step 4 parser */
 function validateStructuredSection(value: unknown): boolean {
   if (!isRecord(value)) return false;
   return typeof value.heading === 'string' && value.heading.trim().length > 0 && isStringArray(value.bullets);
 }
 
-function validateFinalSummary(value: unknown): boolean {
+function validateLegacyFinalSummary(value: unknown): boolean {
   if (!isRecord(value)) return false;
   return (
     typeof value.overview === 'string' &&
@@ -228,7 +249,7 @@ function validateFinalSummary(value: unknown): boolean {
   );
 }
 
-function validateMetadata(value: unknown): boolean {
+function validateLegacyMetadata(value: unknown): boolean {
   if (!isRecord(value)) return false;
   return (
     typeof value.title === 'string' &&
@@ -288,7 +309,7 @@ function validateStep3Quality(value: unknown): boolean {
   );
 }
 
-export function tryParseMetaStep3Response(response: LlmBrowserResponse, videoId: string): MetaStep3Output | null {
+export function tryParseMetaStep3LegacyResponse(response: LlmBrowserResponse, videoId: string): MetaStep3LegacyOutput | null {
   const jsonText = extractJsonText(response);
 
   let parsed: unknown;
@@ -299,20 +320,18 @@ export function tryParseMetaStep3Response(response: LlmBrowserResponse, videoId:
   }
 
   if (!isRecord(parsed)) return null;
-  if (!validateFinalSummary(parsed.final_summary)) return null;
-  if (!validateMetadata(parsed.metadata)) return null;
+  if (!validateLegacyFinalSummary(parsed.final_summary)) return null;
+  if (!validateLegacyMetadata(parsed.metadata)) return null;
   if (!validateGlobalContext(parsed.global_context)) return null;
   if (!Array.isArray(parsed.chapters) || parsed.chapters.length === 0) return null;
-  // if (!parsed.chapters.every(validateChapter)) return null;
-  // if (!validateStep3Quality(parsed.quality)) return null;
 
   return {
     video_id: typeof parsed.video_id === 'string' ? parsed.video_id : videoId,
-    final_summary: parsed.final_summary as MetaStep3Output['final_summary'],
-    metadata: parsed.metadata as MetaStep3Output['metadata'],
-    global_context: parsed.global_context as MetaStep3Output['global_context'],
-    chapters: parsed.chapters as MetaStep3Output['chapters'],
-    quality: parsed?.quality as MetaStep3Output['quality'],
+    final_summary: parsed.final_summary as MetaStep3LegacyOutput['final_summary'],
+    metadata: parsed.metadata as MetaStep3LegacyOutput['metadata'],
+    global_context: parsed.global_context as MetaStep3LegacyOutput['global_context'],
+    chapters: parsed.chapters as MetaStep3LegacyOutput['chapters'],
+    quality: parsed?.quality as MetaStep3LegacyOutput['quality'],
   };
 }
 
@@ -491,7 +510,7 @@ function validateChapterVisualPlansMatchStep3(plans: unknown[], step3Chapters: M
 export function tryParseMetaStep4Response(
   response: LlmBrowserResponse,
   videoId: string,
-  step3Output: MetaStep3Output,
+  step3Output: MetaStep3LegacyOutput,
 ): MetaStep4Output | null {
   const jsonText = extractJsonText(response);
 

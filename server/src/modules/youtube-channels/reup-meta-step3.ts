@@ -9,7 +9,8 @@ import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import type { MetaLlmSession } from './reup-meta-session.js';
 import { tryParseMetaStep3Response } from './reup-meta-response.js';
-import type { MetaStep3Output, MetaStep3PersistedOutput, MetaSynthesisInput } from './reup-metadata.types.js';
+import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output, MetaStep3PersistedOutput } from './reup-metadata.types.js';
+import { DEFAULT_VISUAL_STYLE, type MetaStep3VisualStylePreset } from './reup-meta-visual-preset.js';
 
 const META_STEP3_KEY = 'step_3';
 const MAX_RETRIES = 3;
@@ -23,15 +24,22 @@ export interface MetaStep3Progress {
   status: MetaStep3Status;
 }
 
-export interface ExecuteMetaStep3Options {
+export interface RunMetaStep3Options {
   outputDir?: string;
+  contentTypeHint?: string;
+  visualStylePreset?: MetaStep3VisualStylePreset;
   onProgress?: (progress: MetaStep3Progress) => void;
 }
 
-export type RunMetaStep3Options = ExecuteMetaStep3Options;
+export type ExecuteMetaStep3Options = RunMetaStep3Options;
 
 function logValidationFailure(attempt: number, reason: string): void {
   console.warn(`[meta-step3] attempt ${attempt}: validation failed (${reason})`);
+}
+
+function formatLogValue(value: unknown, maxLength = 80): string {
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
 function resolveStep3PromptKey(language: PromptLanguage): string {
@@ -57,12 +65,14 @@ async function persistStep3Output(parsed: MetaStep3Output, videoId: string, lang
     result: parsed,
   };
   await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
-  console.log(`[meta-step3] saved: ${outputPath} (${parsed.chapters.length} chapters)`);
+  console.log(
+    `[meta-step3] saved: ${outputPath} (title: ${formatLogValue(parsed.metadata.title)}, hero: ${formatLogValue(parsed.hero_image_prompt.prompt)})`,
+  );
 }
 
 export async function executeMetaStep3(
   session: MetaLlmSession,
-  synthesisInput: MetaSynthesisInput,
+  items: MetaStep2StoryBlock[] | MetaStep1ChunkDigest[],
   language: PromptLanguage,
   videoId: string,
   options?: ExecuteMetaStep3Options,
@@ -71,8 +81,11 @@ export async function executeMetaStep3(
     throw new AppError('Metadata step 3 is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
 
+  if (items.length === 0) {
+    throw new AppError('No items provided for metadata step 3', 400, 'INVALID_INPUT');
+  }
+
   const promptKey = resolveStep3PromptKey(language);
-  const synthesisJson = JSON.stringify(synthesisInput, null, 2);
   let lastReason = 'unknown error';
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
@@ -84,7 +97,13 @@ export async function executeMetaStep3(
     });
 
     try {
-      const userPrompt = await executePromptTemplate(language, promptKey, [synthesisJson]);
+      const userPrompt = await executePromptTemplate(language, promptKey, [
+        {
+          contentTypeHint: options?.contentTypeHint ?? 'auto',
+          visualStylePreset: options?.visualStylePreset ?? DEFAULT_VISUAL_STYLE,
+          items: JSON.stringify(items, null, 2),
+        },
+      ]);
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
         pasteStrategy: 'direct',
@@ -108,7 +127,7 @@ export async function executeMetaStep3(
 }
 
 export async function runMetaStep3(
-  synthesisInput: MetaSynthesisInput,
+  items: MetaStep2StoryBlock[] | MetaStep1ChunkDigest[],
   language: PromptLanguage,
   videoId: string,
   options?: RunMetaStep3Options,
@@ -116,12 +135,12 @@ export async function runMetaStep3(
   const provider = promptsSettingsService.get().defaultLlmProvider;
   const profile = chromeProfilesService.pickSubProfile();
 
-  console.log(`[meta-step3] Mở Chrome profile ${profile.name} cho global synthesis...`);
+  console.log(`[meta-step3] Mở Chrome profile ${profile.name} cho final package...`);
 
   try {
     await llmBrowserService.open(profile.id, provider);
 
-    return executeMetaStep3({ profileId: profile.id, profileName: profile.name, provider }, synthesisInput, language, videoId, options);
+    return await executeMetaStep3({ profileId: profile.id, profileName: profile.name, provider }, items, language, videoId, options);
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }

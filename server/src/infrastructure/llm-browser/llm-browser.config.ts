@@ -1,6 +1,6 @@
-import type { LlmBrowserProvider, LlmProviderConfig } from './llm-browser.types.js';
+import type { LlmTextProvider, LlmProviderConfig } from './llm-browser.types.js';
 
-export const LLM_PROVIDER_CONFIGS: Record<LlmBrowserProvider, LlmProviderConfig> = {
+export const LLM_PROVIDER_CONFIGS: Record<LlmTextProvider, LlmProviderConfig> = {
   gpt: {
     id: 'gpt',
     url: 'https://chatgpt.com',
@@ -37,6 +37,6 @@ export const LLM_PROVIDER_CONFIGS: Record<LlmBrowserProvider, LlmProviderConfig>
   },
 };
 
-export function getLlmProviderConfig(provider: LlmBrowserProvider): LlmProviderConfig {
+export function getLlmProviderConfig(provider: LlmTextProvider): LlmProviderConfig {
   return LLM_PROVIDER_CONFIGS[provider];
 }

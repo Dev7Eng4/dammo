@@ -1,4 +1,6 @@
-export type LlmBrowserProvider = 'gpt' | 'gemini';
+export type LlmTextProvider = 'gpt' | 'gemini';
+export type ImageBrowserProvider = 'flow';
+export type LlmBrowserProvider = LlmTextProvider | ImageBrowserProvider;
 
 export type LlmSessionStatus = 'idle' | 'sending' | 'waiting';
 
@@ -19,7 +21,7 @@ export interface LlmDomSelectors {
 }
 
 export interface LlmProviderConfig {
-  id: LlmBrowserProvider;
+  id: LlmTextProvider;
   url: string;
   selectors: LlmDomSelectors;
   setup?: LlmSetupSelectors;
@@ -35,6 +37,10 @@ export interface LlmReceiveResponseOptions {
   stableMs?: number;
   /** Baseline block count trước khi submit prompt; mặc định lấy từ session sau send. */
   baselineBlockCount?: number;
+  /** Flow: path to save generated image. */
+  outputPath?: string;
+  /** Flow: screenshot on timeout for debugging selectors. */
+  debugScreenshotPath?: string;
 }
 
 export interface LlmSendPromptOptions {
@@ -47,11 +53,27 @@ export interface LlmSendPromptResult {
   baselineBlockCount: number;
 }
 
+export interface LlmMediaAsset {
+  kind: 'image' | 'video';
+  sourceUrl?: string;
+  localPath?: string;
+}
+
+export interface LlmGenerateImageOptions {
+  provider?: ImageBrowserProvider;
+  outputPath?: string;
+  debugScreenshotPath?: string;
+  timeoutMs?: number;
+  stableMs?: number;
+  pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
+}
+
 export interface LlmBrowserResponse {
   provider: LlmBrowserProvider;
   content: string;
   codeBlocks: string[];
   elapsedMs: number;
+  mediaAssets?: LlmMediaAsset[];
 }
 
 export interface LlmBrowserSession {

@@ -17,7 +17,7 @@ import { promptsRepository } from '../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import { tryParseMetaStep1Response } from './reup-meta-response.js';
-import type { MetaStep1ChunkAnalysis, MetaStep1MicroSegment, MetaStep1Output } from './reup-metadata.types.js';
+import type { MetaStep1ChunkDigest, MetaStep1Output } from './reup-metadata.types.js';
 
 const META_STEP1_KEY = 'step_1';
 const BATCH_SIZE = 150;
@@ -25,6 +25,7 @@ const MIN_LAST_BATCH = 70;
 const MAX_CONCURRENT_PROFILES = 5;
 const MAX_BATCH_RETRIES = 3;
 const BATCH_DELAY_MS = 1_500;
+const FALLBACK_DIGEST_MAX_CHARS = 450;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -49,41 +50,32 @@ function logBatchValidationFailure(batchIndex: number, totalBatches: number, att
   console.warn(`[meta-step1] batch ${batchIndex}/${totalBatches} attempt ${attempt}: validation failed (${reason})`);
 }
 
-function createFallbackResult(batchBlocks: SrtBlock[], processingChunkId: string): MetaStep1ChunkAnalysis {
+function createFallbackResult(batchBlocks: SrtBlock[]): MetaStep1ChunkDigest {
   const lineStart = batchBlocks[0].index;
   const lineEnd = batchBlocks[batchBlocks.length - 1].index;
+  const rawText = batchBlocks.map(block => block.text).join(' ');
 
   return {
-    processing_chunk_id: processingChunkId,
-    line_start: lineStart,
-    line_end: lineEnd,
-    overall_summary: '',
-    micro_segments: [
+    range: [lineStart, lineEnd],
+    digest: rawText.slice(0, FALLBACK_DIGEST_MAX_CHARS),
+    beats: [
       {
-        segment_id: `${processingChunkId}-fallback`,
-        line_start: lineStart,
-        line_end: lineEnd,
-        summary: batchBlocks
-          .map(block => block.text)
-          .join(' ')
-          .slice(0, 500),
-        key_points: [],
-        events: [],
-        entities: [],
-        narrative_role: 'unknown',
-        emotion: [],
-        topic: 'unknown',
-        confidence: 0,
+        range: [lineStart, lineEnd],
+        role: 'transition',
+        event: rawText.slice(0, 200),
+        emotion: '',
       },
     ],
-    continuity_notes: {
-      starts_mid_context: false,
-      ends_mid_context: false,
-      notes: 'LLM fallback: raw transcript segment preserved',
-    },
-    quality: {
-      ambiguous_points: ['LLM response validation failed'],
-      confidence: 0,
+    characters: [],
+    key_facts: [],
+    conflicts_and_reveals: [],
+    emotion_arc: '',
+    visual_anchors: [],
+    carry_forward: {
+      last_event: '',
+      active_conflict: '',
+      open_threads: [],
+      important_visuals: [],
     },
   };
 }
@@ -98,9 +90,10 @@ async function processBatchWithRetry(
   batchIndex: number,
   totalBatches: number,
   onProgress?: RunMetaStep1Options['onProgress'],
-): Promise<MetaStep1ChunkAnalysis> {
-  const processingChunkId = `chunk-${batchIndex}`;
-  const indexedText = srtBlocksToIndexedText(batchBlocks);
+): Promise<MetaStep1ChunkDigest> {
+  const lineStart = batchBlocks[0].index;
+  const lineEnd = batchBlocks[batchBlocks.length - 1].index;
+  const transcript = srtBlocksToIndexedText(batchBlocks);
   const previousContext = resolvePreviousContext(allBlocks, batchBlocks);
 
   for (let attempt = 1; attempt <= MAX_BATCH_RETRIES; attempt += 1) {
@@ -114,13 +107,15 @@ async function processBatchWithRetry(
     });
 
     try {
-      const userPrompt = await executePromptTemplate(language, promptKey, [indexedText, previousContext]);
+      const userPrompt = await executePromptTemplate(language, promptKey, [
+        { lineStart, lineEnd, transcript, previousContext },
+      ]);
       const response = await llmBrowserService.chat(profile.id, provider, userPrompt, undefined, {
         submitWith: 'enter',
         pasteStrategy: 'direct',
       });
 
-      const parsed = tryParseMetaStep1Response(response, batchBlocks, processingChunkId);
+      const parsed = tryParseMetaStep1Response(response, batchBlocks);
       if (parsed) {
         onProgress?.({
           batchIndex,
@@ -149,14 +144,14 @@ async function processBatchWithRetry(
     status: 'fallback',
   });
 
-  return createFallbackResult(batchBlocks, processingChunkId);
+  return createFallbackResult(batchBlocks);
 }
 
 export async function runMetaStep1(
   updatedSrtPath: string,
   language: PromptLanguage,
   options?: RunMetaStep1Options,
-): Promise<MetaStep1MicroSegment[]> {
+): Promise<MetaStep1ChunkDigest[]> {
   if (language !== 'ja') {
     throw new AppError('Metadata step 1 is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
@@ -185,7 +180,7 @@ export async function runMetaStep1(
 
   console.log(`[meta-step1] Mở ${workerCount} Chrome profile cho ${totalBatches} batch (${profiles.map(p => p.name).join(', ')})...`);
 
-  const results: MetaStep1ChunkAnalysis[] = new Array(totalBatches);
+  const results: MetaStep1ChunkDigest[] = new Array(totalBatches);
   let nextBatchIndex = 0;
 
   try {
@@ -213,7 +208,7 @@ export async function runMetaStep1(
         } catch (err) {
           const reason = err instanceof Error ? err.message : String(err);
           console.warn(`[meta-step1] batch ${batchIndex + 1}/${totalBatches} lỗi profile ${profile.name}: ${reason}`);
-          results[batchIndex] = createFallbackResult(batches[batchIndex], `chunk-${batchIndex + 1}`);
+          results[batchIndex] = createFallbackResult(batches[batchIndex]);
         }
 
         if (nextBatchIndex < totalBatches) {
@@ -224,16 +219,9 @@ export async function runMetaStep1(
 
     await Promise.all(profiles.map(workerProfile));
 
-    const sortedChunkAnalyses = results.filter(Boolean).sort((a, b) => {
-      const aStart = Number(a.line_start);
-      const bStart = Number(b.line_start);
-      if (aStart !== bStart) return aStart - bStart;
-      const aEnd = Number(a.line_end);
-      const bEnd = Number(b.line_end);
-      return aEnd - bEnd;
-    });
-
-    const microSegments = sortedChunkAnalyses.flatMap(analysis => analysis.micro_segments);
+    const chunkDigests = results
+      .filter(Boolean)
+      .sort((a, b) => (a.range as [number, number])[0] - (b.range as [number, number])[0]);
 
     const outputDir = path.dirname(updatedSrtPath);
     const videoId = path.basename(outputDir);
@@ -243,13 +231,13 @@ export async function runMetaStep1(
       videoId,
       language,
       generatedAt: new Date().toISOString(),
-      micro_segments: microSegments,
+      chunk_digests: chunkDigests,
     };
 
     await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
-    console.log(`[meta-step1] saved: ${outputPath} (${microSegments.length} micro_segments)`);
+    console.log(`[meta-step1] saved: ${outputPath} (${chunkDigests.length} chunk_digests)`);
 
-    return microSegments;
+    return chunkDigests;
   } finally {
     await chromeProfilesService.closeAllSubProfiles();
   }

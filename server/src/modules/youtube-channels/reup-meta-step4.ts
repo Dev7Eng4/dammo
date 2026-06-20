@@ -7,22 +7,12 @@ import { promptsRepository } from '../prompts/prompts.repository.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import type { MetaLlmSession } from './reup-meta-session.js';
 import { tryParseMetaStep4Response } from './reup-meta-response.js';
-import type { MetaStep3Output, MetaStep4Output, MetaStep4PersistedOutput } from './reup-metadata.types.js';
+import type { MetaStep3LegacyOutput, MetaStep4Output, MetaStep4PersistedOutput } from './reup-metadata.types.js';
 
 const META_STEP4_KEY = 'step_4';
 const MAX_RETRIES = 3;
 
-export const DEFAULT_VISUAL_STYLE = {
-  name: 'cinematic',
-  rules: [
-    'realistic human proportions',
-    'film-like composition',
-    'natural facial expressions',
-    'low-key dramatic lighting',
-    'shallow depth of field',
-    'muted color grading',
-  ],
-};
+import { DEFAULT_VISUAL_STYLE } from './reup-meta-visual-preset.js';
 
 export type MetaStep4Status = 'started' | 'retry';
 
@@ -75,7 +65,7 @@ async function persistStep4Output(
 
 export async function executeMetaStep4(
   session: MetaLlmSession,
-  step3Output: MetaStep3Output,
+  step3Output: MetaStep3LegacyOutput,
   language: PromptLanguage,
   videoId: string,
   options?: ExecuteMetaStep4Options,

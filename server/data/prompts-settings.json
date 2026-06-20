@@ -1,3 +1,4 @@
 {
-  "defaultLlmProvider": "gemini"
+  "defaultLlmProvider": "gemini",
+  "defaultImageProvider": "flow"
 }

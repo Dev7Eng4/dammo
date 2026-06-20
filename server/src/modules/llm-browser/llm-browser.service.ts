@@ -6,9 +6,11 @@ import {
   upsertLlmBrowserSession,
 } from '../../infrastructure/llm-browser/llm-browser.session.js';
 import type {
+  ImageBrowserProvider,
   LlmBrowserProvider,
   LlmBrowserResponse,
   LlmBrowserSession,
+  LlmGenerateImageOptions,
   LlmReceiveResponseOptions,
   LlmSendPromptOptions,
   LlmSetupConfig,
@@ -107,17 +109,43 @@ export class LlmBrowserService {
     config?: LlmSetupConfig,
     options?: LlmReceiveResponseOptions & LlmSendPromptOptions
   ): Promise<LlmBrowserResponse> {
+    if (!getLlmBrowserSession(profileId, provider)) {
+      await this.open(profileId, provider);
+    }
+
     if (config && (config.mode || config.model)) {
       await this.setup(profileId, provider, config);
     }
 
-    const { submitWith, pasteStrategy, timeoutMs, stableMs } = options ?? {};
+    const { submitWith, pasteStrategy, timeoutMs, stableMs, outputPath, debugScreenshotPath } = options ?? {};
     const handler = getLlmBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
     await handler.readConversationIfNeeded(page);
     await this.send(profileId, provider, prompt, { submitWith, pasteStrategy });
-    const response = await this.getResponse(profileId, provider, { timeoutMs, stableMs });
+    const response = await this.getResponse(profileId, provider, {
+      timeoutMs,
+      stableMs,
+      outputPath,
+      debugScreenshotPath,
+    });
     return response;
+  }
+
+  async generateImage(
+    profileId: string,
+    prompt: string,
+    options?: LlmGenerateImageOptions,
+  ): Promise<LlmBrowserResponse> {
+    const provider: ImageBrowserProvider = options?.provider ?? 'flow';
+
+    return this.chat(profileId, provider, prompt, { mode: 'image' }, {
+      pasteStrategy: options?.pasteStrategy ?? 'direct',
+      submitWith: 'button',
+      timeoutMs: options?.timeoutMs ?? 300_000,
+      stableMs: options?.stableMs ?? 3_000,
+      outputPath: options?.outputPath,
+      debugScreenshotPath: options?.debugScreenshotPath,
+    });
   }
 }
 

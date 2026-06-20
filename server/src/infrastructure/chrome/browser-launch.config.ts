@@ -31,6 +31,7 @@ export function buildChromeLaunchOptions(headless: boolean) {
     ...baseChromeOptions(headless),
     viewport: null,
     locale: 'en-US',
+    acceptDownloads: true,
     ...resolveChromeTarget(),
   };
 }

@@ -158,18 +158,49 @@ export interface YoutubeVideoCommentsResponse {
   items: YoutubeVideoComment[];
 }
 
-export interface MetaStep1MicroSegment {
-  segment_id: string;
-  line_start: number;
-  line_end: number;
-  summary: string;
-  key_points: Array<{ text: string; evidence_ids: number[] }>;
-  events: Array<{ text: string; evidence_ids: number[] }>;
-  entities: Array<{ name: string; type: string; evidence_ids: number[]; confidence: number }>;
-  narrative_role: string;
-  emotion: string[];
-  topic: string;
-  confidence: number;
+export interface MetaStep1Beat {
+  range: [number, number];
+  role: 'setup' | 'conflict' | 'reveal' | 'reaction' | 'reversal' | 'resolution' | 'explanation' | 'transition';
+  event: string;
+  emotion: string;
+}
+
+export interface MetaStep1Character {
+  name: string;
+  role: string;
+  relationship: string;
+}
+
+export interface MetaStep1CarryForward {
+  last_event: string;
+  active_conflict: string;
+  open_threads: string[];
+  important_visuals: string[];
+}
+
+export interface MetaStep1ChunkDigest {
+  range: unknown;
+  digest: unknown;
+  beats: unknown;
+  characters: unknown;
+  key_facts: unknown;
+  conflicts_and_reveals: unknown;
+  emotion_arc: unknown;
+  visual_anchors: unknown;
+  carry_forward: unknown;
+}
+
+export interface MetaStep2StoryBlock {
+  source_chunk_ids: unknown;
+  range: unknown;
+  story_block_summary: unknown;
+  major_beats: unknown;
+  main_characters: unknown;
+  core_conflicts: unknown;
+  important_reveals: unknown;
+  emotional_arc: unknown;
+  visual_candidates: unknown;
+  open_threads: unknown;
 }
 
 export interface MetaStep2Section {
@@ -188,6 +219,36 @@ export interface MetaStep2Section {
   confidence: number;
 }
 
+export interface MetaStep3HeroImagePrompt {
+  prompt: unknown;
+  concept?: unknown;
+  main_subject?: unknown;
+  supporting_elements?: unknown;
+  negative_prompt?: unknown;
+}
+
+export interface MetaStep3FinalSummary {
+  overview: unknown;
+  key_takeaways: unknown;
+  story_flow: unknown;
+}
+
+export interface MetaStep3Metadata {
+  title: unknown;
+  description: unknown;
+  tags: unknown;
+  title_candidates?: unknown;
+  hook_angle?: unknown;
+}
+
+export interface MetaStep3Output {
+  video_id: string;
+  final_summary: MetaStep3FinalSummary;
+  metadata: MetaStep3Metadata;
+  hero_image_prompt: MetaStep3HeroImagePrompt;
+}
+
+/** @deprecated Legacy step 3 chapter — kept for MetaStep4 types */
 export interface MetaStep3Chapter {
   chapter_id: string;
   title: string;
@@ -202,37 +263,6 @@ export interface MetaStep3Chapter {
   main_points: string[];
   chapter_boundary_reason: string;
   visual_beats: string[];
-}
-
-export interface MetaStep3Output {
-  video_id: string;
-  final_summary: {
-    overview: string;
-    key_takeaways: string[];
-    structured_sections: Array<{ heading: string; bullets: string[] }>;
-  };
-  metadata: {
-    title: string;
-    description: string;
-    tags: string[];
-    hook: string;
-    ctr_strategy: string;
-    search_suppression_notes: string[];
-  };
-  global_context: {
-    niche: string;
-    tone: string;
-    audience: string;
-    topic: string;
-    language: string;
-  };
-  chapters: MetaStep3Chapter[];
-  quality: {
-    merged_redundancies: string[];
-    ambiguous_points: string[];
-    chaptering_notes: string[];
-    confidence: number;
-  };
 }
 
 export interface MetaStep4HeroImagePackage {
@@ -353,9 +383,11 @@ export interface ReupVideoOutputItem {
   transcriptPath?: string;
   srtPath?: string;
   updatedSrtPath?: string;
-  metaStep1MicroSegments?: MetaStep1MicroSegment[];
+  metaStep1ChunkDigests?: MetaStep1ChunkDigest[];
+  metaStep2StoryBlocks?: MetaStep2StoryBlock[];
   metaStep3Output?: MetaStep3Output;
   metaStep4Output?: MetaStep4Output;
+  heroImagePath?: string;
   videoPath?: string;
 }
 

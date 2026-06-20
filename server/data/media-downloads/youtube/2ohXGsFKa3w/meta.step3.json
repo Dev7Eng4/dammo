@@ -1,0 +1,53 @@
+{
+  "videoId": "2ohXGsFKa3w",
+  "language": "ja",
+  "generatedAt": "2026-06-20T09:40:22.301Z",
+  "result": {
+    "final_summary": {
+      "overview": "大学時代からの交際を経てプロポーズされたシホ。しかし、ケイジの実家へ挨拶に赴くと、義母はケイジのいない隙を狙って冷酷な態度で別れを要求してきます。さらに義母は、シホが遺産や介護を巡って暴言を吐いたという嘘の作り話をでっち上げ、結婚に猛反対しました。窮地に立たされたシホでしたが、密かに録音していたボイスレコーダーの証拠を突きつけることで、義母の悪質な嘘を完全に暴きます。激怒したケイジは両親との絶縁を決意し、二人は新たな幸せを掴むために歩み始めます。",
+      "key_takeaways": [
+        "外面が良い義母による、巧妙で執拗な結婚への妨害工作",
+        "嘘の暴言をでっち上げて家族を巻き込む義母の罠",
+        "ボイスレコーダーによる決定的な証拠が形勢を逆転させた事実",
+        "実家の悪意から妻を守り抜き、完全な絶縁を選んだ夫の決断"
+      ],
+      "story_flow": [
+        "プロポーズを受け、幸せの絶頂の中でケイジの実家へ挨拶に訪れる",
+        "ケイジが席を外した瞬間、義母から別れを迫られる豹変劇",
+        "義父も同席する場で、義母から「暴言を吐かれた」と嘘の濡れ衣を着せられる",
+        "ポケットに忍ばせていたボイスレコーダーを再生し、義母の暴言の証拠を暴露する",
+        "真実を知ったケイジが激怒し、実家の両親と絶縁することを決意する",
+        "義両親を呼ばずに結婚式を挙げ、起業した夫と2人の子供と共に幸せな家庭を築く"
+      ]
+    },
+    "metadata": {
+      "title": "「釣り合わないから別れて」婚約者の前で豹変した義母。嘘の暴言で私をハメようとした結末",
+      "title_candidates": [
+        "「釣り合わないから別れて」婚約者の前で豹変した義母。嘘の暴言で私をハメようとした結末",
+        "私のいない場所で義母が流した最低なデマ。婚約者が騙されかけた瞬間に私が取り出したもの",
+        "結婚挨拶で始まった義母の執拗な嫌がらせ。夫が実家を捨てて私を選んだ決定的な証拠"
+      ],
+      "description": "幸せな結婚を控えた挨拶の場で、私の前に立ちはだかったのは外面の良い義母の恐ろしい本性でした。仕組まれた嘘とデマで絶望のどん底に突き落とされそうになったとき、手元に残された一つの確かな証拠がすべての真実を白日の下に晒します。",
+      "tags": [
+        "家族の葛藤",
+        "人間関係",
+        "修羅場",
+        "スカッと"
+      ],
+      "hook_angle": "外面の良い義母の豹変と、嘘の濡れ衣をボイスレコーダーで覆す大逆転のスカッと感"
+    },
+    "hero_image_prompt": {
+      "concept": "A tense, high-stakes confrontation around a dinner table in a traditional Japanese home, capturing the dramatic turning point where a hidden voice recorder is placed on the table, shifting the power dynamic between a young couple and hostile parents.",
+      "main_subject": "A young Japanese woman sitting at a dining table, displaying an expression of quiet determination as she places a small, sleek digital voice recorder onto the table's surface.",
+      "supporting_elements": [
+        "A shocked and furious young Japanese man sitting beside her, glaring across the table at his parents.",
+        "An elegant but visibly distressed middle-aged Japanese mother with a frozen, guilty facial expression.",
+        "A stern, elderly Japanese father sitting in the background, looking on with brewing anger and realization.",
+        "A traditional low-key Japanese tatami dining room setting with muted, dim interior lighting.",
+        "A dark, polished wooden dining table acting as the midground focal point."
+      ],
+      "prompt": "Cinematic film-like composition of a tense Japanese family conflict inside a traditional tatami room. In the midground, a young Japanese woman with an intense, resolute facial expression sits at a dark wooden dining table, her hand resting next to a small digital voice recorder placed prominently on the table. Next to her, her fiancé, a young Japanese man with athletic posture, glares in anger and betrayal across the table. On the opposing side, an elegant middle-aged Japanese mother freezes with a pale, shocked face, her malicious lies freshly exposed. An older Japanese father sits in the background under low-key dramatic lighting, looking on in severe realization. The room features subtle Japanese sliding paper doors and realistic, muted color grading. Shallow depth of field keeps the focus on the emotional breakdown at the table. Low-key lighting casts soft shadows, creating a high-contrast narrative atmosphere. No text, no captions, no subtitles, no speech bubbles, no UI, no readable icons, 16:9 aspect ratio.",
+      "negative_prompt": "no text, no captions, no subtitles, no speech bubbles, no logos, no watermark, no UI, no readable documents, no readable phone screen text, no distorted hands, no extra fingers, no duplicate faces, no deformed anatomy, no blurry face, no low-resolution, no random extra characters, no unrelated objects, no exaggerated horror, no gore, no sexualized content, bright saturated colors, anime style, fantasy effects, high key lighting."
+    }
+  }
+}

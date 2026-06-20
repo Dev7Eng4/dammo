@@ -8,8 +8,10 @@ import type { TranscriptLanguage } from '../../infrastructure/youtube/youtube-tr
 import { downloadReupAssets, downloadReupAudioAssets } from './reup-asset-downloader.js';
 import { updateTranscriptWithLlm } from './reup-transcript-updater.js';
 import { runMetaStep1 } from './reup-meta-step1.js';
-import { runMetaPipelineAfterStep1 } from './reup-meta-pipeline.js';
-import type { MetaStep1MicroSegment, MetaStep3Output, MetaStep4Output } from './reup-metadata.types.js';
+import { runMetaStep2 } from './reup-meta-step2.js';
+import { runMetaStep3 } from './reup-meta-step3.js';
+import { runHeroImageGeneration } from './reup-hero-image.js';
+import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from './reup-metadata.types.js';
 import { reupVideoHistoryRepository } from './reup-video-history.repository.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-video.constants.js';
 import type {
@@ -144,9 +146,10 @@ export class ReupVideoCreatorService {
           }
 
           let updatedSrtPath: string | undefined;
-          let metaStep1MicroSegments: MetaStep1MicroSegment[] | undefined;
+          let metaStep1ChunkDigests: MetaStep1ChunkDigest[] | undefined;
+          let metaStep2StoryBlocks: MetaStep2StoryBlock[] | undefined;
           let metaStep3Output: MetaStep3Output | undefined;
-          let metaStep4Output: MetaStep4Output | undefined;
+          let heroImagePath: string | undefined;
           if (channel.language === 'ja') {
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${channel.language})...`);
@@ -195,7 +198,7 @@ export class ReupVideoCreatorService {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 1...');
             }
 
-            metaStep1MicroSegments = await runMetaStep1(updatedSrtPath, channel.language, {
+            metaStep1ChunkDigests = await runMetaStep1(updatedSrtPath, channel.language, {
               onProgress: taskJobId
                 ? progress => {
                     const label = `${progress.batchIndex}/${progress.totalBatches}`;
@@ -223,7 +226,7 @@ export class ReupVideoCreatorService {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'info',
-                        `Meta step 1 batch ${label} on ${profileLabel} fallback to raw segment`,
+                        `Meta step 1 batch ${label} on ${profileLabel} fallback to raw chunk digest`,
                       );
                       return;
                     }
@@ -237,53 +240,77 @@ export class ReupVideoCreatorService {
               taskQueueRepository.appendLogMessage(
                 taskJobId,
                 'ok',
-                `Metadata step 1 done → ${metaStep1MicroSegments.length} micro_segments`,
+                `Metadata step 1 done → ${metaStep1ChunkDigests.length} chunk_digests`,
               );
-              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Running metadata pipeline (steps 2–4)...');
             }
 
-            const metaPipelineResult = await runMetaPipelineAfterStep1(
-              metaStep1MicroSegments,
-              channel.language,
-              downloaded.youtubeVideoId,
-              {
+            if (metaStep1ChunkDigests.length >= 2) {
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 2...');
+              }
+
+              metaStep2StoryBlocks = await runMetaStep2(
+                metaStep1ChunkDigests,
+                channel.language,
+                downloaded.youtubeVideoId,
+                {
+                  outputDir: path.dirname(updatedSrtPath),
+                  onProgress: taskJobId
+                    ? progress => {
+                        const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                        const profileLabel = progress.profileName;
+
+                        if (progress.status === 'started') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
+
+                        if (progress.status === 'retry') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
+
+                        if (progress.status === 'fallback') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
+                          );
+                          return;
+                        }
+
+                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
+                      }
+                    : undefined,
+                },
+              );
+
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(
+                  taskJobId,
+                  'ok',
+                  `Metadata step 2 done → ${metaStep2StoryBlocks.length} story_blocks`,
+                );
+              }
+            }
+
+            const step3Items = metaStep2StoryBlocks ?? metaStep1ChunkDigests;
+            if (step3Items && step3Items.length > 0) {
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 3...');
+              }
+
+              metaStep3Output = await runMetaStep3(step3Items, channel.language, downloaded.youtubeVideoId, {
                 outputDir: path.dirname(updatedSrtPath),
-                onStep2Progress: taskJobId
-                  ? progress => {
-                      const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                      const profileLabel = progress.profileName;
-
-                      if (progress.status === 'started') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                        );
-                        return;
-                      }
-
-                      if (progress.status === 'retry') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                        );
-                        return;
-                      }
-
-                      if (progress.status === 'fallback') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 2 batch ${label} on ${profileLabel} fallback to micro_segments`,
-                        );
-                        return;
-                      }
-
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
-                    }
-                  : undefined,
-                onStep3Progress: taskJobId
+                onProgress: taskJobId
                   ? progress => {
                       const profileLabel = progress.profileName;
 
@@ -303,43 +330,55 @@ export class ReupVideoCreatorService {
                       );
                     }
                   : undefined,
-                onStep4Progress: taskJobId
-                  ? progress => {
-                      const profileLabel = progress.profileName;
+              });
 
-                      if (progress.status === 'retry') {
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(
+                  taskJobId,
+                  'ok',
+                  `Metadata step 3 done → title: ${metaStep3Output.metadata.title}, hero: ${
+                    typeof metaStep3Output.hero_image_prompt.prompt === 'string' &&
+                    metaStep3Output.hero_image_prompt.prompt.length > 80
+                      ? `${metaStep3Output.hero_image_prompt.prompt.slice(0, 80)}...`
+                      : metaStep3Output.hero_image_prompt.prompt
+                  }`,
+                );
+              }
+
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating hero image with Google Flow...');
+              }
+
+              const heroResult = await runHeroImageGeneration(
+                metaStep3Output,
+                downloaded.youtubeVideoId,
+                path.dirname(updatedSrtPath),
+                {
+                  onProgress: taskJobId
+                    ? progress => {
+                        const profileLabel = progress.profileName;
+                        if (progress.status === 'retry') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
                         taskQueueRepository.appendLogMessage(
                           taskJobId,
                           'info',
-                          `Meta step 4 on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                          `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
                         );
-                        return;
                       }
-
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Meta step 4 on ${profileLabel} (attempt ${progress.attempt})...`,
-                      );
-                    }
-                  : undefined,
-              },
-            );
-
-            metaStep3Output = metaPipelineResult.step3;
-            metaStep4Output = metaPipelineResult.step4;
-
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'ok',
-                `Metadata step 3 done → ${metaStep3Output.chapters.length} chapters, title: ${metaStep3Output.metadata.title}`,
+                    : undefined,
+                },
               );
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'ok',
-                `Metadata step 4 done → hero image prompt ready (${metaStep4Output.hero_image_package.conflict_type})`,
-              );
+              heroImagePath = heroResult.heroImagePath;
+
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Hero image saved → ${heroImagePath}`);
+              }
             }
           }
 
@@ -363,9 +402,10 @@ export class ReupVideoCreatorService {
             ...(updatedSrtPath
               ? {
                   updatedSrtPath,
-                  ...(metaStep1MicroSegments ? { metaStep1MicroSegments } : {}),
+                  ...(metaStep1ChunkDigests ? { metaStep1ChunkDigests } : {}),
+                  ...(metaStep2StoryBlocks ? { metaStep2StoryBlocks } : {}),
                   ...(metaStep3Output ? { metaStep3Output } : {}),
-                  ...(metaStep4Output ? { metaStep4Output } : {}),
+                  ...(heroImagePath ? { heroImagePath } : {}),
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };

@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import {
   llmBrowserChatSchema,
+  llmBrowserGenerateImageSchema,
   llmBrowserOpenSchema,
   llmBrowserResponseSchema,
   llmBrowserSendSchema,
@@ -50,8 +51,22 @@ export function createLlmBrowserRoutes() {
       {
         timeoutMs: body.timeoutMs,
         stableMs: body.stableMs,
+        outputPath: body.outputPath,
+        debugScreenshotPath: body.debugScreenshotPath,
       },
     );
+    return c.json({ item });
+  });
+
+  app.post('/:profileId/generate-image', zValidator('json', llmBrowserGenerateImageSchema), async (c) => {
+    const body = c.req.valid('json');
+    const item = await llmBrowserService.generateImage(c.req.param('profileId'), body.prompt, {
+      provider: body.provider,
+      outputPath: body.outputPath,
+      debugScreenshotPath: body.debugScreenshotPath,
+      timeoutMs: body.timeoutMs,
+      stableMs: body.stableMs,
+    });
     return c.json({ item });
   });
 

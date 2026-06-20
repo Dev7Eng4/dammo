@@ -33,6 +33,18 @@ export class ChromeProfilesService {
     return this.pickSubProfiles(1)[0];
   }
 
+  requireMainProfile(): ChromeProfile {
+    const mains = chromeProfilesRepository.findByRole('main');
+    if (mains.length === 0) {
+      throw new AppError(
+        'No main Chrome profile configured. Set a profile as main first.',
+        409,
+        'NO_MAIN_PROFILE',
+      );
+    }
+    return mains[0];
+  }
+
   pickSubProfiles(count: number): ChromeProfile[] {
     const subs = chromeProfilesRepository.findByRole('sub');
     if (subs.length === 0) {

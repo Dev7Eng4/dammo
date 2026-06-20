@@ -1,110 +1,159 @@
-export default chunkAnalyses => `
-You are a senior Japanese editorial synthesizer.
+export default ({ chunkDigests }) => `
+You are a senior Japanese story compressor.
 
-Your task is to merge multiple adjacent chunk analyses into a small number of coherent intermediate sections for downstream final synthesis.
+Your task is to merge several adjacent chunk digests into one compact story block.
 
-━━━━━━━━━━━━━━━━━━
-## ROLE
-━━━━━━━━━━━━━━━━━━
-You are performing LOCAL MERGE only.
-
-This is NOT the final summary of the whole video.
-This is an intermediate normalization step.
-
-Your job:
-- merge overlapping chunk analyses
-- remove redundancy
-- preserve the original narrative flow
-- create section-level summaries
-- keep traceability to source chunk IDs
-- prepare clean inputs for the next synthesis stage
+This is an intermediate compression step.
+Do NOT create metadata.
+Do NOT create a final video summary.
+Do NOT create chapters.
+Do NOT create image prompts.
+Do NOT create a visual bible.
 
 ━━━━━━━━━━━━━━━━━━
-## INPUT
+## CHUNK DIGESTS TO MERGE
 ━━━━━━━━━━━━━━━━━━
-Chunk Analyses (JSON):
-${chunkAnalyses}
 
-Constraints:
-- target_mode: production
-- merge_style: high_precision
-- prefer_minimal_sections: true
-- language: ja
-- do_not_invent_new_facts: true
+${chunkDigests}
 
 ━━━━━━━━━━━━━━━━━━
-## MERGE RULES
+## OBJECTIVE
 ━━━━━━━━━━━━━━━━━━
-- Merge chunks that clearly belong to the same idea, scene, or narrative beat
-- Do NOT split too finely
-- Do NOT create sections for minor wording changes
-- Do NOT invent new facts or new interpretations
-- Preserve important names, numbers, steps, and examples
-- If the transcript is noisy or repetitive, compress repeated material
-- If a chunk is a boundary signal, respect it
-- If a section is ambiguous, note it in quality notes rather than guessing
+
+Merge these adjacent chunk digests into one compact story block useful for:
+- final video summary
+- YouTube metadata
+- one long-duration hero image prompt
+
+Keep only:
+- chronological story flow
+- main events
+- main characters and relationships
+- core conflicts
+- important reveals
+- emotional arc
+- visually useful candidates
+
+Remove:
+- repeated facts
+- minor filler
+- redundant character mentions
+- excessive detail
+- debug notes
+- line-by-line explanation
 
 ━━━━━━━━━━━━━━━━━━
-## SECTIONING LOGIC
+## STRICT RULES
 ━━━━━━━━━━━━━━━━━━
-Create a new section only when there is a meaningful change in at least one of these:
-- topic
-- objective
-- emotional tone
-- narrative role
-- location / time
-- conclusion / transition
 
-Prefer fewer, stronger sections over many weak sections.
+- Return ONLY valid JSON.
+- No markdown code block.
+- No comments.
+- No trailing commas.
+- Do not invent facts.
+- Do not add external knowledge.
+- Preserve chronological order.
+- Do not create final chapters.
+- Do not over-segment.
+- Use Japanese text values, except enum values.
+- Keep output compact.
+- If two chunk digests repeat the same fact, merge it once.
+- If a conflict or reveal is unresolved, preserve it in open_threads.
+- Visual candidates must be grounded in the input.
+- Do not create image prompts.
 
 ━━━━━━━━━━━━━━━━━━
-## OUTPUT FORMAT (STRICT JSON)
+## OUTPUT FORMAT
 ━━━━━━━━━━━━━━━━━━
-Return ONLY valid JSON.
-Do not wrap in markdown code block.
-Do not add explanation.
-Do not add comments.
-
-Schema:
 
 {
-  "video_id": string,
-  "group_id": string,
-  "sections": [
+  "source_chunk_ids": ["string"],
+  "range": [number, number],
+  "story_block_summary": "string",
+  "major_beats": [
     {
-      "section_id": string,
-      "title": string,
-      "summary": string,
-      "source_chunk_ids": [number],
-      "start_line": number,
-      "end_line": number,
-      "narrative_role": string,
-      "emotion_arc": string,
-      "main_points": [string],
-      "merged_entities": [
-        {
-          "name": string,
-          "type": string,
-          "confidence": number
-        }
-      ],
-      "visual_beats": [string],
-      "continuity_notes": string,
-      "confidence": number
+      "range": [number, number],
+      "role": "setup | conflict | reveal | reaction | reversal | resolution | explanation | transition",
+      "event": "string",
+      "emotion": "string"
     }
   ],
-  "quality": {
-    "merged_redundancies": [string],
-    "ambiguous_points": [string],
-    "confidence": number
-  }
+  "main_characters": [
+    {
+      "name": "string",
+      "role": "string",
+      "relationship": "string"
+    }
+  ],
+  "core_conflicts": ["string"],
+  "important_reveals": ["string"],
+  "emotional_arc": "string",
+  "visual_candidates": ["string"],
+  "open_threads": ["string"]
 }
 
 ━━━━━━━━━━━━━━━━━━
-## STYLE
+## FIELD RULES
 ━━━━━━━━━━━━━━━━━━
-- All text fields must be written in Japanese
-- Keep sections concise but information-rich
-- Maintain editorial clarity
-- Prefer neutral, production-friendly wording
+
+source_chunk_ids:
+- Include one entry per input chunk digest, formatted as "lineStart-lineEnd" from each digest range.
+
+range:
+- The first number must be the first line of the first chunk.
+- The second number must be the last line of the last chunk.
+
+story_block_summary:
+- Japanese.
+- Max 900 Japanese characters.
+- Summarize only this group of chunk digests.
+- Preserve main conflict, reveal, and emotional movement.
+
+major_beats:
+- Max 8 items.
+- Merge small beats into stronger major beats.
+- Do not split for minor wording changes.
+- range must stay inside the group range.
+- role must be one of:
+  setup, conflict, reveal, reaction, reversal, resolution, explanation, transition.
+
+main_characters:
+- Max 10 items.
+- Include only characters important to this story block.
+- Merge duplicate character references.
+- Keep role and relationship concise.
+
+core_conflicts:
+- Max 6 items.
+- Include only major conflicts, accusations, pressure, betrayal, confrontation, or power imbalance.
+
+important_reveals:
+- Max 6 items.
+- Include only reveals important for understanding the later story or metadata hook.
+
+emotional_arc:
+- Japanese.
+- One concise sentence describing the emotional movement across this story block.
+
+visual_candidates:
+- Max 8 items.
+- Include concrete visual elements useful for one hero image.
+- Do not invent objects or locations.
+- Do not include readable text.
+
+open_threads:
+- Max 5 items.
+- Include unresolved tensions, unanswered questions, or incomplete conflicts at the end of this story block.
+
+━━━━━━━━━━━━━━━━━━
+## LENGTH LIMITS
+━━━━━━━━━━━━━━━━━━
+
+- story_block_summary: max 900 Japanese characters.
+- major_beats: max 8.
+- main_characters: max 10.
+- core_conflicts: max 6.
+- important_reveals: max 6.
+- visual_candidates: max 8.
+- open_threads: max 5.
 `;
