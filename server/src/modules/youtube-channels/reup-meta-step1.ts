@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
-import type { LlmBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmTextProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import {
   chunkSrtBlocksForMeta,
   parseSrt,
@@ -17,7 +16,7 @@ import { promptsRepository } from '../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import { tryParseMetaStep1Response } from './reup-meta-response.js';
-import type { MetaStep1ChunkDigest, MetaStep1Output } from './reup-metadata.types.js';
+import type { MetaStep1ChunkDigest } from './reup-metadata.types.js';
 
 const META_STEP1_KEY = 'step_1';
 const BATCH_SIZE = 150;
@@ -82,7 +81,7 @@ function createFallbackResult(batchBlocks: SrtBlock[]): MetaStep1ChunkDigest {
 
 async function processBatchWithRetry(
   profile: ChromeProfile,
-  provider: LlmBrowserProvider,
+  provider: LlmTextProvider,
   promptKey: string,
   language: PromptLanguage,
   allBlocks: SrtBlock[],
@@ -223,19 +222,7 @@ export async function runMetaStep1(
       .filter(Boolean)
       .sort((a, b) => (a.range as [number, number])[0] - (b.range as [number, number])[0]);
 
-    const outputDir = path.dirname(updatedSrtPath);
-    const videoId = path.basename(outputDir);
-    const outputPath = path.join(outputDir, 'meta.step1.json');
-
-    const output: MetaStep1Output = {
-      videoId,
-      language,
-      generatedAt: new Date().toISOString(),
-      chunk_digests: chunkDigests,
-    };
-
-    await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
-    console.log(`[meta-step1] saved: ${outputPath} (${chunkDigests.length} chunk_digests)`);
+    console.log(`[meta-step1] done: ${chunkDigests.length} chunk_digests`);
 
     return chunkDigests;
   } finally {

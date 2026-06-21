@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { LlmBrowserProvider, LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmBrowserResponse, LlmTextProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import {
   chunkSrtBlocks,
   parseIndexedTranscriptResponse,
@@ -60,18 +60,8 @@ async function removeIntermediateTranscriptFiles(srtPath: string): Promise<void>
   }
 }
 
-function resolveUpdatedSrtPath(srtPath: string, language: TranscriptLanguage): string {
-  const dir = path.dirname(srtPath);
-  const ext = path.extname(srtPath);
-  const base = path.basename(srtPath, ext);
-  const langSuffix = `.${language}`;
-
-  if (base.endsWith(langSuffix)) {
-    const prefix = base.slice(0, -langSuffix.length);
-    return path.join(dir, `${prefix}.${language}.updated${ext}`);
-  }
-
-  return path.join(dir, `${base}.updated${ext}`);
+function resolveUpdatedSrtPath(srtPath: string, _language: TranscriptLanguage): string {
+  return path.join(path.dirname(srtPath), 'transcript.srt');
 }
 
 function resolveLlmTranscriptText(response: LlmBrowserResponse): string {
@@ -101,7 +91,7 @@ function logBatchValidationFailure(
 
 async function processBatchWithRetry(
   profile: ChromeProfile,
-  provider: LlmBrowserProvider,
+  provider: LlmTextProvider,
   promptKey: string,
   language: TranscriptLanguage,
   blocks: SrtBlock[],

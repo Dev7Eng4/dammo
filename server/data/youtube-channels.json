@@ -1,6 +1,27 @@
 {
   "channels": [
     {
+      "id": "426c3f52-c001-4fb6-869a-c3ca956e7f6e",
+      "name": "THẦY CHIẾN DẠY BƠI ",
+      "handle": "@ThayChienDayBoi",
+      "youtubeUrl": "https://youtube.com/@ThayChienDayBoi",
+      "channelId": "UCzP97LNoMpnso74Hc4eMMBQ",
+      "type": "reup_audio",
+      "niche": "General",
+      "language": "ja",
+      "monetizationStatus": "in_review",
+      "healthScore": "medium",
+      "status": "active",
+      "linkedEmail": "scrape.bot.v2@outlook.com",
+      "uploadSchedule": ["13:43"],
+      "sourceMapping": "https://youtube.com/@サラダのお金相談所",
+      "contentProjectId": "PRJ-THAYCHIE",
+      "recentActivity": [],
+      "createdAt": "2026-06-21T05:44:26.236Z",
+      "uploadFrequency": "every_5_days",
+      "backgroundFootageSourceId": "ebd3f9fb-e859-4d13-b79e-de88edf697e9"
+    },
+    {
       "id": "85184f4f-6c28-4c3e-a6a4-985689b51840",
       "name": "Comic Stats",
       "handle": "@ComicStats",
@@ -13,14 +34,13 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "prod.sys.a1@gmail.com",
-      "uploadSchedule": [
-        "02:41"
-      ],
+      "uploadSchedule": ["02:41"],
       "sourceMapping": "https://youtube.com/@サラダのお金相談所",
       "contentProjectId": "PRJ-COMICSTA",
       "recentActivity": [],
       "createdAt": "2026-06-17T18:42:03.479Z",
-      "uploadFrequency": "every_2_days"
+      "uploadFrequency": "every_2_days",
+      "backgroundFootageSourceId": "ebd3f9fb-e859-4d13-b79e-de88edf697e9"
     },
     {
       "id": "fcf12fb4-178f-46ec-97a0-4e8c2b861038",
@@ -34,9 +54,7 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "demo@yopmail.com",
-      "uploadSchedule": [
-        "23:15"
-      ],
+      "uploadSchedule": ["23:15"],
       "sourceMapping": "https://youtube.com/@サラダのお金相談所",
       "contentProjectId": "PRJ-LIFEWISD",
       "recentActivity": [],
@@ -55,10 +73,7 @@
       "healthScore": "medium",
       "status": "active",
       "linkedEmail": "duongbich9n7@gmail.com",
-      "uploadSchedule": [
-        "09:00",
-        "18:00"
-      ],
+      "uploadSchedule": ["09:00", "18:00"],
       "sourceMapping": "",
       "contentProjectId": "PRJ-MRBEAST",
       "recentActivity": [],

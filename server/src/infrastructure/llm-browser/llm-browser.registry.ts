@@ -1,18 +1,30 @@
-import type { LlmBrowserProvider } from './llm-browser.types.js';
+import type { LlmBrowserProvider, LlmTextProvider } from './llm-browser.types.js';
 import type { LlmBrowserProviderHandler } from './llm-browser.provider.js';
 import { createFlowProviderHandler } from './providers/flow-llm.provider.js';
 import { createLlmProviderHandler } from './providers/configurable-llm.provider.js';
 
-const handlers: Record<LlmBrowserProvider, LlmBrowserProviderHandler> = {
+const textHandlers: Record<LlmTextProvider, LlmBrowserProviderHandler> = {
   gpt: createLlmProviderHandler('gpt'),
   gemini: createLlmProviderHandler('gemini'),
-  flow: createFlowProviderHandler(),
 };
 
-export function getLlmBrowserHandler(provider: LlmBrowserProvider): LlmBrowserProviderHandler {
-  return handlers[provider];
+let flowHandler: LlmBrowserProviderHandler | undefined;
+
+export function getLlmTextBrowserHandler(provider: LlmTextProvider): LlmBrowserProviderHandler {
+  return textHandlers[provider];
+}
+
+export function getFlowBrowserHandler(): LlmBrowserProviderHandler {
+  if (!flowHandler) {
+    flowHandler = createFlowProviderHandler();
+  }
+  return flowHandler;
+}
+
+export function isLlmTextProvider(value: string): value is LlmTextProvider {
+  return value === 'gpt' || value === 'gemini';
 }
 
 export function isLlmBrowserProvider(value: string): value is LlmBrowserProvider {
-  return value === 'gpt' || value === 'gemini' || value === 'flow';
+  return isLlmTextProvider(value) || value === 'flow';
 }

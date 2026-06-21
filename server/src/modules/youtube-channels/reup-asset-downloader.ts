@@ -42,14 +42,14 @@ export async function downloadReupAudioAssets(url: string, language: ChannelLang
   const outputDir = mediaDownloadDir('youtube', youtubeVideoId);
   const transcriptLanguage = language as TranscriptLanguage;
   // const thumbnailPath = await downloadYoutubeThumbnail(url, outputDir);
-  // const audioPath = await downloadYoutubeAudio(url, outputDir);
+  const audioPath = await downloadYoutubeAudio(url, outputDir);
   const transcriptPath = await downloadYoutubeTranscript(url, outputDir, transcriptLanguage);
 
   return {
     youtubeVideoId,
     outputDir,
     thumbnailPath: '',
-    audioPath: '',
+    audioPath,
     transcriptPath,
   };
 }
@@ -68,7 +68,7 @@ export async function processReupAudioTranscript(transcriptPath: string, languag
 export async function downloadReupAssets(
   url: string,
   channelType: StoredYoutubeChannelType,
-  language: ChannelLanguage
+  language: ChannelLanguage,
 ): Promise<ReupDownloadResult> {
   const youtubeVideoId = requireYoutubeVideoId(url);
   const outputDir = mediaDownloadDir('youtube', youtubeVideoId);

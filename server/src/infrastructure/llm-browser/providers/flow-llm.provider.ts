@@ -2,32 +2,32 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Locator } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { FLOW_CONFIG } from '../flow.config.js';
+import { FLOW_CONFIG, FLOW_BASE_URL, FLOW_INITIAL_SETUP_SELECTORS, buildFlowProjectUrl } from '../flow.config.js';
+import { downloadAndSaveFlowImage, extractFifeUrl } from '../flow-api-response.js';
+import type { FlowOpenOptions } from '../llm-browser.types.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
   LlmBrowserResponse,
   LlmMediaAsset,
   LlmReceiveResponseOptions,
   LlmSendPromptOptions,
-  LlmSendPromptResult,
   LlmSetupConfig,
 } from '../llm-browser.types.js';
-import {
-  humanClick,
-  humanPaste,
-  humanWander,
-  randomDelay,
-} from '../human-interaction.js';
+import { humanClick, humanPaste, humanPressEnter, humanWander, randomDelay, setupClick } from '../human-interaction.js';
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'flow' as const;
+const configuredProjects = new Set<string>();
 
 function domTimeoutError(detail: string): AppError {
   return new AppError(`LLM DOM timeout (${PROVIDER}): ${detail}`, 502, 'LLM_DOM_TIMEOUT');
 }
 
 function splitSelectors(selector: string): string[] {
-  return selector.split(',').map(part => part.trim()).filter(Boolean);
+  return selector
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean);
 }
 
 async function waitForFirstVisible(page: Page, selector: string, timeout = 45_000): Promise<Locator> {
@@ -53,23 +53,6 @@ async function waitForFirstVisible(page: Page, selector: string, timeout = 45_00
   );
 }
 
-async function isAnyVisible(page: Page, selector: string): Promise<boolean> {
-  for (const candidate of splitSelectors(selector)) {
-    if (await page.locator(candidate).first().isVisible().catch(() => false)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-async function countResultImages(page: Page): Promise<number> {
-  let total = 0;
-  for (const candidate of splitSelectors(FLOW_CONFIG.selectors.resultImages)) {
-    total += await page.locator(candidate).count();
-  }
-  return total;
-}
-
 async function warmUpBeforeFlow(page: Page): Promise<void> {
   const currentUrl = page.url();
   if (!currentUrl.startsWith(WARMUP_URL)) {
@@ -78,88 +61,6 @@ async function warmUpBeforeFlow(page: Page): Promise<void> {
   await randomDelay(1_500, 3_000);
   await humanWander(page);
   await randomDelay(800, 1_500);
-}
-
-async function findLatestResultImage(page: Page, baselineCount: number): Promise<Locator | null> {
-  for (const candidate of splitSelectors(FLOW_CONFIG.selectors.resultImages)) {
-    const images = page.locator(candidate);
-    const count = await images.count();
-    if (count <= baselineCount) continue;
-    return images.nth(count - 1);
-  }
-  return null;
-}
-
-async function saveImageBytes(outputPath: string, bytes: Buffer): Promise<void> {
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, bytes);
-}
-
-async function saveImageFromSrc(page: Page, src: string, outputPath: string): Promise<void> {
-  if (src.startsWith('blob:') || src.startsWith('data:')) {
-    const bytes = await page.evaluate(async (url: string) => {
-      const response = await fetch(url);
-      const buffer = await response.arrayBuffer();
-      return Array.from(new Uint8Array(buffer));
-    }, src);
-    await saveImageBytes(outputPath, Buffer.from(bytes));
-    return;
-  }
-
-  if (src.startsWith('http')) {
-    const response = await page.request.get(src);
-    if (!response.ok()) {
-      throw new AppError(`Failed to download image (${response.status()})`, 502, 'FLOW_IMAGE_DOWNLOAD_FAILED');
-    }
-    await saveImageBytes(outputPath, await response.body());
-    return;
-  }
-
-  throw new AppError(`Unsupported image src: ${src.slice(0, 32)}`, 502, 'FLOW_IMAGE_DOWNLOAD_FAILED');
-}
-
-async function tryDownloadViaButton(page: Page, outputPath: string): Promise<boolean> {
-  for (const candidate of splitSelectors(FLOW_CONFIG.selectors.downloadButton)) {
-    const button = page.locator(candidate).first();
-    if (!(await button.isVisible().catch(() => false))) continue;
-
-    try {
-      const downloadPromise = page.waitForEvent('download', { timeout: 15_000 });
-      await humanClick(page, button);
-      const download = await downloadPromise;
-      await fs.mkdir(path.dirname(outputPath), { recursive: true });
-      await download.saveAs(outputPath);
-      return true;
-    } catch {
-      // Try next selector.
-    }
-  }
-  return false;
-}
-
-async function captureGeneratedImage(
-  page: Page,
-  baselineCount: number,
-  outputPath: string,
-): Promise<LlmMediaAsset> {
-  const image = await findLatestResultImage(page, baselineCount);
-  if (!image) {
-    throw domTimeoutError('No generated image found in DOM');
-  }
-
-  if (await tryDownloadViaButton(page, outputPath)) {
-    return { kind: 'image', localPath: outputPath };
-  }
-
-  const src = await image.getAttribute('src');
-  if (src) {
-    await saveImageFromSrc(page, src, outputPath);
-    return { kind: 'image', sourceUrl: src, localPath: outputPath };
-  }
-
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await image.screenshot({ path: outputPath });
-  return { kind: 'image', localPath: outputPath };
 }
 
 async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<void> {
@@ -172,110 +73,350 @@ async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<v
   }
 }
 
+async function clickNewProjectButton(page: Page): Promise<void> {
+  const roleButton = page.getByRole('button', { name: /New project/i }).first();
+  if (await roleButton.isVisible().catch(() => false)) {
+    await humanClick(page, roleButton);
+    await randomDelay(500, 1_000);
+    return;
+  }
+
+  const selectorButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.newProjectButton, 15_000);
+  await humanClick(page, selectorButton);
+  await randomDelay(500, 1_000);
+}
+
+function isOnFlowProjectPage(pageUrl: string, projectId: string): boolean {
+  return pageUrl.includes('flow/project/') && pageUrl.includes(projectId);
+}
+
+async function isPromptInputReady(page: Page): Promise<boolean> {
+  try {
+    await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 2_000);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function parseProjectIdFromUrl(pageUrl: string): string | null {
+  const match = pageUrl.match(/\/flow\/project\/([^/?#]+)/);
+  return match?.[1] ?? null;
+}
+
+function resolveProjectId(page: Page, explicitProjectId?: string): string {
+  if (explicitProjectId) return explicitProjectId;
+  const parsed = parseProjectIdFromUrl(page.url());
+  if (!parsed) {
+    throw domTimeoutError(`Could not parse Flow project id from URL: ${page.url()}`);
+  }
+  return parsed;
+}
+
+type FlowSetupSelectorKey = (typeof FLOW_INITIAL_SETUP_SELECTORS)[number];
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function popoverButtonByLabel(popover: Locator, label: string): Locator {
+  return popover
+    .locator('button')
+    .filter({ hasText: new RegExp(escapeRegExp(label), 'i') })
+    .first();
+}
+
+async function findVisibleSetupButton(page: Page, popover: Locator, label: string, fallbackXPath?: string): Promise<Locator | null> {
+  const scopes: Locator[] = [popover];
+  const submenu = page.locator(`xpath=${FLOW_CONFIG.selectors.modelSubmenuFallback}`);
+  if (await submenu.isVisible().catch(() => false)) {
+    scopes.push(submenu);
+  }
+
+  for (const scope of scopes) {
+    const button = popoverButtonByLabel(scope, label);
+    if (await button.isVisible().catch(() => false)) {
+      return button;
+    }
+  }
+
+  if (fallbackXPath) {
+    const fallback = page.locator(`xpath=${fallbackXPath}`);
+    if (await fallback.isVisible().catch(() => false)) {
+      return fallback;
+    }
+  }
+
+  return null;
+}
+
+async function isConfigPopoverOpen(page: Page): Promise<boolean> {
+  return page
+    .locator(`xpath=${FLOW_CONFIG.selectors.configPopoverFallback}`)
+    .isVisible()
+    .catch(() => false);
+}
+
+async function getConfigPopover(page: Page): Promise<Locator> {
+  const fallback = page.locator(`xpath=${FLOW_CONFIG.selectors.configPopoverFallback}`);
+  await fallback.waitFor({ state: 'visible', timeout: 15_000 });
+  return fallback;
+}
+
+async function openConfigPopover(page: Page): Promise<Locator> {
+  if (await isConfigPopoverOpen(page)) {
+    return getConfigPopover(page);
+  }
+
+  const btnConfig = page.locator(`xpath=${FLOW_CONFIG.selectors.btnConfig}`);
+  await setupClick(btnConfig);
+  await randomDelay(300, 500);
+  return getConfigPopover(page);
+}
+
+async function assertConfigPopoverOpen(page: Page, stepName: string): Promise<Locator> {
+  if (await isConfigPopoverOpen(page)) {
+    return getConfigPopover(page);
+  }
+
+  console.warn(`[flow] setup: popover closed after ${stepName}, re-opening`);
+  return openConfigPopover(page);
+}
+
+async function getModelSubmenu(page: Page): Promise<Locator> {
+  const menu = page.getByRole('menu').last();
+  if (await menu.isVisible().catch(() => false)) {
+    return menu;
+  }
+
+  const fallback = page.locator(`xpath=${FLOW_CONFIG.selectors.modelSubmenuFallback}`);
+  await fallback.waitFor({ state: 'visible', timeout: 15_000 });
+  return fallback;
+}
+
+async function clickPopoverButton(page: Page, popover: Locator, label: string, fallbackXPath?: string): Promise<void> {
+  const target = await findVisibleSetupButton(page, popover, label, fallbackXPath);
+  if (target) {
+    await setupClick(target);
+    return;
+  }
+
+  throw domTimeoutError(`Setup option "${label}" not found in config popover`);
+}
+
+async function clickImageOption(page: Page, popover: Locator): Promise<void> {
+  const label = FLOW_CONFIG.selectors.btnOptionImage;
+  const deadline = Date.now() + 15_000;
+
+  while (Date.now() < deadline) {
+    const imageButton = await findVisibleSetupButton(page, popover, label, FLOW_CONFIG.selectors.btnOptionImageFallback);
+    if (imageButton) {
+      await setupClick(imageButton);
+      return;
+    }
+
+    const typeTrigger = page.locator(`xpath=${FLOW_CONFIG.selectors.btnOptionImageTrigger}`);
+    if (await typeTrigger.isVisible().catch(() => false)) {
+      await setupClick(typeTrigger);
+      await randomDelay(300, 500);
+      continue;
+    }
+
+    await randomDelay(200, 400);
+  }
+
+  throw domTimeoutError(`Setup option "${label}" not found in config popover`);
+}
+
+async function clickModelInPopover(page: Page, popover: Locator): Promise<void> {
+  const modelDropdown = popover
+    .locator(FLOW_CONFIG.selectors.btnOptionModel)
+    .filter({ hasText: /Nano Banana/i })
+    .first();
+
+  if (await modelDropdown.isVisible().catch(() => false)) {
+    await setupClick(modelDropdown);
+    return;
+  }
+
+  await setupClick(page.locator(`xpath=${FLOW_CONFIG.selectors.btnOptionModelFallback}`));
+}
+
+async function clickModelProInSubmenu(page: Page): Promise<void> {
+  const menu = await getModelSubmenu(page);
+  const label = FLOW_CONFIG.selectors.btnOptionModelPro;
+
+  const menuItem = menu.getByRole('menuitem', { name: new RegExp(label, 'i') }).first();
+  if (await menuItem.isVisible().catch(() => false)) {
+    const innerButton = menuItem.locator('button').first();
+    if (await innerButton.isVisible().catch(() => false)) {
+      await setupClick(innerButton);
+      return;
+    }
+    await setupClick(menuItem);
+    return;
+  }
+
+  const buttonInMenu = menu
+    .locator('button')
+    .filter({ hasText: new RegExp(label, 'i') })
+    .first();
+  if (await buttonInMenu.isVisible().catch(() => false)) {
+    await setupClick(buttonInMenu);
+    return;
+  }
+
+  await setupClick(page.locator(`xpath=${FLOW_CONFIG.selectors.btnOptionModelProFallback}`));
+}
+
+async function runSetupStep(page: Page, popover: Locator, selectorKey: FlowSetupSelectorKey): Promise<Locator> {
+  switch (selectorKey) {
+    case 'btnConfig':
+      return popover;
+    case 'btnOptionImage':
+      await clickImageOption(page, popover);
+      return assertConfigPopoverOpen(page, selectorKey);
+    case 'btnOptionRatio':
+      await clickPopoverButton(page, popover, FLOW_CONFIG.selectors.btnOptionRatio);
+      return assertConfigPopoverOpen(page, selectorKey);
+    case 'btnOptionQuantity':
+      await clickPopoverButton(page, popover, FLOW_CONFIG.selectors.btnOptionQuantity);
+      return assertConfigPopoverOpen(page, selectorKey);
+    case 'btnOptionModel':
+      await clickModelInPopover(page, popover);
+      return popover;
+    case 'btnOptionModelPro':
+      await clickModelProInSubmenu(page);
+      return popover;
+    default:
+      return popover;
+  }
+}
+
+async function ensureInitialProjectSetup(page: Page, projectId: string): Promise<void> {
+  if (configuredProjects.has(projectId)) return;
+
+  console.log(`[flow] running initial setup for project ${projectId}...`);
+
+  let popover = await openConfigPopover(page);
+
+  for (const selectorKey of FLOW_INITIAL_SETUP_SELECTORS) {
+    if (selectorKey === 'btnConfig') {
+      console.log('[flow] setup step: btnConfig');
+      continue;
+    }
+
+    console.log(`[flow] setup step: ${selectorKey}`);
+    popover = await runSetupStep(page, popover, selectorKey);
+  }
+
+  await page.keyboard.press('Escape');
+  await randomDelay(400, 800);
+  await waitForProjectReady(page);
+  configuredProjects.add(projectId);
+  console.log(`[flow] initial setup done for project ${projectId}`);
+}
+
+async function waitForProjectReady(page: Page): Promise<void> {
+  await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 45_000);
+  await randomDelay(400, 900);
+}
+
+async function assertPromptFilled(locator: Locator, prompt: string): Promise<void> {
+  const expectedLength = prompt.trim().length;
+  const length = await locator.evaluate(el => {
+    const target = el as HTMLElement;
+    if (target.isContentEditable) return (target.textContent ?? '').trim().length;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) return target.value.trim().length;
+    return 0;
+  });
+  if (length < expectedLength) {
+    throw domTimeoutError(`Prompt not filled before submit: expected ${expectedLength}, got ${length}`);
+  }
+}
+
 export function createFlowProviderHandler(): LlmBrowserProviderHandler {
   return {
     provider: PROVIDER,
 
-    async open(page: Page): Promise<void> {
-      const onFlowSite = page.url().includes('labs.google') && page.url().includes('flow');
-      if (onFlowSite) {
-        try {
-          await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 5_000);
-          await randomDelay(400, 900);
-          return;
-        } catch {
-          // Reload flow UI.
-        }
+    async open(page: Page, options?: FlowOpenOptions): Promise<void> {
+      const projectId = options?.projectId;
+
+      if (projectId && isOnFlowProjectPage(page.url(), projectId) && (await isPromptInputReady(page))) {
+        await ensureInitialProjectSetup(page, projectId);
+        return;
       }
 
       await warmUpBeforeFlow(page);
-      await page.goto(FLOW_CONFIG.url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+
+      if (projectId) {
+        await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
+        await randomDelay(2_000, 4_000);
+        await waitForProjectReady(page);
+        await ensureInitialProjectSetup(page, projectId);
+        return;
+      }
+
+      await page.goto(FLOW_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await randomDelay(2_000, 4_000);
-      await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 45_000);
-      await randomDelay(400, 900);
+      await clickNewProjectButton(page);
+      await waitForProjectReady(page);
+      const newProjectId = resolveProjectId(page);
+      await ensureInitialProjectSetup(page, newProjectId);
     },
 
     async setupConfig(page: Page, setup: LlmSetupConfig): Promise<void> {
       if (setup.mode && setup.mode !== 'image') return;
-
-      for (const candidate of splitSelectors(FLOW_CONFIG.selectors.imageModeTab)) {
-        const tab = page.locator(candidate).first();
-        if (await tab.isVisible().catch(() => false)) {
-          await humanClick(page, tab);
-          await randomDelay(400, 800);
-          break;
-        }
-      }
-
-      if (setup.model) {
-        const option = page.getByRole('button', { name: new RegExp(setup.model, 'i') }).first();
-        if (await option.isVisible().catch(() => false)) {
-          await humanClick(page, option);
-          await randomDelay(400, 800);
-        }
-      }
+      const projectId = resolveProjectId(page);
+      await ensureInitialProjectSetup(page, projectId);
     },
 
     async readConversationIfNeeded(_page: Page): Promise<void> {
       // Flow is stateless per generation; no conversation scroll needed.
     },
 
-    async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<LlmSendPromptResult> {
+    async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
       const input = await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput);
-      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'direct' });
-
-      const baselineBlockCount = await countResultImages(page);
-      const generateButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.generateButton, 15_000);
-      await humanClick(page, generateButton);
+      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'insertText' });
+      await assertPromptFilled(input, prompt);
+      await humanPressEnter(page);
       await randomDelay(500, 1_000);
-
-      return { baselineBlockCount };
     },
 
     async receiveResponse(page: Page, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
       const startedAt = Date.now();
-      const timeoutMs = options?.timeoutMs ?? FLOW_CONFIG.defaultTimeoutMs;
-      const stableMs = options?.stableMs ?? 3_000;
-      const deadline = startedAt + timeoutMs;
-      const baselineBlockCount = options?.baselineBlockCount ?? 0;
-      const outputPath = options?.outputPath;
-
-      let sawGenerating = false;
-
-      while (Date.now() < deadline) {
-        const generating = await isAnyVisible(page, FLOW_CONFIG.selectors.generatingIndicator);
-        if (generating) {
-          sawGenerating = true;
-        }
-
-        const image = await findLatestResultImage(page, baselineBlockCount);
-        if (image && (!generating || sawGenerating)) {
-          await randomDelay(stableMs, stableMs + 500);
-          const stillGenerating = await isAnyVisible(page, FLOW_CONFIG.selectors.generatingIndicator);
-          if (!stillGenerating) {
-            const mediaAssets: LlmMediaAsset[] = [];
-            if (outputPath) {
-              mediaAssets.push(await captureGeneratedImage(page, baselineBlockCount, outputPath));
-            } else {
-              const src = await image.getAttribute('src');
-              mediaAssets.push({ kind: 'image', sourceUrl: src ?? undefined });
-            }
-
-            return {
-              provider: PROVIDER,
-              content: '',
-              codeBlocks: [],
-              elapsedMs: Date.now() - startedAt,
-              mediaAssets,
-            };
-          }
-        }
-
-        await randomDelay(500, 1_000);
+      const batchResponsePromise = options?.batchResponsePromise;
+      if (!batchResponsePromise) {
+        throw new AppError('Flow batchResponsePromise is required for receiveResponse', 500, 'FLOW_API_WAIT_MISSING');
       }
 
-      await captureDebugScreenshot(page, options?.debugScreenshotPath);
-      throw domTimeoutError('Timed out waiting for Flow image generation');
+      try {
+        const apiResponse = await batchResponsePromise;
+        const payload = await apiResponse.json();
+        const imageUrl = extractFifeUrl(payload);
+        console.log(`[flow-api] extracted image url: ${imageUrl.slice(0, 80)}...`);
+
+        const mediaAssets: LlmMediaAsset[] = [];
+        if (options?.outputPath) {
+          mediaAssets.push(await downloadAndSaveFlowImage(page, imageUrl, options.outputPath));
+        } else {
+          mediaAssets.push({ kind: 'image', sourceUrl: imageUrl });
+        }
+
+        return {
+          provider: PROVIDER,
+          content: '',
+          codeBlocks: [],
+          elapsedMs: Date.now() - startedAt,
+          mediaAssets,
+        };
+      } catch (err) {
+        await captureDebugScreenshot(page, options?.debugScreenshotPath);
+        if (err instanceof AppError) throw err;
+        throw domTimeoutError(
+          `Timed out or failed waiting for Flow batchGenerateImages (${err instanceof Error ? err.message : 'unknown error'})`,
+        );
+      }
     },
   };
 }

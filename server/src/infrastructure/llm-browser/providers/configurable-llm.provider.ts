@@ -3,6 +3,7 @@ import { AppError } from '../../../shared/http/errors.js';
 import { getLlmProviderConfig } from '../llm-browser.config.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
+  FlowOpenOptions,
   LlmBrowserProvider,
   LlmBrowserResponse,
   LlmTextProvider,
@@ -180,7 +181,7 @@ export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserP
   return {
     provider,
 
-    async open(page: Page): Promise<void> {
+    async open(page: Page, _options?: FlowOpenOptions): Promise<void> {
       const onProviderSite = page.url().startsWith(config.url);
       if (onProviderSite && (await isPromptInputVisible(page, config))) {
         await randomDelay(400, 900);

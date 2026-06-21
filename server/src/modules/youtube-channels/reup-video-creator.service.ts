@@ -1,4 +1,6 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
+import { mediaDownloadDir } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import { sourceVideosRepository } from '../source-channels/source-videos.repository.js';
 import type { SourceChannel, SourceVideoRecord } from '../source-channels/source-channels.types.js';
@@ -11,8 +13,13 @@ import { runMetaStep1 } from './reup-meta-step1.js';
 import { runMetaStep2 } from './reup-meta-step2.js';
 import { runMetaStep3 } from './reup-meta-step3.js';
 import { runHeroImageGeneration } from './reup-hero-image.js';
+import { runThumbnailHorizontal } from './reup-thumbnail-horizontal.js';
+import { renderThumbnailHorizontalFlowCompositeToPath } from './reup-thumbnail-composite.js';
+import { assembleReupSiVideo } from './reup-si-video-assembler.js';
 import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from './reup-metadata.types.js';
+import type { ThumbnailHorizontalOutput } from './reup-thumbnail.types.js';
 import { reupVideoHistoryRepository } from './reup-video-history.repository.js';
+import { moveVideoFolderToChannel, remapOutputItemPaths } from './reup-video-folder-mover.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-video.constants.js';
 import type {
   CreateReupVideosBatchResult,
@@ -149,7 +156,12 @@ export class ReupVideoCreatorService {
           let metaStep1ChunkDigests: MetaStep1ChunkDigest[] | undefined;
           let metaStep2StoryBlocks: MetaStep2StoryBlock[] | undefined;
           let metaStep3Output: MetaStep3Output | undefined;
+          let thumbnailHorizontalOutput: ThumbnailHorizontalOutput | undefined;
           let heroImagePath: string | undefined;
+          let thumbnailVisualPath: string | undefined;
+          let reupThumbnailPath: string | undefined;
+          let reupVideoPath: string | undefined;
+          let primaryOutputPath = downloaded.audioPath;
           if (channel.language === 'ja') {
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${channel.language})...`);
@@ -190,7 +202,7 @@ export class ReupVideoCreatorService {
             });
 
             if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript updated → ${updatedSrtPath}`);
+              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → transcript.srt`);
             }
 
             if (taskJobId) {
@@ -237,11 +249,7 @@ export class ReupVideoCreatorService {
             });
 
             if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'ok',
-                `Metadata step 1 done → ${metaStep1ChunkDigests.length} chunk_digests`,
-              );
+              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Metadata step 1 done → ${metaStep1ChunkDigests.length} chunk_digests`);
             }
 
             if (metaStep1ChunkDigests.length >= 2) {
@@ -249,56 +257,47 @@ export class ReupVideoCreatorService {
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 2...');
               }
 
-              metaStep2StoryBlocks = await runMetaStep2(
-                metaStep1ChunkDigests,
-                channel.language,
-                downloaded.youtubeVideoId,
-                {
-                  outputDir: path.dirname(updatedSrtPath),
-                  onProgress: taskJobId
-                    ? progress => {
-                        const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                        const profileLabel = progress.profileName;
+              metaStep2StoryBlocks = await runMetaStep2(metaStep1ChunkDigests, channel.language, downloaded.youtubeVideoId, {
+                outputDir: path.dirname(updatedSrtPath),
+                onProgress: taskJobId
+                  ? progress => {
+                      const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                      const profileLabel = progress.profileName;
 
-                        if (progress.status === 'started') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                          );
-                          return;
-                        }
-
-                        if (progress.status === 'retry') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                          );
-                          return;
-                        }
-
-                        if (progress.status === 'fallback') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
-                          );
-                          return;
-                        }
-
-                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
+                      if (progress.status === 'started') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                        );
+                        return;
                       }
-                    : undefined,
-                },
-              );
+
+                      if (progress.status === 'retry') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                        );
+                        return;
+                      }
+
+                      if (progress.status === 'fallback') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
+                        );
+                        return;
+                      }
+
+                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
+                    }
+                  : undefined,
+              });
 
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(
-                  taskJobId,
-                  'ok',
-                  `Metadata step 2 done → ${metaStep2StoryBlocks.length} story_blocks`,
-                );
+                taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Metadata step 2 done → ${metaStep2StoryBlocks.length} story_blocks`);
               }
             }
 
@@ -333,12 +332,12 @@ export class ReupVideoCreatorService {
               });
 
               if (taskJobId) {
+                const videoMetaPath = path.join(path.dirname(updatedSrtPath), 'video-meta.json');
                 taskQueueRepository.appendLogMessage(
                   taskJobId,
                   'ok',
-                  `Metadata step 3 done → title: ${metaStep3Output.metadata.title}, hero: ${
-                    typeof metaStep3Output.hero_image_prompt.prompt === 'string' &&
-                    metaStep3Output.hero_image_prompt.prompt.length > 80
+                  `Metadata step 3 done → ${videoMetaPath}, title: ${metaStep3Output.metadata.title}, hero: ${
+                    typeof metaStep3Output.hero_image_prompt.prompt === 'string' && metaStep3Output.hero_image_prompt.prompt.length > 80
                       ? `${metaStep3Output.hero_image_prompt.prompt.slice(0, 80)}...`
                       : metaStep3Output.hero_image_prompt.prompt
                   }`,
@@ -346,47 +345,167 @@ export class ReupVideoCreatorService {
               }
 
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating hero image with Google Flow...');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating horizontal thumbnail (LLM step 1/2/3)...');
               }
 
-              const heroResult = await runHeroImageGeneration(
-                metaStep3Output,
-                downloaded.youtubeVideoId,
-                path.dirname(updatedSrtPath),
-                {
+              try {
+                thumbnailHorizontalOutput = await runThumbnailHorizontal(metaStep3Output, {
                   onProgress: taskJobId
                     ? progress => {
                         const profileLabel = progress.profileName;
+                        const stepLabel = `step ${progress.step}/3`;
+
                         if (progress.status === 'retry') {
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                            `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
                           );
                           return;
                         }
+
                         taskQueueRepository.appendLogMessage(
                           taskJobId,
                           'info',
-                          `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
+                          `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
                         );
                       }
                     : undefined,
-                },
-              );
-              heroImagePath = heroResult.heroImagePath;
+                });
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Horizontal thumbnail LLM done');
+                }
+              } catch (err) {
+                const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
+                console.warn(`[reup-video] thumbnail LLM skipped (non-fatal): ${message}`);
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail LLM skipped: ${message}`);
+                }
+              }
 
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Hero image saved → ${heroImagePath}`);
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating hero image with Google Flow...');
+              }
+
+              const heroResult = await runHeroImageGeneration(metaStep3Output, downloaded.youtubeVideoId, path.dirname(updatedSrtPath), {
+                ...(thumbnailHorizontalOutput
+                  ? {
+                      thumbnailVisual: {
+                        visualPrompt: thumbnailHorizontalOutput.plan.visualPrompt,
+                        negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
+                      },
+                    }
+                  : {}),
+                onProgress: taskJobId
+                  ? progress => {
+                      const profileLabel = progress.profileName;
+                      if (progress.status === 'retry') {
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                        );
+                        return;
+                      }
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
+                      );
+                    }
+                  : undefined,
+              });
+              heroImagePath = heroResult.heroImagePath;
+              thumbnailVisualPath = heroResult.thumbnailVisualPath;
+
+              const flowDebugPath = path.join(path.dirname(updatedSrtPath), 'flow-debug.png');
+              await fs.unlink(flowDebugPath).catch(() => undefined);
+
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Hero image saved → background.jpg`);
+              }
+
+              if (taskJobId) {
+                if (thumbnailVisualPath) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail visual saved → thumbnail_visual.jpg`);
+                } else {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'Thumbnail visual generation skipped or failed (background.jpg kept)',
+                  );
+                }
+              }
+
+              if (thumbnailHorizontalOutput && thumbnailVisualPath) {
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Compositing horizontal thumbnail (canvas)...');
+                }
+
+                try {
+                  const compositeOutPath = path.join(path.dirname(updatedSrtPath), 'thumbnail.jpg');
+                  reupThumbnailPath = await renderThumbnailHorizontalFlowCompositeToPath({
+                    backgroundImagePath: thumbnailVisualPath,
+                    flowLayout: {
+                      thumbnail_copy: thumbnailHorizontalOutput.plan.thumbnailCopy,
+                      color_strategy: thumbnailHorizontalOutput.plan.colorStrategy,
+                    },
+                    outPath: compositeOutPath,
+                  });
+
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail composite saved → thumbnail.jpg`);
+                  }
+                } catch (err) {
+                  const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail composite failed';
+                  console.warn(`[reup-video] thumbnail composite skipped (non-fatal): ${message}`);
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail composite skipped: ${message}`);
+                  }
+                }
               }
             }
           }
+
+          // if (updatedSrtPath && downloaded.audioPath && heroImagePath) {
+          //   if (!channel.backgroundFootageSourceId) {
+          //     console.warn(`[reup-video] SI video assembly skipped: channel ${channel.id} has no backgroundFootageSourceId`);
+          //     if (taskJobId) {
+          //       taskQueueRepository.appendLogMessage(
+          //         taskJobId,
+          //         'info',
+          //         'SI video assembly skipped: no backgroundFootageSourceId configured on channel',
+          //       );
+          //     }
+          //   } else {
+          //     if (taskJobId) {
+          //       taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+          //       taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
+          //     }
+
+          //     reupVideoPath = await assembleReupSiVideo({
+          //       workDir: path.dirname(updatedSrtPath),
+          //       audioPath: downloaded.audioPath,
+          //       subtitlePath: updatedSrtPath,
+          //       centerImagePath: heroImagePath,
+          //       backgroundFootageSourceId: channel.backgroundFootageSourceId,
+          //       language: channel.language,
+          //       onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+          //     });
+          //     primaryOutputPath = reupVideoPath;
+
+          //     if (taskJobId) {
+          //       taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
+          //     }
+          //   }
+          // }
 
           reupVideoHistoryRepository.markProcessed({
             channelId: channel.id,
             videoUrl: task.link,
             videoId: task.videoId,
-            outputPath: downloaded.audioPath,
+            outputPath: primaryOutputPath,
             processedAt: new Date().toISOString(),
           });
 
@@ -396,7 +515,7 @@ export class ReupVideoCreatorService {
             language: channel.language,
             videoId: task.videoId,
             youtubeVideoId: downloaded.youtubeVideoId,
-            outputPath: downloaded.audioPath,
+            outputPath: primaryOutputPath,
             thumbnailPath: downloaded.thumbnailPath,
             audioPath: downloaded.audioPath,
             ...(updatedSrtPath
@@ -405,7 +524,11 @@ export class ReupVideoCreatorService {
                   ...(metaStep1ChunkDigests ? { metaStep1ChunkDigests } : {}),
                   ...(metaStep2StoryBlocks ? { metaStep2StoryBlocks } : {}),
                   ...(metaStep3Output ? { metaStep3Output } : {}),
+                  ...(thumbnailHorizontalOutput ? { thumbnailHorizontalOutput } : {}),
                   ...(heroImagePath ? { heroImagePath } : {}),
+                  ...(thumbnailVisualPath ? { thumbnailVisualPath } : {}),
+                  ...(reupThumbnailPath ? { reupThumbnailPath } : {}),
+                  ...(reupVideoPath ? { reupVideoPath } : {}),
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };
@@ -439,6 +562,11 @@ export class ReupVideoCreatorService {
             ...(downloaded.videoPath ? { videoPath: downloaded.videoPath } : {}),
           };
         }
+
+        const sourceDir = mediaDownloadDir('youtube', outputItem.youtubeVideoId);
+        const destDir = await moveVideoFolderToChannel(channel.id, outputItem.youtubeVideoId);
+        outputItem = remapOutputItemPaths(outputItem, sourceDir, destDir);
+        reupVideoHistoryRepository.updateOutputPath(channel.id, task.link, outputItem.outputPath);
 
         items.push(outputItem);
       } catch (err) {

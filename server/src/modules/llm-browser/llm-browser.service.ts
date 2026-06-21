@@ -1,4 +1,4 @@
-import { getLlmBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
+import { getLlmTextBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
   clearLlmBrowserSessionPendingBaseline,
   getLlmBrowserSession,
@@ -6,14 +6,13 @@ import {
   upsertLlmBrowserSession,
 } from '../../infrastructure/llm-browser/llm-browser.session.js';
 import type {
-  ImageBrowserProvider,
-  LlmBrowserProvider,
   LlmBrowserResponse,
   LlmBrowserSession,
-  LlmGenerateImageOptions,
-  LlmReceiveResponseOptions,
   LlmSendPromptOptions,
   LlmSetupConfig,
+  LlmTextChatOptions,
+  LlmTextProvider,
+  LlmTextReceiveResponseOptions,
 } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
 import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
@@ -25,7 +24,7 @@ function assertProfileOpen(profileId: string): void {
   }
 }
 
-function assertLlmSession(profileId: string, provider: LlmBrowserProvider): LlmBrowserSession {
+function assertLlmSession(profileId: string, provider: LlmTextProvider): LlmBrowserSession {
   const session = getLlmBrowserSession(profileId, provider);
   if (!session) {
     throw new AppError('LLM browser session is not open for this provider', 409, 'LLM_SESSION_NOT_OPEN');
@@ -34,9 +33,9 @@ function assertLlmSession(profileId: string, provider: LlmBrowserProvider): LlmB
 }
 
 export class LlmBrowserService {
-  async open(profileId: string, provider: LlmBrowserProvider): Promise<LlmBrowserSession> {
+  async open(profileId: string, provider: LlmTextProvider): Promise<LlmBrowserSession> {
     const profile = chromeProfilesService.getById(profileId);
-    const handler = getLlmBrowserHandler(provider);
+    const handler = getLlmTextBrowserHandler(provider);
 
     await openChromeProfile(profile.id, profile.userDataDir);
     const page = await getChromeProfilePage(profile.id);
@@ -45,11 +44,11 @@ export class LlmBrowserService {
     return upsertLlmBrowserSession(profileId, provider);
   }
 
-  async setup(profileId: string, provider: LlmBrowserProvider, config: LlmSetupConfig): Promise<LlmBrowserSession> {
+  async setup(profileId: string, provider: LlmTextProvider, config: LlmSetupConfig): Promise<LlmBrowserSession> {
     assertProfileOpen(profileId);
     assertLlmSession(profileId, provider);
 
-    const handler = getLlmBrowserHandler(provider);
+    const handler = getLlmTextBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
     await handler.setupConfig(page, config);
 
@@ -58,21 +57,23 @@ export class LlmBrowserService {
 
   async send(
     profileId: string,
-    provider: LlmBrowserProvider,
+    provider: LlmTextProvider,
     prompt: string,
-    sendOptions?: LlmSendPromptOptions
+    sendOptions?: LlmSendPromptOptions,
   ): Promise<LlmBrowserSession> {
     assertProfileOpen(profileId);
     assertLlmSession(profileId, provider);
 
-    const handler = getLlmBrowserHandler(provider);
+    const handler = getLlmTextBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
 
     setLlmBrowserSessionStatus(profileId, provider, 'sending');
     try {
-      console.log('🚀 ~ LlmBrowserService ~ send ~ sendOptions:');
-      const { baselineBlockCount } = await handler.sendPrompt(page, prompt, sendOptions);
-      console.log('🚀 ~ LlmBrowserService ~ send ~ baselineBlockCount:', baselineBlockCount);
+      const sendResult = await handler.sendPrompt(page, prompt, sendOptions);
+      if (!sendResult) {
+        throw new AppError('Text provider sendPrompt must return baselineBlockCount', 500, 'LLM_SEND_FAILED');
+      }
+      const { baselineBlockCount } = sendResult;
       return setLlmBrowserSessionStatus(profileId, provider, 'waiting', { pendingBaselineBlockCount: baselineBlockCount });
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, provider, 'idle');
@@ -80,11 +81,15 @@ export class LlmBrowserService {
     }
   }
 
-  async getResponse(profileId: string, provider: LlmBrowserProvider, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
+  async getResponse(
+    profileId: string,
+    provider: LlmTextProvider,
+    options?: LlmTextReceiveResponseOptions,
+  ): Promise<LlmBrowserResponse> {
     assertProfileOpen(profileId);
     const session = assertLlmSession(profileId, provider);
 
-    const handler = getLlmBrowserHandler(provider);
+    const handler = getLlmTextBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
 
     try {
@@ -104,10 +109,10 @@ export class LlmBrowserService {
 
   async chat(
     profileId: string,
-    provider: LlmBrowserProvider,
+    provider: LlmTextProvider,
     prompt: string,
     config?: LlmSetupConfig,
-    options?: LlmReceiveResponseOptions & LlmSendPromptOptions
+    options?: LlmTextChatOptions,
   ): Promise<LlmBrowserResponse> {
     if (!getLlmBrowserSession(profileId, provider)) {
       await this.open(profileId, provider);
@@ -117,35 +122,12 @@ export class LlmBrowserService {
       await this.setup(profileId, provider, config);
     }
 
-    const { submitWith, pasteStrategy, timeoutMs, stableMs, outputPath, debugScreenshotPath } = options ?? {};
-    const handler = getLlmBrowserHandler(provider);
+    const { submitWith, pasteStrategy, timeoutMs, stableMs } = options ?? {};
+    const handler = getLlmTextBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
     await handler.readConversationIfNeeded(page);
     await this.send(profileId, provider, prompt, { submitWith, pasteStrategy });
-    const response = await this.getResponse(profileId, provider, {
-      timeoutMs,
-      stableMs,
-      outputPath,
-      debugScreenshotPath,
-    });
-    return response;
-  }
-
-  async generateImage(
-    profileId: string,
-    prompt: string,
-    options?: LlmGenerateImageOptions,
-  ): Promise<LlmBrowserResponse> {
-    const provider: ImageBrowserProvider = options?.provider ?? 'flow';
-
-    return this.chat(profileId, provider, prompt, { mode: 'image' }, {
-      pasteStrategy: options?.pasteStrategy ?? 'direct',
-      submitWith: 'button',
-      timeoutMs: options?.timeoutMs ?? 300_000,
-      stableMs: options?.stableMs ?? 3_000,
-      outputPath: options?.outputPath,
-      debugScreenshotPath: options?.debugScreenshotPath,
-    });
+    return this.getResponse(profileId, provider, { timeoutMs, stableMs });
   }
 }
 

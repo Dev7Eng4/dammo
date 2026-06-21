@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
+import { flowBrowserService } from './flow-browser.service.js';
 import {
   llmBrowserChatSchema,
   llmBrowserGenerateImageSchema,
@@ -51,8 +52,6 @@ export function createLlmBrowserRoutes() {
       {
         timeoutMs: body.timeoutMs,
         stableMs: body.stableMs,
-        outputPath: body.outputPath,
-        debugScreenshotPath: body.debugScreenshotPath,
       },
     );
     return c.json({ item });
@@ -60,9 +59,10 @@ export function createLlmBrowserRoutes() {
 
   app.post('/:profileId/generate-image', zValidator('json', llmBrowserGenerateImageSchema), async (c) => {
     const body = c.req.valid('json');
-    const item = await llmBrowserService.generateImage(c.req.param('profileId'), body.prompt, {
-      provider: body.provider,
+    const item = await flowBrowserService.generateImage(c.req.param('profileId'), body.prompt, {
       outputPath: body.outputPath,
+      outputDir: body.outputDir,
+      fileName: body.fileName,
       debugScreenshotPath: body.debugScreenshotPath,
       timeoutMs: body.timeoutMs,
       stableMs: body.stableMs,

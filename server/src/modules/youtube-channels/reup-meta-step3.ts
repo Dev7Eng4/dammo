@@ -57,7 +57,7 @@ function resolveStep3PromptKey(language: PromptLanguage): string {
 async function persistStep3Output(parsed: MetaStep3Output, videoId: string, language: PromptLanguage, outputDir?: string): Promise<void> {
   if (!outputDir) return;
 
-  const outputPath = path.join(outputDir, 'meta.step3.json');
+  const outputPath = path.join(outputDir, 'video-meta.json');
   const output: MetaStep3PersistedOutput = {
     videoId,
     language,

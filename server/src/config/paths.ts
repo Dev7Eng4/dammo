@@ -10,6 +10,7 @@ export const paths = {
   renderOutputDir: path.join(env.dataDir, 'renders', 'output'),
   importsDir: path.join(env.dataDir, 'imports'),
   youtubeChannels: path.join(env.dataDir, 'youtube-channels.json'),
+  youtubeChannelsDir: path.join(env.dataDir, 'youtube-channels'),
   sourceChannels: path.join(env.dataDir, 'source-channels.json'),
   sourcesDir: path.join(env.dataDir, 'sources'),
   chromeProfiles: path.join(env.dataDir, 'chrome-profiles.json'),
@@ -22,6 +23,7 @@ export const paths = {
   prompts: path.join(env.dataDir, 'prompts.json'),
   promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
   promptsDir: path.join(env.dataDir, 'prompts'),
+  reupSiAssetsDir: path.join(env.dataDir, 'assets'),
 };
 
 export function sourceVideosFile(sourceId: string): string {
@@ -40,6 +42,14 @@ export function chromeProfileDir(profileId: string): string {
   return path.join(paths.chromeProfilesDir, profileId);
 }
 
+export function youtubeChannelDir(channelId: string): string {
+  return path.join(paths.youtubeChannelsDir, channelId);
+}
+
+export function youtubeChannelVideoDir(channelId: string, youtubeVideoId: string): string {
+  return path.join(youtubeChannelDir(channelId), youtubeVideoId);
+}
+
 export function ensureDataDirs(): void {
   const dirs = [
     paths.dataDir,
@@ -52,7 +62,12 @@ export function ensureDataDirs(): void {
     paths.reupVideoOutputDir,
     paths.taskQueueDir,
     paths.mediaDownloadsDir,
+    paths.youtubeChannelsDir,
     paths.promptsDir,
+    paths.reupSiAssetsDir,
+    path.join(paths.reupSiAssetsDir, 'noise'),
+    path.join(paths.reupSiAssetsDir, 'overlay'),
+    path.join(paths.reupSiAssetsDir, 'fonts'),
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) {

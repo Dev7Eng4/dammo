@@ -1,6 +1,4 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import type { LlmBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmTextProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
 import type { ChromeProfile } from '../chrome-profiles/chrome-profiles.types.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
@@ -10,7 +8,7 @@ import { promptsRepository } from '../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../prompts/prompts.types.js';
 import { tryParseMetaStep2Response } from './reup-meta-response.js';
-import type { MetaStep1Beat, MetaStep1CarryForward, MetaStep1Character, MetaStep1ChunkDigest, MetaStep2Output, MetaStep2StoryBlock } from './reup-metadata.types.js';
+import type { MetaStep1Beat, MetaStep1CarryForward, MetaStep1Character, MetaStep1ChunkDigest, MetaStep2StoryBlock } from './reup-metadata.types.js';
 
 const META_STEP2_KEY = 'step_2';
 const BATCH_SIZE = 6;
@@ -108,7 +106,7 @@ function createFallbackResult(batchChunkDigests: MetaStep1ChunkDigest[]): MetaSt
 
 async function processBatchWithRetry(
   profile: ChromeProfile,
-  provider: LlmBrowserProvider,
+  provider: LlmTextProvider,
   promptKey: string,
   language: PromptLanguage,
   batchChunkDigests: MetaStep1ChunkDigest[],
@@ -240,17 +238,7 @@ export async function runMetaStep2(
       .filter(Boolean)
       .sort((a, b) => (a.range as [number, number])[0] - (b.range as [number, number])[0]);
 
-    if (options?.outputDir) {
-      const outputPath = path.join(options.outputDir, 'meta.step2.json');
-      const output: MetaStep2Output = {
-        videoId,
-        language,
-        generatedAt: new Date().toISOString(),
-        story_blocks: storyBlocks,
-      };
-      await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
-      console.log(`[meta-step2] saved: ${outputPath} (${storyBlocks.length} story_blocks)`);
-    }
+    console.log(`[meta-step2] done: ${storyBlocks.length} story_blocks`);
 
     return storyBlocks;
   } finally {

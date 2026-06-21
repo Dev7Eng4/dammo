@@ -1,17 +1,17 @@
 import { AppError } from '../../shared/http/errors.js';
-import type { LlmBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmTextProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../llm-browser/llm-browser.service.js';
 
 export interface PromptPlaygroundRunInput {
-  provider: LlmBrowserProvider;
+  provider: LlmTextProvider;
   userPrompt: string;
   promptId?: string;
 }
 
 export interface PromptPlaygroundRunResult {
   content: string;
-  provider: LlmBrowserProvider;
+  provider: LlmTextProvider;
   profileId: string;
   codeBlocks: string[];
   elapsedMs: number;

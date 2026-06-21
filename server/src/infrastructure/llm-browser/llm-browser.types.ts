@@ -32,22 +32,30 @@ export interface LlmSetupConfig {
   model?: string;
 }
 
-export interface LlmReceiveResponseOptions {
+export interface LlmTextReceiveResponseOptions {
   timeoutMs?: number;
   stableMs?: number;
   /** Baseline block count trước khi submit prompt; mặc định lấy từ session sau send. */
   baselineBlockCount?: number;
-  /** Flow: path to save generated image. */
+}
+
+export interface FlowReceiveResponseOptions extends LlmTextReceiveResponseOptions {
+  projectId?: string;
+  batchResponsePromise?: Promise<import('playwright').Response>;
   outputPath?: string;
-  /** Flow: screenshot on timeout for debugging selectors. */
   debugScreenshotPath?: string;
 }
+
+/** @deprecated Use LlmTextReceiveResponseOptions or FlowReceiveResponseOptions */
+export type LlmReceiveResponseOptions = FlowReceiveResponseOptions;
 
 export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
   /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
-  pasteStrategy?: 'human' | 'direct';
+  pasteStrategy?: 'human' | 'direct' | 'insertText';
 }
+
+export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}
 
 export interface LlmSendPromptResult {
   baselineBlockCount: number;
@@ -59,14 +67,25 @@ export interface LlmMediaAsset {
   localPath?: string;
 }
 
-export interface LlmGenerateImageOptions {
-  provider?: ImageBrowserProvider;
+export interface FlowOpenOptions {
+  projectId?: string;
+}
+
+export interface FlowGenerateImageOptions {
+  projectId?: string;
   outputPath?: string;
+  outputDir?: string;
+  fileName?: string;
   debugScreenshotPath?: string;
   timeoutMs?: number;
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
 }
+
+/** @deprecated Use FlowGenerateImageOptions */
+export type LlmGenerateImageOptions = FlowGenerateImageOptions & {
+  provider?: ImageBrowserProvider;
+};
 
 export interface LlmBrowserResponse {
   provider: LlmBrowserProvider;

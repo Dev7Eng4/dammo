@@ -1,13 +1,31 @@
 {
   "prompts": [
     {
-      "id": "1885887e-76ac-482c-a669-0e53406aa7d9",
-      "key": "step_4",
+      "id": "c8da6af4-f803-496f-8741-61eb66e6b576",
+      "key": "ja_thumbnail_horizontal_step_3",
       "language": "ja",
-      "name": "Create MetaData Step 4",
-      "category": "meta",
-      "createdAt": "2026-06-19T09:49:23.497Z",
-      "updatedAt": "2026-06-19T09:49:23.497Z"
+      "name": "Horizontal",
+      "category": "thumbnail",
+      "createdAt": "2026-06-21T04:19:21.397Z",
+      "updatedAt": "2026-06-21T04:24:53.550Z"
+    },
+    {
+      "id": "85102221-2ccf-4f76-8961-34094b75634e",
+      "key": "ja_thumbnail_horizontal_step_2",
+      "language": "ja",
+      "name": "Horizontal",
+      "category": "thumbnail",
+      "createdAt": "2026-06-21T04:18:49.990Z",
+      "updatedAt": "2026-06-21T04:18:49.990Z"
+    },
+    {
+      "id": "74641628-437b-4879-81b6-192251253b70",
+      "key": "ja_thumbnail_horizontal_step_1",
+      "language": "ja",
+      "name": "Horizontal",
+      "category": "thumbnail",
+      "createdAt": "2026-06-21T04:18:34.473Z",
+      "updatedAt": "2026-06-21T04:18:34.473Z"
     },
     {
       "id": "02ce07f1-4462-4076-922f-38320ac496b2",

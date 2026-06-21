@@ -11,7 +11,9 @@
     "download:video": "tsx src/scripts/download-video.ts",
     "download:audio": "tsx src/scripts/download-audio.ts",
     "download:transcript": "tsx src/scripts/download-transcript.ts",
-    "create-videos": "tsx src/scripts/create-videos.ts"
+    "create-videos": "tsx src/scripts/create-videos.ts",
+    "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
+    "flow:generate-image": "tsx src/scripts/generate-flow-image.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

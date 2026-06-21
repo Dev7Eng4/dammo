@@ -30,6 +30,22 @@ export class ReupVideoHistoryRepository {
     );
     return record;
   }
+
+  updateOutputPath(channelId: string, videoUrl: string, outputPath: string): void {
+    const normalizedUrl = normalizeUrl(videoUrl);
+
+    updateJson(
+      paths.reupVideoHistory,
+      (store) => ({
+        records: store.records.map(record =>
+          record.channelId === channelId && normalizeUrl(record.videoUrl) === normalizedUrl
+            ? { ...record, outputPath }
+            : record,
+        ),
+      }),
+      loadStore(),
+    );
+  }
 }
 
 export const reupVideoHistoryRepository = new ReupVideoHistoryRepository();
