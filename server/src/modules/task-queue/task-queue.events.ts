@@ -3,7 +3,8 @@ import type { TaskJobSummary, TaskLogEntry } from './task-queue.types.js';
 export type TaskQueueEvent =
   | { type: 'snapshot'; items: TaskJobSummary[]; paused: boolean }
   | { type: 'job_updated'; job: TaskJobSummary }
-  | { type: 'log_appended'; jobId: string; entry: TaskLogEntry; total: number };
+  | { type: 'log_appended'; jobId: string; entry: TaskLogEntry; total: number }
+  | { type: 'jobs_cleared'; ids: string[] };
 
 const listeners = new Set<(event: TaskQueueEvent) => void>();
 

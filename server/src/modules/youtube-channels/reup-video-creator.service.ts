@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { mediaDownloadDir } from '../../config/paths.js';
+import { mediaDownloadDir, youtubeChannelVideoDir } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
+import { generateId } from '../../shared/id.js';
 import { sourceVideosRepository } from '../source-channels/source-videos.repository.js';
 import type { SourceChannel, SourceVideoRecord } from '../source-channels/source-channels.types.js';
 import { resolveSourceChannelsFromMapping } from './youtube-channel-sources.js';
@@ -20,6 +21,7 @@ import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from 
 import type { ThumbnailHorizontalOutput } from './reup-thumbnail.types.js';
 import { reupVideoHistoryRepository } from './reup-video-history.repository.js';
 import { moveVideoFolderToChannel, remapOutputItemPaths } from './reup-video-folder-mover.js';
+import { videoPrepareRepository } from './video-prepare.repository.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-video.constants.js';
 import type {
   CreateReupVideosBatchResult,
@@ -69,11 +71,25 @@ function isSkippableCreateError(err: unknown): err is AppError {
   return err instanceof AppError && Boolean(err.code && SKIP_ON_CREATE_CODES.has(err.code));
 }
 
+function resolveVideoPrepareTitle(outputItem: ReupVideoOutputItem): string {
+  const title = outputItem.metaStep3Output?.metadata?.title;
+  if (typeof title === 'string' && title.trim()) {
+    return title.trim();
+  }
+  return outputItem.youtubeVideoId;
+}
+
 function buildTasks(channel: YoutubeChannel, videos: SourceVideoWithSource[]): ReupVideoTask[] {
   const processedUrls = reupVideoHistoryRepository.getProcessedVideoUrls(channel.id);
+  const preparedVideoIds = videoPrepareRepository.getPreparedVideoIds(channel.id);
 
   return videos
-    .filter(video => video.url && !processedUrls.has(video.url.trim().toLowerCase()))
+    .filter(video => {
+      if (!video.url) return false;
+      if (processedUrls.has(video.url.trim().toLowerCase())) return false;
+      if (preparedVideoIds.has(video.id)) return false;
+      return true;
+    })
     .slice(0, REUP_VIDEOS_PER_RUN)
     .map(video => ({
       link: video.url,
@@ -114,6 +130,8 @@ export class ReupVideoCreatorService {
     if (tasks.length === 0) {
       throw new AppError('No unprocessed source videos available', 400, 'NO_UNPROCESSED_VIDEOS');
     }
+
+    videoPrepareRepository.ensureStore(channel.id);
 
     const items: ReupVideoOutputItem[] = [];
     const isAudioChannel = isReupAudioChannel(channel.type);
@@ -567,6 +585,20 @@ export class ReupVideoCreatorService {
         const destDir = await moveVideoFolderToChannel(channel.id, outputItem.youtubeVideoId);
         outputItem = remapOutputItemPaths(outputItem, sourceDir, destDir);
         reupVideoHistoryRepository.updateOutputPath(channel.id, task.link, outputItem.outputPath);
+
+        const expectedDestDir = youtubeChannelVideoDir(channel.id, outputItem.youtubeVideoId);
+        if (path.resolve(destDir) === path.resolve(expectedDestDir)) {
+          videoPrepareRepository.appendCreated(channel.id, {
+            id: generateId(),
+            videoId: outputItem.youtubeVideoId,
+            title: resolveVideoPrepareTitle(outputItem),
+            status: 'Prepared',
+          });
+
+          if (taskJobId) {
+            taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video prepare tracked → video-prepare.json');
+          }
+        }
 
         items.push(outputItem);
       } catch (err) {

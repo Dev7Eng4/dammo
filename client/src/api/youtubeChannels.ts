@@ -73,7 +73,7 @@ export function fetchYoutubeChannelVideos(id: string, options?: FetchOptions) {
 }
 
 export function syncYoutubeChannelVideos(id: string) {
-  return fetchJson<{ item: YoutubeChannel; videos: YoutubeChannelVideo[] }>(
+  return fetchJson<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string }>(
     `${API_V1}/youtube-channels/${id}/sync-videos`,
     { method: 'POST' },
   );

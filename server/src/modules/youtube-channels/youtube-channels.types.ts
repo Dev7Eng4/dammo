@@ -60,6 +60,12 @@ export interface YoutubeChannelsStore {
   channels: YoutubeChannel[];
 }
 
+export interface YoutubeChannelVideosStore {
+  channelId: string;
+  fetchedAt: string;
+  videos: YoutubeChannelVideo[];
+}
+
 export interface YoutubeChannelStats {
   total: number;
   monetized: number;

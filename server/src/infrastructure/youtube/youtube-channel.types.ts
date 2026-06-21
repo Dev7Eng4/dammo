@@ -10,6 +10,8 @@ export interface YoutubeChannelMetadata {
   categories?: string[];
 }
 
+export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error';
+
 export interface YoutubeChannelVideo {
   id: string;
   title: string;
@@ -18,6 +20,7 @@ export interface YoutubeChannelVideo {
   likeCount?: number;
   commentCount?: number;
   duration?: number;
+  status?: YoutubeChannelVideoStatus;
 }
 
 export interface YtdlpVideoEntry {

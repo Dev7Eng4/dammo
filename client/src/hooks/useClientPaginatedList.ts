@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 export interface UseClientPaginatedListOptions {
   limit?: number;
-  resetKey?: number;
+  resetKey?: string | number;
 }
 
 export interface UseClientPaginatedListResult<TItem> {

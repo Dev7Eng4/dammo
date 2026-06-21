@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui';
-import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm';
-import { formatChannelLanguageLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type YoutubeChannel } from '../../types/youtubeChannel';
+import { type YoutubeChannel } from '../../types/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
+import { ChannelTypePill } from './ChannelTypePill';
 import { MonetizationPill } from './MonetizationPill';
 
 interface YoutubeChannelDetailHeaderProps {
   channel: YoutubeChannel;
   syncing?: boolean;
   syncError?: string | null;
+  videosFetchedAt?: string | null;
   creatingVideo?: boolean;
   canCreateVideo?: boolean;
   onSync?: () => void;
@@ -16,10 +17,17 @@ interface YoutubeChannelDetailHeaderProps {
   onCreateVideo?: () => void;
 }
 
+function formatVideosFetchedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
 export function YoutubeChannelDetailHeader({
   channel,
   syncing,
   syncError,
+  videosFetchedAt,
   creatingVideo,
   canCreateVideo,
   onSync,
@@ -80,6 +88,11 @@ export function YoutubeChannelDetailHeader({
               <Button className="rounded-lg" disabled={syncing} onClick={onSync}>
                 {syncing ? 'Syncing videos...' : 'Sync Now'}
               </Button>
+              {videosFetchedAt ? (
+                <p className="mt-2 text-xs text-neutral-500">
+                  Last synced: {formatVideosFetchedAt(videosFetchedAt)}
+                </p>
+              ) : null}
               {syncError ? <p className="mt-2 text-xs text-danger">{syncError}</p> : null}
             </div>
           ) : null}
@@ -89,33 +102,7 @@ export function YoutubeChannelDetailHeader({
       <div className="flex flex-wrap gap-2">
         <ChannelStatusPill status={channel.status} />
         <MonetizationPill status={channel.monetizationStatus} />
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card-surface px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Type</p>
-          <p className="mt-2 text-sm font-medium text-neutral-100">
-            {YOUTUBE_CHANNEL_TYPE_LABELS[channel.type]}
-          </p>
-        </div>
-        <div className="card-surface px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Niche</p>
-          <p className="mt-2 text-sm font-medium text-neutral-100">{channel.niche}</p>
-        </div>
-        <div className="card-surface px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Language</p>
-          <p className="mt-2 text-sm font-medium text-neutral-100">{formatChannelLanguageLabel(channel.language)}</p>
-        </div>
-        <div className="card-surface px-4 py-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Linked Email</p>
-          <p className="mt-2 truncate text-sm font-mono text-neutral-100">{channel.linkedEmail}</p>
-        </div>
-        {formatChannelUploadSchedule(channel) ? (
-          <div className="card-surface px-4 py-3 sm:col-span-2 lg:col-span-4">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Upload Schedule</p>
-            <p className="mt-2 text-sm font-medium text-neutral-100">{formatChannelUploadSchedule(channel)}</p>
-          </div>
-        ) : null}
+        <ChannelTypePill type={channel.type} />
       </div>
     </div>
   );
@@ -133,10 +120,10 @@ export function YoutubeChannelDetailHeaderSkeleton() {
           <div className="h-4 w-64 rounded bg-neutral-800" />
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-20 rounded-2xl bg-neutral-800" />
-        ))}
+      <div className="flex gap-2">
+        <div className="h-6 w-16 rounded-full bg-neutral-800" />
+        <div className="h-6 w-24 rounded-full bg-neutral-800" />
+        <div className="h-6 w-20 rounded-full bg-neutral-800" />
       </div>
     </div>
   );

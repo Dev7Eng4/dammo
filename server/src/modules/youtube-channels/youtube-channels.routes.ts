@@ -72,9 +72,9 @@ export function createYoutubeChannelsRoutes() {
     return c.json(result);
   });
 
-  // Detail page: always fetch live metadata from YouTube
-  app.get('/:id', async (c) => {
-    const item = await youtubeChannelsService.getLiveById(c.req.param('id'));
+  // Detail page: return stored channel metadata (refresh via POST /:id/sync-videos)
+  app.get('/:id', (c) => {
+    const item = youtubeChannelsService.getById(c.req.param('id'));
     return c.json(item);
   });
 

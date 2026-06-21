@@ -18,6 +18,7 @@ import type {
 
 const STATE_FILE = 'queue-state.json';
 const MAX_LOG_LINES = 300;
+const TERMINAL_STATUSES = new Set<TaskStatus>(['completed', 'failed', 'cancelled']);
 
 function formatLogTime(): string {
   return new Date().toLocaleTimeString(undefined, {
@@ -159,6 +160,29 @@ export class TaskQueueRepository {
         .filter((job) => job.status === 'queued')
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0] ?? null
     );
+  }
+
+  clearFinished(): { removed: number; ids: string[] } {
+    if (!fs.existsSync(paths.taskQueueDir)) return { removed: 0, ids: [] };
+
+    const ids: string[] = [];
+
+    for (const fileName of fs.readdirSync(paths.taskQueueDir)) {
+      if (!fileName.endsWith('.json') || fileName === STATE_FILE) continue;
+
+      const filePath = path.join(paths.taskQueueDir, fileName);
+      const job = readJson<TaskJob>(filePath);
+      if (!job || !TERMINAL_STATUSES.has(job.status)) continue;
+
+      fs.unlinkSync(filePath);
+      ids.push(job.id);
+    }
+
+    if (ids.length > 0) {
+      emitTaskQueueEvent({ type: 'jobs_cleared', ids });
+    }
+
+    return { removed: ids.length, ids };
   }
 }
 

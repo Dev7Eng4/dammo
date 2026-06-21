@@ -130,6 +130,23 @@ export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType | 'reup', st
 };
 export type YoutubeMonetizationFilter = 'all' | MonetizationStatus;
 
+export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error';
+
+export type YoutubeChannelVideoStatusFilter = 'all' | YoutubeChannelVideoStatus | 'Draft';
+
+export const YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS: {
+  value: YoutubeChannelVideoStatusFilter;
+  label: string;
+}[] = [
+  { value: 'all', label: 'All Status' },
+  { value: 'Published', label: 'Published' },
+  { value: 'Prepared', label: 'Prepared' },
+  { value: 'Created', label: 'Created' },
+  { value: 'Uploaded', label: 'Uploaded' },
+  { value: 'Error', label: 'Error' },
+  { value: 'Draft', label: 'Draft' },
+];
+
 export interface YoutubeChannelVideo {
   id: string;
   title: string;
@@ -138,10 +155,12 @@ export interface YoutubeChannelVideo {
   likeCount?: number;
   commentCount?: number;
   duration?: number;
+  status?: YoutubeChannelVideoStatus;
 }
 
 export interface YoutubeChannelVideosResponse {
   items: YoutubeChannelVideo[];
+  fetchedAt?: string;
 }
 
 export interface YoutubeVideoComment {

@@ -62,3 +62,12 @@ export interface CreateReupVideosBatchResult {
   channels: ReupVideoBatchChannelResult[];
   items: ReupVideoOutputItem[];
 }
+
+export type VideoPrepareStatus = 'Prepared' | 'Created' | 'Uploaded' | 'Error';
+
+export interface VideoPrepareItem {
+  id: string;
+  videoId: string;
+  title: string;
+  status: VideoPrepareStatus;
+}

@@ -47,4 +47,8 @@ export function resumeTaskQueue() {
   return fetchJson<{ paused: boolean }>(`${API_V1}/task-queue/resume`, { method: 'POST' });
 }
 
+export function clearFinishedTasks() {
+  return fetchJson<{ removed: number; ids: string[] }>(`${API_V1}/task-queue/clear`, { method: 'POST' });
+}
+
 export const TASK_QUEUE_STREAM_URL = `${API_V1}/task-queue/stream`;

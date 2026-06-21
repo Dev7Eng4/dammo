@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { isAbortError } from '../api/http';
 import {
@@ -13,10 +13,13 @@ import {
   YoutubeChannelDetailHeaderSkeleton,
 } from '../components/youtube-channels/YoutubeChannelDetailHeader';
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
+import { YoutubeChannelVideoSummary } from '../components/youtube-channels/YoutubeChannelVideoSummary';
+import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
 import { VideoCommentsDrawer } from '../components/youtube-channels/VideoCommentsDrawer';
 import { useAbortableEffect, useClientPaginatedList, useTaskQueue } from '../hooks';
-import type { YoutubeChannel, YoutubeChannelVideo } from '../types/youtubeChannel';
+import type { YoutubeChannel, YoutubeChannelVideo, YoutubeChannelVideoStatusFilter } from '../types/youtubeChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
+import { filterYoutubeChannelVideosByStatus } from '../utils/youtubeChannelVideos';
 
 const VIDEO_LIMIT = 20;
 
@@ -29,16 +32,26 @@ export function YoutubeChannelDetailPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [allVideos, setAllVideos] = useState<YoutubeChannelVideo[]>([]);
+  const [videosFetchedAt, setVideosFetchedAt] = useState<string | null>(null);
   const [videosLoading, setVideosLoading] = useState(true);
   const [videosError, setVideosError] = useState<string | null>(null);
   const [videoResetKey, setVideoResetKey] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<YoutubeChannelVideoStatusFilter>('all');
 
-  const videos = useClientPaginatedList(allVideos, {
+  const filteredVideos = useMemo(
+    () => filterYoutubeChannelVideosByStatus(allVideos, statusFilter),
+    [allVideos, statusFilter],
+  );
+
+  const videos = useClientPaginatedList(filteredVideos, {
     limit: VIDEO_LIMIT,
-    resetKey: videoResetKey,
+    resetKey: `${videoResetKey}:${statusFilter}`,
   });
+
+  const videosEmptyMessage =
+    statusFilter !== 'all' ? 'No videos match the selected status.' : 'No videos found.';
 
   useAbortableEffect(
     async (signal) => {
@@ -72,6 +85,7 @@ export function YoutubeChannelDetailPage() {
       try {
         const data = await fetchYoutubeChannelVideos(id, { signal });
         setAllVideos(data.items);
+        setVideosFetchedAt(data.fetchedAt ?? null);
         setVideoResetKey((key) => key + 1);
       } catch (err) {
         if (isAbortError(err)) return;
@@ -109,9 +123,10 @@ export function YoutubeChannelDetailPage() {
     setVideosError(null);
 
     try {
-      const { item, videos: syncedVideos } = await syncYoutubeChannelVideos(id);
+      const { item, videos: syncedVideos, fetchedAt } = await syncYoutubeChannelVideos(id);
       setChannel(item);
       setAllVideos(syncedVideos);
+      setVideosFetchedAt(fetchedAt);
       setVideoResetKey((key) => key + 1);
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Failed to sync videos');
@@ -145,6 +160,7 @@ export function YoutubeChannelDetailPage() {
               channel={channel}
               syncing={syncing}
               syncError={syncError}
+              videosFetchedAt={videosFetchedAt}
               canCreateVideo={isStoredReupChannelType(channel.type)}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}
@@ -170,11 +186,20 @@ export function YoutubeChannelDetailPage() {
             />
           ) : null}
 
-          <div className="mt-4 card-surface px-5 pt-3 pb-4">
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+            <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} />
+            <YoutubeChannelVideosToolbar
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+            />
+          </div>
+
+          <div className="mt-3 card-surface px-5 pt-3 pb-4">
             <YoutubeChannelVideosTable
               videos={videos.pageItems}
               loading={videosLoading}
               error={videosError}
+              emptyMessage={videosEmptyMessage}
               onCommentClick={setSelectedVideo}
             />
             <MailAccountsPagination

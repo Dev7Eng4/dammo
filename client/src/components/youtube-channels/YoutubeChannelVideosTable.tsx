@@ -1,10 +1,58 @@
-import type { YoutubeChannelVideo } from '../../types/youtubeChannel';
+import { cn } from '../../lib/cn';
+import type { YoutubeChannelVideo, YoutubeChannelVideoStatus } from '../../types/youtubeChannel';
 
 interface YoutubeChannelVideosTableProps {
   videos: YoutubeChannelVideo[];
   loading?: boolean;
   error?: string | null;
+  emptyMessage?: string;
   onCommentClick?: (video: YoutubeChannelVideo) => void;
+}
+
+const statusConfig: Record<
+  YoutubeChannelVideoStatus,
+  { label: string; text: string; bg: string }
+> = {
+  Published: {
+    label: 'Published',
+    text: 'text-success',
+    bg: 'bg-success/10 border-success/30',
+  },
+  Prepared: {
+    label: 'Prepared',
+    text: 'text-primary-300',
+    bg: 'bg-primary-400/10 border-primary-400/30',
+  },
+  Created: {
+    label: 'Created',
+    text: 'text-primary-300',
+    bg: 'bg-primary-400/10 border-primary-400/30',
+  },
+  Uploaded: {
+    label: 'Uploaded',
+    text: 'text-secondary-300',
+    bg: 'bg-secondary-400/10 border-secondary-400/30',
+  },
+  Error: {
+    label: 'Error',
+    text: 'text-danger',
+    bg: 'bg-danger/10 border-danger/30',
+  },
+};
+
+function VideoStatusBadge({ status }: { status: YoutubeChannelVideoStatus }) {
+  const config = statusConfig[status];
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        config.bg,
+        config.text,
+      )}
+    >
+      {config.label}
+    </span>
+  );
 }
 
 function formatCount(count?: number | null): string {
@@ -12,16 +60,11 @@ function formatCount(count?: number | null): string {
   return count.toLocaleString();
 }
 
-function truncateLink(url: string, max = 44) {
-  const display = url.replace('https://', '');
-  if (display.length <= max) return display;
-  return display.slice(0, max) + '...';
-}
-
 export function YoutubeChannelVideosTable({
   videos,
   loading,
   error,
+  emptyMessage = 'No videos found.',
   onCommentClick,
 }: YoutubeChannelVideosTableProps) {
   if (loading) {
@@ -31,7 +74,7 @@ export function YoutubeChannelVideosTable({
           <thead>
             <tr className="border-b border-border text-xs text-neutral-500">
               <th className="pb-3 pr-4 font-medium">TITLE</th>
-              <th className="min-w-52 pb-3 pr-4 font-medium">LINK</th>
+              <th className="pb-3 pr-4 font-medium">STATUS</th>
               <th className="pb-3 pr-4 font-medium">VIEWS</th>
               <th className="pb-3 pr-4 font-medium">LIKES</th>
               <th className="pb-3 font-medium">COMMENTS</th>
@@ -62,7 +105,7 @@ export function YoutubeChannelVideosTable({
   if (videos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">No videos found.</p>
+        <p className="text-sm text-neutral-400">{emptyMessage}</p>
       </div>
     );
   }
@@ -73,7 +116,7 @@ export function YoutubeChannelVideosTable({
         <thead>
           <tr className="border-b border-border text-xs text-neutral-500">
             <th className="pb-3 pr-4 font-medium">TITLE</th>
-            <th className="min-w-52 pb-3 pr-4 font-medium">LINK</th>
+            <th className="pb-3 pr-4 font-medium">STATUS</th>
             <th className="pb-3 pr-4 font-medium">VIEWS</th>
             <th className="pb-3 pr-4 font-medium">LIKES</th>
             <th className="pb-3 font-medium">COMMENTS</th>
@@ -83,15 +126,8 @@ export function YoutubeChannelVideosTable({
           {videos.map((video) => (
             <tr key={video.id} className="border-b border-border/50">
               <td className="py-3 pr-4 font-medium text-neutral-100">{video.title}</td>
-              <td className="min-w-52 py-3 pr-4 font-mono text-xs text-neutral-500">
-                <a
-                  href={video.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-secondary-400 hover:underline"
-                >
-                  {truncateLink(video.url)}
-                </a>
+              <td className="py-3 pr-4">
+                <VideoStatusBadge status={video.status ?? 'Published'} />
               </td>
               <td className="py-3 pr-4 text-neutral-300">{formatCount(video.viewCount)}</td>
               <td className="py-3 pr-4 text-neutral-300">{formatCount(video.likeCount)}</td>

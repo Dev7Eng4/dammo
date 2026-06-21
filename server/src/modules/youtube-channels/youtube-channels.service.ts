@@ -10,7 +10,10 @@ import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-c
 import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
+import { youtubeChannelVideosRepository } from './youtube-channel-videos.repository.js';
 import { reupVideoCreatorService } from './reup-video-creator.service.js';
+import { mergeChannelVideos } from './merge-channel-videos.js';
+import { videoPrepareRepository } from './video-prepare.repository.js';
 import { resolveSourceNamesForChannel } from './youtube-channel-sources.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
@@ -210,16 +213,9 @@ export class YoutubeChannelsService {
   async getLiveById(id: string): Promise<YoutubeChannel> {
     const channel = this.getById(id);
     try {
-      const metadata = await fetchYoutubeChannelMetadata(channel.youtubeUrl);
-      const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
-
-      return {
-        ...channel,
-        name: metadata.name,
-        handle,
-        niche: metadata.niche,
-      };
+      return await this.refreshChannelMetadata(id, channel);
     } catch (err) {
+      if (err instanceof AppError) throw err;
       const detail = err instanceof Error ? err.message : 'Unknown error';
       throw new AppError(
         `Failed to fetch YouTube channel metadata: ${detail}`,
@@ -227,6 +223,28 @@ export class YoutubeChannelsService {
         'YOUTUBE_FETCH_FAILED',
       );
     }
+  }
+
+  private async refreshChannelMetadata(id: string, channel = this.getById(id)): Promise<YoutubeChannel> {
+    const metadata = await fetchYoutubeChannelMetadata(channel.youtubeUrl);
+    const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+
+    const updated = youtubeChannelsRepository.update(id, (current) => ({
+      ...current,
+      name: metadata.name,
+      handle,
+      niche: metadata.niche,
+      channelId: metadata.channelId ?? current.channelId,
+    }));
+
+    if (!updated) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    return {
+      ...updated,
+      language: normalizeChannelLanguage(updated.language),
+    };
   }
 
   private async fetchVideos(channel: YoutubeChannel): Promise<YoutubeChannelVideo[]> {
@@ -238,16 +256,43 @@ export class YoutubeChannelsService {
     }
   }
 
-  async getVideos(id: string): Promise<{ items: YoutubeChannelVideo[] }> {
-    const channel = this.getById(id);
-    const items = await this.fetchVideos(channel);
-    return { items };
+  private persistVideos(channelId: string, videos: YoutubeChannelVideo[]): string {
+    const fetchedAt = new Date().toISOString();
+    youtubeChannelVideosRepository.write(channelId, { channelId, fetchedAt, videos });
+    return fetchedAt;
   }
 
-  async syncVideos(id: string): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[] }> {
+  private mergeVideosWithPrepare(channelId: string, videos: YoutubeChannelVideo[]): YoutubeChannelVideo[] {
+    const prepare = videoPrepareRepository.read(channelId);
+    return mergeChannelVideos(videos, prepare);
+  }
+
+  async getVideos(id: string): Promise<{ items: YoutubeChannelVideo[]; fetchedAt?: string }> {
     const channel = this.getById(id);
+
+    const store = youtubeChannelVideosRepository.read(id);
+    if (store) {
+      return {
+        items: this.mergeVideosWithPrepare(id, store.videos),
+        fetchedAt: store.fetchedAt,
+      };
+    }
+
     const videos = await this.fetchVideos(channel);
-    return { item: channel, videos };
+    const fetchedAt = this.persistVideos(id, videos);
+    return { items: this.mergeVideosWithPrepare(id, videos), fetchedAt };
+  }
+
+  async syncVideos(
+    id: string,
+  ): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string }> {
+    const channel = this.getById(id);
+    const [videos, item] = await Promise.all([
+      this.fetchVideos(channel),
+      this.refreshChannelMetadata(id, channel),
+    ]);
+    const fetchedAt = this.persistVideos(id, videos);
+    return { item, videos: this.mergeVideosWithPrepare(id, videos), fetchedAt };
   }
 
   async getVideoComments(

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import {
   cancelTask,
+  clearFinishedTasks,
   enqueueTask as enqueueTaskApi,
   fetchTaskJob,
   fetchTaskJobLogs,
@@ -49,6 +50,7 @@ interface TaskQueueContextValue {
   retryJob: (job: TaskJobListItem) => Promise<TaskJob>;
   cancelJob: (id: string) => Promise<void>;
   togglePause: () => Promise<void>;
+  clearFinishedJobs: () => Promise<number>;
   refresh: () => Promise<void>;
   refreshJob: (id: string) => Promise<TaskJob>;
   summary: {
@@ -202,6 +204,23 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     [bumpDetail],
   );
 
+  const removeJobsByIds = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      setJobs((current) => current.filter((job) => !idSet.has(job.id)));
+      for (const id of ids) {
+        jobDetailsRef.current.delete(id);
+        logOffsetsRef.current.delete(id);
+        handlersRef.current.delete(id);
+        notifiedRef.current.delete(id);
+      }
+      setLiveJobId((current) => (current && idSet.has(current) ? null : current));
+      bumpDetail();
+    },
+    [bumpDetail],
+  );
+
   const pollList = useCallback(async () => {
     const data = await fetchTaskQueue({ view: 'summary' });
     setJobs(sortJobs(data.items));
@@ -229,10 +248,12 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   const applyListItemRef = useRef(applyListItem);
   const appendLogEntryRef = useRef(appendLogEntry);
   const refreshJobRef = useRef(refreshJob);
+  const removeJobsByIdsRef = useRef(removeJobsByIds);
   handleTerminalJobRef.current = handleTerminalJob;
   applyListItemRef.current = applyListItem;
   appendLogEntryRef.current = appendLogEntry;
   refreshJobRef.current = refreshJob;
+  removeJobsByIdsRef.current = removeJobsByIds;
 
   const pollLiveLogs = useCallback(async () => {
     const currentLiveJobId = liveJobIdRef.current;
@@ -384,6 +405,16 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    const onJobsCleared = (event: MessageEvent<string>) => {
+      try {
+        const data = JSON.parse(event.data) as { ids: string[] };
+        sseConnectedRef.current = true;
+        removeJobsByIdsRef.current(data.ids);
+      } catch {
+        /* ignore malformed event */
+      }
+    };
+
     const onError = () => {
       if (source.readyState === EventSource.CLOSED) {
         sseConnectedRef.current = false;
@@ -396,6 +427,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     source.addEventListener('snapshot', onSnapshot);
     source.addEventListener('job_updated', onJobUpdated);
     source.addEventListener('log_appended', onLogAppended);
+    source.addEventListener('jobs_cleared', onJobsCleared);
     source.onerror = onError;
 
     return () => {
@@ -404,6 +436,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       source.removeEventListener('snapshot', onSnapshot);
       source.removeEventListener('job_updated', onJobUpdated);
       source.removeEventListener('log_appended', onLogAppended);
+      source.removeEventListener('jobs_cleared', onJobsCleared);
       source.onerror = null;
       source.close();
     };
@@ -485,6 +518,20 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     await refresh();
   }, [paused, refresh, toast]);
 
+  const clearFinishedJobs = useCallback(async () => {
+    try {
+      const { removed, ids } = await clearFinishedTasks();
+      removeJobsByIds(ids);
+      if (removed > 0) {
+        toast.success(`Cleared ${removed} finished job${removed === 1 ? '' : 's'}`);
+      }
+      return removed;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to clear finished jobs');
+      throw err;
+    }
+  }, [removeJobsByIds, toast]);
+
   const summary = useMemo(
     () => ({
       running: jobs.filter((job) => job.status === 'running').length,
@@ -507,6 +554,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       retryJob,
       cancelJob,
       togglePause,
+      clearFinishedJobs,
       refresh,
       refreshJob,
       summary,
@@ -521,6 +569,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       retryJob,
       cancelJob,
       togglePause,
+      clearFinishedJobs,
       refresh,
       refreshJob,
       summary,

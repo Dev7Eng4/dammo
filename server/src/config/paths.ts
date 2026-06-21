@@ -46,8 +46,16 @@ export function youtubeChannelDir(channelId: string): string {
   return path.join(paths.youtubeChannelsDir, channelId);
 }
 
+export function youtubeChannelVideosFile(channelId: string): string {
+  return path.join(youtubeChannelDir(channelId), 'videos.json');
+}
+
 export function youtubeChannelVideoDir(channelId: string, youtubeVideoId: string): string {
-  return path.join(youtubeChannelDir(channelId), youtubeVideoId);
+  return path.join(youtubeChannelDir(channelId), 'videos', youtubeVideoId);
+}
+
+export function youtubeChannelVideoPrepareFile(channelId: string): string {
+  return path.join(youtubeChannelDir(channelId), 'video-prepare.json');
 }
 
 export function ensureDataDirs(): void {

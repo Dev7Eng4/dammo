@@ -3,20 +3,26 @@ import { Button } from '../ui';
 interface TaskQueuePageToolbarProps {
   activeCount: number;
   totalCount: number;
+  clearableCount: number;
+  clearing: boolean;
   search: string;
   paused: boolean;
   onSearchChange: (value: string) => void;
   onRefresh: () => void;
+  onClear: () => void;
   onTogglePause: () => void;
 }
 
 export function TaskQueuePageToolbar({
   activeCount,
   totalCount,
+  clearableCount,
+  clearing,
   search,
   paused,
   onSearchChange,
   onRefresh,
+  onClear,
   onTogglePause,
 }: TaskQueuePageToolbarProps) {
   return (
@@ -50,6 +56,15 @@ export function TaskQueuePageToolbar({
         </div>
         <Button variant="outlined" size="sm" className="rounded-lg" onClick={onRefresh}>
           Refresh
+        </Button>
+        <Button
+          variant="outlined"
+          size="sm"
+          className="rounded-lg"
+          disabled={clearableCount === 0 || clearing}
+          onClick={onClear}
+        >
+          {clearing ? 'Clearing...' : 'Clear'}
         </Button>
         <Button size="sm" className="rounded-lg" onClick={onTogglePause}>
           {paused ? 'Resume Queue' : 'Pause All'}

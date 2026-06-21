@@ -55,6 +55,8 @@ export function createTaskQueueRoutes() {
 
   app.post('/resume', (c) => c.json(taskQueueService.resume()));
 
+  app.post('/clear', (c) => c.json(taskQueueService.clearFinished()));
+
   app.get('/:id/logs', (c) => {
     const after = Number(c.req.query('after') ?? '0');
     const safeAfter = Number.isFinite(after) ? Math.max(0, Math.floor(after)) : 0;

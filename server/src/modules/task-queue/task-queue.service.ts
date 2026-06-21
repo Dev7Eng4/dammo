@@ -87,6 +87,10 @@ export class TaskQueueService {
   listSummariesForStream(): TaskJobSummary[] {
     return taskQueueRepository.listSummaries();
   }
+
+  clearFinished(): { removed: number; ids: string[] } {
+    return taskQueueRepository.clearFinished();
+  }
 }
 
 export const taskQueueService = new TaskQueueService();

@@ -5,6 +5,7 @@ import { TaskQueuePageToolbar } from '../components/task-queue/TaskQueuePageTool
 import { useToast } from '../components/ui';
 import { useDebouncedValue, useTaskQueue } from '../hooks';
 import { matchesTaskSearch } from '../utils/taskQueue';
+import { isTerminalTaskStatus } from '../types/taskQueue';
 import type { TaskJobListItem } from '../types/taskQueue';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -17,6 +18,7 @@ export function TaskQueuePage() {
     cancelJob,
     retryJob,
     togglePause,
+    clearFinishedJobs,
     paused,
     refresh,
     refreshJob,
@@ -25,9 +27,14 @@ export function TaskQueuePage() {
   } = useTaskQueue();
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
   const activeCount = summary.running + summary.queued;
+  const clearableCount = useMemo(
+    () => jobs.filter((job) => isTerminalTaskStatus(job.status)).length,
+    [jobs],
+  );
 
   const filteredJobs = useMemo(
     () => jobs.filter((job) => matchesTaskSearch(job, debouncedSearch)),
@@ -75,6 +82,23 @@ export function TaskQueuePage() {
     setLiveJobId(null);
   }
 
+  async function handleClearFinished() {
+    const selectedWasTerminal =
+      selectedJobId != null &&
+      jobs.some((job) => job.id === selectedJobId && isTerminalTaskStatus(job.status));
+
+    setClearing(true);
+    try {
+      await clearFinishedJobs();
+      if (selectedWasTerminal) {
+        setSelectedJobId(null);
+        setLiveJobId(null);
+      }
+    } finally {
+      setClearing(false);
+    }
+  }
+
   return (
     <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -82,10 +106,13 @@ export function TaskQueuePage() {
           <TaskQueuePageToolbar
             activeCount={activeCount}
             totalCount={jobs.length}
+            clearableCount={clearableCount}
+            clearing={clearing}
             search={search}
             paused={paused}
             onSearchChange={setSearch}
             onRefresh={() => void refresh()}
+            onClear={() => void handleClearFinished()}
             onTogglePause={() => void togglePause()}
           />
 
