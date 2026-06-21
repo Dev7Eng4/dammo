@@ -13,6 +13,7 @@
     "download:transcript": "tsx src/scripts/download-transcript.ts",
     "create-videos": "tsx src/scripts/create-videos.ts",
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
+    "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts"
   },
   "devDependencies": {

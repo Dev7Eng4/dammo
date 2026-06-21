@@ -23,11 +23,23 @@ export interface ThumbnailVisualGenerationInput {
   negativePrompt?: string;
 }
 
-export interface RunHeroImageGenerationOptions {
+export interface FlowProfileOptions {
   profileId?: string;
+}
+
+export interface RunHeroImageGenerationOptions extends FlowProfileOptions {
   fileName?: string;
   thumbnailVisual?: ThumbnailVisualGenerationInput;
   onProgress?: (progress: HeroImageProgress) => void;
+}
+
+export interface RunThumbnailVisualGenerationOptions extends FlowProfileOptions {
+  onProgress?: (progress: HeroImageProgress) => void;
+}
+
+export interface ThumbnailVisualGenerationResult {
+  thumbnailVisualPath: string;
+  thumbnailVisualPromptUsed: string;
 }
 
 export interface HeroImageGenerationResult {
@@ -59,7 +71,7 @@ function buildHeroPrompt(metaStep3: MetaStep3Output): string {
   return buildFlowPrompt(metaStep3.hero_image_prompt.prompt, metaStep3.hero_image_prompt.negative_prompt);
 }
 
-function resolveFlowProfile(options?: RunHeroImageGenerationOptions): ChromeProfile {
+function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
   if (options?.profileId) {
     const profile = chromeProfilesService.getById(options.profileId);
     if (profile.role !== 'main') {
@@ -97,6 +109,46 @@ async function tryGenerateThumbnailVisual(
     const reason = err instanceof Error ? err.message : 'unknown error';
     console.warn(`[hero-image] thumbnail visual generation failed (non-fatal): ${reason}`);
     return undefined;
+  }
+}
+
+export async function runThumbnailVisualGeneration(
+  outputDir: string,
+  thumbnailVisual: ThumbnailVisualGenerationInput,
+  options?: RunThumbnailVisualGenerationOptions,
+): Promise<ThumbnailVisualGenerationResult> {
+  const debugScreenshotPath = path.join(outputDir, 'flow-debug.png');
+  const profile = resolveFlowProfile(options);
+
+  console.log(`[hero-image] Mở Chrome main profile ${profile.name} cho thumbnail visual...`);
+
+  let lastReason = 'unknown error';
+
+  try {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+      options?.onProgress?.({
+        attempt,
+        profileId: profile.id,
+        profileName: profile.name,
+        status: attempt === 1 ? 'started' : 'retry',
+      });
+
+      const result = await tryGenerateThumbnailVisual(profile.id, outputDir, thumbnailVisual, debugScreenshotPath);
+      if (result) {
+        return result;
+      }
+
+      lastReason = 'Flow completed but no local image path returned';
+      logValidationFailure(attempt, lastReason);
+    }
+
+    throw new AppError(
+      `Thumbnail visual generation failed after ${MAX_RETRIES} attempts: ${lastReason}`,
+      502,
+      'THUMBNAIL_VISUAL_FAILED',
+    );
+  } finally {
+    await chromeProfilesService.closeSubProfiles([profile.id]);
   }
 }
 
