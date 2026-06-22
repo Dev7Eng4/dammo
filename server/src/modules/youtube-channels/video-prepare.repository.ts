@@ -3,6 +3,10 @@ import { youtubeChannelDir, youtubeChannelVideoPrepareFile } from '../../config/
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import type { VideoPrepareItem, VideoPrepareStatus } from './video-prepare.types.js';
 
+function normalizeVideoId(videoId: unknown): string {
+  return typeof videoId === 'string' ? videoId.trim() : '';
+}
+
 export class VideoPrepareRepository {
   read(channelId: string): VideoPrepareItem[] {
     const items = readJson<VideoPrepareItem[]>(youtubeChannelVideoPrepareFile(channelId));
@@ -30,7 +34,7 @@ export class VideoPrepareRepository {
   getPreparedVideoIds(channelId: string): Set<string> {
     return new Set(
       this.read(channelId)
-        .map(item => item.videoId.trim())
+        .map(item => normalizeVideoId(item.videoId))
         .filter(Boolean),
     );
   }
@@ -49,7 +53,7 @@ export class VideoPrepareRepository {
 
     let updated: VideoPrepareItem | null = null;
     const items = this.read(channelId).map(item => {
-      if (item.videoId.trim() !== normalizedVideoId) return item;
+      if (normalizeVideoId(item.videoId) !== normalizedVideoId) return item;
       updated = { ...item, status };
       return updated;
     });

@@ -1,13 +1,12 @@
-import { cn } from '../../lib/cn';
 import type { GpmGroup } from '../../types/gpm';
-import { Button } from '../ui';
 
 interface GpmGroupsTableProps {
   groups: GpmGroup[];
   loading?: boolean;
+  readOnly?: boolean;
   deletingId?: string | null;
-  onEdit: (group: GpmGroup) => void;
-  onDelete: (group: GpmGroup) => void;
+  onEdit?: (group: GpmGroup) => void;
+  onDelete?: (group: GpmGroup) => void;
 }
 
 function formatDate(value?: string): string {
@@ -19,6 +18,7 @@ function formatDate(value?: string): string {
 export function GpmGroupsTable({
   groups,
   loading,
+  readOnly = true,
   deletingId,
   onEdit,
   onDelete,
@@ -32,13 +32,13 @@ export function GpmGroupsTable({
               <th className="pb-3 pr-4 font-medium">NAME</th>
               <th className="pb-3 pr-4 font-medium">SORT ORDER</th>
               <th className="pb-3 pr-4 font-medium">CREATED</th>
-              <th className="pb-3 font-medium">ACTIONS</th>
+              {!readOnly ? <th className="pb-3 font-medium">ACTIONS</th> : null}
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 4 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={4} className="py-3">
+                <td colSpan={readOnly ? 3 : 4} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -65,7 +65,7 @@ export function GpmGroupsTable({
             <th className="pb-3 pr-4 font-medium">NAME</th>
             <th className="pb-3 pr-4 font-medium">SORT ORDER</th>
             <th className="pb-3 pr-4 font-medium">CREATED</th>
-            <th className="pb-3 font-medium">ACTIONS</th>
+            {!readOnly ? <th className="pb-3 font-medium">ACTIONS</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -74,28 +74,28 @@ export function GpmGroupsTable({
               <td className="py-3 pr-4 font-medium text-neutral-100">{group.name}</td>
               <td className="py-3 pr-4 text-neutral-300">{group.sort_order ?? '—'}</td>
               <td className="py-3 pr-4 text-neutral-300">{formatDate(group.created_at)}</td>
-              <td className="py-3">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outlined"
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => onEdit(group)}
-                    disabled={deletingId === group.id}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="sm"
-                    className={cn('rounded-lg text-danger hover:text-danger')}
-                    onClick={() => onDelete(group)}
-                    disabled={deletingId === group.id}
-                  >
-                    {deletingId === group.id ? 'Deleting…' : 'Delete'}
-                  </Button>
-                </div>
-              </td>
+              {!readOnly ? (
+                <td className="py-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-border px-2 py-1 text-xs"
+                      onClick={() => onEdit?.(group)}
+                      disabled={deletingId === group.id}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-border px-2 py-1 text-xs text-danger"
+                      onClick={() => onDelete?.(group)}
+                      disabled={deletingId === group.id}
+                    >
+                      {deletingId === group.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

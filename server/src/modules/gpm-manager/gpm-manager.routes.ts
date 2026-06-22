@@ -85,7 +85,8 @@ export function createGpmManagerRoutes() {
 
   app.onError((err, c) => {
     if (isAppError(err)) {
-      return c.json({ error: err.message, code: err.code }, err.statusCode as 502);
+      const status = err.statusCode >= 400 && err.statusCode < 600 ? err.statusCode : 502;
+      return c.json({ error: err.message, code: err.code }, status as 400);
     }
     console.error('[gpm-manager]', err);
     const message = err instanceof Error ? err.message : 'Internal server error';

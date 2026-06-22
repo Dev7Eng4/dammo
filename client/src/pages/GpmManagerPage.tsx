@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  deleteGpmGroup,
   deleteGpmProfile,
   fetchGpmGroups,
   fetchGpmProfiles,
@@ -8,9 +7,7 @@ import {
   startGpmProfile,
   stopGpmProfile,
 } from '../api/gpm';
-import { AddGpmGroupModal } from '../components/gpm-manager/AddGpmGroupModal';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
-import { EditGpmGroupModal } from '../components/gpm-manager/EditGpmGroupModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
 import { GpmConnectionBanner } from '../components/gpm-manager/GpmConnectionBanner';
 import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
@@ -48,7 +45,6 @@ export function GpmManagerPage() {
   const [profileSort, setProfileSort] = useState<GpmProfileSort>(0);
   const [debouncedProfileSearch, setDebouncedProfileSearch] = useState('');
   const [groupSearch, setGroupSearch] = useState('');
-  const [debouncedGroupSearch, setDebouncedGroupSearch] = useState('');
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [runningProfileIds, setRunningProfileIds] = useState<Set<string>>(() => new Set());
@@ -58,11 +54,6 @@ export function GpmManagerPage() {
   const [showDeleteProfileModal, setShowDeleteProfileModal] = useState(false);
   const [deleteHardMode, setDeleteHardMode] = useState(false);
 
-  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
-  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<GpmGroup | null>(null);
-  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
-
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [deletingProfile, setDeletingProfile] = useState(false);
@@ -70,15 +61,16 @@ export function GpmManagerPage() {
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const isSelectedRunning = selectedProfileId ? runningProfileIds.has(selectedProfileId) : false;
 
+  const filteredGroups = useMemo(() => {
+    const query = groupSearch.trim().toLowerCase();
+    if (!query) return groups;
+    return groups.filter((group) => group.name.toLowerCase().includes(query));
+  }, [groups, groupSearch]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedProfileSearch(profileSearch.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [profileSearch]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedGroupSearch(groupSearch.trim()), 300);
-    return () => window.clearTimeout(timer);
-  }, [groupSearch]);
 
   useAbortableEffect(
     async (signal) => {
@@ -90,7 +82,7 @@ export function GpmManagerPage() {
         if (signal.aborted) return;
         setStatus({
           connected: false,
-          baseUrl: 'http://127.0.0.1:9495/api/v1',
+          baseUrl: 'http://127.0.0.1:19995/api/v3',
           message: err instanceof Error ? err.message : 'Failed to check GPM status',
         });
       } finally {
@@ -134,14 +126,7 @@ export function GpmManagerPage() {
       setGroupsLoading(true);
       setGroupsError(null);
       try {
-        const { item } = await fetchGpmGroups(
-          {
-            page: 1,
-            page_size: 100,
-            search: debouncedGroupSearch || undefined,
-          },
-          { signal },
-        );
+        const { item } = await fetchGpmGroups(undefined, { signal });
         setGroups(item.data);
       } catch (err) {
         if (signal.aborted) return;
@@ -151,7 +136,7 @@ export function GpmManagerPage() {
         if (!signal.aborted) setGroupsLoading(false);
       }
     },
-    [refreshKey, debouncedGroupSearch],
+    [refreshKey],
   );
 
   const handleRefresh = useCallback(() => {
@@ -164,12 +149,12 @@ export function GpmManagerPage() {
     try {
       const { item } = await startGpmProfile(selectedProfileId);
       setRunningProfileIds((prev) => new Set(prev).add(selectedProfileId));
-      const port = item.remote_debugging_port;
-      const name = item.addition_info?.profile_name ?? selectedProfile?.name ?? selectedProfileId;
+      const name = selectedProfile?.name ?? selectedProfileId;
+      const debugInfo =
+        item.remote_debugging_address ??
+        (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
       toast.success(
-        port
-          ? `Started "${name}" — debug port ${port}`
-          : `Started profile "${name}"`,
+        debugInfo ? `Started "${name}" — debug ${debugInfo}` : `Started profile "${name}"`,
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to start profile');
@@ -219,23 +204,6 @@ export function GpmManagerPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to delete profile');
     } finally {
       setDeletingProfile(false);
-    }
-  }
-
-  async function handleDeleteGroup(group: GpmGroup) {
-    if (deletingGroupId) return;
-    const confirmed = window.confirm(`Delete group "${group.name}"?`);
-    if (!confirmed) return;
-
-    setDeletingGroupId(group.id);
-    try {
-      await deleteGpmGroup(group.id);
-      toast.success(`Deleted group "${group.name}"`);
-      handleRefresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete group');
-    } finally {
-      setDeletingGroupId(null);
     }
   }
 
@@ -306,28 +274,19 @@ export function GpmManagerPage() {
             <>
               <div className="border-b border-border pb-4">
                 <GpmGroupsToolbar
-                  count={groups.length}
+                  count={filteredGroups.length}
                   search={groupSearch}
                   loading={groupsLoading}
+                  readOnly
                   onSearchChange={setGroupSearch}
                   onRefresh={handleRefresh}
-                  onAddGroup={() => setShowAddGroupModal(true)}
                 />
               </div>
 
               {groupsError ? <p className="mt-2 text-xs text-danger">{groupsError}</p> : null}
 
               <div className="mt-4 card-surface px-5 pt-3 pb-4">
-                <GpmGroupsTable
-                  groups={groups}
-                  loading={groupsLoading}
-                  deletingId={deletingGroupId}
-                  onEdit={(group) => {
-                    setEditingGroup(group);
-                    setShowEditGroupModal(true);
-                  }}
-                  onDelete={handleDeleteGroup}
-                />
+                <GpmGroupsTable groups={filteredGroups} loading={groupsLoading} readOnly />
               </div>
             </>
           )}
@@ -399,31 +358,12 @@ export function GpmManagerPage() {
             disabled={deletingProfile}
             className="size-3.5 rounded border-border bg-surface accent-primary-500"
           />
-          Permanently delete (hard mode)
+          Permanently delete (mode 2 — database + storage)
         </label>
+        <p className="mt-2 text-xs text-neutral-500">
+          Unchecked uses mode 1 (database only).
+        </p>
       </Modal>
-
-      <AddGpmGroupModal
-        open={showAddGroupModal}
-        onClose={() => setShowAddGroupModal(false)}
-        onSuccess={() => {
-          toast.success('GPM group created');
-          handleRefresh();
-        }}
-      />
-
-      <EditGpmGroupModal
-        open={showEditGroupModal}
-        group={editingGroup}
-        onClose={() => {
-          setShowEditGroupModal(false);
-          setEditingGroup(null);
-        }}
-        onSuccess={() => {
-          toast.success('GPM group updated');
-          handleRefresh();
-        }}
-      />
     </div>
   );
 }

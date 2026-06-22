@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { SI_OUTPUT_VIDEO_BASENAME } from '../video-production/shared/si-video/si.constants.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
-import { youtubeChannelVideoDir } from '../../config/paths.js';
+import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 
 const VIDEO_META_FILENAME = 'video-meta.json';
@@ -20,7 +20,8 @@ export interface ListUploadJobsOptions {
   videoIds?: string[] | null;
 }
 
-function assertSafeVideoId(videoId: string): string | null {
+function assertSafeVideoId(videoId: string | undefined | null): string | null {
+  if (videoId == null || typeof videoId !== 'string') return null;
   const trimmed = videoId.trim();
   if (!trimmed || trimmed.includes('..') || trimmed.includes('/') || trimmed.includes('\\')) {
     return null;
@@ -54,18 +55,26 @@ export function listUploadJobs(channelId: string, options: ListUploadJobsOptions
 
   for (const item of createdItems) {
     const videoId = assertSafeVideoId(item.videoId);
-    if (!videoId) continue;
+    if (!videoId) {
+      console.warn(
+        `[youtube-upload] Skip prepare item ${item.id ?? '?'} — missing or invalid videoId`,
+      );
+      continue;
+    }
     if (filterSet && !filterSet.has(videoId.toLowerCase())) continue;
 
-    const folderPath = youtubeChannelVideoDir(channelId, videoId);
+    const folderPath = resolveYoutubeChannelVideoDir(channelId, videoId);
+    if (!folderPath) {
+      console.warn(
+        `[youtube-upload] Skip ${videoId} — folder not found under channel (tried videos/${videoId} and ${videoId})`,
+      );
+      continue;
+    }
+
     const mp4Path = path.join(folderPath, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
     const thumbnailPath = path.join(folderPath, THUMBNAIL_FILENAME);
     const metaPath = path.join(folderPath, VIDEO_META_FILENAME);
 
-    if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) {
-      console.warn(`[youtube-upload] Skip ${videoId} — folder not found: ${folderPath}`);
-      continue;
-    }
     if (!fs.existsSync(mp4Path)) {
       console.warn(`[youtube-upload] Skip ${videoId} — missing video.mp4`);
       continue;

@@ -20,6 +20,16 @@ function groupName(groups: GpmGroup[], groupId: string): string {
   return groups.find((group) => group.id === groupId)?.name ?? (groupId || '—');
 }
 
+function browserLabel(profile: GpmProfile): string {
+  if (profile.browser) {
+    return `${profile.browser.name} ${profile.browser.version}`.trim();
+  }
+  const type = profile.browser_type?.trim();
+  const version = profile.browser_version?.trim();
+  if (type || version) return `${type ?? ''} ${version ?? ''}`.trim();
+  return '—';
+}
+
 function StatusBadge({ running }: { running: boolean }) {
   return (
     <span
@@ -107,9 +117,7 @@ export function GpmProfilesTable({
             >
               <td className="py-3 pr-4 font-medium text-neutral-100">{profile.name}</td>
               <td className="py-3 pr-4 text-neutral-300">{groupName(groups, profile.group_id)}</td>
-              <td className="py-3 pr-4 text-neutral-300">
-                {profile.browser ? `${profile.browser.name} ${profile.browser.version}` : '—'}
-              </td>
+              <td className="py-3 pr-4 text-neutral-300">{browserLabel(profile)}</td>
               <td className="py-3 pr-4 text-neutral-300">{profile.os ?? '—'}</td>
               <td
                 className="max-w-[12rem] truncate py-3 pr-4 font-mono text-xs text-neutral-400"

@@ -54,6 +54,22 @@ export function youtubeChannelVideoDir(channelId: string, youtubeVideoId: string
   return path.join(youtubeChannelDir(channelId), 'videos', youtubeVideoId);
 }
 
+/** Canonical `videos/{id}` first, then legacy `{id}` directly under channel dir. */
+export function resolveYoutubeChannelVideoDir(channelId: string, youtubeVideoId: string): string | null {
+  const candidates = [
+    youtubeChannelVideoDir(channelId, youtubeVideoId),
+    path.join(youtubeChannelDir(channelId), youtubeVideoId),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
 export function youtubeChannelVideoPrepareFile(channelId: string): string {
   return path.join(youtubeChannelDir(channelId), 'video-prepare.json');
 }

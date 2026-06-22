@@ -1,6 +1,16 @@
 {
   "accounts": [
     {
+      "id": "6216c714-9652-49ec-bde7-be511d8f80b2",
+      "email": "davidduong9n7@gmail.com",
+      "provider": "Gmail",
+      "status": "active",
+      "purpose": "",
+      "linkedPlatforms": [],
+      "recoveryEmail": "",
+      "notes": ""
+    },
+    {
       "id": "60072119-807e-435d-8b31-ae41f42c5905",
       "email": "duongbich9n7@gmail.com",
       "provider": "Gmail",

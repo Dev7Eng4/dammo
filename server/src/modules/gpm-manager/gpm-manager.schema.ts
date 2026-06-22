@@ -5,6 +5,7 @@ export const gpmListQuerySchema = z.object({
   page_size: z.coerce.number().int().min(1).max(100).default(30),
   search: z.string().optional(),
   sort: z.coerce.number().int().min(0).max(3).default(0),
+  group_id: z.string().optional(),
 });
 
 export const createGpmProfileSchema = z.object({
@@ -30,11 +31,9 @@ export const deleteGpmProfileQuerySchema = z.object({
 });
 
 export const startGpmProfileSchema = z.object({
-  remote_debugging_port: z.number().int().optional(),
-  window_scale: z.number().optional(),
-  window_pos: z.string().optional(),
-  window_size: z.string().optional(),
-  skip_proxy_check: z.boolean().optional(),
+  win_scale: z.number().optional(),
+  win_pos: z.string().optional(),
+  win_size: z.string().optional(),
   addition_args: z.string().optional(),
 });
 

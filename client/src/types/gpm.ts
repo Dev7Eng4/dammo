@@ -10,6 +10,8 @@ export interface GpmProfile {
   storage_path?: string;
   raw_proxy?: string;
   browser?: GpmBrowserInfo;
+  browser_type?: string;
+  browser_version?: string;
   os?: string;
   note?: string;
   created_at?: string;
@@ -37,6 +39,8 @@ export interface GpmPaginated<T> {
 export interface GpmStartResult {
   profile_id: string;
   driver_path?: string;
+  browser_location?: string;
+  remote_debugging_address?: string;
   remote_debugging_port?: number;
   websocket_debugging_url?: string;
   addition_info?: {
