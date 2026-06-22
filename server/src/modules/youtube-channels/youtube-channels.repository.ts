@@ -2,39 +2,37 @@ import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { isUuid } from '../../shared/id.js';
 import { normalizeChannelLanguage } from './channel-language.js';
-import { generateSeedChannels } from './youtube-channels.seed.js';
+import { normalizeYoutubeChannel, channelNeedsMigration } from './youtube-channel-migration.js';
 import type { YoutubeChannel, YoutubeChannelsStore } from './youtube-channels.types.js';
 
 const EMPTY_STORE: YoutubeChannelsStore = { channels: [] };
 
 type LegacyYoutubeChannelsStore = YoutubeChannelsStore & { nextId?: number };
+type LegacyYoutubeChannel = YoutubeChannel & {
+  sourceMapping?: string;
+  backgroundFootageSourceId?: string;
+};
 
-function isCurrentSchema(channel: Partial<YoutubeChannel>): channel is YoutubeChannel {
+function needsLegacyMigration(raw: LegacyYoutubeChannelsStore): boolean {
   return (
-    typeof channel.handle === 'string' &&
-    typeof channel.type === 'string' &&
-    typeof channel.monetizationStatus === 'string' &&
-    typeof channel.linkedEmail === 'string' &&
-    Array.isArray(channel.recentActivity)
+    raw.nextId !== undefined ||
+    raw.channels.some((c) => !isUuid(c.id)) ||
+    raw.channels.some((c) => channelNeedsMigration(c as LegacyYoutubeChannel))
   );
 }
 
-function needsReseed(raw: LegacyYoutubeChannelsStore | null): boolean {
-  if (!raw?.channels?.length) return true;
-  if (raw.nextId !== undefined) return true;
-  if (raw.channels.some((c) => !isUuid(c.id))) return true;
-  if (!raw.channels.every(isCurrentSchema)) return true;
-  return false;
+function migrateStore(raw: LegacyYoutubeChannelsStore): YoutubeChannelsStore {
+  const channels = raw.channels.map(channel => normalizeYoutubeChannel(channel as LegacyYoutubeChannel));
+  const store = { channels };
+  writeJson(paths.youtubeChannels, store);
+  return store;
 }
 
 function loadStore(): YoutubeChannelsStore {
   const raw = readJson<LegacyYoutubeChannelsStore>(paths.youtubeChannels);
-  if (needsReseed(raw)) {
-    const seeded = generateSeedChannels();
-    writeJson(paths.youtubeChannels, seeded);
-    return seeded;
-  }
-  return raw ?? EMPTY_STORE;
+  if (!raw || !Array.isArray(raw.channels)) return EMPTY_STORE;
+  if (needsLegacyMigration(raw)) return migrateStore(raw);
+  return { channels: raw.channels };
 }
 
 export class YoutubeChannelsRepository {

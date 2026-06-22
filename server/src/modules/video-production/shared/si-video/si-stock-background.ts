@@ -128,20 +128,32 @@ export interface PrepareSiStockBackgroundResult {
 }
 
 export async function prepareSiStockBackground(
-  backgroundFootageSourceId: string,
+  backgroundFootageSourceIds: string[],
   targetDurationSec: number,
   workDir: string,
 ): Promise<PrepareSiStockBackgroundResult> {
-  const store = sourceVideosRepository.read(backgroundFootageSourceId);
-  if (!store?.videos?.length) {
+  const ids = [...new Set(backgroundFootageSourceIds.map(id => id.trim()).filter(Boolean))];
+  if (ids.length === 0) {
+    throw new AppError('No background footage sources configured', 400, 'SI_STOCK_SOURCE_EMPTY');
+  }
+
+  const pooledVideos: SourceVideoRecord[] = [];
+  for (const sourceId of ids) {
+    const store = sourceVideosRepository.read(sourceId);
+    if (store?.videos?.length) {
+      pooledVideos.push(...store.videos);
+    }
+  }
+
+  if (pooledVideos.length === 0) {
     throw new AppError(
-      `No background footage videos found for source ${backgroundFootageSourceId}`,
+      `No background footage videos found for sources: ${ids.join(', ')}`,
       400,
       'SI_STOCK_SOURCE_EMPTY',
     );
   }
 
-  const chosen = selectEligibleStockVideo(store.videos, targetDurationSec);
+  const chosen = selectEligibleStockVideo(pooledVideos, targetDurationSec);
   if (!chosen?.url) {
     throw new AppError(
       `No background footage video long enough (need effective >= ${Math.ceil(targetDurationSec)}s)`,

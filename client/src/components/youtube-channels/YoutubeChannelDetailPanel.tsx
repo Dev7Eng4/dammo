@@ -163,8 +163,18 @@ export function YoutubeChannelDetailPanel({ channel, loading, onClose }: Youtube
                 <Input readOnly value={formatChannelUploadSchedule(channel)} className="h-9 rounded-lg text-sm" />
               </div>
               <div>
-                <FieldLabel>Source Mapping</FieldLabel>
-                <Input readOnly value={channel.sourceMapping} className="h-9 rounded-lg text-sm font-mono" />
+                <FieldLabel>Source Channels</FieldLabel>
+                <Input
+                  readOnly
+                  value={
+                    channel.sourceNames?.length
+                      ? channel.sourceNames.join(', ')
+                      : channel.sourceChannels?.length
+                        ? channel.sourceChannels.join(', ')
+                        : '—'
+                  }
+                  className="h-9 rounded-lg text-sm"
+                />
               </div>
               <div>
                 <FieldLabel>Content Project</FieldLabel>

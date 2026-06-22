@@ -20,8 +20,8 @@ const channelConfigFields = {
   mailAccountId: z.string().min(1),
   type: youtubeChannelTypeSchema,
   language: channelLanguageSchema,
-  sourceChannelIds: z.array(z.string().min(1)).optional(),
-  backgroundFootageSourceId: z.string().optional(),
+  sourceChannels: z.array(z.string().min(1)).optional(),
+  backgroundFootageSources: z.array(z.string().min(1)).optional(),
   thumbnailStyleKey: z.string().optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
@@ -34,7 +34,7 @@ function isReupChannelType(type: z.infer<typeof youtubeChannelTypeSchema>): bool
 function applyChannelConfigRefine(
   data: {
     type: z.infer<typeof youtubeChannelTypeSchema>;
-    sourceChannelIds?: string[];
+    sourceChannels?: string[];
     thumbnailStyleKey?: string;
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
@@ -42,11 +42,11 @@ function applyChannelConfigRefine(
   ctx: z.RefinementCtx,
 ) {
   if (isReupChannelType(data.type)) {
-    if (!data.sourceChannelIds?.length) {
+    if (!data.sourceChannels?.length) {
       ctx.addIssue({
         code: 'custom',
         message: 'Source channels are required for reup channels',
-        path: ['sourceChannelIds'],
+        path: ['sourceChannels'],
       });
     }
 

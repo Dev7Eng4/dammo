@@ -1,9 +1,11 @@
 import { AppError } from '../../shared/http/errors.js';
 import { sourceChannelsService } from '../source-channels/source-channels.service.js';
 import type { SourcePurpose } from '../source-channels/source-channels.types.js';
+import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import { videoProductionService } from '../video-production/video-production.service.js';
+import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.js';
 import { taskQueueRepository } from './task-queue.repository.js';
-import type { AddSourceTaskPayload, CreateVideoTaskPayload, TaskJob } from './task-queue.types.js';
+import type { AddSourceTaskPayload, CreateVideoTaskPayload, TaskJob, UploadVideoTaskPayload } from './task-queue.types.js';
 
 let workerRunning = false;
 let workerInterval: ReturnType<typeof setInterval> | null = null;
@@ -56,6 +58,42 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
   return result;
 }
 
+async function processUploadVideo(job: TaskJob): Promise<unknown> {
+  const payload = job.payload as UploadVideoTaskPayload;
+
+  if (payload.allReupChannels) {
+    updateProgress(job.id, 15, 'Uploading all reup channels');
+    const channelIds = youtubeChannelsRepository
+      .findAll()
+      .filter(ch => ch.type === 'reup_audio' || ch.type === 'reup_video')
+      .map(ch => ch.id);
+    const result = await youtubeUploadService.uploadChannels(channelIds, {
+      maxUploads: payload.maxUploads,
+      videoIds: payload.videoIds,
+    });
+    updateProgress(job.id, 90, 'Finishing');
+    return result;
+  }
+
+  if (payload.channelIds?.length) {
+    updateProgress(job.id, 15, `Uploading ${payload.channelIds.length} channel(s)`);
+    const result = await youtubeUploadService.uploadChannels(payload.channelIds, {
+      maxUploads: payload.maxUploads,
+      videoIds: payload.videoIds,
+    });
+    updateProgress(job.id, 90, 'Finishing');
+    return result;
+  }
+
+  updateProgress(job.id, 15, 'Uploading via GPM');
+  const result = await youtubeUploadService.uploadChannel(payload.channelId!, {
+    maxUploads: payload.maxUploads,
+    videoIds: payload.videoIds,
+  });
+  updateProgress(job.id, 90, 'Finishing');
+  return result;
+}
+
 async function processJob(job: TaskJob): Promise<void> {
   taskQueueRepository.setStatus(job.id, 'running', {
     progress: 5,
@@ -66,7 +104,9 @@ async function processJob(job: TaskJob): Promise<void> {
     const result =
       job.type === 'add_source'
         ? await processAddSource(job)
-        : await processCreateVideo(job);
+        : job.type === 'upload_video'
+          ? await processUploadVideo(job)
+          : await processCreateVideo(job);
 
     taskQueueRepository.setStatus(job.id, 'completed', {
       progress: 100,

@@ -87,11 +87,11 @@ export interface YoutubeChannel {
   status: YoutubeChannelStatus;
   linkedEmail: string;
   uploadSchedule: string[];
-  sourceMapping: string;
+  sourceChannels: string[];
   contentProjectId: string;
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
-  backgroundFootageSourceId?: string;
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
@@ -374,8 +374,8 @@ export interface CreateYoutubeChannelPayload {
   channelUrl: string;
   type: YoutubeChannelType;
   language: YoutubeChannelLanguage;
-  sourceChannelIds?: string[];
-  backgroundFootageSourceId?: string;
+  sourceChannels?: string[];
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
@@ -388,8 +388,8 @@ export interface AddYoutubeChannelFormValues {
   channelUrl: string;
   type: YoutubeChannelType | '';
   language: YoutubeChannelLanguage | '';
-  sourceChannelIds: string[];
-  backgroundFootageSourceId: string;
+  sourceChannels: string[];
+  backgroundFootageSources: string[];
   thumbnailStyleKey: string;
   uploadFrequency: UploadFrequency | '';
   publishTimes: string[];

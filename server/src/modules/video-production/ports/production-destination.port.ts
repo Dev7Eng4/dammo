@@ -8,8 +8,8 @@ export interface ProductionDestination {
   name: string;
   pipelineType: ProductionPipelineType;
   language: ChannelLanguage;
-  sourceMapping: string;
-  backgroundFootageSourceId?: string;
+  sourceChannels: string[];
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   getVideoOutputDir(mediaId: string): string;
   getPreparedVideoIds(): Set<string>;

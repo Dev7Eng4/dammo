@@ -38,11 +38,11 @@ export interface YoutubeChannel {
   status: YoutubeChannelStatus;
   linkedEmail: string;
   uploadSchedule: string[];
-  sourceMapping: string;
+  sourceChannels: string[];
   contentProjectId: string;
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
-  backgroundFootageSourceId?: string;
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
@@ -50,9 +50,11 @@ export interface YoutubeChannel {
   lastUploadAt?: string;
   createdAt: string;
   channelId?: string;
+  /** Resolved server-side for API responses */
+  sourceNames?: string[];
 }
 
-/** Resolved from sourceMapping / source IDs; included in list API responses. */
+/** Resolved from source channel IDs; included in list API responses. */
 export type YoutubeChannelListItem = YoutubeChannel & {
   sourceNames: string[];
 };
@@ -81,8 +83,8 @@ export interface CreateYoutubeChannelInput {
   channelUrl: string;
   type: YoutubeChannelType;
   language: ChannelLanguage;
-  sourceChannelIds?: string[];
-  backgroundFootageSourceId?: string;
+  sourceChannels?: string[];
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
@@ -92,8 +94,8 @@ export interface UpdateYoutubeChannelInput {
   mailAccountId: string;
   type: YoutubeChannelType;
   language: ChannelLanguage;
-  sourceChannelIds?: string[];
-  backgroundFootageSourceId?: string;
+  sourceChannels?: string[];
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];

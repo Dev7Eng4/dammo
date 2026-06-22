@@ -94,8 +94,8 @@ type ChannelConfigInput = Pick<
   | 'mailAccountId'
   | 'type'
   | 'language'
-  | 'sourceChannelIds'
-  | 'backgroundFootageSourceId'
+  | 'sourceChannels'
+  | 'backgroundFootageSources'
   | 'thumbnailStyleKey'
   | 'uploadFrequency'
   | 'publishTimes'
@@ -105,26 +105,15 @@ function isReupChannelType(type: YoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video';
 }
 
-function buildSourceMapping(sourceChannelIds: string[] | undefined): string {
-  const ids = [...new Set((sourceChannelIds ?? []).map((id) => id.trim()).filter(Boolean))];
-  if (ids.length === 0) return '';
-
-  const mappings: string[] = [];
-  for (const sourceChannelId of ids) {
-    const source = sourceChannelsRepository.findById(sourceChannelId);
-    if (!source) {
-      throw new AppError('Source channel not found', 404, 'SOURCE_NOT_FOUND');
-    }
-    mappings.push(source.fullUrl);
-  }
-  return mappings.join(', ');
+function normalizeSourceIds(ids: string[] | undefined): string[] {
+  return [...new Set((ids ?? []).map(id => id.trim()).filter(Boolean))];
 }
 
 function validateChannelConfig(input: ChannelConfigInput): {
   linkedEmail: string;
-  sourceMapping: string;
+  sourceChannels: string[];
   uploadSchedule: string[];
-  backgroundFootageSourceId?: string;
+  backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
 } {
   const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
@@ -132,18 +121,24 @@ function validateChannelConfig(input: ChannelConfigInput): {
     throw new AppError('Mail account not found', 404, 'MAIL_NOT_FOUND');
   }
 
+  const sourceChannels = normalizeSourceIds(input.sourceChannels);
+
   if (isReupChannelType(input.type)) {
-    const sourceIds = (input.sourceChannelIds ?? []).map((id) => id.trim()).filter(Boolean);
-    if (sourceIds.length === 0) {
+    if (sourceChannels.length === 0) {
       throw new AppError('Reup channels require at least one source channel', 400, 'VALIDATION_ERROR');
     }
   }
 
-  const sourceMapping = buildSourceMapping(input.sourceChannelIds);
+  for (const sourceId of sourceChannels) {
+    const source = sourceChannelsRepository.findById(sourceId);
+    if (!source) {
+      throw new AppError('Source channel not found', 404, 'SOURCE_NOT_FOUND');
+    }
+  }
 
-  const backgroundFootageSourceId = input.backgroundFootageSourceId?.trim();
-  if (backgroundFootageSourceId) {
-    requireSourceWithPurpose(backgroundFootageSourceId, 'background_footage', 'Background footage');
+  const backgroundFootageSources = normalizeSourceIds(input.backgroundFootageSources);
+  for (const sourceId of backgroundFootageSources) {
+    requireSourceWithPurpose(sourceId, 'background_footage', 'Background footage');
   }
 
   const uploadSchedule = normalizeUploadSchedule(input.publishTimes);
@@ -156,9 +151,9 @@ function validateChannelConfig(input: ChannelConfigInput): {
 
   return {
     linkedEmail: mailAccount.email,
-    sourceMapping,
+    sourceChannels,
     uploadSchedule,
-    ...(backgroundFootageSourceId ? { backgroundFootageSourceId } : {}),
+    ...(backgroundFootageSources.length > 0 ? { backgroundFootageSources } : {}),
     ...(thumbnailStyleKey ? { thumbnailStyleKey } : {}),
   };
 }
@@ -218,6 +213,7 @@ export class YoutubeChannelsService {
     return {
       ...channel,
       language: normalizeChannelLanguage(channel.language),
+      sourceNames: resolveSourceNamesForChannel(channel),
     };
   }
 
@@ -370,13 +366,13 @@ export class YoutubeChannelsService {
         status: 'active',
         linkedEmail: config.linkedEmail,
         uploadSchedule: config.uploadSchedule,
-        sourceMapping: config.sourceMapping,
+        sourceChannels: config.sourceChannels,
         contentProjectId: buildProjectId(handle),
         recentActivity: [],
         createdAt: new Date().toISOString(),
         uploadFrequency: input.uploadFrequency,
-        ...(config.backgroundFootageSourceId
-          ? { backgroundFootageSourceId: config.backgroundFootageSourceId }
+        ...(config.backgroundFootageSources?.length
+          ? { backgroundFootageSources: config.backgroundFootageSources }
           : {}),
         ...(config.thumbnailStyleKey ? { thumbnailStyleKey: config.thumbnailStyleKey } : {}),
       };
@@ -404,15 +400,15 @@ export class YoutubeChannelsService {
         type: input.type,
         language: input.language,
         linkedEmail: config.linkedEmail,
-        sourceMapping: config.sourceMapping,
+        sourceChannels: config.sourceChannels,
         uploadSchedule: config.uploadSchedule,
         uploadFrequency: input.uploadFrequency,
       };
 
-      if (config.backgroundFootageSourceId) {
-        next.backgroundFootageSourceId = config.backgroundFootageSourceId;
+      if (config.backgroundFootageSources?.length) {
+        next.backgroundFootageSources = config.backgroundFootageSources;
       } else {
-        delete next.backgroundFootageSourceId;
+        delete next.backgroundFootageSources;
       }
 
       if (config.thumbnailStyleKey) {

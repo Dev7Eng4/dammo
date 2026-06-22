@@ -1,7 +1,6 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { ensureUuid, isUuid } from '../../shared/id.js';
-import { generateSeedAccounts } from './mail-accounts.seed.js';
 import type { MailAccount, MailAccountsStore } from './mail-accounts.types.js';
 
 const EMPTY_STORE: MailAccountsStore = { accounts: [] };
@@ -29,9 +28,8 @@ function normalizeStore(raw: LegacyMailAccountsStore | null): MailAccountsStore 
 function loadStore(): MailAccountsStore {
   const raw = readJson<LegacyMailAccountsStore>(paths.mailAccounts);
   if (!raw) {
-    const seeded = generateSeedAccounts();
-    writeJson(paths.mailAccounts, seeded);
-    return seeded;
+    writeJson(paths.mailAccounts, EMPTY_STORE);
+    return EMPTY_STORE;
   }
 
   const normalized = normalizeStore(raw);

@@ -9,11 +9,15 @@ export type ReupChannelPickResult =
   | { mode: 'selected'; channelIds: string[] }
   | { mode: 'cancelled' };
 
+export type ReupChannelPickOptions = {
+  message?: string;
+};
+
 function isReupChannelType(type: StoredYoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
 }
 
-export async function pickReupChannels(): Promise<ReupChannelPickResult> {
+export async function pickReupChannels(options: ReupChannelPickOptions = {}): Promise<ReupChannelPickResult> {
   const reupChannels = youtubeChannelsRepository
     .findAll()
     .filter((channel) => isReupChannelType(channel.type));
@@ -24,7 +28,7 @@ export async function pickReupChannels(): Promise<ReupChannelPickResult> {
   }
 
   const selected = await checkbox({
-    message: 'Chọn kênh để tạo video',
+    message: options.message ?? 'Chọn kênh để tạo video',
     instructions: '↑↓ di chuyển · Space chọn · Enter chạy',
     choices: [
       { name: 'All', value: ALL_VALUE },

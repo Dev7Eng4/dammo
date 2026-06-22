@@ -29,8 +29,8 @@ const defaultValues: AddYoutubeChannelFormValues = {
   channelUrl: '',
   type: '',
   language: '',
-  sourceChannelIds: [],
-  backgroundFootageSourceId: '',
+  sourceChannels: [],
+  backgroundFootageSources: [],
   thumbnailStyleKey: '',
   uploadFrequency: '',
   publishTimes: [],
@@ -97,7 +97,10 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
-  const sourceOptions = useMemo(() => sources.map(toSourceOption), [sources]);
+  const sourceOptions = useMemo(
+    () => sources.filter((s) => s.purpose !== 'background_footage').map(toSourceOption),
+    [sources],
+  );
   const backgroundFootageOptions = useMemo(
     () => sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
     [sources],
@@ -191,9 +194,9 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         language: values.language,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
-        ...(values.sourceChannelIds.length > 0 ? { sourceChannelIds: values.sourceChannelIds } : {}),
-        ...(values.backgroundFootageSourceId
-          ? { backgroundFootageSourceId: values.backgroundFootageSourceId }
+        ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
+        ...(values.backgroundFootageSources.length > 0
+          ? { backgroundFootageSources: values.backgroundFootageSources }
           : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
       });
@@ -367,10 +370,10 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           className="min-w-0"
         >
           <Controller
-            name="backgroundFootageSourceId"
+            name="backgroundFootageSources"
             control={control}
             render={({ field }) => (
-              <Select
+              <MultiSelect
                 id="background-footage"
                 options={backgroundFootageOptions}
                 value={field.value}
@@ -381,7 +384,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                 searchable
                 disabled={isSubmitting || optionsLoading}
                 className="w-full"
-                triggerClassName={selectTriggerClass}
+                triggerClassName="min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5"
               />
             )}
           />
@@ -391,11 +394,11 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           label="Source Channels"
           htmlFor="source-channel"
           optional={!isReupType}
-          error={errors.sourceChannelIds?.message}
+          error={errors.sourceChannels?.message}
           className="min-w-0 sm:col-span-2"
         >
           <Controller
-            name="sourceChannelIds"
+            name="sourceChannels"
             control={control}
             rules={{
               validate: (value) =>

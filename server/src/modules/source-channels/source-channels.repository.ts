@@ -1,7 +1,6 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
-import { isUuid } from '../../shared/id.js';
-import { generateSeedSources } from './source-channels.seed.js';
+import { ensureUuid, isUuid } from '../../shared/id.js';
 import type { SourceChannel, SourceChannelsStore } from './source-channels.types.js';
 
 const EMPTY_STORE: SourceChannelsStore = { sources: [] };
@@ -17,21 +16,25 @@ function isCurrentSchema(source: Partial<SourceChannel>): source is SourceChanne
   );
 }
 
-function needsReseed(raw: SourceChannelsStore | null): boolean {
-  if (!raw?.sources?.length) return true;
-  if (raw.sources.some((s) => !isUuid(s.id))) return true;
-  if (!raw.sources.every(isCurrentSchema)) return true;
-  return false;
+function needsLegacyMigration(raw: SourceChannelsStore): boolean {
+  return raw.sources.some((s) => !isUuid(s.id)) || !raw.sources.every(isCurrentSchema);
+}
+
+function migrateStore(raw: SourceChannelsStore): SourceChannelsStore {
+  const sources = raw.sources.map((source) => ({
+    ...source,
+    id: ensureUuid(source.id),
+  }));
+  const store = { sources };
+  writeJson(paths.sourceChannels, store);
+  return store;
 }
 
 function loadStore(): SourceChannelsStore {
   const raw = readJson<SourceChannelsStore>(paths.sourceChannels);
-  if (needsReseed(raw)) {
-    const seeded = generateSeedSources();
-    writeJson(paths.sourceChannels, seeded);
-    return seeded;
-  }
-  return raw ?? EMPTY_STORE;
+  if (!raw || !Array.isArray(raw.sources)) return EMPTY_STORE;
+  if (needsLegacyMigration(raw)) return migrateStore(raw);
+  return raw;
 }
 
 export class SourceChannelsRepository {

@@ -16,7 +16,7 @@ interface CliOptions {
   channelId: string;
   videoId: string;
   workDir?: string;
-  backgroundFootageSourceId: string;
+  backgroundFootageSourceIds: string[];
   language: string;
 }
 
@@ -24,7 +24,7 @@ function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     channelId: DEFAULT_CHANNEL_ID,
     videoId: DEFAULT_YOUTUBE_VIDEO_ID,
-    backgroundFootageSourceId: DEFAULT_BACKGROUND_FOOTAGE_SOURCE_ID,
+    backgroundFootageSourceIds: [DEFAULT_BACKGROUND_FOOTAGE_SOURCE_ID],
     language: DEFAULT_LANGUAGE,
   };
 
@@ -52,11 +52,12 @@ function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
-    if (arg === '--background-footage-source-id') {
-      options.backgroundFootageSourceId = argv[index + 1]?.trim() ?? '';
-      if (!options.backgroundFootageSourceId) {
-        throw new Error('--background-footage-source-id requires a value');
+    if (arg === '--background-footage-source-id' || arg === '--background-footage-source-ids') {
+      const raw = argv[index + 1]?.trim() ?? '';
+      if (!raw) {
+        throw new Error(`${arg} requires a value`);
       }
+      options.backgroundFootageSourceIds = raw.split(',').map(id => id.trim()).filter(Boolean);
       index += 1;
       continue;
     }
@@ -104,7 +105,7 @@ async function main() {
   console.log(`Audio: ${audioPath}`);
   console.log(`Subtitle: ${subtitlePath}`);
   console.log(`Center image: ${centerImagePath}`);
-  console.log(`Background footage source: ${options.backgroundFootageSourceId}`);
+  console.log(`Background footage sources: ${options.backgroundFootageSourceIds.join(', ')}`);
   console.log(`Language: ${options.language}`);
   console.log('\nAssembling SI video...\n');
 
@@ -113,7 +114,7 @@ async function main() {
     audioPath,
     subtitlePath,
     centerImagePath,
-    backgroundFootageSourceId: options.backgroundFootageSourceId,
+    backgroundFootageSourceIds: options.backgroundFootageSourceIds,
     language: options.language,
     onLog: msg => console.log(msg),
   });

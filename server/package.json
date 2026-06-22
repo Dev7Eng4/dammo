@@ -12,6 +12,7 @@
     "download:audio": "tsx src/scripts/download-audio.ts",
     "download:transcript": "tsx src/scripts/download-transcript.ts",
     "create-videos": "tsx src/scripts/create-videos.ts",
+    "upload-videos": "tsx src/scripts/upload-videos.ts",
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts"

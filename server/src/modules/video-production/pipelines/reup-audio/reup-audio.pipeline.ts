@@ -22,6 +22,8 @@ import {
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
 import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
+import { SI_OUTPUT_VIDEO_BASENAME } from '../../shared/si-video/si.constants.js';
+import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
 import { moveVideoFolderToDestination, remapOutputItemPaths } from './video-folder-mover.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-audio.constants.js';
 import type {
@@ -47,10 +49,10 @@ interface SourceVideoWithSource extends SourceVideoRecord {
   sourceId: string;
 }
 
-function collectSourceVideos(sourceCatalog: SourceCatalog, mapping: string): SourceVideoWithSource[] {
+function collectSourceVideos(sourceCatalog: SourceCatalog, sourceChannels: string[]): SourceVideoWithSource[] {
   const videos: SourceVideoWithSource[] = [];
 
-  for (const source of sourceCatalog.resolveSources(mapping)) {
+  for (const source of sourceCatalog.resolveSources(sourceChannels)) {
     for (const video of sourceCatalog.listVideos(source.id)) {
       videos.push({ ...video, sourceId: source.id });
     }
@@ -92,16 +94,16 @@ export class ReupAudioPipeline {
       throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
     }
 
-    if (!destination.sourceMapping.trim()) {
+    if (destination.sourceChannels.length === 0) {
       throw new AppError('Channel has no source mapping configured', 400, 'NO_SOURCE_MAPPING');
     }
 
-    const sources = this.sourceCatalog.resolveSources(destination.sourceMapping);
+    const sources = this.sourceCatalog.resolveSources(destination.sourceChannels);
     if (sources.length === 0) {
       throw new AppError('No source channels matched source mapping', 400, 'SOURCE_NOT_FOUND');
     }
 
-    const allVideos = collectSourceVideos(this.sourceCatalog, destination.sourceMapping);
+    const allVideos = collectSourceVideos(this.sourceCatalog, destination.sourceChannels);
     if (allVideos.length === 0) {
       throw new AppError('No source videos available for mapped sources', 400, 'NO_SOURCE_VIDEOS');
     }
@@ -529,38 +531,38 @@ export class ReupAudioPipeline {
             }
           }
 
-          // if (updatedSrtPath && downloaded.audioPath && heroImagePath) {
-          //   if (!destination.backgroundFootageSourceId) {
-          //     console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSourceId`);
-          //     if (taskJobId) {
-          //       taskQueueRepository.appendLogMessage(
-          //         taskJobId,
-          //         'info',
-          //         'SI video assembly skipped: no backgroundFootageSourceId configured on channel',
-          //       );
-          //     }
-          //   } else {
-          //     if (taskJobId) {
-          //       taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-          //       taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
-          //     }
+          if (updatedSrtPath && downloaded.audioPath && heroImagePath) {
+            if (!destination.backgroundFootageSources?.length) {
+              console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(
+                  taskJobId,
+                  'info',
+                  'SI video assembly skipped: no backgroundFootageSources configured on channel',
+                );
+              }
+            } else {
+              if (taskJobId) {
+                taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
+              }
 
-          //     reupVideoPath = await assembleReupSiVideo({
-          //       workDir: path.dirname(updatedSrtPath),
-          //       audioPath: downloaded.audioPath,
-          //       subtitlePath: updatedSrtPath,
-          //       centerImagePath: heroImagePath,
-          //       backgroundFootageSourceId: destination.backgroundFootageSourceId,
-          //       language: destination.language,
-          //       onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-          //     });
-          //     primaryOutputPath = reupVideoPath;
+              reupVideoPath = await assembleReupSiVideo({
+                workDir: path.dirname(updatedSrtPath),
+                audioPath: downloaded.audioPath,
+                subtitlePath: updatedSrtPath,
+                centerImagePath: heroImagePath,
+                backgroundFootageSourceIds: destination.backgroundFootageSources,
+                language: destination.language,
+                onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+              });
+              primaryOutputPath = reupVideoPath;
 
-          //     if (taskJobId) {
-          //       taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
-          //     }
-          //   }
-          // }
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
+              }
+            }
+          }
 
           outputItem = {
             link: task.link,
@@ -623,6 +625,17 @@ export class ReupAudioPipeline {
 
           if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video prepare tracked → video-prepare.json');
+          }
+
+          const finalVideoPath = path.join(destDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
+          try {
+            await fs.access(finalVideoPath);
+            videoPrepareRepository.markCreated(destination.id, outputItem.youtubeVideoId);
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video ready → status Created in video-prepare.json');
+            }
+          } catch {
+            /* video.mp4 not ready yet — stays Prepared */
           }
         }
 

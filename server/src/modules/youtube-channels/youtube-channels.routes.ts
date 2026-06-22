@@ -7,7 +7,10 @@ import {
   listYoutubeChannelsQuerySchema,
   updateYoutubeChannelSchema,
 } from './youtube-channels.schema.js';
+import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelsService } from './youtube-channels.service.js';
+import { uploadVideosBatchSchema, uploadVideosSchema } from '../youtube-upload/youtube-upload.schema.js';
+import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.js';
 
 export function createYoutubeChannelsRoutes() {
   const app = new Hono();
@@ -64,6 +67,42 @@ export function createYoutubeChannelsRoutes() {
 
   app.post('/:id/create-videos', async (c) => {
     const result = await youtubeChannelsService.createVideos(c.req.param('id'));
+    return c.json(result);
+  });
+
+  app.post('/:id/upload', zValidator('json', uploadVideosSchema), async (c) => {
+    const body = c.req.valid('json');
+    const result = await youtubeUploadService.uploadChannel(c.req.param('id'), body);
+    return c.json(result);
+  });
+
+  app.post('/upload-videos', async (c) => {
+    const contentType = c.req.header('content-type') ?? '';
+    let channelIds: string[] | undefined;
+    let maxUploads: number | undefined;
+    let videoIds: string[] | undefined;
+
+    if (contentType.includes('application/json')) {
+      const parsed = uploadVideosBatchSchema.safeParse(await c.req.json());
+      if (!parsed.success) {
+        return c.json({ error: parsed.error.message }, 400);
+      }
+      channelIds = parsed.data.channelIds;
+      maxUploads = parsed.data.maxUploads;
+      videoIds = parsed.data.videoIds;
+    }
+
+    if (channelIds?.length) {
+      const result = await youtubeUploadService.uploadChannels(channelIds, { maxUploads, videoIds });
+      return c.json(result);
+    }
+
+    const allReupIds = youtubeChannelsRepository
+      .findAll()
+      .filter(ch => ch.type === 'reup_audio' || ch.type === 'reup_video')
+      .map(ch => ch.id);
+
+    const result = await youtubeUploadService.uploadChannels(allReupIds, { maxUploads, videoIds });
     return c.json(result);
   });
 

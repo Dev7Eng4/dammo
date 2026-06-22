@@ -19,8 +19,8 @@ export function createYoutubeProductionDestination(channel: YoutubeChannel): Pro
     name: channel.name,
     pipelineType: channel.type,
     language: channel.language,
-    sourceMapping: channel.sourceMapping,
-    backgroundFootageSourceId: channel.backgroundFootageSourceId,
+    sourceChannels: channel.sourceChannels ?? [],
+    backgroundFootageSources: channel.backgroundFootageSources,
     thumbnailStyleKey: channel.thumbnailStyleKey,
 
     getVideoOutputDir(mediaId: string) {

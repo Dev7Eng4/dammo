@@ -16,7 +16,6 @@ import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel, YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import { isReupYoutubeChannelType, parseStoredChannelLanguage } from '../../types/youtubeChannel';
-import { canonicalizeSourceUrl } from '../../utils/canonicalizeSourceUrl';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface EditYoutubeChannelModalProps {
@@ -37,23 +36,12 @@ function normalizeChannelType(type: StoredYoutubeChannelType): EditYoutubeChanne
   return type === 'reup' ? 'reup_video' : type;
 }
 
-function parseSourceChannelIds(sourceMapping: string, sources: SourceChannel[]): string[] {
-  if (!sourceMapping.trim()) return [];
-
-  const urls = new Set(
-    sourceMapping.split(',').map((part) => canonicalizeSourceUrl(part.trim())),
-  );
-  return sources
-    .filter((source) => urls.has(canonicalizeSourceUrl(source.fullUrl)))
-    .map((source) => source.id);
-}
-
 const defaultValues: EditYoutubeChannelFormValues = {
   mailAccountId: '',
   type: '',
   language: '',
-  sourceChannelIds: [],
-  backgroundFootageSourceId: '',
+  sourceChannels: [],
+  backgroundFootageSources: [],
   thumbnailStyleKey: '',
   uploadFrequency: '',
   publishTimes: [],
@@ -117,7 +105,10 @@ export function EditYoutubeChannelModal({
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
-  const sourceOptions = useMemo(() => sources.map(toSourceOption), [sources]);
+  const sourceOptions = useMemo(
+    () => sources.filter((s) => s.purpose !== 'background_footage').map(toSourceOption),
+    [sources],
+  );
   const backgroundFootageOptions = useMemo(
     () => sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
     [sources],
@@ -157,8 +148,8 @@ export function EditYoutubeChannelModal({
           mailAccountId: mailAccount?.id ?? '',
           type: normalizeChannelType(channel.type),
           language: parseStoredChannelLanguage(channel.language),
-          sourceChannelIds: parseSourceChannelIds(channel.sourceMapping, sourceList.items),
-          backgroundFootageSourceId: channel.backgroundFootageSourceId ?? '',
+          sourceChannels: channel.sourceChannels ?? [],
+          backgroundFootageSources: channel.backgroundFootageSources ?? [],
           thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
           uploadFrequency: frequency,
           publishTimes,
@@ -228,9 +219,9 @@ export function EditYoutubeChannelModal({
         language: values.language,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
-        ...(values.sourceChannelIds.length > 0 ? { sourceChannelIds: values.sourceChannelIds } : {}),
-        ...(values.backgroundFootageSourceId
-          ? { backgroundFootageSourceId: values.backgroundFootageSourceId }
+        ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
+        ...(values.backgroundFootageSources.length > 0
+          ? { backgroundFootageSources: values.backgroundFootageSources }
           : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
       });
@@ -371,10 +362,10 @@ export function EditYoutubeChannelModal({
 
         <FormField label="Background Footage" htmlFor="edit-background-footage" optional className="min-w-0">
           <Controller
-            name="backgroundFootageSourceId"
+            name="backgroundFootageSources"
             control={control}
             render={({ field }) => (
-              <Select
+              <MultiSelect
                 id="edit-background-footage"
                 options={backgroundFootageOptions}
                 value={field.value}
@@ -385,7 +376,7 @@ export function EditYoutubeChannelModal({
                 searchable
                 disabled={isSubmitting || optionsLoading}
                 className="w-full"
-                triggerClassName={selectTriggerClass}
+                triggerClassName="min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5"
               />
             )}
           />
@@ -395,11 +386,11 @@ export function EditYoutubeChannelModal({
           label="Source Channels"
           htmlFor="edit-source-channel"
           optional={!isReupType}
-          error={errors.sourceChannelIds?.message}
+          error={errors.sourceChannels?.message}
           className="min-w-0 sm:col-span-2"
         >
           <Controller
-            name="sourceChannelIds"
+            name="sourceChannels"
             control={control}
             rules={{
               validate: (value) =>

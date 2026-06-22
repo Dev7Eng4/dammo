@@ -46,13 +46,13 @@ export interface AssembleReupSiVideoInput {
   audioPath: string;
   subtitlePath: string;
   centerImagePath: string;
-  backgroundFootageSourceId: string;
+  backgroundFootageSourceIds: string[];
   language: string;
   onLog?: (msg: string) => void;
 }
 
 export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Promise<string> {
-  const { workDir, audioPath, subtitlePath, centerImagePath, backgroundFootageSourceId, language, onLog } = input;
+  const { workDir, audioPath, subtitlePath, centerImagePath, backgroundFootageSourceIds, language, onLog } = input;
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
@@ -77,7 +77,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
   const { stockClipPath, stockTempDir } = await prepareSiStockBackground(
-    backgroundFootageSourceId,
+    backgroundFootageSourceIds,
     stockRenderTarget,
     workDir,
   );

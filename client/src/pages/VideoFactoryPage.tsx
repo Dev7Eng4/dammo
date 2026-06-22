@@ -4,10 +4,6 @@ import { useToast } from '../components/ui';
 export function VideoFactoryPage() {
   const { toast } = useToast();
 
-  function handleQueued() {
-    toast.success('Video queued for render (mock)');
-  }
-
   return (
     <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex-1 overflow-y-auto p-6">
@@ -19,7 +15,10 @@ export function VideoFactoryPage() {
         </div>
 
         <div className="card-surface p-5">
-          <VideoFactoryForm onQueued={handleQueued} />
+          <VideoFactoryForm
+            onQueued={() => toast.success('Video queued for render')}
+            onError={(message) => toast.error(message)}
+          />
         </div>
       </div>
     </div>

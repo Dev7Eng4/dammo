@@ -1,5 +1,6 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { enqueueRenderJob } from '../../api/renderQueue';
 import {
   VIDEO_DESTINATION_OPTIONS,
   VIDEO_TEMPLATE_OPTIONS,
@@ -9,6 +10,7 @@ import { Button, Input, Select } from '../ui';
 
 interface VideoFactoryFormProps {
   onQueued?: () => void;
+  onError?: (message: string) => void;
 }
 
 const defaultValues: VideoFactoryFormValues = {
@@ -45,7 +47,7 @@ function FormField({
   );
 }
 
-export function VideoFactoryForm({ onQueued }: VideoFactoryFormProps) {
+export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
   const navigate = useNavigate();
   const {
     register,
@@ -55,10 +57,19 @@ export function VideoFactoryForm({ onQueued }: VideoFactoryFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<VideoFactoryFormValues>({ defaultValues });
 
-  function onSubmit(_values: VideoFactoryFormValues) {
-    onQueued?.();
-    reset(defaultValues);
-    navigate('/render-queue');
+  async function onSubmit(values: VideoFactoryFormValues) {
+    try {
+      await enqueueRenderJob({
+        fileName: values.projectName.trim(),
+        inputPath: values.datasetPath.trim(),
+        preset: values.template.trim() || undefined,
+      });
+      onQueued?.();
+      reset(defaultValues);
+      navigate('/render-queue');
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : 'Failed to queue render job');
+    }
   }
 
   return (

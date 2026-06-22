@@ -1,3 +1,11 @@
+import { renderQueueService } from '../render-queue/render-queue.service.js';
+import type { RenderJob } from '../render-queue/render-queue.types.js';
+import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
+import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
+import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
+import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import type { VideoPrepareStatus } from '../youtube-channels/video-prepare.types.js';
+
 export interface DashboardData {
   overviewStats: {
     youtubeChannels: number;
@@ -40,67 +48,127 @@ export interface DashboardData {
   }>;
 }
 
-const defaultDashboard: DashboardData = {
-  overviewStats: {
-    youtubeChannels: 412,
-    tiktokAccounts: 856,
-    facebookAssets: 124,
-    sourceChannels: 52,
-  },
-  pipelineSteps: [
-    { id: 'ideas', label: 'IDEAS', count: 15 },
-    { id: 'script', label: 'SCRIPT READY', count: 8 },
-    { id: 'assets', label: 'ASSETS READY', count: 22 },
-    { id: 'rendering', label: 'RENDERING', count: 2, highlight: 'info' },
-    { id: 'rendered', label: 'RENDERED', count: 142 },
-    { id: 'uploaded', label: 'UPLOADED', count: 310, highlight: 'success' },
-    { id: 'failed', label: 'FAILED', count: 4, highlight: 'danger' },
-  ],
-  accountSummary: {
-    total: 1248,
-    active: 1180,
-    needVerify: 12,
-    limited: 45,
-    suspended: 8,
-    lostAccess: 3,
-  },
-  activeRender: {
-    fileName: 'TikTok_Daily_Hook_05.mp4',
-    progress: 68,
-    eta: '00:02:14',
-    filePath: 'D:\\VideoOps\\Projects\\DailyHooks\\TikTok_Daily_Hook_05.mp4',
-  },
-  recentProjects: [
-    { id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', name: 'YT_Shorts_Batch_12', format: '1080x1920', target: 'YouTube', status: 'success' },
-    { id: '6ba7b810-9dad-11d1-80b4-00c04fd430c8', name: 'FB_Reels_Promo_Q2', format: '1080x1920', target: 'Facebook', status: 'failed' },
-    { id: '6ba7b811-9dad-11d1-80b4-00c04fd430c8', name: 'TikTok_Daily_Hook_05', format: '1080x1920', target: 'TikTok', status: 'rendering' },
-    { id: '550e8400-e29b-41d4-a716-446655440000', name: 'Multi_Platform_Campaign_A', format: '1920x1080', target: 'Multi', status: 'success' },
-  ],
-  healthAlerts: [
-    {
-      id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-      title: 'Need verification (12)',
-      description: 'Mail accounts require SMS verification before upload.',
-      severity: 'warning',
-    },
-    {
-      id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-      title: 'No upload in 7 days (45)',
-      description: 'TikTok channels have been inactive for over a week.',
-      severity: 'neutral',
-    },
-    {
-      id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
-      title: 'Copyright risk (2)',
-      description: 'Strikes detected on Facebook Assets.',
-      severity: 'danger',
-    },
-  ],
+const EMPTY_ACTIVE_RENDER: DashboardData['activeRender'] = {
+  fileName: '',
+  progress: 0,
+  eta: '',
+  filePath: '',
 };
+
+function countVideoPrepareByStatus(status: VideoPrepareStatus): number {
+  let count = 0;
+  for (const channel of youtubeChannelsRepository.findAll()) {
+    count += videoPrepareRepository.countByStatus(channel.id, status);
+  }
+  return count;
+}
+
+function mapRenderJobStatus(status: RenderJob['status']): 'success' | 'failed' | 'rendering' {
+  if (status === 'completed') return 'success';
+  if (status === 'failed') return 'failed';
+  return 'rendering';
+}
+
+function buildActiveRender(): DashboardData['activeRender'] {
+  const job = renderQueueService.getActive();
+  if (!job) return EMPTY_ACTIVE_RENDER;
+
+  return {
+    fileName: job.fileName,
+    progress: job.progress,
+    eta: job.eta,
+    filePath: job.outputPath,
+  };
+}
+
+function buildRecentProjects(): DashboardData['recentProjects'] {
+  return renderQueueService
+    .list()
+    .slice()
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 5)
+    .map(job => ({
+      id: job.id,
+      name: job.fileName,
+      format: job.preset || 'default',
+      target: 'Render',
+      status: mapRenderJobStatus(job.status),
+    }));
+}
+
+function buildPipelineSteps(renderJobs: RenderJob[]): DashboardData['pipelineSteps'] {
+  const rendering = renderJobs.filter(job => job.status === 'processing').length;
+  const rendered = renderJobs.filter(job => job.status === 'completed').length;
+  const failed = renderJobs.filter(job => job.status === 'failed').length;
+
+  return [
+    { id: 'ideas', label: 'IDEAS', count: 0 },
+    { id: 'script', label: 'SCRIPT READY', count: countVideoPrepareByStatus('Prepared') },
+    { id: 'assets', label: 'ASSETS READY', count: countVideoPrepareByStatus('Created') },
+    { id: 'rendering', label: 'RENDERING', count: rendering, highlight: rendering > 0 ? 'info' : undefined },
+    { id: 'rendered', label: 'RENDERED', count: rendered },
+    { id: 'uploaded', label: 'UPLOADED', count: countVideoPrepareByStatus('Uploaded'), highlight: 'success' },
+    {
+      id: 'failed',
+      label: 'FAILED',
+      count: failed + countVideoPrepareByStatus('Error'),
+      highlight: failed + countVideoPrepareByStatus('Error') > 0 ? 'danger' : undefined,
+    },
+  ];
+}
+
+function buildHealthAlerts(): DashboardData['healthAlerts'] {
+  const alerts: DashboardData['healthAlerts'] = [];
+  const mailAccounts = mailAccountsRepository.findAll();
+  const needVerify = mailAccounts.filter(account => account.status === 'need_verify').length;
+  const suspendedChannels = youtubeChannelsRepository.findAll().filter(channel => channel.status === 'suspended').length;
+
+  if (needVerify > 0) {
+    alerts.push({
+      id: 'mail-need-verify',
+      title: `Need verification (${needVerify})`,
+      description: 'Mail accounts require verification before upload.',
+      severity: 'warning',
+    });
+  }
+
+  if (suspendedChannels > 0) {
+    alerts.push({
+      id: 'youtube-suspended',
+      title: `Suspended channels (${suspendedChannels})`,
+      description: 'YouTube channels are suspended and should not receive uploads.',
+      severity: 'danger',
+    });
+  }
+
+  return alerts;
+}
 
 export class DashboardRepository {
   getData(): DashboardData {
-    return defaultDashboard;
+    const renderJobs = renderQueueService.list();
+    const mailAccounts = mailAccountsRepository.findAll();
+
+    return {
+      overviewStats: {
+        youtubeChannels: youtubeChannelsRepository.findAll().length,
+        tiktokAccounts: 0,
+        facebookAssets: 0,
+        sourceChannels: sourceChannelsRepository.findAll().length,
+      },
+      pipelineSteps: buildPipelineSteps(renderJobs),
+      accountSummary: {
+        total: mailAccounts.length,
+        active: mailAccounts.filter(account => account.status === 'active').length,
+        needVerify: mailAccounts.filter(account => account.status === 'need_verify').length,
+        limited: 0,
+        suspended: mailAccounts.filter(account => account.status === 'suspended').length,
+        lostAccess: 0,
+      },
+      activeRender: buildActiveRender(),
+      recentProjects: buildRecentProjects(),
+      healthAlerts: buildHealthAlerts(),
+    };
   }
 }
 

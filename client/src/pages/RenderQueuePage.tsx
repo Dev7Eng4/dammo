@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { mockRenderJobs } from '../data/mockRenderJobs';
+import { fetchRenderJobs } from '../api/renderQueue';
 import { RenderJobDetailPanel } from '../components/render-queue/RenderJobDetailPanel';
 import { RenderQueueTable } from '../components/render-queue/RenderQueueTable';
 import { RenderQueueToolbar } from '../components/render-queue/RenderQueueToolbar';
-import { useToast } from '../components/ui';
+import { useAbortableEffect } from '../hooks';
 import type { RenderJob } from '../types/videoProduction';
 
 function findInitialSelectedId(jobs: RenderJob[]): string | null {
@@ -11,67 +11,44 @@ function findInitialSelectedId(jobs: RenderJob[]): string | null {
 }
 
 export function RenderQueuePage() {
-  const { toast } = useToast();
-  const [jobs, setJobs] = useState<RenderJob[]>(mockRenderJobs);
-  const [selectedId, setSelectedId] = useState<string | null>(() => findInitialSelectedId(mockRenderJobs));
-  const [queuePaused, setQueuePaused] = useState(false);
+  const [jobs, setJobs] = useState<RenderJob[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useAbortableEffect(async (signal) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const nextJobs = await fetchRenderJobs({ signal });
+      setJobs(nextJobs);
+      setSelectedId((current) =>
+        current && nextJobs.some((job) => job.id === current) ? current : findInitialSelectedId(nextJobs),
+      );
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(err instanceof Error ? err.message : 'Failed to load render queue');
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, []);
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.id === selectedId) ?? null,
     [jobs, selectedId],
   );
 
-  function handleStartQueue() {
-    toast.success(queuePaused ? 'Queue resumed (mock)' : 'Queue started (mock)');
-    setQueuePaused(false);
-  }
-
-  function handlePauseQueue() {
-    setQueuePaused((paused) => {
-      toast.success(paused ? 'Queue resumed (mock)' : 'Queue paused (mock)');
-      return !paused;
-    });
-  }
-
-  function handleClearCompleted() {
-    const nextJobs = jobs.filter((job) => job.status !== 'success');
-    setJobs(nextJobs);
-    setSelectedId((current) => (current && nextJobs.some((job) => job.id === current) ? current : findInitialSelectedId(nextJobs)));
-    toast.success('Completed jobs cleared (mock)');
-  }
-
-  function handleRetryFailed() {
-    setJobs((current) =>
-      current.map((job) =>
-        job.status === 'failed'
-          ? { ...job, status: 'queued' as const, progress: 0, framesDone: 0, error: undefined }
-          : job,
-      ),
-    );
-    toast.success('Failed jobs re-queued (mock)');
-  }
-
-  function handleOpenRendersFolder() {
-    toast.success('Open renders folder (mock)');
-  }
-
-  function handleCancelRender() {
-    if (!selectedJob) return;
-    setJobs((current) => current.filter((job) => job.id !== selectedJob.id));
-    setSelectedId((current) => (current === selectedJob.id ? null : current));
-    toast.success(`Cancelled ${selectedJob.id} (mock)`);
-  }
-
-  function handleOpenProject() {
-    toast.success('Open project (mock)');
-  }
-
-  function handleViewOutput() {
-    toast.success('View output (mock)');
-  }
-
   function handleClosePanel() {
     setSelectedId(null);
+  }
+
+  if (error) {
+    return (
+      <div className="card-surface m-6 p-6 text-center">
+        <p className="text-danger">{error}</p>
+      </div>
+    );
   }
 
   return (
@@ -79,18 +56,17 @@ export function RenderQueuePage() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <div className="border-b border-border pb-4">
-            <RenderQueueToolbar
-              queuePaused={queuePaused}
-              onStartQueue={handleStartQueue}
-              onPauseQueue={handlePauseQueue}
-              onClearCompleted={handleClearCompleted}
-              onRetryFailed={handleRetryFailed}
-              onOpenRendersFolder={handleOpenRendersFolder}
-            />
+            <RenderQueueToolbar actionsDisabled />
           </div>
 
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
-            <RenderQueueTable jobs={jobs} selectedId={selectedId} onSelect={setSelectedId} />
+            {loading ? (
+              <p className="py-8 text-center text-sm text-neutral-400">Loading render jobs...</p>
+            ) : jobs.length === 0 ? (
+              <p className="py-8 text-center text-sm text-neutral-400">No render jobs in queue.</p>
+            ) : (
+              <RenderQueueTable jobs={jobs} selectedId={selectedId} onSelect={setSelectedId} />
+            )}
           </div>
         </div>
       </div>
@@ -107,9 +83,9 @@ export function RenderQueuePage() {
             <RenderJobDetailPanel
               job={selectedJob}
               onClose={handleClosePanel}
-              onCancelRender={handleCancelRender}
-              onOpenProject={handleOpenProject}
-              onViewOutput={handleViewOutput}
+              onCancelRender={() => undefined}
+              onOpenProject={() => undefined}
+              onViewOutput={() => undefined}
             />
           </div>
         </>

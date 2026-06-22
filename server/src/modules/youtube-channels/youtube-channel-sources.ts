@@ -45,6 +45,24 @@ export function resolveSourceChannelsFromMapping(sourceMapping: string): SourceC
   return matched;
 }
 
+export function resolveSourceChannelsByIds(ids: string[]): SourceChannel[] {
+  const normalized = [...new Set(ids.map(id => id.trim()).filter(Boolean))];
+  if (normalized.length === 0) return [];
+
+  const sourceById = new Map(sourceChannelsRepository.findAll().map(source => [source.id, source]));
+  const matched: SourceChannel[] = [];
+  const seen = new Set<string>();
+
+  for (const id of normalized) {
+    const source = sourceById.get(id);
+    if (!source || seen.has(source.id)) continue;
+    seen.add(source.id);
+    matched.push(source);
+  }
+
+  return matched;
+}
+
 export function resolveSourceNamesForChannel(channel: YoutubeChannel): string[] {
   const names: string[] = [];
   const seen = new Set<string>();
@@ -55,12 +73,12 @@ export function resolveSourceNamesForChannel(channel: YoutubeChannel): string[] 
     names.push(name);
   };
 
-  for (const source of resolveSourceChannelsFromMapping(channel.sourceMapping ?? '')) {
+  for (const source of resolveSourceChannelsByIds(channel.sourceChannels ?? [])) {
     add(source.name);
   }
 
   for (const sourceId of [
-    channel.backgroundFootageSourceId,
+    ...(channel.backgroundFootageSources ?? []),
     channel.reupVideoSourceId,
     channel.reupAudioSourceId,
   ]) {
