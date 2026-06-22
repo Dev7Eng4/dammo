@@ -1,5 +1,7 @@
 export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image';
 
+export type PromptOutputType = 'text' | 'image';
+
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
 export interface Prompt {
@@ -8,6 +10,7 @@ export interface Prompt {
   language: PromptLanguage;
   name: string;
   category: PromptCategory;
+  outputType?: PromptOutputType;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -23,6 +26,7 @@ export interface CreatePromptInput {
   name: string;
   template: string;
   category?: PromptCategory;
+  outputType?: PromptOutputType;
   description?: string;
 }
 
@@ -32,6 +36,7 @@ export interface UpdatePromptInput {
   name?: string;
   template?: string;
   category?: PromptCategory;
+  outputType?: PromptOutputType;
   description?: string;
 }
 

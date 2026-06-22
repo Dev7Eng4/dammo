@@ -5,9 +5,11 @@ import {
   createPromptSchema,
   listPromptsQuerySchema,
   promptKeyQuerySchema,
+  thumbnailStylesQuerySchema,
   updatePromptSchema,
 } from './prompts.schema.js';
 import { promptsService } from './prompts.service.js';
+import { listThumbnailStyleOptions } from './thumbnail-styles.js';
 import { promptPlaygroundRunSchema } from '../prompt-playground/prompt-playground.schema.js';
 import { promptPlaygroundService } from '../prompt-playground/prompt-playground.service.js';
 import { updatePromptsSettingsSchema } from './prompts-settings.schema.js';
@@ -30,6 +32,11 @@ export function createPromptsRoutes() {
   app.get('/settings', (c) => {
     const item = promptsSettingsService.get();
     return c.json({ item });
+  });
+
+  app.get('/thumbnail-styles', zValidator('query', thumbnailStylesQuerySchema), (c) => {
+    const { language } = c.req.valid('query');
+    return c.json({ items: listThumbnailStyleOptions(language) });
   });
 
   app.patch('/settings', zValidator('json', updatePromptsSettingsSchema), (c) => {

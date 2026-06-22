@@ -4,6 +4,7 @@ import { isAppError } from '../shared/http/errors.js';
 import { createChromeProfilesRoutes } from '../modules/chrome-profiles/chrome-profiles.routes.js';
 import { createContentDownloadRoutes } from '../modules/content-download/content-download.routes.js';
 import { createDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
+import { createGpmManagerRoutes } from '../modules/gpm-manager/gpm-manager.routes.js';
 import { createHealthRoutes } from '../modules/health/health.routes.js';
 import { createLlmBrowserRoutes } from '../modules/llm-browser/llm-browser.routes.js';
 import { createMailAccountsRoutes } from '../modules/mail-accounts/mail-accounts.routes.js';
@@ -26,6 +27,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/llm-browser`, createLlmBrowserRoutes());
   app.route(`${prefix}/content-download`, createContentDownloadRoutes());
   app.route(`${prefix}/prompts`, createPromptsRoutes());
+  app.route(`${prefix}/gpm`, createGpmManagerRoutes());
 }
 
 export function registerModules(app: Hono) {

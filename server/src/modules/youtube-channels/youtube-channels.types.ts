@@ -43,6 +43,7 @@ export interface YoutubeChannel {
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSourceId?: string;
+  thumbnailStyleKey?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
   recentActivity: YoutubeChannelActivity[];
@@ -82,6 +83,7 @@ export interface CreateYoutubeChannelInput {
   language: ChannelLanguage;
   sourceChannelIds?: string[];
   backgroundFootageSourceId?: string;
+  thumbnailStyleKey?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }
@@ -92,6 +94,7 @@ export interface UpdateYoutubeChannelInput {
   language: ChannelLanguage;
   sourceChannelIds?: string[];
   backgroundFootageSourceId?: string;
+  thumbnailStyleKey?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }

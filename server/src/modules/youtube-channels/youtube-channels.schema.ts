@@ -22,6 +22,7 @@ const channelConfigFields = {
   language: channelLanguageSchema,
   sourceChannelIds: z.array(z.string().min(1)).optional(),
   backgroundFootageSourceId: z.string().optional(),
+  thumbnailStyleKey: z.string().optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
 };
@@ -34,6 +35,7 @@ function applyChannelConfigRefine(
   data: {
     type: z.infer<typeof youtubeChannelTypeSchema>;
     sourceChannelIds?: string[];
+    thumbnailStyleKey?: string;
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
   },
@@ -45,6 +47,14 @@ function applyChannelConfigRefine(
         code: 'custom',
         message: 'Source channels are required for reup channels',
         path: ['sourceChannelIds'],
+      });
+    }
+
+    if (!data.thumbnailStyleKey?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Thumbnail style is required for reup channels',
+        path: ['thumbnailStyleKey'],
       });
     }
   }

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, youtubeChannelVideoDir } from '../config/paths.js';
-import { assembleReupSiVideo } from '../modules/youtube-channels/reup-si-video-assembler.js';
+import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
 
 const DEFAULT_CHANNEL_ID = '85184f4f-6c28-4c3e-a6a4-985689b51840';
 const DEFAULT_YOUTUBE_VIDEO_ID = '9paQm2UbaLc';

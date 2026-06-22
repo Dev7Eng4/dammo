@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const promptCategorySchema = z.enum(['thumbnail', 'transcript', 'meta', 'image']);
+const promptOutputTypeSchema = z.enum(['text', 'image']);
 const promptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
 
 const promptKeySchema = z
@@ -15,6 +16,7 @@ export const createPromptSchema = z.object({
   name: z.string().min(1).max(120),
   template: z.string().min(1),
   category: promptCategorySchema.default('meta'),
+  outputType: promptOutputTypeSchema.default('text'),
   description: z.string().max(500).optional(),
 });
 
@@ -25,6 +27,7 @@ export const updatePromptSchema = z
     name: z.string().min(1).max(120).optional(),
     template: z.string().min(1).optional(),
     category: promptCategorySchema.optional(),
+    outputType: promptOutputTypeSchema.optional(),
     description: z.string().max(500).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
@@ -40,5 +43,9 @@ export const listPromptsQuerySchema = z.object({
 });
 
 export const promptKeyQuerySchema = z.object({
+  language: promptLanguageSchema,
+});
+
+export const thumbnailStylesQuerySchema = z.object({
   language: promptLanguageSchema,
 });

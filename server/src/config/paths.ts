@@ -15,7 +15,6 @@ export const paths = {
   sourcesDir: path.join(env.dataDir, 'sources'),
   chromeProfiles: path.join(env.dataDir, 'chrome-profiles.json'),
   chromeProfilesDir: path.join(env.dataDir, 'chrome-profiles'),
-  reupVideoHistory: path.join(env.dataDir, 'reup-video-history.json'),
   reupVideoDownloadsDir: path.join(env.dataDir, 'renders', 'downloads'),
   reupVideoOutputDir: path.join(env.dataDir, 'renders', 'reup'),
   taskQueueDir: path.join(env.dataDir, 'task-queue'),
@@ -23,6 +22,7 @@ export const paths = {
   prompts: path.join(env.dataDir, 'prompts.json'),
   promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
   promptsDir: path.join(env.dataDir, 'prompts'),
+  playgroundDir: path.join(env.dataDir, 'playground'),
   reupSiAssetsDir: path.join(env.dataDir, 'assets'),
 };
 
@@ -72,6 +72,7 @@ export function ensureDataDirs(): void {
     paths.mediaDownloadsDir,
     paths.youtubeChannelsDir,
     paths.promptsDir,
+    paths.playgroundDir,
     paths.reupSiAssetsDir,
     path.join(paths.reupSiAssetsDir, 'noise'),
     path.join(paths.reupSiAssetsDir, 'overlay'),

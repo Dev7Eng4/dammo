@@ -108,6 +108,7 @@ export class PromptsService {
       language: input.language,
       name: input.name.trim(),
       category: input.category ?? 'meta',
+      outputType: input.outputType ?? 'text',
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
       createdAt: now,
       updatedAt: now,
@@ -147,6 +148,7 @@ export class PromptsService {
 
       if (input.name !== undefined) next.name = input.name.trim();
       if (input.category !== undefined) next.category = input.category;
+      if (input.outputType !== undefined) next.outputType = input.outputType;
 
       if (input.description !== undefined) {
         const description = input.description.trim();

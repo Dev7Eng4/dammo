@@ -1,5 +1,5 @@
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
-import type { VideoPrepareItem } from './reup-video.types.js';
+import type { VideoPrepareItem } from './video-prepare.types.js';
 
 function prepareItemToVideo(item: VideoPrepareItem): YoutubeChannelVideo {
   return {

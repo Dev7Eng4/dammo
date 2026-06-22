@@ -4,6 +4,7 @@ import { TaskQueueProvider } from './contexts/TaskQueueContext';
 import { AppLayout } from './layouts/AppLayout';
 import { ChromeProfilesPage } from './pages/ChromeProfilesPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { GpmManagerPage } from './pages/GpmManagerPage';
 import { MailAccountsPage } from './pages/MailAccountsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { PromptsPage } from './pages/PromptsPage';
@@ -32,11 +33,20 @@ export default function App() {
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
               <Route path="prompts" element={<PromptsPage />} />
               <Route path="chrome-profiles" element={<ChromeProfilesPage />} />
+              <Route path="gpm-manager" element={<GpmManagerPage />} />
+              <Route path="proxies" element={<PlaceholderPage />} />
+              <Route path="launch-logs" element={<PlaceholderPage />} />
               <Route path="content-projects" element={<PlaceholderPage />} />
+              <Route path="scripts" element={<PlaceholderPage />} />
+              <Route path="datasets" element={<PlaceholderPage />} />
+              <Route path="assets" element={<PlaceholderPage />} />
               <Route path="video-factory" element={<VideoFactoryPage />} />
+              <Route path="video-factory/templates" element={<PlaceholderPage />} />
               <Route path="render-queue" element={<RenderQueuePage />} />
               <Route path="task-queue" element={<TaskQueuePage />} />
               <Route path="excel-import-export" element={<PlaceholderPage />} />
+              <Route path="support" element={<PlaceholderPage />} />
+              <Route path="logs" element={<PlaceholderPage />} />
               <Route path="workspace-settings" element={<PlaceholderPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

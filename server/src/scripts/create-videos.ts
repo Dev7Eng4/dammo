@@ -1,5 +1,5 @@
 import { ensureDataDirs } from '../config/paths.js';
-import { reupVideoCreatorService } from '../modules/youtube-channels/reup-video-creator.service.js';
+import { videoProductionService } from '../modules/video-production/video-production.service.js';
 import { pickReupChannels } from './lib/reup-channel-picker.js';
 import { printBatchResult } from './lib/print-batch-result.js';
 
@@ -16,8 +16,8 @@ async function main() {
 
   const result =
     pick.mode === 'all'
-      ? await reupVideoCreatorService.createVideosForAllReupChannels()
-      : await reupVideoCreatorService.createVideosForChannels(pick.channelIds);
+      ? await videoProductionService.createVideosForAllReupChannels()
+      : await videoProductionService.createVideosForChannels(pick.channelIds);
 
   printBatchResult(result);
 }

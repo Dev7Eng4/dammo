@@ -1,6 +1,6 @@
 export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image';
 
-
+export type PromptOutputType = 'text' | 'image';
 
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
@@ -31,12 +31,19 @@ export interface Prompt {
 
   category: PromptCategory;
 
+  outputType?: PromptOutputType;
+
   description?: string;
 
   createdAt: string;
 
   updatedAt: string;
 
+}
+
+export interface ThumbnailStyleOption {
+  key: string;
+  name: string;
 }
 
 
@@ -61,6 +68,8 @@ export interface CreatePromptPayload {
 
   category?: PromptCategory;
 
+  outputType?: PromptOutputType;
+
   description?: string;
 
 }
@@ -79,6 +88,8 @@ export interface UpdatePromptPayload {
 
   category?: PromptCategory;
 
+  outputType?: PromptOutputType;
+
   description?: string;
 
 }
@@ -86,13 +97,15 @@ export interface UpdatePromptPayload {
 
 
 export interface PromptPlaygroundRunPayload {
+  outputType?: PromptOutputType;
 
-  provider: PlaygroundProvider;
+  provider?: PlaygroundProvider;
+
+  imageProvider?: ImageBrowserProvider;
 
   userPrompt: string;
 
   promptId?: string;
-
 }
 
 
@@ -111,9 +124,15 @@ export interface PromptPlaygroundUsage {
 
 export interface PromptPlaygroundResult {
 
+  kind: PromptOutputType;
+
   content: string;
 
-  provider: PlaygroundProvider;
+  imageBase64?: string;
+
+  imageMimeType?: string;
+
+  provider: PlaygroundProvider | ImageBrowserProvider;
 
   profileId?: string;
 
@@ -140,6 +159,8 @@ export interface PromptFormDraft {
   name: string;
 
   category: PromptCategory;
+
+  outputType: PromptOutputType;
 
   description: string;
 

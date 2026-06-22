@@ -11,6 +11,7 @@ import type {
   PromptLanguage,
   UpdatePromptPayload,
   PromptsSettings,
+  ThumbnailStyleOption,
   UpdatePromptsSettingsPayload,
 } from '../types/prompt';
 
@@ -82,6 +83,14 @@ export function runPromptPlayground(payload: PromptPlaygroundRunPayload) {
 export function fetchPromptSettings(options?: FetchOptions) {
   return fetchJson<{ item: PromptsSettings }>(
     `${API_V1}/prompts/settings`,
+    withSignal(undefined, options),
+  );
+}
+
+export function fetchThumbnailStyles(language: PromptLanguage, options?: FetchOptions) {
+  const params = new URLSearchParams({ language });
+  return fetchJson<{ items: ThumbnailStyleOption[] }>(
+    `${API_V1}/prompts/thumbnail-styles?${params}`,
     withSignal(undefined, options),
   );
 }

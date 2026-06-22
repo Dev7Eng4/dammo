@@ -1,7 +1,7 @@
 import {
   REUP_VIDEO_BLUR_PERCENT,
   REUP_VIDEO_CROP_PERCENT,
-} from '../../modules/youtube-channels/reup-video.constants.js';
+} from '../../modules/video-production/pipelines/reup-audio/reup-audio.constants.js';
 
 /**
  * Crop keeps the center region after removing cropPercent from each axis.

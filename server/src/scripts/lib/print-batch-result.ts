@@ -1,4 +1,4 @@
-import type { CreateReupVideosBatchResult } from '../../modules/youtube-channels/reup-video.types.js';
+import type { CreateReupVideosBatchResult } from '../../modules/video-production/pipelines/reup-audio/reup-audio.types.js';
 
 export function printBatchResult(result: CreateReupVideosBatchResult): void {
   const created = result.channels.filter((channel) => channel.status === 'created').length;

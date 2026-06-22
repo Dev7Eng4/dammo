@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
+import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { updateYoutubeChannel } from '../../api/youtubeChannels';
 import {
@@ -13,7 +14,7 @@ import {
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
-import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel } from '../../types/youtubeChannel';
+import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel, YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import { isReupYoutubeChannelType, parseStoredChannelLanguage } from '../../types/youtubeChannel';
 import { canonicalizeSourceUrl } from '../../utils/canonicalizeSourceUrl';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
@@ -53,6 +54,7 @@ const defaultValues: EditYoutubeChannelFormValues = {
   language: '',
   sourceChannelIds: [],
   backgroundFootageSourceId: '',
+  thumbnailStyleKey: '',
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -95,6 +97,8 @@ export function EditYoutubeChannelModal({
   const [mailAccountId, setMailAccountId] = useState('');
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [formReady, setFormReady] = useState(false);
+  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([]);
+  const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
 
   const {
     handleSubmit,
@@ -109,6 +113,7 @@ export function EditYoutubeChannelModal({
 
   const channelType = watch('type');
   const isReupType = isReupYoutubeChannelType(channelType);
+  const language = watch('language') as YoutubeChannelLanguage | '';
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
@@ -154,6 +159,7 @@ export function EditYoutubeChannelModal({
           language: parseStoredChannelLanguage(channel.language),
           sourceChannelIds: parseSourceChannelIds(channel.sourceMapping, sourceList.items),
           backgroundFootageSourceId: channel.backgroundFootageSourceId ?? '',
+          thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
           uploadFrequency: frequency,
           publishTimes,
         });
@@ -178,6 +184,34 @@ export function EditYoutubeChannelModal({
     }
   }, [publishTimeSlotCount, formReady, setValue, getValues]);
 
+  useAbortableEffect(
+    async (signal) => {
+      if (!open || !language) {
+        setThumbnailStyleOptions([]);
+        return;
+      }
+
+      setThumbnailStylesLoading(true);
+      try {
+        const { items } = await fetchThumbnailStyles(language, { signal });
+        const options = items.map((item) => ({ value: item.key, label: item.name }));
+        setThumbnailStyleOptions(options);
+
+        const current = getValues('thumbnailStyleKey');
+        if (current && !options.some((option) => option.value === current)) {
+          setValue('thumbnailStyleKey', '');
+        }
+      } catch {
+        if (signal.aborted) return;
+        setThumbnailStyleOptions([]);
+      } finally {
+        if (!signal.aborted) setThumbnailStylesLoading(false);
+      }
+    },
+    [language, open, formReady],
+    { enabled: open && formReady && Boolean(language) },
+  );
+
   function handleClose() {
     setApiError(null);
     onClose();
@@ -198,6 +232,7 @@ export function EditYoutubeChannelModal({
         ...(values.backgroundFootageSourceId
           ? { backgroundFootageSourceId: values.backgroundFootageSourceId }
           : {}),
+        ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
       });
       onSuccess(item);
       onClose();
@@ -289,6 +324,44 @@ export function EditYoutubeChannelModal({
                 onBlur={field.onBlur}
                 placeholder="Select language"
                 disabled={isSubmitting}
+                className="w-full"
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label="Thumbnail Style"
+          htmlFor="edit-thumbnail-style"
+          optional={!isReupType}
+          error={errors.thumbnailStyleKey?.message}
+          className="min-w-0"
+        >
+          <Controller
+            name="thumbnailStyleKey"
+            control={control}
+            rules={{
+              validate: (value) =>
+                !isReupType || value.trim().length > 0 || 'Thumbnail style is required',
+            }}
+            render={({ field }) => (
+              <Select
+                id="edit-thumbnail-style"
+                options={thumbnailStyleOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  !language
+                    ? 'Select language first'
+                    : thumbnailStylesLoading
+                      ? 'Loading styles...'
+                      : thumbnailStyleOptions.length === 0
+                        ? 'No thumbnail styles for this language'
+                        : 'Select thumbnail style'
+                }
+                disabled={isSubmitting || !language || thumbnailStylesLoading}
                 className="w-full"
                 triggerClassName={selectTriggerClass}
               />

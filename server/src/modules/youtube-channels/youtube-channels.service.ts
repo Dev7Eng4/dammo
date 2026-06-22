@@ -11,12 +11,13 @@ import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repositor
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelVideosRepository } from './youtube-channel-videos.repository.js';
-import { reupVideoCreatorService } from './reup-video-creator.service.js';
+import { videoProductionService } from '../video-production/video-production.service.js';
 import { mergeChannelVideos } from './merge-channel-videos.js';
 import { videoPrepareRepository } from './video-prepare.repository.js';
 import { resolveSourceNamesForChannel } from './youtube-channel-sources.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
+import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
 import type {
   CreateYoutubeChannelInput,
   MonetizationStatus,
@@ -92,8 +93,10 @@ type ChannelConfigInput = Pick<
   CreateYoutubeChannelInput,
   | 'mailAccountId'
   | 'type'
+  | 'language'
   | 'sourceChannelIds'
   | 'backgroundFootageSourceId'
+  | 'thumbnailStyleKey'
   | 'uploadFrequency'
   | 'publishTimes'
 >;
@@ -122,6 +125,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   sourceMapping: string;
   uploadSchedule: string[];
   backgroundFootageSourceId?: string;
+  thumbnailStyleKey?: string;
 } {
   const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
   if (!mailAccount) {
@@ -144,11 +148,18 @@ function validateChannelConfig(input: ChannelConfigInput): {
 
   const uploadSchedule = normalizeUploadSchedule(input.publishTimes);
 
+  const thumbnailStyleKey = assertValidThumbnailStyleKey(
+    input.thumbnailStyleKey,
+    input.language,
+    isReupChannelType(input.type),
+  );
+
   return {
     linkedEmail: mailAccount.email,
     sourceMapping,
     uploadSchedule,
     ...(backgroundFootageSourceId ? { backgroundFootageSourceId } : {}),
+    ...(thumbnailStyleKey ? { thumbnailStyleKey } : {}),
   };
 }
 
@@ -367,6 +378,7 @@ export class YoutubeChannelsService {
         ...(config.backgroundFootageSourceId
           ? { backgroundFootageSourceId: config.backgroundFootageSourceId }
           : {}),
+        ...(config.thumbnailStyleKey ? { thumbnailStyleKey: config.thumbnailStyleKey } : {}),
       };
 
       return youtubeChannelsRepository.prepend(channel);
@@ -403,6 +415,12 @@ export class YoutubeChannelsService {
         delete next.backgroundFootageSourceId;
       }
 
+      if (config.thumbnailStyleKey) {
+        next.thumbnailStyleKey = config.thumbnailStyleKey;
+      } else {
+        delete next.thumbnailStyleKey;
+      }
+
       if (!isReupChannelType(input.type)) {
         delete next.reupVideoSourceId;
         delete next.reupAudioSourceId;
@@ -419,15 +437,15 @@ export class YoutubeChannelsService {
   }
 
   async createVideos(id: string) {
-    return reupVideoCreatorService.createVideos(id);
+    return videoProductionService.createVideosForYoutubeChannel(id);
   }
 
   async createVideosForAllReupChannels() {
-    return reupVideoCreatorService.createVideosForAllReupChannels();
+    return videoProductionService.createVideosForAllReupChannels();
   }
 
   async createVideosForChannels(channelIds: string[]) {
-    return reupVideoCreatorService.createVideosForChannels(channelIds);
+    return videoProductionService.createVideosForChannels(channelIds);
   }
 }
 

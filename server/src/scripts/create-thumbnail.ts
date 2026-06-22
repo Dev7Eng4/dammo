@@ -1,10 +1,17 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, youtubeChannelVideoDir } from '../config/paths.js';
-import { runThumbnailVisualGeneration } from '../modules/youtube-channels/reup-hero-image.js';
-import type { MetaStep3Output, MetaStep3PersistedOutput } from '../modules/youtube-channels/reup-metadata.types.js';
-import { renderThumbnailHorizontalFlowCompositeToPath } from '../modules/youtube-channels/reup-thumbnail-composite.js';
-import { runThumbnailHorizontal } from '../modules/youtube-channels/reup-thumbnail-horizontal.js';
+import { runThumbnailVisualGeneration } from '../modules/video-production/shared/thumbnail/hero-image.js';
+import { parseVideoMetaContent, type MetaStep3Output } from '../modules/video-production/shared/meta/metadata.types.js';
+import { renderThumbnailHorizontalFlowCompositeToPath } from '../modules/video-production/shared/thumbnail/thumbnail-composite.js';
+import { runDirectFlowThumbnail } from '../modules/video-production/shared/thumbnail/direct-flow-thumbnail.js';
+import { runThumbnailHorizontal } from '../modules/video-production/shared/thumbnail/thumbnail-horizontal.js';
+import {
+  isHorizontalMultiStepStyle,
+  resolveThumbnailStyleKey,
+} from '../modules/prompts/thumbnail-styles.js';
+import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
+import type { ChannelLanguage } from '../modules/youtube-channels/channel-language.js';
 
 const DEFAULT_CHANNEL_ID = '85184f4f-6c28-4c3e-a6a4-985689b51840';
 const DEFAULT_YOUTUBE_VIDEO_ID = '9paQm2UbaLc';
@@ -19,6 +26,7 @@ interface CliOptions {
   videoId: string;
   workDir?: string;
   profileId?: string;
+  styleKey?: string;
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -58,6 +66,13 @@ function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
+    if (arg === '--style-key') {
+      options.styleKey = argv[index + 1]?.trim() ?? '';
+      if (!options.styleKey) throw new Error('--style-key requires a value');
+      index += 1;
+      continue;
+    }
+
     if (arg.startsWith('-')) {
       throw new Error(`Unknown option: ${arg}`);
     }
@@ -76,37 +91,34 @@ async function assertFileExists(filePath: string, label: string): Promise<void> 
 
 async function loadMetaStep3FromVideoMeta(workDir: string): Promise<MetaStep3Output> {
   const videoMetaPath = path.join(workDir, VIDEO_META_FILE);
-  const raw = JSON.parse(await fs.readFile(videoMetaPath, 'utf8')) as MetaStep3PersistedOutput;
-
-  if (!raw.result || typeof raw.result !== 'object') {
-    throw new Error(`Invalid ${VIDEO_META_FILE}: missing result field`);
-  }
-
-  return raw.result;
+  const raw = JSON.parse(await fs.readFile(videoMetaPath, 'utf8')) as unknown;
+  return parseVideoMetaContent(raw);
 }
 
-async function main() {
-  ensureDataDirs();
-
-  const options = parseArgs(process.argv.slice(2));
-  const workDir = options.workDir ?? youtubeChannelVideoDir(options.channelId, options.videoId);
-  const videoMetaPath = path.join(workDir, VIDEO_META_FILE);
-
-  await assertFileExists(videoMetaPath, 'video meta');
-
-  console.log(`Channel: ${options.channelId}`);
-  console.log(`YouTube video id: ${options.videoId}`);
-  console.log(`Work dir: ${workDir}`);
-  console.log(`Video meta: ${videoMetaPath}`);
-  if (options.profileId) {
-    console.log(`Flow profile id: ${options.profileId}`);
+function resolveStyleKey(options: CliOptions) {
+  const channel = youtubeChannelsRepository.findById(options.channelId);
+  if (!channel) {
+    throw new Error(`Channel not found: ${options.channelId}`);
   }
 
-  const metaStep3Output = await loadMetaStep3FromVideoMeta(workDir);
+  const styleKey = resolveThumbnailStyleKey(options.styleKey ?? channel.thumbnailStyleKey, channel.language);
+  if (!styleKey) {
+    throw new Error(`No thumbnail style configured for channel ${options.channelId}`);
+  }
 
+  return { channel, styleKey };
+}
+
+async function runHorizontalThumbnailFlow(
+  metaStep3Output: MetaStep3Output,
+  workDir: string,
+  language: ChannelLanguage,
+  styleKey: string,
+  profileId?: string,
+): Promise<void> {
   console.log('\nStep 1/3: Horizontal thumbnail LLM (3 prompts)...\n');
 
-  const thumbnailHorizontalOutput = await runThumbnailHorizontal(metaStep3Output, {
+  const thumbnailHorizontalOutput = await runThumbnailHorizontal(metaStep3Output, language, styleKey, {
     onProgress: progress => {
       const stepLabel = `step ${progress.step}/3`;
       if (progress.status === 'retry') {
@@ -130,7 +142,7 @@ async function main() {
       negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
     },
     {
-      profileId: options.profileId,
+      profileId,
       onProgress: progress => {
         if (progress.status === 'retry') {
           console.log(`  Thumbnail visual on ${progress.profileName} retry (attempt ${progress.attempt})...`);
@@ -161,6 +173,76 @@ async function main() {
   console.log(`\nDone:`);
   console.log(`  ${path.join(workDir, THUMBNAIL_VISUAL_FILE)}`);
   console.log(`  ${compositePath}`);
+}
+
+async function runDirectFlowThumbnailScript(
+  metaStep3Output: MetaStep3Output,
+  workDir: string,
+  language: ChannelLanguage,
+  styleKey: string,
+  profileId?: string,
+): Promise<void> {
+  console.log(`\nGenerating thumbnail via Flow (${styleKey})...\n`);
+
+  const result = await runDirectFlowThumbnail(metaStep3Output, language, styleKey, workDir, {
+    profileId,
+    onProgress: progress => {
+      if (progress.status === 'retry') {
+        console.log(`  Thumbnail on ${progress.profileName} retry (attempt ${progress.attempt})...`);
+        return;
+      }
+      console.log(`  Thumbnail on ${progress.profileName} (attempt ${progress.attempt})...`);
+    },
+  });
+
+  const flowDebugPath = path.join(workDir, 'flow-debug.png');
+  await fs.unlink(flowDebugPath).catch(() => undefined);
+
+  console.log(`\nDone:`);
+  console.log(`  ${result.thumbnailPath}`);
+}
+
+async function main() {
+  ensureDataDirs();
+
+  const options = parseArgs(process.argv.slice(2));
+  const workDir = options.workDir ?? youtubeChannelVideoDir(options.channelId, options.videoId);
+  const videoMetaPath = path.join(workDir, VIDEO_META_FILE);
+
+  await assertFileExists(videoMetaPath, 'video meta');
+
+  const { channel, styleKey } = resolveStyleKey(options);
+  const useHorizontalFlow = isHorizontalMultiStepStyle(styleKey, channel.language);
+
+  console.log(`Channel: ${options.channelId}`);
+  console.log(`YouTube video id: ${options.videoId}`);
+  console.log(`Work dir: ${workDir}`);
+  console.log(`Video meta: ${videoMetaPath}`);
+  console.log(`Thumbnail style: ${styleKey}`);
+  if (options.profileId) {
+    console.log(`Flow profile id: ${options.profileId}`);
+  }
+
+  const metaStep3Output = await loadMetaStep3FromVideoMeta(workDir);
+
+  if (useHorizontalFlow) {
+    await runHorizontalThumbnailFlow(
+      metaStep3Output,
+      workDir,
+      channel.language,
+      styleKey,
+      options.profileId,
+    );
+    return;
+  }
+
+  await runDirectFlowThumbnailScript(
+    metaStep3Output,
+    workDir,
+    channel.language,
+    styleKey,
+    options.profileId,
+  );
 }
 
 main().catch(err => {

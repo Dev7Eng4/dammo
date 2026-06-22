@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '../lib/cn';
-import { footerNavItem, navItems, type NavIcon } from '../config/navigation';
+import { footerNavItems, navSections, type NavIcon, type NavItem } from '../config/navigation';
 
 function NavIconSvg({ icon }: { icon: NavIcon }) {
   const className = 'size-4 shrink-0';
@@ -44,22 +44,35 @@ function NavIconSvg({ icon }: { icon: NavIcon }) {
     case 'source':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M4 11a9 9 0 0 1 9 9" />
-          <path d="M4 4a16 16 0 0 1 16 16" />
-          <circle cx="5" cy="19" r="1" />
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
         </svg>
       );
     case 'prompt':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-          <path d="M14 2v6h6" />
-          <path d="M16 13H8" />
-          <path d="M16 17H8" />
-          <path d="M10 9H8" />
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+          <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Z" />
         </svg>
       );
     case 'browser':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <path d="M8 21h8" />
+          <path d="M12 17v4" />
+        </svg>
+      );
+    case 'gpm':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <line x1="19" x2="19" y1="8" y2="14" />
+          <line x1="22" x2="16" y1="11" y2="11" />
+        </svg>
+      );
+    case 'proxies':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10" />
@@ -67,11 +80,62 @@ function NavIconSvg({ icon }: { icon: NavIcon }) {
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
       );
+    case 'launch-logs':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+          <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+        </svg>
+      );
     case 'projects':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+        </svg>
+      );
+    case 'scripts':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>
+      );
+    case 'datasets':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
+          <path d="M3 5v14a9 3 0 0 0 18 0V5" />
+          <path d="M3 12a9 3 0 0 0 18 0" />
+        </svg>
+      );
+    case 'assets':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+          <circle cx="9" cy="9" r="2" />
+          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+        </svg>
+      );
+    case 'excel':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+          <path d="M14 2v6h6" />
+          <path d="M8 13h2" />
+          <path d="M8 17h2" />
+          <path d="M14 13h2" />
+          <path d="M14 17h2" />
+        </svg>
+      );
+    case 'templates':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect width="7" height="9" x="3" y="3" rx="1" />
+          <rect width="7" height="5" x="14" y="3" rx="1" />
+          <rect width="7" height="9" x="14" y="12" rx="1" />
+          <rect width="7" height="5" x="3" y="16" rx="1" />
         </svg>
       );
     case 'factory':
@@ -100,78 +164,102 @@ function NavIconSvg({ icon }: { icon: NavIcon }) {
           <rect x="8" y="8" width="12" height="12" rx="2" />
         </svg>
       );
-    case 'excel':
+    case 'support':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <path d="M12 17h.01" />
+        </svg>
+      );
+    case 'logs':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
           <path d="M14 2v6h6" />
-          <path d="M8 13h2" />
-          <path d="M8 17h2" />
-          <path d="M14 13h2" />
-          <path d="M14 17h2" />
-        </svg>
-      );
-    case 'settings':
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-          <circle cx="12" cy="12" r="3" />
+          <path d="M16 13H8" />
+          <path d="M16 17H8" />
+          <path d="M10 9H8" />
         </svg>
       );
   }
 }
 
-function NavItem({ to, label, icon, end }: { to: string; label: string; icon: NavIcon; end?: boolean }) {
+function NavItemLink({ item }: { item: NavItem }) {
+  const end = item.path === '/' || item.path === '/video-factory';
+
   return (
     <NavLink
-      to={to}
+      to={item.path}
       end={end}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          'flex items-center gap-3 rounded-r-lg border-l-2 py-2 pr-3 text-sm font-medium transition-colors',
           isActive
-            ? 'bg-secondary-600 text-white'
-            : 'text-neutral-400 hover:bg-surface-elevated hover:text-neutral-100',
+            ? 'border-primary-400 bg-primary-500/10 pl-[10px] text-primary-300'
+            : 'border-transparent pl-[10px] text-neutral-400 hover:bg-surface-elevated hover:text-neutral-100',
         )
       }
     >
-      <NavIconSvg icon={icon} />
-      {label}
+      <NavIconSvg icon={item.icon} />
+      <span className="truncate">{item.label}</span>
     </NavLink>
+  );
+}
+
+function WorkspaceHeader() {
+  return (
+    <button
+      type="button"
+      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-elevated"
+      aria-label="Workspace switcher"
+    >
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-elevated text-neutral-300">
+        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="2" width="20" height="8" rx="2" />
+          <rect x="2" y="14" width="20" height="8" rx="2" />
+          <line x1="6" x2="6.01" y1="6" y2="6" />
+          <line x1="6" x2="6.01" y1="18" y2="18" />
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-neutral-50">Core Systems</p>
+        <p className="truncate text-[10px] text-neutral-500">Production Cluster</p>
+      </div>
+      <svg className="size-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="m7 15 5 5 5-5" />
+        <path d="m7 9 5-5 5 5" />
+      </svg>
+    </button>
   );
 }
 
 export function Sidebar() {
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-surface">
-      <div className="flex items-center gap-2.5 border-b border-border px-4 py-4">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-secondary-600 text-sm font-bold text-white">
-          V
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-neutral-50">VideoOps Pro</p>
-          <p className="text-[10px] text-neutral-500">Version 2.4.1-Stable</p>
-        </div>
+    <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-surface">
+      <div className="border-b border-border px-3 py-3">
+        <WorkspaceHeader />
       </div>
 
-      <nav className="scrollbar-thin flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 py-3">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.id}
-            to={item.path}
-            label={item.label}
-            icon={item.icon}
-            end={item.path === '/'}
-          />
+      <nav className="scrollbar-thin flex-1 overflow-y-auto overscroll-contain px-2 py-1">
+        {navSections.map((section) => (
+          <div key={section.id}>
+            <p className="px-3 pb-1 pt-4 text-[10px] font-semibold tracking-wider text-neutral-500">
+              {section.label}
+            </p>
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <NavItemLink key={item.id} item={item} />
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
-      <div className="border-t border-border px-3 py-3">
-        <NavItem
-          to={footerNavItem.path}
-          label={footerNavItem.label}
-          icon={footerNavItem.icon}
-        />
+      <div className="space-y-0.5 border-t border-border px-2 py-3">
+        {footerNavItems.map((item) => (
+          <NavItemLink key={item.id} item={item} />
+        ))}
       </div>
     </aside>
   );

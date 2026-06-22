@@ -15,11 +15,13 @@ import { PromptPlaygroundPanel } from '../components/prompts/PromptPlaygroundPan
 import { PromptsListPanel } from '../components/prompts/PromptsListPanel';
 import { useAbortableEffect, useDebouncedValue } from '../hooks';
 import type {
+  ImageBrowserProvider,
   PlaygroundProvider,
   Prompt,
   PromptCategory,
   PromptFormDraft,
   PromptLanguage,
+  PromptOutputType,
   PromptPlaygroundResult,
 } from '../types/prompt';
 import {
@@ -38,6 +40,7 @@ const EMPTY_DRAFT: PromptFormDraft = {
   language: 'ja',
   name: '',
   category: 'meta',
+  outputType: 'text',
   description: '',
   template: '',
   templateParams: [],
@@ -45,12 +48,23 @@ const EMPTY_DRAFT: PromptFormDraft = {
   outputSchema: '',
 };
 
+function resolveDraftOutputType(item: {
+  outputType?: PromptOutputType;
+  category: PromptCategory;
+  key: string;
+}): PromptOutputType {
+  if (item.outputType === 'text' || item.outputType === 'image') return item.outputType;
+  if (item.category === 'image' || item.key === 'love_story') return 'image';
+  return 'text';
+}
+
 function serializeDraft(draft: PromptFormDraft): string {
   return JSON.stringify({
     key: draft.key,
     language: draft.language,
     name: draft.name,
     category: draft.category,
+    outputType: draft.outputType,
     description: draft.description,
     template: draft.template,
     templateParams: draft.templateParams,
@@ -72,9 +86,11 @@ function draftFromResolved(item: {
   language: PromptLanguage;
   name: string;
   category: PromptCategory;
+  outputType?: PromptOutputType;
   description?: string;
   template: string;
 }): PromptFormDraft {
+  const outputType = resolveDraftOutputType(item);
   const managed = parseManagedTemplate(item.template);
   if (managed) {
     return {
@@ -83,6 +99,7 @@ function draftFromResolved(item: {
       language: item.language,
       name: item.name,
       category: item.category,
+      outputType,
       description: item.description ?? '',
       template: managed.body,
       templateParams: managed.params,
@@ -97,6 +114,7 @@ function draftFromResolved(item: {
     language: item.language,
     name: item.name,
     category: item.category,
+    outputType,
     description: item.description ?? '',
     template: item.template,
     templateParams: [],
@@ -122,8 +140,11 @@ export function PromptsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [provider, setProvider] = useState<PlaygroundProvider>('gpt');
+  const [imageProvider, setImageProvider] = useState<ImageBrowserProvider>('flow');
   const [providerSaving, setProviderSaving] = useState(false);
+  const [imageProviderSaving, setImageProviderSaving] = useState(false);
   const [providerSettingsError, setProviderSettingsError] = useState<string | null>(null);
+  const [imageProviderSettingsError, setImageProviderSettingsError] = useState<string | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [running, setRunning] = useState(false);
   const [playgroundResult, setPlaygroundResult] = useState<PromptPlaygroundResult | null>(null);
@@ -170,6 +191,7 @@ export function PromptsPage() {
     try {
       const { item } = await fetchPromptSettings({ signal });
       setProvider(item.defaultLlmProvider);
+      setImageProvider(item.defaultImageProvider);
     } catch (err) {
       if (isAbortError(err)) return;
     }
@@ -189,6 +211,23 @@ export function PromptsPage() {
       setProviderSettingsError(err instanceof Error ? err.message : 'Failed to update default provider');
     } finally {
       setProviderSaving(false);
+    }
+  }
+
+  async function handleImageProviderChange(next: ImageBrowserProvider) {
+    const previous = imageProvider;
+    setImageProvider(next);
+    setImageProviderSettingsError(null);
+    setImageProviderSaving(true);
+
+    try {
+      const { item } = await updatePromptSettings({ defaultImageProvider: next });
+      setImageProvider(item.defaultImageProvider);
+    } catch (err) {
+      setImageProvider(previous);
+      setImageProviderSettingsError(err instanceof Error ? err.message : 'Failed to update image provider');
+    } finally {
+      setImageProviderSaving(false);
     }
   }
 
@@ -285,6 +324,7 @@ export function PromptsPage() {
           language: draft.language,
           name: draft.name,
           category: draft.category,
+          outputType: draft.outputType,
           description: draft.description || undefined,
           template: templatePayload,
         });
@@ -298,6 +338,7 @@ export function PromptsPage() {
           language: draft.language,
           name: draft.name,
           category: draft.category,
+          outputType: draft.outputType,
           description: draft.description || undefined,
           template: templatePayload,
         });
@@ -360,7 +401,9 @@ export function PromptsPage() {
 
     try {
       const { item } = await runPromptPlayground({
+        outputType: draft.outputType,
         provider,
+        imageProvider,
         userPrompt,
         promptId: draft.id ?? undefined,
       });
@@ -401,14 +444,19 @@ export function PromptsPage() {
       <PromptPlaygroundPanel
         template={draft?.template ?? ''}
         templateParams={draft?.templateParams ?? []}
+        outputType={draft?.outputType ?? 'text'}
         provider={provider}
+        imageProvider={imageProvider}
         providerSaving={providerSaving}
+        imageProviderSaving={imageProviderSaving}
         providerSettingsError={providerSettingsError}
+        imageProviderSettingsError={imageProviderSettingsError}
         variableValues={variableValues}
         running={running}
         result={playgroundResult}
         error={playgroundError}
         onProviderChange={handleProviderChange}
+        onImageProviderChange={handleImageProviderChange}
         onVariableChange={(name, value) =>
           setVariableValues((prev) => ({ ...prev, [name]: value }))
         }

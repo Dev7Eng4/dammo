@@ -1,4 +1,4 @@
-import type { PlaygroundProvider, PromptCategory, PromptLanguage } from '../types/prompt';
+import type { PlaygroundProvider, PromptCategory, PromptLanguage, PromptOutputType } from '../types/prompt';
 
 export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[] = [
   { value: 'thumbnail', label: 'Thumbnail' },
@@ -12,6 +12,15 @@ export const PROMPT_LANGUAGE_OPTIONS: { value: PromptLanguage; label: string }[]
   { value: 'ko', label: 'Korean' },
   { value: 'ja', label: 'Japanese' },
   { value: 'es', label: 'Spanish' },
+];
+
+export const PROMPT_OUTPUT_TYPE_OPTIONS: { value: PromptOutputType; label: string }[] = [
+  { value: 'text', label: 'Text content' },
+  { value: 'image', label: 'Image generation' },
+];
+
+export const IMAGE_PROVIDER_OPTIONS: { value: ImageBrowserProvider; label: string }[] = [
+  { value: 'flow', label: 'Google Flow' },
 ];
 
 export const PLAYGROUND_PROVIDER_OPTIONS: { value: PlaygroundProvider; label: string }[] = [

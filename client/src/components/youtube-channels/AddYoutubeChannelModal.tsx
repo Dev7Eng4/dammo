@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
+import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { createYoutubeChannel, fetchYoutubeChannels } from '../../api/youtubeChannels';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
+import type { YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import type { AddYoutubeChannelFormValues } from '../../types/youtubeChannel';
 import { isReupYoutubeChannelType } from '../../types/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
@@ -29,6 +31,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   language: '',
   sourceChannelIds: [],
   backgroundFootageSourceId: '',
+  thumbnailStyleKey: '',
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -72,6 +75,8 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
   const [sources, setSources] = useState<SourceChannel[]>([]);
+  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([]);
+  const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
 
   const {
     register,
@@ -79,6 +84,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
     control,
     reset,
     watch,
+    getValues,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<AddYoutubeChannelFormValues>({
@@ -87,6 +93,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
 
   const channelType = watch('type');
   const isReupType = isReupYoutubeChannelType(channelType);
+  const language = watch('language') as YoutubeChannelLanguage | '';
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
@@ -136,6 +143,36 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
     setValue('publishTimes', createEmptyPublishTimes(publishTimeSlotCount));
   }, [publishTimeSlotCount, setValue]);
 
+  useAbortableEffect(
+    async (signal) => {
+      if (!language) {
+        setThumbnailStyleOptions([]);
+        setValue('thumbnailStyleKey', '');
+        return;
+      }
+
+      setThumbnailStylesLoading(true);
+      try {
+        const { items } = await fetchThumbnailStyles(language, { signal });
+        const options = items.map((item) => ({ value: item.key, label: item.name }));
+        setThumbnailStyleOptions(options);
+
+        const current = getValues('thumbnailStyleKey');
+        if (current && !options.some((option) => option.value === current)) {
+          setValue('thumbnailStyleKey', '');
+        }
+      } catch {
+        if (signal.aborted) return;
+        setThumbnailStyleOptions([]);
+        setValue('thumbnailStyleKey', '');
+      } finally {
+        if (!signal.aborted) setThumbnailStylesLoading(false);
+      }
+    },
+    [language],
+    { enabled: open },
+  );
+
   function handleClose() {
     reset(defaultValues);
     setApiError(null);
@@ -158,6 +195,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         ...(values.backgroundFootageSourceId
           ? { backgroundFootageSourceId: values.backgroundFootageSourceId }
           : {}),
+        ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
       });
       reset(defaultValues);
       onSuccess();
@@ -277,6 +315,44 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                 onBlur={field.onBlur}
                 placeholder="Select language"
                 disabled={isSubmitting}
+                className="w-full"
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label="Thumbnail Style"
+          htmlFor="thumbnail-style"
+          optional={!isReupType}
+          error={errors.thumbnailStyleKey?.message}
+          className="min-w-0"
+        >
+          <Controller
+            name="thumbnailStyleKey"
+            control={control}
+            rules={{
+              validate: (value) =>
+                !isReupType || value.trim().length > 0 || 'Thumbnail style is required',
+            }}
+            render={({ field }) => (
+              <Select
+                id="thumbnail-style"
+                options={thumbnailStyleOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  !language
+                    ? 'Select language first'
+                    : thumbnailStylesLoading
+                      ? 'Loading styles...'
+                      : thumbnailStyleOptions.length === 0
+                        ? 'No thumbnail styles for this language'
+                        : 'Select thumbnail style'
+                }
+                disabled={isSubmitting || !language || thumbnailStylesLoading}
                 className="w-full"
                 triggerClassName={selectTriggerClass}
               />

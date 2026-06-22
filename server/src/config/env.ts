@@ -18,4 +18,5 @@ export const env = {
   youtubeCookiesFromBrowser: process.env.YOUTUBE_COOKIES_FROM_BROWSER ?? '',
   /** yt-dlp: path to Netscape cookies.txt */
   youtubeCookiesFile: process.env.YOUTUBE_COOKIES_FILE ?? '',
+  gpmApiBaseUrl: process.env.GPM_API_BASE_URL ?? 'http://127.0.0.1:9495/api/v1',
 };

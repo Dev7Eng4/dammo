@@ -1,11 +1,10 @@
 import { useLocation } from 'react-router-dom';
-import { footerNavItem, navItems } from '../config/navigation';
+import { flattenNavItems } from '../config/navigation';
 
 export function PlaceholderPage() {
   const { pathname } = useLocation();
 
-  const allItems = [...navItems, footerNavItem];
-  const match = allItems.find((item) => item.path === pathname);
+  const match = flattenNavItems().find((item) => item.path === pathname);
   const title = match?.label ?? 'Module';
 
   return (

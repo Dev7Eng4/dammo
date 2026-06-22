@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { youtubeChannelDir, youtubeChannelVideoPrepareFile } from '../../config/paths.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
-import type { VideoPrepareItem } from './reup-video.types.js';
+import type { VideoPrepareItem } from './video-prepare.types.js';
 
 export class VideoPrepareRepository {
   read(channelId: string): VideoPrepareItem[] {

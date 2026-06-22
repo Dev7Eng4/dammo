@@ -1,7 +1,7 @@
 import { AppError } from '../../shared/http/errors.js';
 import { sourceChannelsService } from '../source-channels/source-channels.service.js';
 import type { SourcePurpose } from '../source-channels/source-channels.types.js';
-import { reupVideoCreatorService } from '../youtube-channels/reup-video-creator.service.js';
+import { videoProductionService } from '../video-production/video-production.service.js';
 import { taskQueueRepository } from './task-queue.repository.js';
 import type { AddSourceTaskPayload, CreateVideoTaskPayload, TaskJob } from './task-queue.types.js';
 
@@ -32,7 +32,7 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
 
   if (payload.allReupChannels) {
     updateProgress(job.id, 15, 'Processing all reup channels');
-    const result = await reupVideoCreatorService.createVideosForAllReupChannels({
+    const result = await videoProductionService.createVideosForAllReupChannels({
       taskJobId: job.id,
     });
     updateProgress(job.id, 90, 'Finishing');
@@ -41,7 +41,7 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
 
   if (payload.channelIds?.length) {
     updateProgress(job.id, 15, `Processing ${payload.channelIds.length} channel(s)`);
-    const result = await reupVideoCreatorService.createVideosForChannels(payload.channelIds, {
+    const result = await videoProductionService.createVideosForChannels(payload.channelIds, {
       taskJobId: job.id,
     });
     updateProgress(job.id, 90, 'Finishing');
@@ -49,7 +49,7 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
   }
 
   updateProgress(job.id, 15, 'Downloading assets');
-  const result = await reupVideoCreatorService.createVideos(payload.channelId!, {
+  const result = await videoProductionService.createVideosForYoutubeChannel(payload.channelId!, {
     taskJobId: job.id,
   });
   updateProgress(job.id, 90, 'Finishing');

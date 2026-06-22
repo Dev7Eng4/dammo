@@ -3,6 +3,7 @@ import { Button, DropdownSelect, Input, Textarea } from '../ui';
 import {
   PROMPT_CATEGORY_OPTIONS,
   PROMPT_LANGUAGE_OPTIONS,
+  PROMPT_OUTPUT_TYPE_OPTIONS,
 } from '../../constants/promptForm';
 import { estimateTokens, isUserFunctionTemplate, normalizeVariableName } from '../../utils/promptVariables';
 import type { PromptFormDraft } from '../../types/prompt';
@@ -134,6 +135,19 @@ export function PromptEditorPanel({
               className="w-full"
               triggerClassName="h-10 w-full rounded-lg"
             />
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-xs font-medium text-neutral-400">Output Type</span>
+            <DropdownSelect
+              value={draft.outputType}
+              onChange={(outputType) => onChange({ outputType })}
+              options={PROMPT_OUTPUT_TYPE_OPTIONS}
+              className="w-full"
+              triggerClassName="h-10 w-full rounded-lg"
+            />
+            <p className="text-xs text-neutral-500">
+              Text content uses LLM provider; image generation uses Flow in playground.
+            </p>
           </label>
         </div>
 

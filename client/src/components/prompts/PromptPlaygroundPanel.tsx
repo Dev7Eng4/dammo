@@ -1,23 +1,33 @@
 import { Button, DropdownSelect, Input } from '../ui';
-import { PLAYGROUND_PROVIDER_OPTIONS } from '../../constants/promptForm';
+import { IMAGE_PROVIDER_OPTIONS, PLAYGROUND_PROVIDER_OPTIONS } from '../../constants/promptForm';
 import {
   extractTemplateVariables,
   formatVariableToken,
   isUserFunctionTemplate,
 } from '../../utils/promptVariables';
-import type { PlaygroundProvider, PromptPlaygroundResult } from '../../types/prompt';
+import type {
+  ImageBrowserProvider,
+  PlaygroundProvider,
+  PromptOutputType,
+  PromptPlaygroundResult,
+} from '../../types/prompt';
 
 export interface PromptPlaygroundPanelProps {
   template: string;
   templateParams: string[];
+  outputType: PromptOutputType;
   provider: PlaygroundProvider;
+  imageProvider: ImageBrowserProvider;
   providerSaving?: boolean;
+  imageProviderSaving?: boolean;
   providerSettingsError?: string | null;
+  imageProviderSettingsError?: string | null;
   variableValues: Record<string, string>;
   running: boolean;
   result: PromptPlaygroundResult | null;
   error: string | null;
   onProviderChange: (provider: PlaygroundProvider) => void;
+  onImageProviderChange: (provider: ImageBrowserProvider) => void;
   onVariableChange: (name: string, value: string) => void;
   onRun: () => void;
 }
@@ -25,28 +35,39 @@ export interface PromptPlaygroundPanelProps {
 export function PromptPlaygroundPanel({
   template,
   templateParams,
+  outputType,
   provider,
+  imageProvider,
   providerSaving = false,
+  imageProviderSaving = false,
   providerSettingsError = null,
+  imageProviderSettingsError = null,
   variableValues,
   running,
   result,
   error,
   onProviderChange,
+  onImageProviderChange,
   onVariableChange,
   onRun,
 }: PromptPlaygroundPanelProps) {
   const userFunctionTemplate = isUserFunctionTemplate(template);
   const variables = extractTemplateVariables(template, templateParams);
+  const isImagePrompt = outputType === 'image';
 
   let formattedContent = result?.content ?? '';
-  if (result?.content) {
+  if (result?.kind === 'text' && result.content) {
     try {
       formattedContent = JSON.stringify(JSON.parse(result.content), null, 2);
     } catch {
       formattedContent = result.content;
     }
   }
+
+  const imagePreviewUrl =
+    result?.kind === 'image' && result.imageBase64
+      ? `data:${result.imageMimeType ?? 'image/jpeg'};base64,${result.imageBase64}`
+      : null;
 
   return (
     <aside className="flex w-[380px] shrink-0 flex-col border-l border-border bg-surface">
@@ -69,10 +90,40 @@ export function PromptPlaygroundPanel({
             className="w-full"
             triggerClassName="h-9 w-full rounded-lg text-sm"
           />
+          {isImagePrompt ? (
+            <p className="text-[10px] text-neutral-500">Not used for image prompts.</p>
+          ) : (
+            <p className="text-[10px] text-primary-400">Used for this prompt.</p>
+          )}
           {providerSettingsError ? (
             <p className="text-[10px] text-danger">{providerSettingsError}</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">Used as default for Run Test and saved on change.</p>
+            <p className="text-[10px] text-neutral-500">Saved as default for text content prompts.</p>
+          )}
+        </label>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">Default Image Provider</span>
+            {imageProviderSaving ? <span className="text-[10px] text-neutral-500">Saving...</span> : null}
+          </div>
+          <DropdownSelect
+            value={imageProvider}
+            onChange={onImageProviderChange}
+            options={IMAGE_PROVIDER_OPTIONS}
+            disabled={imageProviderSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          {isImagePrompt ? (
+            <p className="text-[10px] text-primary-400">Used for this prompt.</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">Not used for text content prompts.</p>
+          )}
+          {imageProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{imageProviderSettingsError}</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">Saved as default for image generation prompts.</p>
           )}
         </label>
 
@@ -114,6 +165,8 @@ export function PromptPlaygroundPanel({
         {result ? (
           <div className="card-surface space-y-3 p-3">
             <div className="flex flex-wrap gap-2 text-[10px] text-neutral-500">
+              <span>{result.kind}</span>
+              <span>·</span>
               <span>{result.provider}</span>
               <span>·</span>
               <span>{result.elapsedMs}ms</span>
@@ -136,9 +189,17 @@ export function PromptPlaygroundPanel({
                 </>
               ) : null}
             </div>
-            <pre className="scrollbar-thin max-h-[320px] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-neutral-200">
-              {formattedContent}
-            </pre>
+            {imagePreviewUrl ? (
+              <img
+                src={imagePreviewUrl}
+                alt="Generated thumbnail preview"
+                className="max-h-[320px] w-full rounded-lg border border-border object-contain"
+              />
+            ) : (
+              <pre className="scrollbar-thin max-h-[320px] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-neutral-200">
+                {formattedContent}
+              </pre>
+            )}
           </div>
         ) : null}
       </div>
