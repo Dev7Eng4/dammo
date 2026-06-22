@@ -13,6 +13,7 @@ import type {
   YoutubeVideoCommentsResponse,
   CreateReupVideosResponse,
   CreateReupVideosBatchResponse,
+  UploadYoutubeVideosBatchResponse,
 } from '../types/youtubeChannel';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
@@ -107,6 +108,31 @@ export function createYoutubeChannelVideosForAll() {
 export function createYoutubeChannelVideosForChannels(channelIds: string[]) {
   return fetchJson<CreateReupVideosBatchResponse>(
     `${API_V1}/youtube-channels/create-videos`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelIds }),
+    },
+  );
+}
+
+export function uploadYoutubeChannelVideos(channelId: string) {
+  return fetchJson<UploadYoutubeVideosBatchResponse>(
+    `${API_V1}/youtube-channels/${channelId}/upload`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' },
+  );
+}
+
+export function uploadYoutubeChannelVideosForAll() {
+  return fetchJson<UploadYoutubeVideosBatchResponse>(
+    `${API_V1}/youtube-channels/upload-videos`,
+    { method: 'POST' },
+  );
+}
+
+export function uploadYoutubeChannelVideosForChannels(channelIds: string[]) {
+  return fetchJson<UploadYoutubeVideosBatchResponse>(
+    `${API_V1}/youtube-channels/upload-videos`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

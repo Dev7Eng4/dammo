@@ -167,13 +167,38 @@ export class YoutubeUploadService {
   }
 
   async uploadChannels(channelIds: string[], options: UploadYoutubeChannelOptions = {}) {
-    const results: Array<{ channelId: string; ok: boolean; result?: UploadYoutubeChannelResult; error?: string }> = [];
+    const results: Array<{
+      channelId: string;
+      ok: boolean;
+      skipped?: boolean;
+      result?: UploadYoutubeChannelResult;
+      error?: string;
+    }> = [];
+
+    const skipCodes = new Set(['NO_UPLOAD_JOBS', 'NOT_REUP_CHANNEL']);
 
     for (const channelId of channelIds) {
       try {
         const result = await this.uploadChannel(channelId, options);
         results.push({ channelId, ok: true, result });
       } catch (err) {
+        if (err instanceof AppError && skipCodes.has(err.code ?? '')) {
+          results.push({
+            channelId,
+            ok: true,
+            skipped: true,
+            result: {
+              ok: true,
+              channelId,
+              uploaded: 0,
+              uploadedSuccessful: 0,
+              jobs: [],
+              successfulVideoIds: [],
+            },
+          });
+          continue;
+        }
+
         const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Upload failed';
         results.push({ channelId, ok: false, error: message });
       }

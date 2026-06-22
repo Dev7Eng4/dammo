@@ -32,6 +32,26 @@ const createVideoPayloadSchema = z
     { message: 'Provide exactly one of channelId, channelIds, or allReupChannels' },
   );
 
+const uploadVideoPayloadSchema = z
+  .object({
+    channelId: z.string().min(1).optional(),
+    channelIds: z.array(z.string().min(1)).min(1).optional(),
+    allReupChannels: z.boolean().optional(),
+    maxUploads: z.number().int().min(1).optional(),
+    videoIds: z.array(z.string().min(1)).optional(),
+  })
+  .refine(
+    (data) => {
+      const modes = [
+        data.allReupChannels === true,
+        Boolean(data.channelId),
+        Boolean(data.channelIds?.length),
+      ].filter(Boolean).length;
+      return modes === 1;
+    },
+    { message: 'Provide exactly one of channelId, channelIds, or allReupChannels' },
+  );
+
 export const enqueueTaskSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('add_source'),
@@ -44,5 +64,11 @@ export const enqueueTaskSchema = z.discriminatedUnion('type', [
     title: z.string().min(1).optional(),
     subtitle: z.string().optional(),
     payload: createVideoPayloadSchema,
+  }),
+  z.object({
+    type: z.literal('upload_video'),
+    title: z.string().min(1).optional(),
+    subtitle: z.string().optional(),
+    payload: uploadVideoPayloadSchema,
   }),
 ]);

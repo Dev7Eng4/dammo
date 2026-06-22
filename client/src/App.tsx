@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { GpmManagerPage } from './pages/GpmManagerPage';
 import { MailAccountsPage } from './pages/MailAccountsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { ProxiesPage } from './pages/ProxiesPage';
 import { PromptsPage } from './pages/PromptsPage';
 import { RenderQueuePage } from './pages/RenderQueuePage';
 import { SourceChannelDetailPage } from './pages/SourceChannelDetailPage';
@@ -34,7 +35,7 @@ export default function App() {
               <Route path="prompts" element={<PromptsPage />} />
               <Route path="chrome-profiles" element={<ChromeProfilesPage />} />
               <Route path="gpm-manager" element={<GpmManagerPage />} />
-              <Route path="proxies" element={<PlaceholderPage />} />
+              <Route path="proxies" element={<ProxiesPage />} />
               <Route path="launch-logs" element={<PlaceholderPage />} />
               <Route path="content-projects" element={<PlaceholderPage />} />
               <Route path="scripts" element={<PlaceholderPage />} />

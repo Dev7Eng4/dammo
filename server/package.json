@@ -12,6 +12,7 @@
     "download:audio": "tsx src/scripts/download-audio.ts",
     "download:transcript": "tsx src/scripts/download-transcript.ts",
     "create-videos": "tsx src/scripts/create-videos.ts",
+    "prepare-videos": "tsx src/scripts/prepare-videos.ts",
     "upload-videos": "tsx src/scripts/upload-videos.ts",
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
@@ -28,6 +29,7 @@
     "@inquirer/checkbox": "^4.3.2",
     "hono": "^4.12.25",
     "playwright": "^1.52.0",
+    "undici": "^8.5.0",
     "xlsx": "^0.18.5",
     "youtube-dl-exec": "^3.1.7",
     "zod": "^4.4.3"

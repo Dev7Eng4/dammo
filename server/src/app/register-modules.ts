@@ -8,6 +8,7 @@ import { createGpmManagerRoutes } from '../modules/gpm-manager/gpm-manager.route
 import { createHealthRoutes } from '../modules/health/health.routes.js';
 import { createLlmBrowserRoutes } from '../modules/llm-browser/llm-browser.routes.js';
 import { createMailAccountsRoutes } from '../modules/mail-accounts/mail-accounts.routes.js';
+import { createProxiesRoutes } from '../modules/proxies/proxies.routes.js';
 import { createPromptsRoutes } from '../modules/prompts/prompts.routes.js';
 import { createRenderQueueRoutes } from '../modules/render-queue/render-queue.routes.js';
 import { createSearchRoutes } from '../modules/search/search.routes.js';
@@ -18,6 +19,7 @@ import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube
 function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/dashboard`, createDashboardRoutes());
   app.route(`${prefix}/mail-accounts`, createMailAccountsRoutes());
+  app.route(`${prefix}/proxies`, createProxiesRoutes());
   app.route(`${prefix}/search`, createSearchRoutes());
   app.route(`${prefix}/youtube-channels`, createYoutubeChannelsRoutes());
   app.route(`${prefix}/source-channels`, createSourceChannelsRoutes());

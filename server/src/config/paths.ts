@@ -5,6 +5,8 @@ import { env } from './env.js';
 export const paths = {
   dataDir: env.dataDir,
   mailAccounts: path.join(env.dataDir, 'mail-accounts.json'),
+  proxies: path.join(env.dataDir, 'proxies.json'),
+  proxyProviders: path.join(env.dataDir, 'proxy-providers.json'),
   dashboard: path.join(env.dataDir, 'dashboard.json'),
   renderJobsDir: path.join(env.dataDir, 'renders', 'jobs'),
   renderOutputDir: path.join(env.dataDir, 'renders', 'output'),

@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { SI_OUTPUT_VIDEO_BASENAME } from '../video-production/shared/si-video/si.constants.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
@@ -71,14 +70,16 @@ export function listUploadJobs(channelId: string, options: ListUploadJobsOptions
       continue;
     }
 
-    const mp4Path = path.join(folderPath, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
-    const thumbnailPath = path.join(folderPath, THUMBNAIL_FILENAME);
-    const metaPath = path.join(folderPath, VIDEO_META_FILENAME);
-
-    if (!fs.existsSync(mp4Path)) {
-      console.warn(`[youtube-upload] Skip ${videoId} — missing video.mp4`);
+    const files = fs.readdirSync(folderPath);
+    const mp4File = files.find(file => file.toLowerCase().endsWith('.mp4'));
+    if (!mp4File) {
+      console.warn(`[youtube-upload] Skip ${videoId} — missing mp4 video file`);
       continue;
     }
+
+    const mp4Path = path.join(folderPath, mp4File);
+    const thumbnailPath = path.join(folderPath, THUMBNAIL_FILENAME);
+    const metaPath = path.join(folderPath, VIDEO_META_FILENAME);
     if (!fs.existsSync(thumbnailPath)) {
       console.warn(`[youtube-upload] Skip ${videoId} — missing thumbnail.jpg`);
       continue;

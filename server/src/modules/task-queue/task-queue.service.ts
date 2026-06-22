@@ -23,6 +23,21 @@ function buildEnqueueInput(body: EnqueueBody): EnqueueTaskInput {
     };
   }
 
+  if (body.type === 'upload_video') {
+    const count = body.payload.channelIds?.length;
+    const defaultTitle = body.payload.allReupChannels
+      ? 'Uploading videos for all reup channels'
+      : count
+        ? `Uploading videos for ${count} channels`
+        : `Uploading videos: ${body.payload.channelId}`;
+    return {
+      type: 'upload_video',
+      title: body.title ?? defaultTitle,
+      subtitle: body.subtitle,
+      payload: body.payload,
+    };
+  }
+
   const name = body.payload.channelName ?? body.payload.channelHandle ?? body.payload.channelId;
   return {
     type: 'create_video',

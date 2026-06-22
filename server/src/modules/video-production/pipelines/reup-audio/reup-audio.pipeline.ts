@@ -39,6 +39,8 @@ import { taskQueueRepository } from '../../../task-queue/task-queue.repository.j
 interface CreateVideosOptions {
   taskJobId?: string;
   skipLivePhaseDone?: boolean;
+  /** Khi true: bỏ qua bước assembleReupSiVideo, video sẽ ở status Prepared */
+  skipVideoAssembly?: boolean;
 }
 
 function isReupAudioPipeline(pipelineType: ProductionDestination['pipelineType']): boolean {
@@ -531,7 +533,7 @@ export class ReupAudioPipeline {
             }
           }
 
-          if (updatedSrtPath && downloaded.audioPath && heroImagePath) {
+          if (!options?.skipVideoAssembly && updatedSrtPath && downloaded.audioPath && heroImagePath) {
             if (!destination.backgroundFootageSources?.length) {
               console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
               if (taskJobId) {
@@ -562,6 +564,8 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
               }
             }
+          } else if (options?.skipVideoAssembly && taskJobId) {
+            taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped (prepare-only mode)');
           }
 
           outputItem = {
@@ -627,15 +631,19 @@ export class ReupAudioPipeline {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video prepare tracked → video-prepare.json');
           }
 
-          const finalVideoPath = path.join(destDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
-          try {
-            await fs.access(finalVideoPath);
-            videoPrepareRepository.markCreated(destination.id, outputItem.youtubeVideoId);
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video ready → status Created in video-prepare.json');
+          if (!options?.skipVideoAssembly) {
+            const finalVideoPath = path.join(destDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
+            try {
+              await fs.access(finalVideoPath);
+              videoPrepareRepository.markCreated(destination.id, outputItem.youtubeVideoId);
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video ready → status Created in video-prepare.json');
+              }
+            } catch {
+              /* video.mp4 not ready yet — stays Prepared */
             }
-          } catch {
-            /* video.mp4 not ready yet — stays Prepared */
+          } else if (taskJobId) {
+            taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video assets saved → status Prepared in video-prepare.json');
           }
         }
 

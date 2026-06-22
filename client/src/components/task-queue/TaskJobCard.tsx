@@ -24,7 +24,8 @@ interface TaskJobCardProps {
 function TaskJobIcon({ job }: { job: TaskJobListItem }) {
   const isFailed = job.status === 'failed';
   const isSuccess = job.status === 'completed';
-  const isVideo = job.type === 'create_video';
+  const isVideo = job.type === 'create_video' || job.type === 'upload_video';
+  const isUpload = job.type === 'upload_video';
 
   return (
     <div
@@ -51,6 +52,12 @@ function TaskJobIcon({ job }: { job: TaskJobListItem }) {
             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
             clipRule="evenodd"
           />
+        </svg>
+      ) : isUpload ? (
+        <svg viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+          <path d="M10 3v10" />
+          <path d="M6 7l4-4 4 4" />
+          <path d="M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2" />
         </svg>
       ) : isVideo ? (
         <svg viewBox="0 0 20 20" className="size-5" fill="currentColor" aria-hidden>

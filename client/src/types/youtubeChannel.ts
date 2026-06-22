@@ -369,6 +369,23 @@ export interface CreateReupVideosBatchResponse {
   items: ReupVideoOutputItem[];
 }
 
+export interface UploadYoutubeChannelBatchItem {
+  channelId: string;
+  ok: boolean;
+  skipped?: boolean;
+  result?: {
+    channelId: string;
+    uploaded: number;
+    uploadedSuccessful: number;
+    successfulVideoIds: string[];
+  };
+  error?: string;
+}
+
+export interface UploadYoutubeVideosBatchResponse {
+  results: UploadYoutubeChannelBatchItem[];
+}
+
 export interface CreateYoutubeChannelPayload {
   mailAccountId: string;
   channelUrl: string;

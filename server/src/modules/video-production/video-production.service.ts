@@ -49,6 +49,10 @@ export class VideoProductionService {
     return resolvePipeline(destination.pipelineType).run(destination, options);
   }
 
+  async prepareVideosForYoutubeChannel(channelId: string, options?: CreateVideosOptions): Promise<CreateReupVideosResult> {
+    return this.createVideosForYoutubeChannel(channelId, { ...options, skipVideoAssembly: true });
+  }
+
   async createVideosForChannels(channelIds: string[], options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
     if (channelIds.length === 0) {
       throw new AppError('No channels specified', 400, 'NO_CHANNELS');
@@ -161,6 +165,14 @@ export class VideoProductionService {
     }
 
     return this.createVideosForChannels(reupChannelIds, options);
+  }
+
+  async prepareVideosForChannels(channelIds: string[], options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
+    return this.createVideosForChannels(channelIds, { ...options, skipVideoAssembly: true });
+  }
+
+  async prepareVideosForAllReupChannels(options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
+    return this.createVideosForAllReupChannels({ ...options, skipVideoAssembly: true });
   }
 }
 

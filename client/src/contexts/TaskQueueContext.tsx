@@ -1,13 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   cancelTask,
   clearFinishedTasks,
@@ -23,6 +14,7 @@ import { useToast } from '../components/ui';
 import type {
   AddSourceTaskPayload,
   CreateVideoTaskPayload,
+  UploadVideoTaskPayload,
   EnqueueTaskInput,
   TaskJob,
   TaskJobListItem,
@@ -91,7 +83,7 @@ function listItemFromJob(job: TaskJob): TaskJobListItem {
 }
 
 function getListIntervalMs(jobs: TaskJobListItem[], liveJobId: string | null): number {
-  const hasActive = jobs.some((job) => isActiveTaskStatus(job.status));
+  const hasActive = jobs.some(job => isActiveTaskStatus(job.status));
   if (!hasActive) return POLL_IDLE_MS;
   if (liveJobId) return POLL_LIVE_LIST_MS;
   return POLL_ACTIVE_MS;
@@ -121,7 +113,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   liveJobIdRef.current = liveJobId;
   toastRef.current = toast;
 
-  const bumpDetail = useCallback(() => setDetailVersion((v) => v + 1), []);
+  const bumpDetail = useCallback(() => setDetailVersion(v => v + 1), []);
 
   const clearPollTimers = useCallback(() => {
     if (listTimerRef.current) {
@@ -146,9 +138,9 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       if (job.type === 'add_source') {
         toastRef.current.success(`Source "${job.title.replace(/^Importing:\s*/, '')}" added successfully`);
       } else if (job.type === 'create_video') {
-        toastRef.current.success(
-          job.videoId ? `Created video from ${job.videoId}` : 'Video created successfully',
-        );
+        toastRef.current.success(job.videoId ? `Created video from ${job.videoId}` : 'Video created successfully');
+      } else if (job.type === 'upload_video') {
+        toastRef.current.success('YouTube upload completed');
       }
       handlers?.onComplete?.(merged);
     } else if (job.status === 'failed') {
@@ -162,17 +154,17 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyListItem = useCallback((item: TaskJobListItem) => {
-    setJobs((current) => sortJobs(current.map((job) => (job.id === item.id ? item : job))));
+    setJobs(current => sortJobs(current.map(job => (job.id === item.id ? item : job))));
   }, []);
 
   const applyFullJob = useCallback(
     (job: TaskJob) => {
       jobDetailsRef.current.set(job.id, job);
       logOffsetsRef.current.set(job.id, job.logs?.length ?? 0);
-      setJobs((current) =>
+      setJobs(current =>
         sortJobs(
-          current.some((entry) => entry.id === job.id)
-            ? current.map((entry) => (entry.id === job.id ? listItemFromJob(job) : entry))
+          current.some(entry => entry.id === job.id)
+            ? current.map(entry => (entry.id === job.id ? listItemFromJob(job) : entry))
             : [listItemFromJob(job), ...current],
         ),
       );
@@ -184,7 +176,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   const appendLogEntry = useCallback(
     (jobId: string, entry: TaskLogEntry, total: number) => {
       const existing = jobDetailsRef.current.get(jobId);
-      const listItem = jobsRef.current.find((job) => job.id === jobId);
+      const listItem = jobsRef.current.find(job => job.id === jobId);
 
       if (existing) {
         const logs = [...(existing.logs ?? []), entry].slice(-300);
@@ -194,11 +186,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       }
 
       logOffsetsRef.current.set(jobId, total);
-      setJobs((current) =>
-        current.map((job) =>
-          job.id === jobId ? { ...job, logCount: total, updatedAt: new Date().toISOString() } : job,
-        ),
-      );
+      setJobs(current => current.map(job => (job.id === jobId ? { ...job, logCount: total, updatedAt: new Date().toISOString() } : job)));
       bumpDetail();
     },
     [bumpDetail],
@@ -208,14 +196,14 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     (ids: string[]) => {
       if (ids.length === 0) return;
       const idSet = new Set(ids);
-      setJobs((current) => current.filter((job) => !idSet.has(job.id)));
+      setJobs(current => current.filter(job => !idSet.has(job.id)));
       for (const id of ids) {
         jobDetailsRef.current.delete(id);
         logOffsetsRef.current.delete(id);
         handlersRef.current.delete(id);
         notifiedRef.current.delete(id);
       }
-      setLiveJobId((current) => (current && idSet.has(current) ? null : current));
+      setLiveJobId(current => (current && idSet.has(current) ? null : current));
       bumpDetail();
     },
     [bumpDetail],
@@ -259,7 +247,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     const currentLiveJobId = liveJobIdRef.current;
     if (!currentLiveJobId) return;
 
-    const job = jobsRef.current.find((entry) => entry.id === currentLiveJobId);
+    const job = jobsRef.current.find(entry => entry.id === currentLiveJobId);
     if (!job || job.type !== 'create_video' || job.status !== 'running') return;
 
     const after = logOffsetsRef.current.get(currentLiveJobId) ?? job.logCount ?? 0;
@@ -277,11 +265,9 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       logs: mergedLogs,
     });
     logOffsetsRef.current.set(currentLiveJobId, data.total);
-    setJobs((current) =>
-      current.map((entry) =>
-        entry.id === currentLiveJobId
-          ? { ...entry, logCount: data.total, updatedAt: new Date().toISOString() }
-          : entry,
+    setJobs(current =>
+      current.map(entry =>
+        entry.id === currentLiveJobId ? { ...entry, logCount: data.total, updatedAt: new Date().toISOString() } : entry,
       ),
     );
     bumpDetail();
@@ -294,18 +280,21 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     if (listTimerRef.current) clearTimeout(listTimerRef.current);
     if (!tabVisibleRef.current || sseConnectedRef.current) return;
 
-    listTimerRef.current = setTimeout(() => {
-      void pollList()
-        .catch(() => undefined)
-        .finally(() => scheduleListPollRef.current());
-    }, getListIntervalMs(jobsRef.current, liveJobIdRef.current));
+    listTimerRef.current = setTimeout(
+      () => {
+        void pollList()
+          .catch(() => undefined)
+          .finally(() => scheduleListPollRef.current());
+      },
+      getListIntervalMs(jobsRef.current, liveJobIdRef.current),
+    );
   };
 
   scheduleLivePollRef.current = () => {
     if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
     if (!tabVisibleRef.current || !liveJobIdRef.current || sseConnectedRef.current) return;
 
-    const job = jobsRef.current.find((entry) => entry.id === liveJobIdRef.current);
+    const job = jobsRef.current.find(entry => entry.id === liveJobIdRef.current);
     if (!job || job.type !== 'create_video' || job.status !== 'running') return;
 
     liveTimerRef.current = setTimeout(() => {
@@ -367,10 +356,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
         sseConnectedRef.current = true;
         applyListItemRef.current(data.job);
         handleTerminalJobRef.current(data.job);
-        if (
-          data.job.id === liveJobIdRef.current &&
-          isTerminalTaskStatus(data.job.status)
-        ) {
+        if (data.job.id === liveJobIdRef.current && isTerminalTaskStatus(data.job.status)) {
           void refreshJobRef.current(data.job.id).catch(() => undefined);
         }
       } catch {
@@ -386,18 +372,11 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
           total: number;
         };
         sseConnectedRef.current = true;
-        if (
-          data.jobId === liveJobIdRef.current ||
-          jobDetailsRef.current.has(data.jobId)
-        ) {
+        if (data.jobId === liveJobIdRef.current || jobDetailsRef.current.has(data.jobId)) {
           appendLogEntryRef.current(data.jobId, data.entry, data.total);
         } else {
-          setJobs((current) =>
-            current.map((job) =>
-              job.id === data.jobId
-                ? { ...job, logCount: data.total, updatedAt: new Date().toISOString() }
-                : job,
-            ),
+          setJobs(current =>
+            current.map(job => (job.id === data.jobId ? { ...job, logCount: data.total, updatedAt: new Date().toISOString() } : job)),
           );
         }
       } catch {
@@ -444,20 +423,17 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!liveJobId) return;
-    const job = jobs.find((entry) => entry.id === liveJobId);
-    if (!job || job.type !== 'create_video') return;
+    const job = jobs.find(entry => entry.id === liveJobId);
+    if (!job || (job.type !== 'create_video' && job.type !== 'upload_video')) return;
 
-    if (
-      !jobDetailsRef.current.has(liveJobId) ||
-      (job.logCount ?? 0) > (jobDetailsRef.current.get(liveJobId)?.logs?.length ?? 0)
-    ) {
+    if (!jobDetailsRef.current.has(liveJobId) || (job.logCount ?? 0) > (jobDetailsRef.current.get(liveJobId)?.logs?.length ?? 0)) {
       void refreshJob(liveJobId).catch(() => undefined);
     }
   }, [liveJobId, jobs, refreshJob]);
 
   const getJobDetail = useCallback(
     (id: string): TaskJob | null => {
-      const item = jobs.find((job) => job.id === id);
+      const item = jobs.find(job => job.id === id);
       if (!item) return jobDetailsRef.current.get(id) ?? null;
       return mergeTaskJob(item, jobDetailsRef.current.get(id) ?? null);
     },
@@ -491,6 +467,14 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
           title: job.title,
           subtitle: job.subtitle,
           payload: job.payload as AddSourceTaskPayload,
+        });
+      }
+      if (job.type === 'upload_video') {
+        return enqueueTask({
+          type: 'upload_video',
+          title: job.title,
+          subtitle: job.subtitle,
+          payload: job.payload as UploadVideoTaskPayload,
         });
       }
       return enqueueTask({
@@ -534,9 +518,9 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
 
   const summary = useMemo(
     () => ({
-      running: jobs.filter((job) => job.status === 'running').length,
-      queued: jobs.filter((job) => job.status === 'queued').length,
-      failed: jobs.filter((job) => job.status === 'failed').length,
+      running: jobs.filter(job => job.status === 'running').length,
+      queued: jobs.filter(job => job.status === 'queued').length,
+      failed: jobs.filter(job => job.status === 'failed').length,
     }),
     [jobs],
   );

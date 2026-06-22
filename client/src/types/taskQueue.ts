@@ -1,4 +1,4 @@
-export type TaskType = 'add_source' | 'create_video';
+export type TaskType = 'add_source' | 'create_video' | 'upload_video';
 
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -25,7 +25,15 @@ export interface CreateVideoTaskPayload {
   channelHandle?: string;
 }
 
-export type TaskPayload = AddSourceTaskPayload | CreateVideoTaskPayload;
+export interface UploadVideoTaskPayload {
+  channelId?: string;
+  channelIds?: string[];
+  allReupChannels?: boolean;
+  maxUploads?: number;
+  videoIds?: string[];
+}
+
+export type TaskPayload = AddSourceTaskPayload | CreateVideoTaskPayload | UploadVideoTaskPayload;
 
 export interface TaskJobListItem {
   id: string;
@@ -75,7 +83,14 @@ export interface EnqueueCreateVideoInput {
   payload: CreateVideoTaskPayload;
 }
 
-export type EnqueueTaskInput = EnqueueAddSourceInput | EnqueueCreateVideoInput;
+export interface EnqueueUploadVideoInput {
+  type: 'upload_video';
+  title?: string;
+  subtitle?: string;
+  payload: UploadVideoTaskPayload;
+}
+
+export type EnqueueTaskInput = EnqueueAddSourceInput | EnqueueCreateVideoInput | EnqueueUploadVideoInput;
 
 export function isActiveTaskStatus(status: TaskStatus): boolean {
   return status === 'queued' || status === 'running';

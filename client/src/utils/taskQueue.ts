@@ -6,6 +6,8 @@ export function getTaskTypeLabel(type: TaskType): string {
       return 'SOURCE IMPORT';
     case 'create_video':
       return 'REUP VIDEO';
+    case 'upload_video':
+      return 'YOUTUBE UPLOAD';
   }
 }
 

@@ -8,6 +8,9 @@ interface YoutubeChannelsToolbarProps {
   canCreateVideo?: boolean;
   createVideoDisabledReason?: string;
   creatingVideo?: boolean;
+  canUpload?: boolean;
+  uploadDisabledReason?: string;
+  uploading?: boolean;
   canEdit?: boolean;
   editDisabledReason?: string;
   onTypeFilterChange: (value: YoutubeChannelTypeFilter) => void;
@@ -15,6 +18,7 @@ interface YoutubeChannelsToolbarProps {
   onSearchChange: (value: string) => void;
   onAddChannel: () => void;
   onCreateVideo?: () => void;
+  onUpload?: () => void;
   onEdit?: () => void;
 }
 
@@ -41,6 +45,9 @@ export function YoutubeChannelsToolbar({
   canCreateVideo,
   createVideoDisabledReason,
   creatingVideo,
+  canUpload,
+  uploadDisabledReason,
+  uploading,
   canEdit,
   editDisabledReason,
   onTypeFilterChange,
@@ -48,6 +55,7 @@ export function YoutubeChannelsToolbar({
   onSearchChange,
   onAddChannel,
   onCreateVideo,
+  onUpload,
   onEdit,
 }: YoutubeChannelsToolbarProps) {
   return (
@@ -95,6 +103,23 @@ export function YoutubeChannelsToolbar({
               <rect x="3" y="6" width="12" height="12" rx="2" />
             </svg>
             {creatingVideo ? 'Creating…' : 'Create Video'}
+          </Button>
+        ) : null}
+        {onUpload ? (
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg"
+            onClick={onUpload}
+            disabled={uploading || !canUpload}
+            title={!uploading ? uploadDisabledReason : undefined}
+          >
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            {uploading ? 'Uploading…' : 'Upload'}
           </Button>
         ) : null}
         {onEdit ? (

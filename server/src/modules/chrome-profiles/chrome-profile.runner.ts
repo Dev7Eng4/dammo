@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { buildChromeLaunchOptions } from '../../infrastructure/chrome/browser-launch.config.js';
 import { applyStealthInit } from '../../infrastructure/chrome/stealth-init.js';
@@ -8,6 +9,50 @@ import { AppError } from '../../shared/http/errors.js';
 
 const activeContexts = new Map<string, BrowserContext>();
 const DEFAULT_OPEN_URL = 'https://www.google.com';
+const CHROME_LAUNCH_GAP_MS = 1_500;
+const CHROME_LAUNCH_MAX_ATTEMPTS = 3;
+
+let launchChain: Promise<unknown> = Promise.resolve();
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function enqueueChromeLaunch<T>(task: () => Promise<T>): Promise<T> {
+  const run = launchChain.then(task);
+  launchChain = run.catch(() => undefined);
+  return run;
+}
+
+async function waitChromeLaunchSlot(): Promise<void> {
+  await sleep(CHROME_LAUNCH_GAP_MS);
+}
+
+async function removeStaleProfileLocks(userDataDir: string): Promise<void> {
+  const lockNames = ['SingletonLock', 'SingletonCookie', 'SingletonSocket', 'lockfile'];
+  for (const name of lockNames) {
+    try {
+      await fs.unlink(path.join(userDataDir, name));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  try {
+    await fs.unlink(path.join(userDataDir, 'Default', 'SingletonLock'));
+  } catch {
+    /* ignore */
+  }
+}
+
+function isContextAlive(context: BrowserContext): boolean {
+  try {
+    const browser = context.browser();
+    return browser ? browser.isConnected() : context.pages().length >= 0;
+  } catch {
+    return false;
+  }
+}
 
 export interface OpenChromeProfileOptions {
   startUrl?: string;
@@ -118,10 +163,35 @@ async function navigateToStartPage(context: BrowserContext, startUrl: string): P
 }
 
 async function launchChromeContext(userDataDir: string, headless: boolean): Promise<BrowserContext> {
-  const context = await chromium.launchPersistentContext(userDataDir, buildChromeLaunchOptions(headless));
-  await applyStealthInit(context);
-  await logChromeLaunch(context, headless, userDataDir);
-  return context;
+  return enqueueChromeLaunch(async () => {
+    await waitChromeLaunchSlot();
+
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= CHROME_LAUNCH_MAX_ATTEMPTS; attempt += 1) {
+      if (attempt > 1) {
+        await removeStaleProfileLocks(userDataDir);
+        await sleep(1_000 * attempt);
+      }
+
+      try {
+        const context = await chromium.launchPersistentContext(
+          userDataDir,
+          buildChromeLaunchOptions(headless),
+        );
+        await applyStealthInit(context);
+        await logChromeLaunch(context, headless, userDataDir);
+        return context;
+      } catch (err) {
+        lastError = err;
+        const detail = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `[chrome-profile] launch attempt ${attempt}/${CHROME_LAUNCH_MAX_ATTEMPTS} failed for ${userDataDir}: ${detail}`,
+        );
+      }
+    }
+
+    throw lastError;
+  });
 }
 
 export async function openChromeProfile(
@@ -129,11 +199,17 @@ export async function openChromeProfile(
   userDataDir: string,
   options?: OpenChromeProfileOptions,
 ): Promise<void> {
-  if (activeContexts.has(profileId)) {
-    if (options?.startUrl) {
-      await navigateToStartPage(activeContexts.get(profileId)!, options.startUrl);
+  const existing = activeContexts.get(profileId);
+  if (existing) {
+    if (isContextAlive(existing)) {
+      if (options?.startUrl) {
+        await navigateToStartPage(existing, options.startUrl);
+      }
+      return;
     }
-    return;
+
+    activeContexts.delete(profileId);
+    await existing.close().catch(() => undefined);
   }
 
   let context: BrowserContext;

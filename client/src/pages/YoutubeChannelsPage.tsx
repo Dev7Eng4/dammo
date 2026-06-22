@@ -59,6 +59,7 @@ export function YoutubeChannelsPage() {
     isBulkCreate ||
     (selectedIds.size === 1 && selectedChannel !== null && isStoredReupChannelType(selectedChannel.type)) ||
     (selectedIds.size > 1 && allSelectedAreReup);
+  const canUpload = canCreateVideo;
   const createVideoDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
       ? 'All selected channels must be Reup Audio or Reup Video'
@@ -68,6 +69,16 @@ export function YoutubeChannelsPage() {
           ? 'Tạo video cho tất cả reup channels'
           : selectedIds.size > 1
             ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
+            : undefined;
+  const uploadDisabledReason =
+    selectedIds.size > 1 && !allSelectedAreReup
+      ? 'All selected channels must be Reup Audio or Reup Video'
+      : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
+        ? 'Only Reup Audio or Reup Video channels can upload videos'
+        : isBulkCreate
+          ? 'Upload videos for all reup channels'
+          : selectedIds.size > 1
+            ? `Upload videos for ${selectedIds.size} selected channels`
             : undefined;
   const canEdit = selectedIds.size === 1;
   const editDisabledReason =
@@ -212,6 +223,40 @@ export function YoutubeChannelsPage() {
     });
   }
 
+  function handleUpload() {
+    if (selectedIds.size === 0) {
+      void enqueueTask({
+        type: 'upload_video',
+        title: 'Uploading videos for all reup channels',
+        subtitle: 'Bulk upload run',
+        payload: { allReupChannels: true },
+      });
+      return;
+    }
+
+    if (selectedIds.size > 1) {
+      if (!allSelectedAreReup) return;
+
+      void enqueueTask({
+        type: 'upload_video',
+        title: `Uploading videos for ${selectedIds.size} channels`,
+        subtitle: `${selectedIds.size} selected channels`,
+        payload: { channelIds: Array.from(selectedIds) },
+      });
+      return;
+    }
+
+    if (!selectedChannel) return;
+    if (!isStoredReupChannelType(selectedChannel.type)) return;
+
+    void enqueueTask({
+      type: 'upload_video',
+      title: `Uploading: ${selectedChannel.name}`,
+      subtitle: selectedChannel.handle,
+      payload: { channelId: selectedChannel.id },
+    });
+  }
+
   return (
     <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -229,6 +274,9 @@ export function YoutubeChannelsPage() {
               onSearchChange={handleSearchChange}
               onAddChannel={() => setShowAddModal(true)}
               onCreateVideo={handleCreateVideo}
+              canUpload={canUpload}
+              uploadDisabledReason={uploadDisabledReason}
+              onUpload={handleUpload}
               canEdit={canEdit}
               editDisabledReason={editDisabledReason}
               onEdit={() => setShowEditModal(true)}

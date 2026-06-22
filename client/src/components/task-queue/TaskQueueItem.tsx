@@ -35,6 +35,18 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
     );
   }
 
+  if (job.type === 'upload_video') {
+    return (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400">
+        <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+          <path d="M10 3v10" />
+          <path d="M6 7l4-4 4 4" />
+          <path d="M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2" />
+        </svg>
+      </div>
+    );
+  }
+
   if (job.type === 'create_video') {
     return (
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400">
