@@ -1,12 +1,12 @@
 import { Controller, useForm } from 'react-hook-form';
 import { SOURCE_PURPOSE_OPTIONS } from './PurposePill';
-import { Button, Input, Modal, Select } from '../ui';
+import { Button, Modal, Select } from '../ui';
 import type { AddSourceChannelFormValues, CreateSourceChannelPayload } from '../../types/sourceChannel';
 
 interface AddSourceChannelModalProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (payload: CreateSourceChannelPayload) => void;
+  onAdd: (payloads: CreateSourceChannelPayload[]) => void;
 }
 
 const defaultValues: AddSourceChannelFormValues = {
@@ -33,13 +33,20 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
   function onSubmit(values: AddSourceChannelFormValues) {
     if (!values.purpose) return;
 
-    const payload: CreateSourceChannelPayload = {
-      url: values.url.trim(),
-      purpose: values.purpose,
-    };
+    const urls = values.url
+      .split('\n')
+      .map((u) => u.trim())
+      .filter((u) => u.length > 0);
+
+    if (urls.length === 0) return;
+
+    const payloads: CreateSourceChannelPayload[] = urls.map((url) => ({
+      url,
+      purpose: values.purpose as CreateSourceChannelPayload['purpose'],
+    }));
 
     reset(defaultValues);
-    onAdd(payload);
+    onAdd(payloads);
     onClose();
   }
 
@@ -63,12 +70,14 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
         <div>
           <label htmlFor="source-url" className="mb-1.5 block text-xs font-medium text-neutral-400">
             URL / Handle
+            <span className="ml-1 font-normal text-neutral-500">(mỗi dòng một link)</span>
           </label>
-          <Input
+          <textarea
             id="source-url"
-            placeholder="https://youtube.com/@channel or @handle"
-            className="h-10 rounded-lg font-mono text-sm"
-            {...register('url', { required: 'URL is required' })}
+            rows={5}
+            placeholder={`https://youtube.com/@channel1\nhttps://youtube.com/@channel2\n@handle`}
+            className="w-full resize-y rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 font-mono text-sm text-neutral-100 placeholder-neutral-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            {...register('url', { required: 'Nhập ít nhất một URL' })}
           />
           {errors.url ? <p className="mt-1 text-xs text-danger">{errors.url.message}</p> : null}
         </div>

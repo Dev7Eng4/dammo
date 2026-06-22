@@ -78,35 +78,37 @@ export function SourceChannelsPage() {
     navigate(`/source-channels/${id}`);
   }
 
-  function handleAddSource(payload: CreateSourceChannelPayload) {
-    void enqueueTask(
-      {
-        type: 'add_source',
-        title: `Importing: ${payload.url}`,
-        subtitle: payload.purpose,
-        payload: {
-          url: payload.url,
-          purpose: payload.purpose,
+  function handleAddSource(payloads: CreateSourceChannelPayload[]) {
+    for (const payload of payloads) {
+      void enqueueTask(
+        {
+          type: 'add_source',
+          title: `Importing: ${payload.url}`,
+          subtitle: payload.purpose,
+          payload: {
+            url: payload.url,
+            purpose: payload.purpose,
+          },
         },
-      },
-      {
-        onComplete: () => {
-          list.markLoading();
-          list.resetPage();
-          list.refresh();
+        {
+          onComplete: () => {
+            list.markLoading();
+            list.resetPage();
+            list.refresh();
+          },
+          onFail: (job) => {
+            const err = job.error ?? '';
+            if (err.includes('already exists')) {
+              toast.error(`Đã tồn tại: ${payload.url}`);
+            } else {
+              toast.error(err || `Không thể thêm: ${payload.url}`);
+            }
+          },
         },
-        onFail: (job) => {
-          const err = job.error ?? '';
-          if (err.includes('already exists')) {
-            toast.error('Source đã tồn tại');
-          } else {
-            toast.error(err || 'Không thể thêm source');
-          }
-        },
-      },
-    ).catch((err) => {
-      console.error(err);
-    });
+      ).catch((err) => {
+        console.error(err);
+      });
+    }
   }
 
   async function handleBumpRisk(id: string) {
