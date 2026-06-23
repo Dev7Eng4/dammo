@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { mediaDownloadDir } from '../../../../config/paths.js';
 import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import { downloadYoutubeAudio } from '../../../../infrastructure/youtube/youtube-audio-downloader.js';
@@ -38,18 +40,39 @@ function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
   return type === 'reup_audio';
 }
 
+async function downloadDirectThumbnail(youtubeVideoId: string, outputDir: string): Promise<string> {
+  await fs.mkdir(outputDir, { recursive: true });
+  const targetPath = path.join(outputDir, 'old-thumbnail.jpg');
+  
+  // Try maxresdefault first
+  let response = await fetch(`https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`);
+  
+  // Fallback to hqdefault if not found or empty
+  if (!response.ok) {
+    response = await fetch(`https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`);
+  }
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch thumbnail for video ${youtubeVideoId}`);
+  }
+  
+  const buffer = Buffer.from(await response.arrayBuffer());
+  await fs.writeFile(targetPath, buffer);
+  return targetPath;
+}
+
 export async function downloadReupAudioAssets(url: string, language: ChannelLanguage): Promise<ReupAudioDownloadResult> {
   const youtubeVideoId = requireYoutubeVideoId(url);
   const outputDir = mediaDownloadDir('youtube', youtubeVideoId);
   const transcriptLanguage = language as TranscriptLanguage;
-  // const thumbnailPath = await downloadYoutubeThumbnail(url, outputDir);
+  const thumbnailPath = await downloadDirectThumbnail(youtubeVideoId, outputDir);
   const audioPath = await downloadYoutubeAudio(url, outputDir);
   const transcriptPath = await downloadYoutubeTranscript(url, outputDir, transcriptLanguage);
 
   return {
     youtubeVideoId,
     outputDir,
-    thumbnailPath: '',
+    thumbnailPath,
     audioPath,
     transcriptPath,
   };
