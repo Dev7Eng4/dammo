@@ -2,8 +2,6 @@ import { formatChannelLanguageLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type StoredYou
 import type { SourceChannel } from '../../types/sourceChannel';
 import { formatChannelSources } from '../../utils/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
-import { HealthIndicator } from './HealthIndicator';
-import { MonetizationPill } from './MonetizationPill';
 
 interface YoutubeChannelsTableProps {
   channels: YoutubeChannel[];
@@ -17,6 +15,12 @@ interface YoutubeChannelsTableProps {
 
 function typeLabel(type: StoredYoutubeChannelType): string {
   return YOUTUBE_CHANNEL_TYPE_LABELS[type] ?? type;
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('en-US');
 }
 
 function ChannelAvatar({ name }: { name: string }) {
@@ -51,15 +55,14 @@ export function YoutubeChannelsTable({
               <th className="pb-3 pr-4 font-medium">TYPE</th>
               <th className="pb-3 pr-4 font-medium">SOURCE</th>
               <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
-              <th className="pb-3 pr-4 font-medium">MONETIZATION</th>
-              <th className="pb-3 pr-4 font-medium">HEALTH</th>
+              <th className="pb-3 pr-4 font-medium">LAST UPLOAD</th>
               <th className="pb-3 font-medium">STATUS</th>
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={9} className="py-3">
+                <td colSpan={8} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -96,8 +99,7 @@ export function YoutubeChannelsTable({
             <th className="pb-3 pr-4 font-medium">TYPE</th>
             <th className="pb-3 pr-4 font-medium">SOURCE</th>
             <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
-            <th className="pb-3 pr-4 font-medium">MONETIZATION</th>
-            <th className="pb-3 pr-4 font-medium">HEALTH</th>
+            <th className="pb-3 pr-4 font-medium">LAST UPLOAD</th>
             <th className="pb-3 font-medium">STATUS</th>
           </tr>
         </thead>
@@ -144,11 +146,8 @@ export function YoutubeChannelsTable({
               <td className="py-3 pr-4 text-neutral-400">
                 {channel.niche} ({formatChannelLanguageLabel(channel.language)})
               </td>
-              <td className="py-3 pr-4">
-                <MonetizationPill status={channel.monetizationStatus} />
-              </td>
-              <td className="py-3 pr-4">
-                <HealthIndicator score={channel.healthScore} />
+              <td className="py-3 pr-4 text-neutral-300">
+                {formatDate(channel.lastUploadAt)}
               </td>
               <td className="py-3">
                 <ChannelStatusPill status={channel.status} />
@@ -160,3 +159,4 @@ export function YoutubeChannelsTable({
     </div>
   );
 }
+

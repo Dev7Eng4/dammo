@@ -14,6 +14,10 @@ import type { ProductionPipelineType } from './ports/production-destination.port
 interface CreateVideosOptions {
   taskJobId?: string;
   skipLivePhaseDone?: boolean;
+  /** Khi true: bỏ qua bước assembleReupSiVideo, video sẽ ở status Prepared */
+  skipVideoAssembly?: boolean;
+  /** Số video tối đa xử lý trên mỗi channel trong một lần chạy */
+  maxVideosPerChannel?: number;
 }
 
 const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);

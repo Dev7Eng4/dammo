@@ -6,13 +6,7 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 const ENRICH_CONCURRENCY = 5;
 
-const UNAVAILABLE_TITLE_MARKERS = [
-  '[private video]',
-  '[deleted video]',
-  'private video',
-  'members-only',
-  'member-only',
-];
+const UNAVAILABLE_TITLE_MARKERS = ['[private video]', '[deleted video]', 'private video', 'members-only', 'member-only'];
 
 const ytdlpBaseOptions = {
   ...getYoutubeDlCommonOptions(),
@@ -36,7 +30,7 @@ function buildVideoUrl(entry: YtdlpVideoEntry): string | null {
 function isUnavailableFlatEntry(entry: YtdlpVideoEntry): boolean {
   const title = entry.title?.trim().toLowerCase() ?? '';
   if (!title) return true;
-  return UNAVAILABLE_TITLE_MARKERS.some((marker) => title.includes(marker));
+  return UNAVAILABLE_TITLE_MARKERS.some(marker => title.includes(marker));
 }
 
 function mapVideoEntry(entry: YtdlpVideoEntry): YoutubeChannelVideo | null {
@@ -63,10 +57,7 @@ function normalizePlaylistEntries(entries: unknown): YtdlpVideoEntry[] {
   return entries.filter((entry): entry is YtdlpVideoEntry => entry !== null && typeof entry === 'object');
 }
 
-async function fetchFlatPlaylistEntries(
-  channelUrl: string,
-  options?: { playlistEnd?: number },
-): Promise<YtdlpVideoEntry[]> {
+async function fetchFlatPlaylistEntries(channelUrl: string, options?: { playlistEnd?: number }): Promise<YtdlpVideoEntry[]> {
   const raw = await youtubeDl(buildVideosTabUrl(channelUrl), {
     ...ytdlpBaseOptions,
     dumpSingleJson: true,
@@ -75,7 +66,7 @@ async function fetchFlatPlaylistEntries(
   });
 
   const data = raw as YtdlpChannelResponse;
-  return normalizePlaylistEntries(data.entries).filter((entry) => !isUnavailableFlatEntry(entry));
+  return normalizePlaylistEntries(data.entries).filter(entry => !isUnavailableFlatEntry(entry));
 }
 
 async function enrichVideoEntry(entry: YtdlpVideoEntry): Promise<YoutubeChannelVideo | null> {
@@ -97,10 +88,7 @@ async function enrichVideoEntry(entry: YtdlpVideoEntry): Promise<YoutubeChannelV
   }
 }
 
-async function enrichVideosInBatches(
-  entries: YtdlpVideoEntry[],
-  options?: { maxVideos?: number },
-): Promise<YoutubeChannelVideo[]> {
+async function enrichVideosInBatches(entries: YtdlpVideoEntry[], options?: { maxVideos?: number }): Promise<YoutubeChannelVideo[]> {
   const maxVideos = options?.maxVideos;
   const videos: YoutubeChannelVideo[] = [];
 
@@ -108,7 +96,7 @@ async function enrichVideosInBatches(
     if (maxVideos !== undefined && videos.length >= maxVideos) break;
 
     const batch = entries.slice(i, i + ENRICH_CONCURRENCY);
-    const results = await Promise.all(batch.map((entry) => enrichVideoEntry(entry)));
+    const results = await Promise.all(batch.map(entry => enrichVideoEntry(entry)));
 
     for (const video of results) {
       if (!video) continue;
@@ -138,10 +126,7 @@ async function fetchPlaylistVideos(
   }
 }
 
-export async function fetchYoutubeChannelVideos(
-  channelUrl: string,
-  limit = DEFAULT_LIMIT,
-): Promise<YoutubeChannelVideo[]> {
+export async function fetchYoutubeChannelVideos(channelUrl: string, limit = DEFAULT_LIMIT): Promise<YoutubeChannelVideo[]> {
   const cappedLimit = Math.min(Math.max(limit, 1), MAX_LIMIT);
   return fetchPlaylistVideos(channelUrl, {
     playlistEnd: cappedLimit * 2,
@@ -149,8 +134,6 @@ export async function fetchYoutubeChannelVideos(
   });
 }
 
-export async function fetchAllYoutubeChannelVideos(
-  channelUrl: string,
-): Promise<YoutubeChannelVideo[]> {
+export async function fetchAllYoutubeChannelVideos(channelUrl: string): Promise<YoutubeChannelVideo[]> {
   return fetchPlaylistVideos(channelUrl);
 }

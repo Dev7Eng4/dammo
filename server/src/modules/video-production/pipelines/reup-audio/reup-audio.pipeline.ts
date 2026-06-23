@@ -41,6 +41,8 @@ interface CreateVideosOptions {
   skipLivePhaseDone?: boolean;
   /** Khi true: bỏ qua bước assembleReupSiVideo, video sẽ ở status Prepared */
   skipVideoAssembly?: boolean;
+  /** Số video tối đa xử lý trên mỗi channel trong một lần chạy */
+  maxVideosPerChannel?: number;
 }
 
 function isReupAudioPipeline(pipelineType: ProductionDestination['pipelineType']): boolean {
@@ -73,12 +75,13 @@ function resolveVideoPrepareTitle(outputItem: ReupVideoOutputItem): string {
   return outputItem.youtubeVideoId;
 }
 
-function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[]): ReupVideoTask[] {
+function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[], maxVideos?: number): ReupVideoTask[] {
   const preparedVideoIds = destination.getPreparedVideoIds();
+  const limit = maxVideos ?? REUP_VIDEOS_PER_RUN;
 
   return videos
     .filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id))
-    .slice(0, REUP_VIDEOS_PER_RUN)
+    .slice(0, limit)
     .map(video => ({
       link: video.url,
       id: destination.id,
@@ -110,7 +113,7 @@ export class ReupAudioPipeline {
       throw new AppError('No source videos available for mapped sources', 400, 'NO_SOURCE_VIDEOS');
     }
 
-    const tasks = buildTasks(destination, allVideos);
+    const tasks = buildTasks(destination, allVideos, options?.maxVideosPerChannel);
     if (tasks.length === 0) {
       throw new AppError('No unprocessed source videos available', 400, 'NO_UNPROCESSED_VIDEOS');
     }
