@@ -80,7 +80,7 @@ export interface YoutubeChannelStats {
 
 export interface CreateYoutubeChannelInput {
   mailAccountId: string;
-  channelUrl: string;
+  channelUrl?: string;
   type: YoutubeChannelType;
   language: ChannelLanguage;
   sourceChannels?: string[];

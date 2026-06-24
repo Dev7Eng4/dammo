@@ -25,7 +25,7 @@ interface AddYoutubeChannelModalProps {
 }
 
 const defaultValues: AddYoutubeChannelFormValues = {
-  mailAccountId: '',
+  mailAccountId: 'default',
   channelUrl: '',
   type: '',
   language: '',
@@ -121,18 +121,19 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           channels.items.map((channel) => channel.linkedEmail.toLowerCase()),
         );
 
-        setMailOptions(
-          mails.items
+        setMailOptions([
+          { value: 'default', label: 'Default' },
+          ...mails.items
             .filter((account) => !usedEmails.has(account.email.toLowerCase()))
             .map((account) => ({
               value: account.id,
               label: account.email,
             })),
-        );
+        ]);
         setSources(sourceList.items);
       } catch {
         if (signal.aborted) return;
-        setMailOptions([]);
+        setMailOptions([{ value: 'default', label: 'Default' }]);
         setSources([]);
       } finally {
         if (!signal.aborted) setOptionsLoading(false);
@@ -268,13 +269,13 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           />
         </FormField>
 
-        <FormField label="Channel URL" htmlFor="channel-url" error={errors.channelUrl?.message} className="min-w-0">
+        <FormField label="Channel URL" htmlFor="channel-url" optional error={errors.channelUrl?.message} className="min-w-0">
           <Input
             id="channel-url"
             placeholder="https://youtube.com/@channel or @handle"
             className="h-10 rounded-lg font-mono text-sm"
             disabled={isSubmitting}
-            {...register('channelUrl', { required: 'Channel URL is required' })}
+            {...register('channelUrl')}
           />
         </FormField>
 
@@ -328,17 +329,13 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         <FormField
           label="Thumbnail Style"
           htmlFor="thumbnail-style"
-          optional={!isReupType}
+          optional
           error={errors.thumbnailStyleKey?.message}
           className="min-w-0"
         >
           <Controller
             name="thumbnailStyleKey"
             control={control}
-            rules={{
-              validate: (value) =>
-                !isReupType || value.trim().length > 0 || 'Thumbnail style is required',
-            }}
             render={({ field }) => (
               <Select
                 id="thumbnail-style"

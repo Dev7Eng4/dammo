@@ -116,9 +116,13 @@ function validateChannelConfig(input: ChannelConfigInput): {
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
 } {
-  const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
-  if (!mailAccount) {
-    throw new AppError('Mail account not found', 404, 'MAIL_NOT_FOUND');
+  let linkedEmail = 'Default';
+  if (input.mailAccountId && input.mailAccountId.toLowerCase() !== 'default') {
+    const mailAccount = mailAccountsRepository.findById(input.mailAccountId);
+    if (!mailAccount) {
+      throw new AppError('Mail account not found', 404, 'MAIL_NOT_FOUND');
+    }
+    linkedEmail = mailAccount.email;
   }
 
   const sourceChannels = normalizeSourceIds(input.sourceChannels);
@@ -146,11 +150,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
   const thumbnailStyleKey = assertValidThumbnailStyleKey(
     input.thumbnailStyleKey,
     input.language,
-    isReupChannelType(input.type),
+    false,
   );
 
   return {
-    linkedEmail: mailAccount.email,
+    linkedEmail,
     sourceChannels,
     uploadSchedule,
     ...(backgroundFootageSources.length > 0 ? { backgroundFootageSources } : {}),
@@ -160,6 +164,9 @@ function validateChannelConfig(input: ChannelConfigInput): {
 
 function assertEmailAvailableForChannel(email: string, channelId?: string): void {
   const normalized = email.toLowerCase();
+  if (normalized === 'default') {
+    return;
+  }
   const taken = youtubeChannelsRepository
     .findAll()
     .some((c) => c.id !== channelId && c.linkedEmail.toLowerCase() === normalized);
@@ -233,6 +240,12 @@ export class YoutubeChannelsService {
   }
 
   private async refreshChannelMetadata(id: string, channel = this.getById(id)): Promise<YoutubeChannel> {
+    if (!channel.youtubeUrl || !channel.channelId || channel.youtubeUrl.includes('@channel_')) {
+      return {
+        ...channel,
+        language: normalizeChannelLanguage(channel.language),
+      };
+    }
     const metadata = await fetchYoutubeChannelMetadata(channel.youtubeUrl);
     const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
 
@@ -255,6 +268,9 @@ export class YoutubeChannelsService {
   }
 
   private async fetchVideos(channel: YoutubeChannel): Promise<YoutubeChannelVideo[]> {
+    if (!channel.youtubeUrl || !channel.channelId || channel.youtubeUrl.includes('@channel_')) {
+      return [];
+    }
     try {
       return await fetchAllYoutubeChannelVideos(channel.youtubeUrl);
     } catch (err) {
@@ -325,68 +341,89 @@ export class YoutubeChannelsService {
     const config = validateChannelConfig(input);
     assertEmailAvailableForChannel(config.linkedEmail);
 
-    const { platform, fullUrl } = parseSourceUrl(input.channelUrl);
-    if (platform !== 'youtube') {
-      throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
-    }
+    let name = '';
+    let handle = '';
+    let youtubeUrl = '';
+    let channelId: string | undefined = undefined;
+    let niche = 'General';
 
-    const canonicalUrl = canonicalizeSourceUrl(fullUrl);
+    if (input.channelUrl && input.channelUrl.trim() !== '') {
+      const { platform, fullUrl } = parseSourceUrl(input.channelUrl);
+      if (platform !== 'youtube') {
+        throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
+      }
 
-    const exists = youtubeChannelsRepository
-      .findAll()
-      .some((c) => canonicalizeSourceUrl(c.youtubeUrl) === canonicalUrl);
-    if (exists) {
-      throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
-    }
+      const canonicalUrl = canonicalizeSourceUrl(fullUrl);
 
-    try {
-      const metadata = await fetchYoutubeChannelMetadata(fullUrl);
-
-      const duplicateById = youtubeChannelsRepository
+      const exists = youtubeChannelsRepository
         .findAll()
-        .some((c) => c.channelId && c.channelId === metadata.channelId);
-      if (duplicateById) {
+        .some((c) => canonicalizeSourceUrl(c.youtubeUrl) === canonicalUrl);
+      if (exists) {
         throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
       }
 
-      const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
-      const youtubeUrl = `https://youtube.com/${handle}`;
+      try {
+        const metadata = await fetchYoutubeChannelMetadata(fullUrl);
 
-      const channel: YoutubeChannel = {
-        id: generateId(),
-        name: metadata.name,
-        handle,
-        youtubeUrl,
-        channelId: metadata.channelId,
-        type: input.type,
-        niche: metadata.niche,
-        language: input.language,
-        monetizationStatus: 'in_review',
-        healthScore: 'medium',
-        status: 'active',
-        linkedEmail: config.linkedEmail,
-        uploadSchedule: config.uploadSchedule,
-        sourceChannels: config.sourceChannels,
-        contentProjectId: buildProjectId(handle),
-        recentActivity: [],
-        createdAt: new Date().toISOString(),
-        uploadFrequency: input.uploadFrequency,
-        ...(config.backgroundFootageSources?.length
-          ? { backgroundFootageSources: config.backgroundFootageSources }
-          : {}),
-        ...(config.thumbnailStyleKey ? { thumbnailStyleKey: config.thumbnailStyleKey } : {}),
-      };
+        const duplicateById = youtubeChannelsRepository
+          .findAll()
+          .some((c) => c.channelId && c.channelId === metadata.channelId);
+        if (duplicateById) {
+          throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
+        }
 
-      return youtubeChannelsRepository.prepend(channel);
-    } catch (err) {
-      if (err instanceof AppError) throw err;
-      const detail = err instanceof Error ? err.message : 'Unknown error';
-      throw new AppError(
-        `Failed to fetch YouTube channel metadata: ${detail}`,
-        502,
-        'YOUTUBE_FETCH_FAILED',
-      );
+        handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+        youtubeUrl = `https://youtube.com/${handle}`;
+        name = metadata.name;
+        channelId = metadata.channelId;
+        niche = metadata.niche;
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        throw new AppError(
+          `Failed to fetch YouTube channel metadata: ${detail}`,
+          502,
+          'YOUTUBE_FETCH_FAILED',
+        );
+      }
+    } else {
+      const id = generateId().slice(0, 8);
+      handle = `@channel_${id}`;
+      youtubeUrl = `https://youtube.com/${handle}`;
+      
+      let emailPrefix = 'Channel';
+      if (config.linkedEmail && config.linkedEmail.toLowerCase() !== 'default') {
+        emailPrefix = config.linkedEmail.split('@')[0] || 'Channel';
+      }
+      name = emailPrefix;
     }
+
+    const channel: YoutubeChannel = {
+      id: generateId(),
+      name,
+      handle,
+      youtubeUrl,
+      channelId,
+      type: input.type,
+      niche,
+      language: input.language,
+      monetizationStatus: 'in_review',
+      healthScore: 'medium',
+      status: 'active',
+      linkedEmail: config.linkedEmail,
+      uploadSchedule: config.uploadSchedule,
+      sourceChannels: config.sourceChannels,
+      contentProjectId: buildProjectId(handle),
+      recentActivity: [],
+      createdAt: new Date().toISOString(),
+      uploadFrequency: input.uploadFrequency,
+      ...(config.backgroundFootageSources?.length
+        ? { backgroundFootageSources: config.backgroundFootageSources }
+        : {}),
+      ...(config.thumbnailStyleKey ? { thumbnailStyleKey: config.thumbnailStyleKey } : {}),
+    };
+
+    return youtubeChannelsRepository.prepend(channel);
   }
 
   update(id: string, input: UpdateYoutubeChannelInput): YoutubeChannel {

@@ -135,7 +135,10 @@ export function EditYoutubeChannelModal({
           (account) => account.email.toLowerCase() === channel.linkedEmail.toLowerCase(),
         );
 
-        setMailAccountId(mailAccount?.id ?? '');
+        const isDefaultMail = channel.linkedEmail.toLowerCase() === 'default';
+        const mailAccountIdValue = mailAccount?.id ?? (isDefaultMail ? 'default' : '');
+
+        setMailAccountId(mailAccountIdValue);
         setSources(sourceList.items);
 
         const frequency = channel.uploadFrequency ?? '';
@@ -145,7 +148,7 @@ export function EditYoutubeChannelModal({
           savedTimes.length === slotCount ? savedTimes : createEmptyPublishTimes(slotCount);
 
         reset({
-          mailAccountId: mailAccount?.id ?? '',
+          mailAccountId: mailAccountIdValue,
           type: normalizeChannelType(channel.type),
           language: parseStoredChannelLanguage(channel.language),
           sourceChannels: channel.sourceChannels ?? [],
@@ -325,17 +328,13 @@ export function EditYoutubeChannelModal({
         <FormField
           label="Thumbnail Style"
           htmlFor="edit-thumbnail-style"
-          optional={!isReupType}
+          optional
           error={errors.thumbnailStyleKey?.message}
           className="min-w-0"
         >
           <Controller
             name="thumbnailStyleKey"
             control={control}
-            rules={{
-              validate: (value) =>
-                !isReupType || value.trim().length > 0 || 'Thumbnail style is required',
-            }}
             render={({ field }) => (
               <Select
                 id="edit-thumbnail-style"

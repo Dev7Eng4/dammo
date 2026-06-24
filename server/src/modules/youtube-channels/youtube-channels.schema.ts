@@ -49,14 +49,6 @@ function applyChannelConfigRefine(
         path: ['sourceChannels'],
       });
     }
-
-    if (!data.thumbnailStyleKey?.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Thumbnail style is required for reup channels',
-        path: ['thumbnailStyleKey'],
-      });
-    }
   }
 
   const expectedSlots = getPublishTimeSlotCount(data.uploadFrequency);
@@ -72,7 +64,7 @@ function applyChannelConfigRefine(
 export const createYoutubeChannelSchema = z
   .object({
     ...channelConfigFields,
-    channelUrl: z.string().min(1),
+    channelUrl: z.string().optional(),
   })
   .superRefine(applyChannelConfigRefine);
 
