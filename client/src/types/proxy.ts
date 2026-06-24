@@ -18,7 +18,9 @@ export interface Proxy {
   latencyMs?: number;
   lastCheckedAt?: string;
   assignedProfileIds: string[];
+  maxProfiles: number;
   archivedAt?: string;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +53,7 @@ export interface CreateProxyPayload {
   countryCode?: string;
   provider?: string;
   tags?: string[];
+  expiresAt?: string;
 }
 
 export interface UpdateProxyPayload {
@@ -83,16 +86,14 @@ export interface ProxyImportResult {
 }
 
 export interface ProxyFormValues {
-  name: string;
   type: ProxyType;
   host: string;
   port: number;
   username?: string;
   password?: string;
-  location?: string;
   countryCode?: string;
-  provider?: string;
-  tags?: string;
+  providerId?: string;
+  expiresAt?: string;
 }
 
 export type ProxyTab = 'monitoring' | 'providers' | 'automations' | 'library';

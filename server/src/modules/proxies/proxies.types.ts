@@ -18,7 +18,9 @@ export interface Proxy {
   latencyMs?: number;
   lastCheckedAt?: string;
   assignedProfileIds: string[];
+  maxProfiles: number;
   archivedAt?: string;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +40,7 @@ export interface CreateProxyInput {
   countryCode?: string;
   provider?: string;
   tags?: string[];
+  expiresAt?: string;
 }
 
 export interface UpdateProxyInput {

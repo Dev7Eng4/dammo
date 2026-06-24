@@ -212,7 +212,7 @@ export function ProxiesPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row">
+    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <ProxyPageHeader activeTab={activeTab} onTabChange={handleTabChange} />
@@ -264,9 +264,9 @@ export function ProxiesPage() {
             type="button"
             aria-label="Close detail panel"
             onClick={handleClosePanel}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/50"
           />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm lg:static lg:z-auto lg:max-w-none">
+          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm shadow-2xl">
             <ProxyDetailPanel
               proxy={detail.item}
               loading={detail.loading}

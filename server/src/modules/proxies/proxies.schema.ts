@@ -14,6 +14,7 @@ export const createProxySchema = z.object({
   countryCode: z.string().optional(),
   provider: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  expiresAt: z.string().optional(),
 });
 
 export const updateProxySchema = z

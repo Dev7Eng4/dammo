@@ -112,6 +112,8 @@ export class ProxiesService {
       tags: input.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [],
       status: 'active',
       assignedProfileIds: [],
+      maxProfiles: 0,
+      expiresAt: normalizeOptionalString(input.expiresAt),
       createdAt: now,
       updatedAt: now,
     };
