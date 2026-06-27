@@ -1,4 +1,4 @@
-import type { PlaygroundProvider, PromptCategory, PromptLanguage, PromptOutputType } from '../types/prompt';
+import type { PlaygroundProvider, PromptCategory, PromptLanguage, PromptOutputType, ImageBrowserProvider, VideoBrowserProvider } from '../types/prompt';
 
 export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[] = [
   { value: 'thumbnail', label: 'Thumbnail' },
@@ -21,6 +21,11 @@ export const PROMPT_OUTPUT_TYPE_OPTIONS: { value: PromptOutputType; label: strin
 
 export const IMAGE_PROVIDER_OPTIONS: { value: ImageBrowserProvider; label: string }[] = [
   { value: 'flow', label: 'Google Flow' },
+  { value: 'meta', label: 'Meta AI' },
+];
+
+export const VIDEO_PROVIDER_OPTIONS: { value: VideoBrowserProvider; label: string }[] = [
+  { value: 'meta', label: 'Meta AI' },
 ];
 
 export const PLAYGROUND_PROVIDER_OPTIONS: { value: PlaygroundProvider; label: string }[] = [

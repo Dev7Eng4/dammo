@@ -12,7 +12,7 @@ import {
 } from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 import { sourceChannelsRepository } from './source-channels.repository.js';
-import { findChannelsUsingSource } from './source-channel-usage.js';
+import { getSourceChannelUsage } from './source-channel-usage.js';
 import { sourceVideosRepository } from './source-videos.repository.js';
 import type {
   CreateSourceChannelInput,
@@ -309,12 +309,23 @@ export class SourceChannelsService {
     return updated;
   }
 
-  delete(id: string): void {
-    const source = this.getById(id);
-    const usedBy = findChannelsUsingSource(source);
+  getUsage(id: string) {
+    this.getById(id);
+    return getSourceChannelUsage(id);
+  }
 
-    if (usedBy.length > 0) {
-      const names = usedBy.map((channel) => channel.name).join(', ');
+  delete(id: string): void {
+    this.getById(id);
+    const usage = getSourceChannelUsage(id);
+
+    if (usage.inUse) {
+      const names = [
+        ...usage.channels.youtube,
+        ...usage.channels.tiktok,
+        ...usage.channels.facebook,
+      ]
+        .map((channel) => channel.name)
+        .join(', ');
       throw new AppError(`Source is used by: ${names}`, 400, 'SOURCE_IN_USE');
     }
 

@@ -11,6 +11,7 @@ import type {
   GpmStartResult,
   UpdateGpmGroupPayload,
   UpdateGpmProfilePayload,
+  GpmTestResult,
 } from '../types/gpm';
 
 function buildQuery(params: GpmListParams = {}): string {
@@ -77,6 +78,14 @@ export function startGpmProfile(id: string) {
 export function stopGpmProfile(id: string) {
   return fetchJson<{ ok: boolean }>(`${API_V1}/gpm/profiles/${id}/stop`, {
     method: 'POST',
+  });
+}
+
+export function testGpmProfile(id: string) {
+  return fetchJson<{ item: GpmTestResult }>(`${API_V1}/gpm/profiles/${id}/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
   });
 }
 

@@ -10,6 +10,7 @@ import { fetchJson, withSignal, type FetchOptions } from './http';import type {
   SourceRiskFilter,
   SourceVideoDurationFilter,
   UpdateSourceChannelPayload,
+  SourceChannelUsage,
 } from '../types/sourceChannel';
 
 export function fetchSourceChannels(
@@ -79,6 +80,13 @@ export function refreshSourceChannel(id: string) {
   return fetchJson<{ item: SourceChannel; videos: SourceChannelVideo[] }>(
     `${API_V1}/source-channels/${id}/refresh`,
     { method: 'POST' },
+  );
+}
+
+export function fetchSourceChannelUsage(id: string, options?: FetchOptions) {
+  return fetchJson<SourceChannelUsage>(
+    `${API_V1}/source-channels/${id}/usage`,
+    withSignal(undefined, options),
   );
 }
 

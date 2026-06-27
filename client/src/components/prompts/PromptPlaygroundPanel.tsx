@@ -1,5 +1,5 @@
 import { Button, DropdownSelect, Input } from '../ui';
-import { IMAGE_PROVIDER_OPTIONS, PLAYGROUND_PROVIDER_OPTIONS } from '../../constants/promptForm';
+import { IMAGE_PROVIDER_OPTIONS, PLAYGROUND_PROVIDER_OPTIONS, VIDEO_PROVIDER_OPTIONS } from '../../constants/promptForm';
 import {
   extractTemplateVariables,
   formatVariableToken,
@@ -10,6 +10,7 @@ import type {
   PlaygroundProvider,
   PromptOutputType,
   PromptPlaygroundResult,
+  VideoBrowserProvider,
 } from '../../types/prompt';
 
 export interface PromptPlaygroundPanelProps {
@@ -18,16 +19,20 @@ export interface PromptPlaygroundPanelProps {
   outputType: PromptOutputType;
   provider: PlaygroundProvider;
   imageProvider: ImageBrowserProvider;
+  videoProvider: VideoBrowserProvider;
   providerSaving?: boolean;
   imageProviderSaving?: boolean;
+  videoProviderSaving?: boolean;
   providerSettingsError?: string | null;
   imageProviderSettingsError?: string | null;
+  videoProviderSettingsError?: string | null;
   variableValues: Record<string, string>;
   running: boolean;
   result: PromptPlaygroundResult | null;
   error: string | null;
   onProviderChange: (provider: PlaygroundProvider) => void;
   onImageProviderChange: (provider: ImageBrowserProvider) => void;
+  onVideoProviderChange: (provider: VideoBrowserProvider) => void;
   onVariableChange: (name: string, value: string) => void;
   onRun: () => void;
 }
@@ -38,16 +43,20 @@ export function PromptPlaygroundPanel({
   outputType,
   provider,
   imageProvider,
+  videoProvider,
   providerSaving = false,
   imageProviderSaving = false,
+  videoProviderSaving = false,
   providerSettingsError = null,
   imageProviderSettingsError = null,
+  videoProviderSettingsError = null,
   variableValues,
   running,
   result,
   error,
   onProviderChange,
   onImageProviderChange,
+  onVideoProviderChange,
   onVariableChange,
   onRun,
 }: PromptPlaygroundPanelProps) {
@@ -125,6 +134,25 @@ export function PromptPlaygroundPanel({
           ) : (
             <p className="text-[10px] text-neutral-500">Saved as default for image generation prompts.</p>
           )}
+        </label>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">Default Video Provider</span>
+            {videoProviderSaving ? <span className="text-[10px] text-neutral-500">Saving...</span> : null}
+          </div>
+          <DropdownSelect
+            value={videoProvider}
+            onChange={onVideoProviderChange}
+            options={VIDEO_PROVIDER_OPTIONS}
+            disabled={videoProviderSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          <p className="text-[10px] text-neutral-500">Saved as default for video generation prompts.</p>
+          {videoProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{videoProviderSettingsError}</p>
+          ) : null}
         </label>
 
         <div className="space-y-2">

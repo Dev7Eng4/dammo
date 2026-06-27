@@ -8,16 +8,20 @@ export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
 export type PlaygroundProvider = 'gpt' | 'gemini';
 
-export type ImageBrowserProvider = 'flow';
+export type ImageBrowserProvider = 'flow' | 'meta';
+
+export type VideoBrowserProvider = 'meta';
 
 export interface PromptsSettings {
   defaultLlmProvider: PlaygroundProvider;
   defaultImageProvider: ImageBrowserProvider;
+  defaultVideoProvider: VideoBrowserProvider;
 }
 
 export interface UpdatePromptsSettingsPayload {
   defaultLlmProvider?: PlaygroundProvider;
   defaultImageProvider?: ImageBrowserProvider;
+  defaultVideoProvider?: VideoBrowserProvider;
 }
 
 export interface Prompt {

@@ -6,6 +6,7 @@ import {
   fetchGpmStatus,
   startGpmProfile,
   stopGpmProfile,
+  testGpmProfile,
 } from '../api/gpm';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
@@ -22,6 +23,7 @@ import type {
   GpmGroup,
   GpmProfile,
   GpmProfileSort,
+  GpmTestResult,
 } from '../types/gpm';
 
 type GpmTab = 'profiles' | 'groups';
@@ -56,7 +58,10 @@ export function GpmManagerPage() {
 
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [deletingProfile, setDeletingProfile] = useState(false);
+  const [testResult, setTestResult] = useState<GpmTestResult | null>(null);
+  const [showTestResultModal, setShowTestResultModal] = useState(false);
 
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const isSelectedRunning = selectedProfileId ? runningProfileIds.has(selectedProfileId) : false;
@@ -181,6 +186,21 @@ export function GpmManagerPage() {
     }
   }
 
+  async function handleTestProfile() {
+    if (!selectedProfileId || testing) return;
+    setTesting(true);
+    try {
+      const { item } = await testGpmProfile(selectedProfileId);
+      setRunningProfileIds((prev) => new Set(prev).add(selectedProfileId));
+      setTestResult(item);
+      setShowTestResultModal(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gemini test failed');
+    } finally {
+      setTesting(false);
+    }
+  }
+
   async function handleConfirmDeleteProfile() {
     if (!selectedProfileId || deletingProfile) return;
     setDeletingProfile(true);
@@ -241,9 +261,11 @@ export function GpmManagerPage() {
                   loading={profilesLoading}
                   starting={starting}
                   stopping={stopping}
+                  testing={testing}
                   deleting={deletingProfile}
                   canStart={selectedProfileId !== null && !isSelectedRunning}
                   canStop={selectedProfileId !== null && isSelectedRunning}
+                  canTest={selectedProfileId !== null}
                   canEdit={selectedProfileId !== null}
                   canDelete={selectedProfileId !== null}
                   onSearchChange={setProfileSearch}
@@ -252,6 +274,7 @@ export function GpmManagerPage() {
                   onAddProfile={() => setShowAddProfileModal(true)}
                   onStart={handleStartProfile}
                   onStop={handleStopProfile}
+                  onTest={handleTestProfile}
                   onEdit={() => setShowEditProfileModal(true)}
                   onDelete={() => setShowDeleteProfileModal(true)}
                 />
@@ -313,6 +336,49 @@ export function GpmManagerPage() {
           handleRefresh();
         }}
       />
+
+      <Modal
+        open={showTestResultModal}
+        onClose={() => {
+          setShowTestResultModal(false);
+          setTestResult(null);
+        }}
+        title="Gemini Test Result"
+        footer={
+          <Button
+            size="sm"
+            className="rounded-lg"
+            onClick={() => {
+              setShowTestResultModal(false);
+              setTestResult(null);
+            }}
+          >
+            Close
+          </Button>
+        }
+      >
+        {testResult ? (
+          <div className="space-y-4 text-sm">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Profile</p>
+              <p className="mt-1 text-neutral-200">{selectedProfile?.name ?? testResult.profileId}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Prompt</p>
+              <p className="mt-1 text-neutral-300">{testResult.prompt}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Response</p>
+              <pre className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-surface-elevated p-3 text-neutral-200">
+                {testResult.content || '(empty response)'}
+              </pre>
+            </div>
+            <p className="text-xs text-neutral-500">
+              Completed in {(testResult.elapsedMs / 1000).toFixed(1)}s — profile remains open.
+            </p>
+          </div>
+        ) : null}
+      </Modal>
 
       <Modal
         open={showDeleteProfileModal}

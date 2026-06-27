@@ -2,9 +2,11 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import { flowBrowserService } from './flow-browser.service.js';
+import { metaBrowserService } from './meta-browser.service.js';
 import {
   llmBrowserChatSchema,
   llmBrowserGenerateImageSchema,
+  llmBrowserGenerateVideoSchema,
   llmBrowserOpenSchema,
   llmBrowserResponseSchema,
   llmBrowserSendSchema,
@@ -59,7 +61,36 @@ export function createLlmBrowserRoutes() {
 
   app.post('/:profileId/generate-image', zValidator('json', llmBrowserGenerateImageSchema), async (c) => {
     const body = c.req.valid('json');
-    const item = await flowBrowserService.generateImage(c.req.param('profileId'), body.prompt, {
+    const profileId = c.req.param('profileId');
+
+    if (body.provider === 'meta') {
+      const item = await metaBrowserService.generateMedia(profileId, body.prompt, {
+        mediaKind: 'image',
+        outputPath: body.outputPath,
+        outputDir: body.outputDir,
+        fileName: body.fileName,
+        debugScreenshotPath: body.debugScreenshotPath,
+        timeoutMs: body.timeoutMs,
+        stableMs: body.stableMs,
+      });
+      return c.json({ item });
+    }
+
+    const item = await flowBrowserService.generateImage(profileId, body.prompt, {
+      outputPath: body.outputPath,
+      outputDir: body.outputDir,
+      fileName: body.fileName,
+      debugScreenshotPath: body.debugScreenshotPath,
+      timeoutMs: body.timeoutMs,
+      stableMs: body.stableMs,
+    });
+    return c.json({ item });
+  });
+
+  app.post('/:profileId/generate-video', zValidator('json', llmBrowserGenerateVideoSchema), async (c) => {
+    const body = c.req.valid('json');
+    const item = await metaBrowserService.generateMedia(c.req.param('profileId'), body.prompt, {
+      mediaKind: 'video',
       outputPath: body.outputPath,
       outputDir: body.outputDir,
       fileName: body.fileName,

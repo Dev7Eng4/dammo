@@ -6,6 +6,7 @@ import { generateId } from '../../shared/id.js';
 import type { ImageBrowserProvider, LlmTextProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { flowBrowserService } from '../llm-browser/flow-browser.service.js';
+import { metaBrowserService } from '../llm-browser/meta-browser.service.js';
 import { llmBrowserService } from '../llm-browser/llm-browser.service.js';
 import { resolvePromptOutputType } from '../prompts/prompt-output-type.js';
 import { promptsRepository } from '../prompts/prompts.repository.js';
@@ -92,22 +93,26 @@ async function runImagePlayground(
   input: PromptPlaygroundRunInput,
   imageProvider: ImageBrowserProvider,
 ): Promise<PromptPlaygroundRunResult> {
-  if (imageProvider !== 'flow') {
-    throw new AppError(`Unsupported image provider: ${imageProvider}`, 400, 'INVALID_IMAGE_PROVIDER');
-  }
-
   const profile = chromeProfilesService.requireMainProfile();
   const startedAt = Date.now();
   const runDir = path.join(paths.playgroundDir, generateId());
   await fs.mkdir(runDir, { recursive: true });
 
+  const generateOptions = {
+    outputDir: runDir,
+    fileName: 'output.jpg',
+    debugScreenshotPath: path.join(runDir, `${imageProvider}-debug.png`),
+    timeoutMs: 300_000,
+  };
+
   try {
-    const response = await flowBrowserService.generateImage(profile.id, input.userPrompt, {
-      outputDir: runDir,
-      fileName: 'output.jpg',
-      debugScreenshotPath: path.join(runDir, 'flow-debug.png'),
-      timeoutMs: 300_000,
-    });
+    const response =
+      imageProvider === 'meta'
+        ? await metaBrowserService.generateMedia(profile.id, input.userPrompt, {
+            ...generateOptions,
+            mediaKind: 'image',
+          })
+        : await flowBrowserService.generateImage(profile.id, input.userPrompt, generateOptions);
 
     const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
     if (!savedPath) {

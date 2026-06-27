@@ -15,9 +15,11 @@ interface GpmProfilesToolbarProps {
   loading?: boolean;
   starting?: boolean;
   stopping?: boolean;
+  testing?: boolean;
   deleting?: boolean;
   canStart?: boolean;
   canStop?: boolean;
+  canTest?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   onSearchChange: (value: string) => void;
@@ -26,6 +28,7 @@ interface GpmProfilesToolbarProps {
   onAddProfile: () => void;
   onStart: () => void;
   onStop: () => void;
+  onTest: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -37,9 +40,11 @@ export function GpmProfilesToolbar({
   loading,
   starting,
   stopping,
+  testing,
   deleting,
   canStart,
   canStop,
+  canTest,
   canEdit,
   canDelete,
   onSearchChange,
@@ -48,10 +53,11 @@ export function GpmProfilesToolbar({
   onAddProfile,
   onStart,
   onStop,
+  onTest,
   onEdit,
   onDelete,
 }: GpmProfilesToolbarProps) {
-  const busy = loading || starting || stopping || deleting;
+  const busy = loading || starting || stopping || testing || deleting;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -94,6 +100,15 @@ export function GpmProfilesToolbar({
           disabled={!canStop || stopping || busy}
         >
           {stopping ? 'Stopping…' : 'Stop'}
+        </Button>
+        <Button
+          variant="outlined"
+          size="sm"
+          className="rounded-lg"
+          onClick={onTest}
+          disabled={!canTest || testing || busy}
+        >
+          {testing ? 'Testing…' : 'Test'}
         </Button>
         <Button
           variant="outlined"

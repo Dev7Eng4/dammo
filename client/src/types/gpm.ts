@@ -114,3 +114,12 @@ export interface EditGpmGroupFormValues {
 }
 
 export type GpmProfileSort = 0 | 1 | 2 | 3;
+
+export interface GpmTestResult {
+  profileId: string;
+  prompt: string;
+  provider: 'gemini' | 'gpt' | 'flow';
+  content: string;
+  codeBlocks: string[];
+  elapsedMs: number;
+}

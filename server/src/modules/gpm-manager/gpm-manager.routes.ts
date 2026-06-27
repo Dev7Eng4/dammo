@@ -6,10 +6,12 @@ import {
   createGpmProfileSchema,
   deleteGpmProfileQuerySchema,
   gpmListQuerySchema,
+  gpmTestProfileSchema,
   startGpmProfileSchema,
   updateGpmGroupSchema,
   updateGpmProfileSchema,
 } from './gpm-manager.schema.js';
+import { gpmLlmTestService } from './gpm-llm-test.service.js';
 import { gpmManagerService } from './gpm-manager.service.js';
 
 export function createGpmManagerRoutes() {
@@ -58,6 +60,11 @@ export function createGpmManagerRoutes() {
   app.post('/profiles/:id/stop', async (c) => {
     await gpmManagerService.stopProfile(c.req.param('id'));
     return c.json({ ok: true });
+  });
+
+  app.post('/profiles/:id/test', zValidator('json', gpmTestProfileSchema), async (c) => {
+    const item = await gpmLlmTestService.testGemini(c.req.param('id'));
+    return c.json({ item });
   });
 
   app.get('/groups', zValidator('query', gpmListQuerySchema), async (c) => {

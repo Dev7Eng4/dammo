@@ -13,6 +13,19 @@ export interface MappedOwnedChannel {
   name: string;
 }
 
+export type SourceUsagePlatform = 'youtube' | 'tiktok' | 'facebook';
+
+export interface ChannelUsingSource {
+  id: string;
+  name: string;
+  platform: SourceUsagePlatform;
+}
+
+export interface SourceChannelUsage {
+  inUse: boolean;
+  channels: Record<SourceUsagePlatform, ChannelUsingSource[]>;
+}
+
 export interface SourceActiveProject {
   id: string;
   name: string;

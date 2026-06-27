@@ -173,6 +173,14 @@ export async function connectPlaywrightToGpmProfile(profileId: string): Promise<
   };
 }
 
+export async function detachGpmPlaywright(connection: GpmPlaywrightConnection): Promise<void> {
+  try {
+    await connection.browser.close();
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function disconnectGpmPlaywright(connection: GpmPlaywrightConnection): Promise<void> {
   try {
     await connection.context.close();

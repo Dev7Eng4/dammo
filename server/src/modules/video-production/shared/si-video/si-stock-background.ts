@@ -4,6 +4,7 @@ import { youtubeDl } from 'youtube-dl-exec';
 import { spawn } from 'node:child_process';
 import { env } from '../../../../config/env.js';
 import { AppError } from '../../../../shared/http/errors.js';
+import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { getYoutubeDlCommonOptions } from '../../../../infrastructure/youtube/youtube-dl-auth.js';
 import { sourceVideosRepository } from '../../../source-channels/source-videos.repository.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
@@ -131,6 +132,7 @@ export async function prepareSiStockBackground(
   backgroundFootageSourceIds: string[],
   targetDurationSec: number,
   workDir: string,
+  onLog?: (msg: string) => void,
 ): Promise<PrepareSiStockBackgroundResult> {
   const ids = [...new Set(backgroundFootageSourceIds.map(id => id.trim()).filter(Boolean))];
   if (ids.length === 0) {
@@ -165,9 +167,21 @@ export async function prepareSiStockBackground(
   const stockTempDir = path.join(workDir, '_stock_tmp');
   await fs.mkdir(stockTempDir, { recursive: true });
 
-  console.log(`[reup-si] Selected stock video: ${chosen.url}`);
-  const rawPath = await downloadStockVideoNoAudio(chosen.url, stockTempDir);
-  const stockClipPath = await prepareStockClip(rawPath, targetDurationSec, stockTempDir);
+  const stepOpts = { prefix: '[reup-si]', onLog };
+  const selectedMsg = `[reup-si] Selected stock video: ${chosen.url}`;
+  console.log(selectedMsg);
+  onLog?.(selectedMsg);
+
+  const rawPath = await timedStep(
+    'Download stock video',
+    () => downloadStockVideoNoAudio(chosen.url, stockTempDir),
+    stepOpts,
+  );
+  const stockClipPath = await timedStep(
+    'Xử lý stock clip (ffmpeg)',
+    () => prepareStockClip(rawPath, targetDurationSec, stockTempDir),
+    stepOpts,
+  );
 
   return { stockClipPath, stockTempDir };
 }

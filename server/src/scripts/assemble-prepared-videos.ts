@@ -5,6 +5,7 @@ import { assembleReupSiVideo } from '../modules/video-production/shared/si-video
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import type { StoredYoutubeChannelType } from '../modules/youtube-channels/youtube-channels.types.js';
+import { formatElapsedMs, timedStep } from '../shared/timing/step-timer.js';
 
 const AUDIO_FILE = 'audio.mp3';
 /** Thử transcript đã qua LLM trước, fallback về cleaned SRT */
@@ -74,6 +75,8 @@ async function main() {
 
     console.log(`  ${channel.name}: ${preparedItems.length} video(s) Prepared → bắt đầu ghép...`);
 
+    const backgroundFootageSourceIds = channel.backgroundFootageSources;
+
     for (const item of preparedItems) {
       const workDir = resolveYoutubeChannelVideoDir(channel.id, item.videoId);
       if (!workDir) {
@@ -103,19 +106,25 @@ async function main() {
       }
 
       try {
-        console.log(`    [ghép] ${item.videoId}...`);
-        const outputPath = await assembleReupSiVideo({
-          workDir,
-          audioPath,
-          subtitlePath: subtitlePath!,
-          centerImagePath,
-          backgroundFootageSourceIds: channel.backgroundFootageSources,
-          language: channel.language,
-          onLog: msg => console.log(`      ${msg}`),
-        });
+        const startedAt = performance.now();
+
+        const outputPath = await timedStep(
+          `Ghép ${item.videoId}`,
+          () =>
+            assembleReupSiVideo({
+              workDir,
+              audioPath,
+              subtitlePath: subtitlePath!,
+              centerImagePath,
+              backgroundFootageSourceIds,
+              language: channel.language,
+              onLog: msg => console.log(`      ${msg}`),
+            }),
+          { prefix: '[ghép]' },
+        );
 
         videoPrepareRepository.markCreated(channel.id, item.videoId);
-        console.log(`    [ok]   ${item.videoId} → ${outputPath}`);
+        console.log(`    [ok]   ${item.videoId} → ${outputPath} (tổng ${formatElapsedMs(performance.now() - startedAt)})`);
         results.push({ channelName: channel.name, videoId: item.videoId, status: 'created', outputPath });
       } catch (err) {
         const reason = err instanceof Error ? err.message : 'Lỗi không xác định';

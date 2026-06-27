@@ -34,6 +34,8 @@ export function createSourceChannelsRoutes() {
     return c.json(result);
   });
 
+  app.get('/:id/usage', (c) => c.json(sourceChannelsService.getUsage(c.req.param('id'))));
+
   app.patch('/:id', zValidator('json', updateSourceChannelSchema), (c) => {
     const body = c.req.valid('json');
     const item = sourceChannelsService.update(c.req.param('id'), body);

@@ -23,6 +23,7 @@ import type {
   PromptLanguage,
   PromptOutputType,
   PromptPlaygroundResult,
+  VideoBrowserProvider,
 } from '../types/prompt';
 import {
   buildManagedTemplateExpression,
@@ -141,10 +142,13 @@ export function PromptsPage() {
 
   const [provider, setProvider] = useState<PlaygroundProvider>('gpt');
   const [imageProvider, setImageProvider] = useState<ImageBrowserProvider>('flow');
+  const [videoProvider, setVideoProvider] = useState<VideoBrowserProvider>('meta');
   const [providerSaving, setProviderSaving] = useState(false);
   const [imageProviderSaving, setImageProviderSaving] = useState(false);
+  const [videoProviderSaving, setVideoProviderSaving] = useState(false);
   const [providerSettingsError, setProviderSettingsError] = useState<string | null>(null);
   const [imageProviderSettingsError, setImageProviderSettingsError] = useState<string | null>(null);
+  const [videoProviderSettingsError, setVideoProviderSettingsError] = useState<string | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [running, setRunning] = useState(false);
   const [playgroundResult, setPlaygroundResult] = useState<PromptPlaygroundResult | null>(null);
@@ -192,6 +196,7 @@ export function PromptsPage() {
       const { item } = await fetchPromptSettings({ signal });
       setProvider(item.defaultLlmProvider);
       setImageProvider(item.defaultImageProvider);
+      setVideoProvider(item.defaultVideoProvider);
     } catch (err) {
       if (isAbortError(err)) return;
     }
@@ -228,6 +233,23 @@ export function PromptsPage() {
       setImageProviderSettingsError(err instanceof Error ? err.message : 'Failed to update image provider');
     } finally {
       setImageProviderSaving(false);
+    }
+  }
+
+  async function handleVideoProviderChange(next: VideoBrowserProvider) {
+    const previous = videoProvider;
+    setVideoProvider(next);
+    setVideoProviderSettingsError(null);
+    setVideoProviderSaving(true);
+
+    try {
+      const { item } = await updatePromptSettings({ defaultVideoProvider: next });
+      setVideoProvider(item.defaultVideoProvider);
+    } catch (err) {
+      setVideoProvider(previous);
+      setVideoProviderSettingsError(err instanceof Error ? err.message : 'Failed to update video provider');
+    } finally {
+      setVideoProviderSaving(false);
     }
   }
 
@@ -447,16 +469,20 @@ export function PromptsPage() {
         outputType={draft?.outputType ?? 'text'}
         provider={provider}
         imageProvider={imageProvider}
+        videoProvider={videoProvider}
         providerSaving={providerSaving}
         imageProviderSaving={imageProviderSaving}
+        videoProviderSaving={videoProviderSaving}
         providerSettingsError={providerSettingsError}
         imageProviderSettingsError={imageProviderSettingsError}
+        videoProviderSettingsError={videoProviderSettingsError}
         variableValues={variableValues}
         running={running}
         result={playgroundResult}
         error={playgroundError}
         onProviderChange={handleProviderChange}
         onImageProviderChange={handleImageProviderChange}
+        onVideoProviderChange={handleVideoProviderChange}
         onVariableChange={(name, value) =>
           setVariableValues((prev) => ({ ...prev, [name]: value }))
         }

@@ -5,6 +5,7 @@ import type { PromptsSettings } from './prompts-settings.types.js';
 const DEFAULT_SETTINGS: PromptsSettings = {
   defaultLlmProvider: 'gpt',
   defaultImageProvider: 'flow',
+  defaultVideoProvider: 'meta',
 };
 
 function loadSettings(): PromptsSettings {
@@ -12,6 +13,7 @@ function loadSettings(): PromptsSettings {
   return {
     defaultLlmProvider: stored?.defaultLlmProvider ?? DEFAULT_SETTINGS.defaultLlmProvider,
     defaultImageProvider: stored?.defaultImageProvider ?? DEFAULT_SETTINGS.defaultImageProvider,
+    defaultVideoProvider: stored?.defaultVideoProvider ?? DEFAULT_SETTINGS.defaultVideoProvider,
   };
 }
 
@@ -25,6 +27,7 @@ export class PromptsSettingsService {
     const next: PromptsSettings = {
       defaultLlmProvider: input.defaultLlmProvider ?? current.defaultLlmProvider,
       defaultImageProvider: input.defaultImageProvider ?? current.defaultImageProvider,
+      defaultVideoProvider: input.defaultVideoProvider ?? current.defaultVideoProvider,
     };
     writeJson(paths.promptsSettings, next);
     return next;

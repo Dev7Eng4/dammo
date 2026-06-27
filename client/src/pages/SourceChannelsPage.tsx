@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchSourceChannels, updateSourceChannel, deleteSourceChannel } from '../api/sourceChannels';
+import {
+  fetchSourceChannels,
+  updateSourceChannel,
+  deleteSourceChannel,
+  fetchSourceChannelUsage,
+} from '../api/sourceChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddSourceChannelModal } from '../components/source-channels/AddSourceChannelModal';
+import { DeleteSourceChannelModal } from '../components/source-channels/DeleteSourceChannelModal';
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
 import { useToast } from '../components/ui';
@@ -10,6 +16,8 @@ import { useTaskQueue } from '../hooks/useTaskQueue';
 import { useDebouncedValue, usePaginatedList } from '../hooks';
 import type {
   CreateSourceChannelPayload,
+  SourceChannel,
+  SourceChannelUsage,
   SourcePlatformFilter,
   SourcePurposeFilter,
   SourceRiskFilter,
@@ -30,6 +38,9 @@ export function SourceChannelsPage() {
   const [bumpingRiskId, setBumpingRiskId] = useState<string | null>(null);
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteModalSource, setDeleteModalSource] = useState<SourceChannel | null>(null);
+  const [deleteModalUsage, setDeleteModalUsage] = useState<SourceChannelUsage | null>(null);
+  const [confirmDeleting, setConfirmDeleting] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -138,19 +149,41 @@ export function SourceChannelsPage() {
     }
   }
 
+  function closeDeleteModal() {
+    setDeleteModalSource(null);
+    setDeleteModalUsage(null);
+    setConfirmDeleting(false);
+  }
+
   async function handleDelete(id: string) {
     const source = list.items.find((item) => item.id === id);
     if (!source) return;
 
     setDeletingId(id);
     try {
-      await deleteSourceChannel(id);
-      toast.success(`Deleted source "${source.name}"`);
-      list.refresh();
+      const usage = await fetchSourceChannelUsage(id);
+      setDeleteModalSource(source);
+      setDeleteModalUsage(usage);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete source');
+      toast.error(err instanceof Error ? err.message : 'Không thể kiểm tra source đang được sử dụng');
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteModalSource) return;
+
+    setConfirmDeleting(true);
+    try {
+      await deleteSourceChannel(deleteModalSource.id);
+      toast.success(`Đã xóa source "${deleteModalSource.name}"`);
+      closeDeleteModal();
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa source');
+    } finally {
+      setConfirmDeleting(false);
     }
   }
 
@@ -199,6 +232,15 @@ export function SourceChannelsPage() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddSource}
+      />
+
+      <DeleteSourceChannelModal
+        open={deleteModalSource !== null}
+        sourceName={deleteModalSource?.name ?? ''}
+        usage={deleteModalUsage}
+        deleting={confirmDeleting}
+        onClose={closeDeleteModal}
+        onConfirmDelete={handleConfirmDelete}
       />
     </div>
   );

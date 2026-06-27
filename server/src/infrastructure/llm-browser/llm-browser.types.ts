@@ -1,6 +1,7 @@
 export type LlmTextProvider = 'gpt' | 'gemini';
-export type ImageBrowserProvider = 'flow';
-export type LlmBrowserProvider = LlmTextProvider | ImageBrowserProvider;
+export type ImageBrowserProvider = 'flow' | 'meta';
+export type VideoBrowserProvider = 'meta';
+export type LlmBrowserProvider = LlmTextProvider | ImageBrowserProvider | VideoBrowserProvider;
 
 export type LlmSessionStatus = 'idle' | 'sending' | 'waiting';
 
@@ -46,15 +47,20 @@ export interface FlowReceiveResponseOptions extends LlmTextReceiveResponseOption
   debugScreenshotPath?: string;
 }
 
-/** @deprecated Use LlmTextReceiveResponseOptions or FlowReceiveResponseOptions */
-export type LlmReceiveResponseOptions = FlowReceiveResponseOptions;
+export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOptions {
+  outputPath?: string;
+  debugScreenshotPath?: string;
+  mediaKind?: 'image' | 'video' | 'auto';
+  baselineMediaCount?: number;
+}
+
+export type LlmReceiveResponseOptions = FlowReceiveResponseOptions & MetaReceiveResponseOptions;
 
 export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
   /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
   pasteStrategy?: 'human' | 'direct' | 'insertText';
 }
-
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}
 
 export interface LlmSendPromptResult {
@@ -80,6 +86,17 @@ export interface FlowGenerateImageOptions {
   timeoutMs?: number;
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
+}
+
+export interface MetaGenerateMediaOptions {
+  outputPath?: string;
+  outputDir?: string;
+  fileName?: string;
+  debugScreenshotPath?: string;
+  timeoutMs?: number;
+  stableMs?: number;
+  pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
+  mediaKind?: 'image' | 'video' | 'auto';
 }
 
 /** @deprecated Use FlowGenerateImageOptions */

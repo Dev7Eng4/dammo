@@ -3,6 +3,7 @@ import path from 'node:path';
 import { mediaDownloadDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { generateId } from '../../../../shared/id.js';
+import { timedStep, type TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
 import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
@@ -75,6 +76,13 @@ function resolveVideoPrepareTitle(outputItem: ReupVideoOutputItem): string {
   return outputItem.youtubeVideoId;
 }
 
+function createStepTimer(taskJobId: string | undefined, videoId: string): Pick<TimedStepOptions, 'prefix' | 'onLog'> {
+  return {
+    prefix: `[reup-video] ${videoId}`,
+    onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+  };
+}
+
 function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[], maxVideos?: number): ReupVideoTask[] {
   const preparedVideoIds = destination.getPreparedVideoIds();
   const limit = maxVideos ?? REUP_VIDEOS_PER_RUN;
@@ -125,6 +133,7 @@ export class ReupAudioPipeline {
 
     for (const task of tasks) {
       const taskJobId = options?.taskJobId;
+      const stepTimer = createStepTimer(taskJobId, task.videoId);
 
       try {
         let outputItem: ReupVideoOutputItem;
@@ -139,7 +148,11 @@ export class ReupAudioPipeline {
             );
           }
 
-          const downloaded = await downloadReupAudioAssets(task.link, destination.language);
+          const downloaded = await timedStep(
+            'Tải thumbnail + audio + transcript',
+            () => downloadReupAudioAssets(task.link, destination.language),
+            stepTimer,
+          );
 
           if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail saved → ${downloaded.thumbnailPath}`);
@@ -151,7 +164,7 @@ export class ReupAudioPipeline {
             taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Cleaning transcript → SRT...');
           }
 
-          const srtPath = await cleanSrt(downloaded.transcriptPath);
+          const srtPath = await timedStep('Làm sạch SRT', () => cleanSrt(downloaded.transcriptPath), stepTimer);
 
           if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SRT cleaned → ${srtPath}`);
@@ -172,86 +185,103 @@ export class ReupAudioPipeline {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${destination.language})...`);
             }
 
-            updatedSrtPath = await updateTranscriptWithLlm(srtPath, destination.language as TranscriptLanguage, {
-              onProgress: taskJobId
-                ? progress => {
-                    const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                    const profileLabel = progress.profileName;
+            updatedSrtPath = await timedStep(
+              'Cập nhật transcript (LLM)',
+              () =>
+                updateTranscriptWithLlm(srtPath, destination.language as TranscriptLanguage, {
+                  onProgress: taskJobId
+                    ? progress => {
+                        const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                        const profileLabel = progress.profileName;
 
-                    if (progress.status === 'started') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `LLM batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                      );
-                      return;
-                    }
+                        if (progress.status === 'started') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `LLM batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
 
-                    if (progress.status === 'retry') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `LLM batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                      );
-                      return;
-                    }
+                        if (progress.status === 'retry') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `LLM batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
 
-                    if (progress.status === 'fallback') {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `LLM batch ${label} on ${profileLabel} fallback to original`);
-                      return;
-                    }
+                        if (progress.status === 'fallback') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `LLM batch ${label} on ${profileLabel} fallback to original`,
+                          );
+                          return;
+                        }
 
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `LLM batch ${label} on ${profileLabel} done`);
-                  }
-                : undefined,
-            });
+                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `LLM batch ${label} on ${profileLabel} done`);
+                      }
+                    : undefined,
+                }),
+              stepTimer,
+            );
 
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → transcript.srt`);
             }
+
+            const jaSrtPath = updatedSrtPath;
+            const jaWorkDir = path.dirname(jaSrtPath);
 
             if (taskJobId) {
               taskQueueRepository.setLivePhase(taskJobId, 'metadata');
               taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 1...');
             }
 
-            metaStep1ChunkDigests = await runMetaStep1(updatedSrtPath, destination.language, {
-              onProgress: taskJobId
-                ? progress => {
-                    const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                    const profileLabel = progress.profileName;
+            metaStep1ChunkDigests = await timedStep(
+              'Meta step 1',
+              () =>
+                runMetaStep1(jaSrtPath, destination.language, {
+                  onProgress: taskJobId
+                    ? progress => {
+                        const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                        const profileLabel = progress.profileName;
 
-                    if (progress.status === 'started') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Meta step 1 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                      );
-                      return;
-                    }
+                        if (progress.status === 'started') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 1 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
 
-                    if (progress.status === 'retry') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Meta step 1 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                      );
-                      return;
-                    }
+                        if (progress.status === 'retry') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 1 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                          );
+                          return;
+                        }
 
-                    if (progress.status === 'fallback') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Meta step 1 batch ${label} on ${profileLabel} fallback to raw chunk digest`,
-                      );
-                      return;
-                    }
+                        if (progress.status === 'fallback') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 1 batch ${label} on ${profileLabel} fallback to raw chunk digest`,
+                          );
+                          return;
+                        }
 
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 1 batch ${label} on ${profileLabel} done`);
-                  }
-                : undefined,
-            });
+                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 1 batch ${label} on ${profileLabel} done`);
+                      }
+                    : undefined,
+                }),
+              stepTimer,
+            );
 
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Metadata step 1 done → ${metaStep1ChunkDigests.length} chunk_digests`);
@@ -262,44 +292,51 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 2...');
               }
 
-              metaStep2StoryBlocks = await runMetaStep2(metaStep1ChunkDigests, destination.language, downloaded.youtubeVideoId, {
-                outputDir: path.dirname(updatedSrtPath),
-                onProgress: taskJobId
-                  ? progress => {
-                      const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                      const profileLabel = progress.profileName;
+              const step1Digests = metaStep1ChunkDigests;
 
-                      if (progress.status === 'started') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                        );
-                        return;
-                      }
+              metaStep2StoryBlocks = await timedStep(
+                'Meta step 2',
+                () =>
+                  runMetaStep2(step1Digests, destination.language, downloaded.youtubeVideoId, {
+                    outputDir: jaWorkDir,
+                    onProgress: taskJobId
+                      ? progress => {
+                          const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                          const profileLabel = progress.profileName;
 
-                      if (progress.status === 'retry') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                        );
-                        return;
-                      }
+                          if (progress.status === 'started') {
+                            taskQueueRepository.appendLogMessage(
+                              taskJobId,
+                              'info',
+                              `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                            );
+                            return;
+                          }
 
-                      if (progress.status === 'fallback') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
-                        );
-                        return;
-                      }
+                          if (progress.status === 'retry') {
+                            taskQueueRepository.appendLogMessage(
+                              taskJobId,
+                              'info',
+                              `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                            );
+                            return;
+                          }
 
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
-                    }
-                  : undefined,
-              });
+                          if (progress.status === 'fallback') {
+                            taskQueueRepository.appendLogMessage(
+                              taskJobId,
+                              'info',
+                              `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
+                            );
+                            return;
+                          }
+
+                          taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
+                        }
+                      : undefined,
+                  }),
+                stepTimer,
+              );
 
               if (taskJobId) {
                 taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Metadata step 2 done → ${metaStep2StoryBlocks.length} story_blocks`);
@@ -312,32 +349,37 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 3...');
               }
 
-              metaStep3Output = await runMetaStep3(step3Items, destination.language, downloaded.youtubeVideoId, {
-                outputDir: path.dirname(updatedSrtPath),
-                onProgress: taskJobId
-                  ? progress => {
-                      const profileLabel = progress.profileName;
+              metaStep3Output = await timedStep(
+                'Meta step 3',
+                () =>
+                  runMetaStep3(step3Items, destination.language, downloaded.youtubeVideoId, {
+                    outputDir: jaWorkDir,
+                    onProgress: taskJobId
+                      ? progress => {
+                          const profileLabel = progress.profileName;
 
-                      if (progress.status === 'retry') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Meta step 3 on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                        );
-                        return;
-                      }
+                          if (progress.status === 'retry') {
+                            taskQueueRepository.appendLogMessage(
+                              taskJobId,
+                              'info',
+                              `Meta step 3 on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                            );
+                            return;
+                          }
 
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Meta step 3 on ${profileLabel} (attempt ${progress.attempt})...`,
-                      );
-                    }
-                  : undefined,
-              });
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Meta step 3 on ${profileLabel} (attempt ${progress.attempt})...`,
+                          );
+                        }
+                      : undefined,
+                  }),
+                stepTimer,
+              );
 
               if (taskJobId) {
-                const videoMetaPath = path.join(path.dirname(updatedSrtPath), 'video-meta.json');
+                const videoMetaPath = path.join(jaWorkDir, 'video-meta.json');
                 taskQueueRepository.appendLogMessage(
                   taskJobId,
                   'ok',
@@ -349,11 +391,12 @@ export class ReupAudioPipeline {
                 );
               }
 
-              const workDir = path.dirname(updatedSrtPath);
+              const workDir = jaWorkDir;
               const styleKey = resolveThumbnailStyleKey(destination.thumbnailStyleKey, destination.language);
               const useHorizontalFlow = styleKey
                 ? isHorizontalMultiStepStyle(styleKey, destination.language)
                 : false;
+              const metaOutput = metaStep3Output;
 
               if (useHorizontalFlow && styleKey) {
                 if (taskJobId) {
@@ -361,33 +404,33 @@ export class ReupAudioPipeline {
                 }
 
                 try {
-                  thumbnailHorizontalOutput = await runThumbnailHorizontal(
-                    metaStep3Output,
-                    destination.language,
-                    styleKey,
-                    {
-                      onProgress: taskJobId
-                        ? progress => {
-                            const profileLabel = progress.profileName;
-                            const stepLabel = `step ${progress.step}/3`;
+                  thumbnailHorizontalOutput = await timedStep(
+                    'Thumbnail ngang (LLM 3 bước)',
+                    () =>
+                      runThumbnailHorizontal(metaOutput, destination.language, styleKey, {
+                        onProgress: taskJobId
+                          ? progress => {
+                              const profileLabel = progress.profileName;
+                              const stepLabel = `step ${progress.step}/3`;
 
-                            if (progress.status === 'retry') {
+                              if (progress.status === 'retry') {
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                );
+                                return;
+                              }
+
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
                               );
-                              return;
                             }
-
-                            taskQueueRepository.appendLogMessage(
-                              taskJobId,
-                              'info',
-                              `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
-                            );
-                          }
-                        : undefined,
-                    },
+                          : undefined,
+                      }),
+                    stepTimer,
                   );
 
                   if (taskJobId) {
@@ -410,31 +453,30 @@ export class ReupAudioPipeline {
                 }
 
                 try {
-                  const directResult = await runDirectFlowThumbnail(
-                    metaStep3Output,
-                    destination.language,
-                    styleKey,
-                    workDir,
-                    {
-                      onProgress: taskJobId
-                        ? progress => {
-                            const profileLabel = progress.profileName;
-                            if (progress.status === 'retry') {
+                  const directResult = await timedStep(
+                    `Thumbnail Flow (${styleKey})`,
+                    () =>
+                      runDirectFlowThumbnail(metaOutput, destination.language, styleKey, workDir, {
+                        onProgress: taskJobId
+                          ? progress => {
+                              const profileLabel = progress.profileName;
+                              if (progress.status === 'retry') {
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                );
+                                return;
+                              }
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
                               );
-                              return;
                             }
-                            taskQueueRepository.appendLogMessage(
-                              taskJobId,
-                              'info',
-                              `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
-                            );
-                          }
-                        : undefined,
-                    },
+                          : undefined,
+                      }),
+                    stepTimer,
                   );
                   reupThumbnailPath = directResult.thumbnailPath;
 
@@ -454,34 +496,39 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating hero image with Google Flow...');
               }
 
-              const heroResult = await runHeroImageGeneration(metaStep3Output, downloaded.youtubeVideoId, workDir, {
-                ...(thumbnailHorizontalOutput
-                  ? {
-                      thumbnailVisual: {
-                        visualPrompt: thumbnailHorizontalOutput.plan.visualPrompt,
-                        negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
-                      },
-                    }
-                  : {}),
-                onProgress: taskJobId
-                  ? progress => {
-                      const profileLabel = progress.profileName;
-                      if (progress.status === 'retry') {
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                        );
-                        return;
-                      }
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
-                      );
-                    }
-                  : undefined,
-              });
+              const heroResult = await timedStep(
+                'Hero image (Google Flow)',
+                () =>
+                  runHeroImageGeneration(metaOutput, downloaded.youtubeVideoId, workDir, {
+                    ...(thumbnailHorizontalOutput
+                      ? {
+                          thumbnailVisual: {
+                            visualPrompt: thumbnailHorizontalOutput.plan.visualPrompt,
+                            negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
+                          },
+                        }
+                      : {}),
+                    onProgress: taskJobId
+                      ? progress => {
+                          const profileLabel = progress.profileName;
+                          if (progress.status === 'retry') {
+                            taskQueueRepository.appendLogMessage(
+                              taskJobId,
+                              'info',
+                              `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                            );
+                            return;
+                          }
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
+                          );
+                        }
+                      : undefined,
+                  }),
+                stepTimer,
+              );
               heroImagePath = heroResult.heroImagePath;
               thumbnailVisualPath = heroResult.thumbnailVisualPath;
 
@@ -510,16 +557,24 @@ export class ReupAudioPipeline {
                     taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Compositing horizontal thumbnail (canvas)...');
                   }
 
+                  const horizontalOutput = thumbnailHorizontalOutput;
+                  const visualPath = thumbnailVisualPath;
+
                   try {
                     const compositeOutPath = path.join(workDir, 'thumbnail.jpg');
-                    reupThumbnailPath = await renderThumbnailHorizontalFlowCompositeToPath({
-                      backgroundImagePath: thumbnailVisualPath,
-                      flowLayout: {
-                        thumbnail_copy: thumbnailHorizontalOutput.plan.thumbnailCopy,
-                        color_strategy: thumbnailHorizontalOutput.plan.colorStrategy,
-                      },
-                      outPath: compositeOutPath,
-                    });
+                    reupThumbnailPath = await timedStep(
+                      'Composite thumbnail',
+                      () =>
+                        renderThumbnailHorizontalFlowCompositeToPath({
+                          backgroundImagePath: visualPath,
+                          flowLayout: {
+                            thumbnail_copy: horizontalOutput.plan.thumbnailCopy,
+                            color_strategy: horizontalOutput.plan.colorStrategy,
+                          },
+                          outPath: compositeOutPath,
+                        }),
+                      stepTimer,
+                    );
 
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail composite saved → thumbnail.jpg`);
@@ -552,15 +607,25 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
               }
 
-              reupVideoPath = await assembleReupSiVideo({
-                workDir: path.dirname(updatedSrtPath),
-                audioPath: downloaded.audioPath,
-                subtitlePath: updatedSrtPath,
-                centerImagePath: heroImagePath,
-                backgroundFootageSourceIds: destination.backgroundFootageSources,
-                language: destination.language,
-                onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-              });
+              const backgroundSources = destination.backgroundFootageSources;
+              const assemblyWorkDir = path.dirname(updatedSrtPath);
+              const assemblyHeroPath = heroImagePath;
+              const assemblySrtPath = updatedSrtPath;
+
+              reupVideoPath = await timedStep(
+                'Ghép SI video',
+                () =>
+                  assembleReupSiVideo({
+                    workDir: assemblyWorkDir,
+                    audioPath: downloaded.audioPath,
+                    subtitlePath: assemblySrtPath,
+                    centerImagePath: assemblyHeroPath,
+                    backgroundFootageSourceIds: backgroundSources,
+                    language: destination.language,
+                    onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                  }),
+                stepTimer,
+              );
               primaryOutputPath = reupVideoPath;
 
               if (taskJobId) {
@@ -600,7 +665,11 @@ export class ReupAudioPipeline {
             taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading source video ${task.videoId}...`);
           }
 
-          const downloaded = await downloadReupAssets(task.link, destination.pipelineType, destination.language);
+          const downloaded = await timedStep(
+            'Tải source video',
+            () => downloadReupAssets(task.link, destination.pipelineType, destination.language),
+            stepTimer,
+          );
 
           if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Video saved → ${downloaded.videoPath}`);
@@ -619,7 +688,11 @@ export class ReupAudioPipeline {
 
         const sourceDir = mediaDownloadDir('youtube', outputItem.youtubeVideoId);
         const expectedDestDir = destination.getVideoOutputDir(outputItem.youtubeVideoId);
-        const destDir = await moveVideoFolderToDestination('youtube', outputItem.youtubeVideoId, expectedDestDir);
+        const destDir = await timedStep(
+          'Di chuyển thư mục video',
+          () => moveVideoFolderToDestination('youtube', outputItem.youtubeVideoId, expectedDestDir),
+          stepTimer,
+        );
         outputItem = remapOutputItemPaths(outputItem, sourceDir, destDir);
 
         if (path.resolve(destDir) === path.resolve(expectedDestDir)) {
