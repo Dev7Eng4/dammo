@@ -76,6 +76,70 @@ export function youtubeChannelVideoPrepareFile(channelId: string): string {
   return path.join(youtubeChannelDir(channelId), 'video-prepare.json');
 }
 
+export function youtubeChannelUploadsDir(channelId: string): string {
+  return path.join(youtubeChannelDir(channelId), 'uploads');
+}
+
+export function youtubeChannelUploadedVideoDir(channelId: string, youtubeVideoId: string): string {
+  return path.join(youtubeChannelUploadsDir(channelId), youtubeVideoId);
+}
+
+function isDirectory(dirPath: string): boolean {
+  try {
+    return fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/** Move a prepared video folder into `uploads/{videoId}` after YouTube upload. Never throws. */
+export function moveYoutubeChannelVideoToUploads(
+  channelId: string,
+  videoId: string,
+  sourceFolderPath?: string,
+): void {
+  const normalizedVideoId = videoId.trim();
+  if (!normalizedVideoId) return;
+
+  const uploadsDir = youtubeChannelUploadsDir(channelId);
+  const dest = youtubeChannelUploadedVideoDir(channelId, normalizedVideoId);
+
+  let source =
+    sourceFolderPath?.trim() && isDirectory(sourceFolderPath.trim())
+      ? path.resolve(sourceFolderPath.trim())
+      : resolveYoutubeChannelVideoDir(channelId, normalizedVideoId);
+
+  if (!source) {
+    if (isDirectory(dest)) return;
+    console.warn(
+      `[youtube-upload] move to uploads: source folder not found for videoId «${normalizedVideoId}»`,
+    );
+    return;
+  }
+
+  source = path.resolve(source);
+  const resolvedUploadsDir = path.resolve(uploadsDir);
+  if (source === dest || source.startsWith(resolvedUploadsDir + path.sep)) {
+    return;
+  }
+
+  if (isDirectory(dest)) {
+    console.warn(
+      `[youtube-upload] move to uploads: destination already exists for videoId «${normalizedVideoId}»`,
+    );
+    return;
+  }
+
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.renameSync(source, dest);
+    console.log(`[youtube-upload] moved ${normalizedVideoId} → uploads/`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[youtube-upload] move to uploads failed for «${normalizedVideoId}»: ${message}`);
+  }
+}
+
 export function ensureDataDirs(): void {
   const dirs = [
     paths.dataDir,

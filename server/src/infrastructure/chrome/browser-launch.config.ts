@@ -6,12 +6,24 @@ const STEALTH_ARGS = [
   '--no-default-browser-check',
 ] as const;
 
+/** Chrome flags to avoid stealing focus from the user's foreground apps. */
+export function backgroundChromeArgs(): string[] {
+  if (process.platform === 'win32') {
+    return ['--start-minimized'];
+  }
+  return [];
+}
+
 /** Shared launch flags for system Google Chrome (not Playwright Chromium bundle). */
-function baseChromeOptions(headless: boolean) {
+function baseChromeOptions(headless: boolean, background = false) {
+  const args: string[] = [...STEALTH_ARGS];
+  if (background) {
+    args.push(...backgroundChromeArgs());
+  }
   return {
     headless,
     ignoreDefaultArgs: ['--enable-automation'],
-    args: [...STEALTH_ARGS],
+    args,
   };
 }
 
@@ -22,13 +34,17 @@ function resolveChromeTarget() {
   return { channel: env.chromeChannel };
 }
 
+export interface ChromeLaunchOptions {
+  background?: boolean;
+}
+
 /**
  * Options for chromium.launchPersistentContext().
  * Playwright API name is "chromium", but channel/executablePath selects system Google Chrome.
  */
-export function buildChromeLaunchOptions(headless: boolean) {
+export function buildChromeLaunchOptions(headless: boolean, options: ChromeLaunchOptions = {}) {
   return {
-    ...baseChromeOptions(headless),
+    ...baseChromeOptions(headless, options.background),
     viewport: null,
     locale: 'en-US',
     acceptDownloads: true,

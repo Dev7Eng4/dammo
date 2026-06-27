@@ -8,6 +8,7 @@ import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
 
 const activeContexts = new Map<string, BrowserContext>();
+const profileBackgroundMode = new Map<string, boolean>();
 const DEFAULT_OPEN_URL = 'https://www.google.com';
 const CHROME_LAUNCH_GAP_MS = 1_500;
 const CHROME_LAUNCH_MAX_ATTEMPTS = 3;
@@ -54,8 +55,13 @@ function isContextAlive(context: BrowserContext): boolean {
   }
 }
 
+function isProfileBackground(profileId: string): boolean {
+  return profileBackgroundMode.get(profileId) ?? false;
+}
+
 export interface OpenChromeProfileOptions {
   startUrl?: string;
+  background?: boolean;
 }
 
 function chromeLaunchError(err: unknown, action: string): AppError {
@@ -67,7 +73,12 @@ function chromeLaunchError(err: unknown, action: string): AppError {
   );
 }
 
-async function logChromeLaunch(context: BrowserContext, headless: boolean, userDataDir: string): Promise<void> {
+async function logChromeLaunch(
+  context: BrowserContext,
+  headless: boolean,
+  userDataDir: string,
+  background: boolean,
+): Promise<void> {
   let userAgent: string | undefined;
   try {
     const page = context.pages()[0] ?? (await context.newPage());
@@ -78,6 +89,7 @@ async function logChromeLaunch(context: BrowserContext, headless: boolean, userD
 
   console.log('[chrome-profile] launched', {
     headless,
+    background,
     chrome: env.chromeExecutablePath || `channel:${env.chromeChannel}`,
     userAgent,
     userDataDir,
@@ -98,9 +110,12 @@ export async function getChromeProfilePage(profileId: string): Promise<Page> {
     throw new AppError('Chrome profile is not open', 409, 'PROFILE_NOT_OPEN');
   }
 
+  const bringToFront = !isProfileBackground(profileId);
   const existing = context.pages()[0];
   if (existing) {
-    await existing.bringToFront();
+    if (bringToFront) {
+      await existing.bringToFront();
+    }
     return existing;
   }
 
@@ -108,7 +123,9 @@ export async function getChromeProfilePage(profileId: string): Promise<Page> {
     return await context.waitForEvent('page', { timeout: 5_000 });
   } catch {
     const page = await context.newPage();
-    await page.bringToFront();
+    if (bringToFront) {
+      await page.bringToFront();
+    }
     return page;
   }
 }
@@ -128,6 +145,7 @@ export async function closeChromeProfile(profileId: string): Promise<boolean> {
     return false;
   } finally {
     activeContexts.delete(profileId);
+    profileBackgroundMode.delete(profileId);
   }
 }
 
@@ -149,7 +167,11 @@ async function waitForInitialPage(context: BrowserContext): Promise<Page> {
   }
 }
 
-async function navigateToStartPage(context: BrowserContext, startUrl: string): Promise<void> {
+async function navigateToStartPage(
+  context: BrowserContext,
+  startUrl: string,
+  profileId: string,
+): Promise<void> {
   const page = await waitForInitialPage(context);
 
   if (!page.url().startsWith(startUrl)) {
@@ -159,10 +181,23 @@ async function navigateToStartPage(context: BrowserContext, startUrl: string): P
     });
   }
 
+  if (!isProfileBackground(profileId)) {
+    await page.bringToFront();
+  }
+}
+
+async function bringChromeProfileToFront(profileId: string): Promise<void> {
+  const context = activeContexts.get(profileId);
+  if (!context) return;
+  const page = await waitForInitialPage(context);
   await page.bringToFront();
 }
 
-async function launchChromeContext(userDataDir: string, headless: boolean): Promise<BrowserContext> {
+async function launchChromeContext(
+  userDataDir: string,
+  headless: boolean,
+  background: boolean,
+): Promise<BrowserContext> {
   return enqueueChromeLaunch(async () => {
     await waitChromeLaunchSlot();
 
@@ -176,10 +211,10 @@ async function launchChromeContext(userDataDir: string, headless: boolean): Prom
       try {
         const context = await chromium.launchPersistentContext(
           userDataDir,
-          buildChromeLaunchOptions(headless),
+          buildChromeLaunchOptions(headless, { background }),
         );
         await applyStealthInit(context);
-        await logChromeLaunch(context, headless, userDataDir);
+        await logChromeLaunch(context, headless, userDataDir, background);
         return context;
       } catch (err) {
         lastError = err;
@@ -199,36 +234,44 @@ export async function openChromeProfile(
   userDataDir: string,
   options?: OpenChromeProfileOptions,
 ): Promise<void> {
+  const background = options?.background ?? false;
   const existing = activeContexts.get(profileId);
   if (existing) {
     if (isContextAlive(existing)) {
+      profileBackgroundMode.set(profileId, background);
       if (options?.startUrl) {
-        await navigateToStartPage(existing, options.startUrl);
+        await navigateToStartPage(existing, options.startUrl, profileId);
+      } else if (!background) {
+        await bringChromeProfileToFront(profileId);
       }
       return;
     }
 
     activeContexts.delete(profileId);
+    profileBackgroundMode.delete(profileId);
     await existing.close().catch(() => undefined);
   }
 
   let context: BrowserContext;
   try {
-    context = await launchChromeContext(userDataDir, false);
+    context = await launchChromeContext(userDataDir, false, background);
   } catch (err) {
     throw chromeLaunchError(err, 'open Chrome profile');
   }
 
   activeContexts.set(profileId, context);
+  profileBackgroundMode.set(profileId, background);
   context.on('close', () => {
     activeContexts.delete(profileId);
+    profileBackgroundMode.delete(profileId);
     clearLlmBrowserSessionsForProfile(profileId);
   });
 
   try {
-    await navigateToStartPage(context, options?.startUrl ?? DEFAULT_OPEN_URL);
+    await navigateToStartPage(context, options?.startUrl ?? DEFAULT_OPEN_URL, profileId);
   } catch (err) {
     activeContexts.delete(profileId);
+    profileBackgroundMode.delete(profileId);
     await context.close().catch(() => undefined);
     throw chromeLaunchError(err, 'open default page');
   }
@@ -239,7 +282,7 @@ export async function initializeChromeProfile(userDataDir: string): Promise<void
 
   let context;
   try {
-    context = await launchChromeContext(userDataDir, true);
+    context = await launchChromeContext(userDataDir, true, false);
   } catch (err) {
     const detail = err instanceof Error ? err.message : 'Unknown error';
     throw new AppError(

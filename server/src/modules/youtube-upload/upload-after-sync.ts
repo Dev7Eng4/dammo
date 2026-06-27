@@ -1,3 +1,4 @@
+import { moveYoutubeChannelVideoToUploads } from '../../config/paths.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import type { PublishScheduleSlot } from './publish-schedule.js';
@@ -5,13 +6,8 @@ import type { PublishScheduleSlot } from './publish-schedule.js';
 export interface SyncAfterUploadParams {
   channelId: string;
   videoId: string;
+  folderPath?: string;
   latestScheduleSlot?: PublishScheduleSlot | null;
-}
-
-function formatActivityTime(iso: string): string {
-  const date = new Date(iso);
-  if (!Number.isFinite(date.getTime())) return '--:--';
-  return date.toISOString().slice(11, 16);
 }
 
 export async function syncAfterYoutubeUpload(params: SyncAfterUploadParams): Promise<void> {
@@ -24,14 +20,11 @@ export async function syncAfterYoutubeUpload(params: SyncAfterUploadParams): Pro
   }
 
   const uploadedAt = params.latestScheduleSlot?.iso ?? new Date().toISOString();
-  const activityMessage = `Uploaded video ${videoId}`;
 
   youtubeChannelsRepository.update(params.channelId, channel => ({
     ...channel,
     lastUploadAt: uploadedAt,
-    recentActivity: [
-      { at: formatActivityTime(uploadedAt), message: activityMessage },
-      ...channel.recentActivity,
-    ].slice(0, 20),
   }));
+
+  moveYoutubeChannelVideoToUploads(params.channelId, videoId, params.folderPath);
 }

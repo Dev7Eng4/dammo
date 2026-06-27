@@ -4,6 +4,8 @@ import type { YoutubeChannel } from './youtube-channels.types.js';
 type LegacyYoutubeChannel = YoutubeChannel & {
   sourceMapping?: string;
   backgroundFootageSourceId?: string;
+  /** @deprecated removed from persisted channel shape */
+  recentActivity?: unknown;
 };
 
 export function normalizeYoutubeChannel(raw: LegacyYoutubeChannel): YoutubeChannel {
@@ -28,7 +30,7 @@ export function normalizeYoutubeChannel(raw: LegacyYoutubeChannel): YoutubeChann
     backgroundFootageSources = [raw.backgroundFootageSourceId.trim()];
   }
 
-  const { sourceMapping: _sm, backgroundFootageSourceId: _bf, ...rest } = raw;
+  const { sourceMapping: _sm, backgroundFootageSourceId: _bf, recentActivity: _ra, ...rest } = raw;
 
   return {
     ...rest,

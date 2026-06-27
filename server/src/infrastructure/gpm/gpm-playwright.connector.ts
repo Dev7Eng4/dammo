@@ -5,6 +5,7 @@ import {
   startGpmProfile,
   stopGpmProfile,
   type GpmProfile,
+  type GpmStartProfileOptions,
   type GpmStartResult,
 } from './gpm-api.client.js';
 
@@ -129,8 +130,15 @@ async function connectOverCdp(httpEndpoint: string): Promise<Browser> {
   return chromium.connectOverCDP(wsUrl);
 }
 
+function buildGpmBackgroundStartOptions(): GpmStartProfileOptions {
+  return {
+    addition_args: '--start-minimized',
+  };
+}
+
 async function openGpmBrowserSession(profileId: string): Promise<{ browser: Browser; start: GpmStartResult }> {
-  const start = await startGpmProfile(profileId);
+  const startOptions = buildGpmBackgroundStartOptions();
+  const start = await startGpmProfile(profileId, startOptions);
   const httpEndpoint = resolveCdpHttpEndpoint(start);
   console.log(
     `[gpm-playwright] Started profile ${start.profile_id || profileId} (debug: ${httpEndpoint})`,
@@ -151,7 +159,7 @@ async function openGpmBrowserSession(profileId: string): Promise<{ browser: Brow
 
     await sleep(2_000);
 
-    const retryStart = await startGpmProfile(profileId);
+    const retryStart = await startGpmProfile(profileId, startOptions);
     const retryEndpoint = resolveCdpHttpEndpoint(retryStart);
     console.log(`[gpm-playwright] Retry start profile (debug: ${retryEndpoint})`);
     const browser = await connectOverCdp(retryEndpoint);
@@ -163,7 +171,6 @@ export async function connectPlaywrightToGpmProfile(profileId: string): Promise<
   const { browser, start } = await openGpmBrowserSession(profileId);
   const context = browser.contexts()[0] ?? (await browser.newContext());
   const page = await waitForInitialPage(context);
-  await page.bringToFront();
 
   return {
     browser,
