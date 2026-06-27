@@ -20,11 +20,6 @@ export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'li
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
 
-export interface YoutubeChannelActivity {
-  at: string;
-  message: string;
-}
-
 export interface YoutubeChannel {
   id: string;
   name: string;
@@ -46,7 +41,6 @@ export interface YoutubeChannel {
   thumbnailStyleKey?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
-  recentActivity: YoutubeChannelActivity[];
   lastUploadAt?: string;
   createdAt: string;
   channelId?: string;

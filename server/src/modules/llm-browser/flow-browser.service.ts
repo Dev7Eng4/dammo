@@ -37,7 +37,7 @@ export class FlowBrowserService {
     const profile = chromeProfilesService.getById(profileId);
     const handler = getFlowBrowserHandler();
 
-    await openChromeProfile(profile.id, profile.userDataDir);
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
     const page = await getChromeProfilePage(profile.id);
     await handler.open(page, options);
 

@@ -37,7 +37,7 @@ export class LlmBrowserService {
     const profile = chromeProfilesService.getById(profileId);
     const handler = getLlmTextBrowserHandler(provider);
 
-    await openChromeProfile(profile.id, profile.userDataDir);
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
     const page = await getChromeProfilePage(profile.id);
     await handler.open(page);
 

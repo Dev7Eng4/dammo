@@ -4,7 +4,7 @@ import { pickReupChannels } from './lib/reup-channel-picker.js';
 import { printBatchResult } from './lib/print-batch-result.js';
 
 /** Số video tối đa được prepare cho mỗi channel trong một lần chạy script */
-const DEFAULT_MAX_VIDEOS_PER_CHANNEL = 10;
+const DEFAULT_MAX_VIDEOS_PER_CHANNEL = 1;
 
 async function main() {
   ensureDataDirs();
@@ -25,8 +25,7 @@ async function main() {
   printBatchResult(result);
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });
-

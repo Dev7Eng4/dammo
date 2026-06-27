@@ -192,20 +192,6 @@ export function YoutubeChannelDetailPanel({ channel, loading, onClose }: Youtube
               </div>
             </div>
           ) : null}
-
-          {channel.recentActivity.length > 0 ? (
-            <div>
-              <SectionTitle>Recent Activity</SectionTitle>
-              <ul className="space-y-2">
-                {channel.recentActivity.map((entry, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-neutral-400">
-                    <span className="shrink-0 font-mono text-neutral-500">{entry.at}</span>
-                    <span className="text-neutral-300">{entry.message}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
         </div>
       </div>
     </aside>

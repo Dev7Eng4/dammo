@@ -414,7 +414,6 @@ export class YoutubeChannelsService {
       uploadSchedule: config.uploadSchedule,
       sourceChannels: config.sourceChannels,
       contentProjectId: buildProjectId(handle),
-      recentActivity: [],
       createdAt: new Date().toISOString(),
       uploadFrequency: input.uploadFrequency,
       ...(config.backgroundFootageSources?.length

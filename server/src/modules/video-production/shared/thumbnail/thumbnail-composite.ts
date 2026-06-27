@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { buildChromeBrowserOptions } from '../../../../infrastructure/chrome/browser-launch.config.js';
 import type { ThumbnailHorizontalCopy } from './thumbnail.types.js';
 
 const COMPOSITE_HTML_PATH = fileURLToPath(new URL('./thumbnail-horizontal-composite.html', import.meta.url));
@@ -47,7 +48,7 @@ export async function renderThumbnailHorizontalFlowCompositeToPath(input: Render
   await fs.mkdir(path.dirname(absOut), { recursive: true });
 
   const html = await buildCompositeHtml(input.backgroundImagePath, input.flowLayout);
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(buildChromeBrowserOptions(true));
 
   try {
     const page = await browser.newPage({ viewport: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT } });

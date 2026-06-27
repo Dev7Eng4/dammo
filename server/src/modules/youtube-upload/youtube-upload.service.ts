@@ -128,6 +128,7 @@ export class YoutubeUploadService {
             await syncAfterYoutubeUpload({
               channelId,
               videoId: job.videoId,
+              folderPath: job.folderPath,
               latestScheduleSlot: latestSlot,
             });
           } catch (syncErr) {
