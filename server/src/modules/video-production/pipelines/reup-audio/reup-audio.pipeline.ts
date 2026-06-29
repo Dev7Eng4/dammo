@@ -16,10 +16,7 @@ import { runHeroImageGeneration } from '../../shared/thumbnail/hero-image.js';
 import { runDirectFlowThumbnail } from '../../shared/thumbnail/direct-flow-thumbnail.js';
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
-import {
-  isHorizontalMultiStepStyle,
-  resolveThumbnailStyleKey,
-} from '../../../prompts/thumbnail-styles.js';
+import { isHorizontalMultiStepStyle, resolveThumbnailStyleKey } from '../../../prompts/thumbnail-styles.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
 import { assembleReupAiSlideshowVideo, generateAiVideoImages } from '../../shared/ai-video/index.js';
 import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from '../../shared/meta/metadata.types.js';
@@ -28,11 +25,7 @@ import { SI_OUTPUT_VIDEO_BASENAME } from '../../shared/si-video/si.constants.js'
 import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
 import { moveVideoFolderToDestination, remapOutputItemPaths } from './video-folder-mover.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-audio.constants.js';
-import type {
-  CreateReupVideosResult,
-  ReupVideoOutputItem,
-  ReupVideoTask,
-} from './reup-audio.types.js';
+import type { CreateReupVideosResult, ReupVideoOutputItem, ReupVideoTask } from './reup-audio.types.js';
 import { sourceCatalogAdapter } from '../../adapters/source-catalog.adapter.js';
 import type { ProductionDestination } from '../../ports/production-destination.port.js';
 import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
@@ -239,70 +232,15 @@ export class ReupAudioPipeline {
             subtitleForAssembly = updatedSrtPath;
 
             if (videoType === 'si') {
-            if (taskJobId) {
-              taskQueueRepository.setLivePhase(taskJobId, 'metadata');
-              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 1...');
-            }
-
-            metaStep1ChunkDigests = await timedStep(
-              'Meta step 1',
-              () =>
-                runMetaStep1(jaSrtPath, destination.language, {
-                  onProgress: taskJobId
-                    ? progress => {
-                        const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                        const profileLabel = progress.profileName;
-
-                        if (progress.status === 'started') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 1 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                          );
-                          return;
-                        }
-
-                        if (progress.status === 'retry') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 1 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                          );
-                          return;
-                        }
-
-                        if (progress.status === 'fallback') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 1 batch ${label} on ${profileLabel} fallback to raw chunk digest`,
-                          );
-                          return;
-                        }
-
-                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 1 batch ${label} on ${profileLabel} done`);
-                      }
-                    : undefined,
-                }),
-              stepTimer,
-            );
-
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Metadata step 1 done → ${metaStep1ChunkDigests.length} chunk_digests`);
-            }
-
-            if (metaStep1ChunkDigests.length >= 2) {
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 2...');
+                taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 1...');
               }
 
-              const step1Digests = metaStep1ChunkDigests;
-
-              metaStep2StoryBlocks = await timedStep(
-                'Meta step 2',
+              metaStep1ChunkDigests = await timedStep(
+                'Meta step 1',
                 () =>
-                  runMetaStep2(step1Digests, destination.language, downloaded.youtubeVideoId, {
-                    outputDir: jaWorkDir,
+                  runMetaStep1(jaSrtPath, destination.language, {
                     onProgress: taskJobId
                       ? progress => {
                           const label = `${progress.batchIndex}/${progress.totalBatches}`;
@@ -312,7 +250,7 @@ export class ReupAudioPipeline {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
+                              `Meta step 1 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
                             );
                             return;
                           }
@@ -321,7 +259,7 @@ export class ReupAudioPipeline {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              `Meta step 1 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
                             );
                             return;
                           }
@@ -330,12 +268,12 @@ export class ReupAudioPipeline {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
+                              `Meta step 1 batch ${label} on ${profileLabel} fallback to raw chunk digest`,
                             );
                             return;
                           }
 
-                          taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
+                          taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 1 batch ${label} on ${profileLabel} done`);
                         }
                       : undefined,
                   }),
@@ -343,265 +281,325 @@ export class ReupAudioPipeline {
               );
 
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Metadata step 2 done → ${metaStep2StoryBlocks.length} story_blocks`);
-              }
-            }
-
-            const step3Items = metaStep2StoryBlocks ?? metaStep1ChunkDigests;
-            if (step3Items && step3Items.length > 0) {
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 3...');
-              }
-
-              metaStep3Output = await timedStep(
-                'Meta step 3',
-                () =>
-                  runMetaStep3(step3Items, destination.language, downloaded.youtubeVideoId, {
-                    outputDir: jaWorkDir,
-                    ...(destination.visualStyle
-                      ? {
-                          visualStylePreset: {
-                            name: destination.visualStyle.name,
-                            rules: [destination.visualStyle.rule],
-                          },
-                          contentTypeHint: destination.visualStyle.niche,
-                        }
-                      : {}),
-                    onProgress: taskJobId
-                      ? progress => {
-                          const profileLabel = progress.profileName;
-
-                          if (progress.status === 'retry') {
-                            taskQueueRepository.appendLogMessage(
-                              taskJobId,
-                              'info',
-                              `Meta step 3 on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                            );
-                            return;
-                          }
-
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Meta step 3 on ${profileLabel} (attempt ${progress.attempt})...`,
-                          );
-                        }
-                      : undefined,
-                  }),
-                stepTimer,
-              );
-
-              if (taskJobId) {
-                const videoMetaPath = path.join(jaWorkDir, 'video-meta.json');
                 taskQueueRepository.appendLogMessage(
                   taskJobId,
                   'ok',
-                  `Metadata step 3 done → ${videoMetaPath}, title: ${metaStep3Output.metadata.title}, hero: ${
-                    typeof metaStep3Output.hero_image_prompt.prompt === 'string' && metaStep3Output.hero_image_prompt.prompt.length > 80
-                      ? `${metaStep3Output.hero_image_prompt.prompt.slice(0, 80)}...`
-                      : metaStep3Output.hero_image_prompt.prompt
-                  }`,
+                  `Metadata step 1 done → ${metaStep1ChunkDigests.length} chunk_digests`,
                 );
               }
 
-              const workDir = jaWorkDir;
-              const styleKey = resolveThumbnailStyleKey(destination.thumbnailStyleKey, destination.language);
-              const useHorizontalFlow = styleKey
-                ? isHorizontalMultiStepStyle(styleKey, destination.language)
-                : false;
-              const metaOutput = metaStep3Output;
-
-              if (useHorizontalFlow && styleKey) {
+              if (metaStep1ChunkDigests.length >= 2) {
                 if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating horizontal thumbnail (LLM step 1/2/3)...');
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 2...');
                 }
 
-                try {
-                  thumbnailHorizontalOutput = await timedStep(
-                    'Thumbnail ngang (LLM 3 bước)',
-                    () =>
-                      runThumbnailHorizontal(metaOutput, destination.language, styleKey, {
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              const stepLabel = `step ${progress.step}/3`;
+                const step1Digests = metaStep1ChunkDigests;
 
-                              if (progress.status === 'retry') {
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                );
-                                return;
-                              }
+                metaStep2StoryBlocks = await timedStep(
+                  'Meta step 2',
+                  () =>
+                    runMetaStep2(step1Digests, destination.language, downloaded.youtubeVideoId, {
+                      outputDir: jaWorkDir,
+                      onProgress: taskJobId
+                        ? progress => {
+                            const label = `${progress.batchIndex}/${progress.totalBatches}`;
+                            const profileLabel = progress.profileName;
 
+                            if (progress.status === 'started') {
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
+                                `Meta step 2 batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
                               );
+                              return;
                             }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
 
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Horizontal thumbnail LLM done');
-                  }
-                } catch (err) {
-                  const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
-                  console.warn(`[reup-video] thumbnail LLM skipped (non-fatal): ${message}`);
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail LLM skipped: ${message}`);
-                  }
-                }
-              } else if (styleKey) {
+                            if (progress.status === 'retry') {
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `Meta step 2 batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              );
+                              return;
+                            }
+
+                            if (progress.status === 'fallback') {
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `Meta step 2 batch ${label} on ${profileLabel} fallback to merged chunk digests`,
+                              );
+                              return;
+                            }
+
+                            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Meta step 2 batch ${label} on ${profileLabel} done`);
+                          }
+                        : undefined,
+                    }),
+                  stepTimer,
+                );
+
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(
                     taskJobId,
-                    'info',
-                    `Creating thumbnail via Flow (${styleKey})...`,
+                    'ok',
+                    `Metadata step 2 done → ${metaStep2StoryBlocks.length} story_blocks`,
                   );
                 }
+              }
 
-                try {
-                  const directResult = await timedStep(
-                    `Thumbnail Flow (${styleKey})`,
-                    () =>
-                      runDirectFlowThumbnail(metaOutput, destination.language, styleKey, workDir, {
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              if (progress.status === 'retry') {
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                );
-                                return;
-                              }
+              const step3Items = metaStep2StoryBlocks ?? metaStep1ChunkDigests;
+              if (step3Items && step3Items.length > 0) {
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 3...');
+                }
+
+                metaStep3Output = await timedStep(
+                  'Meta step 3',
+                  () =>
+                    runMetaStep3(step3Items, destination.language, downloaded.youtubeVideoId, {
+                      outputDir: jaWorkDir,
+                      ...(destination.visualStyle
+                        ? {
+                            visualStylePreset: {
+                              name: destination.visualStyle.name,
+                              rules: [destination.visualStyle.rule],
+                            },
+                            contentTypeHint: destination.visualStyle.niche,
+                          }
+                        : {}),
+                      onProgress: taskJobId
+                        ? progress => {
+                            const profileLabel = progress.profileName;
+
+                            if (progress.status === 'retry') {
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                                `Meta step 3 on ${profileLabel} retry (attempt ${progress.attempt})...`,
                               );
+                              return;
                             }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  reupThumbnailPath = directResult.thumbnailPath;
 
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Thumbnail saved → thumbnail.jpg');
-                  }
-                } catch (err) {
-                  const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
-                  console.warn(`[reup-video] direct flow thumbnail skipped (non-fatal): ${message}`);
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail skipped: ${message}`);
-                  }
-                }
-              }
-
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating hero image with Google Flow...');
-              }
-
-              const heroResult = await timedStep(
-                'Hero image (Google Flow)',
-                () =>
-                  runHeroImageGeneration(metaOutput, downloaded.youtubeVideoId, workDir, {
-                    ...(thumbnailHorizontalOutput
-                      ? {
-                          thumbnailVisual: {
-                            visualPrompt: thumbnailHorizontalOutput.plan.visualPrompt,
-                            negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
-                          },
-                        }
-                      : {}),
-                    onProgress: taskJobId
-                      ? progress => {
-                          const profileLabel = progress.profileName;
-                          if (progress.status === 'retry') {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              `Meta step 3 on ${profileLabel} (attempt ${progress.attempt})...`,
                             );
-                            return;
                           }
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
-                          );
-                        }
-                      : undefined,
-                  }),
-                stepTimer,
-              );
-              heroImagePath = heroResult.heroImagePath;
-              thumbnailVisualPath = heroResult.thumbnailVisualPath;
+                        : undefined,
+                    }),
+                  stepTimer,
+                );
 
-              const flowDebugPath = path.join(workDir, 'flow-debug.png');
-              await fs.unlink(flowDebugPath).catch(() => undefined);
-
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Hero image saved → background.jpg`);
-              }
-
-              if (useHorizontalFlow) {
                 if (taskJobId) {
-                  if (thumbnailVisualPath) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail visual saved → thumbnail_visual.jpg`);
-                  } else {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      'Thumbnail visual generation skipped or failed (background.jpg kept)',
-                    );
-                  }
+                  const videoMetaPath = path.join(jaWorkDir, 'video-meta.json');
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'ok',
+                    `Metadata step 3 done → ${videoMetaPath}, title: ${metaStep3Output.metadata.title}, hero: ${
+                      typeof metaStep3Output.hero_image_prompt.prompt === 'string' && metaStep3Output.hero_image_prompt.prompt.length > 80
+                        ? `${metaStep3Output.hero_image_prompt.prompt.slice(0, 80)}...`
+                        : metaStep3Output.hero_image_prompt.prompt
+                    }`,
+                  );
                 }
 
-                if (thumbnailHorizontalOutput && thumbnailVisualPath) {
+                const workDir = jaWorkDir;
+                const styleKey = resolveThumbnailStyleKey(destination.thumbnailStyleKey, destination.language);
+                const useHorizontalFlow = styleKey ? isHorizontalMultiStepStyle(styleKey, destination.language) : false;
+                const metaOutput = metaStep3Output;
+
+                if (useHorizontalFlow && styleKey) {
                   if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Compositing horizontal thumbnail (canvas)...');
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating horizontal thumbnail (LLM step 1/2/3)...');
                   }
 
-                  const horizontalOutput = thumbnailHorizontalOutput;
-                  const visualPath = thumbnailVisualPath;
-
                   try {
-                    const compositeOutPath = path.join(workDir, 'thumbnail.jpg');
-                    reupThumbnailPath = await timedStep(
-                      'Composite thumbnail',
+                    thumbnailHorizontalOutput = await timedStep(
+                      'Thumbnail ngang (LLM 3 bước)',
                       () =>
-                        renderThumbnailHorizontalFlowCompositeToPath({
-                          backgroundImagePath: visualPath,
-                          flowLayout: {
-                            thumbnail_copy: horizontalOutput.plan.thumbnailCopy,
-                            color_strategy: horizontalOutput.plan.colorStrategy,
-                          },
-                          outPath: compositeOutPath,
+                        runThumbnailHorizontal(metaOutput, destination.language, styleKey, {
+                          onProgress: taskJobId
+                            ? progress => {
+                                const profileLabel = progress.profileName;
+                                const stepLabel = `step ${progress.step}/3`;
+
+                                if (progress.status === 'retry') {
+                                  taskQueueRepository.appendLogMessage(
+                                    taskJobId,
+                                    'info',
+                                    `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  );
+                                  return;
+                                }
+
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
+                                );
+                              }
+                            : undefined,
                         }),
                       stepTimer,
                     );
 
                     if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail composite saved → thumbnail.jpg`);
+                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Horizontal thumbnail LLM done');
                     }
                   } catch (err) {
-                    const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail composite failed';
-                    console.warn(`[reup-video] thumbnail composite skipped (non-fatal): ${message}`);
+                    const message =
+                      err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
+                    console.warn(`[reup-video] thumbnail LLM skipped (non-fatal): ${message}`);
                     if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail composite skipped: ${message}`);
+                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail LLM skipped: ${message}`);
+                    }
+                  }
+                } else if (styleKey) {
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Creating thumbnail via Flow (${styleKey})...`);
+                  }
+
+                  try {
+                    const directResult = await timedStep(
+                      `Thumbnail Flow (${styleKey})`,
+                      () =>
+                        runDirectFlowThumbnail(metaOutput, destination.language, styleKey, workDir, {
+                          onProgress: taskJobId
+                            ? progress => {
+                                const profileLabel = progress.profileName;
+                                if (progress.status === 'retry') {
+                                  taskQueueRepository.appendLogMessage(
+                                    taskJobId,
+                                    'info',
+                                    `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  );
+                                  return;
+                                }
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                                );
+                              }
+                            : undefined,
+                        }),
+                      stepTimer,
+                    );
+                    reupThumbnailPath = directResult.thumbnailPath;
+
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Thumbnail saved → thumbnail.jpg');
+                    }
+                  } catch (err) {
+                    const message =
+                      err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
+                    console.warn(`[reup-video] direct flow thumbnail skipped (non-fatal): ${message}`);
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail skipped: ${message}`);
+                    }
+                  }
+                }
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating hero image with Google Flow...');
+                }
+
+                const heroResult = await timedStep(
+                  'Hero image (Google Flow)',
+                  () =>
+                    runHeroImageGeneration(metaOutput, downloaded.youtubeVideoId, workDir, {
+                      ...(thumbnailHorizontalOutput
+                        ? {
+                            thumbnailVisual: {
+                              visualPrompt: thumbnailHorizontalOutput.plan.visualPrompt,
+                              negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
+                            },
+                          }
+                        : {}),
+                      onProgress: taskJobId
+                        ? progress => {
+                            const profileLabel = progress.profileName;
+                            if (progress.status === 'retry') {
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `Hero image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              );
+                              return;
+                            }
+                            taskQueueRepository.appendLogMessage(
+                              taskJobId,
+                              'info',
+                              `Hero image on ${profileLabel} (attempt ${progress.attempt})...`,
+                            );
+                          }
+                        : undefined,
+                    }),
+                  stepTimer,
+                );
+                heroImagePath = heroResult.heroImagePath;
+                thumbnailVisualPath = heroResult.thumbnailVisualPath;
+
+                const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Hero image saved → background.jpg`);
+                }
+
+                if (useHorizontalFlow) {
+                  if (taskJobId) {
+                    if (thumbnailVisualPath) {
+                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail visual saved → thumbnail_visual.jpg`);
+                    } else {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        'Thumbnail visual generation skipped or failed (background.jpg kept)',
+                      );
+                    }
+                  }
+
+                  if (thumbnailHorizontalOutput && thumbnailVisualPath) {
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Compositing horizontal thumbnail (canvas)...');
+                    }
+
+                    const horizontalOutput = thumbnailHorizontalOutput;
+                    const visualPath = thumbnailVisualPath;
+
+                    try {
+                      const compositeOutPath = path.join(workDir, 'thumbnail.jpg');
+                      reupThumbnailPath = await timedStep(
+                        'Composite thumbnail',
+                        () =>
+                          renderThumbnailHorizontalFlowCompositeToPath({
+                            backgroundImagePath: visualPath,
+                            flowLayout: {
+                              thumbnail_copy: horizontalOutput.plan.thumbnailCopy,
+                              color_strategy: horizontalOutput.plan.colorStrategy,
+                            },
+                            outPath: compositeOutPath,
+                          }),
+                        stepTimer,
+                      );
+
+                      if (taskJobId) {
+                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail composite saved → thumbnail.jpg`);
+                      }
+                    } catch (err) {
+                      const message =
+                        err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail composite failed';
+                      console.warn(`[reup-video] thumbnail composite skipped (non-fatal): ${message}`);
+                      if (taskJobId) {
+                        taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail composite skipped: ${message}`);
+                      }
                     }
                   }
                 }
               }
-            }
             }
           }
 

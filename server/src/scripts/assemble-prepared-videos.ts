@@ -99,8 +99,6 @@ async function main() {
 
     console.log(`  ${channel.name} [${videoType?.toUpperCase()}]: ${preparedItems.length} video(s) Prepared → bắt đầu ghép...`);
 
-    const backgroundFootageSourceIds = channel.backgroundFootageSources;
-
     for (const item of preparedItems) {
       const workDir = resolveYoutubeChannelVideoDir(channel.id, item.videoId);
       if (!workDir) {
