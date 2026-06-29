@@ -23,21 +23,24 @@ function formatEta(seconds: number): string {
   return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
 }
 
-export async function runFfmpegJob(
-  inputPath: string,
-  outputPath: string,
-  preset: FfmpegPresetKey = 'default',
+/**
+ * Generic ffmpeg runner. Spawns ffmpeg with the given args, parses progress
+ * from stderr and resolves/rejects on exit. Reusable across pipelines
+ * (slideshow, etc.) without coupling to preset/SI-specific error codes.
+ */
+export async function runFfmpeg(
+  args: string[],
   onProgress?: (progress: FfmpegProgress) => void,
 ): Promise<void> {
-  const presetConfig = ffmpegPresets[preset] ?? ffmpegPresets.default;
-  const args = ['-y', '-i', inputPath, ...presetConfig.args, outputPath];
-
   return new Promise((resolve, reject) => {
     const proc = spawn(env.ffmpegPath, args);
     let durationSec = 0;
+    let stderrTail = '';
 
     proc.stderr.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
+      stderrTail = (stderrTail + text).slice(-2000);
+
       const durationMatch = text.match(/Duration: (\d+:\d+:\d+\.\d+)/);
       if (durationMatch) {
         durationSec = parseDurationToSeconds(durationMatch[1].split('.')[0]);
@@ -57,7 +60,7 @@ export async function runFfmpegJob(
         onProgress?.({ progress: 100, eta: '00:00:00' });
         resolve();
       } else {
-        reject(new Error(`FFmpeg exited with code ${code}`));
+        reject(new Error(`FFmpeg exited with code ${code}: ${stderrTail.slice(-800)}`));
       }
     });
 
@@ -65,6 +68,17 @@ export async function runFfmpegJob(
       reject(new Error(`FFmpeg not available: ${err.message}`));
     });
   });
+}
+
+export async function runFfmpegJob(
+  inputPath: string,
+  outputPath: string,
+  preset: FfmpegPresetKey = 'default',
+  onProgress?: (progress: FfmpegProgress) => void,
+): Promise<void> {
+  const presetConfig = ffmpegPresets[preset] ?? ffmpegPresets.default;
+  const args = ['-y', '-i', inputPath, ...presetConfig.args, outputPath];
+  return runFfmpeg(args, onProgress);
 }
 
 export function resolveOutputPath(fileName: string, outputDir: string): string {

@@ -21,6 +21,7 @@ import {
   resolveThumbnailStyleKey,
 } from '../../../prompts/thumbnail-styles.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
+import { assembleReupAiSlideshowVideo, generateAiVideoImages } from '../../shared/ai-video/index.js';
 import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
 import { SI_OUTPUT_VIDEO_BASENAME } from '../../shared/si-video/si.constants.js';
@@ -34,6 +35,7 @@ import type {
 } from './reup-audio.types.js';
 import { sourceCatalogAdapter } from '../../adapters/source-catalog.adapter.js';
 import type { ProductionDestination } from '../../ports/production-destination.port.js';
+import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
 import type { SourceCatalog } from '../../ports/source-catalog.port.js';
 import { taskQueueRepository } from '../../../task-queue/task-queue.repository.js';
 
@@ -148,11 +150,8 @@ export class ReupAudioPipeline {
             );
           }
 
-          const downloaded = await timedStep(
-            'Tải thumbnail + audio + transcript',
-            () => downloadReupAudioAssets(task.link, destination.language),
-            stepTimer,
-          );
+          const downloaded = await downloadReupAudioAssets(task.link, destination.language);
+          const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
 
           if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Thumbnail saved → ${downloaded.thumbnailPath}`);
@@ -179,7 +178,9 @@ export class ReupAudioPipeline {
           let thumbnailVisualPath: string | undefined;
           let reupThumbnailPath: string | undefined;
           let reupVideoPath: string | undefined;
+          let aiSlideImagePaths: string[] | undefined;
           let primaryOutputPath = downloaded.audioPath;
+          let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${destination.language})...`);
@@ -235,6 +236,9 @@ export class ReupAudioPipeline {
             const jaSrtPath = updatedSrtPath;
             const jaWorkDir = path.dirname(jaSrtPath);
 
+            subtitleForAssembly = updatedSrtPath;
+
+            if (videoType === 'si') {
             if (taskJobId) {
               taskQueueRepository.setLivePhase(taskJobId, 'metadata');
               taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata step 1...');
@@ -354,6 +358,15 @@ export class ReupAudioPipeline {
                 () =>
                   runMetaStep3(step3Items, destination.language, downloaded.youtubeVideoId, {
                     outputDir: jaWorkDir,
+                    ...(destination.visualStyle
+                      ? {
+                          visualStylePreset: {
+                            name: destination.visualStyle.name,
+                            rules: [destination.visualStyle.rule],
+                          },
+                          contentTypeHint: destination.visualStyle.niche,
+                        }
+                      : {}),
                     onProgress: taskJobId
                       ? progress => {
                           const profileLabel = progress.profileName;
@@ -589,51 +602,95 @@ export class ReupAudioPipeline {
                 }
               }
             }
+            }
           }
 
-          if (!options?.skipVideoAssembly && updatedSrtPath && downloaded.audioPath && heroImagePath) {
-            if (!destination.backgroundFootageSources?.length) {
-              console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(
-                  taskJobId,
-                  'info',
-                  'SI video assembly skipped: no backgroundFootageSources configured on channel',
-                );
+          const workDir = subtitleForAssembly ? path.dirname(subtitleForAssembly) : path.dirname(srtPath);
+
+          if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
+            if (videoType === 'si') {
+              if (!heroImagePath) {
+                console.warn(`[reup-video] SI video assembly skipped: hero image not generated`);
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped: hero image missing');
+                }
+              } else if (!destination.backgroundFootageSources?.length) {
+                console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'SI video assembly skipped: no backgroundFootageSources configured on channel',
+                  );
+                }
+              } else {
+                if (taskJobId) {
+                  taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
+                }
+
+                reupVideoPath = await assembleReupSiVideo({
+                  workDir,
+                  audioPath: downloaded.audioPath,
+                  subtitlePath: subtitleForAssembly,
+                  centerImagePath: heroImagePath,
+                  backgroundFootageSourceIds: destination.backgroundFootageSources,
+                  language: destination.language,
+                  onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                });
+                primaryOutputPath = reupVideoPath;
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
+                }
               }
-            } else {
+            } else if (videoType === 'ai') {
+              if (!destination.visualStyle) {
+                throw new AppError('Reup Audio AI channel is missing visual style', 400, 'VALIDATION_ERROR');
+              }
+
+              if (taskJobId) {
+                taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI slideshow images...');
+              }
+
+              aiSlideImagePaths = await generateAiVideoImages({
+                workDir,
+                youtubeVideoId: downloaded.youtubeVideoId,
+                visualStyle: destination.visualStyle,
+                metaStep3Output,
+                onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                onProgress: taskJobId
+                  ? progress =>
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `AI slide ${progress.slideIndex + 1}/${progress.totalSlides} (attempt ${progress.attempt})...`,
+                      )
+                  : undefined,
+              });
+
               if (taskJobId) {
                 taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling AI slideshow video...');
               }
 
-              const backgroundSources = destination.backgroundFootageSources;
-              const assemblyWorkDir = path.dirname(updatedSrtPath);
-              const assemblyHeroPath = heroImagePath;
-              const assemblySrtPath = updatedSrtPath;
-
-              reupVideoPath = await timedStep(
-                'Ghép SI video',
-                () =>
-                  assembleReupSiVideo({
-                    workDir: assemblyWorkDir,
-                    audioPath: downloaded.audioPath,
-                    subtitlePath: assemblySrtPath,
-                    centerImagePath: assemblyHeroPath,
-                    backgroundFootageSourceIds: backgroundSources,
-                    language: destination.language,
-                    onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                  }),
-                stepTimer,
-              );
+              reupVideoPath = await assembleReupAiSlideshowVideo({
+                workDir,
+                imagePaths: aiSlideImagePaths,
+                audioPath: downloaded.audioPath,
+                subtitlePath: subtitleForAssembly,
+                language: destination.language,
+                onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+              });
               primaryOutputPath = reupVideoPath;
 
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
+                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'AI slideshow video saved → video.mp4');
               }
             }
           } else if (options?.skipVideoAssembly && taskJobId) {
-            taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped (prepare-only mode)');
+            taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Video assembly skipped (prepare-only mode)');
           }
 
           outputItem = {
@@ -645,9 +702,9 @@ export class ReupAudioPipeline {
             outputPath: primaryOutputPath,
             thumbnailPath: downloaded.thumbnailPath,
             audioPath: downloaded.audioPath,
-            ...(updatedSrtPath
+            ...(subtitleForAssembly
               ? {
-                  updatedSrtPath,
+                  updatedSrtPath: subtitleForAssembly,
                   ...(metaStep1ChunkDigests ? { metaStep1ChunkDigests } : {}),
                   ...(metaStep2StoryBlocks ? { metaStep2StoryBlocks } : {}),
                   ...(metaStep3Output ? { metaStep3Output } : {}),
@@ -656,6 +713,7 @@ export class ReupAudioPipeline {
                   ...(thumbnailVisualPath ? { thumbnailVisualPath } : {}),
                   ...(reupThumbnailPath ? { reupThumbnailPath } : {}),
                   ...(reupVideoPath ? { reupVideoPath } : {}),
+                  ...(aiSlideImagePaths ? { aiSlideImagePaths } : {}),
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };

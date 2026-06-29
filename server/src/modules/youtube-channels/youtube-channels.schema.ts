@@ -23,6 +23,8 @@ const channelConfigFields = {
   sourceChannels: z.array(z.string().min(1)).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   thumbnailStyleKey: z.string().optional(),
+  reupAudioVideoType: z.enum(['si', 'ai']).optional(),
+  reupAudioVisualStyleId: z.string().min(1).optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
 };
@@ -36,6 +38,8 @@ function applyChannelConfigRefine(
     type: z.infer<typeof youtubeChannelTypeSchema>;
     sourceChannels?: string[];
     thumbnailStyleKey?: string;
+    reupAudioVideoType?: z.infer<typeof channelConfigFields.reupAudioVideoType>;
+    reupAudioVisualStyleId?: string;
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
   },
@@ -47,6 +51,23 @@ function applyChannelConfigRefine(
         code: 'custom',
         message: 'Source channels are required for reup channels',
         path: ['sourceChannels'],
+      });
+    }
+  }
+
+  if (data.type === 'reup_audio') {
+    if (!data.reupAudioVideoType) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Video type is required for Reup Audio channels',
+        path: ['reupAudioVideoType'],
+      });
+    }
+    if (!data.reupAudioVisualStyleId?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Video style is required for Reup Audio channels',
+        path: ['reupAudioVisualStyleId'],
       });
     }
   }

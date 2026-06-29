@@ -20,6 +20,8 @@ export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'li
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
 
+export type ReupAudioVideoType = 'si' | 'ai';
+
 export interface YoutubeChannel {
   id: string;
   name: string;
@@ -39,6 +41,8 @@ export interface YoutubeChannel {
   reupAudioSourceId?: string;
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
+  reupAudioVideoType?: ReupAudioVideoType;
+  reupAudioVisualStyleId?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
@@ -80,6 +84,8 @@ export interface CreateYoutubeChannelInput {
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
+  reupAudioVideoType?: ReupAudioVideoType;
+  reupAudioVisualStyleId?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }
@@ -91,6 +97,8 @@ export interface UpdateYoutubeChannelInput {
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
+  reupAudioVideoType?: ReupAudioVideoType;
+  reupAudioVisualStyleId?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }

@@ -35,3 +35,4 @@ Các ngách đặc thù (như thị trường Châu Á, Nhật Bản): Với cá
 
 4. Đơn giản hóa góc nhìn
    Dù chọn phong cách tối giản hay Information-Overload, hãy thu nhỏ Thumbnail lại ở mức 20% (kích thước hiển thị trên màn hình điện thoại) trước khi xuất file. Nếu bạn không thể đọc được text hoặc không nhận ra nhân vật chính ở kích thước nhỏ đó, khán giả lướt YouTube trên điện thoại cũng vậy.
+   pnpm slideshow:demo --dir data/test

@@ -7,10 +7,16 @@ export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannel
 
 export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
 
+export type ReupAudioVideoType = 'si' | 'ai';
+
 export function isReupYoutubeChannelType(
   type: YoutubeChannelType | '',
 ): type is ReupYoutubeChannelType {
   return type === 'reup_audio' || type === 'reup_video';
+}
+
+export function isReupAudioChannelType(type: YoutubeChannelType | ''): type is 'reup_audio' {
+  return type === 'reup_audio';
 }
 
 export function isStoredReupChannelType(type: StoredYoutubeChannelType): boolean {
@@ -88,6 +94,8 @@ export interface YoutubeChannel {
   reupAudioSourceId?: string;
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
+  reupAudioVideoType?: ReupAudioVideoType;
+  reupAudioVisualStyleId?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
@@ -388,6 +396,8 @@ export interface CreateYoutubeChannelPayload {
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
+  reupAudioVideoType?: ReupAudioVideoType;
+  reupAudioVisualStyleId?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }
@@ -402,6 +412,8 @@ export interface AddYoutubeChannelFormValues {
   sourceChannels: string[];
   backgroundFootageSources: string[];
   thumbnailStyleKey: string;
+  reupAudioVideoType: ReupAudioVideoType | '';
+  reupAudioVisualStyleId: string;
   uploadFrequency: UploadFrequency | '';
   publishTimes: string[];
 }

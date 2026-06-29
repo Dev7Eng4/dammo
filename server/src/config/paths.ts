@@ -23,6 +23,7 @@ export const paths = {
   mediaDownloadsDir: path.join(env.dataDir, 'media-downloads'),
   prompts: path.join(env.dataDir, 'prompts.json'),
   promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
+  visualStyles: path.join(env.dataDir, 'visual-styles.json'),
   promptsDir: path.join(env.dataDir, 'prompts'),
   playgroundDir: path.join(env.dataDir, 'playground'),
   reupSiAssetsDir: path.join(env.dataDir, 'assets'),

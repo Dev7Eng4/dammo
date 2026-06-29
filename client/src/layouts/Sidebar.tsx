@@ -55,6 +55,16 @@ function NavIconSvg({ icon }: { icon: NavIcon }) {
           <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Z" />
         </svg>
       );
+    case 'visual-styles':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="13.5" cy="6.5" r="2.5" />
+          <circle cx="17.5" cy="10.5" r="2.5" />
+          <circle cx="8.5" cy="7.5" r="2.5" />
+          <circle cx="6.5" cy="12.5" r="2.5" />
+          <path d="M12 22c4.418 0 8-3.582 8-8 0-1.657-.505-3.198-1.37-4.47L12 22Z" />
+        </svg>
+      );
     case 'browser':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -17,6 +17,14 @@ function isReupChannelType(type: StoredYoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
 }
 
+function formatChannelLabel(channel: { name: string; handle: string; type: StoredYoutubeChannelType; reupAudioVideoType?: string }) {
+  const typeTag =
+    channel.type === 'reup_audio' && channel.reupAudioVideoType
+      ? ` [${channel.reupAudioVideoType.toUpperCase()}]`
+      : '';
+  return `${channel.name} (${channel.handle})${typeTag}`;
+}
+
 export async function pickReupChannels(options: ReupChannelPickOptions = {}): Promise<ReupChannelPickResult> {
   const reupChannels = youtubeChannelsRepository
     .findAll()
@@ -33,7 +41,7 @@ export async function pickReupChannels(options: ReupChannelPickOptions = {}): Pr
     choices: [
       { name: 'All', value: ALL_VALUE },
       ...reupChannels.map((channel) => ({
-        name: `${channel.name} (${channel.handle})`,
+        name: formatChannelLabel(channel),
         value: channel.id,
       })),
     ],

@@ -3,11 +3,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
+import { fetchVisualStyles } from '../../api/visualStyles';
 import { updateYoutubeChannel } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
   getChannelUploadTimes,
   getPublishTimeSlotCount,
+  REUP_AUDIO_VIDEO_TYPE_OPTIONS,
   UPLOAD_FREQUENCY_OPTIONS,
   YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
@@ -15,7 +17,7 @@ import {
 import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel, YoutubeChannelLanguage } from '../../types/youtubeChannel';
-import { isReupYoutubeChannelType, parseStoredChannelLanguage } from '../../types/youtubeChannel';
+import { isReupAudioChannelType, isReupYoutubeChannelType, parseStoredChannelLanguage } from '../../types/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface EditYoutubeChannelModalProps {
@@ -43,6 +45,8 @@ const defaultValues: EditYoutubeChannelFormValues = {
   sourceChannels: [],
   backgroundFootageSources: [],
   thumbnailStyleKey: '',
+  reupAudioVideoType: '',
+  reupAudioVisualStyleId: '',
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -87,6 +91,8 @@ export function EditYoutubeChannelModal({
   const [formReady, setFormReady] = useState(false);
   const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([]);
   const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
+  const [visualStyleOptions, setVisualStyleOptions] = useState<{ value: string; label: string }[]>([]);
+  const [visualStylesLoading, setVisualStylesLoading] = useState(false);
 
   const {
     handleSubmit,
@@ -101,6 +107,7 @@ export function EditYoutubeChannelModal({
 
   const channelType = watch('type');
   const isReupType = isReupYoutubeChannelType(channelType);
+  const isReupAudio = isReupAudioChannelType(channelType);
   const language = watch('language') as YoutubeChannelLanguage | '';
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
@@ -154,6 +161,8 @@ export function EditYoutubeChannelModal({
           sourceChannels: channel.sourceChannels ?? [],
           backgroundFootageSources: channel.backgroundFootageSources ?? [],
           thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
+          reupAudioVideoType: channel.reupAudioVideoType ?? '',
+          reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
           uploadFrequency: frequency,
           publishTimes,
         });
@@ -177,6 +186,37 @@ export function EditYoutubeChannelModal({
       setValue('publishTimes', createEmptyPublishTimes(publishTimeSlotCount));
     }
   }, [publishTimeSlotCount, formReady, setValue, getValues]);
+
+  useEffect(() => {
+    if (!formReady || isReupAudio) return;
+    setValue('reupAudioVideoType', '');
+    setValue('reupAudioVisualStyleId', '');
+  }, [isReupAudio, formReady, setValue]);
+
+  useAbortableEffect(
+    async (signal) => {
+      if (!open) return;
+
+      setVisualStylesLoading(true);
+      try {
+        const { items } = await fetchVisualStyles({ signal });
+        const options = items.map((item) => ({ value: item.id, label: item.name }));
+        setVisualStyleOptions(options);
+
+        const current = getValues('reupAudioVisualStyleId');
+        if (current && !options.some((option) => option.value === current)) {
+          setValue('reupAudioVisualStyleId', '');
+        }
+      } catch {
+        if (signal.aborted) return;
+        setVisualStyleOptions([]);
+      } finally {
+        if (!signal.aborted) setVisualStylesLoading(false);
+      }
+    },
+    [open, formReady],
+    { enabled: open && formReady },
+  );
 
   useAbortableEffect(
     async (signal) => {
@@ -227,6 +267,12 @@ export function EditYoutubeChannelModal({
           ? { backgroundFootageSources: values.backgroundFootageSources }
           : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVideoType
+          ? { reupAudioVideoType: values.reupAudioVideoType }
+          : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId
+          ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId }
+          : {}),
       });
       onSuccess(item);
       onClose();
@@ -298,6 +344,70 @@ export function EditYoutubeChannelModal({
             )}
           />
         </FormField>
+
+        {isReupAudio ? (
+          <>
+            <FormField
+              label="Video Type"
+              htmlFor="edit-reup-audio-video-type"
+              error={errors.reupAudioVideoType?.message}
+              className="min-w-0"
+            >
+              <Controller
+                name="reupAudioVideoType"
+                control={control}
+                rules={{ required: isReupAudio ? 'Video type is required' : false }}
+                render={({ field }) => (
+                  <Select
+                    id="edit-reup-audio-video-type"
+                    options={REUP_AUDIO_VIDEO_TYPE_OPTIONS}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Select video type"
+                    disabled={isSubmitting}
+                    className="w-full"
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+
+            <FormField
+              label="Video Style"
+              htmlFor="edit-reup-audio-visual-style"
+              error={errors.reupAudioVisualStyleId?.message}
+              className="min-w-0"
+            >
+              <Controller
+                name="reupAudioVisualStyleId"
+                control={control}
+                rules={{ required: isReupAudio ? 'Video style is required' : false }}
+                render={({ field }) => (
+                  <Select
+                    id="edit-reup-audio-visual-style"
+                    options={visualStyleOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={
+                      visualStylesLoading
+                        ? 'Loading styles...'
+                        : visualStyleOptions.length === 0
+                          ? 'No visual styles available'
+                          : 'Select video style'
+                    }
+                    searchPlaceholder="Search visual styles..."
+                    searchable
+                    disabled={isSubmitting || visualStylesLoading}
+                    className="w-full"
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+          </>
+        ) : null}
 
         <FormField
           label="Language"

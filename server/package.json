@@ -19,7 +19,8 @@
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts",
-    "meta:generate-videos": "tsx src/scripts/generate-meta-videos.ts"
+    "meta:generate-videos": "tsx src/scripts/generate-meta-videos.ts",
+    "slideshow:demo": "tsx src/scripts/create-slideshow.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

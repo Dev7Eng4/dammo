@@ -14,6 +14,7 @@ import { SourceChannelDetailPage } from './pages/SourceChannelDetailPage';
 import { SourceChannelsPage } from './pages/SourceChannelsPage';
 import { TaskQueuePage } from './pages/TaskQueuePage';
 import { VideoFactoryPage } from './pages/VideoFactoryPage';
+import { VisualStylesPage } from './pages/VisualStylesPage';
 import { YoutubeChannelDetailPage } from './pages/YoutubeChannelDetailPage';
 import { YoutubeChannelsPage } from './pages/YoutubeChannelsPage';
 
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="source-channels" element={<SourceChannelsPage />} />
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
               <Route path="prompts" element={<PromptsPage />} />
+              <Route path="visual-styles" element={<VisualStylesPage />} />
               <Route path="chrome-profiles" element={<ChromeProfilesPage />} />
               <Route path="gpm-manager" element={<GpmManagerPage />} />
               <Route path="proxies" element={<ProxiesPage />} />
