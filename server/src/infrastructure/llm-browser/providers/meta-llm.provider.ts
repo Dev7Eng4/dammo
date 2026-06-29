@@ -2,8 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { META_BASE_URL, META_CONFIG } from '../meta.config.js';
-import { downloadAndSaveMetaAsset } from '../meta-media.js';
+import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from '../meta.config.js';
+import { downloadAndSaveMetaAsset, resolveMetaMediaIndexedSavePaths } from '../meta-media.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
   LlmBrowserResponse,
@@ -17,8 +17,11 @@ import {
   humanClick,
   humanPaste,
   humanPressEnter,
+  humanReadLatestResponse,
+  humanScroll,
   humanWander,
   randomDelay,
+  randomInt,
 } from '../human-interaction.js';
 
 const WARMUP_URL = 'https://www.google.com';
@@ -68,6 +71,24 @@ async function warmUpBeforeMeta(page: Page): Promise<void> {
   await randomDelay(800, 1_500);
 }
 
+async function humanIdleBrief(page: Page): Promise<void> {
+  if (Math.random() < 0.4) {
+    await humanWander(page);
+  }
+  await randomDelay(200, 600);
+}
+
+async function humanIdleWhileWaiting(page: Page): Promise<void> {
+  await humanScroll(page, randomInt(80, 220));
+  await randomDelay(400, 900);
+}
+
+async function humanPauseAfterMediaReady(page: Page, assistant: Locator): Promise<void> {
+  await humanReadLatestResponse(page, assistant);
+  await humanIdleBrief(page);
+  await randomDelay(1_000, 2_500);
+}
+
 async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<void> {
   if (!debugPath) return;
   try {
@@ -78,76 +99,116 @@ async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<v
   }
 }
 
-async function isGenerating(page: Page): Promise<boolean> {
-  const indicator = META_CONFIG.selectors.generatingIndicator;
-  if (!indicator) return false;
-
-  for (const candidate of splitSelectors(indicator)) {
-    const locator = page.locator(candidate).first();
-    if (await locator.isVisible().catch(() => false)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-async function countMediaElements(page: Page, selector: string): Promise<number> {
-  let count = 0;
-  for (const candidate of splitSelectors(selector)) {
-    count += await page.locator(candidate).count().catch(() => 0);
-  }
-  return count;
-}
-
-async function extractMediaSource(locator: Locator): Promise<string | null> {
-  const tagName = await locator.evaluate(node => node.tagName.toLowerCase()).catch(() => '');
-
-  if (tagName === 'video') {
-    const src = await locator.getAttribute('src');
-    if (src?.trim()) return src.trim();
-
-    const source = locator.locator('source').first();
-    const sourceSrc = await source.getAttribute('src').catch(() => null);
-    if (sourceSrc?.trim()) return sourceSrc.trim();
-    return null;
-  }
-
-  if (tagName === 'source') {
-    const src = await locator.getAttribute('src');
-    return src?.trim() || null;
-  }
-
-  const src = await locator.getAttribute('src');
-  return src?.trim() || null;
-}
-
-async function findLatestMedia(
+async function waitForAssistantMessageWithImages(
   page: Page,
-  mediaKind: 'image' | 'video' | 'auto',
-  baselineImages: number,
-  baselineVideos: number,
-): Promise<{ kind: 'image' | 'video'; sourceUrl: string } | null> {
-  const kinds: Array<'image' | 'video'> =
-    mediaKind === 'auto' ? ['video', 'image'] : [mediaKind];
+  timeoutMs: number,
+): Promise<{ assistant: Locator; imageSources: string[] }> {
+  const deadline = Date.now() + timeoutMs;
+  let pollCount = 0;
+  let nextIdleAt = randomInt(3, 5);
 
-  for (const kind of kinds) {
-    const selector =
-      kind === 'video' ? META_CONFIG.selectors.resultVideos : META_CONFIG.selectors.resultImages;
-    const baseline = kind === 'video' ? baselineVideos : baselineImages;
-    const locators = page.locator(splitSelectors(selector).join(', '));
-    const count = await locators.count().catch(() => 0);
-    if (count <= baseline) continue;
+  while (Date.now() < deadline) {
+    pollCount += 1;
+    if (pollCount >= nextIdleAt) {
+      await humanIdleWhileWaiting(page);
+      pollCount = 0;
+      nextIdleAt = randomInt(3, 5);
+    }
 
-    const latest = locators.nth(count - 1);
-    const sourceUrl = await extractMediaSource(latest);
-    if (sourceUrl) return { kind, sourceUrl };
+    const lastMessage = page.locator(META_CONFIG.selectors.messageItem).last();
+    const assistant = lastMessage.locator(META_CONFIG.selectors.assistantMessage).first();
+
+    if ((await assistant.count().catch(() => 0)) > 0) {
+      try {
+        await assistant.waitFor({ state: 'visible', timeout: 1_500 });
+        const imageSources = await collectImageSources(assistant);
+        if (imageSources.length > 0) {
+          return { assistant, imageSources };
+        }
+        await humanReadLatestResponse(page, assistant);
+      } catch {
+        // Keep polling until assistant message is visible with images.
+      }
+    }
+
+    await randomDelay(400, 800);
   }
 
-  return null;
+  throw domTimeoutError('Timed out waiting for assistant-message with images in last message item');
+}
+
+async function collectImageSources(assistant: Locator): Promise<string[]> {
+  const images = assistant.locator('img');
+  const count = await images.count().catch(() => 0);
+  const sources: string[] = [];
+  const seen = new Set<string>();
+
+  for (let index = 0; index < count; index += 1) {
+    const src = await images.nth(index).getAttribute('src');
+    const trimmed = src?.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    sources.push(trimmed);
+  }
+
+  return sources;
+}
+
+function hasOutputConfig(options: MetaReceiveResponseOptions): boolean {
+  return Boolean(options.outputPath?.trim() || options.outputDir?.trim() || options.fileName?.trim());
+}
+
+function resolveAssistantWaitTimeoutMs(options: MetaReceiveResponseOptions): number {
+  const requested = options.timeoutMs ?? ASSISTANT_MESSAGE_TIMEOUT_MS;
+  return Math.min(requested, ASSISTANT_MESSAGE_TIMEOUT_MS);
 }
 
 function resolveMetaOptions(options?: LlmReceiveResponseOptions): MetaReceiveResponseOptions {
   return (options ?? {}) as MetaReceiveResponseOptions;
+}
+
+async function downloadMetaImagesBestEffort(
+  page: Page,
+  imageSources: string[],
+  outputPaths: string[],
+): Promise<LlmMediaAsset[]> {
+  const mediaAssets: LlmMediaAsset[] = [];
+
+  for (let index = 0; index < imageSources.length; index += 1) {
+    const sourceUrl = imageSources[index];
+    const outputPath = outputPaths[index];
+
+    try {
+      mediaAssets.push(await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn('[meta] skipped image download:', message, sourceUrl.slice(0, 80));
+    }
+  }
+
+  return mediaAssets;
+}
+
+async function dismissDialogIfPresent(page: Page): Promise<void> {
+  await randomDelay(300, 800);
+
+  const deadline = Date.now() + DIALOG_APPEAR_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    const dialog = page.locator(META_CONFIG.selectors.dialog).first();
+
+    if (await dialog.isVisible().catch(() => false)) {
+      const closeButton = dialog.locator(META_CONFIG.selectors.dialogCloseButton).first();
+
+      if (await closeButton.isVisible().catch(() => false)) {
+        await humanClick(page, closeButton);
+        await randomDelay(300, 600);
+        return;
+      }
+    }
+
+    await randomDelay(200, 400);
+  }
 }
 
 export function createMetaProviderHandler(): LlmBrowserProviderHandler {
@@ -159,10 +220,26 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       await page.goto(META_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await randomDelay(2_000, 4_000);
       await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
+      await humanIdleBrief(page);
+      await randomDelay(800, 1_500);
     },
 
-    async setupConfig(_page: Page, _setup: LlmSetupConfig): Promise<void> {
-      // Meta AI has no model setup flow in this integration.
+    async setupConfig(page: Page, _setup: LlmSetupConfig): Promise<void> {
+      await humanIdleBrief(page);
+      const attachmentButton = await waitForFirstVisible(
+        page,
+        META_CONFIG.selectors.composerAddAttachmentButton,
+      );
+      await humanClick(page, attachmentButton);
+      await randomDelay(500, 1_200);
+
+      const menuItem = await waitForFirstVisible(
+        page,
+        META_CONFIG.selectors.composerMenuItemCheckbox,
+        10_000,
+      );
+      await humanClick(page, menuItem);
+      await randomDelay(400, 900);
     },
 
     async readConversationIfNeeded(_page: Page): Promise<void> {
@@ -170,8 +247,12 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
     },
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
+      await humanIdleBrief(page);
       const input = await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
-      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'insertText' });
+      await humanClick(page, input);
+      await randomDelay(150, 400);
+      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'human' });
+      await randomDelay(500, 1_200);
 
       const submitWith = options?.submitWith ?? 'button';
       if (submitWith === 'enter') {
@@ -194,58 +275,48 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         }
       }
 
+      await dismissDialogIfPresent(page);
       await randomDelay(500, 1_000);
     },
 
     async receiveResponse(page: Page, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
       const startedAt = Date.now();
       const metaOptions = resolveMetaOptions(options);
-      const timeoutMs = metaOptions.timeoutMs ?? META_CONFIG.defaultTimeoutMs;
-      const stableMs = metaOptions.stableMs ?? 2_000;
-      const mediaKind = metaOptions.mediaKind ?? 'auto';
-      const deadline = startedAt + timeoutMs;
+      const timeoutMs = resolveAssistantWaitTimeoutMs(metaOptions);
 
-      const baselineImages = await countMediaElements(page, META_CONFIG.selectors.resultImages);
-      const baselineVideos = await countMediaElements(page, META_CONFIG.selectors.resultVideos);
-
-      await randomDelay(1_500, 2_500);
-
-      let lastMedia: { kind: 'image' | 'video'; sourceUrl: string } | null = null;
-      let stableSince = 0;
-
-      while (Date.now() < deadline) {
-        const generating = await isGenerating(page);
-        const found = await findLatestMedia(page, mediaKind, baselineImages, baselineVideos);
-
-        if (found) {
-          if (found.sourceUrl === lastMedia?.sourceUrl && !generating) {
-            if (stableSince === 0) {
-              stableSince = Date.now();
-            } else if (Date.now() - stableSince >= stableMs) {
-              lastMedia = found;
-              break;
-            }
-          } else {
-            lastMedia = found;
-            stableSince = 0;
-          }
-        }
-
-        await randomDelay(400, 800);
-      }
-
-      if (!lastMedia) {
+      let assistant: Locator;
+      let imageSources: string[];
+      try {
+        ({ assistant, imageSources } = await waitForAssistantMessageWithImages(page, timeoutMs));
+      } catch (err) {
         await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
-        throw domTimeoutError(`Timed out waiting for Meta ${mediaKind} media`);
+        throw err;
       }
 
       const mediaAssets: LlmMediaAsset[] = [];
-      if (metaOptions.outputPath) {
-        mediaAssets.push(
-          await downloadAndSaveMetaAsset(page, lastMedia.sourceUrl, metaOptions.outputPath, lastMedia.kind),
-        );
+
+      if (hasOutputConfig(metaOptions)) {
+        const outputPaths = resolveMetaMediaIndexedSavePaths(imageSources.length, 'image', {
+          outputPath: metaOptions.outputPath,
+          outputDir: metaOptions.outputDir,
+          fileName: metaOptions.fileName,
+        });
+        const downloaded = await downloadMetaImagesBestEffort(page, imageSources, outputPaths);
+
+        if (downloaded.length === 0) {
+          await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
+          throw domTimeoutError('Failed to download any Meta images');
+        }
+
+        mediaAssets.push(...downloaded);
       } else {
-        mediaAssets.push({ kind: lastMedia.kind, sourceUrl: lastMedia.sourceUrl });
+        for (const sourceUrl of imageSources) {
+          mediaAssets.push({ kind: 'image', sourceUrl });
+        }
+      }
+
+      if (mediaAssets.length > 0) {
+        await humanPauseAfterMediaReady(page, assistant);
       }
 
       return {

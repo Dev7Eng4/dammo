@@ -8,8 +8,22 @@ import { metaBrowserService } from '../modules/llm-browser/meta-browser.service.
 
 /** Sửa danh sách prompt tại đây rồi chạy: npm run meta:generate-videos */
 const TEST_VIDEO_PROMPTS: Array<{ prompt: string; name: string }> = [
-  { name: 'sunset', prompt: 'A cinematic sunset over the ocean' },
+  {
+    name: 'sunset',
+    prompt:
+      'A beautiful arrangement of fresh vegetables and fruits on a wooden kitchen table, Japanese anime style, colorful tomatoes, carrots, cabbage, pumpkin, apples, oranges, leafy greens, soft morning sunlight from the window, clean healthy food atmosphere, cozy Japanese kitchen background, detailed illustration, vibrant but natural colors, wholesome lifestyle feeling, 16:9 aspect ratio, no text, no logo, no watermark',
+  },
   { name: 'cat-rain', prompt: 'A cat walking in the rain' },
+  {
+    name: 'wife',
+    prompt:
+      'A Japanese married couple arguing emotionally inside a modern Japanese living room, anime style, husband and wife standing face to face, tense expressions, dramatic lighting, scattered documents on the table, warm but serious domestic atmosphere, cinematic anime scene, detailed facial emotions, natural Japanese home interior, emotional storytelling composition, 16:9 aspect ratio, no text, no logo, no watermark',
+  },
+  {
+    name: 'beach',
+    prompt:
+      'A peaceful Japanese seaside landscape in anime style, clear blue ocean, gentle waves, white sand beach, small fishing village in the distance, warm sunlight, soft summer clouds, seagulls flying, calm emotional atmosphere, cinematic composition, beautiful hand-drawn anime background, highly detailed, soft colors, 16:9 aspect ratio, no text, no logo, no watermark',
+  },
 ];
 
 const DEFAULT_TIMEOUT_MS = 300_000;

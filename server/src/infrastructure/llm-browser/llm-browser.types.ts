@@ -49,6 +49,8 @@ export interface FlowReceiveResponseOptions extends LlmTextReceiveResponseOption
 
 export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOptions {
   outputPath?: string;
+  outputDir?: string;
+  fileName?: string;
   debugScreenshotPath?: string;
   mediaKind?: 'image' | 'video' | 'auto';
   baselineMediaCount?: number;

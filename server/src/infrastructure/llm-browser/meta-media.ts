@@ -20,6 +20,46 @@ function defaultExtension(kind: 'image' | 'video'): string {
   return kind === 'video' ? '.mp4' : '.jpg';
 }
 
+function resolveMetaMediaBaseName(
+  options?: Pick<MetaGenerateMediaOptions, 'outputPath' | 'fileName'>,
+): string {
+  if (options?.fileName?.trim()) {
+    return path.parse(options.fileName.trim()).name;
+  }
+  if (options?.outputPath?.trim()) {
+    return path.parse(options.outputPath.trim()).name;
+  }
+  return 'meta-image';
+}
+
+function resolveMetaMediaOutputDir(
+  options?: Pick<MetaGenerateMediaOptions, 'outputPath' | 'outputDir'>,
+): string {
+  if (options?.outputDir?.trim()) {
+    return path.resolve(options.outputDir.trim());
+  }
+  if (options?.outputPath?.trim()) {
+    return path.dirname(path.resolve(options.outputPath.trim()));
+  }
+  return path.join(paths.mediaDownloadsDir, 'meta-test');
+}
+
+export function resolveMetaMediaIndexedSavePaths(
+  count: number,
+  kind: 'image' | 'video',
+  options?: Pick<MetaGenerateMediaOptions, 'outputPath' | 'outputDir' | 'fileName'>,
+): string[] {
+  if (count <= 0) return [];
+
+  const ext = defaultExtension(kind);
+  const dir = resolveMetaMediaOutputDir(options);
+  const baseName = resolveMetaMediaBaseName(options);
+
+  return Array.from({ length: count }, (_, index) =>
+    path.join(dir, `${baseName}-${index + 1}${ext}`),
+  );
+}
+
 export function resolveMetaMediaSavePath(
   kind: 'image' | 'video',
   options?: Pick<MetaGenerateMediaOptions, 'outputPath' | 'outputDir' | 'fileName'>,

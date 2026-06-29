@@ -1,4 +1,3 @@
-import { resolveMetaMediaSavePath } from '../../infrastructure/llm-browser/meta-media.js';
 import { getMetaBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
   getLlmBrowserSession,
@@ -42,15 +41,12 @@ export class MetaBrowserService {
     await openChromeProfile(profile.id, profile.userDataDir);
     const page = await getChromeProfilePage(profile.id);
     await handler.open(page);
+    await handler.setupConfig(page, {});
 
     return upsertLlmBrowserSession(profileId, META_PROVIDER);
   }
 
-  async generateMedia(
-    profileId: string,
-    prompt: string,
-    options?: MetaGenerateMediaOptions,
-  ): Promise<LlmBrowserResponse> {
+  async generateMedia(profileId: string, prompt: string, options?: MetaGenerateMediaOptions): Promise<LlmBrowserResponse> {
     if (!getLlmBrowserSession(profileId, META_PROVIDER)) {
       await this.open(profileId);
     }
@@ -61,25 +57,24 @@ export class MetaBrowserService {
     const handler = getMetaBrowserHandler();
     const page = await getChromeProfilePage(profileId);
     const mediaKind = resolveMediaKind(options);
-    const resolvedKind = mediaKind === 'auto' ? 'image' : mediaKind;
     const timeoutMs = options?.timeoutMs ?? 300_000;
-    const outputPath = resolveMetaMediaSavePath(resolvedKind, options);
 
     setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'sending');
 
     try {
       await handler.sendPrompt(page, prompt, {
-        pasteStrategy: options?.pasteStrategy ?? 'insertText',
+        pasteStrategy: options?.pasteStrategy ?? 'human',
         submitWith: 'enter',
       });
       setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'waiting');
 
       const response = await handler.receiveResponse(page, {
         mediaKind,
-        outputPath,
+        outputPath: options?.outputPath,
+        outputDir: options?.outputDir,
+        fileName: options?.fileName,
         debugScreenshotPath: options?.debugScreenshotPath,
         timeoutMs,
-        stableMs: options?.stableMs,
       });
 
       setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'idle');
