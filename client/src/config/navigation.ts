@@ -6,6 +6,7 @@ export type NavIcon =
   | 'facebook'
   | 'source'
   | 'prompt'
+  | 'visual-styles'
   | 'browser'
   | 'gpm'
   | 'proxies'
@@ -74,6 +75,7 @@ export const navSections: NavSection[] = [
       { id: 'scripts', label: 'Scripts', path: '/scripts', icon: 'scripts' },
       { id: 'datasets', label: 'Datasets', path: '/datasets', icon: 'datasets' },
       { id: 'prompts', label: 'Prompts', path: '/prompts', icon: 'prompt' },
+      { id: 'visual-styles', label: 'Visual Styles', path: '/visual-styles', icon: 'visual-styles' },
       { id: 'assets', label: 'Assets', path: '/assets', icon: 'assets' },
       { id: 'excel', label: 'Excel Import/Export', path: '/excel-import-export', icon: 'excel' },
     ],

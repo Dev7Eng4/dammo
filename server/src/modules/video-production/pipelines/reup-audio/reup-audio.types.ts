@@ -29,6 +29,7 @@ export interface ReupVideoOutputItem {
   thumbnailVisualPath?: string;
   reupThumbnailPath?: string;
   reupVideoPath?: string;
+  aiSlideImagePaths?: string[];
   videoPath?: string;
 }
 
