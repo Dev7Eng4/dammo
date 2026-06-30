@@ -1,10 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeDl } from 'youtube-dl-exec';
-import { spawn } from 'node:child_process';
-import { env } from '../../../../config/env.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
+import {
+  appendPixelFormatToVideoFilter,
+  buildH264VideoEncoderArgs,
+} from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { getYoutubeDlCommonOptions } from '../../../../infrastructure/youtube/youtube-dl-auth.js';
 import { sourceVideosRepository } from '../../../source-channels/source-videos.repository.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
@@ -29,15 +32,32 @@ const PREFERRED_VIDEO_FORMATS = [
   'bestvideo',
 ];
 
-function pickRandomVideo<T>(items: T[]): T | null {
-  if (items.length === 0) return null;
-  return items[Math.floor(Math.random() * items.length)] ?? null;
-}
+type PooledStockVideo = { sourceId: string; video: SourceVideoRecord };
 
-function selectEligibleStockVideo(videos: SourceVideoRecord[], targetDurationSec: number): SourceVideoRecord | null {
-  const withUrl = videos.filter(v => v.url?.trim());
-  const eligible = withUrl.filter(v => getSiEffectiveStockDuration(v.duration) >= targetDurationSec);
-  return pickRandomVideo(eligible);
+export function selectEligibleStockVideo(
+  items: PooledStockVideo[],
+  targetDurationSec: number,
+): PooledStockVideo | null {
+  const eligible = items.filter(item => {
+    if (!item.video.url?.trim()) return false;
+    return getSiEffectiveStockDuration(item.video.duration) >= targetDurationSec;
+  });
+
+  if (eligible.length === 0) return null;
+
+  const ranked = [...eligible].sort((a, b) => {
+    const usedA = a.video.used ?? 0;
+    const usedB = b.video.used ?? 0;
+    if (usedA !== usedB) return usedA - usedB;
+
+    const gapA = Math.abs(getSiEffectiveStockDuration(a.video.duration) - targetDurationSec);
+    const gapB = Math.abs(getSiEffectiveStockDuration(b.video.duration) - targetDurationSec);
+    if (gapA !== gapB) return gapA - gapB;
+
+    return a.video.id.localeCompare(b.video.id);
+  });
+
+  return ranked[0] ?? null;
 }
 
 async function downloadStockVideoNoAudio(url: string, outputDir: string): Promise<string> {
@@ -61,64 +81,49 @@ async function downloadStockVideoNoAudio(url: string, outputDir: string): Promis
   throw new AppError(`Failed to download stock background video: ${url}`, 502, 'SI_STOCK_DOWNLOAD_FAILED');
 }
 
-async function runFfmpegEncode(args: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(env.ffmpegPath, args);
-    let stderr = '';
-
-    proc.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-    });
-
-    proc.on('close', code => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      reject(new Error(`ffmpeg exited with code ${code}: ${stderr.slice(-500)}`));
-    });
-
-    proc.on('error', err => {
-      reject(new Error(`ffmpeg not available: ${err.message}`));
-    });
-  });
-}
-
-async function prepareStockClip(rawVideoPath: string, targetDuration: number, outputDir: string): Promise<string> {
+async function prepareStockClip(
+  rawVideoPath: string,
+  targetDuration: number,
+  outputDir: string,
+  onLog?: (msg: string) => void,
+): Promise<string> {
   const clipPath = path.join(outputDir, 'stock_processed.mp4');
   const sourceDuration = targetDuration / SI_STOCK_SLOWMO_FACTOR;
 
   const scaledW = Math.ceil((SI_CANVAS_W * SI_STOCK_ZOOM_FACTOR) / 2) * 2;
   const scaledH = Math.ceil((SI_CANVAS_H * SI_STOCK_ZOOM_FACTOR) / 2) * 2;
 
-  const vf = [
-    `fps=${SI_FPS}`,
-    `setpts=${SI_STOCK_SLOWMO_FACTOR}*PTS`,
-    `scale=${scaledW}:${scaledH}:force_original_aspect_ratio=increase:flags=fast_bilinear`,
-    `crop=${SI_CANVAS_W}:${SI_CANVAS_H}`,
-    'format=yuv420p',
-  ].join(',');
+  const vf = appendPixelFormatToVideoFilter(
+    [
+      `fps=${SI_FPS}`,
+      `setpts=${SI_STOCK_SLOWMO_FACTOR}*PTS`,
+      `scale=${scaledW}:${scaledH}:force_original_aspect_ratio=increase:flags=fast_bilinear`,
+      `crop=${SI_CANVAS_W}:${SI_CANVAS_H}`,
+      'format=yuv420p',
+    ].join(','),
+  );
 
-  await runFfmpegEncode([
-    '-hide_banner',
-    '-loglevel',
-    'error',
-    '-y',
-    '-ss',
-    String(SI_STOCK_SKIP_START_SEC),
-    '-t',
-    String(sourceDuration),
-    '-i',
-    rawVideoPath,
-    '-vf',
-    vf,
-    '-an',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'fast',
-    clipPath,
-  ]);
+  const stockEncodeOpts = { preset: 'fast' as const };
+  await runFfmpeg(
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      '-ss',
+      String(SI_STOCK_SKIP_START_SEC),
+      '-t',
+      String(sourceDuration),
+      '-i',
+      rawVideoPath,
+      '-vf',
+      vf,
+      '-an',
+      ...buildH264VideoEncoderArgs(stockEncodeOpts),
+      clipPath,
+    ],
+    { encodeOpts: stockEncodeOpts, onLog, label: 'si-stock-clip' },
+  );
 
   return clipPath;
 }
@@ -139,11 +144,13 @@ export async function prepareSiStockBackground(
     throw new AppError('No background footage sources configured', 400, 'SI_STOCK_SOURCE_EMPTY');
   }
 
-  const pooledVideos: SourceVideoRecord[] = [];
+  const pooledVideos: PooledStockVideo[] = [];
   for (const sourceId of ids) {
     const store = sourceVideosRepository.read(sourceId);
     if (store?.videos?.length) {
-      pooledVideos.push(...store.videos);
+      for (const video of store.videos) {
+        pooledVideos.push({ sourceId, video });
+      }
     }
   }
 
@@ -156,7 +163,7 @@ export async function prepareSiStockBackground(
   }
 
   const chosen = selectEligibleStockVideo(pooledVideos, targetDurationSec);
-  if (!chosen?.url) {
+  if (!chosen?.video.url) {
     throw new AppError(
       `No background footage video long enough (need effective >= ${Math.ceil(targetDurationSec)}s)`,
       400,
@@ -167,19 +174,20 @@ export async function prepareSiStockBackground(
   const stockTempDir = path.join(workDir, '_stock_tmp');
   await fs.mkdir(stockTempDir, { recursive: true });
 
+  const nextUsed = sourceVideosRepository.incrementVideoUsed(chosen.sourceId, chosen.video.id);
   const stepOpts = { prefix: '[reup-si]', onLog };
-  const selectedMsg = `[reup-si] Selected stock video: ${chosen.url}`;
+  const selectedMsg = `[reup-si] Selected stock video: ${chosen.video.url} (used=${nextUsed})`;
   console.log(selectedMsg);
   onLog?.(selectedMsg);
 
   const rawPath = await timedStep(
     'Download stock video',
-    () => downloadStockVideoNoAudio(chosen.url, stockTempDir),
+    () => downloadStockVideoNoAudio(chosen.video.url, stockTempDir),
     stepOpts,
   );
   const stockClipPath = await timedStep(
     'Xử lý stock clip (ffmpeg)',
-    () => prepareStockClip(rawPath, targetDurationSec, stockTempDir),
+    () => prepareStockClip(rawPath, targetDurationSec, stockTempDir, onLog),
     stepOpts,
   );
 

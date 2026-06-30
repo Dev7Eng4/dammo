@@ -1,6 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { formatClockDuration, getAudioDurationSeconds } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
+import {
+  buildH264VideoEncoderArgs,
+  isHardwareEncoder,
+  resolveFfmpegHwEncoder,
+} from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from './si-assets.js';
@@ -167,22 +172,23 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
       const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
       const subFilter = `subtitles='${subPathEscaped}:fontsdir=${fontsDirEscaped}'`;
-      filterParts.push(`[${currentVLabel}]${drawboxFilter},${subFilter}[vout_final]`);
+      const hwEncoder = resolveFfmpegHwEncoder();
+      const videoMapLabel = isHardwareEncoder(hwEncoder) ? 'venc' : 'vout_final';
+      const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
+      filterParts.push(`[${currentVLabel}]${drawboxFilter},${subFilter}${finalFormat}[${videoMapLabel}]`);
 
       const fullGraph = filterParts.join(';');
       await fs.writeFile(filterScriptPath, fullGraph, 'utf-8');
 
+      const siEncodeOpts = { preset: 'fast' as const };
       mergeArgs.push(
         '-filter_complex_script',
         filterScriptPath,
         '-map',
-        '[vout_final]',
+        `[${videoMapLabel}]`,
         '-map',
         '[aout]',
-        '-c:v',
-        'libx264',
-        '-preset',
-        'fast',
+        ...buildH264VideoEncoderArgs(siEncodeOpts),
         '-c:a',
         'aac',
         '-b:a',
@@ -195,7 +201,16 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     stepOpts,
   );
 
-  await timedStep('Ghép video (ffmpeg)', () => runFfmpegFilterComplex(mergeArgs), stepOpts);
+  await timedStep(
+    'Ghép video (ffmpeg)',
+    () =>
+      runFfmpegFilterComplex(mergeArgs, {
+        encodeOpts: { preset: 'fast' },
+        onLog,
+        label: 'si-final-merge',
+      }),
+    stepOpts,
+  );
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);

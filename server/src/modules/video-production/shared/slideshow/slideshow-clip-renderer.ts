@@ -1,9 +1,14 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  appendPixelFormatToVideoFilter,
+  buildH264VideoEncoderArgs,
+  resolveOutputPixelFormat,
+} from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { buildSlideVideoFilter } from './ken-burns.js';
-import { SS_CLIP_CRF, SS_CLIP_PRESET, SS_PIXEL_FORMAT } from './slideshow.constants.js';
+import { SS_CLIP_CRF, SS_CLIP_PRESET } from './slideshow.constants.js';
 import type { SlideSpec } from './slideshow.types.js';
 
 export interface RenderClipOptions {
@@ -50,14 +55,16 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   }
 
   const fit = slide.fit ?? 'cover';
-  const filter = buildSlideVideoFilter(slide.kenBurns, {
-    width: opts.width,
-    height: opts.height,
-    fps: opts.fps,
-    durationSec: slide.durationSec,
-    tempScaleFactor: opts.tempScaleFactor,
-    fit,
-  });
+  const filter = appendPixelFormatToVideoFilter(
+    buildSlideVideoFilter(slide.kenBurns, {
+      width: opts.width,
+      height: opts.height,
+      fps: opts.fps,
+      durationSec: slide.durationSec,
+      tempScaleFactor: opts.tempScaleFactor,
+      fit,
+    }),
+  );
 
   const key = cacheKeyFor(slide, opts, filter);
   const clipPath = path.join(opts.cacheDir, `clip_${key}.mp4`);
@@ -68,6 +75,12 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   }
 
   fs.mkdirSync(opts.cacheDir, { recursive: true });
+
+  const encodeOpts = {
+    preset: opts.preset ?? SS_CLIP_PRESET,
+    crf: opts.crf ?? SS_CLIP_CRF,
+  };
+  const pixFmt = resolveOutputPixelFormat();
 
   const args = [
     '-hide_banner',
@@ -85,18 +98,13 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
     '-r',
     String(opts.fps),
     '-an',
-    '-c:v',
-    'libx264',
-    '-preset',
-    opts.preset ?? SS_CLIP_PRESET,
-    '-crf',
-    String(opts.crf ?? SS_CLIP_CRF),
+    ...buildH264VideoEncoderArgs(encodeOpts),
     '-pix_fmt',
-    SS_PIXEL_FORMAT,
+    pixFmt,
     clipPath,
   ];
 
   opts.onLog?.(`[slideshow] rendering clip ${path.basename(slide.imagePath)} (${slide.durationSec}s)`);
-  await runFfmpeg(args);
+  await runFfmpeg(args, { encodeOpts, onLog: opts.onLog, label: 'slideshow-clip' });
   return clipPath;
 }

@@ -50,6 +50,7 @@ export interface SourceVideoRecord {
   url: string;
   viewCount?: number;
   duration?: number;
+  used?: number;
 }
 
 export interface SourceVideosStore {

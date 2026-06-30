@@ -1,26 +1,15 @@
-import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
+import {
+  appendPixelFormatToVideoFilter,
+  buildH264VideoEncoderArgs,
+} from './ffmpeg-encoder.js';
+import { runFfmpeg } from './ffmpeg-runner.js';
 import { buildReupVideoFilterGraph } from './reup-video-filters.js';
 
 export interface ProcessReupVideoOptions {
   onStderrLine?: (line: string) => void;
-}
-
-function createStderrLineEmitter(onLine: (line: string) => void) {
-  let buffer = '';
-
-  return (chunk: string) => {
-    buffer += chunk;
-    const parts = buffer.split(/\r?\n/);
-    buffer = parts.pop() ?? '';
-    for (const part of parts) {
-      const line = part.trim();
-      if (line) onLine(line);
-    }
-  };
 }
 
 export async function processReupVideo(
@@ -30,56 +19,30 @@ export async function processReupVideo(
 ): Promise<void> {
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
-  const filterGraph = buildReupVideoFilterGraph();
+  const filterGraph = appendPixelFormatToVideoFilter(buildReupVideoFilterGraph());
+  const encodeOpts = { preset: 'fast' as const };
   const args = [
     '-y',
     '-i',
     inputPath,
     '-vf',
     filterGraph,
-    '-c:v',
-    'libx264',
-    '-preset',
-    'fast',
+    ...buildH264VideoEncoderArgs(encodeOpts),
     '-c:a',
     'aac',
     outputPath,
   ];
 
-  return new Promise((resolve, reject) => {
-    const proc = spawn(env.ffmpegPath, args);
+  try {
+    await runFfmpeg(args, { encodeOpts, label: 'reup-process' });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'FFmpeg reup processing failed';
+    throw new AppError(message, 502, 'FFMPEG_REUP_FAILED');
+  }
 
-    let stderr = '';
-    const emitStderrLine = options?.onStderrLine
-      ? createStderrLineEmitter(options.onStderrLine)
-      : null;
-
-    proc.stderr.on('data', (chunk: Buffer) => {
-      const text = chunk.toString();
-      stderr += text;
-      emitStderrLine?.(text);
-    });
-
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-      reject(
-        new AppError(
-          `FFmpeg reup processing failed with code ${code}: ${stderr.slice(-500)}`,
-          502,
-          'FFMPEG_REUP_FAILED',
-        ),
-      );
-    });
-
-    proc.on('error', (err) => {
-      reject(
-        new AppError(`FFmpeg not available: ${err.message}`, 502, 'FFMPEG_REUP_FAILED'),
-      );
-    });
-  });
+  if (options?.onStderrLine) {
+    options.onStderrLine('[reup-video] encode complete');
+  }
 }
 
 export function buildReupOutputPath(channelId: string, videoId: string, outputDir: string): string {

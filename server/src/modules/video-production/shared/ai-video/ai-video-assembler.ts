@@ -1,6 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { formatClockDuration, getAudioDurationSeconds } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
+import {
+  buildH264VideoEncoderArgs,
+  isHardwareEncoder,
+  resolveFfmpegHwEncoder,
+} from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import { pickAutoEffects } from '../slideshow/slideshow-presets.js';
@@ -112,14 +117,18 @@ export async function assembleReupAiSlideshowVideo(
   const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
   const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
   const subFilter = `subtitles='${subPathEscaped}:fontsdir=${fontsDirEscaped}'`;
+  const hwEncoder = resolveFfmpegHwEncoder();
+  const videoMapLabel = isHardwareEncoder(hwEncoder) ? 'venc' : 'vout_final';
+  const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
 
   const filterParts = [
-    `[0:v]scale=${SI_CANVAS_W}:${SI_CANVAS_H}:flags=fast_bilinear,format=yuv420p,fps=${SI_FPS},${drawboxFilter},${subFilter}[vout_final]`,
+    `[0:v]scale=${SI_CANVAS_W}:${SI_CANVAS_H}:flags=fast_bilinear,format=yuv420p,fps=${SI_FPS},${drawboxFilter},${subFilter}${finalFormat}[${videoMapLabel}]`,
     `[1:a]atempo=${speed}[aout]`,
   ];
 
   await fs.writeFile(filterScriptPath, filterParts.join(';'), 'utf-8');
 
+  const aiEncodeOpts = { preset: 'fast' as const };
   const mergeArgs = [
     '-y',
     '-i',
@@ -129,13 +138,10 @@ export async function assembleReupAiSlideshowVideo(
     '-filter_complex_script',
     filterScriptPath,
     '-map',
-    '[vout_final]',
+    `[${videoMapLabel}]`,
     '-map',
     '[aout]',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'fast',
+    ...buildH264VideoEncoderArgs(aiEncodeOpts),
     '-c:a',
     'aac',
     '-b:a',
@@ -146,7 +152,11 @@ export async function assembleReupAiSlideshowVideo(
   ];
 
   log('[ai-video] Muxing slideshow + audio + subtitles...');
-  await runFfmpegFilterComplex(mergeArgs);
+  await runFfmpegFilterComplex(mergeArgs, {
+    encodeOpts: aiEncodeOpts,
+    onLog,
+    label: 'ai-final-mux',
+  });
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);

@@ -1,5 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {
+  buildH264VideoEncoderArgs,
+  resolveOutputPixelFormat,
+} from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { renderSlideClip } from './slideshow-clip-renderer.js';
 import {
@@ -10,7 +14,6 @@ import {
   SS_FINAL_CRF,
   SS_FINAL_PRESET,
   SS_FPS,
-  SS_PIXEL_FORMAT,
   SS_TEMP_SCALE_FACTOR,
 } from './slideshow.constants.js';
 import { buildXfadeChain, type ChainTransition } from './slideshow-transitions.js';
@@ -67,10 +70,12 @@ export async function assembleSlideshow(spec: SlideshowSpec): Promise<string> {
   }));
 
   const chain = buildXfadeChain({ clipCount: clipPaths.length, durations, transitions });
+  const pixFmt = resolveOutputPixelFormat();
+  const slideshowEncodeOpts = { preset: SS_FINAL_PRESET, crf: SS_FINAL_CRF };
 
   const finalFilter =
     `${chain.filter ? `${chain.filter};` : ''}` +
-    `[${chain.outLabel}]format=${SS_PIXEL_FORMAT},fps=${cfg.fps},setsar=1[vout]`;
+    `[${chain.outLabel}]format=${pixFmt},fps=${cfg.fps},setsar=1[vout]`;
 
   const filterScriptPath = path.join(workDir, 'slideshow_filter.txt');
   await fs.writeFile(filterScriptPath, finalFilter, 'utf-8');
@@ -87,21 +92,21 @@ export async function assembleSlideshow(spec: SlideshowSpec): Promise<string> {
     '-r',
     String(cfg.fps),
     '-an',
-    '-c:v',
-    'libx264',
-    '-preset',
-    SS_FINAL_PRESET,
-    '-crf',
-    String(SS_FINAL_CRF),
+    ...buildH264VideoEncoderArgs(slideshowEncodeOpts),
     '-pix_fmt',
-    SS_PIXEL_FORMAT,
+    pixFmt,
     '-movflags',
     '+faststart',
     outputPath,
   );
 
   log(`[slideshow] composing final video (~${chain.totalDuration.toFixed(1)}s)...`);
-  await runFfmpeg(args, p => spec.onLog?.(`[slideshow] encode ${p.progress}% ETA ${p.eta}`));
+  await runFfmpeg(args, {
+    onProgress: p => spec.onLog?.(`[slideshow] encode ${p.progress}% ETA ${p.eta}`),
+    encodeOpts: slideshowEncodeOpts,
+    onLog: spec.onLog,
+    label: 'slideshow-compose',
+  });
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
 
