@@ -94,7 +94,7 @@ export function YoutubeChannelsPage() {
   useAbortableEffect(
     async signal => {
       try {
-        const data = await fetchSourceChannels('all', 'all', 'all', '', 1, 200, { signal });
+        const data = await fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal });
         setSources(data.items);
       } catch {
         if (signal.aborted) return;

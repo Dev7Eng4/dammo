@@ -57,6 +57,18 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
     );
   }
 
+  if (job.type === 'download_source') {
+    return (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary-500/15 text-secondary-400">
+        <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+          <path d="M10 3v10" />
+          <path d="M6 11l4 4 4-4" />
+          <path d="M4 16h12" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-800 text-neutral-300">
       <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>

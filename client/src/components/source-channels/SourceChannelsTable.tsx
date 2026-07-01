@@ -6,10 +6,13 @@ import { RiskPill } from './RiskPill';
 interface SourceChannelsTableProps {
   sources: SourceChannel[];
   loading?: boolean;
+  selectedIds: Set<string>;
   bumpingRiskId?: string | null;
   savingNotesId?: string | null;
   deletingId?: string | null;
   onSelect: (id: string) => void;
+  onToggleRow: (id: string) => void;
+  onToggleAll: () => void;
   onBumpRisk?: (id: string) => void;
   onNotesChange?: (id: string, notes: string) => void;
   onDelete?: (id: string) => void;
@@ -20,8 +23,17 @@ function truncateUrl(url: string, max = 14) {
   return url.slice(0, max) + '...';
 }
 
-const headerColumns = (
+const headerColumns = (allSelected: boolean, onToggleAll: () => void) => (
   <>
+    <th className="pb-3 pr-3 font-medium w-10">
+      <input
+        type="checkbox"
+        checked={allSelected}
+        onChange={onToggleAll}
+        className="size-3.5 rounded border-border bg-surface-elevated"
+        aria-label="Select all sources"
+      />
+    </th>
     <th className="pb-3 pr-4 font-medium w-12">PLAT</th>
     <th className="pb-3 pr-4 font-medium">SOURCE NAME</th>
     <th className="pb-3 pr-4 font-medium">URL (ID)</th>
@@ -36,25 +48,32 @@ const headerColumns = (
 export function SourceChannelsTable({
   sources,
   loading,
+  selectedIds,
   bumpingRiskId,
   savingNotesId,
   deletingId,
   onSelect,
+  onToggleRow,
+  onToggleAll,
   onBumpRisk,
   onNotesChange,
   onDelete,
 }: SourceChannelsTableProps) {
+  const allSelected = sources.length > 0 && selectedIds.size === sources.length;
+
   if (loading) {
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">{headerColumns}</tr>
+            <tr className="border-b border-border text-xs text-neutral-500">
+              {headerColumns(false, onToggleAll)}
+            </tr>
           </thead>
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={8} className="py-3">
+                <td colSpan={9} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -77,7 +96,9 @@ export function SourceChannelsTable({
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">{headerColumns}</tr>
+          <tr className="border-b border-border text-xs text-neutral-500">
+            {headerColumns(allSelected, onToggleAll)}
+          </tr>
         </thead>
         <tbody>
           {sources.map((source) => {
@@ -85,13 +106,25 @@ export function SourceChannelsTable({
             const isBumping = bumpingRiskId === source.id;
             const isSavingNotes = savingNotesId === source.id;
             const isDeleting = deletingId === source.id;
+            const isSelected = selectedIds.has(source.id);
 
             return (
               <tr
                 key={source.id}
                 onClick={() => onSelect(source.id)}
-                className="border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50"
+                className={`border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50 ${
+                  isSelected ? 'bg-primary-500/10' : ''
+                }`}
               >
+                <td className="py-3 pr-3" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleRow(source.id)}
+                    className="size-3.5 rounded border-border bg-surface-elevated"
+                    aria-label={`Select ${source.name}`}
+                  />
+                </td>
                 <td className="py-3 pr-4">
                   <PlatformIcon platform={source.platform} className="text-neutral-400" />
                 </td>

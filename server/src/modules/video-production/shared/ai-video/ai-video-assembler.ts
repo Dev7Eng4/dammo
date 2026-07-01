@@ -103,6 +103,7 @@ export async function assembleReupAiSlideshowVideo(
     workDir,
     outputPath: slideshowRawPath,
     onLog,
+    output: { width: SI_CANVAS_W, height: SI_CANVAS_H, fps: SI_FPS },
   });
 
   const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
@@ -122,7 +123,7 @@ export async function assembleReupAiSlideshowVideo(
   const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
 
   const filterParts = [
-    `[0:v]scale=${SI_CANVAS_W}:${SI_CANVAS_H}:flags=fast_bilinear,format=yuv420p,fps=${SI_FPS},${drawboxFilter},${subFilter}${finalFormat}[${videoMapLabel}]`,
+    `[0:v]format=yuv420p,fps=${SI_FPS},${drawboxFilter},${subFilter}${finalFormat}[${videoMapLabel}]`,
     `[1:a]atempo=${speed}[aout]`,
   ];
 

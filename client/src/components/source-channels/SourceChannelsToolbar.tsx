@@ -10,11 +10,16 @@ interface SourceChannelsToolbarProps {
   purposeFilter: SourcePurposeFilter;
   riskFilter: SourceRiskFilter;
   search: string;
+  canDownload?: boolean;
+  downloadDisabledReason?: string;
+  canDelete?: boolean;
   onPlatformFilterChange: (value: SourcePlatformFilter) => void;
   onPurposeFilterChange: (value: SourcePurposeFilter) => void;
   onRiskFilterChange: (value: SourceRiskFilter) => void;
   onSearchChange: (value: string) => void;
   onAddSource: () => void;
+  onDownload?: () => void;
+  onDelete?: () => void;
 }
 
 const platformOptions: { value: SourcePlatformFilter; label: string }[] = [
@@ -46,11 +51,16 @@ export function SourceChannelsToolbar({
   purposeFilter,
   riskFilter,
   search,
+  canDownload = true,
+  downloadDisabledReason,
+  canDelete = false,
   onPlatformFilterChange,
   onPurposeFilterChange,
   onRiskFilterChange,
   onSearchChange,
   onAddSource,
+  onDownload,
+  onDelete,
 }: SourceChannelsToolbarProps) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
@@ -95,6 +105,39 @@ export function SourceChannelsToolbar({
             className="h-8 w-48 rounded-lg border border-border bg-surface-elevated pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 lg:w-56"
           />
         </div>
+        {onDelete ? (
+          <Button
+            size="sm"
+            variant="danger"
+            className="rounded-lg"
+            disabled={!canDelete}
+            onClick={onDelete}
+          >
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Delete
+          </Button>
+        ) : null}
+        {onDownload ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="rounded-lg"
+            disabled={!canDownload}
+            title={downloadDisabledReason}
+            onClick={onDownload}
+          >
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 3v12" />
+              <path d="M8 11l4 4 4-4" />
+              <path d="M4 19h16" />
+            </svg>
+            Download
+          </Button>
+        ) : null}
         <Button size="sm" className="rounded-lg" onClick={onAddSource}>
           <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M5 12h14" />

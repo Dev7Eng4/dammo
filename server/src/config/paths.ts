@@ -29,8 +29,34 @@ export const paths = {
   reupSiAssetsDir: path.join(env.dataDir, 'assets'),
 };
 
-export function sourceVideosFile(sourceId: string): string {
+export function sourceChannelDir(sourceId: string): string {
+  return path.join(paths.sourcesDir, sourceId);
+}
+
+export function sourceChannelVideosFile(sourceId: string): string {
+  return path.join(sourceChannelDir(sourceId), 'videos.json');
+}
+
+/** @deprecated Use sourceChannelVideosFile — kept for legacy flat-file migration */
+export function legacySourceVideosFile(sourceId: string): string {
   return path.join(paths.sourcesDir, `${sourceId}.json`);
+}
+
+export function sourceVideosFile(sourceId: string): string {
+  return sourceChannelVideosFile(sourceId);
+}
+
+export function sourceChannelVideoDir(sourceId: string, videoId: string): string {
+  return path.join(sourceChannelDir(sourceId), 'videos', videoId);
+}
+
+/** Canonical `videos/{id}` under source channel dir. */
+export function resolveSourceChannelVideoDir(sourceId: string, videoId: string): string | null {
+  const candidate = sourceChannelVideoDir(sourceId, videoId);
+  if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+    return candidate;
+  }
+  return null;
 }
 
 export function mediaDownloadDir(platform: string, mediaId: string): string {

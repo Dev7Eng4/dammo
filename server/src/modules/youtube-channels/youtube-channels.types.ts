@@ -50,6 +50,8 @@ export interface YoutubeChannel {
   channelId?: string;
   /** Resolved server-side for API responses */
   sourceNames?: string[];
+  sourceChannelNames?: string[];
+  backgroundFootageNames?: string[];
 }
 
 /** Resolved from source channel IDs; included in list API responses. */

@@ -103,6 +103,8 @@ export interface YoutubeChannel {
   channelId?: string;
   /** Resolved server-side for list responses */
   sourceNames?: string[];
+  sourceChannelNames?: string[];
+  backgroundFootageNames?: string[];
 }
 
 export interface YoutubeChannelsResponse {

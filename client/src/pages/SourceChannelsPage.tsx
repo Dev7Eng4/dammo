@@ -34,13 +34,15 @@ export function SourceChannelsPage() {
   const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('all');
   const [riskFilter, setRiskFilter] = useState<SourceRiskFilter>('all');
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [bumpingRiskId, setBumpingRiskId] = useState<string | null>(null);
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteModalSource, setDeleteModalSource] = useState<SourceChannel | null>(null);
-  const [deleteModalUsage, setDeleteModalUsage] = useState<SourceChannelUsage | null>(null);
+  const [deleteModalSources, setDeleteModalSources] = useState<SourceChannel[]>([]);
+  const [deleteModalUsages, setDeleteModalUsages] = useState<SourceChannelUsage[]>([]);
   const [confirmDeleting, setConfirmDeleting] = useState(false);
+  const [checkingDelete, setCheckingDelete] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -56,37 +58,95 @@ export function SourceChannelsPage() {
     limit: LIMIT,
   });
 
+  const selectedSources = list.items.filter(source => selectedIds.has(source.id));
+  const selectedSource = selectedSources.length === 1 ? selectedSources[0] : null;
+  const canDownload =
+    selectedIds.size > 0 && selectedSources.every(source => source.platform === 'youtube');
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
   function handlePlatformFilterChange(next: SourcePlatformFilter) {
     list.markLoading();
     setPlatformFilter(next);
     list.resetPage();
+    clearSelection();
   }
 
   function handlePurposeFilterChange(next: SourcePurposeFilter) {
     list.markLoading();
     setPurposeFilter(next);
     list.resetPage();
+    clearSelection();
   }
 
   function handleRiskFilterChange(next: SourceRiskFilter) {
     list.markLoading();
     setRiskFilter(next);
     list.resetPage();
+    clearSelection();
   }
 
   function handleSearchChange(value: string) {
     list.markLoading();
     setSearch(typeof value === 'string' ? value : '');
     list.resetPage();
+    clearSelection();
   }
 
   function handlePageChange(nextPage: number) {
     list.markLoading();
     list.setPage(nextPage);
+    clearSelection();
   }
 
   function handleSelect(id: string) {
     navigate(`/source-channels/${id}`);
+  }
+
+  function handleToggleRow(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleToggleAll() {
+    if (selectedIds.size === list.items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(list.items.map(source => source.id)));
+    }
+  }
+
+  function handleDownload() {
+    if (selectedIds.size === 0 || !canDownload) return;
+
+    if (selectedIds.size > 1) {
+      void enqueueTask({
+        type: 'download_source',
+        title: `Downloading videos for ${selectedIds.size} sources`,
+        subtitle: `${selectedIds.size} selected sources`,
+        payload: { sourceIds: Array.from(selectedIds) },
+      });
+      return;
+    }
+
+    if (!selectedSource) return;
+    if (selectedSource.platform !== 'youtube') return;
+
+    void enqueueTask({
+      type: 'download_source',
+      title: `Downloading: ${selectedSource.name}`,
+      subtitle: selectedSource.url,
+      payload: {
+        sourceId: selectedSource.id,
+        sourceName: selectedSource.name,
+      },
+    });
   }
 
   function handleAddSource(payloads: CreateSourceChannelPayload[]) {
@@ -150,9 +210,24 @@ export function SourceChannelsPage() {
   }
 
   function closeDeleteModal() {
-    setDeleteModalSource(null);
-    setDeleteModalUsage(null);
+    setDeleteModalSources([]);
+    setDeleteModalUsages([]);
     setConfirmDeleting(false);
+  }
+
+  async function openDeleteModal(sources: SourceChannel[]) {
+    if (sources.length === 0) return;
+
+    setCheckingDelete(true);
+    try {
+      const usages = await Promise.all(sources.map(source => fetchSourceChannelUsage(source.id)));
+      setDeleteModalSources(sources);
+      setDeleteModalUsages(usages);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể kiểm tra source đang được sử dụng');
+    } finally {
+      setCheckingDelete(false);
+    }
   }
 
   async function handleDelete(id: string) {
@@ -161,25 +236,36 @@ export function SourceChannelsPage() {
 
     setDeletingId(id);
     try {
-      const usage = await fetchSourceChannelUsage(id);
-      setDeleteModalSource(source);
-      setDeleteModalUsage(usage);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể kiểm tra source đang được sử dụng');
+      await openDeleteModal([source]);
     } finally {
       setDeletingId(null);
     }
   }
 
+  function handleBulkDelete() {
+    if (selectedSources.length === 0) return;
+    void openDeleteModal(selectedSources);
+  }
+
   async function handleConfirmDelete() {
-    if (!deleteModalSource) return;
+    if (deleteModalSources.length === 0) return;
+    if (deleteModalUsages.some(usage => usage.inUse)) return;
 
     setConfirmDeleting(true);
     try {
-      await deleteSourceChannel(deleteModalSource.id);
-      toast.success(`Đã xóa source "${deleteModalSource.name}"`);
+      for (const source of deleteModalSources) {
+        await deleteSourceChannel(source.id);
+      }
+
+      const count = deleteModalSources.length;
+      toast.success(
+        count === 1
+          ? `Đã xóa source "${deleteModalSources[0]?.name ?? ''}"`
+          : `Đã xóa ${count} source channels`,
+      );
       closeDeleteModal();
       list.refresh();
+      clearSelection();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Không thể xóa source');
     } finally {
@@ -196,11 +282,22 @@ export function SourceChannelsPage() {
             purposeFilter={purposeFilter}
             riskFilter={riskFilter}
             search={search}
+            canDownload={canDownload}
+            downloadDisabledReason={
+              selectedIds.size === 0
+                ? 'Chọn source để download'
+                : !canDownload
+                  ? 'Chỉ hỗ trợ download cho YouTube sources'
+                  : undefined
+            }
             onPlatformFilterChange={handlePlatformFilterChange}
             onPurposeFilterChange={handlePurposeFilterChange}
             onRiskFilterChange={handleRiskFilterChange}
             onSearchChange={handleSearchChange}
             onAddSource={() => setShowAddModal(true)}
+            onDownload={handleDownload}
+            onDelete={handleBulkDelete}
+            canDelete={selectedIds.size > 0 && !checkingDelete}
           />
           {list.error ? (
             <p className="mt-2 text-xs text-danger">{list.error}</p>
@@ -209,10 +306,13 @@ export function SourceChannelsPage() {
             <SourceChannelsTable
               sources={list.items}
               loading={list.loading}
+              selectedIds={selectedIds}
               bumpingRiskId={bumpingRiskId}
               savingNotesId={savingNotesId}
               deletingId={deletingId}
               onSelect={handleSelect}
+              onToggleRow={handleToggleRow}
+              onToggleAll={handleToggleAll}
               onBumpRisk={handleBumpRisk}
               onNotesChange={handleNotesChange}
               onDelete={handleDelete}
@@ -235,9 +335,9 @@ export function SourceChannelsPage() {
       />
 
       <DeleteSourceChannelModal
-        open={deleteModalSource !== null}
-        sourceName={deleteModalSource?.name ?? ''}
-        usage={deleteModalUsage}
+        open={deleteModalSources.length > 0}
+        sources={deleteModalSources}
+        usages={deleteModalUsages}
         deleting={confirmDeleting}
         onClose={closeDeleteModal}
         onConfirmDelete={handleConfirmDelete}

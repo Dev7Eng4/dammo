@@ -1,5 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { paths } from '../config/paths.js';
+import { resizeImageInPlace } from '../infrastructure/ffmpeg/image-resize.js';
 import { assembleSlideshow } from '../modules/video-production/shared/slideshow/slideshow-assembler.js';
 import { pickAutoEffects } from '../modules/video-production/shared/slideshow/slideshow-presets.js';
 import {
@@ -9,6 +11,9 @@ import {
 } from '../modules/video-production/shared/slideshow/slideshow.constants.js';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
+const DEFAULT_IMAGES_DIR = path.join(paths.mediaDownloadsDir, 'images');
+const RESIZE_WIDTH = 1280;
+const RESIZE_HEIGHT = 720;
 
 interface CliOptions {
   imagesDir: string;
@@ -70,7 +75,7 @@ function parseArgs(argv: string[]): CliOptions {
   }
 
   if (!options.imagesDir) {
-    throw new Error('Usage: slideshow:demo --dir <images-dir> [--out file.mp4] [--duration 5] [--transition 1] [--shuffle]');
+    options.imagesDir = DEFAULT_IMAGES_DIR;
   }
 
   return options;
@@ -97,8 +102,14 @@ async function main() {
 
   console.log(`Images dir : ${options.imagesDir}`);
   console.log(`Image count: ${images.length}`);
+  console.log(`Resize     : ${RESIZE_WIDTH}x${RESIZE_HEIGHT}`);
   console.log(`Per slide  : ${options.durationSec}s, transition ${options.transitionDurationSec}s`);
   console.log(`Output     : ${outputPath}`);
+
+  for (const imagePath of images) {
+    console.log(`  resize ${path.basename(imagePath)}`);
+    await resizeImageInPlace(imagePath, RESIZE_WIDTH, RESIZE_HEIGHT);
+  }
 
   const slides = pickAutoEffects(images, {
     durationSec: options.durationSec,

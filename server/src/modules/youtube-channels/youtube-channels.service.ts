@@ -14,7 +14,11 @@ import { youtubeChannelVideosRepository } from './youtube-channel-videos.reposit
 import { videoProductionService } from '../video-production/video-production.service.js';
 import { mergeChannelVideos } from './merge-channel-videos.js';
 import { videoPrepareRepository } from './video-prepare.repository.js';
-import { resolveSourceNamesForChannel } from './youtube-channel-sources.js';
+import {
+  resolveBackgroundFootageNamesOnly,
+  resolveSourceChannelNamesOnly,
+  resolveSourceNamesForChannel,
+} from './youtube-channel-sources.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
@@ -239,6 +243,8 @@ export class YoutubeChannelsService {
       items: result.items.map((channel) => ({
         ...channel,
         sourceNames: resolveSourceNamesForChannel(channel),
+        sourceChannelNames: resolveSourceChannelNamesOnly(channel),
+        backgroundFootageNames: resolveBackgroundFootageNamesOnly(channel),
       })),
     };
   }
@@ -252,6 +258,8 @@ export class YoutubeChannelsService {
       ...channel,
       language: normalizeChannelLanguage(channel.language),
       sourceNames: resolveSourceNamesForChannel(channel),
+      sourceChannelNames: resolveSourceChannelNamesOnly(channel),
+      backgroundFootageNames: resolveBackgroundFootageNamesOnly(channel),
     };
   }
 
@@ -284,7 +292,6 @@ export class YoutubeChannelsService {
       ...current,
       name: metadata.name,
       handle,
-      niche: metadata.niche,
       channelId: metadata.channelId ?? current.channelId,
     }));
 
@@ -376,7 +383,7 @@ export class YoutubeChannelsService {
     let handle = '';
     let youtubeUrl = '';
     let channelId: string | undefined = undefined;
-    let niche = 'General';
+    let niche = '';
 
     if (input.channelUrl && input.channelUrl.trim() !== '') {
       const { platform, fullUrl } = parseSourceUrl(input.channelUrl);
@@ -407,7 +414,6 @@ export class YoutubeChannelsService {
         youtubeUrl = `https://youtube.com/${handle}`;
         name = metadata.name;
         channelId = metadata.channelId;
-        niche = metadata.niche;
       } catch (err) {
         if (err instanceof AppError) throw err;
         const detail = err instanceof Error ? err.message : 'Unknown error';

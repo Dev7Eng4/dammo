@@ -36,10 +36,6 @@ export interface ReupDownloadResult {
   updatedSrtPath?: string;
 }
 
-function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio';
-}
-
 async function downloadDirectThumbnail(youtubeVideoId: string, outputDir: string): Promise<string> {
   await fs.mkdir(outputDir, { recursive: true });
   const targetPath = path.join(outputDir, 'old-thumbnail.jpg');
@@ -61,13 +57,19 @@ async function downloadDirectThumbnail(youtubeVideoId: string, outputDir: string
   return targetPath;
 }
 
-export async function downloadReupAudioAssets(url: string, language: ChannelLanguage): Promise<ReupAudioDownloadResult> {
+function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
+  return type === 'reup_audio';
+}
+
+export async function downloadSourceAudioAssets(
+  url: string,
+  outputDir: string,
+  language: TranscriptLanguage,
+): Promise<ReupAudioDownloadResult> {
   const youtubeVideoId = requireYoutubeVideoId(url);
-  const outputDir = mediaDownloadDir('youtube', youtubeVideoId);
-  const transcriptLanguage = language as TranscriptLanguage;
   const thumbnailPath = await downloadDirectThumbnail(youtubeVideoId, outputDir);
   const audioPath = await downloadYoutubeAudio(url, outputDir);
-  const transcriptPath = await downloadYoutubeTranscript(url, outputDir, transcriptLanguage);
+  const transcriptPath = await downloadYoutubeTranscript(url, outputDir, language);
 
   return {
     youtubeVideoId,
@@ -76,6 +78,12 @@ export async function downloadReupAudioAssets(url: string, language: ChannelLang
     audioPath,
     transcriptPath,
   };
+}
+
+export async function downloadReupAudioAssets(url: string, language: ChannelLanguage): Promise<ReupAudioDownloadResult> {
+  const youtubeVideoId = requireYoutubeVideoId(url);
+  const outputDir = mediaDownloadDir('youtube', youtubeVideoId);
+  return downloadSourceAudioAssets(url, outputDir, language as TranscriptLanguage);
 }
 
 export async function processReupAudioTranscript(transcriptPath: string, language: ChannelLanguage): Promise<ReupTranscriptProcessResult> {

@@ -44,7 +44,7 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={4} className="py-3">
+                <td colSpan={5} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -79,7 +79,8 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
             <th className="pb-3 pr-4 font-medium">TITLE</th>
             <th className="pb-3 pr-4 font-medium">LINK</th>
             <th className="pb-3 pr-4 font-medium">VIEWS</th>
-            <th className="pb-3 font-medium">DURATION</th>
+            <th className="pb-3 pr-4 font-medium">DURATION</th>
+            <th className="pb-3 font-medium">STATUS</th>
           </tr>
         </thead>
         <tbody>
@@ -97,7 +98,14 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
                 </a>
               </td>
               <td className="py-3 pr-4 text-neutral-300">{formatViews(video.viewCount)}</td>
-              <td className="py-3 text-neutral-300">{formatDuration(video.duration)}</td>
+              <td className="py-3 pr-4 text-neutral-300">{formatDuration(video.duration)}</td>
+              <td className="py-3 text-neutral-300">
+                {video.status === 'Downloaded' ? (
+                  <span className="text-xs font-medium text-primary-400">Downloaded</span>
+                ) : (
+                  <span className="text-xs text-neutral-500">—</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

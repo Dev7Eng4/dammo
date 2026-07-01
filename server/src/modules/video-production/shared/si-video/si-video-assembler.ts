@@ -6,6 +6,7 @@ import {
   isHardwareEncoder,
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { resizeImageToFit } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from './si-assets.js';
@@ -96,6 +97,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
   const filterScriptPath = path.join(workDir, 'filter_complex.txt');
   const tempAssPath = path.join(workDir, 'temp_sub.ass');
+  const resizedCenterImagePath = path.join(workDir, 'center_720.jpg');
 
   let prebakedSiNoise: string | null = null;
   let siNoiseInputPath = assets.noisePath;
@@ -109,6 +111,8 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         scaleSrtTimestamps(subtitlePath, scaledSrtPath, speed);
         activeSubtitlePath = scaledSrtPath;
       }
+
+      await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
 
       prebakedSiNoise = await getPrebakedNoiseMov(
         assets.noisePath,
@@ -129,7 +133,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       mergeArgs.push('-i', audioPath);
 
       const centerImgIndex = inputIdx++;
-      mergeArgs.push('-loop', '1', '-i', centerImagePath);
+      mergeArgs.push('-loop', '1', '-i', resizedCenterImagePath);
 
       const siNoiseIndex = inputIdx++;
       mergeArgs.push('-stream_loop', '-1', '-i', siNoiseInputPath);
@@ -214,6 +218,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
+  await fs.unlink(resizedCenterImagePath).catch(() => undefined);
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }

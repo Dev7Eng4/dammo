@@ -21,6 +21,7 @@ import type {
   SourcePurpose,
   SourceRiskLevel,
   SourceVideoDurationFilter,
+  SourceVideoRecord,
   UpdateSourceChannelInput,
 } from './source-channels.types.js';
 
@@ -77,10 +78,20 @@ const EIGHT_MINUTES_SEC = 8 * 60;
 const THIRTY_MINUTES_SEC = 30 * 60;
 const SIXTY_MINUTES_SEC = 60 * 60;
 
+function toSourceVideoRecords(videos: YoutubeChannelVideo[]): SourceVideoRecord[] {
+  return videos.map(({ id, title, url, viewCount, duration }) => ({
+    id,
+    title,
+    url,
+    viewCount,
+    duration,
+  }));
+}
+
 function filterVideosByDuration(
-  videos: YoutubeChannelVideo[],
+  videos: SourceVideoRecord[],
   duration: SourceVideoDurationFilter,
-): YoutubeChannelVideo[] {
+): SourceVideoRecord[] {
   if (duration === 'all') return videos;
 
   return videos.filter((video) => {
@@ -139,14 +150,14 @@ export class SourceChannelsService {
 
     const store = sourceVideosRepository.read(id);
     if (!store) {
-      return paginate<YoutubeChannelVideo>([], page, limit);
+      return paginate<SourceVideoRecord>([], page, limit);
     }
 
     const filtered = filterVideosByDuration(store.videos, duration);
     return paginate(filtered, page, limit);
   }
 
-  async refresh(id: string): Promise<{ item: SourceChannel; videos: YoutubeChannelVideo[] }> {
+  async refresh(id: string): Promise<{ item: SourceChannel; videos: SourceVideoRecord[] }> {
     const source = this.getById(id);
 
     if (source.platform !== 'youtube') {
@@ -156,12 +167,7 @@ export class SourceChannelsService {
     try {
       const { metadata, videos } = await fetchYoutubeSourceData(source.fullUrl);
 
-      sourceVideosRepository.write(id, {
-        sourceId: id,
-        channelId: metadata.channelId,
-        fetchedAt: new Date().toISOString(),
-        videos,
-      });
+      const store = sourceVideosRepository.mergeVideosOnRefresh(id, videos, metadata.channelId);
 
       const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
       const updated = sourceChannelsRepository.update(id, (current) => ({
@@ -181,7 +187,7 @@ export class SourceChannelsService {
         throw new AppError('Source channel not found', 404, 'NOT_FOUND');
       }
 
-      return { item: updated, videos };
+      return { item: updated, videos: store.videos };
     } catch (err) {
       if (err instanceof AppError) throw err;
       const detail = err instanceof Error ? err.message : 'Unknown error';
@@ -240,7 +246,7 @@ export class SourceChannelsService {
           sourceId: id,
           channelId,
           fetchedAt: metadataFetchedAt,
-          videos,
+          videos: toSourceVideoRecords(videos),
         });
       } catch (err) {
         if (err instanceof AppError) throw err;

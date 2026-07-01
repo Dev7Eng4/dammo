@@ -38,6 +38,21 @@ function buildEnqueueInput(body: EnqueueBody): EnqueueTaskInput {
     };
   }
 
+  if (body.type === 'download_source') {
+    const count = body.payload.sourceIds?.length;
+    const defaultTitle = body.payload.allSources
+      ? 'Downloading videos for all YouTube sources'
+      : count
+        ? `Downloading videos for ${count} sources`
+        : `Downloading: ${body.payload.sourceName ?? body.payload.sourceId}`;
+    return {
+      type: 'download_source',
+      title: body.title ?? defaultTitle,
+      subtitle: body.subtitle,
+      payload: body.payload,
+    };
+  }
+
   const name = body.payload.channelName ?? body.payload.channelHandle ?? body.payload.channelId;
   return {
     type: 'create_video',

@@ -8,6 +8,8 @@ export function getTaskTypeLabel(type: TaskType): string {
       return 'REUP VIDEO';
     case 'upload_video':
       return 'YOUTUBE UPLOAD';
+    case 'download_source':
+      return 'SOURCE DOWNLOAD';
   }
 }
 

@@ -1,5 +1,5 @@
 import { Button, Modal } from '../ui';
-import type { SourceChannelUsage, SourceUsagePlatform } from '../../types/sourceChannel';
+import type { SourceChannel, SourceChannelUsage, SourceUsagePlatform } from '../../types/sourceChannel';
 
 const PLATFORM_LABELS: Record<SourceUsagePlatform, string> = {
   youtube: 'YouTube',
@@ -9,10 +9,36 @@ const PLATFORM_LABELS: Record<SourceUsagePlatform, string> = {
 
 const PLATFORM_ORDER: SourceUsagePlatform[] = ['youtube', 'tiktok', 'facebook'];
 
+function UsageChannelsList({ usage }: { usage: SourceChannelUsage }) {
+  return (
+    <>
+      {PLATFORM_ORDER.map((platform) => {
+        const channels = usage.channels[platform];
+        if (!channels.length) return null;
+
+        return (
+          <div key={platform}>
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              {PLATFORM_LABELS[platform]}
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {channels.map((channel) => (
+                <li key={channel.id} className="text-sm text-neutral-200">
+                  {channel.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export interface DeleteSourceChannelModalProps {
   open: boolean;
-  sourceName: string;
-  usage: SourceChannelUsage | null;
+  sources: SourceChannel[];
+  usages: SourceChannelUsage[];
   deleting?: boolean;
   onClose: () => void;
   onConfirmDelete?: () => void;
@@ -20,13 +46,19 @@ export interface DeleteSourceChannelModalProps {
 
 export function DeleteSourceChannelModal({
   open,
-  sourceName,
-  usage,
+  sources,
+  usages,
   deleting = false,
   onClose,
   onConfirmDelete,
 }: DeleteSourceChannelModalProps) {
-  const blocked = usage?.inUse ?? false;
+  const blockedEntries = sources
+    .map((source, index) => ({ source, usage: usages[index] }))
+    .filter((entry): entry is { source: SourceChannel; usage: SourceChannelUsage } =>
+      Boolean(entry.usage?.inUse),
+    );
+  const blocked = blockedEntries.length > 0;
+  const isBulk = sources.length > 1;
 
   return (
     <Modal
@@ -35,7 +67,7 @@ export function DeleteSourceChannelModal({
         if (deleting) return;
         onClose();
       }}
-      title={blocked ? 'Không thể xóa source' : 'Xóa source channel'}
+      title={blocked ? 'Không thể xóa source' : isBulk ? 'Xóa source channels' : 'Xóa source channel'}
       footer={
         blocked ? (
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose}>
@@ -65,34 +97,30 @@ export function DeleteSourceChannelModal({
         )
       }
     >
-      {blocked && usage ? (
+      {blocked ? (
         <div className="space-y-4">
-          <p className="text-sm text-neutral-300">
-            Source &quot;{sourceName}&quot; đang được sử dụng bởi các kênh sau và không thể xóa.
-          </p>
-          {PLATFORM_ORDER.map((platform) => {
-            const channels = usage.channels[platform];
-            if (!channels.length) return null;
+          {isBulk ? (
+            <p className="text-sm text-neutral-300">
+              Một hoặc nhiều source đang được sử dụng. Không source nào được xóa.
+            </p>
+          ) : null}
 
-            return (
-              <div key={platform}>
-                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  {PLATFORM_LABELS[platform]}
-                </p>
-                <ul className="mt-1.5 space-y-1">
-                  {channels.map((channel) => (
-                    <li key={channel.id} className="text-sm text-neutral-200">
-                      {channel.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+          {blockedEntries.map(({ source, usage }) => (
+            <div key={source.id} className="space-y-3 rounded-lg border border-border/60 p-3">
+              <p className="text-sm text-neutral-300">
+                Source &quot;{source.name}&quot; đang được sử dụng bởi các kênh sau:
+              </p>
+              <UsageChannelsList usage={usage} />
+            </div>
+          ))}
         </div>
+      ) : isBulk ? (
+        <p className="text-sm text-neutral-300">
+          Xóa {sources.length} source channels? Hành động này không thể hoàn tác.
+        </p>
       ) : (
         <p className="text-sm text-neutral-300">
-          Xóa source &quot;{sourceName}&quot;? Hành động này không thể hoàn tác.
+          Xóa source &quot;{sources[0]?.name ?? ''}&quot;? Hành động này không thể hoàn tác.
         </p>
       )}
     </Modal>

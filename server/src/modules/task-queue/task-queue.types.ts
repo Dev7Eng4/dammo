@@ -1,4 +1,4 @@
-export type TaskType = 'add_source' | 'create_video' | 'upload_video';
+export type TaskType = 'add_source' | 'create_video' | 'upload_video' | 'download_source';
 
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -33,7 +33,14 @@ export interface UploadVideoTaskPayload {
   videoIds?: string[];
 }
 
-export type TaskPayload = AddSourceTaskPayload | CreateVideoTaskPayload | UploadVideoTaskPayload;
+export interface DownloadSourceTaskPayload {
+  sourceId?: string;
+  sourceIds?: string[];
+  allSources?: boolean;
+  sourceName?: string;
+}
+
+export type TaskPayload = AddSourceTaskPayload | CreateVideoTaskPayload | UploadVideoTaskPayload | DownloadSourceTaskPayload;
 
 export interface TaskJob {
   id: string;

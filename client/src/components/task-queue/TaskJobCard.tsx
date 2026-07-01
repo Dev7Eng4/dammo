@@ -24,7 +24,7 @@ interface TaskJobCardProps {
 function TaskJobIcon({ job }: { job: TaskJobListItem }) {
   const isFailed = job.status === 'failed';
   const isSuccess = job.status === 'completed';
-  const isVideo = job.type === 'create_video' || job.type === 'upload_video';
+  const isVideo = job.type === 'create_video' || job.type === 'upload_video' || job.type === 'download_source';
   const isUpload = job.type === 'upload_video';
 
   return (

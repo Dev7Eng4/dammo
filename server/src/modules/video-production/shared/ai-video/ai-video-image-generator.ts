@@ -1,8 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { resizeImageInPlace } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
+import { SI_CANVAS_H, SI_CANVAS_W } from '../si-video/si.constants.js';
 import {
   AI_SLIDES_DIRNAME,
   AI_VIDEO_DEFAULT_SLIDES,
@@ -89,8 +91,11 @@ export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): 
             continue;
           }
 
+          await resizeImageInPlace(savedPath, SI_CANVAS_W, SI_CANVAS_H, input.onLog);
           imagePaths.push(savedPath);
-          log(`[ai-video] slide ${slideIndex + 1}/${totalSlides} saved → ${path.basename(savedPath)}`);
+          log(
+            `[ai-video] slide ${slideIndex + 1}/${totalSlides} saved + resized ${SI_CANVAS_W}x${SI_CANVAS_H} → ${path.basename(savedPath)}`,
+          );
           saved = true;
           break;
         } catch (err) {

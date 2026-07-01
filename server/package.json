@@ -13,6 +13,7 @@
     "download:transcript": "tsx src/scripts/download-transcript.ts",
     "create-videos": "tsx src/scripts/create-videos.ts",
     "prepare-videos": "tsx src/scripts/prepare-videos.ts",
+    "download-source-videos": "tsx src/scripts/download-source-videos.ts",
     "log-video-stats": "tsx src/scripts/log-video-stats.ts",
     "assemble-prepared-videos": "tsx src/scripts/assemble-prepared-videos.ts",
     "upload-videos": "tsx src/scripts/upload-videos.ts",

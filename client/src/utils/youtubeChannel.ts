@@ -44,8 +44,11 @@ export function getChannelSourceLabels(
     return labels;
   }
 
-  const hasBackgroundFootage = (channel.backgroundFootageSources ?? []).length > 0;
-  if (!hasBackgroundFootage && channel.sourceNames?.length) {
+  if (channel.sourceChannelNames?.length) {
+    return channel.sourceChannelNames;
+  }
+
+  if (channel.sourceNames?.length) {
     return channel.sourceNames;
   }
 
@@ -57,7 +60,13 @@ export function getChannelBackgroundFootageLabels(
   sources: SourceChannel[],
 ): string[] {
   const lookup = buildSourceLookup(sources);
-  return resolveLabelsFromIds(channel.backgroundFootageSources ?? [], lookup);
+  const labels = resolveLabelsFromIds(channel.backgroundFootageSources ?? [], lookup);
+
+  if (labels.length > 0) {
+    return labels;
+  }
+
+  return channel.backgroundFootageNames ?? [];
 }
 
 function formatLabels(labels: string[]): string {

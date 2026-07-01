@@ -141,6 +141,8 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
         toastRef.current.success(job.videoId ? `Created video from ${job.videoId}` : 'Video created successfully');
       } else if (job.type === 'upload_video') {
         toastRef.current.success('YouTube upload completed');
+      } else if (job.type === 'download_source') {
+        toastRef.current.success('Source videos downloaded');
       }
       handlers?.onComplete?.(merged);
     } else if (job.status === 'failed') {
@@ -424,7 +426,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!liveJobId) return;
     const job = jobs.find(entry => entry.id === liveJobId);
-    if (!job || (job.type !== 'create_video' && job.type !== 'upload_video')) return;
+    if (!job || (job.type !== 'create_video' && job.type !== 'upload_video' && job.type !== 'download_source')) return;
 
     if (!jobDetailsRef.current.has(liveJobId) || (job.logCount ?? 0) > (jobDetailsRef.current.get(liveJobId)?.logs?.length ?? 0)) {
       void refreshJob(liveJobId).catch(() => undefined);

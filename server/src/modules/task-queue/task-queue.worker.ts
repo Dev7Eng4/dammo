@@ -1,11 +1,12 @@
 import { AppError } from '../../shared/http/errors.js';
 import { sourceChannelsService } from '../source-channels/source-channels.service.js';
 import type { SourcePurpose } from '../source-channels/source-channels.types.js';
+import { sourceDownloadService } from '../source-channels/source-download.service.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import { videoProductionService } from '../video-production/video-production.service.js';
 import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.js';
 import { taskQueueRepository } from './task-queue.repository.js';
-import type { AddSourceTaskPayload, CreateVideoTaskPayload, TaskJob, UploadVideoTaskPayload } from './task-queue.types.js';
+import type { AddSourceTaskPayload, CreateVideoTaskPayload, DownloadSourceTaskPayload, TaskJob, UploadVideoTaskPayload } from './task-queue.types.js';
 
 let workerRunning = false;
 let workerInterval: ReturnType<typeof setInterval> | null = null;
@@ -94,6 +95,29 @@ async function processUploadVideo(job: TaskJob): Promise<unknown> {
   return result;
 }
 
+async function processDownloadSource(job: TaskJob): Promise<unknown> {
+  const payload = job.payload as DownloadSourceTaskPayload;
+
+  if (payload.allSources) {
+    updateProgress(job.id, 15, 'Downloading all YouTube sources');
+    const result = await sourceDownloadService.downloadVideosForAllYoutubeSources({ taskJobId: job.id });
+    updateProgress(job.id, 90, 'Finishing');
+    return { sources: result };
+  }
+
+  if (payload.sourceIds?.length) {
+    updateProgress(job.id, 15, `Downloading ${payload.sourceIds.length} source(s)`);
+    const result = await sourceDownloadService.downloadVideosForSources(payload.sourceIds, { taskJobId: job.id });
+    updateProgress(job.id, 90, 'Finishing');
+    return { sources: result };
+  }
+
+  updateProgress(job.id, 15, 'Downloading source videos');
+  const result = await sourceDownloadService.downloadVideosForSource(payload.sourceId!, { taskJobId: job.id });
+  updateProgress(job.id, 90, 'Finishing');
+  return result;
+}
+
 async function processJob(job: TaskJob): Promise<void> {
   taskQueueRepository.setStatus(job.id, 'running', {
     progress: 5,
@@ -104,9 +128,11 @@ async function processJob(job: TaskJob): Promise<void> {
     const result =
       job.type === 'add_source'
         ? await processAddSource(job)
-        : job.type === 'upload_video'
-          ? await processUploadVideo(job)
-          : await processCreateVideo(job);
+        : job.type === 'download_source'
+          ? await processDownloadSource(job)
+          : job.type === 'upload_video'
+            ? await processUploadVideo(job)
+            : await processCreateVideo(job);
 
     taskQueueRepository.setStatus(job.id, 'completed', {
       progress: 100,

@@ -52,12 +52,15 @@ export interface SourceChannel {
   metadataFetchedAt?: string;
 }
 
+export type SourceVideoStatus = 'Downloaded';
+
 export interface SourceChannelVideo {
   id: string;
   title: string;
   url: string;
   viewCount?: number;
   duration?: number;
+  status?: SourceVideoStatus;
 }
 
 export interface SourceChannelVideosResponse {

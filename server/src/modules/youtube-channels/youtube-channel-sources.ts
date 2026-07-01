@@ -63,6 +63,33 @@ export function resolveSourceChannelsByIds(ids: string[]): SourceChannel[] {
   return matched;
 }
 
+export function resolveSourceChannelNamesOnly(channel: YoutubeChannel): string[] {
+  const names: string[] = [];
+  const seen = new Set<string>();
+
+  const add = (name: string) => {
+    if (!name || seen.has(name)) return;
+    seen.add(name);
+    names.push(name);
+  };
+
+  for (const source of resolveSourceChannelsByIds(channel.sourceChannels ?? [])) {
+    add(source.name);
+  }
+
+  for (const sourceId of [channel.reupVideoSourceId, channel.reupAudioSourceId]) {
+    if (!sourceId) continue;
+    const source = sourceChannelsRepository.findById(sourceId);
+    if (source) add(source.name);
+  }
+
+  return names;
+}
+
+export function resolveBackgroundFootageNamesOnly(channel: YoutubeChannel): string[] {
+  return resolveSourceChannelsByIds(channel.backgroundFootageSources ?? []).map(source => source.name);
+}
+
 export function resolveSourceNamesForChannel(channel: YoutubeChannel): string[] {
   const names: string[] = [];
   const seen = new Set<string>();

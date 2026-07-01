@@ -1,13 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { mediaDownloadDir } from '../../../../config/paths.js';
+import { mediaDownloadDir, resolveSourceChannelVideoDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { generateId } from '../../../../shared/id.js';
 import { timedStep, type TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
 import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
-import { downloadReupAssets, downloadReupAudioAssets } from '../../shared/assets/asset-downloader.js';
+import { downloadReupAssets, downloadReupAudioAssets, type ReupAudioDownloadResult } from '../../shared/assets/asset-downloader.js';
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
 import { runMetaStep1 } from '../../shared/meta/meta-step1.js';
 import { runMetaStep2 } from '../../shared/meta/meta-step2.js';
@@ -31,6 +31,13 @@ import type { ProductionDestination } from '../../ports/production-destination.p
 import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
 import type { SourceCatalog } from '../../ports/source-catalog.port.js';
 import { taskQueueRepository } from '../../../task-queue/task-queue.repository.js';
+import {
+  copySourceAssetsToDir,
+  findSourceThumbnailPath,
+  findSourceTranscriptPath,
+  hasRequiredSourceAssets,
+} from '../../../source-channels/source-assets.js';
+import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 
 interface CreateVideosOptions {
   taskJobId?: string;
@@ -76,6 +83,51 @@ function createStepTimer(taskJobId: string | undefined, videoId: string): Pick<T
     prefix: `[reup-video] ${videoId}`,
     onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
   };
+}
+
+async function resolveReupAudioDownload(
+  task: ReupVideoTask,
+  language: ChannelLanguage,
+  taskJobId?: string,
+): Promise<ReupAudioDownloadResult> {
+  const outputDir = mediaDownloadDir('youtube', task.videoId);
+  const sourceAssetsDir = resolveSourceChannelVideoDir(task.sourceId, task.videoId);
+
+  if (sourceAssetsDir && (await hasRequiredSourceAssets(sourceAssetsDir))) {
+    if (taskJobId) {
+      taskQueueRepository.appendLogMessage(
+        taskJobId,
+        'info',
+        `Using pre-downloaded source assets for ${task.videoId}...`,
+      );
+    }
+
+    await copySourceAssetsToDir(sourceAssetsDir, outputDir);
+    const thumbnailPath = await findSourceThumbnailPath(outputDir);
+    const transcriptPath = await findSourceTranscriptPath(outputDir);
+
+    if (!thumbnailPath || !transcriptPath) {
+      throw new AppError('Pre-downloaded source assets incomplete after copy', 500, 'SOURCE_ASSETS_INCOMPLETE');
+    }
+
+    return {
+      youtubeVideoId: task.videoId,
+      outputDir,
+      thumbnailPath,
+      audioPath: path.join(outputDir, 'audio.mp3'),
+      transcriptPath,
+    };
+  }
+
+  if (taskJobId) {
+    taskQueueRepository.appendLogMessage(
+      taskJobId,
+      'info',
+      `Downloading thumbnail + audio + transcript (${language}) for source video ${task.videoId}...`,
+    );
+  }
+
+  return downloadReupAudioAssets(task.link, language);
 }
 
 function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[], maxVideos?: number): ReupVideoTask[] {
@@ -136,14 +188,9 @@ export class ReupAudioPipeline {
         if (isAudioChannel) {
           if (taskJobId) {
             taskQueueRepository.setLivePhase(taskJobId, 'downloading');
-            taskQueueRepository.appendLogMessage(
-              taskJobId,
-              'info',
-              `Downloading thumbnail + audio + transcript (${task.language}) for source video ${task.videoId}...`,
-            );
           }
 
-          const downloaded = await downloadReupAudioAssets(task.link, destination.language);
+          const downloaded = await resolveReupAudioDownload(task, destination.language, taskJobId);
           const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
 
           if (taskJobId) {

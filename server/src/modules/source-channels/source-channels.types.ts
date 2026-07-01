@@ -44,6 +44,8 @@ export interface SourceChannelsStore {
   sources: SourceChannel[];
 }
 
+export type SourceVideoStatus = 'Downloaded';
+
 export interface SourceVideoRecord {
   id: string;
   title: string;
@@ -51,6 +53,7 @@ export interface SourceVideoRecord {
   viewCount?: number;
   duration?: number;
   used?: number;
+  status?: SourceVideoStatus;
 }
 
 export interface SourceVideosStore {
