@@ -6,6 +6,18 @@ const STEALTH_ARGS = [
   '--no-default-browser-check',
 ] as const;
 
+/** Flags reducing Chrome memory. Only safe, non-visual-breaking ones (browser stays visible). */
+const RAM_OPTIMIZATION_ARGS = [
+  '--disable-gpu',
+  '--renderer-process-limit=2',
+  '--disable-extensions',
+  '--disable-dev-shm-usage',
+  '--disable-background-networking',
+  '--disable-component-update',
+  '--disable-breakpad',
+  '--disable-default-apps',
+] as const;
+
 /** Chrome flags to avoid stealing focus from the user's foreground apps. */
 export function backgroundChromeArgs(): string[] {
   if (process.platform === 'win32') {
@@ -16,7 +28,7 @@ export function backgroundChromeArgs(): string[] {
 
 /** Shared launch flags for system Google Chrome (not Playwright Chromium bundle). */
 function baseChromeOptions(headless: boolean, background = false) {
-  const args: string[] = [...STEALTH_ARGS];
+  const args: string[] = [...STEALTH_ARGS, ...RAM_OPTIMIZATION_ARGS];
   if (background) {
     args.push(...backgroundChromeArgs());
   }
