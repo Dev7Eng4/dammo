@@ -3,7 +3,7 @@ import path from 'node:path';
 import { paths } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
-import type { ImageBrowserProvider, LlmTextProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { ImageBrowserProvider, LlmTextProvider, VideoBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { flowBrowserService } from '../llm-browser/flow-browser.service.js';
 import { metaBrowserService } from '../llm-browser/meta-browser.service.js';
@@ -21,7 +21,9 @@ export interface PromptPlaygroundRunResult {
   content: string;
   imageBase64?: string;
   imageMimeType?: string;
-  provider: LlmTextProvider | ImageBrowserProvider;
+  videoBase64?: string;
+  videoMimeType?: string;
+  provider: LlmTextProvider | ImageBrowserProvider | VideoBrowserProvider;
   profileId: string;
   codeBlocks?: string[];
   elapsedMs: number;
@@ -145,6 +147,62 @@ async function runImagePlayground(
   }
 }
 
+async function runVideoPlayground(
+  input: PromptPlaygroundRunInput,
+  videoProvider: VideoBrowserProvider,
+): Promise<PromptPlaygroundRunResult> {
+  const profile = chromeProfilesService.requireMainProfile();
+  const startedAt = Date.now();
+  const runDir = path.join(paths.playgroundDir, generateId());
+  await fs.mkdir(runDir, { recursive: true });
+
+  const generateOptions = {
+    outputDir: runDir,
+    fileName: 'output.mp4',
+    debugScreenshotPath: path.join(runDir, `${videoProvider}-debug.png`),
+    timeoutMs: 300_000,
+  };
+
+  try {
+    if (videoProvider !== 'meta') {
+      throw new AppError('Only Meta AI is supported for video generation', 400, 'PLAYGROUND_FAILED');
+    }
+
+    const response = await metaBrowserService.generateMedia(profile.id, input.userPrompt, {
+      ...generateOptions,
+      mediaKind: 'video',
+    });
+
+    const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
+    if (!savedPath) {
+      throw new AppError('Meta completed but no local video path returned', 502, 'PLAYGROUND_FAILED');
+    }
+
+    const videoBuffer = await fs.readFile(savedPath);
+    const result: PromptPlaygroundRunResult = {
+      kind: 'video',
+      content: '',
+      videoBase64: videoBuffer.toString('base64'),
+      videoMimeType: 'video/mp4',
+      provider: videoProvider,
+      profileId: profile.id,
+      elapsedMs: Date.now() - startedAt,
+    };
+
+    console.log('[prompt-playground:video]', {
+      promptId: input.promptId,
+      profileId: profile.id,
+      provider: videoProvider,
+      elapsedMs: result.elapsedMs,
+      savedPath,
+    });
+
+    return result;
+  } finally {
+    await chromeProfilesService.closeSubProfiles([profile.id]);
+  }
+}
+
 export class PromptPlaygroundService {
   async run(input: PromptPlaygroundRunInput): Promise<PromptPlaygroundRunResult> {
     const settings = promptsSettingsService.get();
@@ -154,6 +212,11 @@ export class PromptPlaygroundService {
       if (outputType === 'image') {
         const imageProvider = input.imageProvider ?? settings.defaultImageProvider;
         return await runImagePlayground(input, imageProvider);
+      }
+
+      if (outputType === 'video') {
+        const videoProvider = input.videoProvider ?? settings.defaultVideoProvider;
+        return await runVideoPlayground(input, videoProvider);
       }
 
       const provider = input.provider ?? settings.defaultLlmProvider;

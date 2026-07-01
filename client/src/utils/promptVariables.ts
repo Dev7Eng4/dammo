@@ -96,6 +96,36 @@ export function normalizePromptKey(key: string): string {
   return key.trim().toLowerCase();
 }
 
+export function derivePromptKeyFromName(name: string): string {
+  const base = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_')
+    .slice(0, 80);
+
+  return base || 'new_prompt';
+}
+
+export function deriveUniquePromptKeyFromName(
+  name: string,
+  language: PromptLanguage,
+  prompts: Prompt[],
+  excludeId?: string | null,
+): string {
+  const base = derivePromptKeyFromName(name);
+  let candidate = base;
+  let index = 2;
+
+  while (findPromptKeyConflict(prompts, candidate, language, excludeId)) {
+    candidate = `${base}_${index}`;
+    index += 1;
+  }
+
+  return candidate;
+}
+
 export function findPromptKeyConflict(
   prompts: Prompt[],
   key: string,

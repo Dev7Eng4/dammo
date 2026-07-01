@@ -71,13 +71,9 @@ export const navSections: NavSection[] = [
     id: 'content',
     label: 'CONTENT',
     items: [
-      { id: 'projects', label: 'Projects', path: '/content-projects', icon: 'projects' },
-      { id: 'scripts', label: 'Scripts', path: '/scripts', icon: 'scripts' },
-      { id: 'datasets', label: 'Datasets', path: '/datasets', icon: 'datasets' },
       { id: 'prompts', label: 'Prompts', path: '/prompts', icon: 'prompt' },
       { id: 'visual-styles', label: 'Visual Styles', path: '/visual-styles', icon: 'visual-styles' },
       { id: 'assets', label: 'Assets', path: '/assets', icon: 'assets' },
-      { id: 'excel', label: 'Excel Import/Export', path: '/excel-import-export', icon: 'excel' },
     ],
   },
   {
@@ -98,10 +94,8 @@ export const footerNavItems: NavItem[] = [
 ];
 
 export function flattenNavItems(): NavItem[] {
-  return [...navSections.flatMap((section) => section.items), ...footerNavItems];
+  return [...navSections.flatMap(section => section.items), ...footerNavItems];
 }
 
 /** @deprecated Use flattenNavItems() */
-export const navItems = flattenNavItems().filter(
-  (item) => !footerNavItems.some((footer) => footer.id === item.id),
-);
+export const navItems = flattenNavItems().filter(item => !footerNavItems.some(footer => footer.id === item.id));

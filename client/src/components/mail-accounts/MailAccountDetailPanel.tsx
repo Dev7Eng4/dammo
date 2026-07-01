@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button, Input, Textarea } from '../ui';
-import { StatusPill } from '../ui/StatusPill';
-import { PlatformTag } from './PlatformIcon';
+import { PlatformLinkCell } from './PlatformLinkCell';
 import type { MailAccount } from '../../types/mailAccount';
 
 interface MailAccountDetailPanelProps {
@@ -53,6 +52,15 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PlatformRow({ label, linked }: { label: string; linked: boolean }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-neutral-400">{label}</span>
+      <PlatformLinkCell linked={linked} />
+    </div>
+  );
+}
+
 export function MailAccountDetailPanel({ account, loading, onClose }: MailAccountDetailPanelProps) {
   if (!account && !loading) return null;
 
@@ -97,13 +105,6 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           </button>
         </div>
 
-        <div className="flex gap-2 px-4 pt-3">
-          <StatusPill status={account.status} />
-          <span className="inline-flex items-center rounded-full border border-border bg-surface-elevated px-2.5 py-0.5 text-xs text-neutral-400">
-            {account.provider}
-          </span>
-        </div>
-
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div>
             <FieldLabel>Purpose</FieldLabel>
@@ -127,32 +128,38 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           </div>
 
           <div>
-            <FieldLabel>Recovery Phone</FieldLabel>
+            <FieldLabel>Phone</FieldLabel>
             <div className="relative">
               <Input
                 readOnly
-                value={account.recoveryPhone ?? ''}
+                value={account.phone ?? ''}
                 placeholder="—"
                 className="h-9 rounded-lg pr-10 text-sm"
               />
-              {account.recoveryPhone ? <CopyButton value={account.recoveryPhone} /> : null}
+              {account.phone ? <CopyButton value={account.phone} /> : null}
             </div>
           </div>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <FieldLabel>Linked Platforms</FieldLabel>
-              <button type="button" className="text-neutral-500 hover:text-neutral-300">
-                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-              </button>
+          {account.twoFactorAuth ? (
+            <div>
+              <FieldLabel>2FA</FieldLabel>
+              <div className="relative">
+                <Input
+                  readOnly
+                  value={account.twoFactorAuth}
+                  className="h-9 rounded-lg pr-10 text-sm font-mono"
+                />
+                <CopyButton value={account.twoFactorAuth} />
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {account.linkedPlatforms.map((p) => (
-                <PlatformTag key={p} platform={p} />
-              ))}
+          ) : null}
+
+          <div>
+            <FieldLabel>Platforms</FieldLabel>
+            <div className="space-y-2 rounded-lg border border-border bg-surface-elevated/50 p-3">
+              <PlatformRow label="Youtube" linked={account.platformLinks.youtube} />
+              <PlatformRow label="TikTok" linked={account.platformLinks.tiktok} />
+              <PlatformRow label="Facebook" linked={account.platformLinks.facebook} />
             </div>
           </div>
 

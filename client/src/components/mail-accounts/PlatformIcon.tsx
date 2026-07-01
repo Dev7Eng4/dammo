@@ -1,5 +1,6 @@
 import { cn } from '../../lib/cn';
-import type { LinkedPlatform } from '../../types/mailAccount';
+
+export type LinkedPlatform = 'youtube' | 'tiktok' | 'facebook' | 'web';
 
 const platformLabels: Record<LinkedPlatform, string> = {
   youtube: 'YouTube',

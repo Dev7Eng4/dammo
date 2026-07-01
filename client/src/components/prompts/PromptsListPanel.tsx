@@ -126,6 +126,11 @@ export function PromptsListPanel({
                       <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-400">
                         {PROMPT_LANGUAGE_LABELS[prompt.language]}
                       </span>
+                      {prompt.isSystem ? (
+                        <span className="inline-flex rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+                          System
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-1 truncate font-mono text-[10px] text-neutral-500">{prompt.key}</p>
                   </button>

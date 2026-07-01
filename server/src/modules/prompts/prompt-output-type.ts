@@ -1,7 +1,7 @@
 import type { Prompt, PromptOutputType } from './prompts.types.js';
 
 export function resolvePromptOutputType(prompt: Pick<Prompt, 'outputType' | 'category' | 'key'>): PromptOutputType {
-  if (prompt.outputType === 'text' || prompt.outputType === 'image') {
+  if (prompt.outputType === 'text' || prompt.outputType === 'image' || prompt.outputType === 'video') {
     return prompt.outputType;
   }
 

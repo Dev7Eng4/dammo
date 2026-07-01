@@ -1,6 +1,6 @@
 export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image';
 
-export type PromptOutputType = 'text' | 'image';
+export type PromptOutputType = 'text' | 'image' | 'video';
 
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
@@ -39,6 +39,10 @@ export interface Prompt {
 
   description?: string;
 
+  isSystem?: boolean;
+
+  useReferenceImage?: boolean;
+
   createdAt: string;
 
   updatedAt: string;
@@ -62,8 +66,6 @@ export interface PromptResolved extends Prompt {
 
 export interface CreatePromptPayload {
 
-  key: string;
-
   language: PromptLanguage;
 
   name: string;
@@ -76,13 +78,13 @@ export interface CreatePromptPayload {
 
   description?: string;
 
+  useReferenceImage?: boolean;
+
 }
 
 
 
 export interface UpdatePromptPayload {
-
-  key?: string;
 
   language?: PromptLanguage;
 
@@ -96,6 +98,8 @@ export interface UpdatePromptPayload {
 
   description?: string;
 
+  useReferenceImage?: boolean;
+
 }
 
 
@@ -106,6 +110,8 @@ export interface PromptPlaygroundRunPayload {
   provider?: PlaygroundProvider;
 
   imageProvider?: ImageBrowserProvider;
+
+  videoProvider?: VideoBrowserProvider;
 
   userPrompt: string;
 
@@ -136,7 +142,11 @@ export interface PromptPlaygroundResult {
 
   imageMimeType?: string;
 
-  provider: PlaygroundProvider | ImageBrowserProvider;
+  videoBase64?: string;
+
+  videoMimeType?: string;
+
+  provider: PlaygroundProvider | ImageBrowserProvider | VideoBrowserProvider;
 
   profileId?: string;
 
@@ -172,9 +182,9 @@ export interface PromptFormDraft {
 
   templateParams: string[];
 
-  systemPrompt: string;
+  isSystem?: boolean;
 
-  outputSchema: string;
+  useReferenceImage: boolean;
 
 }
 

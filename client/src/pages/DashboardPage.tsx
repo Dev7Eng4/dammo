@@ -13,7 +13,7 @@ import type { DashboardData } from '../types/dashboard';
 const emptyData: DashboardData = {
   overview: { youtubeChannels: 0, tiktokAccounts: 0, facebookAssets: 0, sourceChannels: 0 },
   pipeline: [],
-  accounts: { total: 0, active: 0, needVerify: 0, limited: 0, suspended: 0, lostAccess: 0 },
+  accounts: { total: 0 },
   activeRender: { fileName: '', progress: 0, eta: '', filePath: '' },
   recentProjects: [],
   healthAlerts: [],

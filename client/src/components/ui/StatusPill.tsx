@@ -1,5 +1,6 @@
 import { cn } from '../../lib/cn';
-import type { MailAccountStatus } from '../../types/mailAccount';
+
+type MailAccountStatus = 'active' | 'need_verify' | 'suspended';
 
 const statusConfig: Record<
   MailAccountStatus,

@@ -28,12 +28,14 @@ import type {
 import {
   buildManagedTemplateExpression,
   extractTemplateVariables,
-  findPromptKeyConflict,
   interpolateTemplate,
   isUserFunctionTemplate,
   parseManagedTemplate,
-  suggestUniquePromptKey,
 } from '../utils/promptVariables';
+
+function supportsReferenceImage(category: PromptCategory): boolean {
+  return category === 'thumbnail' || category === 'image';
+}
 
 const EMPTY_DRAFT: PromptFormDraft = {
   id: null,
@@ -45,8 +47,7 @@ const EMPTY_DRAFT: PromptFormDraft = {
   description: '',
   template: '',
   templateParams: [],
-  systemPrompt: '',
-  outputSchema: '',
+  useReferenceImage: false,
 };
 
 function resolveDraftOutputType(item: {
@@ -54,14 +55,15 @@ function resolveDraftOutputType(item: {
   category: PromptCategory;
   key: string;
 }): PromptOutputType {
-  if (item.outputType === 'text' || item.outputType === 'image') return item.outputType;
+  if (item.outputType === 'text' || item.outputType === 'image' || item.outputType === 'video') {
+    return item.outputType;
+  }
   if (item.category === 'image' || item.key === 'love_story') return 'image';
   return 'text';
 }
 
 function serializeDraft(draft: PromptFormDraft): string {
   return JSON.stringify({
-    key: draft.key,
     language: draft.language,
     name: draft.name,
     category: draft.category,
@@ -69,6 +71,7 @@ function serializeDraft(draft: PromptFormDraft): string {
     description: draft.description,
     template: draft.template,
     templateParams: draft.templateParams,
+    useReferenceImage: draft.useReferenceImage,
   });
 }
 
@@ -89,6 +92,8 @@ function draftFromResolved(item: {
   category: PromptCategory;
   outputType?: PromptOutputType;
   description?: string;
+  isSystem?: boolean;
+  useReferenceImage?: boolean;
   template: string;
 }): PromptFormDraft {
   const outputType = resolveDraftOutputType(item);
@@ -104,8 +109,8 @@ function draftFromResolved(item: {
       description: item.description ?? '',
       template: managed.body,
       templateParams: managed.params,
-      systemPrompt: '',
-      outputSchema: '',
+      isSystem: item.isSystem,
+      useReferenceImage: item.useReferenceImage ?? false,
     };
   }
 
@@ -119,8 +124,8 @@ function draftFromResolved(item: {
     description: item.description ?? '',
     template: item.template,
     templateParams: [],
-    systemPrompt: '',
-    outputSchema: '',
+    isSystem: item.isSystem,
+    useReferenceImage: item.useReferenceImage ?? false,
   };
 }
 
@@ -299,12 +304,16 @@ export function PromptsPage() {
   }
 
   function handleChange(patch: Partial<PromptFormDraft>) {
-    if (patch.key !== undefined || patch.language !== undefined) {
+    if (patch.name !== undefined || patch.language !== undefined) {
       setSaveError(null);
     }
     setDraft((prev) => {
       if (!prev) return prev;
       const next = { ...prev, ...patch };
+
+      if (patch.category !== undefined && !supportsReferenceImage(patch.category)) {
+        next.useReferenceImage = false;
+      }
 
       if (patch.template !== undefined && isUserFunctionTemplate(next.template)) {
         next.templateParams = [];
@@ -326,10 +335,9 @@ export function PromptsPage() {
 
   async function handleSave() {
     if (!draft) return;
-
-    const conflict = findPromptKeyConflict(allPrompts, draft.key, draft.language, draft.id);
-    if (conflict) {
-      setSaveError(`Key "${draft.key.trim().toLowerCase()}" đã tồn tại cho ngôn ngữ ${draft.language.toUpperCase()}`);
+    if (draft.isSystem) return;
+    if (!draft.name.trim()) {
+      setSaveError('Name is required');
       return;
     }
 
@@ -337,34 +345,50 @@ export function PromptsPage() {
       ? draft.template
       : buildManagedTemplateExpression(draft.template, draft.templateParams);
 
+    const useReferenceImage = supportsReferenceImage(draft.category) ? draft.useReferenceImage : false;
+
     setSaving(true);
     setSaveError(null);
     try {
       if (draft.id) {
         const { item } = await updatePrompt(draft.id, {
-          key: draft.key,
           language: draft.language,
-          name: draft.name,
+          name: draft.name.trim(),
           category: draft.category,
           outputType: draft.outputType,
           description: draft.description || undefined,
           template: templatePayload,
+          useReferenceImage,
         });
-        const nextDraft = { ...draft, id: item.id, key: item.key, language: item.language };
+        const nextDraft = {
+          ...draft,
+          id: item.id,
+          key: item.key,
+          language: item.language,
+          name: item.name,
+          useReferenceImage: item.useReferenceImage ?? false,
+        };
         setDraft(nextDraft);
         setBaseline(serializeDraft(nextDraft));
         setSelectedId(item.id);
       } else {
         const { item } = await createPrompt({
-          key: draft.key,
           language: draft.language,
-          name: draft.name,
+          name: draft.name.trim(),
           category: draft.category,
           outputType: draft.outputType,
           description: draft.description || undefined,
           template: templatePayload,
+          useReferenceImage,
         });
-        const nextDraft = { ...draft, id: item.id, key: item.key, language: item.language };
+        const nextDraft = {
+          ...draft,
+          id: item.id,
+          key: item.key,
+          language: item.language,
+          name: item.name,
+          useReferenceImage: item.useReferenceImage ?? false,
+        };
         setDraft(nextDraft);
         setBaseline(serializeDraft(nextDraft));
         setSelectedId(item.id);
@@ -380,14 +404,13 @@ export function PromptsPage() {
 
   function handleDuplicate() {
     if (!draft) return;
-    const copyKey = suggestUniquePromptKey(draft.key || 'new_prompt', draft.language, allPrompts);
+    const copyName = draft.name ? `${draft.name} (copy)` : 'Untitled (copy)';
     const copy: PromptFormDraft = {
       ...draft,
       id: null,
-      key: copyKey,
-      name: draft.name ? `${draft.name} (copy)` : 'Untitled (copy)',
-      systemPrompt: draft.systemPrompt,
-      outputSchema: draft.outputSchema,
+      key: '',
+      name: copyName,
+      isSystem: false,
     };
     setSelectedId(null);
     setDraft(copy);
@@ -399,6 +422,7 @@ export function PromptsPage() {
 
   async function handleDelete() {
     if (!draft?.id) return;
+    if (draft.isSystem) return;
     if (!window.confirm('Delete this prompt?')) return;
 
     try {
@@ -426,6 +450,7 @@ export function PromptsPage() {
         outputType: draft.outputType,
         provider,
         imageProvider,
+        videoProvider,
         userPrompt,
         promptId: draft.id ?? undefined,
       });
@@ -457,6 +482,7 @@ export function PromptsPage() {
         loading={editorLoading}
         saving={saving}
         dirty={dirty}
+        readOnly={draft?.isSystem}
         saveError={saveError}
         onChange={handleChange}
         onSave={handleSave}

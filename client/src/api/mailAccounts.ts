@@ -3,19 +3,16 @@ import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   CreateMailAccountPayload,
   MailAccount,
-  MailAccountFilter,
   MailAccountsResponse,
 } from '../types/mailAccount';
 
 export function fetchMailAccounts(
-  filter: MailAccountFilter = 'all',
   query = '',
   page = 1,
   limit = 20,
   options?: FetchOptions,
 ) {
   const params = new URLSearchParams();
-  if (filter !== 'all') params.set('status', filter);
   if (query.trim()) params.set('q', query.trim());
   params.set('page', String(page));
   params.set('limit', String(limit));
@@ -41,12 +38,10 @@ export function createMailAccount(payload: CreateMailAccountPayload) {
 }
 
 export async function exportMailAccountsExcel(
-  filter: MailAccountFilter = 'all',
   query = '',
   ids?: string[],
 ) {
   const params = new URLSearchParams();
-  if (filter !== 'all') params.set('status', filter);
   if (query.trim()) params.set('q', query.trim());
   if (ids && ids.length > 0) params.set('ids', ids.join(','));
 

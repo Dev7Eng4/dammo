@@ -15,8 +15,9 @@ export const PROMPT_LANGUAGE_OPTIONS: { value: PromptLanguage; label: string }[]
 ];
 
 export const PROMPT_OUTPUT_TYPE_OPTIONS: { value: PromptOutputType; label: string }[] = [
-  { value: 'text', label: 'Text content' },
-  { value: 'image', label: 'Image generation' },
+  { value: 'text', label: 'Text' },
+  { value: 'image', label: 'Image' },
+  { value: 'video', label: 'Video' },
 ];
 
 export const IMAGE_PROVIDER_OPTIONS: { value: ImageBrowserProvider; label: string }[] = [

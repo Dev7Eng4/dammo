@@ -5,24 +5,56 @@ import type { MailAccount, MailAccountsStore } from './mail-accounts.types.js';
 
 const EMPTY_STORE: MailAccountsStore = { accounts: [] };
 
-type LegacyMailAccountsStore = MailAccountsStore & { nextId?: number };
+type LegacyMailAccount = MailAccount & {
+  provider?: string;
+  status?: string;
+  linkedPlatforms?: string[];
+  recoveryPhone?: string;
+};
+
+type LegacyMailAccountsStore = {
+  accounts?: LegacyMailAccount[];
+  nextId?: number;
+};
+
+function normalizeAccount(account: LegacyMailAccount): MailAccount {
+  const { provider: _provider, status: _status, linkedPlatforms: _linkedPlatforms, recoveryPhone, ...rest } =
+    account;
+
+  return {
+    id: ensureUuid(account.id),
+    email: account.email,
+    password: account.password,
+    twoFactorAuth: account.twoFactorAuth,
+    purpose: account.purpose ?? '',
+    recoveryEmail: account.recoveryEmail ?? '',
+    phone: account.phone ?? recoveryPhone,
+    notes: account.notes ?? '',
+  };
+}
 
 function normalizeStore(raw: LegacyMailAccountsStore | null): MailAccountsStore {
   if (!raw?.accounts) return EMPTY_STORE;
 
-  const needsMigration =
-    raw.nextId !== undefined || raw.accounts.some((account) => !isUuid(account.id));
-
-  if (!needsMigration) {
-    return { accounts: raw.accounts };
-  }
-
   return {
-    accounts: raw.accounts.map((account) => ({
-      ...account,
-      id: ensureUuid(account.id),
-    })),
+    accounts: raw.accounts.map(normalizeAccount),
   };
+}
+
+function storeNeedsPersist(raw: LegacyMailAccountsStore, normalized: MailAccountsStore): boolean {
+  if (raw.nextId !== undefined) return true;
+  if (!raw.accounts) return false;
+
+  return raw.accounts.some((account, i) => {
+    const normalizedAccount = normalized.accounts[i];
+    if (!normalizedAccount) return true;
+    if (!isUuid(account.id)) return true;
+    if (account.provider !== undefined) return true;
+    if (account.status !== undefined) return true;
+    if (account.linkedPlatforms !== undefined) return true;
+    if (account.recoveryPhone !== undefined && account.phone === undefined) return true;
+    return account.id !== normalizedAccount.id;
+  });
 }
 
 function loadStore(): MailAccountsStore {
@@ -33,10 +65,8 @@ function loadStore(): MailAccountsStore {
   }
 
   const normalized = normalizeStore(raw);
-  const needsPersist =
-    raw.nextId !== undefined || raw.accounts.some((account, i) => account.id !== normalized.accounts[i]?.id);
 
-  if (needsPersist) {
+  if (storeNeedsPersist(raw, normalized)) {
     writeJson(paths.mailAccounts, normalized);
   }
 

@@ -49,7 +49,7 @@ export class VideoProductionService {
       throw new AppError('Only reup audio or reup video channels can create videos', 400, 'INVALID_CHANNEL_TYPE');
     }
 
-    const destination = createYoutubeProductionDestination(channel);
+    const destination = await createYoutubeProductionDestination(channel);
     return resolvePipeline(destination.pipelineType).run(destination, options);
   }
 

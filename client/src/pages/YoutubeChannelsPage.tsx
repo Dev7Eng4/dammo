@@ -9,12 +9,7 @@ import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeC
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
-import type {
-  YoutubeChannel,
-  YoutubeChannelStats,
-  YoutubeChannelTypeFilter,
-  YoutubeMonetizationFilter,
-} from '../types/youtubeChannel';
+import type { YoutubeChannel, YoutubeChannelStats, YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../types/youtubeChannel';
 import type { SourceChannel } from '../types/sourceChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 
@@ -49,12 +44,10 @@ export function YoutubeChannelsPage() {
     refreshKey: channelsRefreshKey,
   });
 
-  const selectedChannels = list.items.filter((channel) => selectedIds.has(channel.id));
+  const selectedChannels = list.items.filter(channel => selectedIds.has(channel.id));
   const selectedChannel = selectedIds.size === 1 ? selectedChannels[0] ?? null : null;
   const isBulkCreate = selectedIds.size === 0;
-  const allSelectedAreReup =
-    selectedChannels.length > 0 &&
-    selectedChannels.every((channel) => isStoredReupChannelType(channel.type));
+  const allSelectedAreReup = selectedChannels.length > 0 && selectedChannels.every(channel => isStoredReupChannelType(channel.type));
   const canCreateVideo =
     isBulkCreate ||
     (selectedIds.size === 1 && selectedChannel !== null && isStoredReupChannelType(selectedChannel.type)) ||
@@ -64,31 +57,27 @@ export function YoutubeChannelsPage() {
     selectedIds.size > 1 && !allSelectedAreReup
       ? 'All selected channels must be Reup Audio or Reup Video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-        ? 'Only Reup Audio or Reup Video channels can create videos'
-        : isBulkCreate
-          ? 'Tạo video cho tất cả reup channels'
-          : selectedIds.size > 1
-            ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
-            : undefined;
+      ? 'Only Reup Audio or Reup Video channels can create videos'
+      : isBulkCreate
+      ? 'Tạo video cho tất cả reup channels'
+      : selectedIds.size > 1
+      ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
+      : undefined;
   const uploadDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
       ? 'All selected channels must be Reup Audio or Reup Video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-        ? 'Only Reup Audio or Reup Video channels can upload videos'
-        : isBulkCreate
-          ? 'Upload videos for all reup channels'
-          : selectedIds.size > 1
-            ? `Upload videos for ${selectedIds.size} selected channels`
-            : undefined;
+      ? 'Only Reup Audio or Reup Video channels can upload videos'
+      : isBulkCreate
+      ? 'Upload videos for all reup channels'
+      : selectedIds.size > 1
+      ? `Upload videos for ${selectedIds.size} selected channels`
+      : undefined;
   const canEdit = selectedIds.size === 1;
   const editDisabledReason =
-    selectedIds.size === 0
-      ? 'Select a channel to edit'
-      : selectedIds.size > 1
-        ? 'Select exactly one channel to edit'
-        : undefined;
+    selectedIds.size === 0 ? 'Select a channel to edit' : selectedIds.size > 1 ? 'Select exactly one channel to edit' : undefined;
 
-  useAbortableEffect(async (signal) => {
+  useAbortableEffect(async signal => {
     setStatsLoading(true);
 
     try {
@@ -102,15 +91,18 @@ export function YoutubeChannelsPage() {
     }
   }, []);
 
-  useAbortableEffect(async (signal) => {
-    try {
-      const data = await fetchSourceChannels('all', 'all', 'all', '', 1, 200, { signal });
-      setSources(data.items);
-    } catch {
-      if (signal.aborted) return;
-      setSources([]);
-    }
-  }, [channelsRefreshKey]);
+  useAbortableEffect(
+    async signal => {
+      try {
+        const data = await fetchSourceChannels('all', 'all', 'all', '', 1, 200, { signal });
+        setSources(data.items);
+      } catch {
+        if (signal.aborted) return;
+        setSources([]);
+      }
+    },
+    [channelsRefreshKey]
+  );
 
   function clearSelection() {
     setSelectedIds(new Set());
@@ -148,7 +140,7 @@ export function YoutubeChannelsPage() {
   }
 
   function handleToggleRow(id: string) {
-    setSelectedIds((prev) => {
+    setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -160,7 +152,7 @@ export function YoutubeChannelsPage() {
     if (selectedIds.size === list.items.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(list.items.map((c) => c.id)));
+      setSelectedIds(new Set(list.items.map(c => c.id)));
     }
   }
 
@@ -168,7 +160,7 @@ export function YoutubeChannelsPage() {
     setShowAddModal(false);
     list.markLoading();
     list.resetPage();
-    setChannelsRefreshKey((key) => key + 1);
+    setChannelsRefreshKey(key => key + 1);
 
     void fetchYoutubeChannelStats()
       .then(setStats)
@@ -178,7 +170,7 @@ export function YoutubeChannelsPage() {
   function handleEditSuccess(_updated?: YoutubeChannel) {
     setShowEditModal(false);
     list.markLoading();
-    setChannelsRefreshKey((key) => key + 1);
+    setChannelsRefreshKey(key => key + 1);
 
     void fetchYoutubeChannelStats()
       .then(setStats)
@@ -258,11 +250,11 @@ export function YoutubeChannelsPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
-          <YoutubeChannelStatCards data={stats} loading={statsLoading} />
-          <div className="mt-4 border-b border-border pb-4">
+    <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
+      <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
+        <div className='flex-1 overflow-y-auto p-6'>
+          {/* <YoutubeChannelStatCards data={stats} loading={statsLoading} /> */}
+          <div className='mt-4 border-b border-border pb-4'>
             <YoutubeChannelsToolbar
               typeFilter={typeFilter}
               monetizationFilter={monetizationFilter}
@@ -282,10 +274,8 @@ export function YoutubeChannelsPage() {
               onEdit={() => setShowEditModal(true)}
             />
           </div>
-          {list.error ? (
-            <p className="mt-2 text-xs text-danger">{list.error}</p>
-          ) : null}
-          <div className="mt-4 card-surface px-5 pt-3 pb-4">
+          {list.error ? <p className='mt-2 text-xs text-danger'>{list.error}</p> : null}
+          <div className='mt-4 card-surface px-5 pt-3 pb-4'>
             <YoutubeChannelsTable
               channels={list.items}
               sources={sources}
@@ -306,11 +296,7 @@ export function YoutubeChannelsPage() {
         </div>
       </div>
 
-      <AddYoutubeChannelModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
-      />
+      <AddYoutubeChannelModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />
 
       {selectedChannel ? (
         <EditYoutubeChannelModal

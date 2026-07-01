@@ -1,6 +1,5 @@
 import { cn } from '../../lib/cn';
-import { StatusPill } from '../ui/StatusPill';
-import { PlatformIcon } from './PlatformIcon';
+import { PlatformLinkCell } from './PlatformLinkCell';
 import type { MailAccount } from '../../types/mailAccount';
 
 interface MailAccountsTableProps {
@@ -11,12 +10,6 @@ interface MailAccountsTableProps {
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
-}
-
-function truncateRecovery(email: string, max = 16) {
-  if (email === 'None' || !email) return 'None';
-  if (email.length <= max) return email;
-  return email.slice(0, max) + '...';
 }
 
 export function MailAccountsTable({
@@ -37,18 +30,17 @@ export function MailAccountsTable({
           <thead>
             <tr className="border-b border-border text-xs text-neutral-500">
               <th className="pb-3 pr-4 w-8" />
-              <th className="pb-3 pr-4 font-medium">EMAIL ADDRESS</th>
-              <th className="pb-3 pr-4 font-medium">PROVIDER</th>
-              <th className="pb-3 pr-4 font-medium">STATUS</th>
-              <th className="pb-3 pr-4 font-medium">PURPOSE</th>
-              <th className="pb-3 pr-4 font-medium">LINKED PLATFORMS</th>
-              <th className="pb-3 font-medium">RECOVERY</th>
+              <th className="pb-3 pr-4 font-medium">EMAIL</th>
+              <th className="pb-3 pr-4 font-medium">YOUTUBE</th>
+              <th className="pb-3 pr-4 font-medium">TIKTOK</th>
+              <th className="pb-3 pr-4 font-medium">FACEBOOK</th>
+              <th className="pb-3 font-medium">PURPOSE</th>
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={7} className="py-3">
+                <td colSpan={6} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -62,7 +54,7 @@ export function MailAccountsTable({
   if (accounts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">No mail accounts match your filter.</p>
+        <p className="text-sm text-neutral-400">No mail accounts found.</p>
       </div>
     );
   }
@@ -80,12 +72,11 @@ export function MailAccountsTable({
                 className="size-3.5 rounded border-border bg-surface accent-primary-500"
               />
             </th>
-            <th className="pb-3 pr-4 font-medium">EMAIL ADDRESS</th>
-            <th className="pb-3 pr-4 font-medium">PROVIDER</th>
-            <th className="pb-3 pr-4 font-medium">STATUS</th>
-            <th className="pb-3 pr-4 font-medium">PURPOSE</th>
-            <th className="pb-3 pr-4 font-medium">LINKED PLATFORMS</th>
-            <th className="pb-3 font-medium">RECOVERY</th>
+            <th className="pb-3 pr-4 font-medium">EMAIL</th>
+            <th className="pb-3 pr-4 font-medium">YOUTUBE</th>
+            <th className="pb-3 pr-4 font-medium">TIKTOK</th>
+            <th className="pb-3 pr-4 font-medium">FACEBOOK</th>
+            <th className="pb-3 font-medium">PURPOSE</th>
           </tr>
         </thead>
         <tbody>
@@ -109,21 +100,16 @@ export function MailAccountsTable({
                 />
               </td>
               <td className="py-3 pr-4 font-medium text-neutral-100">{account.email}</td>
-              <td className="py-3 pr-4 text-neutral-400">{account.provider}</td>
               <td className="py-3 pr-4">
-                <StatusPill status={account.status} />
+                <PlatformLinkCell linked={account.platformLinks.youtube} />
               </td>
-              <td className="py-3 pr-4 text-neutral-300">{account.purpose}</td>
               <td className="py-3 pr-4">
-                <div className="flex items-center gap-1.5">
-                  {account.linkedPlatforms.map((p) => (
-                    <PlatformIcon key={p} platform={p} className="text-neutral-400" />
-                  ))}
-                </div>
+                <PlatformLinkCell linked={account.platformLinks.tiktok} />
               </td>
-              <td className="py-3 text-neutral-500 font-mono text-xs">
-                {truncateRecovery(account.recoveryEmail)}
+              <td className="py-3 pr-4">
+                <PlatformLinkCell linked={account.platformLinks.facebook} />
               </td>
+              <td className="py-3 text-neutral-300">{account.purpose}</td>
             </tr>
           ))}
         </tbody>

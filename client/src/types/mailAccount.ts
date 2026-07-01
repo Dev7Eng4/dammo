@@ -1,17 +1,19 @@
-export type MailAccountStatus = 'active' | 'need_verify' | 'suspended';
-export type MailProvider = 'Gmail' | 'Outlook' | 'Yahoo' | 'Proton' | 'iCloud';
-export type LinkedPlatform = 'youtube' | 'tiktok' | 'facebook' | 'web';
+export interface PlatformLinks {
+  youtube: boolean;
+  tiktok: boolean;
+  facebook: boolean;
+}
 
 export interface MailAccount {
   id: string;
   email: string;
-  provider: MailProvider;
-  status: MailAccountStatus;
+  password?: string;
+  twoFactorAuth?: string;
   purpose: string;
-  linkedPlatforms: LinkedPlatform[];
   recoveryEmail: string;
-  recoveryPhone?: string;
+  phone?: string;
   notes?: string;
+  platformLinks: PlatformLinks;
 }
 
 export interface MailAccountsResponse {
@@ -25,13 +27,15 @@ export interface MailAccountsResponse {
 export interface CreateMailAccountPayload {
   email: string;
   password?: string;
+  twoFactorAuth?: string;
   recoveryEmail?: string;
+  phone?: string;
 }
-
-export type MailAccountFilter = 'all' | MailAccountStatus;
 
 export interface AddMailFormValues {
   email: string;
   password?: string;
+  twoFactorAuth?: string;
   recoveryEmail?: string;
+  phone?: string;
 }

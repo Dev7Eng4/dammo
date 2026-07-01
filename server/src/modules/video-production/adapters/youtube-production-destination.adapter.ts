@@ -1,16 +1,16 @@
 import { youtubeChannelVideoDir } from '../../../config/paths.js';
 import { AppError } from '../../../shared/http/errors.js';
+import { resolveReupAudioVisualStyle } from '../../youtube-channels/reup-audio-visual-style.js';
 import type { StoredYoutubeChannelType, YoutubeChannel } from '../../youtube-channels/youtube-channels.types.js';
 import { videoPrepareRepository } from '../../youtube-channels/video-prepare.repository.js';
 import type { VideoPrepareItem } from '../../youtube-channels/video-prepare.types.js';
-import { visualStylesService } from '../../visual-styles/visual-styles.service.js';
 import type { ProductionDestination, ProductionPipelineType } from '../ports/production-destination.port.js';
 
 function isReupPipelineType(type: StoredYoutubeChannelType): type is ProductionPipelineType {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
 }
 
-function resolveReupAudioConfig(channel: YoutubeChannel) {
+async function resolveReupAudioConfig(channel: YoutubeChannel) {
   if (channel.type !== 'reup_audio') {
     return {};
   }
@@ -31,26 +31,23 @@ function resolveReupAudioConfig(channel: YoutubeChannel) {
     );
   }
 
-  const visualStyle = visualStylesService.getById(channel.reupAudioVisualStyleId.trim());
+  const visualStyle = await resolveReupAudioVisualStyle(channel);
 
   return {
     reupAudioVideoType: channel.reupAudioVideoType,
     reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim(),
-    visualStyle: {
-      id: visualStyle.id,
-      name: visualStyle.name,
-      rule: visualStyle.rule,
-      niche: visualStyle.niche,
-    },
+    visualStyle,
   };
 }
 
-export function createYoutubeProductionDestination(channel: YoutubeChannel): ProductionDestination {
+export async function createYoutubeProductionDestination(
+  channel: YoutubeChannel,
+): Promise<ProductionDestination> {
   if (!isReupPipelineType(channel.type)) {
     throw new AppError('Channel type does not support video production', 400, 'INVALID_CHANNEL_TYPE');
   }
 
-  const reupAudioConfig = resolveReupAudioConfig(channel);
+  const reupAudioConfig = await resolveReupAudioConfig(channel);
 
   return {
     id: channel.id,

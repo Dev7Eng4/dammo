@@ -20,7 +20,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<AddMailFormValues>({
-    defaultValues: { email: '', password: '', recoveryEmail: '' },
+    defaultValues: { email: '', password: '', twoFactorAuth: '', recoveryEmail: '', phone: '' },
   });
 
   function handleClose() {
@@ -96,6 +96,19 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
         </div>
 
         <div>
+          <label htmlFor="twoFactorAuth" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            2FA <span className="text-neutral-500">(optional)</span>
+          </label>
+          <Input
+            id="twoFactorAuth"
+            type="text"
+            placeholder="Backup codes or secret"
+            className="h-10 rounded-lg"
+            {...register('twoFactorAuth')}
+          />
+        </div>
+
+        <div>
           <label htmlFor="recoveryEmail" className="mb-1.5 block text-xs font-medium text-neutral-400">
             Mail khôi phục <span className="text-neutral-500">(optional)</span>
           </label>
@@ -111,6 +124,19 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
           {errors.recoveryEmail ? (
             <p className="mt-1 text-xs text-danger">{errors.recoveryEmail.message}</p>
           ) : null}
+        </div>
+
+        <div>
+          <label htmlFor="phone" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            Phone <span className="text-neutral-500">(optional)</span>
+          </label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="+84..."
+            className="h-10 rounded-lg"
+            {...register('phone')}
+          />
         </div>
 
         {apiError ? <p className="text-xs text-danger">{apiError}</p> : null}

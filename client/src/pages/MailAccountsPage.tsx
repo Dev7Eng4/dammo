@@ -6,22 +6,20 @@ import { MailAccountsPagination } from '../components/mail-accounts/MailAccounts
 import { MailAccountsTable } from '../components/mail-accounts/MailAccountsTable';
 import { MailAccountsToolbar } from '../components/mail-accounts/MailAccountsToolbar';
 import { useFetchedItem, usePaginatedList } from '../hooks';
-import type { MailAccountFilter } from '../types/mailAccount';
 
 const LIMIT = 20;
 
 export function MailAccountsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState<MailAccountFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const list = usePaginatedList({
-    fetcher: ({ filter: currentFilter, page, limit, signal }) =>
-      fetchMailAccounts(currentFilter, '', page, limit, { signal }),
-    query: { filter },
+    fetcher: ({ page, limit, signal }) =>
+      fetchMailAccounts('', page, limit, { signal }),
+    query: {},
     limit: LIMIT,
     onFetched: () => setSelectedIds(new Set()),
   });
@@ -31,13 +29,6 @@ export function MailAccountsPage() {
   function clearSelection() {
     setSelectedId(null);
     detail.clear();
-  }
-
-  function handleFilterChange(nextFilter: MailAccountFilter) {
-    list.markLoading();
-    setFilter(nextFilter);
-    list.resetPage();
-    clearSelection();
   }
 
   function handlePageChange(nextPage: number) {
@@ -83,7 +74,7 @@ export function MailAccountsPage() {
     setExportError(null);
     try {
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
-      await exportMailAccountsExcel(filter, '', ids);
+      await exportMailAccountsExcel('', ids);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Export failed');
     } finally {
@@ -97,8 +88,6 @@ export function MailAccountsPage() {
         <div className="flex-1 overflow-y-auto p-6">
           <MailAccountsToolbar
             total={list.total}
-            filter={filter}
-            onFilterChange={handleFilterChange}
             onAddMail={() => setShowAddModal(true)}
             onExportExcel={handleExportExcel}
             exporting={exporting}

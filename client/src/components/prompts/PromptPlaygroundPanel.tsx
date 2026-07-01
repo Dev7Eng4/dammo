@@ -63,6 +63,8 @@ export function PromptPlaygroundPanel({
   const userFunctionTemplate = isUserFunctionTemplate(template);
   const variables = extractTemplateVariables(template, templateParams);
   const isImagePrompt = outputType === 'image';
+  const isVideoPrompt = outputType === 'video';
+  const isTextPrompt = outputType === 'text';
 
   let formattedContent = result?.content ?? '';
   if (result?.kind === 'text' && result.content) {
@@ -76,6 +78,11 @@ export function PromptPlaygroundPanel({
   const imagePreviewUrl =
     result?.kind === 'image' && result.imageBase64
       ? `data:${result.imageMimeType ?? 'image/jpeg'};base64,${result.imageBase64}`
+      : null;
+
+  const videoPreviewUrl =
+    result?.kind === 'video' && result.videoBase64
+      ? `data:${result.videoMimeType ?? 'video/mp4'};base64,${result.videoBase64}`
       : null;
 
   return (
@@ -99,10 +106,10 @@ export function PromptPlaygroundPanel({
             className="w-full"
             triggerClassName="h-9 w-full rounded-lg text-sm"
           />
-          {isImagePrompt ? (
-            <p className="text-[10px] text-neutral-500">Not used for image prompts.</p>
-          ) : (
+          {isTextPrompt ? (
             <p className="text-[10px] text-primary-400">Used for this prompt.</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">Not used for this prompt type.</p>
           )}
           {providerSettingsError ? (
             <p className="text-[10px] text-danger">{providerSettingsError}</p>
@@ -127,7 +134,7 @@ export function PromptPlaygroundPanel({
           {isImagePrompt ? (
             <p className="text-[10px] text-primary-400">Used for this prompt.</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">Not used for text content prompts.</p>
+            <p className="text-[10px] text-neutral-500">Not used for this prompt type.</p>
           )}
           {imageProviderSettingsError ? (
             <p className="text-[10px] text-danger">{imageProviderSettingsError}</p>
@@ -149,10 +156,16 @@ export function PromptPlaygroundPanel({
             className="w-full"
             triggerClassName="h-9 w-full rounded-lg text-sm"
           />
-          <p className="text-[10px] text-neutral-500">Saved as default for video generation prompts.</p>
+          {isVideoPrompt ? (
+            <p className="text-[10px] text-primary-400">Used for this prompt.</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">Not used for this prompt type.</p>
+          )}
           {videoProviderSettingsError ? (
             <p className="text-[10px] text-danger">{videoProviderSettingsError}</p>
-          ) : null}
+          ) : (
+            <p className="text-[10px] text-neutral-500">Saved as default for video generation prompts.</p>
+          )}
         </label>
 
         <div className="space-y-2">
@@ -222,6 +235,12 @@ export function PromptPlaygroundPanel({
                 src={imagePreviewUrl}
                 alt="Generated thumbnail preview"
                 className="max-h-[320px] w-full rounded-lg border border-border object-contain"
+              />
+            ) : videoPreviewUrl ? (
+              <video
+                src={videoPreviewUrl}
+                controls
+                className="max-h-[320px] w-full rounded-lg border border-border"
               />
             ) : (
               <pre className="scrollbar-thin max-h-[320px] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-neutral-200">

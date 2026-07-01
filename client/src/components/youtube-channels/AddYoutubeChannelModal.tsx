@@ -3,7 +3,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
-import { fetchVisualStyles } from '../../api/visualStyles';
 import { createYoutubeChannel, fetchYoutubeChannels } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
@@ -18,6 +17,10 @@ import type { SourceChannel } from '../../types/sourceChannel';
 import type { YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import type { AddYoutubeChannelFormValues } from '../../types/youtubeChannel';
 import { isReupAudioChannelType, isReupYoutubeChannelType } from '../../types/youtubeChannel';
+import {
+  getReupAudioVideoStylePlaceholder,
+  loadReupAudioVideoStyleOptions,
+} from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface AddYoutubeChannelModalProps {
@@ -101,6 +104,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   const isReupType = isReupYoutubeChannelType(channelType);
   const isReupAudio = isReupAudioChannelType(channelType);
   const language = watch('language') as YoutubeChannelLanguage | '';
+  const reupAudioVideoType = watch('reupAudioVideoType');
   const uploadFrequency = watch('uploadFrequency');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
@@ -119,7 +123,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
 
       try {
         const [mails, sourceList, channels] = await Promise.all([
-          fetchMailAccounts('all', '', 1, 100, { signal }),
+          fetchMailAccounts('', 1, 100, { signal }),
           fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal }),
           fetchYoutubeChannels('all', 'all', '', 1, 100, { signal }),
         ]);
@@ -163,12 +167,17 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
 
   useAbortableEffect(
     async (signal) => {
-      if (!open) return;
+      if (!open || !isReupAudio || !reupAudioVideoType) {
+        setVisualStyleOptions([]);
+        if (!reupAudioVideoType) {
+          setValue('reupAudioVisualStyleId', '');
+        }
+        return;
+      }
 
       setVisualStylesLoading(true);
       try {
-        const { items } = await fetchVisualStyles({ signal });
-        const options = items.map((item) => ({ value: item.id, label: item.name }));
+        const options = await loadReupAudioVideoStyleOptions(reupAudioVideoType, language, { signal });
         setVisualStyleOptions(options);
 
         const current = getValues('reupAudioVisualStyleId');
@@ -183,7 +192,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         if (!signal.aborted) setVisualStylesLoading(false);
       }
     },
-    [open],
+    [open, isReupAudio, reupAudioVideoType, language],
     { enabled: open },
   );
 
@@ -383,7 +392,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
               <Controller
                 name="reupAudioVisualStyleId"
                 control={control}
-                rules={{ required: isReupAudio ? 'Video style is required' : false }}
+                rules={{ required: isReupAudio && reupAudioVideoType ? 'Video style is required' : false }}
                 render={({ field }) => (
                   <Select
                     id="reup-audio-visual-style"
@@ -391,16 +400,14 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder={
-                      visualStylesLoading
-                        ? 'Loading styles...'
-                        : visualStyleOptions.length === 0
-                          ? 'No visual styles available'
-                          : 'Select video style'
-                    }
-                    searchPlaceholder="Search visual styles..."
+                    placeholder={getReupAudioVideoStylePlaceholder(
+                      reupAudioVideoType,
+                      visualStylesLoading,
+                      visualStyleOptions.length,
+                    )}
+                    searchPlaceholder="Search video styles..."
                     searchable
-                    disabled={isSubmitting || visualStylesLoading}
+                    disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
                     className="w-full"
                     triggerClassName={selectTriggerClass}
                   />

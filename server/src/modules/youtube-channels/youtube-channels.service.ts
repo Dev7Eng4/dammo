@@ -18,7 +18,7 @@ import { resolveSourceNamesForChannel } from './youtube-channel-sources.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
-import { visualStylesService } from '../visual-styles/visual-styles.service.js';
+import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import type {
   CreateYoutubeChannelInput,
   MonetizationStatus,
@@ -173,7 +173,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
     if (!input.reupAudioVisualStyleId?.trim()) {
       throw new AppError('Video style is required for Reup Audio channels', 400, 'VALIDATION_ERROR');
     }
-    visualStylesService.getById(input.reupAudioVisualStyleId.trim());
+    validateReupAudioVisualStyleId(
+      input.reupAudioVideoType,
+      input.reupAudioVisualStyleId.trim(),
+      input.language,
+    );
     reupAudioVideoType = input.reupAudioVideoType;
     reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
   }

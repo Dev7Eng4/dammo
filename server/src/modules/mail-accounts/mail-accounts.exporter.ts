@@ -1,44 +1,40 @@
 import { Buffer } from 'node:buffer';
 import { jsonToExcelBuffer } from '../../infrastructure/storage/excel-store.js';
 import { mailAccountsService } from './mail-accounts.service.js';
-import type { MailAccount, MailAccountStatus } from './mail-accounts.types.js';
-
-const STATUS_LABELS: Record<MailAccount['status'], string> = {
-  active: 'Active',
-  need_verify: 'Need Verify',
-  suspended: 'Suspended',
-};
+import type { MailAccountView } from './mail-accounts.types.js';
 
 const COLUMN_WIDTHS = [
   { wch: 32 },
-  { wch: 12 },
-  { wch: 14 },
-  { wch: 20 },
-  { wch: 18 },
+  { wch: 16 },
+  { wch: 16 },
   { wch: 28 },
-  { wch: 18 },
-  { wch: 40 },
+  { wch: 16 },
+  { wch: 12 },
+  { wch: 12 },
+  { wch: 12 },
+  { wch: 20 },
 ];
 
-function accountToRow(account: MailAccount) {
+function platformLabel(linked: boolean): string {
+  return linked ? 'Active' : '';
+}
+
+function accountToRow(account: MailAccountView) {
   return {
-    'Email Address': account.email,
-    Provider: account.provider,
-    Status: STATUS_LABELS[account.status],
+    Email: account.email,
+    Password: account.password ?? '',
+    '2FA': account.twoFactorAuth ?? '',
+    'Recovery email': account.recoveryEmail,
+    Phone: account.phone ?? '',
+    Youtube: platformLabel(account.platformLinks.youtube),
+    TikTok: platformLabel(account.platformLinks.tiktok),
+    Facebook: platformLabel(account.platformLinks.facebook),
     Purpose: account.purpose,
-    'Linked Platforms': account.linkedPlatforms.join(', '),
-    'Recovery Email': account.recoveryEmail,
-    'Recovery Phone': account.recoveryPhone ?? '',
-    Notes: account.notes ?? '',
   };
 }
 
-export function buildMailAccountsExcel(
-  status?: MailAccountStatus,
-  query?: string,
-  ids?: string[],
-): Buffer {
-  const accounts = mailAccountsService.getForExport(status, query, ids);
+export function buildMailAccountsExcel(query?: string, ids?: string[]): Buffer {
+  const accounts = mailAccountsService.getForExport(query, ids);
   const rows = accounts.map(accountToRow);
   return jsonToExcelBuffer(rows, 'Mail Accounts', COLUMN_WIDTHS);
 }

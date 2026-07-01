@@ -7,6 +7,7 @@ import {
   readPromptSource,
   writePromptFile,
 } from './prompts.file-store.js';
+import { resolveUniquePromptKey } from './prompt-key.js';
 import { promptsRepository } from './prompts.repository.js';
 import type {
   CreatePromptInput,
@@ -48,6 +49,24 @@ function filterPrompts(
   }
 
   return results;
+}
+
+function assertNotSystemPrompt(prompt: Prompt): void {
+  if (prompt.isSystem) {
+    throw new AppError('System prompt cannot be modified', 403, 'SYSTEM_PROMPT_READONLY');
+  }
+}
+
+function supportsReferenceImage(category: PromptCategory): boolean {
+  return category === 'thumbnail' || category === 'image';
+}
+
+function resolveUseReferenceImage(
+  category: PromptCategory,
+  useReferenceImage?: boolean,
+): boolean {
+  if (!supportsReferenceImage(category)) return false;
+  return useReferenceImage ?? false;
 }
 
 function assertUniqueKeyLanguage(key: string, language: PromptLanguage, excludeId?: string): void {
@@ -96,20 +115,27 @@ export class PromptsService {
   }
 
   async create(input: CreatePromptInput): Promise<Prompt> {
-    const key = normalizeKey(input.key);
+    const name = input.name.trim();
+    const key = input.key
+      ? normalizeKey(input.key)
+      : resolveUniquePromptKey(name, input.language);
     assertUniqueKeyLanguage(key, input.language);
 
     await writePromptFile(input.language, key, input.template);
 
+    const category = input.category ?? 'meta';
     const now = new Date().toISOString();
+    const useReferenceImage = resolveUseReferenceImage(category, input.useReferenceImage);
     const prompt: Prompt = {
       id: generateId(),
       key,
       language: input.language,
-      name: input.name.trim(),
-      category: input.category ?? 'meta',
+      name: name,
+      category,
       outputType: input.outputType ?? 'text',
+      ...(input.isSystem ? { isSystem: true } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+      ...(useReferenceImage ? { useReferenceImage: true } : {}),
       createdAt: now,
       updatedAt: now,
     };
@@ -119,7 +145,8 @@ export class PromptsService {
 
   async update(id: string, input: UpdatePromptInput): Promise<Prompt> {
     const current = this.getById(id);
-    const nextKey = input.key !== undefined ? normalizeKey(input.key) : current.key;
+    assertNotSystemPrompt(current);
+    const nextKey = current.key;
     const nextLanguage = input.language ?? current.language;
 
     assertUniqueKeyLanguage(nextKey, nextLanguage, id);
@@ -150,6 +177,17 @@ export class PromptsService {
       if (input.category !== undefined) next.category = input.category;
       if (input.outputType !== undefined) next.outputType = input.outputType;
 
+      const nextCategory = next.category;
+      const nextUseReferenceImage = resolveUseReferenceImage(
+        nextCategory,
+        input.useReferenceImage !== undefined ? input.useReferenceImage : next.useReferenceImage,
+      );
+      if (nextUseReferenceImage) {
+        next.useReferenceImage = true;
+      } else {
+        delete next.useReferenceImage;
+      }
+
       if (input.description !== undefined) {
         const description = input.description.trim();
         if (description) {
@@ -171,6 +209,7 @@ export class PromptsService {
 
   async delete(id: string): Promise<void> {
     const prompt = this.getById(id);
+    assertNotSystemPrompt(prompt);
     const deleted = promptsRepository.delete(id);
     if (!deleted) {
       throw new AppError('Prompt not found', 404, 'NOT_FOUND');

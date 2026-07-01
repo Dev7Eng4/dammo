@@ -21,11 +21,6 @@ export interface DashboardData {
   }>;
   accountSummary: {
     total: number;
-    active: number;
-    needVerify: number;
-    limited: number;
-    suspended: number;
-    lostAccess: number;
   };
   activeRender: {
     fileName: string;
@@ -119,18 +114,7 @@ function buildPipelineSteps(renderJobs: RenderJob[]): DashboardData['pipelineSte
 
 function buildHealthAlerts(): DashboardData['healthAlerts'] {
   const alerts: DashboardData['healthAlerts'] = [];
-  const mailAccounts = mailAccountsRepository.findAll();
-  const needVerify = mailAccounts.filter(account => account.status === 'need_verify').length;
   const suspendedChannels = youtubeChannelsRepository.findAll().filter(channel => channel.status === 'suspended').length;
-
-  if (needVerify > 0) {
-    alerts.push({
-      id: 'mail-need-verify',
-      title: `Need verification (${needVerify})`,
-      description: 'Mail accounts require verification before upload.',
-      severity: 'warning',
-    });
-  }
 
   if (suspendedChannels > 0) {
     alerts.push({
@@ -159,11 +143,6 @@ export class DashboardRepository {
       pipelineSteps: buildPipelineSteps(renderJobs),
       accountSummary: {
         total: mailAccounts.length,
-        active: mailAccounts.filter(account => account.status === 'active').length,
-        needVerify: mailAccounts.filter(account => account.status === 'need_verify').length,
-        limited: 0,
-        suspended: mailAccounts.filter(account => account.status === 'suspended').length,
-        lostAccess: 0,
       },
       activeRender: buildActiveRender(),
       recentProjects: buildRecentProjects(),

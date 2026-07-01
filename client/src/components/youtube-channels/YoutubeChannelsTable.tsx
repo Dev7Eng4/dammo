@@ -1,6 +1,6 @@
 import { formatChannelLanguageLabel, YOUTUBE_CHANNEL_TYPE_LABELS, type StoredYoutubeChannelType, type YoutubeChannel } from '../../types/youtubeChannel';
 import type { SourceChannel } from '../../types/sourceChannel';
-import { formatChannelSources } from '../../utils/youtubeChannel';
+import { formatChannelBackgroundFootage, formatChannelSources } from '../../utils/youtubeChannel';
 import { ChannelStatusPill } from './ChannelStatusPill';
 
 interface YoutubeChannelsTableProps {
@@ -32,6 +32,14 @@ function ChannelAvatar({ name }: { name: string }) {
   );
 }
 
+function SourceCell({ value }: { value: string }) {
+  return (
+    <p className="max-w-[12rem] truncate text-xs text-neutral-400" title={value}>
+      {value}
+    </p>
+  );
+}
+
 export function YoutubeChannelsTable({
   channels,
   sources,
@@ -54,6 +62,7 @@ export function YoutubeChannelsTable({
               <th className="pb-3 pr-4 font-medium">LINKED EMAIL</th>
               <th className="pb-3 pr-4 font-medium">TYPE</th>
               <th className="pb-3 pr-4 font-medium">SOURCE</th>
+              <th className="pb-3 pr-4 font-medium">BACKGROUND FOOTAGE</th>
               <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
               <th className="pb-3 pr-4 font-medium">LAST UPLOAD</th>
               <th className="pb-3 font-medium">STATUS</th>
@@ -62,7 +71,7 @@ export function YoutubeChannelsTable({
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={8} className="py-3">
+                <td colSpan={9} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -98,65 +107,68 @@ export function YoutubeChannelsTable({
             <th className="pb-3 pr-4 font-medium">LINKED EMAIL</th>
             <th className="pb-3 pr-4 font-medium">TYPE</th>
             <th className="pb-3 pr-4 font-medium">SOURCE</th>
+            <th className="pb-3 pr-4 font-medium">BACKGROUND FOOTAGE</th>
             <th className="pb-3 pr-4 font-medium">NICHE / LANG</th>
             <th className="pb-3 pr-4 font-medium">LAST UPLOAD</th>
             <th className="pb-3 font-medium">STATUS</th>
           </tr>
         </thead>
         <tbody>
-          {channels.map((channel) => (
-            <tr
-              key={channel.id}
-              onClick={() => onSelect(channel.id)}
-              className={`border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50 ${
-                selectedIds.has(channel.id) ? 'bg-primary-500/10' : ''
-              }`}
-            >
-              <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(channel.id)}
-                  onChange={() => onToggleRow(channel.id)}
-                  className="size-3.5 rounded border-border bg-surface accent-primary-500"
-                />
-              </td>
-              <td className="py-3 pr-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <ChannelAvatar name={channel.name} />
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-neutral-100">{channel.name}</p>
-                    <p className="truncate text-xs text-neutral-500">{channel.handle}</p>
+          {channels.map((channel) => {
+            const sourceLabel = formatChannelSources(channel, sources);
+            const backgroundFootageLabel = formatChannelBackgroundFootage(channel, sources);
+
+            return (
+              <tr
+                key={channel.id}
+                onClick={() => onSelect(channel.id)}
+                className={`border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50 ${
+                  selectedIds.has(channel.id) ? 'bg-primary-500/10' : ''
+                }`}
+              >
+                <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(channel.id)}
+                    onChange={() => onToggleRow(channel.id)}
+                    className="size-3.5 rounded border-border bg-surface accent-primary-500"
+                  />
+                </td>
+                <td className="py-3 pr-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ChannelAvatar name={channel.name} />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-neutral-100">{channel.name}</p>
+                      <p className="truncate text-xs text-neutral-500">{channel.handle}</p>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="py-3 pr-4">
-                <p className="max-w-[14rem] truncate font-mono text-xs text-neutral-400">
-                  {channel.linkedEmail}
-                </p>
-              </td>
-              <td className="py-3 pr-4 text-neutral-300">{typeLabel(channel.type)}</td>
-              <td className="py-3 pr-4">
-                <p
-                  className="max-w-[12rem] truncate text-xs text-neutral-400"
-                  title={formatChannelSources(channel, sources)}
-                >
-                  {formatChannelSources(channel, sources)}
-                </p>
-              </td>
-              <td className="py-3 pr-4 text-neutral-400">
-                {channel.niche} ({formatChannelLanguageLabel(channel.language)})
-              </td>
-              <td className="py-3 pr-4 text-neutral-300">
-                {formatDate(channel.lastUploadAt)}
-              </td>
-              <td className="py-3">
-                <ChannelStatusPill status={channel.status} />
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td className="py-3 pr-4">
+                  <p className="max-w-[14rem] truncate font-mono text-xs text-neutral-400">
+                    {channel.linkedEmail}
+                  </p>
+                </td>
+                <td className="py-3 pr-4 text-neutral-300">{typeLabel(channel.type)}</td>
+                <td className="py-3 pr-4">
+                  <SourceCell value={sourceLabel} />
+                </td>
+                <td className="py-3 pr-4">
+                  <SourceCell value={backgroundFootageLabel} />
+                </td>
+                <td className="py-3 pr-4 text-neutral-400">
+                  {channel.niche} ({formatChannelLanguageLabel(channel.language)})
+                </td>
+                <td className="py-3 pr-4 text-neutral-300">
+                  {formatDate(channel.lastUploadAt)}
+                </td>
+                <td className="py-3">
+                  <ChannelStatusPill status={channel.status} />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
-

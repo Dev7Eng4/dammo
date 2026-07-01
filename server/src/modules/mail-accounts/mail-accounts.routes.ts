@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { AppError, isAppError } from '../../shared/http/errors.js';
+import { isAppError } from '../../shared/http/errors.js';
 import {
   createMailAccountSchema,
   exportMailAccountsQuerySchema,
@@ -8,15 +8,14 @@ import {
 } from './mail-accounts.schema.js';
 import { buildExportFilename, buildMailAccountsExcel } from './mail-accounts.exporter.js';
 import { mailAccountsService } from './mail-accounts.service.js';
-import type { MailAccountStatus } from './mail-accounts.types.js';
 
 export function createMailAccountsRoutes() {
   const app = new Hono();
 
   app.get('/export', zValidator('query', exportMailAccountsQuerySchema), (c) => {
-    const { status, q, ids } = c.req.valid('query');
+    const { q, ids } = c.req.valid('query');
     const idList = ids ? ids.split(',').filter(Boolean) : undefined;
-    const buffer = buildMailAccountsExcel(status, q, idList);
+    const buffer = buildMailAccountsExcel(q, idList);
     const filename = buildExportFilename(idList);
 
     c.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -25,8 +24,8 @@ export function createMailAccountsRoutes() {
   });
 
   app.get('/', zValidator('query', listMailAccountsQuerySchema), (c) => {
-    const { status, q, page, limit } = c.req.valid('query');
-    const result = mailAccountsService.listPaginated(status, q, page, limit);
+    const { q, page, limit } = c.req.valid('query');
+    const result = mailAccountsService.listPaginated(q, page, limit);
     return c.json(result);
   });
 

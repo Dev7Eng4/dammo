@@ -1,6 +1,6 @@
 export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image';
 
-export type PromptOutputType = 'text' | 'image';
+export type PromptOutputType = 'text' | 'image' | 'video';
 
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
@@ -12,6 +12,8 @@ export interface Prompt {
   category: PromptCategory;
   outputType?: PromptOutputType;
   description?: string;
+  isSystem?: boolean;
+  useReferenceImage?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,23 +23,25 @@ export interface PromptsStore {
 }
 
 export interface CreatePromptInput {
-  key: string;
   language: PromptLanguage;
   name: string;
   template: string;
   category?: PromptCategory;
   outputType?: PromptOutputType;
   description?: string;
+  isSystem?: boolean;
+  key?: string;
+  useReferenceImage?: boolean;
 }
 
 export interface UpdatePromptInput {
-  key?: string;
   language?: PromptLanguage;
   name?: string;
   template?: string;
   category?: PromptCategory;
   outputType?: PromptOutputType;
   description?: string;
+  useReferenceImage?: boolean;
 }
 
 export interface PromptResolved extends Prompt {

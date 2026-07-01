@@ -16,11 +16,6 @@ export interface PipelineStep {
 
 export interface AccountSummary {
   total: number;
-  active: number;
-  needVerify: number;
-  limited: number;
-  suspended: number;
-  lostAccess: number;
 }
 
 export interface ActiveRender {
