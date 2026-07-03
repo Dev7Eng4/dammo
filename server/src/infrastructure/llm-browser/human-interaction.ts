@@ -1,6 +1,21 @@
-import type { Locator, Page } from 'playwright';
+import type { BrowserContext, Locator, Page } from 'playwright';
 
 export type PasteStrategy = 'human' | 'direct' | 'insertText';
+
+export const MOUSE_TRACKING_INIT_SCRIPT = `
+(() => {
+  const update = (e) => {
+    window.__pwMouseX = e.clientX;
+    window.__pwMouseY = e.clientY;
+  };
+  window.addEventListener('mousemove', update, { capture: true, passive: true });
+  window.addEventListener('pointermove', update, { capture: true, passive: true });
+})();
+`;
+
+export async function installMouseTracking(context: BrowserContext): Promise<void> {
+  await context.addInitScript(MOUSE_TRACKING_INIT_SCRIPT);
+}
 
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;

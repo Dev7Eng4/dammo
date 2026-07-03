@@ -1,5 +1,6 @@
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { AppError } from '../../shared/http/errors.js';
+import { installMouseTracking, MOUSE_TRACKING_INIT_SCRIPT } from '../llm-browser/human-interaction.js';
 import {
   listGpmProfiles,
   startGpmProfile,
@@ -170,7 +171,14 @@ async function openGpmBrowserSession(profileId: string): Promise<{ browser: Brow
 export async function connectPlaywrightToGpmProfile(profileId: string): Promise<GpmPlaywrightConnection> {
   const { browser, start } = await openGpmBrowserSession(profileId);
   const context = browser.contexts()[0] ?? (await browser.newContext());
+  await installMouseTracking(context);
   const page = await waitForInitialPage(context);
+
+  try {
+    await page.evaluate(MOUSE_TRACKING_INIT_SCRIPT);
+  } catch {
+    // Current page tracking is best-effort; addInitScript covers next navigation.
+  }
 
   return {
     browser,

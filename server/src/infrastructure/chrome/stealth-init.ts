@@ -1,18 +1,14 @@
+import playwright from 'playwright';
 import type { BrowserContext } from 'playwright';
+import { addExtra } from 'playwright-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { installMouseTracking } from '../llm-browser/human-interaction.js';
 
-const STEALTH_INIT_SCRIPT = `
-(() => {
-  try {
-    Object.defineProperty(navigator, 'webdriver', {
-      get: () => undefined,
-      configurable: true,
-    });
-  } catch {}
-})();
-`;
+export const stealthChromium = addExtra(playwright.chromium);
+stealthChromium.use(StealthPlugin());
 
 export async function applyStealthInit(context: BrowserContext): Promise<void> {
-  await context.addInitScript(STEALTH_INIT_SCRIPT);
+  await installMouseTracking(context);
 
   try {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { chromium, type BrowserContext, type Page } from 'playwright';
+import type { BrowserContext, Page } from 'playwright';
 import { buildChromeLaunchOptions } from '../../infrastructure/chrome/browser-launch.config.js';
-import { applyStealthInit } from '../../infrastructure/chrome/stealth-init.js';
+import { applyStealthInit, stealthChromium } from '../../infrastructure/chrome/stealth-init.js';
 import { clearLlmBrowserSessionsForProfile } from '../../infrastructure/llm-browser/llm-browser.session.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
@@ -209,7 +209,7 @@ async function launchChromeContext(
       }
 
       try {
-        const context = await chromium.launchPersistentContext(
+        const context = await stealthChromium.launchPersistentContext(
           userDataDir,
           buildChromeLaunchOptions(headless, { background }),
         );

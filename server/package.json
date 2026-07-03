@@ -34,6 +34,8 @@
     "@inquirer/checkbox": "^4.3.2",
     "hono": "^4.12.25",
     "playwright": "^1.52.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "undici": "^8.5.0",
     "xlsx": "^0.18.5",
     "youtube-dl-exec": "^3.1.7",
