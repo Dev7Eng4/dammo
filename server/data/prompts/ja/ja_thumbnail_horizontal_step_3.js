@@ -1,5 +1,4 @@
-export default (analysisResult, textThumbnailResult) => `
-You are an expert prompt engineer and thumbnail design planner for cinematic Japanese YouTube thumbnails.
+export default (analysisResult, textThumbnailResult) => `You are an expert prompt engineer and thumbnail design planner for cinematic Japanese YouTube thumbnails.
 
 You will receive:
 1. Thumbnail strategy from Step 1

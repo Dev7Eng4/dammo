@@ -63,10 +63,10 @@ function applyChannelConfigRefine(
         path: ['reupAudioVideoType'],
       });
     }
-    if (!data.reupAudioVisualStyleId?.trim()) {
+    if (data.reupAudioVideoType === 'ai' && !data.reupAudioVisualStyleId?.trim()) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Video style is required for Reup Audio channels',
+        message: 'Video style is required for Animate Images (AI)',
         path: ['reupAudioVisualStyleId'],
       });
     }

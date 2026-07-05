@@ -392,7 +392,12 @@ export function EditYoutubeChannelModal({
               <Controller
                 name="reupAudioVisualStyleId"
                 control={control}
-                rules={{ required: isReupAudio && reupAudioVideoType ? 'Video style is required' : false }}
+                rules={{
+                  required:
+                    isReupAudio && reupAudioVideoType === 'ai'
+                      ? 'Video style is required for Animate Images (AI)'
+                      : false,
+                }}
                 render={({ field }) => (
                   <Select
                     id="edit-reup-audio-visual-style"

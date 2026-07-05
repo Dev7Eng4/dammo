@@ -23,7 +23,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     );
   }
 
-  if (!channel.reupAudioVisualStyleId?.trim()) {
+  if (channel.reupAudioVideoType === 'ai' && !channel.reupAudioVisualStyleId?.trim()) {
     throw new AppError(
       'Reup Audio channel is missing reupAudioVisualStyleId',
       400,
@@ -31,12 +31,16 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     );
   }
 
-  const visualStyle = await resolveReupAudioVisualStyle(channel);
+  const visualStyle = channel.reupAudioVisualStyleId?.trim()
+    ? await resolveReupAudioVisualStyle(channel)
+    : undefined;
 
   return {
     reupAudioVideoType: channel.reupAudioVideoType,
-    reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim(),
-    visualStyle,
+    ...(channel.reupAudioVisualStyleId?.trim()
+      ? { reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim() }
+      : {}),
+    ...(visualStyle ? { visualStyle } : {}),
   };
 }
 

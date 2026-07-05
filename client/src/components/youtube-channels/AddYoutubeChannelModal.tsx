@@ -392,7 +392,12 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
               <Controller
                 name="reupAudioVisualStyleId"
                 control={control}
-                rules={{ required: isReupAudio && reupAudioVideoType ? 'Video style is required' : false }}
+                rules={{
+                  required:
+                    isReupAudio && reupAudioVideoType === 'ai'
+                      ? 'Video style is required for Animate Images (AI)'
+                      : false,
+                }}
                 render={({ field }) => (
                   <Select
                     id="reup-audio-visual-style"

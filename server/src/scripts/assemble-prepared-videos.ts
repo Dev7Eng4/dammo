@@ -6,8 +6,11 @@ import { AI_SLIDES_DIRNAME } from '../modules/video-production/shared/ai-video/a
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
-import type { StoredYoutubeChannelType } from '../modules/youtube-channels/youtube-channels.types.js';
+import type { StoredYoutubeChannelType, YoutubeChannel } from '../modules/youtube-channels/youtube-channels.types.js';
 import { formatElapsedMs } from '../shared/timing/step-timer.js';
+import { pickReupChannels } from './lib/reup-channel-picker.js';
+
+const ASSEMBLE_VIDEOS_PER_RUN = 1;
 
 const AUDIO_FILE = 'audio.mp3';
 /** Thử transcript đã qua LLM trước, fallback về cleaned SRT */
@@ -17,6 +20,19 @@ const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
 
 function isReupChannelType(type: StoredYoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+}
+
+function resolveChannelsFromPick(
+  pick: { mode: 'all' } | { mode: 'selected'; channelIds: string[] },
+): YoutubeChannel[] {
+  const reupChannels = youtubeChannelsRepository.findAll().filter(channel => isReupChannelType(channel.type));
+
+  if (pick.mode === 'all') {
+    return reupChannels;
+  }
+
+  const selectedIds = new Set(pick.channelIds);
+  return reupChannels.filter(channel => selectedIds.has(channel.id));
 }
 
 async function findFirstExisting(...paths: string[]): Promise<string | null> {
@@ -54,18 +70,28 @@ interface AssembleResult {
 async function main() {
   ensureDataDirs();
 
-  const reupChannels = youtubeChannelsRepository.findAll().filter(channel => isReupChannelType(channel.type));
-
-  if (reupChannels.length === 0) {
-    console.log('Không có reup channel nào trong hệ thống.');
+  const pick = await pickReupChannels({ message: 'Chọn kênh để ghép video Prepared' });
+  if (pick.mode === 'cancelled') {
+    console.log('Đã hủy.');
     return;
   }
 
-  console.log(`Kiểm tra ${reupChannels.length} reup channel(s) để tìm video đang ở status Prepared...\n`);
+  const channels = resolveChannelsFromPick(pick);
+  if (channels.length === 0) {
+    console.log('Không có reup channel nào được chọn.');
+    return;
+  }
+
+  console.log(
+    `Ghép tối đa ${ASSEMBLE_VIDEOS_PER_RUN} video trên ${channels.length} channel(s) đã chọn...\n`,
+  );
 
   const results: AssembleResult[] = [];
+  let processedCount = 0;
 
-  for (const channel of reupChannels) {
+  for (const channel of channels) {
+    if (processedCount >= ASSEMBLE_VIDEOS_PER_RUN) break;
+
     const preparedItems = videoPrepareRepository.listByStatus(channel.id, 'Prepared');
 
     if (preparedItems.length === 0) {
@@ -74,32 +100,23 @@ async function main() {
     }
 
     if (channel.type === 'reup_audio' && !channel.reupAudioVideoType) {
-      for (const item of preparedItems) {
-        const reason = 'Channel reup_audio thiếu reupAudioVideoType';
-        console.log(`  [skip] ${channel.name} / ${item.videoId}: ${reason}`);
-        results.push({ channelName: channel.name, videoId: item.videoId, status: 'skipped', reason });
-      }
+      console.log(`  [skip] ${channel.name}: channel reup_audio thiếu reupAudioVideoType`);
       continue;
     }
 
     const videoType = channel.type === 'reup_audio' ? channel.reupAudioVideoType : 'si';
 
     if (videoType === 'si' && !channel.backgroundFootageSources?.length) {
-      for (const item of preparedItems) {
-        console.log(`  [skip] ${channel.name} / ${item.videoId}: không có backgroundFootageSources`);
-        results.push({
-          channelName: channel.name,
-          videoId: item.videoId,
-          status: 'skipped',
-          reason: 'Channel không có backgroundFootageSources',
-        });
-      }
+      console.log(`  [skip] ${channel.name}: không có backgroundFootageSources`);
       continue;
     }
 
-    console.log(`  ${channel.name} [${videoType?.toUpperCase()}]: ${preparedItems.length} video(s) Prepared → bắt đầu ghép...`);
-
     for (const item of preparedItems) {
+      if (processedCount >= ASSEMBLE_VIDEOS_PER_RUN) break;
+
+      processedCount++;
+      console.log(`  [xử lý] ${channel.name} / ${item.videoId} (${videoType})...`);
+
       const workDir = resolveYoutubeChannelVideoDir(channel.id, item.videoId);
       if (!workDir) {
         const reason = `Không tìm thấy thư mục video: ${item.videoId}`;
@@ -185,6 +202,9 @@ async function main() {
   const failed = results.filter(r => r.status === 'failed').length;
 
   console.log('');
+  if (processedCount === 0) {
+    console.log('Không tìm thấy video Prepared nào để ghép trên các channel đã chọn.');
+  }
   console.log(`Hoàn tất: ${created} created, ${skipped} skipped, ${failed} failed`);
 }
 

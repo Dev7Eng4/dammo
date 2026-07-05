@@ -174,16 +174,26 @@ function validateChannelConfig(input: ChannelConfigInput): {
     if (!input.reupAudioVideoType) {
       throw new AppError('Video type is required for Reup Audio channels', 400, 'VALIDATION_ERROR');
     }
-    if (!input.reupAudioVisualStyleId?.trim()) {
-      throw new AppError('Video style is required for Reup Audio channels', 400, 'VALIDATION_ERROR');
-    }
-    validateReupAudioVisualStyleId(
-      input.reupAudioVideoType,
-      input.reupAudioVisualStyleId.trim(),
-      input.language,
-    );
     reupAudioVideoType = input.reupAudioVideoType;
-    reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+
+    if (input.reupAudioVideoType === 'ai') {
+      if (!input.reupAudioVisualStyleId?.trim()) {
+        throw new AppError('Video style is required for Animate Images (AI)', 400, 'VALIDATION_ERROR');
+      }
+      validateReupAudioVisualStyleId(
+        input.reupAudioVideoType,
+        input.reupAudioVisualStyleId.trim(),
+        input.language,
+      );
+      reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+    } else if (input.reupAudioVisualStyleId?.trim()) {
+      validateReupAudioVisualStyleId(
+        input.reupAudioVideoType,
+        input.reupAudioVisualStyleId.trim(),
+        input.language,
+      );
+      reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+    }
   }
 
   return {
@@ -496,7 +506,11 @@ export class YoutubeChannelsService {
 
       if (isReupAudioChannelType(input.type)) {
         next.reupAudioVideoType = config.reupAudioVideoType;
-        next.reupAudioVisualStyleId = config.reupAudioVisualStyleId;
+        if (config.reupAudioVisualStyleId) {
+          next.reupAudioVisualStyleId = config.reupAudioVisualStyleId;
+        } else {
+          delete next.reupAudioVisualStyleId;
+        }
       } else {
         delete next.reupAudioVideoType;
         delete next.reupAudioVisualStyleId;
