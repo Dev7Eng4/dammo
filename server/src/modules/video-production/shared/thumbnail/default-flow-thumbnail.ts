@@ -41,7 +41,7 @@ function logValidationFailure(attempt: number, reason: string): void {
 export async function runDefaultFlowThumbnail(
   workDir: string,
   language: ChannelLanguage,
-  options?: RunDefaultFlowThumbnailOptions,
+  options?: RunDefaultFlowThumbnailOptions
 ): Promise<DefaultFlowThumbnailResult> {
   const referenceImagePath = options?.referenceImagePath ?? path.join(workDir, OLD_THUMBNAIL_FILENAME);
 
@@ -96,11 +96,7 @@ export async function runDefaultFlowThumbnail(
       }
     }
 
-    throw new AppError(
-      `Default flow thumbnail failed after ${MAX_RETRIES} attempts: ${lastReason}`,
-      502,
-      'DEFAULT_FLOW_THUMBNAIL_FAILED',
-    );
+    throw new AppError(`Default flow thumbnail failed after ${MAX_RETRIES} attempts: ${lastReason}`, 502, 'DEFAULT_FLOW_THUMBNAIL_FAILED');
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }

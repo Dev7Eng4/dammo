@@ -172,7 +172,7 @@ const STEP2_REQUIRED_KEYS = [
 
 export function tryParseMetaStep2Response(
   response: LlmBrowserResponse,
-  batchChunkDigests: MetaStep1ChunkDigest[],
+  batchChunkDigests: MetaStep1ChunkDigest[]
 ): MetaStep2StoryBlock | null {
   if (batchChunkDigests.length === 0) return null;
 
@@ -245,15 +245,15 @@ export function tryParseMetadataResponse(response: LlmBrowserResponse): Metadata
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
+    console.log('🚀 ~ tryParseMetadataResponse ~ parsed:', parsed);
   } catch {
     return null;
   }
 
   if (!isRecord(parsed)) return null;
-  if (!hasRequiredKeys(parsed, ['detected_niche', 'metadata', 'alternative_titles'])) return null;
+  if (!hasRequiredKeys(parsed, ['detected_niche', 'metadata'])) return null;
   if (typeof parsed.detected_niche !== 'string' || !parsed.detected_niche.trim()) return null;
   if (!validateMetadataFields(parsed.metadata)) return null;
-  if (!validateStringArrayLength(parsed.alternative_titles, 2, 10)) return null;
 
   const metadata = parsed.metadata as Record<string, unknown>;
 

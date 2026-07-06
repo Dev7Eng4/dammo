@@ -55,7 +55,7 @@ async function persistMetadataOutput(
   sourceTitle: string,
   videoId: string,
   language: PromptLanguage,
-  outputDir?: string,
+  outputDir?: string
 ): Promise<void> {
   if (!outputDir) return;
 
@@ -70,7 +70,9 @@ async function persistMetadataOutput(
   };
   await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
   console.log(
-    `[run-metadata] saved: ${outputPath} (title: ${formatLogValue(parsed.metadata.title)}, source: ${formatLogValue(sourceTitle)}, niche: ${formatLogValue(parsed.detected_niche)})`,
+    `[run-metadata] saved: ${outputPath} (title: ${formatLogValue(parsed.metadata.title)}, source: ${formatLogValue(
+      sourceTitle
+    )}, niche: ${formatLogValue(parsed.detected_niche)})`
   );
 }
 
@@ -89,7 +91,7 @@ export async function executeMetadata(
   srtPath: string,
   language: PromptLanguage,
   videoId: string,
-  options?: RunMetadataOptions,
+  options?: RunMetadataOptions
 ): Promise<VideoMetaOutput> {
   if (language !== 'ja') {
     throw new AppError('Metadata generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
@@ -136,7 +138,7 @@ export async function runMetadata(
   srtPath: string,
   language: PromptLanguage,
   videoId: string,
-  options?: RunMetadataOptions,
+  options?: RunMetadataOptions
 ): Promise<VideoMetaOutput> {
   const provider = promptsSettingsService.get().defaultLlmProvider;
   const profile = chromeProfilesService.pickSubProfile();
@@ -152,7 +154,7 @@ export async function runMetadata(
       srtPath,
       language,
       videoId,
-      options,
+      options
     );
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);

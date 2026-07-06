@@ -4,6 +4,7 @@ import { youtubeDl } from 'youtube-dl-exec';
 import { AppError } from '../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { findSubtitleFile, renameToCanonical } from './youtube-download-utils.js';
+import { toYoutubeDlError } from './youtube-dl-error.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
 export type TranscriptLanguage = 'en' | 'ko' | 'ja' | 'es';
@@ -59,7 +60,6 @@ export async function downloadYoutubeTranscript(
     return renameToCanonical(subtitlePath, canonicalPath);
   } catch (err) {
     if (err instanceof AppError) throw err;
-    const detail = err instanceof Error ? err.message : 'Unknown error';
-    throw new AppError(`Failed to download YouTube transcript: ${detail}`, 502, 'YOUTUBE_DOWNLOAD_FAILED');
+    throw toYoutubeDlError(err, 'Failed to download YouTube transcript');
   }
 }

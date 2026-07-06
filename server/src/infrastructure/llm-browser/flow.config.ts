@@ -14,6 +14,8 @@ export const FLOW_BASE_URL = 'https://labs.google/fx/tools/flow';
 
 export const FLOW_AISANDBOX_BASE = 'https://aisandbox-pa.googleapis.com/v1';
 
+export const FLOW_UPLOAD_IMAGE_PATH = 'flow/uploadImage';
+
 export const DEFAULT_FLOW_PROJECT_ID = '5d5f6b2b-377f-4b30-b595-d44ffe12a02f';
 
 export function buildFlowProjectUrl(projectId: string): string {
@@ -47,6 +49,9 @@ export interface FlowDomSelectors {
   btnOptionModelProFallback: string;
   referenceImageAddButton: string;
   referenceImageInput: string;
+  addToPromptButton: string;
+  btnAttach: string;
+  btnUploadMedia: string;
 }
 
 export interface FlowConfig {
@@ -82,6 +87,9 @@ export const FLOW_CONFIG: FlowConfig = {
     referenceImageAddButton:
       'button[aria-label*="Upload" i], button[aria-label*="Add" i], button:has-text("Upload"), button:has-text("Add image")',
     referenceImageInput: 'input[type="file"]',
+    addToPromptButton: 'button:has-text("Add to Prompt")',
+    btnAttach: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[2]/div[1]/div/button[1]',
+    btnUploadMedia: 'button:has-text("Upload media")',
   },
 };
 

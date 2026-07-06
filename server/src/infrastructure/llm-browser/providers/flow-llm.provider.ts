@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Page, Locator } from 'playwright';
+import type { Page, Locator, Response } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { FLOW_CONFIG, FLOW_BASE_URL, FLOW_INITIAL_SETUP_SELECTORS, buildFlowProjectUrl } from '../flow.config.js';
+import { FLOW_CONFIG, FLOW_BASE_URL, FLOW_INITIAL_SETUP_SELECTORS, FLOW_UPLOAD_IMAGE_PATH, buildFlowProjectUrl } from '../flow.config.js';
 import { downloadAndSaveFlowImage, extractFifeUrl } from '../flow-api-response.js';
 import type { FlowOpenOptions } from '../llm-browser.types.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
@@ -335,33 +335,59 @@ async function assertPromptFilled(locator: Locator, prompt: string): Promise<voi
   }
 }
 
-async function uploadReferenceImage(page: Page, imagePath: string): Promise<void> {
-  await fs.access(imagePath);
+function beginUploadImageWait(page: Page, timeoutMs = 60_000): Promise<Response> {
+  return page.waitForResponse(
+    response =>
+      response.url().includes(FLOW_UPLOAD_IMAGE_PATH) &&
+      response.request().method() === 'POST' &&
+      response.ok(),
+    { timeout: timeoutMs },
+  );
+}
 
-  const addButtonSelectors = splitSelectors(FLOW_CONFIG.selectors.referenceImageAddButton);
-  for (const selector of addButtonSelectors) {
-    const button = page.locator(selector).first();
-    if (!(await button.isVisible().catch(() => false))) continue;
+async function attachReferenceFile(page: Page, imagePath: string): Promise<void> {
+  const attachButton = page.locator(`xpath=${FLOW_CONFIG.selectors.btnAttach}`);
+  await humanClick(page, attachButton);
+  await randomDelay(500, 1_000);
 
-    try {
-      const [fileChooser] = await Promise.all([
-        page.waitForEvent('filechooser', { timeout: 10_000 }),
-        humanClick(page, button),
-      ]);
-      await fileChooser.setFiles(imagePath);
-      await randomDelay(1_000, 2_000);
-      console.log(`[flow] uploaded reference image via filechooser: ${imagePath}`);
-      return;
-    } catch {
-      // try next selector
-    }
+  try {
+    const uploadButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.btnUploadMedia, 10_000);
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser', { timeout: 10_000 }),
+      humanClick(page, uploadButton),
+    ]);
+    await fileChooser.setFiles(imagePath);
+    console.log(`[flow] selected reference image via Upload media: ${imagePath}`);
+    return;
+  } catch {
+    // fallback below
   }
 
   const fileInput = page.locator(FLOW_CONFIG.selectors.referenceImageInput).first();
   await fileInput.waitFor({ state: 'attached', timeout: 10_000 });
   await fileInput.setInputFiles(imagePath);
-  await randomDelay(1_000, 2_000);
-  console.log(`[flow] uploaded reference image via file input: ${imagePath}`);
+  console.log(`[flow] selected reference image via file input: ${imagePath}`);
+}
+
+async function uploadReferenceImage(page: Page, imagePath: string): Promise<void> {
+  await fs.access(imagePath);
+
+  const uploadPromise = beginUploadImageWait(page);
+
+  await attachReferenceFile(page, imagePath);
+
+  try {
+    await uploadPromise;
+    console.log('[flow] uploadImage API success');
+  } catch (err) {
+    throw domTimeoutError(
+      `Timed out waiting for uploadImage API (${err instanceof Error ? err.message : 'unknown error'})`,
+    );
+  }
+
+  const addToPromptButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.addToPromptButton, 15_000);
+  await humanClick(page, addToPromptButton);
+  await randomDelay(500, 1_000);
 }
 
 export function createFlowProviderHandler(): LlmBrowserProviderHandler {

@@ -5,6 +5,7 @@ import { resolveFfmpegLocation } from '../ffmpeg/ffmpeg-location.js';
 import { AppError } from '../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { findFileByPrefix } from './youtube-download-utils.js';
+import { toYoutubeDlError } from './youtube-dl-error.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
 export async function downloadYoutubeAudio(url: string, outputDir: string): Promise<string> {
@@ -31,8 +32,7 @@ export async function downloadYoutubeAudio(url: string, outputDir: string): Prom
     if (err instanceof Error && err.message.includes('ffmpeg not found')) {
       throw new AppError(err.message, 500, 'FFMPEG_NOT_FOUND');
     }
-    const detail = err instanceof Error ? err.message : 'Unknown error';
-    throw new AppError(`Failed to download YouTube audio: ${detail}`, 502, 'YOUTUBE_DOWNLOAD_FAILED');
+    throw toYoutubeDlError(err, 'Failed to download YouTube audio');
   }
 
   try {

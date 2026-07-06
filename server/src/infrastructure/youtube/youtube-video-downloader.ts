@@ -4,6 +4,7 @@ import { youtubeDl } from 'youtube-dl-exec';
 import { AppError } from '../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { findFileByPrefix } from './youtube-download-utils.js';
+import { toYoutubeDlError } from './youtube-dl-error.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
 export type YoutubeVideoQuality = 'hd' | 'best';
@@ -38,8 +39,7 @@ export async function downloadYoutubeVideo(
       ignoreErrors: false,
     });
   } catch (err) {
-    const detail = err instanceof Error ? err.message : 'Unknown error';
-    throw new AppError(`Failed to download YouTube video: ${detail}`, 502, 'YOUTUBE_DOWNLOAD_FAILED');
+    throw toYoutubeDlError(err, 'Failed to download YouTube video');
   }
 
   try {
