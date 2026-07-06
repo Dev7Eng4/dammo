@@ -62,6 +62,7 @@ export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
   /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
   pasteStrategy?: 'human' | 'direct' | 'insertText';
+  referenceImagePath?: string;
 }
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}
 
@@ -88,6 +89,7 @@ export interface FlowGenerateImageOptions {
   timeoutMs?: number;
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
+  referenceImagePath?: string;
 }
 
 export interface MetaGenerateMediaOptions {

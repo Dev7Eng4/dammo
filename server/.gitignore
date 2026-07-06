@@ -1,3 +1,4 @@
 data/*
 !data/prompts/
 !data/prompts/**
+!data/prompts.json

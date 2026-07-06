@@ -195,6 +195,36 @@ export interface MetaStep3Output {
   hero_image_prompt: MetaStep3HeroImagePrompt;
 }
 
+export interface MetadataLlmOutput {
+  detected_niche: string;
+  metadata: {
+    title: string;
+    description: string;
+    tags: string[];
+  };
+  alternative_titles: string[];
+}
+
+export interface MetadataPersistedOutput extends MetadataLlmOutput {
+  videoId: string;
+  language: PromptLanguage;
+  source_title: string;
+}
+
+/** Unified video-meta shape supporting both legacy step-3 and new single-step metadata */
+export interface VideoMetaOutput {
+  metadata: MetaStep3Metadata;
+  source_title?: string;
+  detected_niche?: string;
+  alternative_titles?: string[];
+  final_summary?: MetaStep3FinalSummary;
+  hero_image_prompt?: MetaStep3HeroImagePrompt;
+}
+
+export function hasLegacyVisualMeta(meta: VideoMetaOutput): meta is MetaStep3Output {
+  return meta.final_summary != null && meta.hero_image_prompt != null;
+}
+
 export interface MetaStep3PersistedOutput extends MetaStep3Output {
   videoId: string;
   language: PromptLanguage;
@@ -208,15 +238,20 @@ export interface LegacyMetaStep3PersistedOutput {
   result?: MetaStep3Output;
 }
 
-export function parseVideoMetaContent(raw: unknown): MetaStep3Output {
+export function parseVideoMetaContent(raw: unknown): VideoMetaOutput {
   if (!raw || typeof raw !== 'object') {
     throw new Error('Invalid video-meta.json: expected object');
   }
 
-  const record = raw as LegacyMetaStep3PersistedOutput;
+  const record = raw as LegacyMetaStep3PersistedOutput & MetadataPersistedOutput;
 
   if (record.result && typeof record.result === 'object') {
-    return record.result;
+    const result = record.result;
+    return {
+      metadata: result.metadata,
+      final_summary: result.final_summary,
+      hero_image_prompt: result.hero_image_prompt,
+    };
   }
 
   if (
@@ -231,9 +266,24 @@ export function parseVideoMetaContent(raw: unknown): MetaStep3Output {
     };
   }
 
+  if ('detected_niche' in record && 'metadata' in record && 'alternative_titles' in record) {
+    return {
+      ...(typeof record.source_title === 'string' && record.source_title.trim()
+        ? { source_title: record.source_title.trim() }
+        : {}),
+      detected_niche: record.detected_niche,
+      metadata: record.metadata as MetaStep3Metadata,
+      alternative_titles: record.alternative_titles,
+    };
+  }
+
   throw new Error('Invalid video-meta.json: missing metadata fields');
 }
 
 export interface MetaPipelineResult {
   step3: MetaStep3Output;
+}
+
+export interface GeneralImageLlmOutput {
+  image_prompt: string;
 }

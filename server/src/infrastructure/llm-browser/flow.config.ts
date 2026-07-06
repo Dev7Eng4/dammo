@@ -45,6 +45,8 @@ export interface FlowDomSelectors {
   btnOptionModelFallback: string;
   btnOptionModelPro: string;
   btnOptionModelProFallback: string;
+  referenceImageAddButton: string;
+  referenceImageInput: string;
 }
 
 export interface FlowConfig {
@@ -77,6 +79,9 @@ export const FLOW_CONFIG: FlowConfig = {
     btnOptionModelFallback: '/html/body/div[3]/div/button',
     btnOptionModelPro: 'Nano Banana Pro',
     btnOptionModelProFallback: '/html/body/div[4]/div/div[1]/div/button',
+    referenceImageAddButton:
+      'button[aria-label*="Upload" i], button[aria-label*="Add" i], button:has-text("Upload"), button:has-text("Add image")',
+    referenceImageInput: 'input[type="file"]',
   },
 };
 

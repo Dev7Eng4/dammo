@@ -27,16 +27,17 @@ function resolveSlideCount(input: GenerateAiVideoImagesInput): number {
 }
 
 function buildScenePrompt(input: GenerateAiVideoImagesInput, slideIndex: number, totalSlides: number): string {
-  const { visualStyle, metaStep3Output } = input;
+  const { visualStyle, videoMetaOutput, metaStep3Output } = input;
+  const meta = videoMetaOutput ?? metaStep3Output;
   const basePrompt =
-    typeof metaStep3Output?.hero_image_prompt?.prompt === 'string' &&
-    metaStep3Output.hero_image_prompt.prompt.trim()
-      ? metaStep3Output.hero_image_prompt.prompt.trim()
+    typeof meta?.hero_image_prompt?.prompt === 'string' &&
+    meta.hero_image_prompt.prompt.trim()
+      ? meta.hero_image_prompt.prompt.trim()
       : `Scene illustration for ${visualStyle.niche}`;
 
   const negative =
-    typeof metaStep3Output?.hero_image_prompt?.negative_prompt === 'string'
-      ? metaStep3Output.hero_image_prompt.negative_prompt.trim()
+    typeof meta?.hero_image_prompt?.negative_prompt === 'string'
+      ? meta.hero_image_prompt.negative_prompt.trim()
       : '';
 
   const parts = [

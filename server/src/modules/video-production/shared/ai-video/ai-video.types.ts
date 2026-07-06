@@ -1,4 +1,4 @@
-import type { MetaStep3Output } from '../meta/metadata.types.js';
+import type { VideoMetaOutput } from '../meta/metadata.types.js';
 
 export interface AiVideoVisualStyle {
   name: string;
@@ -10,8 +10,10 @@ export interface GenerateAiVideoImagesInput {
   workDir: string;
   youtubeVideoId: string;
   visualStyle: AiVideoVisualStyle;
-  /** Optional until dedicated scene-image prompts are implemented */
-  metaStep3Output?: MetaStep3Output;
+  /** Optional hero prompt from video metadata */
+  videoMetaOutput?: VideoMetaOutput;
+  /** @deprecated Use videoMetaOutput */
+  metaStep3Output?: VideoMetaOutput;
   slideCount?: number;
   onLog?: (msg: string) => void;
   onProgress?: (progress: { slideIndex: number; totalSlides: number; attempt: number }) => void;

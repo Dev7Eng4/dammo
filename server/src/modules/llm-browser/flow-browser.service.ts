@@ -69,6 +69,7 @@ export class FlowBrowserService {
       await handler.sendPrompt(page, prompt, {
         pasteStrategy: options?.pasteStrategy ?? 'insertText',
         submitWith: 'enter',
+        referenceImagePath: options?.referenceImagePath,
       });
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 

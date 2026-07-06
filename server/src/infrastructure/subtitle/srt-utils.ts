@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import { AppError } from '../../shared/http/errors.js';
 
 export interface SrtBlock {
@@ -144,4 +145,39 @@ export function serializeSrt(blocks: SrtBlock[]): string {
     .map(block => `${block.index}\n${block.start} --> ${block.end}\n${block.text}`)
     .join('\n\n')
     .concat('\n');
+}
+
+export function srtTimestampToMs(timestamp: string): number {
+  const match = timestamp.trim().match(/^(\d+):(\d{2}):(\d{2})[,.](\d{3})$/);
+  if (!match) return 0;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3]);
+  const millis = Number(match[4]);
+
+  if (![hours, minutes, seconds, millis].every(Number.isFinite)) return 0;
+
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000 + millis;
+}
+
+export function filterSrtBlocksByMaxDuration(blocks: SrtBlock[], maxMs: number): SrtBlock[] {
+  if (maxMs <= 0) return [];
+  return blocks.filter(block => srtTimestampToMs(block.start) < maxMs);
+}
+
+export async function extractTranscriptForMetadata(
+  srtPath: string,
+  maxMinutes = 25,
+): Promise<string> {
+  const content = await fs.readFile(srtPath, 'utf8');
+  const blocks = parseSrt(content);
+  const maxMs = maxMinutes * 60 * 1000;
+  const filtered = filterSrtBlocksByMaxDuration(blocks, maxMs);
+
+  if (filtered.length === 0) {
+    throw new AppError(`No SRT blocks found within first ${maxMinutes} minutes`, 400, 'INVALID_INPUT');
+  }
+
+  return srtBlocksToIndexedText(filtered);
 }

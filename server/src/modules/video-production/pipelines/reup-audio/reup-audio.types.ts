@@ -1,4 +1,4 @@
-import type { MetaStep1ChunkDigest, MetaStep2StoryBlock, MetaStep3Output } from '../../shared/meta/metadata.types.js';
+import type { VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
 
 export interface ReupVideoTask {
@@ -7,6 +7,7 @@ export interface ReupVideoTask {
   language: string;
   videoId: string;
   sourceId: string;
+  sourceTitle: string;
 }
 
 export interface ReupVideoOutputItem {
@@ -21,9 +22,7 @@ export interface ReupVideoOutputItem {
   transcriptPath?: string;
   srtPath?: string;
   updatedSrtPath?: string;
-  metaStep1ChunkDigests?: MetaStep1ChunkDigest[];
-  metaStep2StoryBlocks?: MetaStep2StoryBlock[];
-  metaStep3Output?: MetaStep3Output;
+  videoMetaOutput?: VideoMetaOutput;
   thumbnailHorizontalOutput?: ThumbnailHorizontalOutput;
   heroImagePath?: string;
   thumbnailVisualPath?: string;

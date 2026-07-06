@@ -335,6 +335,35 @@ async function assertPromptFilled(locator: Locator, prompt: string): Promise<voi
   }
 }
 
+async function uploadReferenceImage(page: Page, imagePath: string): Promise<void> {
+  await fs.access(imagePath);
+
+  const addButtonSelectors = splitSelectors(FLOW_CONFIG.selectors.referenceImageAddButton);
+  for (const selector of addButtonSelectors) {
+    const button = page.locator(selector).first();
+    if (!(await button.isVisible().catch(() => false))) continue;
+
+    try {
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser', { timeout: 10_000 }),
+        humanClick(page, button),
+      ]);
+      await fileChooser.setFiles(imagePath);
+      await randomDelay(1_000, 2_000);
+      console.log(`[flow] uploaded reference image via filechooser: ${imagePath}`);
+      return;
+    } catch {
+      // try next selector
+    }
+  }
+
+  const fileInput = page.locator(FLOW_CONFIG.selectors.referenceImageInput).first();
+  await fileInput.waitFor({ state: 'attached', timeout: 10_000 });
+  await fileInput.setInputFiles(imagePath);
+  await randomDelay(1_000, 2_000);
+  console.log(`[flow] uploaded reference image via file input: ${imagePath}`);
+}
+
 export function createFlowProviderHandler(): LlmBrowserProviderHandler {
   return {
     provider: PROVIDER,
@@ -376,6 +405,10 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
     },
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
+      if (options?.referenceImagePath) {
+        await uploadReferenceImage(page, options.referenceImagePath);
+      }
+
       const input = await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput);
       await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'insertText' });
       await assertPromptFilled(input, prompt);

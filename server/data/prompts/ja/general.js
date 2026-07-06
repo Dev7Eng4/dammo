@@ -1,4 +1,4 @@
-export const prompt = transcript => `
+export default transcript => `
 Bạn là một Art Director chuyên xây dựng cinematic key visual cho video audio Nhật Bản, bao gồm:
 
 * Drama gia đình

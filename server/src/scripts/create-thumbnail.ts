@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, youtubeChannelVideoDir } from '../config/paths.js';
 import { runThumbnailVisualGeneration } from '../modules/video-production/shared/thumbnail/hero-image.js';
-import { parseVideoMetaContent, type MetaStep3Output } from '../modules/video-production/shared/meta/metadata.types.js';
+import { hasLegacyVisualMeta, parseVideoMetaContent, type MetaStep3Output } from '../modules/video-production/shared/meta/metadata.types.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../modules/video-production/shared/thumbnail/thumbnail-composite.js';
 import { runDirectFlowThumbnail } from '../modules/video-production/shared/thumbnail/direct-flow-thumbnail.js';
 import { runThumbnailHorizontal } from '../modules/video-production/shared/thumbnail/thumbnail-horizontal.js';
@@ -92,7 +92,11 @@ async function assertFileExists(filePath: string, label: string): Promise<void> 
 async function loadMetaStep3FromVideoMeta(workDir: string): Promise<MetaStep3Output> {
   const videoMetaPath = path.join(workDir, VIDEO_META_FILE);
   const raw = JSON.parse(await fs.readFile(videoMetaPath, 'utf8')) as unknown;
-  return parseVideoMetaContent(raw);
+  const meta = parseVideoMetaContent(raw);
+  if (!hasLegacyVisualMeta(meta)) {
+    throw new Error('video-meta.json uses new metadata format without hero_image_prompt — thumbnail script not supported yet');
+  }
+  return meta;
 }
 
 function resolveStyleKey(options: CliOptions) {

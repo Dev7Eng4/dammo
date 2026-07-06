@@ -6,7 +6,15 @@ import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { findFileByPrefix } from './youtube-download-utils.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
-async function fetchThumbnailFromMetadata(url: string, outputDir: string): Promise<string> {
+export interface DownloadYoutubeThumbnailOptions {
+  outputBasename?: string;
+}
+
+async function fetchThumbnailFromMetadata(
+  url: string,
+  outputDir: string,
+  basename: string,
+): Promise<string> {
   const raw = await youtubeDl(url, {
     ...getYoutubeDlCommonOptions(),
     dumpSingleJson: true,
@@ -27,17 +35,22 @@ async function fetchThumbnailFromMetadata(url: string, outputDir: string): Promi
 
   const contentType = response.headers.get('content-type') ?? 'image/jpeg';
   const ext = contentType.includes('webp') ? '.webp' : contentType.includes('png') ? '.png' : '.jpg';
-  const targetPath = path.join(outputDir, `thumbnail${ext}`);
+  const targetPath = path.join(outputDir, `${basename}${ext}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   await fs.writeFile(targetPath, buffer);
   return targetPath;
 }
 
-export async function downloadYoutubeThumbnail(url: string, outputDir: string): Promise<string> {
+export async function downloadYoutubeThumbnail(
+  url: string,
+  outputDir: string,
+  options?: DownloadYoutubeThumbnailOptions,
+): Promise<string> {
   await fs.mkdir(outputDir, { recursive: true });
   requireYoutubeVideoId(url);
 
-  const outputTemplate = path.join(outputDir, 'thumbnail.%(ext)s');
+  const basename = options?.outputBasename?.trim() || 'old-thumbnail';
+  const outputTemplate = path.join(outputDir, `${basename}.%(ext)s`);
 
   try {
     await youtubeDl(url, {
@@ -49,15 +62,15 @@ export async function downloadYoutubeThumbnail(url: string, outputDir: string): 
       ignoreErrors: false,
     });
 
-    const match = await findFileByPrefix(outputDir, 'thumbnail.');
+    const match = await findFileByPrefix(outputDir, `${basename}.`);
     if (match) return match;
 
-    return fetchThumbnailFromMetadata(url, outputDir);
+    return fetchThumbnailFromMetadata(url, outputDir, basename);
   } catch (err) {
     if (err instanceof AppError) throw err;
 
     try {
-      return await fetchThumbnailFromMetadata(url, outputDir);
+      return await fetchThumbnailFromMetadata(url, outputDir, basename);
     } catch (fallbackErr) {
       const detail = fallbackErr instanceof Error ? fallbackErr.message : 'Unknown error';
       throw new AppError(`Failed to download YouTube thumbnail: ${detail}`, 502, 'YOUTUBE_DOWNLOAD_FAILED');

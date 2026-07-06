@@ -6,6 +6,8 @@ import type {
   MetaStep2StoryBlock,
   MetaStep3HeroImagePrompt,
   MetaStep3Output,
+  GeneralImageLlmOutput,
+  MetadataLlmOutput,
 } from './metadata.types.js';
 
 function stripMarkdownFences(text: string): string {
@@ -226,5 +228,61 @@ export function tryParseMetaStep3Response(response: LlmBrowserResponse, videoId:
     final_summary: parsed.final_summary as MetaStep3Output['final_summary'],
     metadata: parsed.metadata as MetaStep3Output['metadata'],
     hero_image_prompt: parsed.hero_image_prompt as MetaStep3HeroImagePrompt,
+  };
+}
+
+function validateMetadataFields(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (typeof value.title !== 'string' || !value.title.trim()) return false;
+  if (typeof value.description !== 'string' || !value.description.trim()) return false;
+  if (!validateStringArrayLength(value.tags, 1, 10)) return false;
+  return true;
+}
+
+export function tryParseMetadataResponse(response: LlmBrowserResponse): MetadataLlmOutput | null {
+  const jsonText = extractJsonText(response);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed)) return null;
+  if (!hasRequiredKeys(parsed, ['detected_niche', 'metadata', 'alternative_titles'])) return null;
+  if (typeof parsed.detected_niche !== 'string' || !parsed.detected_niche.trim()) return null;
+  if (!validateMetadataFields(parsed.metadata)) return null;
+  if (!validateStringArrayLength(parsed.alternative_titles, 2, 10)) return null;
+
+  const metadata = parsed.metadata as Record<string, unknown>;
+
+  return {
+    detected_niche: parsed.detected_niche.trim(),
+    metadata: {
+      title: String(metadata.title).trim(),
+      description: String(metadata.description).trim(),
+      tags: (metadata.tags as string[]).map(tag => tag.trim()),
+    },
+    alternative_titles: (parsed.alternative_titles as string[]).map(title => title.trim()),
+  };
+}
+
+export function tryParseGeneralImageResponse(response: LlmBrowserResponse): GeneralImageLlmOutput | null {
+  const jsonText = extractJsonText(response);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed)) return null;
+  if (!hasRequiredKeys(parsed, ['image_prompt'])) return null;
+  if (typeof parsed.image_prompt !== 'string' || !parsed.image_prompt.trim()) return null;
+
+  return {
+    image_prompt: parsed.image_prompt.trim(),
   };
 }

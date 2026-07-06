@@ -1,0 +1,117 @@
+{
+  "prompts": [
+    {
+      "id": "b672e1d0-7d69-46c0-b81d-d11856c38b32",
+      "key": "general",
+      "language": "ja",
+      "name": "General",
+      "category": "image",
+      "outputType": "text",
+      "createdAt": "2026-07-05T16:27:13.427Z",
+      "updatedAt": "2026-07-05T16:27:13.427Z"
+    },
+    {
+      "id": "a55b6634-4968-4940-8acb-233c98880d1e",
+      "key": "thumbnail_default",
+      "language": "ja",
+      "name": "Default",
+      "category": "thumbnail",
+      "outputType": "image",
+      "useReferenceImage": true,
+      "createdAt": "2026-07-05T15:08:56.521Z",
+      "updatedAt": "2026-07-05T15:11:58.798Z",
+      "isSystem": true
+    },
+    {
+      "id": "a3f8c2e1-9b4d-4a7f-8e6c-1d2b3c4e5f60",
+      "key": "metadata",
+      "language": "ja",
+      "name": "Create Metadata",
+      "category": "meta",
+      "outputType": "text",
+      "createdAt": "2026-07-05T14:32:00.000Z",
+      "updatedAt": "2026-07-05T14:32:00.000Z",
+      "isSystem": true
+    },
+    {
+      "id": "7fb1c27b-0e96-403c-997c-9cf20bd69174",
+      "key": "love_story",
+      "language": "ja",
+      "name": "Love Story",
+      "category": "thumbnail",
+      "outputType": "image",
+      "createdAt": "2026-06-21T17:49:09.082Z",
+      "updatedAt": "2026-06-21T17:49:09.082Z"
+    },
+    {
+      "id": "c8da6af4-f803-496f-8741-61eb66e6b576",
+      "key": "ja_thumbnail_horizontal_step_3",
+      "language": "ja",
+      "name": "Horizontal",
+      "category": "thumbnail",
+      "outputType": "text",
+      "createdAt": "2026-06-21T04:19:21.397Z",
+      "updatedAt": "2026-06-21T04:24:53.550Z"
+    },
+    {
+      "id": "85102221-2ccf-4f76-8961-34094b75634e",
+      "key": "ja_thumbnail_horizontal_step_2",
+      "language": "ja",
+      "name": "Horizontal",
+      "category": "thumbnail",
+      "outputType": "text",
+      "createdAt": "2026-06-21T04:18:49.990Z",
+      "updatedAt": "2026-06-21T04:18:49.990Z"
+    },
+    {
+      "id": "74641628-437b-4879-81b6-192251253b70",
+      "key": "ja_thumbnail_horizontal_step_1",
+      "language": "ja",
+      "name": "Horizontal",
+      "category": "thumbnail",
+      "outputType": "text",
+      "createdAt": "2026-06-21T04:18:34.473Z",
+      "updatedAt": "2026-06-21T04:18:34.473Z"
+    },
+    {
+      "id": "02ce07f1-4462-4076-922f-38320ac496b2",
+      "key": "step_3",
+      "language": "ja",
+      "name": "Create MetaData Step 3",
+      "category": "meta",
+      "outputType": "text",
+      "createdAt": "2026-06-19T09:48:13.809Z",
+      "updatedAt": "2026-06-20T07:35:44.411Z"
+    },
+    {
+      "id": "e228f541-d433-4dc8-bdd7-60b462e46e57",
+      "key": "step_2",
+      "language": "ja",
+      "name": "Create MetaData Step 2",
+      "category": "meta",
+      "outputType": "text",
+      "createdAt": "2026-06-19T09:47:57.600Z",
+      "updatedAt": "2026-06-20T04:03:51.884Z"
+    },
+    {
+      "id": "dc461869-8f38-4ac0-8b7a-2d89d96aa3fd",
+      "key": "step_1",
+      "language": "ja",
+      "name": "Create MetaData Step 1",
+      "category": "meta",
+      "outputType": "text",
+      "createdAt": "2026-06-19T09:47:36.259Z",
+      "updatedAt": "2026-06-20T03:42:45.024Z"
+    },
+    {
+      "id": "4b097367-b5d7-4376-bb65-f742b6bf791a",
+      "key": "update_transcript",
+      "language": "ja",
+      "name": "Update Transcript Japan",
+      "category": "transcript",
+      "outputType": "text",
+      "createdAt": "2026-06-18T10:29:36.758Z",
+      "updatedAt": "2026-06-19T09:46:45.428Z"
+    }
+  ]
+}
