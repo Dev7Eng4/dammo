@@ -6,9 +6,11 @@
       "language": "ja",
       "name": "General",
       "category": "image",
-      "outputType": "text",
+      "outputType": "image",
       "createdAt": "2026-07-05T16:27:13.427Z",
-      "updatedAt": "2026-07-05T16:27:13.427Z"
+      "updatedAt": "2026-07-07T10:24:22.668Z",
+      "useReferenceImage": true,
+      "isSystem": true
     },
     {
       "id": "a55b6634-4968-4940-8acb-233c98880d1e",

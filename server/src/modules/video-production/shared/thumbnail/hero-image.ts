@@ -28,6 +28,7 @@ export interface FlowProfileOptions {
 
 export interface RunFlowImageGenerationOptions extends FlowProfileOptions {
   fileName?: string;
+  referenceImagePath?: string;
   onProgress?: (progress: HeroImageProgress) => void;
 }
 
@@ -131,6 +132,7 @@ export async function runFlowImageGeneration(
         const response = await flowBrowserService.generateImage(profile.id, promptUsed, {
           outputDir,
           fileName,
+          referenceImagePath: options?.referenceImagePath,
           debugScreenshotPath,
           timeoutMs: 300_000,
         });

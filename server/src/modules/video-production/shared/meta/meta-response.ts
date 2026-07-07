@@ -6,7 +6,6 @@ import type {
   MetaStep2StoryBlock,
   MetaStep3HeroImagePrompt,
   MetaStep3Output,
-  GeneralImageLlmOutput,
   MetadataLlmOutput,
 } from './metadata.types.js';
 
@@ -265,24 +264,5 @@ export function tryParseMetadataResponse(response: LlmBrowserResponse): Metadata
       tags: (metadata.tags as string[]).map(tag => tag.trim()),
     },
     alternative_titles: (parsed.alternative_titles as string[]).map(title => title.trim()),
-  };
-}
-
-export function tryParseGeneralImageResponse(response: LlmBrowserResponse): GeneralImageLlmOutput | null {
-  const jsonText = extractJsonText(response);
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    return null;
-  }
-
-  if (!isRecord(parsed)) return null;
-  if (!hasRequiredKeys(parsed, ['image_prompt'])) return null;
-  if (typeof parsed.image_prompt !== 'string' || !parsed.image_prompt.trim()) return null;
-
-  return {
-    image_prompt: parsed.image_prompt.trim(),
   };
 }

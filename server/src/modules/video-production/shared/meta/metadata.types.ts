@@ -283,7 +283,3 @@ export function parseVideoMetaContent(raw: unknown): VideoMetaOutput {
 export interface MetaPipelineResult {
   step3: MetaStep3Output;
 }
-
-export interface GeneralImageLlmOutput {
-  image_prompt: string;
-}

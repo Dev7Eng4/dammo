@@ -556,30 +556,39 @@ export class ReupAudioPipeline {
                 }
               }
 
+              if (!videoMetaOutput) {
+                throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
+              }
+
+              const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
+              if (!generalImageTitle) {
+                throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
+              }
+
               if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating general image (LLM prompt + Flow)...');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating general image via Flow (general + reference)...');
               }
 
               const heroResult = await timedStep(
-                'General image (LLM + Flow)',
+                'General image (Flow + reference)',
                 () =>
-                  runGeneralImage(jaSrtPath, destination.language, workDir, {
+                  runGeneralImage(generalImageTitle, destination.language, workDir, {
+                    referenceImagePath: downloaded.thumbnailPath,
                     onProgress: taskJobId
                       ? progress => {
                           const profileLabel = progress.profileName;
-                          const phaseLabel = progress.phase === 'prompt' ? 'General image prompt' : 'General image';
                           if (progress.status === 'retry') {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `${phaseLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
                             );
                             return;
                           }
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `${phaseLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
+                            `General image on ${profileLabel} (attempt ${progress.attempt})...`,
                           );
                         }
                       : undefined,
