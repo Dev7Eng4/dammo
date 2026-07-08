@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { createGpmProfile } from '../../api/gpm';
+import { fetchProxies, setProfileProxy } from '../../api/proxies';
+import { buildRawProxy, formatProxyLabel } from '../../lib/proxy-format';
 import type { AddGpmProfileFormValues, GpmGroup } from '../../types/gpm';
+import type { Proxy } from '../../types/proxy';
 import { Button, Input, Modal, Select, Textarea } from '../ui';
 
 interface AddGpmProfileModalProps {
@@ -14,12 +17,14 @@ interface AddGpmProfileModalProps {
 const defaultValues: AddGpmProfileFormValues = {
   name: '',
   group_id: '',
-  raw_proxy: '',
+  proxyId: '',
   note: '',
 };
 
 export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmProfileModalProps) {
   const [apiError, setApiError] = useState<string | null>(null);
+  const [proxies, setProxies] = useState<Proxy[]>([]);
+  const [proxiesLoading, setProxiesLoading] = useState(false);
 
   const groupOptions = useMemo(
     () => [
@@ -27,6 +32,17 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
       ...groups.map((group) => ({ value: group.id, label: group.name })),
     ],
     [groups],
+  );
+
+  const proxyOptions = useMemo(
+    () => [
+      { value: '', label: 'No proxy' },
+      ...proxies.map((proxy) => ({
+        value: proxy.id,
+        label: formatProxyLabel(proxy),
+      })),
+    ],
+    [proxies],
   );
 
   const {
@@ -41,12 +57,34 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
   });
 
   const groupId = watch('group_id');
+  const proxyId = watch('proxyId');
 
   useEffect(() => {
     if (!open) return;
     reset(defaultValues);
     setApiError(null);
   }, [open, reset]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const controller = new AbortController();
+    setProxiesLoading(true);
+
+    fetchProxies('active', '', 1, 100, { signal: controller.signal })
+      .then((response) => setProxies(response.items))
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          setProxies([]);
+          setApiError(err instanceof Error ? err.message : 'Failed to load proxies');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setProxiesLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [open]);
 
   function handleClose() {
     reset(defaultValues);
@@ -57,12 +95,21 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
   async function onSubmit(values: AddGpmProfileFormValues) {
     setApiError(null);
     try {
-      await createGpmProfile({
+      const selectedProxy = values.proxyId
+        ? proxies.find((proxy) => proxy.id === values.proxyId)
+        : undefined;
+
+      const { item } = await createGpmProfile({
         name: values.name.trim(),
         group_id: values.group_id || null,
-        raw_proxy: values.raw_proxy.trim() || undefined,
+        raw_proxy: selectedProxy ? buildRawProxy(selectedProxy) : undefined,
         note: values.note.trim() || null,
       });
+
+      if (values.proxyId) {
+        await setProfileProxy(item.id, values.proxyId);
+      }
+
       reset(defaultValues);
       onSuccess();
       onClose();
@@ -84,7 +131,7 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
           <Button
             size="sm"
             className="rounded-lg"
-            disabled={isSubmitting}
+            disabled={isSubmitting || proxiesLoading}
             form="add-gpm-profile-form"
             type="submit"
           >
@@ -126,13 +173,17 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
           <label htmlFor="gpm-profile-proxy" className="mb-1.5 block text-xs font-medium text-neutral-400">
             Proxy
           </label>
-          <Input
+          <Select
             id="gpm-profile-proxy"
-            placeholder="host:port:user:pass"
-            className="h-10 rounded-lg font-mono text-sm"
-            disabled={isSubmitting}
-            {...register('raw_proxy')}
+            value={proxyId}
+            onChange={(value) => setValue('proxyId', value)}
+            options={proxyOptions}
+            disabled={isSubmitting || proxiesLoading}
+            triggerClassName="h-10 rounded-lg font-mono text-sm"
           />
+          {proxiesLoading ? (
+            <p className="mt-1 text-xs text-neutral-500">Loading proxies…</p>
+          ) : null}
         </div>
 
         <div>

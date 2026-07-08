@@ -92,14 +92,14 @@ export interface UpdateGpmGroupPayload {
 export interface AddGpmProfileFormValues {
   name: string;
   group_id: string;
-  raw_proxy: string;
+  proxyId: string;
   note: string;
 }
 
 export interface EditGpmProfileFormValues {
   name: string;
   group_id: string;
-  raw_proxy: string;
+  proxyId: string;
   note: string;
 }
 

@@ -5,6 +5,7 @@ import { parseExcelBuffer } from '../../infrastructure/storage/excel-store.js';
 import { isAppError } from '../../shared/http/errors.js';
 import { buildExportFilename, buildProxiesExcel } from './proxies.exporter.js';
 import {
+  assignProfileSchema,
   createProxySchema,
   exportProxiesQuerySchema,
   listProxiesQuerySchema,
@@ -84,6 +85,12 @@ export function createProxiesRoutes() {
     const { status, q, page, limit } = c.req.valid('query');
     const result = proxiesService.listPaginated(status as ProxyStatus | undefined, q, page, limit);
     return c.json(result);
+  });
+
+  app.post('/assign', zValidator('json', assignProfileSchema), (c) => {
+    const { profileId, proxyId } = c.req.valid('json');
+    proxiesService.setProfileAssignment(profileId, proxyId);
+    return c.json({ ok: true });
   });
 
   app.get('/:id', (c) => {

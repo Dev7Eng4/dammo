@@ -8,6 +8,7 @@ import {
   stopGpmProfile,
   testGpmProfile,
 } from '../api/gpm';
+import { setProfileProxy } from '../api/proxies';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
 import { GpmConnectionBanner } from '../components/gpm-manager/GpmConnectionBanner';
@@ -206,6 +207,9 @@ export function GpmManagerPage() {
     setDeletingProfile(true);
     try {
       await deleteGpmProfile(selectedProfileId, deleteHardMode ? 'hard' : 'soft');
+      await setProfileProxy(selectedProfileId, null).catch(() => {
+        /* best-effort unassign */
+      });
       setRunningProfileIds((prev) => {
         const next = new Set(prev);
         next.delete(selectedProfileId);

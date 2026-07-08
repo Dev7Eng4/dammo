@@ -202,7 +202,7 @@ export function ProxyDetailPanel({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">
-                Assigned Profiles
+                Assigned Profiles ({proxy.assignedProfileIds.length})
               </p>
             </div>
             {proxy.assignedProfileIds.length > 0 ? (
@@ -215,7 +215,7 @@ export function ProxyDetailPanel({
               </ul>
             ) : (
               <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-neutral-500">
-                No profiles assigned — GPM integration coming soon
+                No profiles assigned
               </p>
             )}
           </div>

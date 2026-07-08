@@ -24,7 +24,7 @@ function formatDate(value?: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-GB');
 }
 
-const COL_SPAN = 8;
+const COL_SPAN = 9;
 
 export function ProxiesTable({
   proxies,
@@ -47,6 +47,7 @@ export function ProxiesTable({
       <th className="pb-3 pr-4 font-medium">COUNTRY</th>
       <th className="pb-3 pr-4 font-medium">PROVIDER</th>
       <th className="pb-3 pr-4 font-medium">EXPIRES</th>
+      <th className="pb-3 pr-4 font-medium">PROFILES</th>
       <th className="pb-3 font-medium">STATUS</th>
     </tr>
   );
@@ -99,6 +100,7 @@ export function ProxiesTable({
             <th className="pb-3 pr-4 font-medium">COUNTRY</th>
             <th className="pb-3 pr-4 font-medium">PROVIDER</th>
             <th className="pb-3 pr-4 font-medium">EXPIRES</th>
+            <th className="pb-3 pr-4 font-medium">PROFILES</th>
             <th className="pb-3 font-medium">STATUS</th>
           </tr>
         </thead>
@@ -129,6 +131,7 @@ export function ProxiesTable({
               </td>
               <td className="py-3 pr-4 text-neutral-400">{proxy.provider ?? '—'}</td>
               <td className="py-3 pr-4 text-neutral-400">{formatDate(proxy.expiresAt)}</td>
+              <td className="py-3 pr-4 text-neutral-300">{proxy.assignedProfileIds.length}</td>
               <td className="py-3">
                 <ProxyStatusPill status={proxy.status} />
               </td>

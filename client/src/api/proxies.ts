@@ -148,3 +148,11 @@ export function updateProxyProvider(id: string, payload: UpdateProxyProviderPayl
 export function deleteProxyProvider(id: string) {
   return fetchJson<{ ok: true }>(`${API_V1}/proxies/providers/${id}`, { method: 'DELETE' });
 }
+
+export function setProfileProxy(profileId: string, proxyId: string | null) {
+  return fetchJson<{ ok: true }>(`${API_V1}/proxies/assign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profileId, proxyId }),
+  });
+}

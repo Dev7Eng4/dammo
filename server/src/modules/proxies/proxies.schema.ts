@@ -45,3 +45,8 @@ export const exportProxiesQuerySchema = z.object({
   q: z.string().optional(),
   ids: z.string().optional(),
 });
+
+export const assignProfileSchema = z.object({
+  profileId: z.string().min(1),
+  proxyId: z.string().nullable(),
+});

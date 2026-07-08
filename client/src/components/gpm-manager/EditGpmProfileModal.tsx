@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { updateGpmProfile } from '../../api/gpm';
+import { fetchProxies, setProfileProxy } from '../../api/proxies';
+import { buildRawProxy, formatProxyLabel } from '../../lib/proxy-format';
 import type { EditGpmProfileFormValues, GpmGroup, GpmProfile } from '../../types/gpm';
+import type { Proxy } from '../../types/proxy';
 import { Button, Input, Modal, Select, Textarea } from '../ui';
 
 interface EditGpmProfileModalProps {
@@ -12,8 +15,14 @@ interface EditGpmProfileModalProps {
   onSuccess: () => void;
 }
 
+function findAssignedProxyId(proxies: Proxy[], profileId: string): string {
+  return proxies.find((proxy) => proxy.assignedProfileIds.includes(profileId))?.id ?? '';
+}
+
 export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess }: EditGpmProfileModalProps) {
   const [apiError, setApiError] = useState<string | null>(null);
+  const [proxies, setProxies] = useState<Proxy[]>([]);
+  const [proxiesLoading, setProxiesLoading] = useState(false);
 
   const groupOptions = useMemo(
     () => [
@@ -21,6 +30,17 @@ export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess 
       ...groups.map((group) => ({ value: group.id, label: group.name })),
     ],
     [groups],
+  );
+
+  const proxyOptions = useMemo(
+    () => [
+      { value: '', label: 'No proxy' },
+      ...proxies.map((proxy) => ({
+        value: proxy.id,
+        label: formatProxyLabel(proxy),
+      })),
+    ],
+    [proxies],
   );
 
   const {
@@ -33,17 +53,40 @@ export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess 
   } = useForm<EditGpmProfileFormValues>();
 
   const groupId = watch('group_id');
+  const proxyId = watch('proxyId');
 
   useEffect(() => {
-    if (!open || !profile) return;
+    if (!open) return;
+
+    const controller = new AbortController();
+    setProxiesLoading(true);
+
+    fetchProxies('active', '', 1, 100, { signal: controller.signal })
+      .then((response) => setProxies(response.items))
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          setProxies([]);
+          setApiError(err instanceof Error ? err.message : 'Failed to load proxies');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setProxiesLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !profile || proxiesLoading) return;
+
     reset({
       name: profile.name,
       group_id: profile.group_id ?? '',
-      raw_proxy: profile.raw_proxy ?? '',
+      proxyId: findAssignedProxyId(proxies, profile.id),
       note: profile.note ?? '',
     });
     setApiError(null);
-  }, [open, profile, reset]);
+  }, [open, profile, proxies, proxiesLoading, reset]);
 
   function handleClose() {
     setApiError(null);
@@ -54,12 +97,19 @@ export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess 
     if (!profile) return;
     setApiError(null);
     try {
+      const selectedProxy = values.proxyId
+        ? proxies.find((proxy) => proxy.id === values.proxyId)
+        : undefined;
+
       await updateGpmProfile(profile.id, {
         name: values.name.trim(),
         group_id: values.group_id || null,
-        raw_proxy: values.raw_proxy.trim() || undefined,
+        raw_proxy: selectedProxy ? buildRawProxy(selectedProxy) : '',
         note: values.note.trim() || null,
       });
+
+      await setProfileProxy(profile.id, values.proxyId || null);
+
       onSuccess();
       onClose();
     } catch (err) {
@@ -82,7 +132,7 @@ export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess 
           <Button
             size="sm"
             className="rounded-lg"
-            disabled={isSubmitting}
+            disabled={isSubmitting || proxiesLoading}
             form="edit-gpm-profile-form"
             type="submit"
           >
@@ -123,12 +173,17 @@ export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess 
           <label htmlFor="edit-gpm-profile-proxy" className="mb-1.5 block text-xs font-medium text-neutral-400">
             Proxy
           </label>
-          <Input
+          <Select
             id="edit-gpm-profile-proxy"
-            className="h-10 rounded-lg font-mono text-sm"
-            disabled={isSubmitting}
-            {...register('raw_proxy')}
+            value={proxyId ?? ''}
+            onChange={(value) => setValue('proxyId', value)}
+            options={proxyOptions}
+            disabled={isSubmitting || proxiesLoading}
+            triggerClassName="h-10 rounded-lg font-mono text-sm"
           />
+          {proxiesLoading ? (
+            <p className="mt-1 text-xs text-neutral-500">Loading proxies…</p>
+          ) : null}
         </div>
 
         <div>

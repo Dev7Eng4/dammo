@@ -255,6 +255,37 @@ export class ProxiesService {
 
     return { created, skipped, errors };
   }
+
+  setProfileAssignment(profileId: string, proxyId: string | null): void {
+    if (proxyId) {
+      const target = proxiesRepository.findById(proxyId);
+      if (!target || target.archivedAt) {
+        throw new AppError('Proxy not found', 404, 'NOT_FOUND');
+      }
+    }
+
+    const now = new Date().toISOString();
+    proxiesRepository.saveStore((store) => ({
+      proxies: store.proxies.map((proxy) => {
+        const withoutProfile = proxy.assignedProfileIds.filter((id) => id !== profileId);
+        const shouldAssign = proxyId !== null && proxy.id === proxyId;
+        const assignedProfileIds = shouldAssign
+          ? withoutProfile.includes(profileId)
+            ? withoutProfile
+            : [...withoutProfile, profileId]
+          : withoutProfile;
+
+        if (
+          assignedProfileIds.length === proxy.assignedProfileIds.length &&
+          assignedProfileIds.every((id, i) => id === proxy.assignedProfileIds[i])
+        ) {
+          return proxy;
+        }
+
+        return { ...proxy, assignedProfileIds, updatedAt: now };
+      }),
+    }));
+  }
 }
 
 export const proxiesService = new ProxiesService();
