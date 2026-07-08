@@ -78,7 +78,11 @@ export interface LlmMediaAsset {
 
 export interface FlowOpenOptions {
   projectId?: string;
+  /** Skip DOM config setup (Image / 16:9 / model) — used for API generation mode. */
+  skipInitialSetup?: boolean;
 }
+
+export type FlowGenerationMode = 'browser' | 'api';
 
 export interface FlowGenerateImageOptions {
   projectId?: string;
@@ -90,6 +94,8 @@ export interface FlowGenerateImageOptions {
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
   referenceImagePath?: string;
+  /** Default: 'api'. Use 'browser' for DOM submit + intercept response. */
+  generationMode?: FlowGenerationMode;
 }
 
 export interface MetaGenerateMediaOptions {

@@ -17,10 +17,13 @@ interface CliOptions {
   output?: string;
   profileId?: string;
   timeoutMs: number;
+  browserMode: boolean;
+  referenceImagePath?: string;
+  projectId?: string;
 }
 
 function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { timeoutMs: DEFAULT_TIMEOUT_MS };
+  const options: CliOptions = { timeoutMs: DEFAULT_TIMEOUT_MS, browserMode: false };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -34,6 +37,27 @@ function parseArgs(argv: string[]): CliOptions {
     if (arg === '--profile-id') {
       options.profileId = argv[index + 1];
       index += 1;
+      continue;
+    }
+
+    if (arg === '--reference-image' || arg === '--ref') {
+      options.referenceImagePath = argv[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--project-id') {
+      options.projectId = argv[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--browser') {
+      options.browserMode = true;
+      continue;
+    }
+
+    if (arg === '--api') {
       continue;
     }
 
@@ -101,12 +125,16 @@ async function main() {
 
   console.log(`Profile: ${profile.name} (${profile.id})`);
   console.log(`Output: ${outputPath}`);
+  console.log(`Mode: ${options.browserMode ? 'browser' : 'api'}`);
   console.log(`Prompt:\n${promptUsed}\n`);
   console.log('Generating image...');
 
   const response = await flowBrowserService.generateImage(profile.id, promptUsed, {
     outputPath,
     timeoutMs: options.timeoutMs,
+    generationMode: options.browserMode ? 'browser' : 'api',
+    referenceImagePath: options.referenceImagePath,
+    projectId: options.projectId,
   });
 
   const savedPath = response.mediaAssets?.[0]?.localPath ?? outputPath;

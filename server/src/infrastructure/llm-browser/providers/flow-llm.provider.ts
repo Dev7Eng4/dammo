@@ -396,9 +396,19 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
 
     async open(page: Page, options?: FlowOpenOptions): Promise<void> {
       const projectId = options?.projectId;
+      const skipInitialSetup = options?.skipInitialSetup === true;
 
       if (projectId && isOnFlowProjectPage(page.url(), projectId) && (await isPromptInputReady(page))) {
-        await ensureInitialProjectSetup(page, projectId);
+        if (!skipInitialSetup) {
+          await ensureInitialProjectSetup(page, projectId);
+        }
+        return;
+      }
+
+      if (skipInitialSetup && projectId) {
+        await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
+        await randomDelay(1_000, 2_000);
+        await page.keyboard.press('Escape');
         return;
       }
 
