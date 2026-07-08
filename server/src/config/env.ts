@@ -17,10 +17,7 @@ function loadEnvFile(filePath: string): void {
 
     const key = trimmed.slice(0, eq).trim();
     let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
       value = value.slice(1, -1);
     }
 
@@ -50,4 +47,7 @@ export const env = {
   /** yt-dlp: path to Netscape cookies.txt */
   youtubeCookiesFile: process.env.YOUTUBE_COOKIES_FILE ?? '',
   gpmApiBaseUrl: process.env.GPM_API_BASE_URL ?? 'http://127.0.0.1:19995/api/v3',
+  /** reCAPTCHA Enterprise site key — inspect Network tab on labs.google/fx when Flow loads */
+  flowRecaptchaSiteKey: process.env.FLOW_RECAPTCHA_SITE_KEY ?? '6LdsFiUsAAAAAIjVDZcuLhaHiDn5nnHVXVRQGeMV',
+  flowRecaptchaAction: process.env.FLOW_RECAPTCHA_ACTION ?? 'IMAGE_GENERATE',
 };

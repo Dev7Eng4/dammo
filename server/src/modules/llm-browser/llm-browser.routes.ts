@@ -83,6 +83,9 @@ export function createLlmBrowserRoutes() {
       debugScreenshotPath: body.debugScreenshotPath,
       timeoutMs: body.timeoutMs,
       stableMs: body.stableMs,
+      generationMode: body.generationMode,
+      referenceImagePath: body.referenceImagePath,
+      projectId: body.projectId,
     });
     return c.json({ item });
   });

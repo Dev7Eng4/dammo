@@ -1,5 +1,26 @@
-import { DEFAULT_FLOW_PROJECT_ID } from '../../infrastructure/llm-browser/flow.config.js';
-import { beginBatchGenerateImagesWait, resolveFlowImageSavePath } from '../../infrastructure/llm-browser/flow-api-response.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import type { Page } from 'playwright';
+import {
+  attachBearerCapture,
+  callBatchGenerateImages,
+  getAccessTokenFromPage,
+  uploadReferenceImageViaApi,
+} from '../../infrastructure/llm-browser/flow-api.client.js';
+import {
+  downloadAndSaveFlowImage,
+  extractFifeUrl,
+  beginBatchGenerateImagesWait,
+  resolveFlowImageSavePath,
+} from '../../infrastructure/llm-browser/flow-api-response.js';
+import {
+  DEFAULT_FLOW_PROJECT_ID,
+  FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS,
+  FLOW_RECAPTCHA_ACTION,
+  FLOW_RECAPTCHA_SITE_KEY,
+  buildFlowProjectUrl,
+} from '../../infrastructure/llm-browser/flow.config.js';
+import { executeEnterpriseRecaptchaOnPage } from '../../infrastructure/llm-browser/flow-recaptcha.js';
 import { getFlowBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
   getLlmBrowserSession,
@@ -18,6 +39,10 @@ import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.servic
 
 const FLOW_PROVIDER = 'flow' as const;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function assertProfileOpen(profileId: string): void {
   if (!isChromeProfileOpen(profileId)) {
     throw new AppError('Chrome profile is not open', 409, 'PROFILE_NOT_OPEN');
@@ -32,6 +57,27 @@ function assertFlowSession(profileId: string): LlmBrowserSession {
   return session;
 }
 
+async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<void> {
+  if (!debugPath) return;
+  try {
+    await fs.mkdir(path.dirname(debugPath), { recursive: true });
+    await page.screenshot({ path: debugPath, fullPage: true });
+  } catch (err) {
+    console.warn('[flow] failed to save debug screenshot:', err instanceof Error ? err.message : err);
+  }
+}
+
+function isOnFlowProjectPage(pageUrl: string, projectId: string): boolean {
+  return pageUrl.includes('flow/project/') && pageUrl.includes(projectId);
+}
+
+function toFlowApiGenerationError(err: unknown): AppError {
+  if (err instanceof AppError) return err;
+
+  const message = err instanceof Error ? err.message : String(err);
+  return new AppError(`Flow API image generation failed: ${message}`, 502, 'FLOW_API_GENERATE_FAILED');
+}
+
 export class FlowBrowserService {
   async open(profileId: string, options?: FlowOpenOptions): Promise<LlmBrowserSession> {
     const profile = chromeProfilesService.getById(profileId);
@@ -44,7 +90,19 @@ export class FlowBrowserService {
     return upsertLlmBrowserSession(profileId, FLOW_PROVIDER);
   }
 
-  async generateImage(profileId: string, prompt: string, options?: FlowGenerateImageOptions) {
+  async generateImage(profileId: string, prompt: string, options?: FlowGenerateImageOptions): Promise<LlmBrowserResponse> {
+    if (options?.generationMode === 'browser') {
+      return this.generateImageViaBrowser(profileId, prompt, options);
+    }
+
+    return this.generateImageViaApi(profileId, prompt, options);
+  }
+
+  private async generateImageViaBrowser(
+    profileId: string,
+    prompt: string,
+    options?: FlowGenerateImageOptions,
+  ): Promise<LlmBrowserResponse> {
     if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
       await this.open(profileId, {
         projectId: options?.projectId ?? DEFAULT_FLOW_PROJECT_ID,
@@ -86,6 +144,154 @@ export class FlowBrowserService {
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
       throw err;
+    }
+  }
+
+  private async generateImageViaApi(
+    profileId: string,
+    prompt: string,
+    options?: FlowGenerateImageOptions,
+  ): Promise<LlmBrowserResponse> {
+    const projectId = options?.projectId ?? DEFAULT_FLOW_PROJECT_ID;
+    const timeoutMs = options?.timeoutMs ?? 300_000;
+    const outputPath = resolveFlowImageSavePath(options);
+    const startedAt = Date.now();
+
+    if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
+      await this.open(profileId, { projectId, skipInitialSetup: true });
+    }
+
+    assertProfileOpen(profileId);
+    assertFlowSession(profileId);
+
+    const page = await getChromeProfilePage(profileId);
+    const bearerCapture = attachBearerCapture(page);
+
+    setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
+
+    try {
+      const projectUrl = buildFlowProjectUrl(projectId);
+      if (!isOnFlowProjectPage(page.url(), projectId)) {
+        console.log(`[flow-api] navigating to ${projectUrl}`);
+        try {
+          await page.goto(projectUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+          await sleep(1_000);
+          await page.keyboard.press('Escape');
+        } catch (err) {
+          throw new AppError(
+            `Failed to open Flow project page: ${err instanceof Error ? err.message : String(err)}`,
+            502,
+            'FLOW_API_NAVIGATION_FAILED',
+          );
+        }
+      }
+
+      let accessToken = '';
+      try {
+        accessToken = await getAccessTokenFromPage(page);
+        if (!accessToken) {
+          accessToken = bearerCapture.getBearerToken();
+        }
+      } catch (err) {
+        console.warn(
+          `[flow-api] accessToken lookup failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      if (!accessToken) {
+        throw new AppError(
+          'Could not obtain Flow accessToken. Ensure the Chrome profile is logged into Google Flow.',
+          502,
+          'FLOW_API_NO_ACCESS_TOKEN',
+        );
+      }
+
+      let primaryMediaId: string | null = null;
+      if (options?.referenceImagePath) {
+        console.log('[flow-api] uploading reference image...');
+        try {
+          primaryMediaId = await uploadReferenceImageViaApi(accessToken, options.referenceImagePath, projectId);
+          if (primaryMediaId) {
+            console.log(`[flow-api] primaryMediaId: ${primaryMediaId}`);
+          } else {
+            console.warn('[flow-api] reference image upload failed; continuing without reference');
+          }
+        } catch (err) {
+          console.warn(
+            `[flow-api] reference image upload error: ${err instanceof Error ? err.message : String(err)}; continuing without reference`,
+          );
+        }
+      }
+
+      console.log(`[flow-api] delay ${FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS}ms after accessToken`);
+      await sleep(FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS);
+
+      setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
+
+      const recaptchaResult = await executeEnterpriseRecaptchaOnPage(page, {
+        siteKey: FLOW_RECAPTCHA_SITE_KEY,
+        action: FLOW_RECAPTCHA_ACTION,
+        timeoutMs,
+        log: true,
+      });
+
+      if (!recaptchaResult.ok || !recaptchaResult.token) {
+        throw new AppError(
+          recaptchaResult.error || `Failed to obtain reCAPTCHA token for action ${FLOW_RECAPTCHA_ACTION}`,
+          502,
+          'FLOW_API_RECAPTCHA_FAILED',
+        );
+      }
+
+      console.log('[flow-api] calling batchGenerateImages...');
+      const apiResponse = await callBatchGenerateImages(recaptchaResult.token, accessToken, {
+        prompt,
+        projectId,
+        primaryMediaId,
+      });
+
+      console.log(`[flow-api] status: ${apiResponse.status} ${apiResponse.statusText}`);
+
+      let imageUrl: string;
+      try {
+        imageUrl = extractFifeUrl(apiResponse.body);
+      } catch (err) {
+        throw new AppError(
+          `Flow API response missing image URL: ${err instanceof Error ? err.message : String(err)}`,
+          502,
+          'FLOW_API_NO_IMAGE_URL',
+        );
+      }
+
+      console.log(`[flow-api] extracted image url: ${imageUrl.slice(0, 80)}...`);
+
+      let mediaAsset;
+      try {
+        mediaAsset = await downloadAndSaveFlowImage(page, imageUrl, outputPath);
+      } catch (err) {
+        throw new AppError(
+          `Failed to download Flow image: ${err instanceof Error ? err.message : String(err)}`,
+          502,
+          'FLOW_IMAGE_DOWNLOAD_FAILED',
+        );
+      }
+
+      setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      return {
+        provider: FLOW_PROVIDER,
+        content: '',
+        codeBlocks: [],
+        elapsedMs: Date.now() - startedAt,
+        mediaAssets: [mediaAsset],
+      };
+    } catch (err) {
+      const appError = toFlowApiGenerationError(err);
+      console.error(`[flow-api] generate failed (${appError.code ?? 'unknown'}): ${appError.message}`);
+      await captureDebugScreenshot(page, options?.debugScreenshotPath);
+      setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      throw appError;
+    } finally {
+      bearerCapture.dispose();
     }
   }
 }
