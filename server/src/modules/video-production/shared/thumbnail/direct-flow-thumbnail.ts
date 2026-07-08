@@ -2,13 +2,12 @@ import path from 'node:path';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
+import { FLOW_MAX_RETRIES, runWithFlowRetries } from '../../../llm-browser/flow-retry.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 import type { MetaStep3Output } from '../meta/metadata.types.js';
 import type { FlowProfileOptions, HeroImageProgress } from './hero-image.js';
 
-const MAX_RETRIES = 3;
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
 export interface RunDirectFlowThumbnailOptions extends FlowProfileOptions {
@@ -46,10 +45,6 @@ function extractMetaInputs(metaStep3: MetaStep3Output): { title: string; summary
   return { title, summary };
 }
 
-function logValidationFailure(attempt: number, reason: string): void {
-  console.warn(`[direct-flow-thumbnail] attempt ${attempt}: generation failed (${reason})`);
-}
-
 export async function runDirectFlowThumbnail(
   metaStep3: MetaStep3Output,
   language: ChannelLanguage,
@@ -69,45 +64,28 @@ export async function runDirectFlowThumbnail(
 
   console.log(`[direct-flow-thumbnail] Mở Chrome main profile ${profile.name} cho style ${promptKey}...`);
 
-  let lastReason = 'unknown error';
-
   try {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
-      options?.onProgress?.({
-        attempt,
-        profileId: profile.id,
-        profileName: profile.name,
-        status: attempt === 1 ? 'started' : 'retry',
-      });
+    const { savedPath, response } = await runWithFlowRetries({
+      profileId: profile.id,
+      profileName: profile.name,
+      prompt: promptUsed,
+      logPrefix: '[direct-flow-thumbnail]',
+      failureCode: 'DIRECT_FLOW_THUMBNAIL_FAILED',
+      buildFailureMessage: reason =>
+        `Direct flow thumbnail failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
+      generateOptions: {
+        outputDir,
+        fileName: THUMBNAIL_FILENAME,
+        debugScreenshotPath,
+      },
+      onProgress: options?.onProgress,
+      onAttemptFailure: (attempt, reason) => {
+        console.warn(`[direct-flow-thumbnail] attempt ${attempt}: generation failed (${reason})`);
+      },
+    });
 
-      try {
-        const response = await flowBrowserService.generateImage(profile.id, promptUsed, {
-          outputDir,
-          fileName: THUMBNAIL_FILENAME,
-          debugScreenshotPath,
-          timeoutMs: 300_000,
-        });
-
-        const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-        if (!savedPath) {
-          lastReason = 'Flow completed but no local image path returned';
-          logValidationFailure(attempt, lastReason);
-          continue;
-        }
-
-        console.log(`[direct-flow-thumbnail] saved: ${savedPath} (${response.elapsedMs}ms)`);
-        return { thumbnailPath: savedPath, promptUsed };
-      } catch (err) {
-        lastReason = err instanceof Error ? err.message : 'unknown error';
-        logValidationFailure(attempt, lastReason);
-      }
-    }
-
-    throw new AppError(
-      `Direct flow thumbnail failed after ${MAX_RETRIES} attempts: ${lastReason}`,
-      502,
-      'DIRECT_FLOW_THUMBNAIL_FAILED',
-    );
+    console.log(`[direct-flow-thumbnail] saved: ${savedPath} (${response.elapsedMs}ms)`);
+    return { thumbnailPath: savedPath, promptUsed };
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }

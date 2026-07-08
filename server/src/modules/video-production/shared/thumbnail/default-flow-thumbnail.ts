@@ -3,12 +3,11 @@ import path from 'node:path';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
+import { FLOW_MAX_RETRIES, runWithFlowRetries } from '../../../llm-browser/flow-retry.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 import type { FlowProfileOptions, HeroImageProgress } from './hero-image.js';
 
-const MAX_RETRIES = 3;
 const DEFAULT_PROMPT_KEY = 'thumbnail_default';
 const OLD_THUMBNAIL_FILENAME = 'old-thumbnail.jpg';
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
@@ -34,14 +33,10 @@ function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
   return chromeProfilesService.requireMainProfile();
 }
 
-function logValidationFailure(attempt: number, reason: string): void {
-  console.warn(`[default-flow-thumbnail] attempt ${attempt}: generation failed (${reason})`);
-}
-
 export async function runDefaultFlowThumbnail(
   workDir: string,
   language: ChannelLanguage,
-  options?: RunDefaultFlowThumbnailOptions
+  options?: RunDefaultFlowThumbnailOptions,
 ): Promise<DefaultFlowThumbnailResult> {
   const referenceImagePath = options?.referenceImagePath ?? path.join(workDir, OLD_THUMBNAIL_FILENAME);
 
@@ -61,42 +56,29 @@ export async function runDefaultFlowThumbnail(
 
   console.log(`[default-flow-thumbnail] Mở Chrome main profile ${profile.name} cho style ${DEFAULT_PROMPT_KEY}...`);
 
-  let lastReason = 'unknown error';
-
   try {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
-      options?.onProgress?.({
-        attempt,
-        profileId: profile.id,
-        profileName: profile.name,
-        status: attempt === 1 ? 'started' : 'retry',
-      });
+    const { savedPath, response } = await runWithFlowRetries({
+      profileId: profile.id,
+      profileName: profile.name,
+      prompt: promptUsed,
+      logPrefix: '[default-flow-thumbnail]',
+      failureCode: 'DEFAULT_FLOW_THUMBNAIL_FAILED',
+      buildFailureMessage: reason =>
+        `Default flow thumbnail failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
+      generateOptions: {
+        outputDir: workDir,
+        fileName: THUMBNAIL_FILENAME,
+        referenceImagePath,
+        debugScreenshotPath,
+      },
+      onProgress: options?.onProgress,
+      onAttemptFailure: (attempt, reason) => {
+        console.warn(`[default-flow-thumbnail] attempt ${attempt}: generation failed (${reason})`);
+      },
+    });
 
-      try {
-        const response = await flowBrowserService.generateImage(profile.id, promptUsed, {
-          outputDir: workDir,
-          fileName: THUMBNAIL_FILENAME,
-          referenceImagePath,
-          debugScreenshotPath,
-          timeoutMs: 300_000,
-        });
-
-        const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-        if (!savedPath) {
-          lastReason = 'Flow completed but no local image path returned';
-          logValidationFailure(attempt, lastReason);
-          continue;
-        }
-
-        console.log(`[default-flow-thumbnail] saved: ${savedPath} (${response.elapsedMs}ms)`);
-        return { thumbnailPath: savedPath, promptUsed };
-      } catch (err) {
-        lastReason = err instanceof Error ? err.message : 'unknown error';
-        logValidationFailure(attempt, lastReason);
-      }
-    }
-
-    throw new AppError(`Default flow thumbnail failed after ${MAX_RETRIES} attempts: ${lastReason}`, 502, 'DEFAULT_FLOW_THUMBNAIL_FAILED');
+    console.log(`[default-flow-thumbnail] saved: ${savedPath} (${response.elapsedMs}ms)`);
+    return { thumbnailPath: savedPath, promptUsed };
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }

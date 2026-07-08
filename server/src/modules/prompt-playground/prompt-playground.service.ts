@@ -5,7 +5,7 @@ import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
 import type { ImageBrowserProvider, LlmTextProvider, VideoBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
-import { flowBrowserService } from '../llm-browser/flow-browser.service.js';
+import { runWithFlowRetries } from '../llm-browser/flow-retry.js';
 import { metaBrowserService } from '../llm-browser/meta-browser.service.js';
 import { llmBrowserService } from '../llm-browser/llm-browser.service.js';
 import { resolvePromptOutputType } from '../prompts/prompt-output-type.js';
@@ -114,7 +114,16 @@ async function runImagePlayground(
             ...generateOptions,
             mediaKind: 'image',
           })
-        : await flowBrowserService.generateImage(profile.id, input.userPrompt, generateOptions);
+        : (
+            await runWithFlowRetries({
+              profileId: profile.id,
+              profileName: profile.name,
+              prompt: input.userPrompt,
+              logPrefix: '[prompt-playground] flow image',
+              failureCode: 'PLAYGROUND_FAILED',
+              generateOptions,
+            })
+          ).response;
 
     const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
     if (!savedPath) {

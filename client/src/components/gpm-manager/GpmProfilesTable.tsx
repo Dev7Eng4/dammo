@@ -1,4 +1,5 @@
 import { cn } from '../../lib/cn';
+import { Button } from '../ui';
 import type { GpmGroup, GpmProfile } from '../../types/gpm';
 
 interface GpmProfilesTableProps {
@@ -6,53 +7,29 @@ interface GpmProfilesTableProps {
   groups: GpmGroup[];
   selectedId: string | null;
   runningProfileIds: Set<string>;
+  actionBusyIds: Set<string>;
   loading?: boolean;
   onSelect: (id: string) => void;
-}
-
-function formatDate(value?: string): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('en-US');
+  onStart: (id: string) => void;
+  onStop: (id: string) => void;
 }
 
 function groupName(groups: GpmGroup[], groupId: string): string {
   return groups.find((group) => group.id === groupId)?.name ?? (groupId || '—');
 }
 
-function browserLabel(profile: GpmProfile): string {
-  if (profile.browser) {
-    return `${profile.browser.name} ${profile.browser.version}`.trim();
-  }
-  const type = profile.browser_type?.trim();
-  const version = profile.browser_version?.trim();
-  if (type || version) return `${type ?? ''} ${version ?? ''}`.trim();
-  return '—';
-}
-
-function StatusBadge({ running }: { running: boolean }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-        running
-          ? 'border-success/30 bg-success/10 text-success'
-          : 'border-border bg-surface-elevated text-neutral-400',
-      )}
-    >
-      <span className={cn('size-1.5 rounded-full', running ? 'bg-success' : 'bg-neutral-500')} />
-      {running ? 'Running' : 'Stopped'}
-    </span>
-  );
-}
+const COL_SPAN = 4;
 
 export function GpmProfilesTable({
   profiles,
   groups,
   selectedId,
   runningProfileIds,
+  actionBusyIds,
   loading,
   onSelect,
+  onStart,
+  onStop,
 }: GpmProfilesTableProps) {
   if (loading) {
     return (
@@ -62,17 +39,14 @@ export function GpmProfilesTable({
             <tr className="border-b border-border text-xs text-neutral-500">
               <th className="pb-3 pr-4 font-medium">NAME</th>
               <th className="pb-3 pr-4 font-medium">GROUP</th>
-              <th className="pb-3 pr-4 font-medium">BROWSER</th>
-              <th className="pb-3 pr-4 font-medium">OS</th>
               <th className="pb-3 pr-4 font-medium">PROXY</th>
-              <th className="pb-3 pr-4 font-medium">CREATED</th>
-              <th className="pb-3 font-medium">STATUS</th>
+              <th className="pb-3 font-medium">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
               <tr key={i} className="border-b border-border/50">
-                <td colSpan={7} className="py-3">
+                <td colSpan={COL_SPAN} className="py-3">
                   <div className="h-4 animate-pulse rounded bg-neutral-800" />
                 </td>
               </tr>
@@ -98,39 +72,46 @@ export function GpmProfilesTable({
           <tr className="border-b border-border text-xs text-neutral-500">
             <th className="pb-3 pr-4 font-medium">NAME</th>
             <th className="pb-3 pr-4 font-medium">GROUP</th>
-            <th className="pb-3 pr-4 font-medium">BROWSER</th>
-            <th className="pb-3 pr-4 font-medium">OS</th>
             <th className="pb-3 pr-4 font-medium">PROXY</th>
-            <th className="pb-3 pr-4 font-medium">CREATED</th>
-            <th className="pb-3 font-medium">STATUS</th>
+            <th className="pb-3 font-medium">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
-          {profiles.map((profile) => (
-            <tr
-              key={profile.id}
-              onClick={() => onSelect(profile.id)}
-              className={cn(
-                'cursor-pointer border-b border-border/50 transition-colors last:border-0',
-                selectedId === profile.id ? 'bg-primary-500/10' : 'hover:bg-surface-elevated/50',
-              )}
-            >
-              <td className="py-3 pr-4 font-medium text-neutral-100">{profile.name}</td>
-              <td className="py-3 pr-4 text-neutral-300">{groupName(groups, profile.group_id)}</td>
-              <td className="py-3 pr-4 text-neutral-300">{browserLabel(profile)}</td>
-              <td className="py-3 pr-4 text-neutral-300">{profile.os ?? '—'}</td>
-              <td
-                className="max-w-[12rem] truncate py-3 pr-4 font-mono text-xs text-neutral-400"
-                title={profile.raw_proxy}
+          {profiles.map((profile) => {
+            const running = runningProfileIds.has(profile.id);
+            const busy = actionBusyIds.has(profile.id);
+
+            return (
+              <tr
+                key={profile.id}
+                onClick={() => onSelect(profile.id)}
+                className={cn(
+                  'cursor-pointer border-b border-border/50 transition-colors last:border-0',
+                  selectedId === profile.id ? 'bg-primary-500/10' : 'hover:bg-surface-elevated/50',
+                )}
               >
-                {profile.raw_proxy || '—'}
-              </td>
-              <td className="py-3 pr-4 text-neutral-300">{formatDate(profile.created_at)}</td>
-              <td className="py-3">
-                <StatusBadge running={runningProfileIds.has(profile.id)} />
-              </td>
-            </tr>
-          ))}
+                <td className="py-3 pr-4 font-medium text-neutral-100">{profile.name}</td>
+                <td className="py-3 pr-4 text-neutral-300">{groupName(groups, profile.group_id)}</td>
+                <td
+                  className="max-w-48 truncate py-3 pr-4 font-mono text-xs text-neutral-400"
+                  title={profile.raw_proxy}
+                >
+                  {profile.raw_proxy || '—'}
+                </td>
+                <td className="py-3" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="outlined"
+                    size="sm"
+                    className="rounded-lg"
+                    disabled={busy}
+                    onClick={() => (running ? onStop(profile.id) : onStart(profile.id))}
+                  >
+                    {busy ? (running ? 'Stopping…' : 'Starting…') : running ? 'Stop' : 'Start'}
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

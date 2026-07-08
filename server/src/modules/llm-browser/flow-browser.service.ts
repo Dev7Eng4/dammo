@@ -211,14 +211,18 @@ export class FlowBrowserService {
         console.log('[flow-api] uploading reference image...');
         try {
           primaryMediaId = await uploadReferenceImageViaApi(accessToken, options.referenceImagePath, projectId);
-          if (primaryMediaId) {
-            console.log(`[flow-api] primaryMediaId: ${primaryMediaId}`);
-          } else {
-            console.warn('[flow-api] reference image upload failed; continuing without reference');
+          if (!primaryMediaId) {
+            throw new AppError('Flow reference image upload failed', 502, 'FLOW_API_REFERENCE_UPLOAD_FAILED');
           }
+          console.log(`[flow-api] primaryMediaId: ${primaryMediaId}`);
         } catch (err) {
-          console.warn(
-            `[flow-api] reference image upload error: ${err instanceof Error ? err.message : String(err)}; continuing without reference`,
+          if (err instanceof AppError) {
+            throw err;
+          }
+          throw new AppError(
+            `Flow reference image upload error: ${err instanceof Error ? err.message : String(err)}`,
+            502,
+            'FLOW_API_REFERENCE_UPLOAD_FAILED',
           );
         }
       }

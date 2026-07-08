@@ -3,7 +3,9 @@ import path from 'node:path';
 import { resizeImageInPlace } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
+import { FLOW_CONFIG } from '../../../../infrastructure/llm-browser/flow.config.js';
 import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
+import { FLOW_MAX_RETRIES, getFlowRetryDelayMs } from '../../../llm-browser/flow-retry.js';
 import { SI_CANVAS_H, SI_CANVAS_W } from '../si-video/si.constants.js';
 import {
   AI_SLIDES_DIRNAME,
@@ -13,7 +15,9 @@ import {
 } from './ai-video.constants.js';
 import type { GenerateAiVideoImagesInput } from './ai-video.types.js';
 
-const MAX_RETRIES = 3;
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function clampSlideCount(count: number): number {
   return Math.min(AI_VIDEO_MAX_SLIDES, Math.max(AI_VIDEO_MIN_SLIDES, count));
@@ -75,39 +79,47 @@ export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): 
       const fileName = `slide_${String(slideIndex + 1).padStart(2, '0')}.jpg`;
       const prompt = buildScenePrompt(input, slideIndex, totalSlides);
       let saved = false;
+      let lastError: unknown;
 
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+      for (let attempt = 1; attempt <= FLOW_MAX_RETRIES; attempt += 1) {
         input.onProgress?.({ slideIndex, totalSlides, attempt });
 
         try {
           const response = await flowBrowserService.generateImage(profile.id, prompt, {
             outputDir: slidesDir,
             fileName,
-            timeoutMs: 300_000,
+            timeoutMs: FLOW_CONFIG.defaultTimeoutMs,
           });
 
           const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
           if (!savedPath) {
             log(`[ai-video] slide ${slideIndex + 1}: no image returned (attempt ${attempt})`);
-            continue;
+            lastError = undefined;
+          } else {
+            await resizeImageInPlace(savedPath, SI_CANVAS_W, SI_CANVAS_H, input.onLog);
+            imagePaths.push(savedPath);
+            log(
+              `[ai-video] slide ${slideIndex + 1}/${totalSlides} saved + resized ${SI_CANVAS_W}x${SI_CANVAS_H} → ${path.basename(savedPath)}`,
+            );
+            saved = true;
+            break;
           }
-
-          await resizeImageInPlace(savedPath, SI_CANVAS_W, SI_CANVAS_H, input.onLog);
-          imagePaths.push(savedPath);
-          log(
-            `[ai-video] slide ${slideIndex + 1}/${totalSlides} saved + resized ${SI_CANVAS_W}x${SI_CANVAS_H} → ${path.basename(savedPath)}`,
-          );
-          saved = true;
-          break;
         } catch (err) {
+          lastError = err;
           const message = err instanceof Error ? err.message : 'unknown error';
           log(`[ai-video] slide ${slideIndex + 1} attempt ${attempt} failed: ${message}`);
+        }
+
+        if (attempt < FLOW_MAX_RETRIES) {
+          const delayMs = getFlowRetryDelayMs(attempt, lastError);
+          log(`[ai-video] slide ${slideIndex + 1}: waiting ${delayMs}ms before retry...`);
+          await sleep(delayMs);
         }
       }
 
       if (!saved) {
         throw new AppError(
-          `Failed to generate slide image ${slideIndex + 1} after ${MAX_RETRIES} attempts`,
+          `Failed to generate slide image ${slideIndex + 1} after ${FLOW_MAX_RETRIES} attempts`,
           502,
           'AI_IMAGE_GENERATION_FAILED',
         );

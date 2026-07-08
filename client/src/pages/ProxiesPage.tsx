@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import {
-  archiveProxy,
   exportProxiesExcel,
-  fetchProxy,
+  extendProxy,
   fetchProxies,
   fetchProxyStats,
   importProxiesExcel,
@@ -10,16 +9,14 @@ import {
   testProxy,
 } from '../api/proxies';
 import { AddProxyModal } from '../components/proxy-manager/AddProxyModal';
-import { EditProxyModal } from '../components/proxy-manager/EditProxyModal';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
-import { ProxyDetailPanel } from '../components/proxy-manager/ProxyDetailPanel';
 import { ProxyPageHeader } from '../components/proxy-manager/ProxyPageHeader';
 import { ProxyProvidersTab } from '../components/proxy-manager/ProxyProvidersTab';
 import { ProxiesTable } from '../components/proxy-manager/ProxiesTable';
 import { ProxiesToolbar } from '../components/proxy-manager/ProxiesToolbar';
 import { ProxyStatCards } from '../components/proxy-manager/ProxyStatCards';
-import { Button, Modal, useToast } from '../components/ui';
-import { useAbortableEffect, useFetchedItem, usePaginatedList } from '../hooks';
+import { Button, Input, Modal, useToast } from '../components/ui';
+import { useAbortableEffect, usePaginatedList } from '../hooks';
 import type { ProxyFilter, ProxyStats, ProxyTab } from '../types/proxy';
 
 const LIMIT = 20;
@@ -34,12 +31,14 @@ export function ProxiesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<ProxyFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showRemoveFailedModal, setShowRemoveFailedModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [removingFailed, setRemovingFailed] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [pingingIds, setPingingIds] = useState<Set<string>>(new Set());
+  const [extendTargetId, setExtendTargetId] = useState<string | null>(null);
+  const [extendDays, setExtendDays] = useState('');
+  const [extending, setExtending] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
   const list = usePaginatedList({
@@ -50,8 +49,6 @@ export function ProxiesPage() {
     refreshKey: listRefreshKey,
     onFetched: () => setSelectedIds(new Set()),
   });
-
-  const detail = useFetchedItem((id, signal) => fetchProxy(id, { signal }));
 
   useAbortableEffect(
     async (signal) => {
@@ -76,7 +73,6 @@ export function ProxiesPage() {
 
   function clearSelection() {
     setSelectedId(null);
-    detail.clear();
   }
 
   function handleFilterChange(nextFilter: ProxyFilter) {
@@ -101,11 +97,6 @@ export function ProxiesPage() {
 
   function handleSelect(id: string) {
     setSelectedId(id);
-    detail.load(id);
-  }
-
-  function handleClosePanel() {
-    clearSelection();
   }
 
   function handleToggleRow(id: string) {
@@ -169,42 +160,60 @@ export function ProxiesPage() {
     }
   }
 
-  async function handleTest() {
-    if (!selectedId) return;
-    setTesting(true);
+  async function handlePingRow(id: string) {
+    if (pingingIds.has(id)) return;
+    setPingingIds((prev) => new Set(prev).add(id));
     try {
-      const result = await testProxy(selectedId);
-      detail.load(selectedId);
+      const result = await testProxy(id);
       refreshAll();
       if (result.status === 'failed') {
-        toast.error(result.error ?? 'Connection test failed');
+        toast.error(result.error ?? 'Ping failed');
       } else {
-        toast.success(`Connection OK — ${result.latencyMs ?? 0}ms`);
+        toast.success(`Ping OK — ${result.latencyMs ?? 0}ms`);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Test failed');
+      toast.error(err instanceof Error ? err.message : 'Ping failed');
     } finally {
-      setTesting(false);
+      setPingingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
-  async function handleArchive() {
-    if (!selectedId) return;
+  function handleOpenExtend(id: string) {
+    setExtendTargetId(id);
+    setExtendDays('');
+  }
+
+  function handleCloseExtend() {
+    setExtendTargetId(null);
+    setExtendDays('');
+  }
+
+  async function handleConfirmExtend() {
+    if (!extendTargetId || extending) return;
+    const days = Number(extendDays);
+    if (!Number.isInteger(days) || days < 1) {
+      toast.error('Enter a valid number of days (at least 1)');
+      return;
+    }
+
+    setExtending(true);
     try {
-      await archiveProxy(selectedId);
-      clearSelection();
+      const { item } = await extendProxy(extendTargetId, days);
       refreshAll();
-      toast.success('Proxy archived');
+      handleCloseExtend();
+      toast.success(`Extended expiry to ${item.expiresAt ?? 'updated date'}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Archive failed');
+      toast.error(err instanceof Error ? err.message : 'Failed to extend proxy');
+    } finally {
+      setExtending(false);
     }
   }
 
-  function handleEditSuccess() {
-    if (selectedId) detail.load(selectedId);
-    refreshAll();
-    toast.success('Proxy updated');
-  }
+  const extendTarget = list.items.find((proxy) => proxy.id === extendTargetId) ?? null;
 
   function handleTabChange(tab: ProxyTab) {
     setActiveTab(tab);
@@ -239,9 +248,12 @@ export function ProxiesPage() {
                   selectedId={selectedId}
                   selectedIds={selectedIds}
                   loading={list.loading}
+                  pingingIds={pingingIds}
                   onSelect={handleSelect}
                   onToggleRow={handleToggleRow}
                   onToggleAll={handleToggleAll}
+                  onPing={handlePingRow}
+                  onExtend={handleOpenExtend}
                 />
                 <MailAccountsPagination
                   page={list.page}
@@ -258,40 +270,74 @@ export function ProxiesPage() {
         </div>
       </div>
 
-      {activeTab === 'monitoring' && (selectedId || detail.loading) ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close detail panel"
-            onClick={handleClosePanel}
-            className="fixed inset-0 z-40 bg-black/50"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm shadow-2xl">
-            <ProxyDetailPanel
-              proxy={detail.item}
-              loading={detail.loading}
-              testing={testing}
-              onClose={handleClosePanel}
-              onTest={handleTest}
-              onEdit={() => setShowEditModal(true)}
-              onArchive={handleArchive}
-            />
-          </div>
-        </>
-      ) : null}
-
       <AddProxyModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddSuccess}
       />
 
-      <EditProxyModal
-        open={showEditModal}
-        proxy={detail.item}
-        onClose={() => setShowEditModal(false)}
-        onSuccess={handleEditSuccess}
-      />
+      <Modal
+        open={extendTargetId !== null}
+        onClose={handleCloseExtend}
+        title="Extend Proxy"
+        footer={
+          <>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="rounded-lg"
+              onClick={handleCloseExtend}
+              disabled={extending}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-lg"
+              disabled={extending}
+              onClick={handleConfirmExtend}
+            >
+              {extending ? 'Saving…' : 'Save'}
+            </Button>
+          </>
+        }
+      >
+        {extendTarget ? (
+          <div className="space-y-4">
+            <p className="text-sm text-neutral-300">
+              Extend expiry for{' '}
+              <span className="font-mono text-neutral-100">
+                {extendTarget.host}:{extendTarget.port}
+              </span>
+              {extendTarget.expiresAt ? (
+                <>
+                  {' '}
+                  (current:{' '}
+                  {new Date(extendTarget.expiresAt).toLocaleDateString('en-GB')})
+                </>
+              ) : (
+                ' (no expiry set)'
+              )}
+            </p>
+            <div>
+              <label htmlFor="extend-days" className="mb-1.5 block text-xs font-medium text-neutral-400">
+                Days to extend
+              </label>
+              <Input
+                id="extend-days"
+                type="number"
+                min={1}
+                step={1}
+                placeholder="e.g. 30"
+                value={extendDays}
+                onChange={(e) => setExtendDays(e.target.value)}
+                className="h-10 rounded-lg text-sm"
+                disabled={extending}
+              />
+            </div>
+          </div>
+        ) : null}
+      </Modal>
 
       <Modal
         open={showRemoveFailedModal}

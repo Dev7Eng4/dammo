@@ -3,6 +3,7 @@ import { generateId } from '../../shared/id.js';
 import { paginate } from '../../shared/types/pagination.js';
 import { proxiesRepository } from './proxies.repository.js';
 import { testProxyConnection } from './proxies.tester.js';
+import { updateGpmProfile } from '../../infrastructure/gpm/gpm-api.client.js';
 import type {
   CreateProxyInput,
   Proxy,
@@ -46,6 +47,14 @@ function normalizeOptionalString(value: string | null | undefined): string | und
   if (value == null) return undefined;
   const trimmed = value.trim();
   return trimmed === '' ? undefined : trimmed;
+}
+
+function buildRawProxy(proxy: Pick<Proxy, 'host' | 'port' | 'username' | 'password'>): string {
+  const hostPort = `${proxy.host}:${proxy.port}`;
+  if (proxy.username) {
+    return `${hostPort}:${proxy.username}:${proxy.password ?? ''}`;
+  }
+  return hostPort;
 }
 
 export class ProxiesService {
@@ -121,8 +130,9 @@ export class ProxiesService {
     return proxiesRepository.prepend(proxy);
   }
 
-  update(id: string, input: UpdateProxyInput): Proxy {
+  async update(id: string, input: UpdateProxyInput): Promise<Proxy> {
     const existing = this.getById(id);
+    const oldRawProxy = buildRawProxy(existing);
     const now = new Date().toISOString();
 
     const updated = proxiesRepository.update(id, (proxy) => ({
@@ -170,11 +180,34 @@ export class ProxiesService {
       throw new AppError('Proxy not found', 404, 'NOT_FOUND');
     }
 
+    const newRawProxy = buildRawProxy(updated);
+
+    // Sync proxy changes to GPM Local API for all assigned profiles.
+    // Best-effort: if GPM is unavailable, keep the local update.
+    if (newRawProxy !== oldRawProxy && updated.assignedProfileIds.length > 0) {
+      for (const profileId of updated.assignedProfileIds) {
+        try {
+          await updateGpmProfile(profileId, { raw_proxy: newRawProxy });
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : String(err);
+          // eslint-disable-next-line no-console
+          console.warn(`Failed to sync raw_proxy for GPM profile ${profileId}: ${detail}`);
+        }
+      }
+    }
+
     return updated;
   }
 
   archive(id: string): void {
     const existing = this.getById(id);
+    if (existing.assignedProfileIds.length > 0) {
+      throw new AppError(
+        `Cannot archive proxy: it has ${existing.assignedProfileIds.length} assigned GPM profile(s). Unassign profiles first.`,
+        409,
+        'PROXY_HAS_PROFILES',
+      );
+    }
     const now = new Date().toISOString();
     proxiesRepository.update(existing.id, (proxy) => ({
       ...proxy,
@@ -186,9 +219,32 @@ export class ProxiesService {
   archiveFailed(): number {
     const failedIds = proxiesRepository
       .findAll()
-      .filter((proxy) => isActive(proxy) && proxy.status === 'failed')
+      .filter((proxy) => isActive(proxy) && proxy.status === 'failed' && proxy.assignedProfileIds.length === 0)
       .map((proxy) => proxy.id);
     return proxiesRepository.archiveMany(failedIds);
+  }
+
+  extend(id: string, days: number): Proxy {
+    const existing = this.getById(id);
+    const base = existing.expiresAt ? new Date(existing.expiresAt) : new Date();
+    if (Number.isNaN(base.getTime())) {
+      base.setTime(Date.now());
+    }
+    base.setDate(base.getDate() + days);
+    const expiresAt = base.toISOString().slice(0, 10);
+    const now = new Date().toISOString();
+
+    const updated = proxiesRepository.update(id, (proxy) => ({
+      ...proxy,
+      expiresAt,
+      updatedAt: now,
+    }));
+
+    if (!updated) {
+      throw new AppError('Proxy not found', 404, 'NOT_FOUND');
+    }
+
+    return updated;
   }
 
   async test(id: string): Promise<ProxyTestResult> {

@@ -12,7 +12,6 @@ interface AddGpmGroupModalProps {
 
 const defaultValues: AddGpmGroupFormValues = {
   name: '',
-  sort_order: '0',
 };
 
 export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalProps) {
@@ -44,7 +43,6 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
     try {
       await createGpmGroup({
         name: values.name.trim(),
-        sort_order: Number(values.sort_order) || 0,
       });
       reset(defaultValues);
       onSuccess();
@@ -58,7 +56,7 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add GPM Group"
+      title="Create GPM Group"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
@@ -71,7 +69,7 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
             form="add-gpm-group-form"
             type="submit"
           >
-            {isSubmitting ? 'Creating…' : 'Add Group'}
+            {isSubmitting ? 'Creating…' : 'Create'}
           </Button>
         </>
       }
@@ -89,19 +87,6 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
             {...register('name', { required: 'Name is required' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
-        </div>
-
-        <div>
-          <label htmlFor="gpm-group-sort" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Sort order
-          </label>
-          <Input
-            id="gpm-group-sort"
-            type="number"
-            className="h-10 rounded-lg text-sm"
-            disabled={isSubmitting}
-            {...register('sort_order')}
-          />
         </div>
 
         {apiError ? <p className="text-xs text-danger">{apiError}</p> : null}

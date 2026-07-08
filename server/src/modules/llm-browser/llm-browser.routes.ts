@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
-import { flowBrowserService } from './flow-browser.service.js';
+import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
+import { runWithFlowRetries } from './flow-retry.js';
 import { metaBrowserService } from './meta-browser.service.js';
 import {
   llmBrowserChatSchema,
@@ -76,16 +77,23 @@ export function createLlmBrowserRoutes() {
       return c.json({ item });
     }
 
-    const item = await flowBrowserService.generateImage(profileId, body.prompt, {
-      outputPath: body.outputPath,
-      outputDir: body.outputDir,
-      fileName: body.fileName,
-      debugScreenshotPath: body.debugScreenshotPath,
-      timeoutMs: body.timeoutMs,
-      stableMs: body.stableMs,
-      generationMode: body.generationMode,
-      referenceImagePath: body.referenceImagePath,
-      projectId: body.projectId,
+    const profile = chromeProfilesService.getById(profileId);
+    const { response: item } = await runWithFlowRetries({
+      profileId,
+      profileName: profile.name,
+      prompt: body.prompt,
+      logPrefix: '[llm-browser] generate-image',
+      failureCode: 'FLOW_IMAGE_FAILED',
+      generateOptions: {
+        outputPath: body.outputPath,
+        outputDir: body.outputDir,
+        fileName: body.fileName,
+        debugScreenshotPath: body.debugScreenshotPath,
+        stableMs: body.stableMs,
+        generationMode: body.generationMode,
+        referenceImagePath: body.referenceImagePath,
+        projectId: body.projectId,
+      },
     });
     return c.json({ item });
   });

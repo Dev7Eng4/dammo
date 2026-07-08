@@ -8,6 +8,7 @@ import {
   assignProfileSchema,
   createProxySchema,
   exportProxiesQuerySchema,
+  extendProxySchema,
   listProxiesQuerySchema,
   updateProxySchema,
 } from './proxies.schema.js';
@@ -104,15 +105,21 @@ export function createProxiesRoutes() {
     return c.json({ item }, 201);
   });
 
-  app.patch('/:id', zValidator('json', updateProxySchema), (c) => {
+  app.patch('/:id', zValidator('json', updateProxySchema), async (c) => {
     const body = c.req.valid('json');
-    const item = proxiesService.update(c.req.param('id'), body);
+    const item = await proxiesService.update(c.req.param('id'), body);
     return c.json({ item });
   });
 
   app.delete('/:id', (c) => {
     proxiesService.archive(c.req.param('id'));
     return c.json({ ok: true });
+  });
+
+  app.post('/:id/extend', zValidator('json', extendProxySchema), (c) => {
+    const { days } = c.req.valid('json');
+    const item = proxiesService.extend(c.req.param('id'), days);
+    return c.json({ item });
   });
 
   app.post('/:id/test', async (c) => {

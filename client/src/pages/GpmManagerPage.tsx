@@ -10,6 +10,7 @@ import {
 } from '../api/gpm';
 import { setProfileProxy } from '../api/proxies';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
+import { AddGpmGroupModal } from '../components/gpm-manager/AddGpmGroupModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
 import { GpmConnectionBanner } from '../components/gpm-manager/GpmConnectionBanner';
 import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
@@ -56,9 +57,11 @@ export function GpmManagerPage() {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showDeleteProfileModal, setShowDeleteProfileModal] = useState(false);
   const [deleteHardMode, setDeleteHardMode] = useState(false);
+  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
 
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [actionBusyIds, setActionBusyIds] = useState<Set<string>>(() => new Set());
   const [testing, setTesting] = useState(false);
   const [deletingProfile, setDeletingProfile] = useState(false);
   const [testResult, setTestResult] = useState<GpmTestResult | null>(null);
@@ -149,19 +152,35 @@ export function GpmManagerPage() {
     setRefreshKey((key) => key + 1);
   }, []);
 
+  async function startProfileById(id: string) {
+    const profile = profiles.find((item) => item.id === id);
+    const { item } = await startGpmProfile(id);
+    setRunningProfileIds((prev) => new Set(prev).add(id));
+    const name = profile?.name ?? id;
+    const debugInfo =
+      item.remote_debugging_address ??
+      (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
+    toast.success(
+      debugInfo ? `Started "${name}" — debug ${debugInfo}` : `Started profile "${name}"`,
+    );
+  }
+
+  async function stopProfileById(id: string) {
+    const profile = profiles.find((item) => item.id === id);
+    await stopGpmProfile(id);
+    setRunningProfileIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    toast.success(`Stopped profile "${profile?.name ?? id}"`);
+  }
+
   async function handleStartProfile() {
     if (!selectedProfileId || starting) return;
     setStarting(true);
     try {
-      const { item } = await startGpmProfile(selectedProfileId);
-      setRunningProfileIds((prev) => new Set(prev).add(selectedProfileId));
-      const name = selectedProfile?.name ?? selectedProfileId;
-      const debugInfo =
-        item.remote_debugging_address ??
-        (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
-      toast.success(
-        debugInfo ? `Started "${name}" — debug ${debugInfo}` : `Started profile "${name}"`,
-      );
+      await startProfileById(selectedProfileId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to start profile');
     } finally {
@@ -173,17 +192,43 @@ export function GpmManagerPage() {
     if (!selectedProfileId || stopping) return;
     setStopping(true);
     try {
-      await stopGpmProfile(selectedProfileId);
-      setRunningProfileIds((prev) => {
-        const next = new Set(prev);
-        next.delete(selectedProfileId);
-        return next;
-      });
-      toast.success(`Stopped profile "${selectedProfile?.name ?? selectedProfileId}"`);
+      await stopProfileById(selectedProfileId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to stop profile');
     } finally {
       setStopping(false);
+    }
+  }
+
+  async function handleStartRow(id: string) {
+    if (actionBusyIds.has(id)) return;
+    setActionBusyIds((prev) => new Set(prev).add(id));
+    try {
+      await startProfileById(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to start profile');
+    } finally {
+      setActionBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async function handleStopRow(id: string) {
+    if (actionBusyIds.has(id)) return;
+    setActionBusyIds((prev) => new Set(prev).add(id));
+    try {
+      await stopProfileById(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to stop profile');
+    } finally {
+      setActionBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -292,8 +337,11 @@ export function GpmManagerPage() {
                   groups={groups}
                   selectedId={selectedProfileId}
                   runningProfileIds={runningProfileIds}
+                  actionBusyIds={actionBusyIds}
                   loading={profilesLoading}
                   onSelect={setSelectedProfileId}
+                  onStart={handleStartRow}
+                  onStop={handleStopRow}
                 />
               </div>
             </>
@@ -304,9 +352,9 @@ export function GpmManagerPage() {
                   count={filteredGroups.length}
                   search={groupSearch}
                   loading={groupsLoading}
-                  readOnly
                   onSearchChange={setGroupSearch}
                   onRefresh={handleRefresh}
+                  onAddGroup={() => setShowAddGroupModal(true)}
                 />
               </div>
 
@@ -326,6 +374,15 @@ export function GpmManagerPage() {
         onClose={() => setShowAddProfileModal(false)}
         onSuccess={() => {
           toast.success('GPM profile created');
+          handleRefresh();
+        }}
+      />
+
+      <AddGpmGroupModal
+        open={showAddGroupModal}
+        onClose={() => setShowAddGroupModal(false)}
+        onSuccess={() => {
+          toast.success('GPM group created');
           handleRefresh();
         }}
       />

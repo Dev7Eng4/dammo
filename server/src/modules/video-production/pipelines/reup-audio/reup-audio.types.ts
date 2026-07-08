@@ -1,5 +1,6 @@
 import type { VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
+import type { SourceVideoStatus } from '../../../source-channels/source-channels.types.js';
 
 export interface ReupVideoTask {
   link: string;
@@ -8,6 +9,7 @@ export interface ReupVideoTask {
   videoId: string;
   sourceId: string;
   sourceTitle: string;
+  sourceStatus?: SourceVideoStatus;
 }
 
 export interface ReupVideoOutputItem {

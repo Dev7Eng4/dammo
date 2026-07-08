@@ -105,7 +105,6 @@ export interface EditGpmProfileFormValues {
 
 export interface AddGpmGroupFormValues {
   name: string;
-  sort_order: string;
 }
 
 export interface EditGpmGroupFormValues {

@@ -65,6 +65,14 @@ export function testProxy(id: string) {
   return fetchJson<ProxyTestResult>(`${API_V1}/proxies/${id}/test`, { method: 'POST' });
 }
 
+export function extendProxy(id: string, days: number) {
+  return fetchJson<{ item: Proxy }>(`${API_V1}/proxies/${id}/extend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ days }),
+  });
+}
+
 export function removeFailedProxies() {
   return fetchJson<{ removed: number }>(`${API_V1}/proxies/bulk/failed`, { method: 'DELETE' });
 }

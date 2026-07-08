@@ -245,6 +245,12 @@ export function ProxyDetailPanel({
               size="sm"
               className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
               onClick={onArchive}
+              disabled={testing || proxy.assignedProfileIds.length > 0}
+              title={
+                proxy.assignedProfileIds.length > 0
+                  ? `Cannot archive while proxy has ${proxy.assignedProfileIds.length} assigned profile(s)`
+                  : undefined
+              }
             >
               Archive
             </Button>

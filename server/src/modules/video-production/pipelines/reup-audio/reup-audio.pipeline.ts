@@ -7,7 +7,8 @@ import { timedStep, type TimedStepOptions } from '../../../../shared/timing/step
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
 import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
-import { downloadReupAssets, downloadReupAudioAssets, type ReupAudioDownloadResult } from '../../shared/assets/asset-downloader.js';
+import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
+import { downloadReupAssets, downloadReupAudioAssets, type ReupAudioDownloadResult, type ReupDownloadResult } from '../../shared/assets/asset-downloader.js';
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
 import { runMetadata } from '../../shared/meta/run-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
@@ -35,7 +36,6 @@ import {
   copySourceAssetsToDir,
   findSourceThumbnailPath,
   findSourceTranscriptPath,
-  hasRequiredSourceAssets,
 } from '../../../source-channels/source-assets.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 
@@ -68,6 +68,17 @@ function collectSourceVideos(sourceCatalog: SourceCatalog, sourceChannels: strin
   return videos;
 }
 
+/** Chọn video theo thứ tự mảng (index 0 trước), bỏ qua video đã prepare. */
+function selectVideosTopDown(
+  videos: SourceVideoWithSource[],
+  preparedVideoIds: Set<string>,
+  limit: number,
+): SourceVideoWithSource[] {
+  return videos
+    .filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id))
+    .slice(0, limit);
+}
+
 const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);
 
 function resolveVideoPrepareTitle(outputItem: ReupVideoOutputItem): string {
@@ -91,11 +102,15 @@ async function resolveReupAudioDownload(
   taskJobId?: string,
 ): Promise<ReupAudioDownloadResult> {
   const outputDir = mediaDownloadDir('youtube', task.videoId);
-  const sourceAssetsDir = resolveSourceChannelVideoDir(task.sourceId, task.videoId);
 
-  if (sourceAssetsDir && (await hasRequiredSourceAssets(sourceAssetsDir))) {
+  if (task.sourceStatus === 'Downloaded') {
+    const sourceAssetsDir = resolveSourceChannelVideoDir(task.sourceId, task.videoId);
+    if (!sourceAssetsDir) {
+      throw new AppError('Downloaded source folder not found', 404, 'SOURCE_ASSETS_NOT_FOUND');
+    }
+
     if (taskJobId) {
-      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Using pre-downloaded source assets for ${task.videoId}...`);
+      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Copying pre-downloaded source assets for ${task.videoId}...`);
     }
 
     await copySourceAssetsToDir(sourceAssetsDir, outputDir);
@@ -126,21 +141,74 @@ async function resolveReupAudioDownload(
   return downloadReupAudioAssets(task.link, language);
 }
 
+async function resolveReupVideoDownload(
+  task: ReupVideoTask,
+  pipelineType: ProductionDestination['pipelineType'],
+  language: ChannelLanguage,
+  taskJobId?: string,
+): Promise<ReupDownloadResult> {
+  if (task.sourceStatus === 'Downloaded') {
+    const outputDir = mediaDownloadDir('youtube', task.videoId);
+    const sourceAssetsDir = resolveSourceChannelVideoDir(task.sourceId, task.videoId);
+    if (!sourceAssetsDir) {
+      throw new AppError('Downloaded source folder not found', 404, 'SOURCE_ASSETS_NOT_FOUND');
+    }
+
+    if (taskJobId) {
+      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Copying pre-downloaded source assets for ${task.videoId}...`);
+    }
+
+    await copySourceAssetsToDir(sourceAssetsDir, outputDir);
+
+    const videoPath = path.join(outputDir, 'video.mp4');
+    try {
+      await fs.access(videoPath);
+      return {
+        youtubeVideoId: task.videoId,
+        outputDir,
+        primaryPath: videoPath,
+        videoPath,
+      };
+    } catch {
+      if (taskJobId) {
+        taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading video file for ${task.videoId}...`);
+      }
+
+      const downloadedVideoPath = await downloadYoutubeVideo(task.link, outputDir, {
+        quality: 'best',
+        outputBasename: 'video',
+      });
+
+      return {
+        youtubeVideoId: task.videoId,
+        outputDir,
+        primaryPath: downloadedVideoPath,
+        videoPath: downloadedVideoPath,
+      };
+    }
+  }
+
+  if (taskJobId) {
+    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading source video ${task.videoId}...`);
+  }
+
+  return downloadReupAssets(task.link, pipelineType, language);
+}
+
 function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[], maxVideos?: number): ReupVideoTask[] {
   const preparedVideoIds = destination.getPreparedVideoIds();
   const limit = maxVideos ?? REUP_VIDEOS_PER_RUN;
+  const selected = selectVideosTopDown(videos, preparedVideoIds, limit);
 
-  return videos
-    .filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id))
-    .slice(0, limit)
-    .map(video => ({
-      link: video.url,
-      id: destination.id,
-      language: destination.language,
-      videoId: video.id,
-      sourceId: video.sourceId,
-      sourceTitle: video.title?.trim() || video.id,
-    }));
+  return selected.map(video => ({
+    link: video.url,
+    id: destination.id,
+    language: destination.language,
+    videoId: video.id,
+    sourceId: video.sourceId,
+    sourceTitle: video.title?.trim() || video.id,
+    sourceStatus: video.status,
+  }));
 }
 
 export class ReupAudioPipeline {
@@ -719,12 +787,11 @@ export class ReupAudioPipeline {
         } else {
           if (taskJobId) {
             taskQueueRepository.setLivePhase(taskJobId, 'downloading');
-            taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading source video ${task.videoId}...`);
           }
 
           const downloaded = await timedStep(
             'Tải source video',
-            () => downloadReupAssets(task.link, destination.pipelineType, destination.language),
+            () => resolveReupVideoDownload(task, destination.pipelineType, destination.language, taskJobId),
             stepTimer,
           );
 

@@ -1,4 +1,5 @@
 import { cn } from '../../lib/cn';
+import { Button } from '../ui';
 import { ProxyStatusPill } from './ProxyStatusPill';
 import type { Proxy } from '../../types/proxy';
 
@@ -7,9 +8,12 @@ interface ProxiesTableProps {
   selectedId: string | null;
   selectedIds: Set<string>;
   loading?: boolean;
+  pingingIds: Set<string>;
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
+  onPing: (id: string) => void;
+  onExtend: (id: string) => void;
 }
 
 function countryFlag(code?: string) {
@@ -24,16 +28,19 @@ function formatDate(value?: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-GB');
 }
 
-const COL_SPAN = 9;
+const COL_SPAN = 10;
 
 export function ProxiesTable({
   proxies,
   selectedId,
   selectedIds,
   loading,
+  pingingIds,
   onSelect,
   onToggleRow,
   onToggleAll,
+  onPing,
+  onExtend,
 }: ProxiesTableProps) {
   const allSelected = proxies.length > 0 && selectedIds.size === proxies.length;
 
@@ -48,7 +55,8 @@ export function ProxiesTable({
       <th className="pb-3 pr-4 font-medium">PROVIDER</th>
       <th className="pb-3 pr-4 font-medium">EXPIRES</th>
       <th className="pb-3 pr-4 font-medium">PROFILES</th>
-      <th className="pb-3 font-medium">STATUS</th>
+      <th className="pb-3 pr-4 font-medium">STATUS</th>
+      <th className="pb-3 font-medium">ACTIONS</th>
     </tr>
   );
 
@@ -101,7 +109,8 @@ export function ProxiesTable({
             <th className="pb-3 pr-4 font-medium">PROVIDER</th>
             <th className="pb-3 pr-4 font-medium">EXPIRES</th>
             <th className="pb-3 pr-4 font-medium">PROFILES</th>
-            <th className="pb-3 font-medium">STATUS</th>
+            <th className="pb-3 pr-4 font-medium">STATUS</th>
+            <th className="pb-3 font-medium">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
@@ -132,8 +141,29 @@ export function ProxiesTable({
               <td className="py-3 pr-4 text-neutral-400">{proxy.provider ?? '—'}</td>
               <td className="py-3 pr-4 text-neutral-400">{formatDate(proxy.expiresAt)}</td>
               <td className="py-3 pr-4 text-neutral-300">{proxy.assignedProfileIds.length}</td>
-              <td className="py-3">
+              <td className="py-3 pr-4">
                 <ProxyStatusPill status={proxy.status} />
+              </td>
+              <td className="py-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outlined"
+                    size="sm"
+                    className="rounded-lg"
+                    disabled={pingingIds.has(proxy.id)}
+                    onClick={() => onPing(proxy.id)}
+                  >
+                    {pingingIds.has(proxy.id) ? 'Pinging…' : 'Ping'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => onExtend(proxy.id)}
+                  >
+                    Extend
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}

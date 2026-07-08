@@ -13,3 +13,9 @@ export function formatProxyLabel(proxy: Proxy): string {
   const suffix = proxy.countryCode ? ` · ${proxy.countryCode.toUpperCase()}` : '';
   return `${hostPort}${suffix}`;
 }
+
+export function formatProxyOptionLabel(proxy: Proxy): string {
+  const count = proxy.assignedProfileIds.length;
+  const profileSuffix = count === 1 ? '1 profile' : `${count} profiles`;
+  return `${formatProxyLabel(proxy)} · ${profileSuffix}`;
+}

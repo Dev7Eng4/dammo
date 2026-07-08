@@ -121,6 +121,26 @@ export interface GpmCreateProfileInput {
   note?: string | null;
 }
 
+const DEFAULT_CREATE_PROFILE_BODY = {
+  browser_core: 'chromium',
+  browser_name: 'Chrome',
+  is_random_browser_version: false,
+  startup_urls: '',
+  is_masked_font: true,
+  is_noise_canvas: true,
+  is_noise_webgl: true,
+  is_noise_client_rect: true,
+  is_noise_audio_context: true,
+  is_random_screen: false,
+  is_masked_webgl_data: true,
+  is_masked_media_device: true,
+  is_random_os: false,
+  os: 'Windows 11',
+  webrtc_mode: 2,
+  user_agent:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+} as const;
+
 export interface GpmUpdateProfileInput {
   name?: string;
   group_id?: string | null;
@@ -346,6 +366,7 @@ export async function createGpmProfile(input: GpmCreateProfileInput): Promise<Gp
     (input.group_id ? await resolveGroupName(input.group_id) : undefined);
 
   const body: Record<string, unknown> = {
+    ...DEFAULT_CREATE_PROFILE_BODY,
     profile_name: input.name,
     raw_proxy: input.raw_proxy ?? '',
   };
@@ -421,8 +442,17 @@ export async function getGpmGroup(id: string): Promise<GpmGroup> {
   return match;
 }
 
-export async function createGpmGroup(_input: GpmCreateGroupInput): Promise<GpmGroup> {
-  throw new AppError('GPM API v3 does not support creating groups', 501, 'GPM_NOT_SUPPORTED');
+export async function createGpmGroup(input: GpmCreateGroupInput): Promise<GpmGroup> {
+  const body: Record<string, unknown> = {
+    group_name: input.name,
+  };
+
+  const response = await gpmFetchRaw<GpmV3Group>('/groups/create', {
+    method: 'POST',
+    body,
+  });
+
+  return normalizeGroup(response.data);
 }
 
 export async function updateGpmGroup(_id: string, _input: GpmUpdateGroupInput): Promise<GpmGroup> {

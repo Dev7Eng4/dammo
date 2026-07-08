@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { createGpmProfile } from '../../api/gpm';
 import { fetchProxies, setProfileProxy } from '../../api/proxies';
-import { buildRawProxy, formatProxyLabel } from '../../lib/proxy-format';
+import { buildRawProxy, formatProxyOptionLabel } from '../../lib/proxy-format';
 import type { AddGpmProfileFormValues, GpmGroup } from '../../types/gpm';
 import type { Proxy } from '../../types/proxy';
 import { Button, Input, Modal, Select, Textarea } from '../ui';
@@ -39,7 +39,7 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
       { value: '', label: 'No proxy' },
       ...proxies.map((proxy) => ({
         value: proxy.id,
-        label: formatProxyLabel(proxy),
+        label: formatProxyOptionLabel(proxy),
       })),
     ],
     [proxies],

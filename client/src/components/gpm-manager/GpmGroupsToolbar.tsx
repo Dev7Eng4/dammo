@@ -41,7 +41,7 @@ export function GpmGroupsToolbar({
         </Button>
         {!readOnly && onAddGroup ? (
           <Button size="sm" className="rounded-lg" onClick={onAddGroup} disabled={loading}>
-            Add Group
+            Create
           </Button>
         ) : null}
       </div>

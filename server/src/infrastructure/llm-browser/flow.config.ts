@@ -25,6 +25,15 @@ export const DEFAULT_FLOW_PROJECT_ID = '5d5f6b2b-377f-4b30-b595-d44ffe12a02f';
 /** Delay after access token before reCAPTCHA (ms). */
 export const FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS = 5_000;
 
+/** Max attempts when generating images via Flow API (callers). */
+export const FLOW_MAX_RETRIES = 3;
+
+/** Base delay between retry attempts (ms). Scales with attempt number. */
+export const FLOW_RETRY_BASE_DELAY_MS = 2_000;
+
+/** Extra delay when HTTP 429 rate-limited (ms). Scales with attempt number. */
+export const FLOW_RETRY_RATE_LIMIT_DELAY_MS = 10_000;
+
 /** reCAPTCHA Enterprise — set FLOW_RECAPTCHA_SITE_KEY in .env (inspect DevTools on Flow page). */
 export const FLOW_RECAPTCHA_SITE_KEY = env.flowRecaptchaSiteKey;
 export const FLOW_RECAPTCHA_ACTION = env.flowRecaptchaAction;

@@ -2,20 +2,13 @@ import path from 'node:path';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
+import { FLOW_MAX_RETRIES, runWithFlowRetries, type FlowRetryProgress } from '../../../llm-browser/flow-retry.js';
 
-const MAX_RETRIES = 3;
 export const DEFAULT_HERO_IMAGE_FILENAME = 'background.jpg';
 const THUMBNAIL_VISUAL_FILENAME = 'thumbnail_visual.jpg';
 
-export type HeroImageStatus = 'started' | 'retry';
-
-export interface HeroImageProgress {
-  attempt: number;
-  profileId: string;
-  profileName: string;
-  status: HeroImageStatus;
-}
+export type HeroImageStatus = FlowRetryProgress['status'];
+export type HeroImageProgress = FlowRetryProgress;
 
 export interface ThumbnailVisualGenerationInput {
   visualPrompt: string;
@@ -46,10 +39,6 @@ export interface ThumbnailVisualGenerationResult {
   thumbnailVisualPromptUsed: string;
 }
 
-function logValidationFailure(attempt: number, reason: string): void {
-  console.warn(`[hero-image] attempt ${attempt}: generation failed (${reason})`);
-}
-
 export function buildFlowPrompt(mainPrompt: unknown, negativePrompt?: unknown): string {
   const promptText = typeof mainPrompt === 'string' ? mainPrompt.trim() : String(mainPrompt ?? '').trim();
   if (!promptText) {
@@ -75,36 +64,6 @@ function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
   return chromeProfilesService.requireMainProfile();
 }
 
-async function tryGenerateThumbnailVisual(
-  profileId: string,
-  outputDir: string,
-  thumbnailVisual: ThumbnailVisualGenerationInput,
-  debugScreenshotPath: string,
-): Promise<{ thumbnailVisualPath: string; thumbnailVisualPromptUsed: string } | undefined> {
-  try {
-    const thumbnailVisualPromptUsed = buildFlowPrompt(thumbnailVisual.visualPrompt, thumbnailVisual.negativePrompt);
-    const response = await flowBrowserService.generateImage(profileId, thumbnailVisualPromptUsed, {
-      outputDir,
-      fileName: THUMBNAIL_VISUAL_FILENAME,
-      debugScreenshotPath,
-      timeoutMs: 300_000,
-    });
-
-    const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-    if (!savedPath) {
-      console.warn('[hero-image] thumbnail visual: Flow completed but no local image path returned');
-      return undefined;
-    }
-
-    console.log(`[hero-image] thumbnail visual saved: ${savedPath} (${response.elapsedMs}ms)`);
-    return { thumbnailVisualPath: savedPath, thumbnailVisualPromptUsed };
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : 'unknown error';
-    console.warn(`[hero-image] thumbnail visual generation failed (non-fatal): ${reason}`);
-    return undefined;
-  }
-}
-
 export async function runFlowImageGeneration(
   prompt: string,
   outputDir: string,
@@ -117,42 +76,28 @@ export async function runFlowImageGeneration(
 
   console.log(`[hero-image] Mở Chrome main profile ${profile.name} cho Google Flow...`);
 
-  let lastReason = 'unknown error';
-
   try {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
-      options?.onProgress?.({
-        attempt,
-        profileId: profile.id,
-        profileName: profile.name,
-        status: attempt === 1 ? 'started' : 'retry',
-      });
+    const { savedPath, response } = await runWithFlowRetries({
+      profileId: profile.id,
+      profileName: profile.name,
+      prompt: promptUsed,
+      logPrefix: '[hero-image]',
+      failureCode: 'FLOW_IMAGE_FAILED',
+      buildFailureMessage: reason => `Flow image generation failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
+      generateOptions: {
+        outputDir,
+        fileName,
+        referenceImagePath: options?.referenceImagePath,
+        debugScreenshotPath,
+      },
+      onProgress: options?.onProgress,
+      onAttemptFailure: (attempt, reason) => {
+        console.warn(`[hero-image] attempt ${attempt}: generation failed (${reason})`);
+      },
+    });
 
-      try {
-        const response = await flowBrowserService.generateImage(profile.id, promptUsed, {
-          outputDir,
-          fileName,
-          referenceImagePath: options?.referenceImagePath,
-          debugScreenshotPath,
-          timeoutMs: 300_000,
-        });
-
-        const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-        if (!savedPath) {
-          lastReason = 'Flow completed but no local image path returned';
-          logValidationFailure(attempt, lastReason);
-          continue;
-        }
-
-        console.log(`[hero-image] saved: ${savedPath} (${response.elapsedMs}ms)`);
-        return { imagePath: savedPath, promptUsed };
-      } catch (err) {
-        lastReason = err instanceof Error ? err.message : 'unknown error';
-        logValidationFailure(attempt, lastReason);
-      }
-    }
-
-    throw new AppError(`Flow image generation failed after ${MAX_RETRIES} attempts: ${lastReason}`, 502, 'FLOW_IMAGE_FAILED');
+    console.log(`[hero-image] saved: ${savedPath} (${response.elapsedMs}ms)`);
+    return { imagePath: savedPath, promptUsed };
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }
@@ -163,36 +108,34 @@ export async function runThumbnailVisualGeneration(
   thumbnailVisual: ThumbnailVisualGenerationInput,
   options?: RunThumbnailVisualGenerationOptions,
 ): Promise<ThumbnailVisualGenerationResult> {
+  const thumbnailVisualPromptUsed = buildFlowPrompt(thumbnailVisual.visualPrompt, thumbnailVisual.negativePrompt);
   const debugScreenshotPath = path.join(outputDir, 'flow-debug.png');
   const profile = resolveFlowProfile(options);
 
   console.log(`[hero-image] Mở Chrome main profile ${profile.name} cho thumbnail visual...`);
 
-  let lastReason = 'unknown error';
-
   try {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
-      options?.onProgress?.({
-        attempt,
-        profileId: profile.id,
-        profileName: profile.name,
-        status: attempt === 1 ? 'started' : 'retry',
-      });
+    const { savedPath, response } = await runWithFlowRetries({
+      profileId: profile.id,
+      profileName: profile.name,
+      prompt: thumbnailVisualPromptUsed,
+      logPrefix: '[hero-image] thumbnail visual',
+      failureCode: 'THUMBNAIL_VISUAL_FAILED',
+      buildFailureMessage: reason =>
+        `Thumbnail visual generation failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
+      generateOptions: {
+        outputDir,
+        fileName: THUMBNAIL_VISUAL_FILENAME,
+        debugScreenshotPath,
+      },
+      onProgress: options?.onProgress,
+      onAttemptFailure: (attempt, reason) => {
+        console.warn(`[hero-image] thumbnail visual attempt ${attempt}: generation failed (${reason})`);
+      },
+    });
 
-      const result = await tryGenerateThumbnailVisual(profile.id, outputDir, thumbnailVisual, debugScreenshotPath);
-      if (result) {
-        return result;
-      }
-
-      lastReason = 'Flow completed but no local image path returned';
-      logValidationFailure(attempt, lastReason);
-    }
-
-    throw new AppError(
-      `Thumbnail visual generation failed after ${MAX_RETRIES} attempts: ${lastReason}`,
-      502,
-      'THUMBNAIL_VISUAL_FAILED',
-    );
+    console.log(`[hero-image] thumbnail visual saved: ${savedPath} (${response.elapsedMs}ms)`);
+    return { thumbnailVisualPath: savedPath, thumbnailVisualPromptUsed };
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }

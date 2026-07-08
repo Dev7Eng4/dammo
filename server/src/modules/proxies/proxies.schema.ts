@@ -50,3 +50,7 @@ export const assignProfileSchema = z.object({
   profileId: z.string().min(1),
   proxyId: z.string().nullable(),
 });
+
+export const extendProxySchema = z.object({
+  days: z.coerce.number().int().min(1),
+});
