@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Page } from 'playwright';
 import {
   attachBearerCapture,
-  callBatchGenerateImages,
+  callBatchGenerateImagesOnPage,
   getAccessTokenFromPage,
   uploadReferenceImageViaApi,
 } from '../../infrastructure/llm-browser/flow-api.client.js';
@@ -15,12 +15,14 @@ import {
 } from '../../infrastructure/llm-browser/flow-api-response.js';
 import {
   DEFAULT_FLOW_PROJECT_ID,
+  FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS,
+  FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS,
   FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS,
   FLOW_RECAPTCHA_ACTION,
   FLOW_RECAPTCHA_SITE_KEY,
   buildFlowProjectUrl,
 } from '../../infrastructure/llm-browser/flow.config.js';
-import { executeEnterpriseRecaptchaOnPage } from '../../infrastructure/llm-browser/flow-recaptcha.js';
+import { waitForFlowProjectReady } from '../../infrastructure/llm-browser/providers/flow-llm.provider.js';
 import { getFlowBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
   getLlmBrowserSession,
@@ -101,7 +103,7 @@ export class FlowBrowserService {
   private async generateImageViaBrowser(
     profileId: string,
     prompt: string,
-    options?: FlowGenerateImageOptions,
+    options?: FlowGenerateImageOptions
   ): Promise<LlmBrowserResponse> {
     if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
       await this.open(profileId, {
@@ -147,11 +149,7 @@ export class FlowBrowserService {
     }
   }
 
-  private async generateImageViaApi(
-    profileId: string,
-    prompt: string,
-    options?: FlowGenerateImageOptions,
-  ): Promise<LlmBrowserResponse> {
+  private async generateImageViaApi(profileId: string, prompt: string, options?: FlowGenerateImageOptions): Promise<LlmBrowserResponse> {
     const projectId = options?.projectId ?? DEFAULT_FLOW_PROJECT_ID;
     const timeoutMs = options?.timeoutMs ?? 300_000;
     const outputPath = resolveFlowImageSavePath(options);
@@ -175,34 +173,44 @@ export class FlowBrowserService {
         console.log(`[flow-api] navigating to ${projectUrl}`);
         try {
           await page.goto(projectUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-          await sleep(1_000);
           await page.keyboard.press('Escape');
         } catch (err) {
           throw new AppError(
             `Failed to open Flow project page: ${err instanceof Error ? err.message : String(err)}`,
             502,
-            'FLOW_API_NAVIGATION_FAILED',
+            'FLOW_API_NAVIGATION_FAILED'
           );
         }
       }
 
+      console.log('[flow-api] waiting for project page ready...');
+      await waitForFlowProjectReady(page);
+
       let accessToken = '';
-      try {
-        accessToken = await getAccessTokenFromPage(page);
-        if (!accessToken) {
-          accessToken = bearerCapture.getBearerToken();
+      for (let attempt = 1; attempt <= FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS; attempt++) {
+        try {
+          accessToken = await getAccessTokenFromPage(page);
+          if (!accessToken) {
+            accessToken = bearerCapture.getBearerToken();
+          }
+        } catch (err) {
+          console.warn(
+            `[flow-api] accessToken attempt ${attempt} failed: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
-      } catch (err) {
-        console.warn(
-          `[flow-api] accessToken lookup failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
+
+        if (accessToken) break;
+
+        if (attempt < FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS) {
+          await sleep(FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS);
+        }
       }
 
       if (!accessToken) {
         throw new AppError(
           'Could not obtain Flow accessToken. Ensure the Chrome profile is logged into Google Flow.',
           502,
-          'FLOW_API_NO_ACCESS_TOKEN',
+          'FLOW_API_NO_ACCESS_TOKEN'
         );
       }
 
@@ -222,7 +230,7 @@ export class FlowBrowserService {
           throw new AppError(
             `Flow reference image upload error: ${err instanceof Error ? err.message : String(err)}`,
             502,
-            'FLOW_API_REFERENCE_UPLOAD_FAILED',
+            'FLOW_API_REFERENCE_UPLOAD_FAILED'
           );
         }
       }
@@ -232,26 +240,14 @@ export class FlowBrowserService {
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
-      const recaptchaResult = await executeEnterpriseRecaptchaOnPage(page, {
-        siteKey: FLOW_RECAPTCHA_SITE_KEY,
-        action: FLOW_RECAPTCHA_ACTION,
-        timeoutMs,
-        log: true,
-      });
-
-      if (!recaptchaResult.ok || !recaptchaResult.token) {
-        throw new AppError(
-          recaptchaResult.error || `Failed to obtain reCAPTCHA token for action ${FLOW_RECAPTCHA_ACTION}`,
-          502,
-          'FLOW_API_RECAPTCHA_FAILED',
-        );
-      }
-
-      console.log('[flow-api] calling batchGenerateImages...');
-      const apiResponse = await callBatchGenerateImages(recaptchaResult.token, accessToken, {
+      console.log('[flow-api] calling batchGenerateImages (browser fetch + reCAPTCHA)...');
+      const apiResponse = await callBatchGenerateImagesOnPage(page, accessToken, {
         prompt,
         projectId,
         primaryMediaId,
+        siteKey: FLOW_RECAPTCHA_SITE_KEY,
+        recaptchaAction: FLOW_RECAPTCHA_ACTION,
+        recaptchaTimeoutMs: timeoutMs,
       });
 
       console.log(`[flow-api] status: ${apiResponse.status} ${apiResponse.statusText}`);
@@ -263,7 +259,7 @@ export class FlowBrowserService {
         throw new AppError(
           `Flow API response missing image URL: ${err instanceof Error ? err.message : String(err)}`,
           502,
-          'FLOW_API_NO_IMAGE_URL',
+          'FLOW_API_NO_IMAGE_URL'
         );
       }
 
@@ -276,7 +272,7 @@ export class FlowBrowserService {
         throw new AppError(
           `Failed to download Flow image: ${err instanceof Error ? err.message : String(err)}`,
           502,
-          'FLOW_IMAGE_DOWNLOAD_FAILED',
+          'FLOW_IMAGE_DOWNLOAD_FAILED'
         );
       }
 

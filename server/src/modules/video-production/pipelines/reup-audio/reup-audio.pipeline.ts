@@ -8,7 +8,12 @@ import type { SourceVideoRecord } from '../../../source-channels/source-channels
 import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
 import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
-import { downloadReupAssets, downloadReupAudioAssets, type ReupAudioDownloadResult, type ReupDownloadResult } from '../../shared/assets/asset-downloader.js';
+import {
+  downloadReupAssets,
+  downloadReupAudioAssets,
+  type ReupAudioDownloadResult,
+  type ReupDownloadResult,
+} from '../../shared/assets/asset-downloader.js';
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
 import { runMetadata } from '../../shared/meta/run-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
@@ -19,7 +24,8 @@ import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizon
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
 import { isHorizontalMultiStepStyle, resolveThumbnailStyleKey } from '../../../prompts/thumbnail-styles.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
-import { assembleReupAiSlideshowVideo, generateAiVideoImages } from '../../shared/ai-video/index.js';
+import { generateAiVideoImages } from '../../shared/ai-video/index.js';
+import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
 import { SI_OUTPUT_VIDEO_BASENAME } from '../../shared/si-video/si.constants.js';
@@ -32,11 +38,7 @@ import type { ProductionDestination } from '../../ports/production-destination.p
 import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
 import type { SourceCatalog } from '../../ports/source-catalog.port.js';
 import { taskQueueRepository } from '../../../task-queue/task-queue.repository.js';
-import {
-  copySourceAssetsToDir,
-  findSourceThumbnailPath,
-  findSourceTranscriptPath,
-} from '../../../source-channels/source-assets.js';
+import { copySourceAssetsToDir, findSourceThumbnailPath, findSourceTranscriptPath } from '../../../source-channels/source-assets.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 
 interface CreateVideosOptions {
@@ -69,14 +71,8 @@ function collectSourceVideos(sourceCatalog: SourceCatalog, sourceChannels: strin
 }
 
 /** Chọn video theo thứ tự mảng (index 0 trước), bỏ qua video đã prepare. */
-function selectVideosTopDown(
-  videos: SourceVideoWithSource[],
-  preparedVideoIds: Set<string>,
-  limit: number,
-): SourceVideoWithSource[] {
-  return videos
-    .filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id))
-    .slice(0, limit);
+function selectVideosTopDown(videos: SourceVideoWithSource[], preparedVideoIds: Set<string>, limit: number): SourceVideoWithSource[] {
+  return videos.filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id)).slice(0, limit);
 }
 
 const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);
@@ -99,7 +95,7 @@ function createStepTimer(taskJobId: string | undefined, videoId: string): Pick<T
 async function resolveReupAudioDownload(
   task: ReupVideoTask,
   language: ChannelLanguage,
-  taskJobId?: string,
+  taskJobId?: string
 ): Promise<ReupAudioDownloadResult> {
   const outputDir = mediaDownloadDir('youtube', task.videoId);
 
@@ -134,7 +130,7 @@ async function resolveReupAudioDownload(
     taskQueueRepository.appendLogMessage(
       taskJobId,
       'info',
-      `Downloading thumbnail + audio + transcript (${language}) for source video ${task.videoId}...`,
+      `Downloading thumbnail + audio + transcript (${language}) for source video ${task.videoId}...`
     );
   }
 
@@ -145,7 +141,7 @@ async function resolveReupVideoDownload(
   task: ReupVideoTask,
   pipelineType: ProductionDestination['pipelineType'],
   language: ChannelLanguage,
-  taskJobId?: string,
+  taskJobId?: string
 ): Promise<ReupDownloadResult> {
   if (task.sourceStatus === 'Downloaded') {
     const outputDir = mediaDownloadDir('youtube', task.videoId);
@@ -281,7 +277,7 @@ export class ReupAudioPipeline {
           let thumbnailVisualPath: string | undefined;
           let reupThumbnailPath: string | undefined;
           let reupVideoPath: string | undefined;
-          let aiSlideImagePaths: string[] | undefined;
+          let aiScenePrompts: AiVideoScenePrompt[] | undefined;
           let primaryOutputPath = downloaded.audioPath;
           let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
@@ -367,7 +363,7 @@ export class ReupAudioPipeline {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Metadata on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              `Metadata on ${profileLabel} retry (attempt ${progress.attempt})...`
                             );
                             return;
                           }
@@ -375,12 +371,12 @@ export class ReupAudioPipeline {
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `Metadata on ${profileLabel} (attempt ${progress.attempt})...`,
+                            `Metadata on ${profileLabel} (attempt ${progress.attempt})...`
                           );
                         }
                       : undefined,
                   }),
-                stepTimer,
+                stepTimer
               );
 
               if (taskJobId) {
@@ -388,7 +384,9 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(
                   taskJobId,
                   'ok',
-                  `Metadata done → ${videoMetaPath}, title: ${videoMetaOutput.metadata.title}, niche: ${videoMetaOutput.detected_niche ?? 'n/a'}`,
+                  `Metadata done → ${videoMetaPath}, title: ${videoMetaOutput.metadata.title}, niche: ${
+                    videoMetaOutput.detected_niche ?? 'n/a'
+                  }`
                 );
               }
 
@@ -414,19 +412,19 @@ export class ReupAudioPipeline {
                                 taskQueueRepository.appendLogMessage(
                                   taskJobId,
                                   'info',
-                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`
                                 );
                                 return;
                               }
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`
                               );
                             }
                           : undefined,
                       }),
-                    stepTimer,
+                    stepTimer
                   );
                   reupThumbnailPath = defaultResult.thumbnailPath;
 
@@ -464,7 +462,7 @@ export class ReupAudioPipeline {
                                   taskQueueRepository.appendLogMessage(
                                     taskJobId,
                                     'info',
-                                    `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                    `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`
                                   );
                                   return;
                                 }
@@ -472,12 +470,12 @@ export class ReupAudioPipeline {
                                 taskQueueRepository.appendLogMessage(
                                   taskJobId,
                                   'info',
-                                  `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
+                                  `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`
                                 );
                               }
                             : undefined,
                         }),
-                      stepTimer,
+                      stepTimer
                     );
 
                     if (taskJobId) {
@@ -508,19 +506,19 @@ export class ReupAudioPipeline {
                                   taskQueueRepository.appendLogMessage(
                                     taskJobId,
                                     'info',
-                                    `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                    `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`
                                   );
                                   return;
                                 }
                                 taskQueueRepository.appendLogMessage(
                                   taskJobId,
                                   'info',
-                                  `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                                  `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`
                                 );
                               }
                             : undefined,
                         }),
-                      stepTimer,
+                      stepTimer
                     );
                     reupThumbnailPath = directResult.thumbnailPath;
 
@@ -546,30 +544,34 @@ export class ReupAudioPipeline {
                     const visualResult = await timedStep(
                       'Thumbnail visual (Google Flow)',
                       () =>
-                        runThumbnailVisualGeneration(workDir, {
-                          visualPrompt: thumbnailHorizontalOutput!.plan.visualPrompt,
-                          negativePrompt: thumbnailHorizontalOutput!.plan.negativePrompt,
-                        }, {
-                          onProgress: taskJobId
-                            ? progress => {
-                                const profileLabel = progress.profileName;
-                                if (progress.status === 'retry') {
+                        runThumbnailVisualGeneration(
+                          workDir,
+                          {
+                            visualPrompt: thumbnailHorizontalOutput!.plan.visualPrompt,
+                            negativePrompt: thumbnailHorizontalOutput!.plan.negativePrompt,
+                          },
+                          {
+                            onProgress: taskJobId
+                              ? progress => {
+                                  const profileLabel = progress.profileName;
+                                  if (progress.status === 'retry') {
+                                    taskQueueRepository.appendLogMessage(
+                                      taskJobId,
+                                      'info',
+                                      `Thumbnail visual on ${profileLabel} retry (attempt ${progress.attempt})...`
+                                    );
+                                    return;
+                                  }
                                   taskQueueRepository.appendLogMessage(
                                     taskJobId,
                                     'info',
-                                    `Thumbnail visual on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                    `Thumbnail visual on ${profileLabel} (attempt ${progress.attempt})...`
                                   );
-                                  return;
                                 }
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Thumbnail visual on ${profileLabel} (attempt ${progress.attempt})...`,
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer,
+                              : undefined,
+                          }
+                        ),
+                      stepTimer
                     );
                     thumbnailVisualPath = visualResult.thumbnailVisualPath;
 
@@ -606,7 +608,7 @@ export class ReupAudioPipeline {
                             },
                             outPath: compositeOutPath,
                           }),
-                        stepTimer,
+                        stepTimer
                       );
 
                       if (taskJobId) {
@@ -649,19 +651,19 @@ export class ReupAudioPipeline {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              `General image on ${profileLabel} retry (attempt ${progress.attempt})...`
                             );
                             return;
                           }
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `General image on ${profileLabel} (attempt ${progress.attempt})...`,
+                            `General image on ${profileLabel} (attempt ${progress.attempt})...`
                           );
                         }
                       : undefined,
                   }),
-                stepTimer,
+                stepTimer
               );
               heroImagePath = heroResult.heroImagePath;
 
@@ -689,7 +691,7 @@ export class ReupAudioPipeline {
                   taskQueueRepository.appendLogMessage(
                     taskJobId,
                     'info',
-                    'SI video assembly skipped: no backgroundFootageSources configured on channel',
+                    'SI video assembly skipped: no backgroundFootageSources configured on channel'
                   );
                 }
               } else {
@@ -718,44 +720,39 @@ export class ReupAudioPipeline {
                 throw new AppError('Reup Audio AI channel is missing visual style', 400, 'VALIDATION_ERROR');
               }
 
-              if (taskJobId) {
-                taskQueueRepository.setLivePhase(taskJobId, 'metadata');
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI slideshow images...');
+              if (!subtitleForAssembly) {
+                throw new AppError('Subtitle is required for AI scene prompt generation', 400, 'INVALID_INPUT');
               }
 
-              aiSlideImagePaths = await generateAiVideoImages({
+              if (taskJobId) {
+                taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
+              }
+
+              aiScenePrompts = await generateAiVideoImages({
                 workDir,
                 youtubeVideoId: downloaded.youtubeVideoId,
                 visualStyle: destination.visualStyle,
-                videoMetaOutput,
+                subtitlePath: subtitleForAssembly,
+                audioPath: downloaded.audioPath,
+                language: destination.language,
                 onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                 onProgress: taskJobId
                   ? progress =>
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'info',
-                        `AI slide ${progress.slideIndex + 1}/${progress.totalSlides} (attempt ${progress.attempt})...`,
+                        `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`
                       )
                   : undefined,
               });
 
               if (taskJobId) {
-                taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling AI slideshow video...');
-              }
-
-              reupVideoPath = await assembleReupAiSlideshowVideo({
-                workDir,
-                imagePaths: aiSlideImagePaths,
-                audioPath: downloaded.audioPath,
-                subtitlePath: subtitleForAssembly,
-                language: destination.language,
-                onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-              });
-              primaryOutputPath = reupVideoPath;
-
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'AI slideshow video saved → video.mp4');
+                taskQueueRepository.appendLogMessage(
+                  taskJobId,
+                  'info',
+                  `AI video assembly skipped — scene prompts only (${aiScenePrompts.length} scene(s))`
+                );
               }
             }
           } else if (options?.skipVideoAssembly && taskJobId) {
@@ -780,7 +777,7 @@ export class ReupAudioPipeline {
                   ...(thumbnailVisualPath ? { thumbnailVisualPath } : {}),
                   ...(reupThumbnailPath ? { reupThumbnailPath } : {}),
                   ...(reupVideoPath ? { reupVideoPath } : {}),
-                  ...(aiSlideImagePaths ? { aiSlideImagePaths } : {}),
+                  ...(aiScenePrompts ? { aiScenePrompts } : {}),
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };
@@ -792,7 +789,7 @@ export class ReupAudioPipeline {
           const downloaded = await timedStep(
             'Tải source video',
             () => resolveReupVideoDownload(task, destination.pipelineType, destination.language, taskJobId),
-            stepTimer,
+            stepTimer
           );
 
           if (taskJobId) {
@@ -815,7 +812,7 @@ export class ReupAudioPipeline {
         const destDir = await timedStep(
           'Di chuyển thư mục video',
           () => moveVideoFolderToDestination('youtube', outputItem.youtubeVideoId, expectedDestDir),
-          stepTimer,
+          stepTimer
         );
         outputItem = remapOutputItemPaths(outputItem, sourceDir, destDir);
 

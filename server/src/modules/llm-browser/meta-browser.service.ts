@@ -33,6 +33,20 @@ function resolveMediaKind(options?: MetaGenerateMediaOptions): 'image' | 'video'
   return options?.mediaKind ?? 'auto';
 }
 
+const META_MEDIA_PREFIX: Record<'image' | 'video', string> = {
+  image: 'Create image 16:9',
+  video: 'Create video 16:9',
+};
+
+function prependMetaMediaPrefix(prompt: string, mediaKind: 'image' | 'video' | 'auto'): string {
+  const prefix = mediaKind === 'video' ? META_MEDIA_PREFIX.video : META_MEDIA_PREFIX.image;
+  const trimmed = prompt.trim();
+  if (trimmed.toLowerCase().startsWith(prefix.toLowerCase())) {
+    return prompt;
+  }
+  return `${prefix} ${trimmed}`;
+}
+
 export class MetaBrowserService {
   async open(profileId: string): Promise<LlmBrowserSession> {
     const profile = chromeProfilesService.getById(profileId);
@@ -62,7 +76,8 @@ export class MetaBrowserService {
     setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'sending');
 
     try {
-      await handler.sendPrompt(page, prompt, {
+      const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind);
+      await handler.sendPrompt(page, effectivePrompt, {
         pasteStrategy: options?.pasteStrategy ?? 'human',
         submitWith: 'enter',
       });

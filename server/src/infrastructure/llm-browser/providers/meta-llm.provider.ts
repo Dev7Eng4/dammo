@@ -224,22 +224,23 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       await randomDelay(800, 1_500);
     },
 
-    async setupConfig(page: Page, _setup: LlmSetupConfig): Promise<void> {
-      await humanIdleBrief(page);
-      const attachmentButton = await waitForFirstVisible(
-        page,
-        META_CONFIG.selectors.composerAddAttachmentButton,
-      );
-      await humanClick(page, attachmentButton);
-      await randomDelay(500, 1_200);
-
-      const menuItem = await waitForFirstVisible(
-        page,
-        META_CONFIG.selectors.composerMenuItemCheckbox,
-        10_000,
-      );
-      await humanClick(page, menuItem);
-      await randomDelay(400, 900);
+    async setupConfig(_page: Page, _setup: LlmSetupConfig): Promise<void> {
+      // TEMP: bỏ bước chọn Create image qua DOM — dùng prefix prompt thay thế
+      // await humanIdleBrief(page);
+      // const attachmentButton = await waitForFirstVisible(
+      //   page,
+      //   META_CONFIG.selectors.composerAddAttachmentButton,
+      // );
+      // await humanClick(page, attachmentButton);
+      // await randomDelay(500, 1_200);
+      //
+      // const menuItem = await waitForFirstVisible(
+      //   page,
+      //   META_CONFIG.selectors.composerMenuItemCheckbox,
+      //   10_000,
+      // );
+      // await humanClick(page, menuItem);
+      // await randomDelay(400, 900);
     },
 
     async readConversationIfNeeded(_page: Page): Promise<void> {

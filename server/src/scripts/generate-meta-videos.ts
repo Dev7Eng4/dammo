@@ -129,7 +129,7 @@ async function main() {
 
     try {
       const response = await metaBrowserService.generateMedia(profile.id, item.prompt, {
-        mediaKind: 'video',
+        mediaKind: 'image',
         outputDir,
         fileName,
         debugScreenshotPath,

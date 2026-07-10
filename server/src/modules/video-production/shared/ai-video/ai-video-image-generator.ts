@@ -1,133 +1,152 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { resizeImageInPlace } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import { FLOW_CONFIG } from '../../../../infrastructure/llm-browser/flow.config.js';
-import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
-import { FLOW_MAX_RETRIES, getFlowRetryDelayMs } from '../../../llm-browser/flow-retry.js';
-import { SI_CANVAS_H, SI_CANVAS_W } from '../si-video/si.constants.js';
+import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
+import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
+import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
+import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
+import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
-  AI_SLIDES_DIRNAME,
-  AI_VIDEO_DEFAULT_SLIDES,
-  AI_VIDEO_MAX_SLIDES,
-  AI_VIDEO_MIN_SLIDES,
+  AI_SCENE_PROMPTS_FILENAME,
+  AI_VIDEO_DENSITY_MAX_SCENE_SEC,
+  VIDEO_IMAGE_PROMPT_KEY,
+  type AiVideoDensityLevel,
 } from './ai-video.constants.js';
-import type { GenerateAiVideoImagesInput } from './ai-video.types.js';
+import type { AiVideoScenePrompt, GenerateAiVideoImagesInput, TranscriptCue } from './ai-video.types.js';
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+const MAX_RETRIES = 3;
+
+interface DensityChunkJob {
+  density: AiVideoDensityLevel;
+  chunkIndex: number;
+  totalChunks: number;
+  maxDurationSec: number;
+  transcriptChunk: TranscriptCue[];
 }
 
-function clampSlideCount(count: number): number {
-  return Math.min(AI_VIDEO_MAX_SLIDES, Math.max(AI_VIDEO_MIN_SLIDES, count));
-}
+function buildDensityChunkJobs(chunks: {
+  high: TranscriptCue[][];
+  medium: TranscriptCue[][];
+  low: TranscriptCue[][];
+}): DensityChunkJob[] {
+  const jobs: DensityChunkJob[] = [];
+  const densities: AiVideoDensityLevel[] = ['high', 'medium', 'low'];
 
-function resolveSlideCount(input: GenerateAiVideoImagesInput): number {
-  if (input.slideCount !== undefined) {
-    return clampSlideCount(input.slideCount);
+  for (const density of densities) {
+    const densityChunks = chunks[density];
+    densityChunks.forEach((transcriptChunk, chunkIndex) => {
+      jobs.push({
+        density,
+        chunkIndex,
+        totalChunks: densityChunks.length,
+        maxDurationSec: AI_VIDEO_DENSITY_MAX_SCENE_SEC[density],
+        transcriptChunk,
+      });
+    });
   }
-  return AI_VIDEO_DEFAULT_SLIDES;
+
+  return jobs;
 }
 
-function buildScenePrompt(input: GenerateAiVideoImagesInput, slideIndex: number, totalSlides: number): string {
-  const { visualStyle, videoMetaOutput, metaStep3Output } = input;
-  const meta = videoMetaOutput ?? metaStep3Output;
-  const basePrompt =
-    typeof meta?.hero_image_prompt?.prompt === 'string' &&
-    meta.hero_image_prompt.prompt.trim()
-      ? meta.hero_image_prompt.prompt.trim()
-      : `Scene illustration for ${visualStyle.niche}`;
+async function executeScenePromptChunk(
+  profileId: string,
+  input: GenerateAiVideoImagesInput,
+  job: DensityChunkJob,
+): Promise<AiVideoScenePrompt[]> {
+  const userPrompt = await executePromptTemplate(input.language, VIDEO_IMAGE_PROMPT_KEY, [
+    JSON.stringify(job.transcriptChunk),
+    input.visualStyle.rule,
+    job.maxDurationSec,
+  ]);
 
-  const negative =
-    typeof meta?.hero_image_prompt?.negative_prompt === 'string'
-      ? meta.hero_image_prompt.negative_prompt.trim()
-      : '';
+  let lastReason = 'unknown error';
 
-  const parts = [
-    basePrompt,
-    `Visual style: ${visualStyle.name}`,
-    visualStyle.rule,
-    `Scene ${slideIndex + 1} of ${totalSlides}`,
-    'cinematic 16:9 composition, no text, no watermark',
-  ];
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+    input.onProgress?.({
+      density: job.density,
+      chunkIndex: job.chunkIndex,
+      totalChunks: job.totalChunks,
+      attempt,
+    });
 
-  const prompt = parts.filter(Boolean).join('. ');
-  if (negative) {
-    return `${prompt}\n\nNegative prompt: ${negative}`;
+    try {
+      const response = await llmBrowserService.chat(
+        profileId,
+        promptsSettingsService.get().defaultLlmProvider,
+        userPrompt,
+        undefined,
+        {
+          submitWith: 'enter',
+          pasteStrategy: 'direct',
+        },
+      );
+
+      const parsed = tryParseAiVideoSceneResponse(response);
+      if (parsed) {
+        return parsed;
+      }
+
+      lastReason = 'invalid JSON or schema mismatch';
+    } catch (err) {
+      lastReason = err instanceof Error ? err.message : 'unknown error';
+    }
   }
-  return prompt;
+
+  throw new AppError(
+    `AI scene prompt generation failed for ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} after ${MAX_RETRIES} attempts: ${lastReason}`,
+    502,
+    'AI_SCENE_PROMPT_FAILED',
+  );
 }
 
-export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<string[]> {
+export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<AiVideoScenePrompt[]> {
   const log = (msg: string) => {
     console.log(msg);
     input.onLog?.(msg);
   };
 
-  const slidesDir = path.join(input.workDir, AI_SLIDES_DIRNAME);
-  await fs.mkdir(slidesDir, { recursive: true });
+  const prepared = await prepareTranscriptDensityChunks(input.subtitlePath, input.audioPath);
+  const jobs = buildDensityChunkJobs(prepared.chunks);
 
-  const totalSlides = resolveSlideCount(input);
-  const profile = chromeProfilesService.requireMainProfile();
-  const imagePaths: string[] = [];
+  if (jobs.length === 0) {
+    throw new AppError('No transcript chunks available for AI scene prompt generation', 400, 'INVALID_INPUT');
+  }
 
-  log(`[ai-video] Generating ${totalSlides} slide image(s) with visual style "${input.visualStyle.name}"...`);
+  log(
+    `[ai-video] Duration ${prepared.totalDurationSec.toFixed(1)}s → tier high=${prepared.tier.highDensity}% medium=${prepared.tier.mediumDensity}% low=${prepared.tier.lowDensity}%`,
+  );
+  log(
+    `[ai-video] Transcript segments: high=${prepared.segments.high.length}, medium=${prepared.segments.medium.length}, low=${prepared.segments.low.length} cue(s)`,
+  );
+  log(
+    `[ai-video] LLM chunks: high=${prepared.chunks.high.length}, medium=${prepared.chunks.medium.length}, low=${prepared.chunks.low.length}`,
+  );
+
+  const profile = chromeProfilesService.pickSubProfile();
+  const allScenes: AiVideoScenePrompt[] = [];
+
+  log(`[ai-video] Mở Chrome profile ${profile.name} cho scene prompts...`);
 
   try {
-    for (let slideIndex = 0; slideIndex < totalSlides; slideIndex += 1) {
-      const fileName = `slide_${String(slideIndex + 1).padStart(2, '0')}.jpg`;
-      const prompt = buildScenePrompt(input, slideIndex, totalSlides);
-      let saved = false;
-      let lastError: unknown;
+    await llmBrowserService.open(profile.id, promptsSettingsService.get().defaultLlmProvider);
 
-      for (let attempt = 1; attempt <= FLOW_MAX_RETRIES; attempt += 1) {
-        input.onProgress?.({ slideIndex, totalSlides, attempt });
+    for (const job of jobs) {
+      log(
+        `[ai-video] LLM ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} (${job.transcriptChunk.length} cue(s), maxDuration=${job.maxDurationSec}s)...`,
+      );
 
-        try {
-          const response = await flowBrowserService.generateImage(profile.id, prompt, {
-            outputDir: slidesDir,
-            fileName,
-            timeoutMs: FLOW_CONFIG.defaultTimeoutMs,
-          });
-
-          const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-          if (!savedPath) {
-            log(`[ai-video] slide ${slideIndex + 1}: no image returned (attempt ${attempt})`);
-            lastError = undefined;
-          } else {
-            await resizeImageInPlace(savedPath, SI_CANVAS_W, SI_CANVAS_H, input.onLog);
-            imagePaths.push(savedPath);
-            log(
-              `[ai-video] slide ${slideIndex + 1}/${totalSlides} saved + resized ${SI_CANVAS_W}x${SI_CANVAS_H} → ${path.basename(savedPath)}`,
-            );
-            saved = true;
-            break;
-          }
-        } catch (err) {
-          lastError = err;
-          const message = err instanceof Error ? err.message : 'unknown error';
-          log(`[ai-video] slide ${slideIndex + 1} attempt ${attempt} failed: ${message}`);
-        }
-
-        if (attempt < FLOW_MAX_RETRIES) {
-          const delayMs = getFlowRetryDelayMs(attempt, lastError);
-          log(`[ai-video] slide ${slideIndex + 1}: waiting ${delayMs}ms before retry...`);
-          await sleep(delayMs);
-        }
-      }
-
-      if (!saved) {
-        throw new AppError(
-          `Failed to generate slide image ${slideIndex + 1} after ${FLOW_MAX_RETRIES} attempts`,
-          502,
-          'AI_IMAGE_GENERATION_FAILED',
-        );
-      }
+      const scenes = await executeScenePromptChunk(profile.id, input, job);
+      allScenes.push(...scenes);
+      log(`[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`);
     }
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }
 
-  return imagePaths;
+  const outputPath = path.join(input.workDir, AI_SCENE_PROMPTS_FILENAME);
+  await fs.writeFile(outputPath, JSON.stringify(allScenes, null, 2), 'utf8');
+  log(`[ai-video] Scene prompts saved → ${outputPath} (${allScenes.length} scene(s))`);
+
+  return allScenes;
 }

@@ -1,6 +1,17 @@
 {
   "prompts": [
     {
+      "id": "8050ea1f-30d7-4889-ae82-dc5b16b8bc0c",
+      "key": "video_image",
+      "language": "ja",
+      "name": "Video Image",
+      "category": "image",
+      "outputType": "text",
+      "createdAt": "2026-07-10T02:36:45.950Z",
+      "updatedAt": "2026-07-10T03:44:17.821Z",
+      "isSystem": true
+    },
+    {
       "id": "b672e1d0-7d69-46c0-b81d-d11856c38b32",
       "key": "general",
       "language": "ja",
