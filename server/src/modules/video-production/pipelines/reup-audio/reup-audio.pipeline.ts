@@ -679,6 +679,45 @@ export class ReupAudioPipeline {
 
           const workDir = subtitleForAssembly ? path.dirname(subtitleForAssembly) : path.dirname(srtPath);
 
+          if (videoType === 'ai' && downloaded.audioPath && subtitleForAssembly) {
+            if (!destination.visualStyle) {
+              throw new AppError('Reup Audio AI channel is missing visual style', 400, 'VALIDATION_ERROR');
+            }
+
+            if (taskJobId) {
+              taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
+            }
+
+            const aiScenePromptResult = await generateAiVideoImages({
+              workDir,
+              youtubeVideoId: downloaded.youtubeVideoId,
+              visualStyle: destination.visualStyle,
+              subtitlePath: subtitleForAssembly,
+              audioPath: downloaded.audioPath,
+              language: destination.language,
+              onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+              onProgress: taskJobId
+                ? progress =>
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`
+                    )
+                : undefined,
+            });
+            aiScenePrompts = aiScenePromptResult.scenes;
+            aiScenePromptsPath = aiScenePromptResult.filePath;
+
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'ok',
+                `AI scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`
+              );
+            }
+          }
+
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
             if (videoType === 'si') {
               if (!heroImagePath) {
@@ -716,49 +755,8 @@ export class ReupAudioPipeline {
                   taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
                 }
               }
-            } else if (videoType === 'ai') {
-              if (!destination.visualStyle) {
-                throw new AppError('Reup Audio AI channel is missing visual style', 400, 'VALIDATION_ERROR');
-              }
-
-              if (!subtitleForAssembly) {
-                throw new AppError('Subtitle is required for AI scene prompt generation', 400, 'INVALID_INPUT');
-              }
-
-              if (taskJobId) {
-                taskQueueRepository.setLivePhase(taskJobId, 'metadata');
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
-              }
-
-              const aiScenePromptResult = await generateAiVideoImages({
-                workDir,
-                youtubeVideoId: downloaded.youtubeVideoId,
-                visualStyle: destination.visualStyle,
-                subtitlePath: subtitleForAssembly,
-                audioPath: downloaded.audioPath,
-                language: destination.language,
-                onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                onProgress: taskJobId
-                  ? progress =>
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`
-                      )
-                  : undefined,
-              });
-              aiScenePrompts = aiScenePromptResult.scenes;
-              aiScenePromptsPath = aiScenePromptResult.filePath;
-
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(
-                  taskJobId,
-                  'info',
-                  `AI video assembly skipped — scene prompts only (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`
-                );
-              }
             }
-          } else if (options?.skipVideoAssembly && taskJobId) {
+          } else if (options?.skipVideoAssembly && videoType === 'si' && taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Video assembly skipped (prepare-only mode)');
           }
 

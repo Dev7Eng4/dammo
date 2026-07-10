@@ -9,13 +9,17 @@ const DEFAULT_MAX_VIDEOS_PER_CHANNEL = 1;
 async function main() {
   ensureDataDirs();
 
-  const pick = await pickReupChannels({ message: 'Chọn kênh để prepare video (không tạo video, chỉ tải assets)' });
+  const pick = await pickReupChannels({
+    message: 'Chọn kênh để prepare video (tải assets; kênh AI vẫn tạo scene prompts LLM)',
+  });
   if (pick.mode === 'cancelled') {
     console.log('Đã hủy.');
     return;
   }
 
-  console.log('Đang prepare video (thumbnail, metadata,... — bỏ qua bước render video)...');
+  console.log(
+    'Đang prepare video (metadata/thumbnail/assets; kênh AI tạo scene prompts LLM — bỏ qua render video.mp4)...',
+  );
 
   const result =
     pick.mode === 'all'
