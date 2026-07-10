@@ -127,6 +127,70 @@ export function beginBatchGenerateImagesWait(page: Page, projectId: string, time
   });
 }
 
+/**
+ * Collect multiple sequential batchGenerateImages responses for the same project.
+ *
+ * Used by the "mavid editor" tool flow where a single submit produces several
+ * images one after another. Resolves once `expectedCount` matching responses are
+ * captured, preserving arrival order; rejects on timeout.
+ */
+export function beginBatchGenerateImagesCollector(
+  page: Page,
+  projectId: string,
+  expectedCount: number,
+  timeoutMs: number,
+): Promise<Response[]> {
+  return new Promise<Response[]>((resolve, reject) => {
+    const collected: Response[] = [];
+    let settled = false;
+
+    const cleanup = () => {
+      page.off('response', onResponse);
+      clearTimeout(timer);
+    };
+
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      fn();
+    };
+
+    const onResponse = (response: Response) => {
+      const url = response.url();
+      if (
+        !url.includes(BATCH_GENERATE_IMAGES_PATH) ||
+        !url.includes(projectId) ||
+        response.request().method() !== 'POST' ||
+        !response.ok()
+      ) {
+        return;
+      }
+
+      collected.push(response);
+      console.log(`[flow-api] collected batchGenerateImages ${collected.length}/${expectedCount}`);
+
+      if (collected.length >= expectedCount) {
+        finish(() => resolve(collected));
+      }
+    };
+
+    const timer = setTimeout(() => {
+      finish(() =>
+        reject(
+          new AppError(
+            `Timed out waiting for ${expectedCount} Flow batchGenerateImages responses (got ${collected.length})`,
+            502,
+            'FLOW_API_WAIT_TIMEOUT',
+          ),
+        ),
+      );
+    }, timeoutMs);
+
+    page.on('response', onResponse);
+  });
+}
+
 export async function downloadAndSaveFlowImage(page: Page, imageUrl: string, outputPath: string): Promise<LlmMediaAsset> {
   const imageResponse = await page.request.get(imageUrl);
   if (!imageResponse.ok()) {

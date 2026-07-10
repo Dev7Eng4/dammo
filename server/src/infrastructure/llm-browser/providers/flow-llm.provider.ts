@@ -2,7 +2,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Locator, Response } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { FLOW_CONFIG, FLOW_BASE_URL, FLOW_INITIAL_SETUP_SELECTORS, FLOW_UPLOAD_IMAGE_PATH, buildFlowProjectUrl } from '../flow.config.js';
+import {
+  FLOW_CONFIG,
+  FLOW_BASE_URL,
+  FLOW_INITIAL_SETUP_SELECTORS,
+  FLOW_UPLOAD_IMAGE_PATH,
+  MAVID_EDITOR_TOOL_ID,
+  buildFlowProjectUrl,
+  buildFlowToolUrl,
+} from '../flow.config.js';
 import { downloadAndSaveFlowImage, extractFifeUrl } from '../flow-api-response.js';
 import type { FlowOpenOptions } from '../llm-browser.types.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
@@ -320,6 +328,78 @@ async function ensureInitialProjectSetup(page: Page, projectId: string): Promise
 export async function waitForFlowProjectReady(page: Page): Promise<void> {
   await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 45_000);
   await randomDelay(400, 900);
+}
+
+async function isMavidEditorReady(locator: Locator): Promise<boolean> {
+  return locator
+    .evaluate(el => {
+      const ta = el as HTMLTextAreaElement;
+      const visible = ta.offsetParent !== null || ta.getClientRects().length > 0;
+      const enabled = !ta.disabled && !ta.readOnly;
+      return visible && enabled;
+    })
+    .catch(() => false);
+}
+
+/**
+ * Locate the mavid editor textarea across all frames of the page.
+ *
+ * The custom tool DOM lives inside a child iframe of the Flow project page, so a
+ * page-level locator never matches. Scan every frame (including the main frame)
+ * for `textarea#mavid-editor-prompt`, polling until one is present, visible and
+ * enabled (i.e. the tool has finished loading).
+ */
+async function locateMavidEditorInFrames(page: Page, timeoutMs: number): Promise<Locator> {
+  const selector = FLOW_CONFIG.selectors.mavidEditorPrompt;
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    for (const frame of page.frames()) {
+      const locator = frame.locator(selector).last();
+      const count = await locator.count().catch(() => 0);
+      if (count > 0 && (await isMavidEditorReady(locator))) {
+        await randomDelay(400, 900);
+        return locator;
+      }
+    }
+
+    await randomDelay(300, 600);
+  }
+
+  throw domTimeoutError('#mavid-editor-prompt not found in any frame (tool still loading)');
+}
+
+/**
+ * Wait until the mavid editor textarea is loaded and interactive.
+ *
+ * The textarea renders asynchronously inside a child iframe; delegates to a frame
+ * scan so both direct and iframe-hosted DOM are handled.
+ */
+async function waitForMavidEditorReady(page: Page, timeoutMs = 120_000): Promise<Locator> {
+  return locateMavidEditorInFrames(page, timeoutMs);
+}
+
+/**
+ * Open the "mavid editor" custom tool page for a project and wait for its prompt input.
+ * Tool pages do not use the project config popover, so no initial setup is run here.
+ */
+export async function openFlowToolPage(page: Page, projectId: string, toolId: string = MAVID_EDITOR_TOOL_ID): Promise<void> {
+  await page.goto(buildFlowToolUrl(projectId, toolId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  await randomDelay(1_000, 2_000);
+  await page.keyboard.press('Escape');
+
+  // Wait for the tool to finish loading (network settles) before touching the textarea.
+  await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => undefined);
+  await waitForMavidEditorReady(page);
+}
+
+/** Fill the mavid editor prompt input with the given text (JSON) and submit via Enter. */
+export async function submitMavidEditorPrompt(page: Page, promptText: string): Promise<void> {
+  const input = await waitForMavidEditorReady(page);
+  await humanPaste(page, input, promptText, { pasteStrategy: 'direct' });
+  await assertPromptFilled(input, promptText);
+  await humanPressEnter(page);
+  await randomDelay(500, 1_000);
 }
 
 async function assertPromptFilled(locator: Locator, prompt: string): Promise<void> {

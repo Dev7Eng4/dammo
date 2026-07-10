@@ -21,6 +21,7 @@
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
     "test:flow-thumbnail": "tsx src/scripts/test-flow-thumbnail.ts",
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts",
+    "flow:generate-tool-images": "tsx src/scripts/generate-flow-tool-images.ts",
     "meta:generate-videos": "tsx src/scripts/generate-meta-videos.ts",
     "slideshow:demo": "tsx src/scripts/create-slideshow.ts"
   },

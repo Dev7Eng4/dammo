@@ -98,6 +98,19 @@ export interface FlowGenerateImageOptions {
   generationMode?: FlowGenerationMode;
 }
 
+export interface FlowToolVisual {
+  name: string;
+  prompt: string;
+}
+
+export interface FlowGenerateImagesViaToolOptions {
+  projectId: string;
+  toolId?: string;
+  outputDir: string;
+  timeoutMs?: number;
+  debugScreenshotPath?: string;
+}
+
 export interface MetaGenerateMediaOptions {
   outputPath?: string;
   outputDir?: string;

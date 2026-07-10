@@ -22,6 +22,9 @@ export const FLOW_SESSION_URL = 'https://labs.google/fx/api/auth/session';
 
 export const DEFAULT_FLOW_PROJECT_ID = '5d5f6b2b-377f-4b30-b595-d44ffe12a02f';
 
+/** Fixed tool id for the "mavid editor" custom Flow tool (project id is dynamic). */
+export const MAVID_EDITOR_TOOL_ID = 'c28faaec-2222-4172-b2d6-29b8293642ba';
+
 /** Delay after access token before reCAPTCHA (ms). */
 export const FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS = 1_000;
 
@@ -75,12 +78,18 @@ export function buildFlowProjectUrl(projectId: string): string {
   return `${FLOW_BASE_URL}/project/${projectId}`;
 }
 
+export function buildFlowToolUrl(projectId: string, toolId: string = MAVID_EDITOR_TOOL_ID): string {
+  return `${FLOW_BASE_URL}/project/${projectId}/tool/${toolId}`;
+}
+
 export function buildBatchGenerateImagesUrl(projectId: string): string {
   return `${FLOW_AISANDBOX_BASE}/projects/${projectId}/flowMedia:batchGenerateImages`;
 }
 
 export interface FlowDomSelectors {
   promptInput: string;
+  /** Prompt input of the "mavid editor" custom tool page. */
+  mavidEditorPrompt: string;
   generateButton: string;
   generatingIndicator: string;
   resultImages: string;
@@ -118,6 +127,7 @@ export const FLOW_CONFIG: FlowConfig = {
   defaultTimeoutMs: 300_000,
   selectors: {
     promptInput: 'div[role="textbox"]',
+    mavidEditorPrompt: 'textarea#mavid-editor-prompt',
     generateButton: 'button:has-text("Generate"), button:has-text("Create"), button[aria-label*="Generate" i], button[type="submit"]',
     generatingIndicator:
       '[aria-busy="true"], button:has-text("Stop"), button[aria-label*="Stop" i], [class*="loading" i], [class*="spinner" i]',

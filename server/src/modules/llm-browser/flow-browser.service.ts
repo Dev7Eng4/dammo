@@ -10,6 +10,7 @@ import {
 import {
   downloadAndSaveFlowImage,
   extractFifeUrl,
+  beginBatchGenerateImagesCollector,
   beginBatchGenerateImagesWait,
   resolveFlowImageSavePath,
 } from '../../infrastructure/llm-browser/flow-api-response.js';
@@ -20,9 +21,14 @@ import {
   FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS,
   FLOW_RECAPTCHA_ACTION,
   FLOW_RECAPTCHA_SITE_KEY,
+  MAVID_EDITOR_TOOL_ID,
   buildFlowProjectUrl,
 } from '../../infrastructure/llm-browser/flow.config.js';
-import { waitForFlowProjectReady } from '../../infrastructure/llm-browser/providers/flow-llm.provider.js';
+import {
+  openFlowToolPage,
+  submitMavidEditorPrompt,
+  waitForFlowProjectReady,
+} from '../../infrastructure/llm-browser/providers/flow-llm.provider.js';
 import { getFlowBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
   getLlmBrowserSession,
@@ -31,8 +37,11 @@ import {
 } from '../../infrastructure/llm-browser/llm-browser.session.js';
 import type {
   FlowGenerateImageOptions,
+  FlowGenerateImagesViaToolOptions,
   FlowOpenOptions,
+  FlowToolVisual,
   LlmBrowserResponse,
+  LlmMediaAsset,
   LlmBrowserSession,
 } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
@@ -98,6 +107,83 @@ export class FlowBrowserService {
     }
 
     return this.generateImageViaBrowser(profileId, prompt, options);
+  }
+
+  /**
+   * Generate multiple images in one shot via the "mavid editor" custom Flow tool.
+   *
+   * Injects `{ visuals: [{ name, prompt }] }` into the tool prompt input, submits,
+   * then captures one batchGenerateImages response per visual (in order) and saves
+   * each image as `${outputDir}/${name}.jpg` reusing the existing download pipeline.
+   */
+  async generateImagesViaTool(
+    profileId: string,
+    visuals: FlowToolVisual[],
+    options: FlowGenerateImagesViaToolOptions,
+  ): Promise<LlmBrowserResponse> {
+    if (visuals.length === 0) {
+      throw new AppError('generateImagesViaTool requires at least one visual', 400, 'INVALID_INPUT');
+    }
+
+    const projectId = options.projectId;
+    const toolId = options.toolId ?? MAVID_EDITOR_TOOL_ID;
+    const timeoutMs = options.timeoutMs ?? 300_000;
+    const startedAt = Date.now();
+
+    if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
+      await this.open(profileId, { projectId, skipInitialSetup: true });
+    }
+
+    assertProfileOpen(profileId);
+    assertFlowSession(profileId);
+
+    const page = await getChromeProfilePage(profileId);
+
+    setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
+
+    try {
+      await openFlowToolPage(page, projectId, toolId);
+
+      const collectorPromise = beginBatchGenerateImagesCollector(page, projectId, visuals.length, timeoutMs);
+
+      const promptPayload = JSON.stringify({ visuals });
+      await submitMavidEditorPrompt(page, promptPayload);
+      setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
+
+      const responses = await collectorPromise;
+
+      await fs.mkdir(path.resolve(options.outputDir), { recursive: true });
+
+      const mediaAssets: LlmMediaAsset[] = [];
+      for (let index = 0; index < visuals.length; index += 1) {
+        const response = responses[index];
+        const visual = visuals[index];
+        const payload = await response.json();
+        const imageUrl = extractFifeUrl(payload);
+        const outputPath = path.join(path.resolve(options.outputDir), `${visual.name}.jpg`);
+        const asset = await downloadAndSaveFlowImage(page, imageUrl, outputPath);
+        console.log(`[flow-tool] saved image ${index + 1}/${visuals.length} → ${outputPath}`);
+        mediaAssets.push(asset);
+      }
+
+      setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      return {
+        provider: FLOW_PROVIDER,
+        content: '',
+        codeBlocks: [],
+        elapsedMs: Date.now() - startedAt,
+        mediaAssets,
+      };
+    } catch (err) {
+      await captureDebugScreenshot(page, options.debugScreenshotPath);
+      setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      if (err instanceof AppError) throw err;
+      throw new AppError(
+        `Flow tool image generation failed: ${err instanceof Error ? err.message : String(err)}`,
+        502,
+        'FLOW_TOOL_GENERATE_FAILED',
+      );
+    }
   }
 
   private async generateImageViaBrowser(
