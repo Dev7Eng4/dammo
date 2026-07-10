@@ -278,6 +278,7 @@ export class ReupAudioPipeline {
           let reupThumbnailPath: string | undefined;
           let reupVideoPath: string | undefined;
           let aiScenePrompts: AiVideoScenePrompt[] | undefined;
+          let aiScenePromptsPath: string | undefined;
           let primaryOutputPath = downloaded.audioPath;
           let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
@@ -729,7 +730,7 @@ export class ReupAudioPipeline {
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
               }
 
-              aiScenePrompts = await generateAiVideoImages({
+              const aiScenePromptResult = await generateAiVideoImages({
                 workDir,
                 youtubeVideoId: downloaded.youtubeVideoId,
                 visualStyle: destination.visualStyle,
@@ -746,12 +747,14 @@ export class ReupAudioPipeline {
                       )
                   : undefined,
               });
+              aiScenePrompts = aiScenePromptResult.scenes;
+              aiScenePromptsPath = aiScenePromptResult.filePath;
 
               if (taskJobId) {
                 taskQueueRepository.appendLogMessage(
                   taskJobId,
                   'info',
-                  `AI video assembly skipped — scene prompts only (${aiScenePrompts.length} scene(s))`
+                  `AI video assembly skipped — scene prompts only (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`
                 );
               }
             }
@@ -778,6 +781,7 @@ export class ReupAudioPipeline {
                   ...(reupThumbnailPath ? { reupThumbnailPath } : {}),
                   ...(reupVideoPath ? { reupVideoPath } : {}),
                   ...(aiScenePrompts ? { aiScenePrompts } : {}),
+                  ...(aiScenePromptsPath ? { aiScenePromptsPath } : {}),
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };

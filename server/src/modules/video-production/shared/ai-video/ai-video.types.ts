@@ -19,6 +19,18 @@ export interface AiVideoScenePrompt {
   endTime: string;
 }
 
+export interface AiVideoScenePromptsFile {
+  youtubeVideoId: string;
+  generatedAt: string;
+  sceneCount: number;
+  scenes: AiVideoScenePrompt[];
+}
+
+export interface GenerateAiVideoImagesResult {
+  scenes: AiVideoScenePrompt[];
+  filePath: string;
+}
+
 export interface GenerateAiVideoImagesInput {
   workDir: string;
   youtubeVideoId: string;

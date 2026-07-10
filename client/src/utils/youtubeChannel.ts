@@ -1,6 +1,5 @@
 import type { SourceChannel } from '../types/sourceChannel';
-import type { ReupAudioVideoType, YoutubeChannel, YoutubeChannelLanguage } from '../types/youtubeChannel';
-import { fetchPrompts } from '../api/prompts';
+import type { ReupAudioVideoType, YoutubeChannel } from '../types/youtubeChannel';
 import { fetchVisualStyles } from '../api/visualStyles';
 
 function buildSourceLookup(sources: SourceChannel[]): Map<string, SourceChannel> {
@@ -91,19 +90,11 @@ export interface ReupAudioVideoStyleOption {
 
 export async function loadReupAudioVideoStyleOptions(
   videoType: ReupAudioVideoType | '',
-  language: YoutubeChannelLanguage | '',
+  _language?: string,
   options?: { signal?: AbortSignal },
 ): Promise<ReupAudioVideoStyleOption[]> {
   if (!videoType) {
     return [];
-  }
-
-  if (videoType === 'ai') {
-    if (!language) {
-      return [];
-    }
-    const { items } = await fetchPrompts('image', language, '', 1, 200, options);
-    return items.map((prompt) => ({ value: prompt.id, label: prompt.name }));
   }
 
   const { items } = await fetchVisualStyles(options);
@@ -120,9 +111,6 @@ export function getReupAudioVideoStylePlaceholder(
   }
   if (!videoType) {
     return 'Select video type first';
-  }
-  if (videoType === 'ai' && optionCount === 0) {
-    return 'No image prompts for this language';
   }
   if (optionCount === 0) {
     return 'No visual styles available';

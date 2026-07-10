@@ -33,6 +33,7 @@ export function remapOutputItemPaths(item: ReupVideoOutputItem, oldDir: string, 
     thumbnailVisualPath: remapFilePath(item.thumbnailVisualPath, oldDir, newDir),
     reupThumbnailPath: remapFilePath(item.reupThumbnailPath, oldDir, newDir),
     reupVideoPath: remapFilePath(item.reupVideoPath, oldDir, newDir),
+    aiScenePromptsPath: remapFilePath(item.aiScenePromptsPath, oldDir, newDir),
     videoPath: remapFilePath(item.videoPath, oldDir, newDir),
   };
 }

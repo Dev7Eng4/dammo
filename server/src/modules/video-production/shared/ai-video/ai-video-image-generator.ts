@@ -1,5 +1,3 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
@@ -8,12 +6,17 @@ import { promptsSettingsService } from '../../../prompts/prompts-settings.servic
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
-  AI_SCENE_PROMPTS_FILENAME,
   AI_VIDEO_DENSITY_MAX_SCENE_SEC,
   VIDEO_IMAGE_PROMPT_KEY,
   type AiVideoDensityLevel,
 } from './ai-video.constants.js';
-import type { AiVideoScenePrompt, GenerateAiVideoImagesInput, TranscriptCue } from './ai-video.types.js';
+import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
+import type {
+  AiVideoScenePrompt,
+  GenerateAiVideoImagesInput,
+  GenerateAiVideoImagesResult,
+  TranscriptCue,
+} from './ai-video.types.js';
 
 const MAX_RETRIES = 3;
 
@@ -100,7 +103,7 @@ async function executeScenePromptChunk(
   );
 }
 
-export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<AiVideoScenePrompt[]> {
+export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesResult> {
   const log = (msg: string) => {
     console.log(msg);
     input.onLog?.(msg);
@@ -139,14 +142,16 @@ export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): 
       const scenes = await executeScenePromptChunk(profile.id, input, job);
       allScenes.push(...scenes);
       log(`[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`);
+
+      const savedPath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
+      log(`[ai-video] Scene prompts checkpoint → ${savedPath} (${allScenes.length} scene(s))`);
     }
   } finally {
     await chromeProfilesService.closeSubProfiles([profile.id]);
   }
 
-  const outputPath = path.join(input.workDir, AI_SCENE_PROMPTS_FILENAME);
-  await fs.writeFile(outputPath, JSON.stringify(allScenes, null, 2), 'utf8');
-  log(`[ai-video] Scene prompts saved → ${outputPath} (${allScenes.length} scene(s))`);
+  const filePath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
+  log(`[ai-video] Scene prompts saved → ${filePath} (${allScenes.length} scene(s))`);
 
-  return allScenes;
+  return { scenes: allScenes, filePath };
 }
