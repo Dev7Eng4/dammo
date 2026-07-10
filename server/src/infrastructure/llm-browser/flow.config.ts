@@ -23,7 +23,13 @@ export const FLOW_SESSION_URL = 'https://labs.google/fx/api/auth/session';
 export const DEFAULT_FLOW_PROJECT_ID = '5d5f6b2b-377f-4b30-b595-d44ffe12a02f';
 
 /** Delay after access token before reCAPTCHA (ms). */
-export const FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS = 5_000;
+export const FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS = 1_000;
+
+/** Max attempts when fetching Flow access token via API mode. */
+export const FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS = 3;
+
+/** Delay between access token retry attempts (ms). */
+export const FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS = 1_200;
 
 /** Max attempts when generating images via Flow API (callers). */
 export const FLOW_MAX_RETRIES = 3;

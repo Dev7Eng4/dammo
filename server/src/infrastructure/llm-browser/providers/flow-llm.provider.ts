@@ -312,12 +312,12 @@ async function ensureInitialProjectSetup(page: Page, projectId: string): Promise
 
   await page.keyboard.press('Escape');
   await randomDelay(400, 800);
-  await waitForProjectReady(page);
+  await waitForFlowProjectReady(page);
   configuredProjects.add(projectId);
   console.log(`[flow] initial setup done for project ${projectId}`);
 }
 
-async function waitForProjectReady(page: Page): Promise<void> {
+export async function waitForFlowProjectReady(page: Page): Promise<void> {
   await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 45_000);
   await randomDelay(400, 900);
 }
@@ -407,8 +407,8 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
 
       if (skipInitialSetup && projectId) {
         await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
-        await randomDelay(1_000, 2_000);
         await page.keyboard.press('Escape');
+        await waitForFlowProjectReady(page);
         return;
       }
 
@@ -417,7 +417,7 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       if (projectId) {
         await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
         await randomDelay(2_000, 4_000);
-        await waitForProjectReady(page);
+        await waitForFlowProjectReady(page);
         await ensureInitialProjectSetup(page, projectId);
         return;
       }
@@ -425,7 +425,7 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       await page.goto(FLOW_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await randomDelay(2_000, 4_000);
       await clickNewProjectButton(page);
-      await waitForProjectReady(page);
+      await waitForFlowProjectReady(page);
       const newProjectId = resolveProjectId(page);
       await ensureInitialProjectSetup(page, newProjectId);
     },
