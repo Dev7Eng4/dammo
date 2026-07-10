@@ -91,11 +91,11 @@ export class FlowBrowserService {
   }
 
   async generateImage(profileId: string, prompt: string, options?: FlowGenerateImageOptions): Promise<LlmBrowserResponse> {
-    if (options?.generationMode === 'browser') {
-      return this.generateImageViaBrowser(profileId, prompt, options);
+    if (options?.generationMode === 'api') {
+      return this.generateImageViaApi(profileId, prompt, options);
     }
 
-    return this.generateImageViaApi(profileId, prompt, options);
+    return this.generateImageViaBrowser(profileId, prompt, options);
   }
 
   private async generateImageViaBrowser(

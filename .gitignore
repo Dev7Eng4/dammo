@@ -10,3 +10,4 @@ server/data/*
 !server/data/prompts/
 !server/data/prompts/**
 !server/data/prompts.json
+!server/data/visual-styles.json
