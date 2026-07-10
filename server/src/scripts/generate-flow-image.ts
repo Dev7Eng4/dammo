@@ -23,7 +23,7 @@ interface CliOptions {
 }
 
 function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { timeoutMs: DEFAULT_TIMEOUT_MS, browserMode: false };
+  const options: CliOptions = { timeoutMs: DEFAULT_TIMEOUT_MS, browserMode: true };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -58,6 +58,7 @@ function parseArgs(argv: string[]): CliOptions {
     }
 
     if (arg === '--api') {
+      options.browserMode = false;
       continue;
     }
 

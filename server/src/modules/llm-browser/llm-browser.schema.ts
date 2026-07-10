@@ -51,7 +51,7 @@ export const llmBrowserGenerateImageSchema = z.object({
   debugScreenshotPath: z.string().min(1).optional(),
   timeoutMs: z.number().int().positive().max(600_000).optional(),
   stableMs: z.number().int().positive().max(60_000).optional(),
-  generationMode: z.enum(['browser', 'api']).default('api'),
+  generationMode: z.enum(['browser', 'api']).default('browser'),
   referenceImagePath: z.string().min(1).optional(),
   projectId: z.string().uuid().optional(),
 });

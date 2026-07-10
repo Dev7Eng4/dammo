@@ -94,7 +94,7 @@ export interface FlowGenerateImageOptions {
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
   referenceImagePath?: string;
-  /** Default: 'api'. Use 'browser' for DOM submit + intercept response. */
+  /** Default: 'browser'. Use 'api' for direct Flow API calls. */
   generationMode?: FlowGenerationMode;
 }
 

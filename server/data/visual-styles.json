@@ -1,0 +1,132 @@
+{
+  "styles": [
+    {
+      "id": "f233447d-5374-4e26-9072-c6dc5d866fc4",
+      "name": "Premium Cinematic Documentary",
+      "rule": "High-end cinematic photography, Japanese documentary style, dramatic yet soft directional lighting, moody and atmospheric, rich cinematic color grading, sharp focus on subject, beautiful bokeh, anamorphic lens, shot on ARRI Alexa 65mm, highly detailed texture, cinematic composition",
+      "niche": "Phim tài liệu ngắn về nghệ nhân truyền thống (Shokunin), vlog du lịch cao cấp, giới thiệu ẩm thực/nhà hàng truyền thống, phỏng vấn chân dung nhân vật có chiều sâu.",
+      "createdAt": "2026-07-10T01:28:07.046Z",
+      "updatedAt": "2026-07-10T01:28:07.046Z"
+    },
+    {
+      "id": "dd8f16d3-42f6-458d-aba4-5f18742ee61d",
+      "name": "Washi Paper Craft",
+      "rule": "Japanese origami and washi paper craft aesthetic, textured paper feeling, layered kirigami depth, soft studio lighting, highly detailed textures, vibrant yet soft colors, miniature world feel",
+      "niche": "Hướng dẫn làm đồ thủ công, các bài tập rèn luyện trí não/tay mắt (chống Alzheimer), nghệ thuật gấp giấy.",
+      "createdAt": "2026-07-10T01:27:45.158Z",
+      "updatedAt": "2026-07-10T01:27:45.158Z"
+    },
+    {
+      "id": "edc192c8-d8ca-49a2-b2b4-9eee01bd14de",
+      "name": "Sumi-e Ink Wash",
+      "rule": "Traditional Japanese Sumi-e ink wash painting, monochromatic with subtle red stamp accents, highly expressive brush strokes, minimalist composition, vast empty space (Ma), deep contrast, zen philosophy",
+      "niche": "Đọc thơ Haiku, hướng dẫn viết thư pháp, triết lý nhân sinh sâu sắc, video thiền định hoặc ngẫm nghĩ về cuộc đời.",
+      "createdAt": "2026-07-10T01:27:26.294Z",
+      "updatedAt": "2026-07-10T01:27:26.294Z"
+    },
+    {
+      "id": "fa886281-9973-45d0-b0dc-6f5f88208238",
+      "name": "Showa Retro Pop",
+      "rule": "Japanese Showa retro pop art style, 1970s graphic design, nostalgic kissaten cafe aesthetic, vibrant but faded colors, bold line art, vintage manga influence, cheerful and energetic, flat but textured",
+      "niche": "Mẹo vặt gia đình thời xưa, giới thiệu món ăn vặt/đồ uống cổ điển, âm nhạc/karaoke hoài cổ, sưu tầm đồ cũ.",
+      "createdAt": "2026-07-10T01:27:05.798Z",
+      "updatedAt": "2026-07-10T01:27:05.798Z"
+    },
+    {
+      "id": "dede4d55-ea4b-4427-ab20-0cb5e255bc8c",
+      "name": "Traditional Matsuri",
+      "rule": "Japanese traditional summer festival, vibrant Matsuri atmosphere, glowing paper lanterns (chochin), warm evening setting, rich cultural details, festive but nostalgic mood, cinematic depth of field",
+      "niche": "Vlog du lịch địa phương, hồi ức về quê hương, giới thiệu văn hóa vùng miền, các dịp lễ hội đền chùa.",
+      "createdAt": "2026-07-10T01:26:44.699Z",
+      "updatedAt": "2026-07-10T01:26:44.699Z"
+    },
+    {
+      "id": "a2ff8289-f7d2-4e99-b52d-ea210e71020e",
+      "name": "Edo Period Jidaigeki",
+      "rule": "Edo period Japan, traditional samurai town, historic wooden architecture, Jidaigeki aesthetic, people in kimono and yukata, warm cinematic lighting, Ukiyo-e color palette, dramatic but peaceful atmosphere, high cultural accuracy",
+      "niche": "Kể chuyện lịch sử, truyền thuyết dân gian, bình luận phim cổ trang, giới thiệu văn hóa/kiến trúc truyền thống.",
+      "createdAt": "2026-07-10T01:26:23.106Z",
+      "updatedAt": "2026-07-10T01:26:23.106Z"
+    },
+    {
+      "id": "efd194e1-d52e-44e8-a770-f24b7d65024c",
+      "name": "Foundation Parameters",
+      "rule": "high contrast, clear subject, minimalist background, uncluttered, easy to see, soft lighting, 8k resolution, highly detailed, eye-level angle, static shot --ar 16:9",
+      "niche": "THÔNG SỐ NỀN TẢNG - Nên nối vào cuối mọi prompt để đảm bảo hình ảnh rõ nét, phù hợp với thị lực người lớn tuổi.",
+      "createdAt": "2026-07-10T01:04:47.272Z",
+      "updatedAt": "2026-07-10T01:04:47.272Z"
+    },
+    {
+      "id": "4f88f32a-a267-42a9-879e-eb06d42bb0d1",
+      "name": "2D Instructional",
+      "rule": "Flat illustration style, clean vector graphics, simple character design, clear visual cues, high visibility, minimal color palette, clear background, graphic elements, diagrammatic feel --niji 6 --style cute",
+      "niche": "Công nghệ (smartphone, mua sắm online), cần truyền tải thông tin bằng minh họa 2D cực kỳ rõ ràng, tối giản.",
+      "createdAt": "2026-07-10T01:04:24.766Z",
+      "updatedAt": "2026-07-10T01:04:24.766Z"
+    },
+    {
+      "id": "65d751d4-68ad-4eb4-af0e-d06739b801b2",
+      "name": "Ghibli Nostalgia",
+      "rule": "Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive",
+      "niche": "Hồi ức (kể về quá khứ), các câu chuyện triết lý nhẹ nhàng mang phong cách hoạt hình truyền thống.",
+      "createdAt": "2026-07-10T01:04:00.982Z",
+      "updatedAt": "2026-07-10T01:04:00.982Z"
+    },
+    {
+      "id": "b4266085-c00d-40a3-b3f7-1025f50ebf6c",
+      "name": "Kawaii Senior Chibi",
+      "rule": "Chibi style, large expressive eyes, small body, rounded shapes, soft textures, pastel color palette, cheerful mood, simple clean background, stylized wrinkles, silver hair --niji 6 --kawaii",
+      "niche": "Làm biểu tượng (icon) kênh, hoạt họa minh họa các mẹo vặt, tạo cảm giác vui vẻ, dễ tiếp cận.",
+      "createdAt": "2026-07-10T01:03:37.761Z",
+      "updatedAt": "2026-07-10T01:03:37.761Z"
+    },
+    {
+      "id": "620681ee-7e69-43f8-b01c-4e32445f0015",
+      "name": "Gentle Senior Anime",
+      "rule": "Soft lighting, subtle character lines, gentle color palette, detailed environment, relaxed pose, expressive but subtle emotions, traditional anime background, distinct character design for seniors --niji 6",
+      "niche": "Vlog hoạt hình, kể chuyện, hướng dẫn kỹ năng theo phong cách anime hiện đại nhưng dịu dàng.",
+      "createdAt": "2026-07-10T01:03:15.464Z",
+      "updatedAt": "2026-07-10T01:03:15.464Z"
+    },
+    {
+      "id": "dc5d4dd6-eaa6-466a-8915-bfd9d44dfdd7",
+      "name": "Clear Tech Macro",
+      "rule": "Extreme macro close-up, ultra-clear focus on the subject, highly contrasted UI elements, bright white clean background, depth of field heavily blurring the background, informative visual, simple geometric composition, instructional photography",
+      "niche": "Dạy dùng smartphone, Line, mua sắm online, cảnh báo lừa đảo.",
+      "createdAt": "2026-07-10T01:02:56.586Z",
+      "updatedAt": "2026-07-10T01:02:56.586Z"
+    },
+    {
+      "id": "d1299b2e-0f2d-483e-9faa-4a99bff455b1",
+      "name": "Zen Landscape",
+      "rule": "Traditional Japanese landscape, zen garden atmosphere, soft watercolor illustration style, Ukiyo-e influence, calm and static scenery, poetic and tranquil atmosphere, pastel colors, natural harmony",
+      "niche": "Làm hình nền tĩnh hoặc video lặp (loop) cho các video đọc tiểu thuyết, kể chuyện, triết lý Phật giáo/Thiền.",
+      "createdAt": "2026-07-10T01:02:34.783Z",
+      "updatedAt": "2026-07-10T01:02:34.783Z"
+    },
+    {
+      "id": "e23d6bc6-eee4-4692-a4c2-3af01bac4977",
+      "name": "Showa Nostalgia",
+      "rule": "Vintage Japanese aesthetic, 1970s Showa era nostalgia, soft dreamy focus, warm golden hour lighting, slight sepia tone hints, cinematic memory, sentimental and emotional mood, nostalgic film photography style",
+      "niche": "Kể chuyện thời xưa, video hồi tưởng, khơi gợi kỷ niệm cá nhân của thế hệ 60+.",
+      "createdAt": "2026-07-10T01:02:13.060Z",
+      "updatedAt": "2026-07-10T01:02:13.060Z"
+    },
+    {
+      "id": "289ce83a-7daf-4b2c-8713-7f547dc4b62e",
+      "name": "Bright Vitality",
+      "rule": "bright airy room, high contrast vivid colors, clean and minimalist background, soft flat lighting for clear visibility, energetic but gentle atmosphere, morning daylight, healthy lifestyle, highly readable visual",
+      "niche": "Hướng dẫn tập thể dục nhẹ nhàng, yoga cho người già, ăn uống dinh dưỡng.",
+      "createdAt": "2026-07-10T01:01:31.700Z",
+      "updatedAt": "2026-07-10T01:01:31.700Z"
+    },
+    {
+      "id": "eb07bbb5-90e1-4ccd-9500-842bfdcced17",
+      "name": "Wabi-Sabi Slow Life",
+      "rule": "Japanese wabi-sabi aesthetic, warm earth tones, soft diffused sunlight shining through shoji screens, cinematic close-up, cozy and peaceful healing atmosphere, rustic traditional Japanese home setting, shallow depth of field, gentle vibe",
+      "niche": "Vlog thường nhật, nấu ăn, làm vườn, uống trà, dọn dẹp nhà cửa (Cuộc sống chậm / Chữa lành).",
+      "createdAt": "2026-07-10T01:00:50.729Z",
+      "updatedAt": "2026-07-10T01:00:50.729Z"
+    }
+  ]
+}
