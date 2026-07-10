@@ -1,6 +1,54 @@
 {
   "styles": [
     {
+      "id": "f233447d-5374-4e26-9072-c6dc5d866fc4",
+      "name": "Premium Cinematic Documentary",
+      "rule": "High-end cinematic photography, Japanese documentary style, dramatic yet soft directional lighting, moody and atmospheric, rich cinematic color grading, sharp focus on subject, beautiful bokeh, anamorphic lens, shot on ARRI Alexa 65mm, highly detailed texture, cinematic composition",
+      "niche": "Phim tài liệu ngắn về nghệ nhân truyền thống (Shokunin), vlog du lịch cao cấp, giới thiệu ẩm thực/nhà hàng truyền thống, phỏng vấn chân dung nhân vật có chiều sâu.",
+      "createdAt": "2026-07-10T01:28:07.046Z",
+      "updatedAt": "2026-07-10T01:28:07.046Z"
+    },
+    {
+      "id": "dd8f16d3-42f6-458d-aba4-5f18742ee61d",
+      "name": "Washi Paper Craft",
+      "rule": "Japanese origami and washi paper craft aesthetic, textured paper feeling, layered kirigami depth, soft studio lighting, highly detailed textures, vibrant yet soft colors, miniature world feel",
+      "niche": "Hướng dẫn làm đồ thủ công, các bài tập rèn luyện trí não/tay mắt (chống Alzheimer), nghệ thuật gấp giấy.",
+      "createdAt": "2026-07-10T01:27:45.158Z",
+      "updatedAt": "2026-07-10T01:27:45.158Z"
+    },
+    {
+      "id": "edc192c8-d8ca-49a2-b2b4-9eee01bd14de",
+      "name": "Sumi-e Ink Wash",
+      "rule": "Traditional Japanese Sumi-e ink wash painting, monochromatic with subtle red stamp accents, highly expressive brush strokes, minimalist composition, vast empty space (Ma), deep contrast, zen philosophy",
+      "niche": "Đọc thơ Haiku, hướng dẫn viết thư pháp, triết lý nhân sinh sâu sắc, video thiền định hoặc ngẫm nghĩ về cuộc đời.",
+      "createdAt": "2026-07-10T01:27:26.294Z",
+      "updatedAt": "2026-07-10T01:27:26.294Z"
+    },
+    {
+      "id": "fa886281-9973-45d0-b0dc-6f5f88208238",
+      "name": "Showa Retro Pop",
+      "rule": "Japanese Showa retro pop art style, 1970s graphic design, nostalgic kissaten cafe aesthetic, vibrant but faded colors, bold line art, vintage manga influence, cheerful and energetic, flat but textured",
+      "niche": "Mẹo vặt gia đình thời xưa, giới thiệu món ăn vặt/đồ uống cổ điển, âm nhạc/karaoke hoài cổ, sưu tầm đồ cũ.",
+      "createdAt": "2026-07-10T01:27:05.798Z",
+      "updatedAt": "2026-07-10T01:27:05.798Z"
+    },
+    {
+      "id": "dede4d55-ea4b-4427-ab20-0cb5e255bc8c",
+      "name": "Traditional Matsuri",
+      "rule": "Japanese traditional summer festival, vibrant Matsuri atmosphere, glowing paper lanterns (chochin), warm evening setting, rich cultural details, festive but nostalgic mood, cinematic depth of field",
+      "niche": "Vlog du lịch địa phương, hồi ức về quê hương, giới thiệu văn hóa vùng miền, các dịp lễ hội đền chùa.",
+      "createdAt": "2026-07-10T01:26:44.699Z",
+      "updatedAt": "2026-07-10T01:26:44.699Z"
+    },
+    {
+      "id": "a2ff8289-f7d2-4e99-b52d-ea210e71020e",
+      "name": "Edo Period Jidaigeki",
+      "rule": "Edo period Japan, traditional samurai town, historic wooden architecture, Jidaigeki aesthetic, people in kimono and yukata, warm cinematic lighting, Ukiyo-e color palette, dramatic but peaceful atmosphere, high cultural accuracy",
+      "niche": "Kể chuyện lịch sử, truyền thuyết dân gian, bình luận phim cổ trang, giới thiệu văn hóa/kiến trúc truyền thống.",
+      "createdAt": "2026-07-10T01:26:23.106Z",
+      "updatedAt": "2026-07-10T01:26:23.106Z"
+    },
+    {
       "id": "efd194e1-d52e-44e8-a770-f24b7d65024c",
       "name": "Foundation Parameters",
       "rule": "high contrast, clear subject, minimalist background, uncluttered, easy to see, soft lighting, 8k resolution, highly detailed, eye-level angle, static shot --ar 16:9",
