@@ -1,4 +1,4 @@
-import { youtubeDl } from 'youtube-dl-exec';
+import { youtubeDl } from './youtube-dl-client.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { inferNiche } from './niche-inferrer.js';
 import type { YoutubeChannelMetadata, YtdlpChannelResponse } from './youtube-channel.types.js';

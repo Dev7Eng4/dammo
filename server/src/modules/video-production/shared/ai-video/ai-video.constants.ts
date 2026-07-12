@@ -35,3 +35,6 @@ export const AI_VIDEO_TRANSCRIPT_CHUNK_MAX_SEC = 300;
 export const VIDEO_IMAGE_PROMPT_KEY = 'video_image';
 
 export const AI_SCENE_PROMPTS_FILENAME = 'ai-scene-prompts.json';
+
+/** Max scenes per Flow tool batch call (mavid editor). */
+export const AI_FLOW_TOOL_BATCH_SIZE = 10;

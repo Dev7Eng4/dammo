@@ -46,6 +46,8 @@ export const env = {
   youtubeCookiesFromBrowser: process.env.YOUTUBE_COOKIES_FROM_BROWSER ?? '',
   /** yt-dlp: path to Netscape cookies.txt */
   youtubeCookiesFile: process.env.YOUTUBE_COOKIES_FILE ?? '',
+  /** Đường dẫn yt-dlp.exe tùy chỉnh; fallback về binary bundled nếu không tồn tại */
+  ytDlpPath: process.env.YT_DLP_PATH ?? 'D:\\yt-dlp.exe',
   gpmApiBaseUrl: process.env.GPM_API_BASE_URL ?? 'http://127.0.0.1:19995/api/v3',
   /** reCAPTCHA Enterprise site key — inspect Network tab on labs.google/fx when Flow loads */
   flowRecaptchaSiteKey: process.env.FLOW_RECAPTCHA_SITE_KEY ?? '6LdsFiUsAAAAAIjVDZcuLhaHiDn5nnHVXVRQGeMV',

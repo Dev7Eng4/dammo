@@ -1,4 +1,4 @@
 # Dán link YouTube video vào dòng dưới (bỏ dấu # ở đầu dòng)
 # Dòng thứ 2 (tùy chọn): mã ngôn ngữ transcript — en | ko | ja | es (mặc định: ja)
 # https://www.youtube.com/watch?v=AmLa17rszY4
-https://www.youtube.com/watch?v=MkWEgFUb6jw
+https://www.youtube.com/watch?v=AlqP6JqlOcs

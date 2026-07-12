@@ -2,8 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { paths } from '../../config/paths.js';
+import { resizeImageToFit } from '../ffmpeg/image-resize.js';
 import { AppError } from '../../shared/http/errors.js';
 import type { LlmMediaAsset, MetaGenerateMediaOptions } from './llm-browser.types.js';
+
+export const META_IMAGE_WIDTH = 1280;
+export const META_IMAGE_HEIGHT = 720;
 
 function normalizeFileName(fileName: string, ext: string): string {
   const parsed = path.parse(fileName);
@@ -105,7 +109,18 @@ export async function downloadAndSaveMetaAsset(
 
   const buffer = await response.body();
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, buffer);
+
+  if (kind === 'image') {
+    const tmpPath = `${outputPath}.download.tmp`;
+    try {
+      await fs.writeFile(tmpPath, buffer);
+      await resizeImageToFit(tmpPath, outputPath, META_IMAGE_WIDTH, META_IMAGE_HEIGHT);
+    } finally {
+      await fs.unlink(tmpPath).catch(() => undefined);
+    }
+  } else {
+    await fs.writeFile(outputPath, buffer);
+  }
 
   return { kind, sourceUrl, localPath: outputPath };
 }

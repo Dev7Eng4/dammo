@@ -38,3 +38,5 @@ Các ngách đặc thù (như thị trường Châu Á, Nhật Bản): Với cá
    pnpm slideshow:demo --dir data/test
 
 sms-22
+
+meta -> logic chờ response sai, input prompt phải clear trước

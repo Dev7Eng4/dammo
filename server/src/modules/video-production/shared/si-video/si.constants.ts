@@ -9,6 +9,14 @@ export const SI_STOCK_SLOWMO_FACTOR = 2;
 export const SI_STOCK_ZOOM_FACTOR = 1.4;
 export const SI_STOCK_RENDER_EXTRA_SEC = 2;
 
+/** yt-dlp format selectors for stock background download (720p MP4 only). */
+export const SI_STOCK_DOWNLOAD_FORMATS = [
+  'bestvideo[height=720][ext=mp4][vcodec^=avc][fps<=30]',
+  'bestvideo[height=720][ext=mp4]',
+] as const;
+
+export const SI_STOCK_MAX_SELECT_ATTEMPTS = 3;
+
 export const SI_CENTER_IMAGE_WIDTH_RATIO = 0.9;
 export const SI_CENTER_IMAGE_OPACITY = 0.85;
 export const SI_STOCK_DIM_FACTOR = 0.8;

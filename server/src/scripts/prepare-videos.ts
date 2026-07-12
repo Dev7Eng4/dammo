@@ -10,7 +10,7 @@ async function main() {
   ensureDataDirs();
 
   const pick = await pickReupChannels({
-    message: 'Chọn kênh để prepare video (tải assets; kênh AI vẫn tạo scene prompts LLM)',
+    message: 'Chọn kênh để prepare video (tải assets; kênh AI tạo scene prompts LLM + sinh ảnh scene)',
   });
   if (pick.mode === 'cancelled') {
     console.log('Đã hủy.');
@@ -18,7 +18,7 @@ async function main() {
   }
 
   console.log(
-    'Đang prepare video (metadata/thumbnail/assets; kênh AI tạo scene prompts LLM — bỏ qua render video.mp4)...',
+    'Đang prepare video (metadata/thumbnail/assets; kênh AI tạo scene prompts LLM + sinh ảnh scene — bỏ qua render video.mp4)...',
   );
 
   const result =

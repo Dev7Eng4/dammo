@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
 import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from '../meta.config.js';
-import { downloadAndSaveMetaAsset, resolveMetaMediaIndexedSavePaths } from '../meta-media.js';
+import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from '../meta-media.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
   LlmBrowserResponse,
@@ -26,6 +26,9 @@ import {
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'meta' as const;
+/** Grace period to detect composer-stop-button after submit (fast generations may skip it). */
+const COMPOSER_STOP_GRACE_MS = 5_000;
+const ASSISTANT_IMAGE_POLL_MS = 15_000;
 
 function domTimeoutError(detail: string): AppError {
   return new AppError(`LLM DOM timeout (${PROVIDER}): ${detail}`, 502, 'LLM_DOM_TIMEOUT');
@@ -86,7 +89,7 @@ async function humanIdleWhileWaiting(page: Page): Promise<void> {
 async function humanPauseAfterMediaReady(page: Page, assistant: Locator): Promise<void> {
   await humanReadLatestResponse(page, assistant);
   await humanIdleBrief(page);
-  await randomDelay(1_000, 2_500);
+  await randomDelay(900, 1_100);
 }
 
 async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<void> {
@@ -99,10 +102,59 @@ async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<v
   }
 }
 
-async function waitForAssistantMessageWithImages(
+async function isComposerStopVisible(page: Page): Promise<boolean> {
+  return page.locator(META_CONFIG.selectors.composerStopButton).first().isVisible().catch(() => false);
+}
+
+async function isComposerSendVisible(page: Page): Promise<boolean> {
+  return page.locator(META_CONFIG.selectors.composerSendButton).first().isVisible().catch(() => false);
+}
+
+async function waitForComposerGenerationComplete(page: Page, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let pollCount = 0;
+  let nextIdleAt = randomInt(3, 5);
+
+  const phaseADeadline = Math.min(Date.now() + COMPOSER_STOP_GRACE_MS, deadline);
+  let generationStarted = false;
+
+  while (Date.now() < phaseADeadline) {
+    if (await isComposerStopVisible(page)) {
+      generationStarted = true;
+      break;
+    }
+    await randomDelay(200, 400);
+  }
+
+  while (Date.now() < deadline) {
+    pollCount += 1;
+    if (pollCount >= nextIdleAt) {
+      await humanIdleWhileWaiting(page);
+      pollCount = 0;
+      nextIdleAt = randomInt(3, 5);
+    }
+
+    const sendVisible = await isComposerSendVisible(page);
+    const stopVisible = await isComposerStopVisible(page);
+
+    if (sendVisible && !stopVisible) {
+      return;
+    }
+
+    if (!generationStarted && sendVisible && !stopVisible) {
+      return;
+    }
+
+    await randomDelay(400, 800);
+  }
+
+  throw domTimeoutError('Timed out waiting for composer button to return to send state');
+}
+
+async function extractFirstAssistantImage(
   page: Page,
   timeoutMs: number,
-): Promise<{ assistant: Locator; imageSources: string[] }> {
+): Promise<{ assistant: Locator; sourceUrl: string }> {
   const deadline = Date.now() + timeoutMs;
   let pollCount = 0;
   let nextIdleAt = randomInt(3, 5);
@@ -121,37 +173,21 @@ async function waitForAssistantMessageWithImages(
     if ((await assistant.count().catch(() => 0)) > 0) {
       try {
         await assistant.waitFor({ state: 'visible', timeout: 1_500 });
-        const imageSources = await collectImageSources(assistant);
-        if (imageSources.length > 0) {
-          return { assistant, imageSources };
+        const src = await assistant.locator('img').first().getAttribute('src');
+        const trimmed = src?.trim();
+        if (trimmed) {
+          return { assistant, sourceUrl: trimmed };
         }
         await humanReadLatestResponse(page, assistant);
       } catch {
-        // Keep polling until assistant message is visible with images.
+        // Keep polling until the first assistant image is available.
       }
     }
 
     await randomDelay(400, 800);
   }
 
-  throw domTimeoutError('Timed out waiting for assistant-message with images in last message item');
-}
-
-async function collectImageSources(assistant: Locator): Promise<string[]> {
-  const images = assistant.locator('img');
-  const count = await images.count().catch(() => 0);
-  const sources: string[] = [];
-  const seen = new Set<string>();
-
-  for (let index = 0; index < count; index += 1) {
-    const src = await images.nth(index).getAttribute('src');
-    const trimmed = src?.trim();
-    if (!trimmed || seen.has(trimmed)) continue;
-    seen.add(trimmed);
-    sources.push(trimmed);
-  }
-
-  return sources;
+  throw domTimeoutError('No image found in assistant-message of last message item');
 }
 
 function hasOutputConfig(options: MetaReceiveResponseOptions): boolean {
@@ -165,28 +201,6 @@ function resolveAssistantWaitTimeoutMs(options: MetaReceiveResponseOptions): num
 
 function resolveMetaOptions(options?: LlmReceiveResponseOptions): MetaReceiveResponseOptions {
   return (options ?? {}) as MetaReceiveResponseOptions;
-}
-
-async function downloadMetaImagesBestEffort(
-  page: Page,
-  imageSources: string[],
-  outputPaths: string[],
-): Promise<LlmMediaAsset[]> {
-  const mediaAssets: LlmMediaAsset[] = [];
-
-  for (let index = 0; index < imageSources.length; index += 1) {
-    const sourceUrl = imageSources[index];
-    const outputPath = outputPaths[index];
-
-    try {
-      mediaAssets.push(await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image'));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.warn('[meta] skipped image download:', message, sourceUrl.slice(0, 80));
-    }
-  }
-
-  return mediaAssets;
 }
 
 async function dismissDialogIfPresent(page: Page): Promise<void> {
@@ -284,11 +298,14 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       const startedAt = Date.now();
       const metaOptions = resolveMetaOptions(options);
       const timeoutMs = resolveAssistantWaitTimeoutMs(metaOptions);
+      const imagePollTimeoutMs = Math.min(ASSISTANT_IMAGE_POLL_MS, timeoutMs);
 
       let assistant: Locator;
-      let imageSources: string[];
+      let sourceUrl: string;
+
       try {
-        ({ assistant, imageSources } = await waitForAssistantMessageWithImages(page, timeoutMs));
+        await waitForComposerGenerationComplete(page, timeoutMs);
+        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, imagePollTimeoutMs));
       } catch (err) {
         await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
         throw err;
@@ -297,23 +314,21 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       const mediaAssets: LlmMediaAsset[] = [];
 
       if (hasOutputConfig(metaOptions)) {
-        const outputPaths = resolveMetaMediaIndexedSavePaths(imageSources.length, 'image', {
+        const outputPath = resolveMetaMediaSavePath('image', {
           outputPath: metaOptions.outputPath,
           outputDir: metaOptions.outputDir,
           fileName: metaOptions.fileName,
         });
-        const downloaded = await downloadMetaImagesBestEffort(page, imageSources, outputPaths);
 
-        if (downloaded.length === 0) {
+        try {
+          mediaAssets.push(await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image'));
+        } catch (err) {
           await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
-          throw domTimeoutError('Failed to download any Meta images');
+          const message = err instanceof Error ? err.message : String(err);
+          throw domTimeoutError(`Failed to download Meta image: ${message}`);
         }
-
-        mediaAssets.push(...downloaded);
       } else {
-        for (const sourceUrl of imageSources) {
-          mediaAssets.push({ kind: 'image', sourceUrl });
-        }
+        mediaAssets.push({ kind: 'image', sourceUrl });
       }
 
       if (mediaAssets.length > 0) {

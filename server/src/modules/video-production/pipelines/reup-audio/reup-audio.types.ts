@@ -33,6 +33,7 @@ export interface ReupVideoOutputItem {
   reupVideoPath?: string;
   aiScenePrompts?: AiVideoScenePrompt[];
   aiScenePromptsPath?: string;
+  aiSlidesDir?: string;
   videoPath?: string;
 }
 

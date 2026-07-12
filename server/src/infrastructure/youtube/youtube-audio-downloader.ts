@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { youtubeDl } from 'youtube-dl-exec';
+import { youtubeDl } from './youtube-dl-client.js';
 import { resolveFfmpegLocation } from '../ffmpeg/ffmpeg-location.js';
 import { AppError } from '../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';

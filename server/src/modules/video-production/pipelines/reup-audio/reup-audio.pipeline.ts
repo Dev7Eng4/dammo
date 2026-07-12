@@ -23,8 +23,9 @@ import { runDirectFlowThumbnail } from '../../shared/thumbnail/direct-flow-thumb
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
 import { isHorizontalMultiStepStyle, resolveThumbnailStyleKey } from '../../../prompts/thumbnail-styles.js';
+import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
-import { generateAiVideoImages } from '../../shared/ai-video/index.js';
+import { generateAiVideoImages, generateAiSceneSlideImages } from '../../shared/ai-video/index.js';
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
@@ -279,6 +280,7 @@ export class ReupAudioPipeline {
           let reupVideoPath: string | undefined;
           let aiScenePrompts: AiVideoScenePrompt[] | undefined;
           let aiScenePromptsPath: string | undefined;
+          let aiSlidesDir: string | undefined;
           let primaryOutputPath = downloaded.audioPath;
           let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
@@ -716,6 +718,52 @@ export class ReupAudioPipeline {
                 `AI scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`
               );
             }
+
+            const imageProvider = promptsSettingsService.get().defaultImageProvider;
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'info',
+                `Generating AI scene images via ${imageProvider}...`,
+              );
+            }
+
+            const aiSlideResult = await generateAiSceneSlideImages({
+              workDir,
+              scenes: aiScenePrompts,
+              onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+              onProgress: taskJobId
+                ? progress => {
+                    if (progress.status === 'skipped') {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `AI scene image ${progress.sceneName} skipped (already exists)`,
+                      );
+                      return;
+                    }
+
+                    const batchLabel =
+                      progress.batchIndex && progress.totalBatches
+                        ? ` batch ${progress.batchIndex}/${progress.totalBatches}`
+                        : '';
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      `AI scene image ${progress.sceneName} (${progress.sceneIndex}/${progress.totalScenes})${batchLabel}...`,
+                    );
+                  }
+                : undefined,
+            });
+            aiSlidesDir = aiSlideResult.slidesDir;
+
+            if (taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'ok',
+                `AI scene images saved (${aiSlideResult.generatedCount} generated, ${aiSlideResult.skippedCount} skipped) → ${aiSlidesDir}`,
+              );
+            }
           }
 
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
@@ -780,6 +828,7 @@ export class ReupAudioPipeline {
                   ...(reupVideoPath ? { reupVideoPath } : {}),
                   ...(aiScenePrompts ? { aiScenePrompts } : {}),
                   ...(aiScenePromptsPath ? { aiScenePromptsPath } : {}),
+                  ...(aiSlidesDir ? { aiSlidesDir } : {}),
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };

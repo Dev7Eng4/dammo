@@ -1,3 +1,4 @@
+import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
 
 type ExecaLikeError = {
@@ -45,7 +46,7 @@ export function toYoutubeDlError(err: unknown, action: string): AppError {
 
   if (isMissingBinaryError(execErr, detail)) {
     return new AppError(
-      `${action}: yt-dlp binary not found. Reinstall dependencies or run "node node_modules/youtube-dl-exec/scripts/postinstall.js" in the server directory to download it.`,
+      `${action}: yt-dlp binary not found. Place yt-dlp at "${env.ytDlpPath}" (or set YT_DLP_PATH), or run "node node_modules/youtube-dl-exec/scripts/postinstall.js" in the server directory to download the bundled binary.`,
       500,
       'YTDLP_BINARY_MISSING',
     );

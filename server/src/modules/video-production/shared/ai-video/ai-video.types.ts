@@ -55,3 +55,24 @@ export interface AssembleReupAiSlideshowVideoInput {
   language: string;
   onLog?: (msg: string) => void;
 }
+
+export interface GenerateAiSceneSlideImagesInput {
+  workDir: string;
+  scenes: AiVideoScenePrompt[];
+  onLog?: (msg: string) => void;
+  onProgress?: (progress: {
+    sceneIndex: number;
+    totalScenes: number;
+    batchIndex?: number;
+    totalBatches?: number;
+    sceneName: string;
+    status: 'generating' | 'skipped';
+  }) => void;
+}
+
+export interface GenerateAiSceneSlideImagesResult {
+  slidesDir: string;
+  imagePaths: string[];
+  generatedCount: number;
+  skippedCount: number;
+}

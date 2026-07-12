@@ -1,4 +1,4 @@
-import { youtubeDl } from 'youtube-dl-exec';
+import { youtubeDl } from './youtube-dl-client.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import type { YoutubeChannelVideo, YtdlpChannelResponse, YtdlpVideoEntry } from './youtube-channel.types.js';
 
