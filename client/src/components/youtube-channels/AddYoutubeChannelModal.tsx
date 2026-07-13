@@ -16,7 +16,12 @@ import { useAbortableEffect } from '../../hooks';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import type { AddYoutubeChannelFormValues } from '../../types/youtubeChannel';
+import { BACKGROUND_FOOTAGE_LOCAL_SENTINEL } from '../../types/youtubeChannel';
 import { isReupAudioChannelType, isReupYoutubeChannelType } from '../../types/youtubeChannel';
+import {
+  buildBackgroundFootageSelectValue,
+  handleBackgroundFootageSelectChange,
+} from '../../utils/backgroundFootage';
 import {
   getReupAudioVideoStylePlaceholder,
   loadReupAudioVideoStyleOptions,
@@ -36,6 +41,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   language: '',
   sourceChannels: [],
   backgroundFootageSources: [],
+  backgroundFootageMode: 'source',
   thumbnailStyleKey: '',
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
@@ -113,7 +119,10 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
     [sources],
   );
   const backgroundFootageOptions = useMemo(
-    () => sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
+    () => [
+      { value: BACKGROUND_FOOTAGE_LOCAL_SENTINEL, label: 'Local' },
+      ...sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
+    ],
     [sources],
   );
 
@@ -245,9 +254,11 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
-        ...(values.backgroundFootageSources.length > 0
-          ? { backgroundFootageSources: values.backgroundFootageSources }
-          : {}),
+        ...(values.backgroundFootageMode === 'local'
+          ? { backgroundFootageMode: 'local' as const }
+          : values.backgroundFootageSources.length > 0
+            ? { backgroundFootageSources: values.backgroundFootageSources }
+            : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType
           ? { reupAudioVideoType: values.reupAudioVideoType }
@@ -495,8 +506,15 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
               <MultiSelect
                 id="background-footage"
                 options={backgroundFootageOptions}
-                value={field.value}
-                onChange={field.onChange}
+                value={buildBackgroundFootageSelectValue(watch('backgroundFootageMode'), field.value)}
+                onChange={(next) => {
+                  const resolved = handleBackgroundFootageSelectChange(
+                    buildBackgroundFootageSelectValue(watch('backgroundFootageMode'), field.value),
+                    next,
+                  );
+                  setValue('backgroundFootageMode', resolved.mode);
+                  field.onChange(resolved.sourceIds);
+                }}
                 onBlur={field.onBlur}
                 placeholder={optionsLoading ? 'Loading sources...' : 'Select background footage'}
                 searchPlaceholder="Search background footage..."

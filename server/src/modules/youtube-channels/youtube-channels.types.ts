@@ -22,6 +22,8 @@ export type YoutubeChannelStatus = 'active' | 'suspended';
 
 export type ReupAudioVideoType = 'si' | 'ai';
 
+export type BackgroundFootageMode = 'source' | 'local';
+
 export interface YoutubeChannel {
   id: string;
   name: string;
@@ -40,6 +42,7 @@ export interface YoutubeChannel {
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSources?: string[];
+  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -85,6 +88,7 @@ export interface CreateYoutubeChannelInput {
   language: ChannelLanguage;
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
+  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -98,6 +102,7 @@ export interface UpdateYoutubeChannelInput {
   language: ChannelLanguage;
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
+  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;

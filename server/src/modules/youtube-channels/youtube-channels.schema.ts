@@ -22,6 +22,7 @@ const channelConfigFields = {
   language: channelLanguageSchema,
   sourceChannels: z.array(z.string().min(1)).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
+  backgroundFootageMode: z.enum(['source', 'local']).optional(),
   thumbnailStyleKey: z.string().optional(),
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),

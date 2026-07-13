@@ -7,7 +7,7 @@ async function main() {
 
   const { url } = await readInput();
   console.log(`Reading URL from ${INPUT_FILE}`);
-  console.log(`Downloading video (HD)...`);
+  console.log(`Downloading video (720p MP4)...`);
 
   const item = await contentDownloadService.downloadYoutubeVideo({ url });
   printResult('Video saved', item.path, item.sizeBytes);

@@ -1,5 +1,3 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { mediaDownloadDir } from '../../../../config/paths.js';
 import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import { downloadYoutubeAudio } from '../../../../infrastructure/youtube/youtube-audio-downloader.js';
@@ -36,38 +34,13 @@ export interface ReupDownloadResult {
   updatedSrtPath?: string;
 }
 
-async function downloadDirectThumbnail(youtubeVideoId: string, outputDir: string): Promise<string> {
-  await fs.mkdir(outputDir, { recursive: true });
-  const targetPath = path.join(outputDir, 'old-thumbnail.jpg');
-  
-  // Try maxresdefault first
-  let response = await fetch(`https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`);
-  
-  // Fallback to hqdefault if not found or empty
-  if (!response.ok) {
-    response = await fetch(`https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`);
-  }
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch thumbnail for video ${youtubeVideoId}`);
-  }
-  
-  const buffer = Buffer.from(await response.arrayBuffer());
-  await fs.writeFile(targetPath, buffer);
-  return targetPath;
-}
-
-function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio';
-}
-
 export async function downloadSourceAudioAssets(
   url: string,
   outputDir: string,
   language: TranscriptLanguage,
 ): Promise<ReupAudioDownloadResult> {
   const youtubeVideoId = requireYoutubeVideoId(url);
-  const thumbnailPath = await downloadDirectThumbnail(youtubeVideoId, outputDir);
+  const thumbnailPath = await downloadYoutubeThumbnail(url, outputDir, { outputBasename: 'old-thumbnail' });
   const audioPath = await downloadYoutubeAudio(url, outputDir);
   const transcriptPath = await downloadYoutubeTranscript(url, outputDir, language);
 
@@ -97,6 +70,10 @@ export async function processReupAudioTranscript(transcriptPath: string, languag
   return { updatedSrtPath };
 }
 
+function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
+  return type === 'reup_audio';
+}
+
 export async function downloadReupAssets(
   url: string,
   channelType: StoredYoutubeChannelType,
@@ -122,7 +99,6 @@ export async function downloadReupAssets(
   }
 
   const videoPath = await downloadYoutubeVideo(url, outputDir, {
-    quality: 'best',
     outputBasename: 'video',
   });
 

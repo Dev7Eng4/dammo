@@ -9,6 +9,10 @@ export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
 
 export type ReupAudioVideoType = 'si' | 'ai';
 
+export type BackgroundFootageMode = 'source' | 'local';
+
+export const BACKGROUND_FOOTAGE_LOCAL_SENTINEL = '__local__';
+
 export function isReupYoutubeChannelType(
   type: YoutubeChannelType | '',
 ): type is ReupYoutubeChannelType {
@@ -93,6 +97,7 @@ export interface YoutubeChannel {
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSources?: string[];
+  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -397,6 +402,7 @@ export interface CreateYoutubeChannelPayload {
   language: YoutubeChannelLanguage;
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
+  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -413,6 +419,7 @@ export interface AddYoutubeChannelFormValues {
   language: YoutubeChannelLanguage | '';
   sourceChannels: string[];
   backgroundFootageSources: string[];
+  backgroundFootageMode: BackgroundFootageMode;
   thumbnailStyleKey: string;
   reupAudioVideoType: ReupAudioVideoType | '';
   reupAudioVisualStyleId: string;

@@ -3,53 +3,51 @@ import path from 'node:path';
 import { youtubeDl } from './youtube-dl-client.js';
 import { AppError } from '../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
-import { findFileByPrefix } from './youtube-download-utils.js';
-import { toYoutubeDlError } from './youtube-dl-error.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
+import {
+  YOUTUBE_VIDEO_DOWNLOAD_FORMAT_LABELS,
+  YOUTUBE_VIDEO_DOWNLOAD_FORMATS,
+} from './youtube-download.constants.js';
 
-export type YoutubeVideoQuality = 'hd' | 'best';
-
-const HD_FORMAT = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best';
-const BEST_FORMAT = 'mp4/best[ext=mp4]/best';
-
-function resolveFormat(quality: YoutubeVideoQuality): string {
-  return quality === 'hd' ? HD_FORMAT : BEST_FORMAT;
+export interface DownloadYoutubeVideoOptions {
+  outputBasename?: string;
+  formats?: readonly string[];
+  onLog?: (msg: string) => void;
 }
 
 export async function downloadYoutubeVideo(
   url: string,
   outputDir: string,
-  options?: { quality?: YoutubeVideoQuality; outputBasename?: string },
+  options?: DownloadYoutubeVideoOptions,
 ): Promise<string> {
   await fs.mkdir(outputDir, { recursive: true });
 
   const videoId = requireYoutubeVideoId(url);
-  const quality = options?.quality ?? 'best';
   const basename = options?.outputBasename ?? videoId;
-  const outputTemplate = path.join(outputDir, `${basename}.%(ext)s`);
-  const expectedMp4 = path.join(outputDir, `${basename}.mp4`);
+  const formats = options?.formats ?? YOUTUBE_VIDEO_DOWNLOAD_FORMATS;
+  const outPath = path.join(outputDir, `${basename}.mp4`);
+  const onLog = options?.onLog;
 
-  try {
-    await youtubeDl(url, {
-      ...getYoutubeDlCommonOptions(),
-      output: outputTemplate,
-      format: resolveFormat(quality),
-      mergeOutputFormat: 'mp4',
-      noWarnings: true,
-      ignoreErrors: false,
-    });
-  } catch (err) {
-    throw toYoutubeDlError(err, 'Failed to download YouTube video');
-  }
+  for (let i = 0; i < formats.length; i++) {
+    const format = formats[i]!;
+    await fs.unlink(outPath).catch(() => undefined);
 
-  try {
-    await fs.access(expectedMp4);
-    return expectedMp4;
-  } catch {
-    const match = await findFileByPrefix(outputDir, `${basename}.`);
-    if (!match) {
-      throw new AppError('Downloaded video file not found', 502, 'YOUTUBE_DOWNLOAD_FAILED');
+    try {
+      await youtubeDl(url, {
+        ...getYoutubeDlCommonOptions(),
+        format,
+        output: outPath,
+        noWarnings: true,
+        ignoreErrors: false,
+      });
+      await fs.access(outPath);
+      const formatLabel = YOUTUBE_VIDEO_DOWNLOAD_FORMAT_LABELS[i] ?? format;
+      onLog?.(`YouTube video download succeeded with format ${i + 1}/${formats.length} (${formatLabel})`);
+      return outPath;
+    } catch {
+      onLog?.(`YouTube video download format ${i + 1}/${formats.length} failed, trying next...`);
     }
-    return match;
   }
+
+  throw new AppError('Failed to download YouTube video', 502, 'YOUTUBE_DOWNLOAD_FAILED');
 }

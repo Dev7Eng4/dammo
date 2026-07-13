@@ -10,7 +10,7 @@ import type { DownloadPlatform, PlatformDownloader } from './download.types.js';
 
 const youtubeDownloader: PlatformDownloader = {
   downloadVideo(url, outputDir) {
-    return downloadYoutubeVideo(url, outputDir, { quality: 'hd', outputBasename: 'video' });
+    return downloadYoutubeVideo(url, outputDir, { outputBasename: 'video' });
   },
   downloadAudio: downloadYoutubeAudio,
   downloadTranscript(url, outputDir, language) {

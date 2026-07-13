@@ -1,44 +1,37 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { youtubeDl } from './youtube-dl-client.js';
 import { AppError } from '../../shared/http/errors.js';
-import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
-import { findFileByPrefix } from './youtube-download-utils.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 
 export interface DownloadYoutubeThumbnailOptions {
   outputBasename?: string;
 }
 
-async function fetchThumbnailFromMetadata(
-  url: string,
-  outputDir: string,
-  basename: string,
-): Promise<string> {
-  const raw = await youtubeDl(url, {
-    ...getYoutubeDlCommonOptions(),
-    dumpSingleJson: true,
-    skipDownload: true,
-    noWarnings: true,
-    ignoreErrors: false,
-  });
+const MAXRES_PLACEHOLDER_MAX_BYTES = 5 * 1024;
 
-  const data = raw as { thumbnail?: string };
-  if (!data.thumbnail) {
-    throw new AppError('Thumbnail not found', 404, 'THUMBNAIL_NOT_FOUND');
-  }
+const THUMBNAIL_VARIANTS = ['maxresdefault', 'hqdefault'] as const;
 
-  const response = await fetch(data.thumbnail);
-  if (!response.ok) {
-    throw new AppError('Failed to fetch thumbnail image', 502, 'YOUTUBE_DOWNLOAD_FAILED');
-  }
+function buildThumbnailUrl(videoId: string, variant: (typeof THUMBNAIL_VARIANTS)[number]): string {
+  return `https://i.ytimg.com/vi/${videoId}/${variant}.jpg`;
+}
 
-  const contentType = response.headers.get('content-type') ?? 'image/jpeg';
-  const ext = contentType.includes('webp') ? '.webp' : contentType.includes('png') ? '.png' : '.jpg';
-  const targetPath = path.join(outputDir, `${basename}${ext}`);
+function isLikelyMaxresPlaceholder(variant: string, buffer: Buffer): boolean {
+  return variant === 'maxresdefault' && buffer.byteLength < MAXRES_PLACEHOLDER_MAX_BYTES;
+}
+
+async function fetchThumbnailVariant(
+  videoId: string,
+  variant: (typeof THUMBNAIL_VARIANTS)[number],
+): Promise<Buffer | null> {
+  const response = await fetch(buildThumbnailUrl(videoId, variant));
+  if (!response.ok) return null;
+
   const buffer = Buffer.from(await response.arrayBuffer());
-  await fs.writeFile(targetPath, buffer);
-  return targetPath;
+  if (buffer.byteLength === 0 || isLikelyMaxresPlaceholder(variant, buffer)) {
+    return null;
+  }
+
+  return buffer;
 }
 
 export async function downloadYoutubeThumbnail(
@@ -47,33 +40,18 @@ export async function downloadYoutubeThumbnail(
   options?: DownloadYoutubeThumbnailOptions,
 ): Promise<string> {
   await fs.mkdir(outputDir, { recursive: true });
-  requireYoutubeVideoId(url);
 
+  const videoId = requireYoutubeVideoId(url);
   const basename = options?.outputBasename?.trim() || 'old-thumbnail';
-  const outputTemplate = path.join(outputDir, `${basename}.%(ext)s`);
+  const targetPath = path.join(outputDir, `${basename}.jpg`);
 
-  try {
-    await youtubeDl(url, {
-      ...getYoutubeDlCommonOptions(),
-      output: outputTemplate,
-      skipDownload: true,
-      writeThumbnail: true,
-      noWarnings: true,
-      ignoreErrors: false,
-    });
+  for (const variant of THUMBNAIL_VARIANTS) {
+    const buffer = await fetchThumbnailVariant(videoId, variant);
+    if (!buffer) continue;
 
-    const match = await findFileByPrefix(outputDir, `${basename}.`);
-    if (match) return match;
-
-    return fetchThumbnailFromMetadata(url, outputDir, basename);
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-
-    try {
-      return await fetchThumbnailFromMetadata(url, outputDir, basename);
-    } catch (fallbackErr) {
-      const detail = fallbackErr instanceof Error ? fallbackErr.message : 'Unknown error';
-      throw new AppError(`Failed to download YouTube thumbnail: ${detail}`, 502, 'YOUTUBE_DOWNLOAD_FAILED');
-    }
+    await fs.writeFile(targetPath, buffer);
+    return targetPath;
   }
+
+  throw new AppError('Failed to download YouTube thumbnail', 502, 'YOUTUBE_DOWNLOAD_FAILED');
 }

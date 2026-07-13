@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { formatClockDuration, getAudioDurationSeconds } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import {
   buildH264VideoEncoderArgs,
@@ -16,16 +17,17 @@ import {
   SI_CENTER_IMAGE_OPACITY,
   SI_CENTER_IMAGE_WIDTH_RATIO,
   SI_FPS,
-  SI_NOISE_ALPHA,
+  // SI_NOISE_ALPHA, // TODO: re-enable SI noise
   SI_OUTPUT_VIDEO_BASENAME,
   SI_STOCK_DIM_FACTOR,
   SI_STOCK_RENDER_EXTRA_SEC,
   SI_SUBTITLE_BOX_OPACITY,
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
+  type SiBackgroundFootageMode,
   resolveRandomSiAudioSpeed,
 } from './si.constants.js';
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
-import { getPrebakedNoiseMov } from './si-prebake.js';
+// import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
 import { cleanupSiStockTempDir, prepareSiStockBackground } from './si-stock-background.js';
 import {
   convertSrtToAss,
@@ -44,6 +46,12 @@ function stockNormalizeFilterInner(slowmoFactor: number, isFlip = false): string
   return `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p${flipFilter}${slowmo},fps=${f},setsar=1`;
 }
 
+function localStockNormalizeFilterChain(inputLabel: string, outLabel: string): string {
+  const hwEncoder = resolveFfmpegHwEncoder();
+  const pixFmt = isHardwareEncoder(hwEncoder) ? 'nv12' : 'yuv420p';
+  return `[${inputLabel}]fps=${SI_FPS},setsar=1,format=${pixFmt}[${outLabel}]`;
+}
+
 function stockNormalizeFilterChain(inputLabel: string, outLabel: string, slowmoFactor: number, isFlip = false): string {
   return `[${inputLabel}]${stockNormalizeFilterInner(slowmoFactor, isFlip)}[${outLabel}]`;
 }
@@ -53,13 +61,25 @@ export interface AssembleReupSiVideoInput {
   audioPath: string;
   subtitlePath: string;
   centerImagePath: string;
-  backgroundFootageSourceIds: string[];
+  backgroundFootageMode?: SiBackgroundFootageMode;
+  backgroundFootageSourceIds?: string[];
   language: string;
   onLog?: (msg: string) => void;
+  onFfmpegProgress?: (progress: FfmpegProgress) => void;
 }
 
 export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Promise<string> {
-  const { workDir, audioPath, subtitlePath, centerImagePath, backgroundFootageSourceIds, language, onLog } = input;
+  const {
+    workDir,
+    audioPath,
+    subtitlePath,
+    centerImagePath,
+    backgroundFootageMode = 'source',
+    backgroundFootageSourceIds = [],
+    language,
+    onLog,
+    onFfmpegProgress,
+  } = input;
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
@@ -85,11 +105,17 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
   const stepOpts = { prefix: '[reup-si]', onLog };
   const { stockClipPath, stockTempDir } = await prepareSiStockBackground(
-    backgroundFootageSourceIds,
+    {
+      mode: backgroundFootageMode,
+      backgroundFootageSourceIds,
+    },
     stockRenderTarget,
     workDir,
     onLog,
+    onFfmpegProgress,
   );
+
+  const isLocalStock = backgroundFootageMode === 'local';
 
   let activeSubtitlePath = subtitlePath;
   let scaledSrtPath: string | null = null;
@@ -99,8 +125,8 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const tempAssPath = path.join(workDir, 'temp_sub.ass');
   const resizedCenterImagePath = path.join(workDir, 'center_720.jpg');
 
-  let prebakedSiNoise: string | null = null;
-  let siNoiseInputPath = assets.noisePath;
+  // let prebakedSiNoise: string | null = null; // TODO: re-enable SI noise
+  // let siNoiseInputPath = assets.noisePath; // TODO: re-enable SI noise
   let mergeArgs: string[] = [];
 
   await timedStep(
@@ -114,14 +140,17 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
       await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
 
-      prebakedSiNoise = await getPrebakedNoiseMov(
-        assets.noisePath,
-        SI_CANVAS_W,
-        SI_CANVAS_H,
-        SI_FPS,
-        SI_NOISE_ALPHA,
-      );
-      siNoiseInputPath = prebakedSiNoise ?? assets.noisePath;
+      // TODO: re-enable SI noise
+      // if (!isLocalStock) {
+      //   prebakedSiNoise = await getPrebakedNoiseMov(
+      //     assets.noisePath,
+      //     SI_CANVAS_W,
+      //     SI_CANVAS_H,
+      //     SI_FPS,
+      //     SI_NOISE_ALPHA,
+      //   );
+      //   siNoiseInputPath = prebakedSiNoise ?? assets.noisePath;
+      // }
 
       mergeArgs = ['-y'];
       let inputIdx = 0;
@@ -135,19 +164,29 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       const centerImgIndex = inputIdx++;
       mergeArgs.push('-loop', '1', '-i', resizedCenterImagePath);
 
-      const siNoiseIndex = inputIdx++;
-      mergeArgs.push('-stream_loop', '-1', '-i', siNoiseInputPath);
+      // TODO: re-enable SI noise
+      // let siNoiseIndex: number | null = null;
+      // if (!isLocalStock) {
+      //   siNoiseIndex = inputIdx++;
+      //   mergeArgs.push('-stream_loop', '-1', '-i', siNoiseInputPath);
+      // }
 
       const filterParts: string[] = [];
       filterParts.push(`[${audioIndex}:a]atempo=${speed}[aout]`);
 
       const vBgLabel = 'vout_bg';
-      filterParts.push(stockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, 1.0, false));
+      if (isLocalStock) {
+        filterParts.push(localStockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel));
+      } else {
+        filterParts.push(stockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, 1.0, false));
+      }
 
       let currentVLabel = vBgLabel;
 
-      filterParts.push(`[${currentVLabel}]lutyuv=y='val*${SI_STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
-      currentVLabel = 'v_dimmed';
+      if (!isLocalStock) {
+        filterParts.push(`[${currentVLabel}]lutyuv=y='val*${SI_STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
+        currentVLabel = 'v_dimmed';
+      }
 
       const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
       filterParts.push(
@@ -158,15 +197,18 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       );
       currentVLabel = 'v_centered_img';
 
-      if (prebakedSiNoise) {
-        filterParts.push(`[${siNoiseIndex}:v]null[si_noise]`);
-      } else {
-        filterParts.push(
-          `[${siNoiseIndex}:v]fps=${SI_FPS},scale=${SI_CANVAS_W}:${SI_CANVAS_H}:flags=fast_bilinear,format=yuva420p,colorkey=0x000000:0.1:0.1,colorchannelmixer=aa=${SI_NOISE_ALPHA}[si_noise]`,
-        );
-      }
-      filterParts.push(`[${currentVLabel}][si_noise]overlay=0:0:shortest=1[v_si_noised]`);
-      currentVLabel = 'v_si_noised';
+      // TODO: re-enable SI noise
+      // if (!isLocalStock && siNoiseIndex !== null) {
+      //   if (prebakedSiNoise) {
+      //     filterParts.push(`[${siNoiseIndex}:v]null[si_noise]`);
+      //   } else {
+      //     filterParts.push(
+      //       `[${siNoiseIndex}:v]fps=${SI_FPS},scale=${SI_CANVAS_W}:${SI_CANVAS_H}:flags=fast_bilinear,format=yuva420p,colorkey=0x000000:0.1:0.1,colorchannelmixer=aa=${SI_NOISE_ALPHA}[si_noise]`,
+      //     );
+      //   }
+      //   filterParts.push(`[${currentVLabel}][si_noise]overlay=0:0:shortest=1[v_si_noised]`);
+      //   currentVLabel = 'v_si_noised';
+      // }
 
       const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
       convertSrtToAss(activeSubtitlePath, tempAssPath, useJaSubtitleStyle, assets.fontPath);
@@ -211,6 +253,8 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       runFfmpegFilterComplex(mergeArgs, {
         encodeOpts: { preset: 'fast' },
         onLog,
+        onProgress: onFfmpegProgress,
+        expectedDurationSec: audioDurationAfterTempo,
         label: 'si-final-merge',
       }),
     stepOpts,

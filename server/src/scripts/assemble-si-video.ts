@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, youtubeChannelVideoDir } from '../config/paths.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
+import type { SiBackgroundFootageMode } from '../modules/video-production/shared/si-video/si.constants.js';
 
 const DEFAULT_CHANNEL_ID = '85184f4f-6c28-4c3e-a6a4-985689b51840';
 const DEFAULT_YOUTUBE_VIDEO_ID = '9paQm2UbaLc';
@@ -16,6 +17,7 @@ interface CliOptions {
   channelId: string;
   videoId: string;
   workDir?: string;
+  backgroundFootageMode: SiBackgroundFootageMode;
   backgroundFootageSourceIds: string[];
   language: string;
 }
@@ -24,12 +26,19 @@ function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     channelId: DEFAULT_CHANNEL_ID,
     videoId: DEFAULT_YOUTUBE_VIDEO_ID,
+    backgroundFootageMode: 'source',
     backgroundFootageSourceIds: [DEFAULT_BACKGROUND_FOOTAGE_SOURCE_ID],
     language: DEFAULT_LANGUAGE,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+
+    if (arg === '--local') {
+      options.backgroundFootageMode = 'local';
+      options.backgroundFootageSourceIds = [];
+      continue;
+    }
 
     if (arg === '--channel-id' || arg === '-c') {
       options.channelId = argv[index + 1]?.trim() ?? '';
@@ -57,6 +66,7 @@ function parseArgs(argv: string[]): CliOptions {
       if (!raw) {
         throw new Error(`${arg} requires a value`);
       }
+      options.backgroundFootageMode = 'source';
       options.backgroundFootageSourceIds = raw.split(',').map(id => id.trim()).filter(Boolean);
       index += 1;
       continue;
@@ -105,7 +115,10 @@ async function main() {
   console.log(`Audio: ${audioPath}`);
   console.log(`Subtitle: ${subtitlePath}`);
   console.log(`Center image: ${centerImagePath}`);
-  console.log(`Background footage sources: ${options.backgroundFootageSourceIds.join(', ')}`);
+  console.log(`Background footage mode: ${options.backgroundFootageMode}`);
+  if (options.backgroundFootageMode === 'source') {
+    console.log(`Background footage sources: ${options.backgroundFootageSourceIds.join(', ')}`);
+  }
   console.log(`Language: ${options.language}`);
   console.log('\nAssembling SI video...\n');
 
@@ -114,6 +127,7 @@ async function main() {
     audioPath,
     subtitlePath,
     centerImagePath,
+    backgroundFootageMode: options.backgroundFootageMode,
     backgroundFootageSourceIds: options.backgroundFootageSourceIds,
     language: options.language,
     onLog: msg => console.log(msg),

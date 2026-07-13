@@ -1,27 +1,20 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { youtubeDl } from '../../../../infrastructure/youtube/youtube-dl-client.js';
+import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
+import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
-import {
-  appendPixelFormatToVideoFilter,
-  buildH264VideoEncoderArgs,
-} from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
-import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
-import { getYoutubeDlCommonOptions } from '../../../../infrastructure/youtube/youtube-dl-auth.js';
 import { sourceVideosRepository } from '../../../source-channels/source-videos.repository.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
 import {
-  SI_CANVAS_H,
-  SI_CANVAS_W,
-  SI_FPS,
-  SI_STOCK_DOWNLOAD_FORMATS,
   SI_STOCK_MAX_SELECT_ATTEMPTS,
   SI_STOCK_SKIP_START_SEC,
   SI_STOCK_SLOWMO_FACTOR,
-  SI_STOCK_ZOOM_FACTOR,
+  type SiBackgroundFootageMode,
   getSiEffectiveStockDuration,
 } from './si.constants.js';
+import { prepareSiLocalStockBackground } from './si-local-stock.js';
+import { prepareRawStockVideoClip } from './si-stock-prepare.js';
 
 type PooledStockVideo = { sourceId: string; video: SourceVideoRecord };
 
@@ -57,44 +50,6 @@ export function selectEligibleStockVideo(
   return ranked[0] ?? null;
 }
 
-interface StockDownloadSuccess {
-  ok: true;
-  path: string;
-  formatIndex: number;
-}
-
-interface StockDownloadFailure {
-  ok: false;
-}
-
-type StockDownloadResult = StockDownloadSuccess | StockDownloadFailure;
-
-async function downloadStockVideoNoAudio(url: string, outputDir: string, onLog?: (msg: string) => void): Promise<StockDownloadResult> {
-  await fs.mkdir(outputDir, { recursive: true });
-  const outPath = path.join(outputDir, 'stock_raw.mp4');
-
-  for (let i = 0; i < SI_STOCK_DOWNLOAD_FORMATS.length; i++) {
-    const format = SI_STOCK_DOWNLOAD_FORMATS[i]!;
-    await fs.unlink(outPath).catch(() => undefined);
-
-    try {
-      await youtubeDl(url, {
-        ...getYoutubeDlCommonOptions(),
-        format,
-        output: outPath,
-      });
-      await fs.access(outPath);
-      const formatLabel = i === 0 ? '720p MP4 H.264 fps<=30' : '720p MP4';
-      onLog?.(`[reup-si] Stock download succeeded with format ${i + 1}/${SI_STOCK_DOWNLOAD_FORMATS.length} (${formatLabel})`);
-      return { ok: true, path: outPath, formatIndex: i };
-    } catch {
-      onLog?.(`[reup-si] Stock download format ${i + 1}/${SI_STOCK_DOWNLOAD_FORMATS.length} failed, trying next...`);
-    }
-  }
-
-  return { ok: false };
-}
-
 async function prepareStockClip(
   rawVideoPath: string,
   targetDuration: number,
@@ -104,42 +59,12 @@ async function prepareStockClip(
   const clipPath = path.join(outputDir, 'stock_processed.mp4');
   const sourceDuration = targetDuration / SI_STOCK_SLOWMO_FACTOR;
 
-  const cropW = Math.floor(SI_CANVAS_W / SI_STOCK_ZOOM_FACTOR / 2) * 2;
-  const cropH = Math.floor(SI_CANVAS_H / SI_STOCK_ZOOM_FACTOR / 2) * 2;
-
-  const vf = appendPixelFormatToVideoFilter(
-    [
-      `fps=${SI_FPS}`,
-      `setpts=${SI_STOCK_SLOWMO_FACTOR}*PTS`,
-      `crop=${cropW}:${cropH}`,
-      `scale=${SI_CANVAS_W}:${SI_CANVAS_H}`,
-      'format=yuv420p',
-    ].join(','),
-  );
-
-  const stockEncodeOpts = { preset: 'fast' as const };
-  await runFfmpeg(
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-y',
-      '-ss',
-      String(SI_STOCK_SKIP_START_SEC),
-      '-t',
-      String(sourceDuration),
-      '-i',
-      rawVideoPath,
-      '-vf',
-      vf,
-      '-an',
-      ...buildH264VideoEncoderArgs(stockEncodeOpts),
-      clipPath,
-    ],
-    { encodeOpts: stockEncodeOpts, onLog, label: 'si-stock-clip' },
-  );
-
-  return clipPath;
+  return prepareRawStockVideoClip(rawVideoPath, clipPath, {
+    skipStartSec: SI_STOCK_SKIP_START_SEC,
+    durationSec: sourceDuration,
+    onLog,
+    label: 'si-stock-clip',
+  });
 }
 
 export interface PrepareSiStockBackgroundResult {
@@ -147,7 +72,31 @@ export interface PrepareSiStockBackgroundResult {
   stockTempDir: string;
 }
 
+export interface PrepareSiStockBackgroundOptions {
+  mode: SiBackgroundFootageMode;
+  backgroundFootageSourceIds?: string[];
+}
+
 export async function prepareSiStockBackground(
+  options: PrepareSiStockBackgroundOptions,
+  targetDurationSec: number,
+  workDir: string,
+  onLog?: (msg: string) => void,
+  onFfmpegProgress?: (progress: FfmpegProgress) => void,
+): Promise<PrepareSiStockBackgroundResult> {
+  if (options.mode === 'local') {
+    return prepareSiLocalStockBackground(targetDurationSec, workDir, onLog, onFfmpegProgress);
+  }
+
+  return prepareSiRemoteStockBackground(
+    options.backgroundFootageSourceIds ?? [],
+    targetDurationSec,
+    workDir,
+    onLog,
+  );
+}
+
+async function prepareSiRemoteStockBackground(
   backgroundFootageSourceIds: string[],
   targetDurationSec: number,
   workDir: string,
@@ -197,13 +146,18 @@ export async function prepareSiStockBackground(
       `[reup-si] Selected stock video (attempt ${attempt}/${SI_STOCK_MAX_SELECT_ATTEMPTS}): ${chosen.video.url}`,
     );
 
-    const downloadResult = await timedStep(
-      'Download stock video',
-      () => downloadStockVideoNoAudio(chosen.video.url, stockTempDir, onLog),
-      stepOpts,
-    );
-
-    if (!downloadResult.ok) {
+    let stockRawPath: string;
+    try {
+      stockRawPath = await timedStep(
+        'Download stock video',
+        () =>
+          downloadYoutubeVideo(chosen.video.url, stockTempDir, {
+            outputBasename: 'stock_raw',
+            onLog: msg => onLog?.(`[reup-si] ${msg}`),
+          }),
+        stepOpts,
+      );
+    } catch {
       failedKeys.add(stockVideoKey(chosen.sourceId, chosen.video.id));
       log(
         `[reup-si] Stock download failed for ${chosen.video.url}, selecting another video...`,
@@ -216,7 +170,7 @@ export async function prepareSiStockBackground(
 
     const stockClipPath = await timedStep(
       'Xử lý stock clip (ffmpeg)',
-      () => prepareStockClip(downloadResult.path, targetDurationSec, stockTempDir, onLog),
+      () => prepareStockClip(stockRawPath, targetDurationSec, stockTempDir, onLog),
       stepOpts,
     );
 

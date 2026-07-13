@@ -58,6 +58,10 @@ export function getChannelBackgroundFootageLabels(
   channel: YoutubeChannel,
   sources: SourceChannel[],
 ): string[] {
+  if (channel.backgroundFootageMode === 'local') {
+    return ['Local'];
+  }
+
   const lookup = buildSourceLookup(sources);
   const labels = resolveLabelsFromIds(channel.backgroundFootageSources ?? [], lookup);
 

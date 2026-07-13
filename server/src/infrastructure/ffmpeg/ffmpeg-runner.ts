@@ -25,6 +25,8 @@ export interface FfmpegProgress {
 
 export interface RunFfmpegOptions {
   onProgress?: (progress: FfmpegProgress) => void;
+  /** Override Duration parsed from input (e.g. when output is trimmed with -t). */
+  expectedDurationSec?: number;
   encoderFallback?: boolean;
   encodeOpts?: H264EncodeOptions;
   onLog?: (msg: string) => void;
@@ -154,7 +156,8 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
       const time = parsed?.time ?? text.match(/time=(\d+:\d+:\d+\.\d+)/)?.[1];
       if (!time) return;
 
-      const progress = buildProgressFromTime(time, durationSec, parsed);
+      const effectiveDurationSec = options?.expectedDurationSec ?? durationSec;
+      const progress = buildProgressFromTime(time, effectiveDurationSec, parsed);
       if (!progress) return;
 
       options?.onProgress?.(progress);

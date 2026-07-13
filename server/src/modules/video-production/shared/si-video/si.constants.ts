@@ -9,15 +9,17 @@ export const SI_STOCK_SLOWMO_FACTOR = 2;
 export const SI_STOCK_ZOOM_FACTOR = 1.4;
 export const SI_STOCK_RENDER_EXTRA_SEC = 2;
 
-/** yt-dlp format selectors for stock background download (720p MP4 only). */
-export const SI_STOCK_DOWNLOAD_FORMATS = [
-  'bestvideo[height=720][ext=mp4][vcodec^=avc][fps<=30]',
-  'bestvideo[height=720][ext=mp4]',
-] as const;
+/** Local stock prepare (`prepare:si-local-stock`): cut / zoom / slowmo trên video thô. */
+export const SI_LOCAL_STOCK_SKIP_START_SEC = 0;
+export const SI_LOCAL_STOCK_SKIP_END_SEC = 0;
+export const SI_LOCAL_STOCK_SLOWMO_FACTOR = 1.5;
+export const SI_LOCAL_STOCK_ZOOM_FACTOR = 1.2;
+
+export { YOUTUBE_VIDEO_DOWNLOAD_FORMATS as SI_STOCK_DOWNLOAD_FORMATS } from '../../../../infrastructure/youtube/youtube-download.constants.js';
 
 export const SI_STOCK_MAX_SELECT_ATTEMPTS = 3;
 
-export const SI_CENTER_IMAGE_WIDTH_RATIO = 0.9;
+export const SI_CENTER_IMAGE_WIDTH_RATIO = 0.7;
 export const SI_CENTER_IMAGE_OPACITY = 0.85;
 export const SI_STOCK_DIM_FACTOR = 0.8;
 export const SI_NOISE_ALPHA = 0.6;
@@ -38,6 +40,14 @@ export const SI_AUDIO_SPEED_MIN = 0.91;
 export const SI_AUDIO_SPEED_MAX = 0.95;
 
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
+
+/** Minimum target duration for one local-stock concat cycle before stream_loop in merge. */
+export const SI_LOCAL_CYCLE_TARGET_SEC = 120;
+
+/** UI sentinel value for the Local background footage option. */
+export const SI_LOCAL_STOCK_SENTINEL = '__local__';
+
+export type SiBackgroundFootageMode = 'source' | 'local';
 
 export function resolveRandomSiAudioSpeed(): number {
   return SI_AUDIO_SPEED_MIN + Math.random() * (SI_AUDIO_SPEED_MAX - SI_AUDIO_SPEED_MIN);

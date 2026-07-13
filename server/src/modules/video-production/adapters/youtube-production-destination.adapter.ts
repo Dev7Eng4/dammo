@@ -60,6 +60,7 @@ export async function createYoutubeProductionDestination(
     language: channel.language,
     sourceChannels: channel.sourceChannels ?? [],
     backgroundFootageSources: channel.backgroundFootageSources,
+    backgroundFootageMode: channel.backgroundFootageMode,
     thumbnailStyleKey: channel.thumbnailStyleKey,
     ...reupAudioConfig,
 

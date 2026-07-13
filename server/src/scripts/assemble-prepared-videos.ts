@@ -106,7 +106,7 @@ async function main() {
 
     const videoType = channel.type === 'reup_audio' ? channel.reupAudioVideoType : 'si';
 
-    if (videoType === 'si' && !channel.backgroundFootageSources?.length) {
+    if (videoType === 'si' && channel.backgroundFootageMode !== 'local' && !channel.backgroundFootageSources?.length) {
       console.log(`  [skip] ${channel.name}: không có backgroundFootageSources`);
       continue;
     }
@@ -180,7 +180,8 @@ async function main() {
             audioPath,
             subtitlePath: subtitlePath!,
             centerImagePath: path.join(workDir, CENTER_IMAGE_FILE),
-            backgroundFootageSourceIds: channel.backgroundFootageSources!,
+            backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
+            backgroundFootageSourceIds: channel.backgroundFootageSources,
             language: channel.language,
             onLog: msg => console.log(`      ${msg}`),
           });

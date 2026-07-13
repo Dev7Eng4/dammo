@@ -25,6 +25,7 @@ import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import type {
   CreateYoutubeChannelInput,
+  BackgroundFootageMode,
   MonetizationStatus,
   ReupAudioVideoType,
   UpdateYoutubeChannelInput,
@@ -102,6 +103,7 @@ type ChannelConfigInput = Pick<
   | 'language'
   | 'sourceChannels'
   | 'backgroundFootageSources'
+  | 'backgroundFootageMode'
   | 'thumbnailStyleKey'
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
@@ -126,6 +128,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   sourceChannels: string[];
   uploadSchedule: string[];
   backgroundFootageSources?: string[];
+  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -154,9 +157,15 @@ function validateChannelConfig(input: ChannelConfigInput): {
     }
   }
 
-  const backgroundFootageSources = normalizeSourceIds(input.backgroundFootageSources);
-  for (const sourceId of backgroundFootageSources) {
-    requireSourceWithPurpose(sourceId, 'background_footage', 'Background footage');
+  const backgroundFootageMode: BackgroundFootageMode =
+    input.backgroundFootageMode === 'local' ? 'local' : 'source';
+
+  let backgroundFootageSources: string[] = [];
+  if (backgroundFootageMode === 'source') {
+    backgroundFootageSources = normalizeSourceIds(input.backgroundFootageSources);
+    for (const sourceId of backgroundFootageSources) {
+      requireSourceWithPurpose(sourceId, 'background_footage', 'Background footage');
+    }
   }
 
   const uploadSchedule = normalizeUploadSchedule(input.publishTimes);
@@ -200,7 +209,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
     linkedEmail,
     sourceChannels,
     uploadSchedule,
-    ...(backgroundFootageSources.length > 0 ? { backgroundFootageSources } : {}),
+    ...(backgroundFootageMode === 'local'
+      ? { backgroundFootageMode: 'local' as const }
+      : backgroundFootageSources.length > 0
+        ? { backgroundFootageSources }
+        : {}),
     ...(thumbnailStyleKey ? { thumbnailStyleKey } : {}),
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
@@ -463,9 +476,11 @@ export class YoutubeChannelsService {
       contentProjectId: buildProjectId(handle),
       createdAt: new Date().toISOString(),
       uploadFrequency: input.uploadFrequency,
-      ...(config.backgroundFootageSources?.length
-        ? { backgroundFootageSources: config.backgroundFootageSources }
-        : {}),
+      ...(config.backgroundFootageMode === 'local'
+        ? { backgroundFootageMode: 'local' as const }
+        : config.backgroundFootageSources?.length
+          ? { backgroundFootageSources: config.backgroundFootageSources }
+          : {}),
       ...(config.thumbnailStyleKey ? { thumbnailStyleKey: config.thumbnailStyleKey } : {}),
       ...(config.reupAudioVideoType ? { reupAudioVideoType: config.reupAudioVideoType } : {}),
       ...(config.reupAudioVisualStyleId
@@ -492,10 +507,16 @@ export class YoutubeChannelsService {
         uploadFrequency: input.uploadFrequency,
       };
 
-      if (config.backgroundFootageSources?.length) {
-        next.backgroundFootageSources = config.backgroundFootageSources;
-      } else {
+      if (config.backgroundFootageMode === 'local') {
+        next.backgroundFootageMode = 'local';
         delete next.backgroundFootageSources;
+      } else {
+        delete next.backgroundFootageMode;
+        if (config.backgroundFootageSources?.length) {
+          next.backgroundFootageSources = config.backgroundFootageSources;
+        } else {
+          delete next.backgroundFootageSources;
+        }
       }
 
       if (config.thumbnailStyleKey) {

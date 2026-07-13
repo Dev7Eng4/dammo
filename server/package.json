@@ -18,6 +18,8 @@
     "assemble-prepared-videos": "tsx src/scripts/assemble-prepared-videos.ts",
     "upload-videos": "tsx src/scripts/upload-videos.ts",
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
+    "test:assemble-si-local": "tsx src/scripts/test-assemble-si-local.ts",
+    "prepare:si-local-stock": "tsx src/scripts/prepare-si-local-stock.ts",
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
     "test:flow-thumbnail": "tsx src/scripts/test-flow-thumbnail.ts",
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts",

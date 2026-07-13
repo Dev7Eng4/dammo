@@ -172,7 +172,6 @@ async function resolveReupVideoDownload(
       }
 
       const downloadedVideoPath = await downloadYoutubeVideo(task.link, outputDir, {
-        quality: 'best',
         outputBasename: 'video',
       });
 
@@ -773,7 +772,10 @@ export class ReupAudioPipeline {
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped: hero image missing');
                 }
-              } else if (!destination.backgroundFootageSources?.length) {
+              } else if (
+                destination.backgroundFootageMode !== 'local' &&
+                !destination.backgroundFootageSources?.length
+              ) {
                 console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(
@@ -793,6 +795,7 @@ export class ReupAudioPipeline {
                   audioPath: downloaded.audioPath,
                   subtitlePath: subtitleForAssembly,
                   centerImagePath: heroImagePath,
+                  backgroundFootageMode: destination.backgroundFootageMode ?? 'source',
                   backgroundFootageSourceIds: destination.backgroundFootageSources,
                   language: destination.language,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
