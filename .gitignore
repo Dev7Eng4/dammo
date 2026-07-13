@@ -7,6 +7,10 @@ dist
 
 # Server local data (prompts templates are tracked in git)
 server/data/*
+!server/data/assets/
+server/data/assets/*
+!server/data/assets/fonts/
+!server/data/assets/fonts/**
 !server/data/prompts/
 !server/data/prompts/**
 !server/data/prompts.json

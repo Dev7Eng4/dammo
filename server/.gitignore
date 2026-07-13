@@ -1,4 +1,8 @@
 data/*
+!data/assets/
+data/assets/*
+!data/assets/fonts/
+!data/assets/fonts/**
 !data/prompts/
 !data/prompts/**
 !data/prompts.json
