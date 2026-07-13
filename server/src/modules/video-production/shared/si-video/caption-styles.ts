@@ -11,6 +11,7 @@ export interface CaptionStylePreset {
   fontAssName: string;
   fontSize: number;
   primaryColor: string;
+  showBackgroundBox: boolean;
 }
 
 export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> = {
@@ -19,8 +20,9 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'Default',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 90,
+    fontSize: 50,
     primaryColor: '&H00FFFFFF',
+    showBackgroundBox: true,
   },
   klee_one: {
     key: 'klee_one',
@@ -29,6 +31,7 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     fontAssName: 'Klee One',
     fontSize: 90,
     primaryColor: '&H00FFFFFF',
+    showBackgroundBox: true,
   },
   green: {
     key: 'green',
@@ -37,8 +40,13 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     fontAssName: 'Noto Sans JP Black',
     fontSize: 60,
     primaryColor: '&H0000FFFF',
+    showBackgroundBox: false,
   },
 };
+
+export function shouldShowCaptionBackgroundBox(key?: string | null): boolean {
+  return getCaptionStylePreset(key).showBackgroundBox;
+}
 
 export function isCaptionStyleKey(value: string): value is CaptionStyleKey {
   return (CAPTION_STYLE_KEYS as readonly string[]).includes(value);

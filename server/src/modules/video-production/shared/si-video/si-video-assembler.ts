@@ -30,7 +30,7 @@ import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
 import { cleanupSiStockTempDir, prepareSiStockBackground } from './si-stock-background.js';
 import type { CaptionStyleKey } from './caption-styles.js';
-import { resolveCaptionStyleKey } from './caption-styles.js';
+import { getCaptionStylePreset, resolveCaptionStyleKey } from './caption-styles.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
@@ -223,14 +223,20 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       });
       const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
       const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);
-      const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
-      const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
-      const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
+      const captionPreset = getCaptionStylePreset(resolvedCaptionStyleKey);
       const subFilter = `subtitles='${subPathEscaped}:fontsdir=${fontsDirEscaped}'`;
       const hwEncoder = resolveFfmpegHwEncoder();
       const videoMapLabel = isHardwareEncoder(hwEncoder) ? 'venc' : 'vout_final';
       const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
-      filterParts.push(`[${currentVLabel}]${drawboxFilter},${subFilter}${finalFormat}[${videoMapLabel}]`);
+      const videoFilters = captionPreset.showBackgroundBox
+        ? (() => {
+            const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
+            const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
+            const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
+            return `${drawboxFilter},${subFilter}`;
+          })()
+        : subFilter;
+      filterParts.push(`[${currentVLabel}]${videoFilters}${finalFormat}[${videoMapLabel}]`);
 
       const fullGraph = filterParts.join(';');
       await fs.writeFile(filterScriptPath, fullGraph, 'utf-8');

@@ -92,7 +92,9 @@ export function convertSrtToAss(
   const shadowPx = japaneseStyle ? 0.5 : 1.5;
 
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
-  const boxMidY = Math.round(SI_CANVAS_H - SI_SUBTITLE_MARGIN_BOTTOM_PX - subtitleBoxHeight / 2);
+  const boxMidY = preset.showBackgroundBox
+    ? Math.round(SI_CANVAS_H - SI_SUBTITLE_MARGIN_BOTTOM_PX - subtitleBoxHeight / 2)
+    : Math.round(SI_CANVAS_H - SI_SUBTITLE_MARGIN_BOTTOM_PX - fontSize / 2);
 
   const header = `[Script Info]\r
 ScriptType: v4.00+\r

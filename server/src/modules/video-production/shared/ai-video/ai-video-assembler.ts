@@ -11,7 +11,7 @@ import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import { pickAutoEffects } from '../slideshow/slideshow-presets.js';
 import { SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
 import { assertRequiredSiAssets } from '../si-video/si-assets.js';
-import { resolveCaptionStyleKey } from '../si-video/caption-styles.js';
+import { getCaptionStylePreset, resolveCaptionStyleKey } from '../si-video/caption-styles.js';
 import {
   SI_CANVAS_H,
   SI_CANVAS_W,
@@ -120,16 +120,22 @@ export async function assembleReupAiSlideshowVideo(
   });
   const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
   const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);
-  const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
-  const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
-  const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
+  const captionPreset = getCaptionStylePreset(resolvedCaptionStyleKey);
   const subFilter = `subtitles='${subPathEscaped}:fontsdir=${fontsDirEscaped}'`;
+  const videoFilters = captionPreset.showBackgroundBox
+    ? (() => {
+        const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
+        const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
+        const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
+        return `${drawboxFilter},${subFilter}`;
+      })()
+    : subFilter;
   const hwEncoder = resolveFfmpegHwEncoder();
   const videoMapLabel = isHardwareEncoder(hwEncoder) ? 'venc' : 'vout_final';
   const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
 
   const filterParts = [
-    `[0:v]format=yuv420p,fps=${SI_FPS},${drawboxFilter},${subFilter}${finalFormat}[${videoMapLabel}]`,
+    `[0:v]format=yuv420p,fps=${SI_FPS},${videoFilters}${finalFormat}[${videoMapLabel}]`,
     `[1:a]atempo=${speed}[aout]`,
   ];
 
