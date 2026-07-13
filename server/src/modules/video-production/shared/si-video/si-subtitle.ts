@@ -1,15 +1,24 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  type CaptionStyleKey,
+  getCaptionStylePreset,
+  resolveCaptionStyleKey,
+} from './caption-styles.js';
+import {
   SI_CANVAS_H,
   SI_CANVAS_W,
   SI_SUBTITLE_CHAR_SPACING,
-  SI_SUBTITLE_FONT_ASS_NAME,
-  SI_SUBTITLE_FONT_SIZE,
   SI_SUBTITLE_LINE_GAP_PX,
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
   SI_SUBTITLE_PADDING_HORIZONTAL,
 } from './si.constants.js';
+
+export interface ConvertSrtToAssOptions {
+  captionStyleKey?: CaptionStyleKey | string | null;
+  japaneseStyle?: boolean;
+  fontFile?: string;
+}
 
 function srtTimeToMs(h: string, m: string, s: string, ms: string): number {
   return Number.parseInt(h) * 3600000 + Number.parseInt(m) * 60000 + Number.parseInt(s) * 1000 + Number.parseInt(ms);
@@ -50,21 +59,36 @@ export function resolveJapaneseSubtitleStyle(subtitlePath: string | null, videoL
   return /\.ja\.(srt|vtt)$/i.test(path.basename(subtitlePath));
 }
 
-function buildJaWhiteStyle(outlinePx: number, shadowPx: number): string {
-  return `Style: Default,${SI_SUBTITLE_FONT_ASS_NAME},${SI_SUBTITLE_FONT_SIZE},&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,${SI_SUBTITLE_CHAR_SPACING},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
+function buildAssStyle(
+  fontName: string,
+  fontSize: number,
+  primaryColor: string,
+  outlinePx: number,
+  shadowPx: number,
+): string {
+  return `Style: Default,${fontName},${fontSize},${primaryColor},&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,${SI_SUBTITLE_CHAR_SPACING},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
 }
 
-function buildJaWhiteEvent(start: string, end: string, eventMarginV: number, baseText: string): string {
+function buildAssEvent(start: string, end: string, eventMarginV: number, baseText: string): string {
   return `Dialogue: 0,${start},${end},Default,,0,0,${eventMarginV},,${baseText}\n`;
 }
 
-export function convertSrtToAss(srtPath: string, assPath: string, japaneseStyle = false, fontFile?: string): void {
+export function convertSrtToAss(
+  srtPath: string,
+  assPath: string,
+  options: ConvertSrtToAssOptions = {},
+): void {
   const content = fs.readFileSync(srtPath, 'utf8').replace(/\r/g, '');
   const cues = content.split(/\n\n+/).filter(Boolean);
 
+  const styleKey = resolveCaptionStyleKey(options.captionStyleKey);
+  const preset = getCaptionStylePreset(styleKey);
+  const japaneseStyle = options.japaneseStyle ?? false;
+  const fontFile = options.fontFile;
   const fontExists = fontFile ? fs.existsSync(fontFile) : false;
-  const fontName = fontExists ? SI_SUBTITLE_FONT_ASS_NAME : 'Arial';
-  const outlinePx = japaneseStyle ? 8.5 : +(SI_SUBTITLE_FONT_SIZE * 0.06).toFixed(2);
+  const fontName = fontExists ? preset.fontAssName : 'Arial';
+  const fontSize = preset.fontSize;
+  const outlinePx = japaneseStyle ? 8.5 : +(fontSize * 0.06).toFixed(2);
   const shadowPx = japaneseStyle ? 0.5 : 1.5;
 
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
@@ -78,7 +102,7 @@ WrapStyle: 1\r
 \r
 [V4+ Styles]\r
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\r
-${buildJaWhiteStyle(outlinePx, shadowPx).replace(SI_SUBTITLE_FONT_ASS_NAME, fontName)}
+${buildAssStyle(fontName, fontSize, preset.primaryColor, outlinePx, shadowPx)}
 \r
 [Events]\r
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\r
@@ -116,7 +140,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
     const textLines = lines.slice(timeLineIdx + 1);
 
     const cw = SI_CANVAS_W - SI_SUBTITLE_PADDING_HORIZONTAL * 2;
-    const cSize = SI_SUBTITLE_FONT_SIZE - SI_SUBTITLE_CHAR_SPACING * 5;
+    const cSize = fontSize - SI_SUBTITLE_CHAR_SPACING * 5;
     const maxCharsPerLine = Math.max(1, Math.floor(cw / cSize));
 
     const wrappedLines: string[] = [];
@@ -134,14 +158,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
 
     const extraGapPx = SI_SUBTITLE_LINE_GAP_PX;
     const lineBreakStr =
-      extraGapPx > 0 ? `\\N{\\fs${extraGapPx}}\\h\\N{\\fs${SI_SUBTITLE_FONT_SIZE}}` : '\\N';
+      extraGapPx > 0 ? `\\N{\\fs${extraGapPx}}\\h\\N{\\fs${fontSize}}` : '\\N';
     const baseText = wrappedLines.join(lineBreakStr);
 
     const numLines = wrappedLines.length;
-    const totalTextH = numLines * SI_SUBTITLE_FONT_SIZE + Math.max(0, numLines - 1) * SI_SUBTITLE_LINE_GAP_PX;
+    const totalTextH = numLines * fontSize + Math.max(0, numLines - 1) * SI_SUBTITLE_LINE_GAP_PX;
     const eventMarginV = Math.max(0, Math.round(SI_CANVAS_H - boxMidY - totalTextH / 2));
 
-    events += buildJaWhiteEvent(start, end, eventMarginV, baseText);
+    events += buildAssEvent(start, end, eventMarginV, baseText);
   }
 
   fs.writeFileSync(assPath, header + events, 'utf-8');

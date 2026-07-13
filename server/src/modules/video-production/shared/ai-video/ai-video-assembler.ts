@@ -11,6 +11,7 @@ import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import { pickAutoEffects } from '../slideshow/slideshow-presets.js';
 import { SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
 import { assertRequiredSiAssets } from '../si-video/si-assets.js';
+import { resolveCaptionStyleKey } from '../si-video/caption-styles.js';
 import {
   SI_CANVAS_H,
   SI_CANVAS_W,
@@ -47,7 +48,7 @@ function computeSlideDurationSec(
 export async function assembleReupAiSlideshowVideo(
   input: AssembleReupAiSlideshowVideoInput,
 ): Promise<string> {
-  const { workDir, imagePaths, audioPath, subtitlePath, language, onLog } = input;
+  const { workDir, imagePaths, audioPath, subtitlePath, language, captionStyleKey, onLog } = input;
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
@@ -65,7 +66,7 @@ export async function assembleReupAiSlideshowVideo(
     }
   }
 
-  const assets = assertRequiredSiAssets();
+  const assets = assertRequiredSiAssets(captionStyleKey);
   const speed = resolveRandomSiAudioSpeed();
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
@@ -111,7 +112,12 @@ export async function assembleReupAiSlideshowVideo(
   const tempAssPath = path.join(workDir, 'ai_temp_sub.ass');
 
   const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
-  convertSrtToAss(activeSubtitlePath, tempAssPath, useJaSubtitleStyle, assets.fontPath);
+  const resolvedCaptionStyleKey = resolveCaptionStyleKey(captionStyleKey);
+  convertSrtToAss(activeSubtitlePath, tempAssPath, {
+    captionStyleKey: resolvedCaptionStyleKey,
+    japaneseStyle: useJaSubtitleStyle,
+    fontFile: assets.fontPath,
+  });
   const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
   const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);

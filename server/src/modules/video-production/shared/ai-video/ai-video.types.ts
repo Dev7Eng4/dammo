@@ -1,3 +1,4 @@
+import type { CaptionStyleKey } from '../si-video/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { AiVideoDensityLevel } from './ai-video.constants.js';
 
@@ -53,6 +54,7 @@ export interface AssembleReupAiSlideshowVideoInput {
   audioPath: string;
   subtitlePath: string;
   language: string;
+  captionStyleKey?: CaptionStyleKey;
   onLog?: (msg: string) => void;
 }
 

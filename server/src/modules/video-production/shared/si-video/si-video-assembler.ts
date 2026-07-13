@@ -29,6 +29,8 @@ import {
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
 import { cleanupSiStockTempDir, prepareSiStockBackground } from './si-stock-background.js';
+import type { CaptionStyleKey } from './caption-styles.js';
+import { resolveCaptionStyleKey } from './caption-styles.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
@@ -64,6 +66,7 @@ export interface AssembleReupSiVideoInput {
   backgroundFootageMode?: SiBackgroundFootageMode;
   backgroundFootageSourceIds?: string[];
   language: string;
+  captionStyleKey?: CaptionStyleKey;
   onLog?: (msg: string) => void;
   onFfmpegProgress?: (progress: FfmpegProgress) => void;
 }
@@ -77,6 +80,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     backgroundFootageMode = 'source',
     backgroundFootageSourceIds = [],
     language,
+    captionStyleKey,
     onLog,
     onFfmpegProgress,
   } = input;
@@ -93,7 +97,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     }
   }
 
-  const assets = assertRequiredSiAssets();
+  const assets = assertRequiredSiAssets(captionStyleKey);
   const speed = resolveRandomSiAudioSpeed();
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
@@ -211,7 +215,12 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       // }
 
       const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
-      convertSrtToAss(activeSubtitlePath, tempAssPath, useJaSubtitleStyle, assets.fontPath);
+      const resolvedCaptionStyleKey = resolveCaptionStyleKey(captionStyleKey);
+      convertSrtToAss(activeSubtitlePath, tempAssPath, {
+        captionStyleKey: resolvedCaptionStyleKey,
+        japaneseStyle: useJaSubtitleStyle,
+        fontFile: assets.fontPath,
+      });
       const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
       const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);
       const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);

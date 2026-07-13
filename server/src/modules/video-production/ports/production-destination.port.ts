@@ -1,5 +1,5 @@
 import type { ChannelLanguage } from '../../youtube-channels/channel-language.js';
-import type { BackgroundFootageMode, ReupAudioVideoType } from '../../youtube-channels/youtube-channels.types.js';
+import type { BackgroundFootageMode, CaptionStyleKey, ReupAudioVideoType } from '../../youtube-channels/youtube-channels.types.js';
 import type { VideoPrepareItem } from '../../youtube-channels/video-prepare.types.js';
 
 export type ProductionPipelineType = 'reup_audio' | 'reup_video' | 'reup' | 'content_sale';
@@ -20,6 +20,7 @@ export interface ProductionDestination {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  captionStyleKey?: CaptionStyleKey;
   /** Set for reup_audio channels only */
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;

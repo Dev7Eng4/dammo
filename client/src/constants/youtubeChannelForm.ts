@@ -1,4 +1,4 @@
-import type { UploadFrequency, YoutubeChannelLanguage, YoutubeChannelType, ReupAudioVideoType } from '../types/youtubeChannel';
+import type { UploadFrequency, YoutubeChannelLanguage, YoutubeChannelType, ReupAudioVideoType, CaptionStyleKey } from '../types/youtubeChannel';
 
 export const YOUTUBE_CHANNEL_LANGUAGE_OPTIONS: { value: YoutubeChannelLanguage; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -20,6 +20,12 @@ export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType; label: s
 export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType; label: string }[] = [
   { value: 'si', label: 'Stock Video + Image' },
   { value: 'ai', label: 'Animate Images (AI)' },
+];
+
+export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] = [
+  { value: 'default', label: 'Default (Noto Sans, trắng)' },
+  { value: 'klee_one', label: 'Klee One (trắng)' },
+  { value: 'green', label: 'Cyan' },
 ];
 
 export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }[] = [

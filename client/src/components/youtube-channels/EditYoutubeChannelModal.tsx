@@ -9,6 +9,7 @@ import {
   getChannelUploadTimes,
   getPublishTimeSlotCount,
   REUP_AUDIO_VIDEO_TYPE_OPTIONS,
+  CAPTION_STYLE_OPTIONS,
   UPLOAD_FREQUENCY_OPTIONS,
   YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
@@ -54,6 +55,7 @@ const defaultValues: EditYoutubeChannelFormValues = {
   backgroundFootageSources: [],
   backgroundFootageMode: 'source',
   thumbnailStyleKey: '',
+  captionStyleKey: 'default',
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
   uploadFrequency: '',
@@ -175,6 +177,7 @@ export function EditYoutubeChannelModal({
           backgroundFootageSources: channel.backgroundFootageSources ?? [],
           backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
           thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
+          captionStyleKey: channel.captionStyleKey ?? 'default',
           reupAudioVideoType: channel.reupAudioVideoType ?? '',
           reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
           uploadFrequency: frequency,
@@ -205,6 +208,7 @@ export function EditYoutubeChannelModal({
     if (!formReady || isReupAudio) return;
     setValue('reupAudioVideoType', '');
     setValue('reupAudioVisualStyleId', '');
+    setValue('captionStyleKey', '');
   }, [isReupAudio, formReady, setValue]);
 
   useAbortableEffect(
@@ -294,6 +298,9 @@ export function EditYoutubeChannelModal({
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId
           ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId }
+          : {}),
+        ...(values.type === 'reup_audio' && values.captionStyleKey
+          ? { captionStyleKey: values.captionStyleKey }
           : {}),
       });
       onSuccess(item);
@@ -425,6 +432,32 @@ export function EditYoutubeChannelModal({
                     searchPlaceholder="Search video styles..."
                     searchable
                     disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
+                    className="w-full"
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+
+            <FormField
+              label="Caption Style"
+              htmlFor="edit-caption-style"
+              optional
+              error={errors.captionStyleKey?.message}
+              className="min-w-0"
+            >
+              <Controller
+                name="captionStyleKey"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    id="edit-caption-style"
+                    options={CAPTION_STYLE_OPTIONS}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Select caption style"
+                    disabled={isSubmitting}
                     className="w-full"
                     triggerClassName={selectTriggerClass}
                   />

@@ -8,6 +8,7 @@ import {
   createEmptyPublishTimes,
   getPublishTimeSlotCount,
   REUP_AUDIO_VIDEO_TYPE_OPTIONS,
+  CAPTION_STYLE_OPTIONS,
   UPLOAD_FREQUENCY_OPTIONS,
   YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
@@ -43,6 +44,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   backgroundFootageSources: [],
   backgroundFootageMode: 'source',
   thumbnailStyleKey: '',
+  captionStyleKey: 'default',
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
   uploadFrequency: '',
@@ -171,6 +173,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
     if (!isReupAudio) {
       setValue('reupAudioVideoType', '');
       setValue('reupAudioVisualStyleId', '');
+      setValue('captionStyleKey', '');
     }
   }, [isReupAudio, setValue]);
 
@@ -265,6 +268,9 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId
           ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId }
+          : {}),
+        ...(values.type === 'reup_audio' && values.captionStyleKey
+          ? { captionStyleKey: values.captionStyleKey }
           : {}),
       });
       reset(defaultValues);
@@ -424,6 +430,32 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                     searchPlaceholder="Search video styles..."
                     searchable
                     disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
+                    className="w-full"
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+
+            <FormField
+              label="Caption Style"
+              htmlFor="caption-style"
+              optional
+              error={errors.captionStyleKey?.message}
+              className="min-w-0"
+            >
+              <Controller
+                name="captionStyleKey"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    id="caption-style"
+                    options={CAPTION_STYLE_OPTIONS}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Select caption style"
+                    disabled={isSubmitting}
                     className="w-full"
                     triggerClassName={selectTriggerClass}
                   />

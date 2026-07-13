@@ -172,6 +172,7 @@ async function main() {
             audioPath,
             subtitlePath: subtitlePath!,
             language: channel.language,
+            captionStyleKey: channel.captionStyleKey,
             onLog: msg => console.log(`      ${msg}`),
           });
         } else {
@@ -183,6 +184,7 @@ async function main() {
             backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
             backgroundFootageSourceIds: channel.backgroundFootageSources,
             language: channel.language,
+            captionStyleKey: channel.captionStyleKey,
             onLog: msg => console.log(`      ${msg}`),
           });
         }

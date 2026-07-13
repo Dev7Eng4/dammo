@@ -1,5 +1,6 @@
 import type { ChannelLanguage } from './channel-language.js';
 export type { ChannelLanguage } from './channel-language.js';
+import type { CaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 
 export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
@@ -21,6 +22,8 @@ export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
 
 export type ReupAudioVideoType = 'si' | 'ai';
+
+export type { CaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 
 export type BackgroundFootageMode = 'source' | 'local';
 
@@ -44,6 +47,7 @@ export interface YoutubeChannel {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   uploadFrequency?: UploadFrequency;
@@ -90,6 +94,7 @@ export interface CreateYoutubeChannelInput {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   uploadFrequency: UploadFrequency;
@@ -104,6 +109,7 @@ export interface UpdateYoutubeChannelInput {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   uploadFrequency: UploadFrequency;
