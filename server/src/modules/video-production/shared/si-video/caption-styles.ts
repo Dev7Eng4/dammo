@@ -12,6 +12,8 @@ export interface CaptionStylePreset {
   fontSize: number;
   primaryColor: string;
   showBackgroundBox: boolean;
+  outlinePx: number;
+  shadowPx: number;
 }
 
 export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> = {
@@ -20,9 +22,11 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'Default',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 50,
+    fontSize: 70,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
+    outlinePx: 5.5,
+    shadowPx: 0.3,
   },
   klee_one: {
     key: 'klee_one',
@@ -32,6 +36,8 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     fontSize: 90,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
+    outlinePx: 5.4,
+    shadowPx: 1.5,
   },
   green: {
     key: 'green',
@@ -41,6 +47,8 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     fontSize: 60,
     primaryColor: '&H0000FFFF',
     showBackgroundBox: false,
+    outlinePx: 3.6,
+    shadowPx: 1.5,
   },
 };
 

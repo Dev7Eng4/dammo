@@ -83,13 +83,12 @@ export function convertSrtToAss(
 
   const styleKey = resolveCaptionStyleKey(options.captionStyleKey);
   const preset = getCaptionStylePreset(styleKey);
-  const japaneseStyle = options.japaneseStyle ?? false;
   const fontFile = options.fontFile;
   const fontExists = fontFile ? fs.existsSync(fontFile) : false;
   const fontName = fontExists ? preset.fontAssName : 'Arial';
   const fontSize = preset.fontSize;
-  const outlinePx = japaneseStyle ? 8.5 : +(fontSize * 0.06).toFixed(2);
-  const shadowPx = japaneseStyle ? 0.5 : 1.5;
+  const outlinePx = preset.outlinePx;
+  const shadowPx = preset.shadowPx;
 
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
   const boxMidY = preset.showBackgroundBox
