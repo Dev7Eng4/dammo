@@ -81,7 +81,7 @@ export class YoutubeUploadService {
 
     if (jobs.length === 0) {
       throw new AppError(
-        'No upload-ready videos (status Created with video.mp4, thumbnail.jpg, and title in video-meta.json)',
+        'No upload-ready videos (status Created with video.mp4, thumbnail.*, and title in video-meta.json)',
         400,
         'NO_UPLOAD_JOBS',
       );
@@ -116,7 +116,7 @@ export class YoutubeUploadService {
             await selectFile(page, job.mp4Path);
           }
 
-          await fillVideoDetails(page, job.folderPath, logError);
+          await fillVideoDetails(page, job.folderPath, logError, job.thumbnailPath);
           await addRelatedVideo(page, job.mp4Path, logError);
           await chooseVisibility(page, { slot });
           successfulVideoIds.push(job.videoId);
