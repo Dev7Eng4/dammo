@@ -1,6 +1,7 @@
 packages:
   - 'client'
   - 'server'
-onlyBuiltDependencies:
-  - esbuild
-  - youtube-dl-exec
+
+allowBuilds:
+  esbuild: true
+  youtube-dl-exec: false

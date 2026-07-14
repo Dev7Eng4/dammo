@@ -6,10 +6,10 @@ import { humanScroll, randomInt } from '../../infrastructure/llm-browser/human-i
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import { clickElement, clearContent, delay, scrollUntilVisible } from './studio-dom.js';
 import { YOUTUBE_SELECTOR } from './studio-selectors.js';
+import { findThumbnailPath } from './upload-assets.js';
 
 const RELATED_VIDEO_START_OFFSET_SEC = 17;
 const VIDEO_META_FILENAME = 'video-meta.json';
-const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
 function getVideoDurationSeconds(mp4Path: string): number | null {
   if (!mp4Path || !fs.existsSync(mp4Path)) return null;
@@ -125,6 +125,7 @@ export async function fillVideoDetails(
   page: Page,
   videoFolderPath: string,
   onError?: (message: string) => void,
+  thumbnailPath?: string,
 ): Promise<void> {
   const meta = readVideoMeta(videoFolderPath);
   const title = typeof meta?.metadata.title === 'string' ? meta.metadata.title.trim() : '';
@@ -171,16 +172,16 @@ export async function fillVideoDetails(
   await scrollUntilVisible(page, YOUTUBE_SELECTOR.thumbnailBox, false, 50);
   await delay(200, 500);
 
-  const thumbnailPath = path.join(videoFolderPath, THUMBNAIL_FILENAME);
-  if (fs.existsSync(thumbnailPath)) {
+  const resolvedThumbnailPath = thumbnailPath ?? findThumbnailPath(videoFolderPath);
+  if (resolvedThumbnailPath && fs.existsSync(resolvedThumbnailPath)) {
     const [fileChooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       clickElement(page, YOUTUBE_SELECTOR.btnSelectThumbnail),
     ]);
     await delay(1000);
-    await fileChooser.setFiles(thumbnailPath);
+    await fileChooser.setFiles(resolvedThumbnailPath);
   } else {
-    onError?.(`Missing thumbnail: ${thumbnailPath}`);
+    onError?.(`Missing thumbnail (thumbnail.*): ${videoFolderPath}`);
   }
 
   await delay(200);

@@ -3,14 +3,15 @@ import path from 'node:path';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
+import { findThumbnailPath } from './upload-assets.js';
 
 const VIDEO_META_FILENAME = 'video-meta.json';
-const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
 export interface UploadJob {
   videoId: string;
   folderPath: string;
   mp4Path: string;
+  thumbnailPath: string;
   prepareItemId: string;
 }
 
@@ -78,10 +79,10 @@ export function listUploadJobs(channelId: string, options: ListUploadJobsOptions
     }
 
     const mp4Path = path.join(folderPath, mp4File);
-    const thumbnailPath = path.join(folderPath, THUMBNAIL_FILENAME);
+    const thumbnailPath = findThumbnailPath(folderPath);
     const metaPath = path.join(folderPath, VIDEO_META_FILENAME);
-    if (!fs.existsSync(thumbnailPath)) {
-      console.warn(`[youtube-upload] Skip ${videoId} — missing thumbnail.jpg`);
+    if (!thumbnailPath) {
+      console.warn(`[youtube-upload] Skip ${videoId} — missing thumbnail (thumbnail.*)`);
       continue;
     }
     if (!fs.existsSync(metaPath)) {
@@ -99,6 +100,7 @@ export function listUploadJobs(channelId: string, options: ListUploadJobsOptions
       videoId,
       folderPath,
       mp4Path,
+      thumbnailPath,
       prepareItemId: item.id,
     });
 
