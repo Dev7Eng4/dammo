@@ -1,3 +1,4 @@
+import type { Page } from 'playwright';
 import { getMetaBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
 import {
   getLlmBrowserSession,
@@ -60,6 +61,12 @@ export class MetaBrowserService {
     return upsertLlmBrowserSession(profileId, META_PROVIDER);
   }
 
+  async openOnPage(page: Page): Promise<void> {
+    const handler = getMetaBrowserHandler();
+    await handler.open(page);
+    await handler.setupConfig(page, {});
+  }
+
   async generateMedia(profileId: string, prompt: string, options?: MetaGenerateMediaOptions): Promise<LlmBrowserResponse> {
     if (!getLlmBrowserSession(profileId, META_PROVIDER)) {
       await this.open(profileId);
@@ -68,36 +75,47 @@ export class MetaBrowserService {
     assertProfileOpen(profileId);
     assertMetaSession(profileId);
 
-    const handler = getMetaBrowserHandler();
     const page = await getChromeProfilePage(profileId);
-    const mediaKind = resolveMediaKind(options);
-    const timeoutMs = options?.timeoutMs ?? 300_000;
 
     setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'sending');
 
     try {
-      const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind);
-      await handler.sendPrompt(page, effectivePrompt, {
-        pasteStrategy: options?.pasteStrategy ?? 'human',
-        submitWith: 'enter',
+      const response = await this.generateMediaOnPage(page, prompt, options, {
+        onPromptSent: () => setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'waiting'),
       });
-      setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'waiting');
-
-      const response = await handler.receiveResponse(page, {
-        mediaKind,
-        outputPath: options?.outputPath,
-        outputDir: options?.outputDir,
-        fileName: options?.fileName,
-        debugScreenshotPath: options?.debugScreenshotPath,
-        timeoutMs,
-      });
-
       setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'idle');
       return response;
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'idle');
       throw err;
     }
+  }
+
+  async generateMediaOnPage(
+    page: Page,
+    prompt: string,
+    options?: MetaGenerateMediaOptions,
+    hooks?: { onPromptSent?: () => void },
+  ): Promise<LlmBrowserResponse> {
+    const handler = getMetaBrowserHandler();
+    const mediaKind = resolveMediaKind(options);
+    const timeoutMs = options?.timeoutMs ?? 300_000;
+    const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind);
+
+    await handler.sendPrompt(page, effectivePrompt, {
+      pasteStrategy: options?.pasteStrategy ?? 'human',
+      submitWith: 'enter',
+    });
+    hooks?.onPromptSent?.();
+
+    return handler.receiveResponse(page, {
+      mediaKind,
+      outputPath: options?.outputPath,
+      outputDir: options?.outputDir,
+      fileName: options?.fileName,
+      debugScreenshotPath: options?.debugScreenshotPath,
+      timeoutMs,
+    });
   }
 }
 

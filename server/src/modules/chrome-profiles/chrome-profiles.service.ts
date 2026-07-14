@@ -33,7 +33,7 @@ export class ChromeProfilesService {
     return this.pickSubProfiles(1)[0];
   }
 
-  requireMainProfile(): ChromeProfile {
+  listMainProfiles(): ChromeProfile[] {
     const mains = chromeProfilesRepository.findByRole('main');
     if (mains.length === 0) {
       throw new AppError(
@@ -42,7 +42,11 @@ export class ChromeProfilesService {
         'NO_MAIN_PROFILE',
       );
     }
-    return mains[0];
+    return mains;
+  }
+
+  requireMainProfile(): ChromeProfile {
+    return this.listMainProfiles()[0];
   }
 
   pickSubProfiles(count: number): ChromeProfile[] {
