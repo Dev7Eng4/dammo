@@ -14,6 +14,7 @@ import type {
   MetaReceiveResponseOptions,
 } from '../llm-browser.types.js';
 import {
+  humanClearInput,
   humanClick,
   humanPaste,
   humanPressEnter,
@@ -266,6 +267,8 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       const input = await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
       await humanClick(page, input);
       await randomDelay(150, 400);
+      await input.focus();
+      await humanClearInput(page);
       await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'human' });
       await randomDelay(500, 1_200);
 

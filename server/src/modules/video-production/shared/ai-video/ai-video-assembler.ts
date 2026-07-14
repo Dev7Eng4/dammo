@@ -8,9 +8,14 @@ import {
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
-import { pickAutoEffects } from '../slideshow/slideshow-presets.js';
+import {
+  AUTO_KEN_BURNS_ROTATION,
+  AUTO_TRANSITION_ROTATION,
+  KEN_BURNS_PRESETS,
+} from '../slideshow/slideshow-presets.js';
 import { SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
-import { assertRequiredSiAssets } from '../si-video/si-assets.js';
+import type { SlideSpec } from '../slideshow/slideshow.types.js';
+import { resolveCaptionFont } from '../si-video/si-assets.js';
 import { getCaptionStylePreset, resolveCaptionStyleKey } from '../si-video/caption-styles.js';
 import {
   SI_CANVAS_H,
@@ -29,34 +34,75 @@ import {
   scaleSrtTimestamps,
 } from '../si-video/si-subtitle.js';
 import { AI_SLIDESHOW_RAW_BASENAME } from './ai-video.constants.js';
-import type { AssembleReupAiSlideshowVideoInput } from './ai-video.types.js';
+import {
+  resolveSceneImageAbsolutePath,
+  sceneDurationSec,
+  scenesWithImagePaths,
+} from './ai-video-scene-timing.js';
+import type { AiVideoScenePrompt, AssembleReupAiSlideshowVideoInput } from './ai-video.types.js';
 
-function computeSlideDurationSec(
-  audioDurationSec: number,
-  slideCount: number,
-  transitionDurationSec: number,
-): number {
-  if (slideCount <= 1) {
-    return Math.max(1, audioDurationSec);
+function buildTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]): SlideSpec[] {
+  const usable = scenesWithImagePaths(scenes);
+  if (usable.length === 0) {
+    throw new AppError('AI slideshow requires at least one scene with an image path', 400, 'AI_SLIDESHOW_NO_IMAGES');
   }
 
-  const overlap = (slideCount - 1) * transitionDurationSec;
-  const durationSec = (audioDurationSec + overlap) / slideCount;
-  return Math.max(1, durationSec);
+  return usable.map((scene, index) => {
+    const durationSec = sceneDurationSec(scene);
+    const presetName = AUTO_KEN_BURNS_ROTATION[index % AUTO_KEN_BURNS_ROTATION.length];
+    const isLast = index === usable.length - 1;
+    const transitionDurationSec = Math.min(SS_DEFAULT_TRANSITION_DURATION, Math.max(0.05, durationSec / 2 - 0.05));
+
+    const slide: SlideSpec = {
+      imagePath: resolveSceneImageAbsolutePath(workDir, scene),
+      durationSec,
+      kenBurns: { ...KEN_BURNS_PRESETS[presetName] },
+      fit: 'cover',
+    };
+
+    if (!isLast && transitionDurationSec > 0) {
+      slide.transitionToNext = AUTO_TRANSITION_ROTATION[index % AUTO_TRANSITION_ROTATION.length];
+      slide.transitionDurationSec = transitionDurationSec;
+    }
+
+    return slide;
+  });
+}
+
+/** xfade shortens total length by sum(transitionDuration); pad the last slide so timeline matches target. */
+function padSlidesToAudioDuration(slides: SlideSpec[], audioDurationSec: number): SlideSpec[] {
+  if (slides.length === 0) return slides;
+
+  const transitionSum = slides.slice(0, -1).reduce((sum, slide) => sum + (slide.transitionDurationSec ?? 0), 0);
+  const contentSum = slides.reduce((sum, slide) => sum + slide.durationSec, 0);
+  const projected = contentSum - transitionSum;
+  const deficit = audioDurationSec - projected;
+  if (deficit <= 0.05) return slides;
+
+  const padded = slides.map(slide => ({ ...slide }));
+  padded[padded.length - 1] = {
+    ...padded[padded.length - 1],
+    durationSec: padded[padded.length - 1].durationSec + deficit,
+  };
+  return padded;
 }
 
 export async function assembleReupAiSlideshowVideo(
   input: AssembleReupAiSlideshowVideoInput,
 ): Promise<string> {
-  const { workDir, imagePaths, audioPath, subtitlePath, language, captionStyleKey, onLog } = input;
+  const { workDir, scenes, audioPath, subtitlePath, language, captionStyleKey, onLog } = input;
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
   };
 
-  if (imagePaths.length === 0) {
+  const usableScenes = scenesWithImagePaths(scenes);
+  if (usableScenes.length === 0) {
     throw new AppError('AI slideshow requires at least one image', 400, 'AI_SLIDESHOW_NO_IMAGES');
   }
+
+  let slides = buildTimedSlides(workDir, usableScenes);
+  const imagePaths = slides.map(slide => slide.imagePath);
 
   for (const requiredPath of [audioPath, subtitlePath, ...imagePaths]) {
     try {
@@ -66,7 +112,7 @@ export async function assembleReupAiSlideshowVideo(
     }
   }
 
-  const assets = assertRequiredSiAssets(captionStyleKey);
+  const assets = resolveCaptionFont(captionStyleKey);
   const speed = resolveRandomSiAudioSpeed();
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
@@ -83,20 +129,20 @@ export async function assembleReupAiSlideshowVideo(
     activeSubtitlePath = scaledSrtPath;
   }
 
-  const transitionDurationSec = SS_DEFAULT_TRANSITION_DURATION;
-  const durationSec = computeSlideDurationSec(
-    audioDurationAfterTempo,
-    imagePaths.length,
-    transitionDurationSec,
+  if (speed !== 1) {
+    slides = slides.map(slide => ({
+      ...slide,
+      durationSec: slide.durationSec / speed,
+      transitionDurationSec:
+        slide.transitionDurationSec !== undefined ? slide.transitionDurationSec / speed : undefined,
+    }));
+  }
+
+  slides = padSlidesToAudioDuration(slides, audioDurationAfterTempo);
+
+  log(
+    `[ai-video] ${slides.length} timed slides (Ken Burns, no shuffle) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
   );
-
-  log(`[ai-video] ${imagePaths.length} slides × ${durationSec.toFixed(2)}s (transition ${transitionDurationSec}s)`);
-
-  const slides = pickAutoEffects(imagePaths, {
-    durationSec,
-    transitionDurationSec,
-    shuffle: true,
-  });
 
   const slideshowRawPath = path.join(workDir, `${AI_SLIDESHOW_RAW_BASENAME}.mp4`);
   await assembleSlideshow({

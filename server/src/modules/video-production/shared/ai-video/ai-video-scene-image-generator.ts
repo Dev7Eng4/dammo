@@ -14,6 +14,12 @@ import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
+import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
+import {
+  attachSceneImagePaths,
+  redistributeMissingSceneTimes,
+  scenesWithImagePaths,
+} from './ai-video-scene-timing.js';
 import type {
   AiVideoScenePrompt,
   GenerateAiSceneSlideImagesInput,
@@ -23,6 +29,7 @@ import type {
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
 const META_IMAGE_TIMEOUT_MS = 300_000;
 const META_IMAGE_MAX_TABS = 5;
+const META_IMAGE_MAX_RETRIES = 3;
 const FLOW_TOOL_TIMEOUT_MS = 300_000;
 
 interface SceneVisualJob {
@@ -172,7 +179,7 @@ async function generateMetaSceneImages(
   totalScenes: number,
   log: (msg: string) => void,
   onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
-): Promise<void> {
+): Promise<{ generatedCount: number; failedCount: number }> {
   const mains = chromeProfilesService.listMainProfiles();
   const profileCount = Math.min(META_IMAGE_MAX_TABS, mains.length);
   const profiles = mains.slice(0, profileCount);
@@ -185,12 +192,11 @@ async function generateMetaSceneImages(
 
   const workers = await openMetaTabWorkers(profiles, tabCount, log);
   let nextJobIndex = 0;
-  let failed: unknown;
+  let generatedCount = 0;
+  let failedCount = 0;
 
   async function runWorker(worker: MetaTabWorker): Promise<void> {
     while (true) {
-      if (failed) return;
-
       const jobIndex = nextJobIndex;
       nextJobIndex += 1;
       if (jobIndex >= pending.length) return;
@@ -207,33 +213,69 @@ async function generateMetaSceneImages(
         `[ai-video] tab ${worker.tabIndex + 1}/${tabCount} (${worker.profile.name}) → ${job.name}`,
       );
 
-      try {
-        const response = await metaBrowserService.generateMediaOnPage(worker.page, job.prompt, {
-          mediaKind: 'image',
-          outputDir: slidesDir,
-          fileName: `${job.name}.jpg`,
-          timeoutMs: META_IMAGE_TIMEOUT_MS,
-        });
+      let succeeded = false;
+      for (let attempt = 1; attempt <= META_IMAGE_MAX_RETRIES; attempt += 1) {
+        try {
+          const response = await metaBrowserService.generateMediaOnPage(worker.page, job.prompt, {
+            mediaKind: 'image',
+            outputDir: slidesDir,
+            fileName: `${job.name}.jpg`,
+            timeoutMs: META_IMAGE_TIMEOUT_MS,
+          });
 
-        const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-        if (!savedPath || !(await fileExists(savedPath))) {
-          throw new AppError(`Meta image generation failed for ${job.name}`, 502, 'AI_SCENE_IMAGE_FAILED');
+          const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
+          if (!savedPath || !(await fileExists(savedPath))) {
+            throw new AppError(`Meta image generation failed for ${job.name}`, 502, 'AI_SCENE_IMAGE_FAILED');
+          }
+
+          generatedCount += 1;
+          succeeded = true;
+          break;
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : String(err);
+          if (attempt === META_IMAGE_MAX_RETRIES) {
+            log(
+              `[ai-video] bỏ qua ${job.name} sau ${META_IMAGE_MAX_RETRIES} lần: ${reason}`,
+            );
+            failedCount += 1;
+          } else {
+            log(
+              `[ai-video] ${job.name} attempt ${attempt}/${META_IMAGE_MAX_RETRIES} failed → retry (${reason})`,
+            );
+          }
         }
-      } catch (err) {
-        failed = err;
-        throw err;
+      }
+
+      if (!succeeded) {
+        onProgress?.({
+          sceneIndex: job.index + 1,
+          totalScenes,
+          sceneName: job.name,
+          status: 'skipped',
+        });
       }
     }
   }
 
-  const results = await Promise.allSettled(workers.map(worker => runWorker(worker)));
-  const firstRejected = results.find(result => result.status === 'rejected');
-  if (firstRejected && firstRejected.status === 'rejected') {
-    throw firstRejected.reason;
-  }
-  if (failed) {
-    throw failed;
-  }
+  await Promise.all(workers.map(worker => runWorker(worker)));
+  return { generatedCount, failedCount };
+}
+
+async function finalizeScenesWithPaths(
+  workDir: string,
+  youtubeVideoId: string,
+  scenes: AiVideoScenePrompt[],
+  log: (msg: string) => void,
+): Promise<AiVideoScenePrompt[]> {
+  const withPaths = await attachSceneImagePaths(scenes, workDir);
+  const redistributed = redistributeMissingSceneTimes(withPaths);
+  const filePath = await persistAiScenePromptsFile(workDir, youtubeVideoId, redistributed);
+  const withImage = scenesWithImagePaths(redistributed).length;
+  const missing = redistributed.length - withImage;
+  log(
+    `[ai-video] Scene prompts updated → ${filePath} (${withImage} with path, ${missing} missing)`,
+  );
+  return redistributed;
 }
 
 export async function generateAiSceneSlideImages(
@@ -269,11 +311,19 @@ export async function generateAiSceneSlideImages(
   if (pending.length === 0) {
     const imagePaths = await listSlideImagePaths(slidesDir);
     log(`[ai-video] All ${input.scenes.length} scene image(s) already exist → ${slidesDir}`);
+    const scenes = await finalizeScenesWithPaths(
+      input.workDir,
+      input.youtubeVideoId,
+      input.scenes,
+      log,
+    );
     return {
       slidesDir,
       imagePaths,
+      scenes,
       generatedCount: 0,
       skippedCount,
+      failedCount: 0,
     };
   }
 
@@ -281,27 +331,50 @@ export async function generateAiSceneSlideImages(
     `[ai-video] Generating ${pending.length} scene image(s) via ${imageProvider} (${skippedCount} skipped) → ${slidesDir}`,
   );
 
+  let generatedCount = 0;
+  let failedCount = 0;
+
   if (imageProvider === 'flow') {
     const profile = chromeProfilesService.requireMainProfile();
     log(`[ai-video] Mở Chrome main profile ${profile.name} cho scene images...`);
     await generateFlowSceneImages(profile.id, slidesDir, pending, input.scenes.length, input.onProgress);
+    generatedCount = pending.length;
   } else {
-    await generateMetaSceneImages(slidesDir, pending, input.scenes.length, log, input.onProgress);
+    const metaResult = await generateMetaSceneImages(
+      slidesDir,
+      pending,
+      input.scenes.length,
+      log,
+      input.onProgress,
+    );
+    generatedCount = metaResult.generatedCount;
+    failedCount = metaResult.failedCount;
   }
 
   const imagePaths = await listSlideImagePaths(slidesDir);
-  const generatedCount = pending.length;
 
   if (imagePaths.length === 0) {
     throw new AppError('AI scene image generation completed but no images were saved', 502, 'AI_SCENE_IMAGE_EMPTY');
   }
 
-  log(`[ai-video] Scene images saved → ${slidesDir} (${generatedCount} generated, ${skippedCount} skipped)`);
+  log(
+    `[ai-video] Scene images saved → ${slidesDir} ` +
+      `(${generatedCount} generated, ${skippedCount} skipped, ${failedCount} failed)`,
+  );
+
+  const scenes = await finalizeScenesWithPaths(
+    input.workDir,
+    input.youtubeVideoId,
+    input.scenes,
+    log,
+  );
 
   return {
     slidesDir,
     imagePaths,
+    scenes,
     generatedCount,
     skippedCount,
+    failedCount,
   };
 }

@@ -1,8 +1,15 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, resolveYoutubeChannelVideoDir } from '../config/paths.js';
-import { assembleReupAiSlideshowVideo } from '../modules/video-production/shared/ai-video/index.js';
+import {
+  assembleReupAiSlideshowVideo,
+  attachSceneImagePaths,
+  redistributeMissingSceneTimes,
+  resolveAiScenePromptsFilePath,
+  scenesWithImagePaths,
+} from '../modules/video-production/shared/ai-video/index.js';
 import { AI_SLIDES_DIRNAME } from '../modules/video-production/shared/ai-video/ai-video.constants.js';
+import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../modules/video-production/shared/ai-video/ai-video.types.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
@@ -57,6 +64,42 @@ async function listAiSlideImages(slidesDir: string): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+function msToSrt(totalMs: number): string {
+  const ms = Math.max(0, Math.round(totalMs));
+  const hours = Math.floor(ms / 3_600_000);
+  const minutes = Math.floor((ms % 3_600_000) / 60_000);
+  const seconds = Math.floor((ms % 60_000) / 1_000);
+  const millis = ms % 1_000;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
+}
+
+async function loadAiScenesForAssemble(workDir: string): Promise<AiVideoScenePrompt[]> {
+  const promptsPath = resolveAiScenePromptsFilePath(workDir);
+  try {
+    const raw = await fs.readFile(promptsPath, 'utf8');
+    const parsed = JSON.parse(raw) as AiVideoScenePromptsFile;
+    if (Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
+      const withPaths = await attachSceneImagePaths(parsed.scenes, workDir);
+      return redistributeMissingSceneTimes(withPaths);
+    }
+  } catch {
+    // fall through to folder-only fallback
+  }
+
+  const imagePaths = await listAiSlideImages(path.join(workDir, AI_SLIDES_DIRNAME));
+  const slideSec = 5;
+  return imagePaths.map((imagePath, index) => {
+    const startMs = index * slideSec * 1_000;
+    const endMs = (index + 1) * slideSec * 1_000;
+    return {
+      prompt: '',
+      startTime: msToSrt(startMs),
+      endTime: msToSrt(endMs),
+      path: path.relative(workDir, imagePath).split(path.sep).join('/'),
+    };
+  });
 }
 
 interface AssembleResult {
@@ -145,9 +188,10 @@ async function main() {
         }
       }
 
+      let aiScenes: AiVideoScenePrompt[] = [];
       if (videoType === 'ai') {
-        const slideImages = await listAiSlideImages(path.join(workDir, AI_SLIDES_DIRNAME));
-        if (slideImages.length === 0) {
+        aiScenes = scenesWithImagePaths(await loadAiScenesForAssemble(workDir));
+        if (aiScenes.length === 0) {
           missingFiles.push(`${AI_SLIDES_DIRNAME}/*.jpg`);
         }
       }
@@ -165,10 +209,9 @@ async function main() {
         let outputPath: string;
 
         if (videoType === 'ai') {
-          const imagePaths = await listAiSlideImages(path.join(workDir, AI_SLIDES_DIRNAME));
           outputPath = await assembleReupAiSlideshowVideo({
             workDir,
-            imagePaths,
+            scenes: aiScenes,
             audioPath,
             subtitlePath: subtitlePath!,
             language: channel.language,
