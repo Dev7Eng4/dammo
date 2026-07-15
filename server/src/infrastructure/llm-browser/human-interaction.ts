@@ -329,6 +329,8 @@ export async function humanReadLatestResponse(page: Page, locator: Locator, cont
 
 export async function humanPressEnter(page: Page): Promise<void> {
   await randomDelay(100, 250);
+  await page.keyboard.press(' ', { delay: randomInt(30, 90) });
+  await randomDelay(100, 250);
   await page.keyboard.press('Enter', { delay: randomInt(30, 90) });
   await randomDelay(120, 280);
 }

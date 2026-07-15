@@ -1,5 +1,7 @@
+import { type ColumnDef } from '@tanstack/react-table';
 import { cn } from '../../lib/cn';
 import type { YoutubeChannelVideo, YoutubeChannelVideoStatus } from '../../types/youtubeChannel';
+import { DataTable } from '../ui';
 
 interface YoutubeChannelVideosTableProps {
   videos: YoutubeChannelVideo[];
@@ -67,87 +69,62 @@ export function YoutubeChannelVideosTable({
   emptyMessage = 'No videos found.',
   onCommentClick,
 }: YoutubeChannelVideosTableProps) {
-  if (loading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">
-              <th className="pb-3 pr-4 font-medium">TITLE</th>
-              <th className="pb-3 pr-4 font-medium">STATUS</th>
-              <th className="pb-3 pr-4 font-medium">VIEWS</th>
-              <th className="pb-3 pr-4 font-medium">LIKES</th>
-              <th className="pb-3 font-medium">COMMENTS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={5} className="py-3">
-                  <div className="h-4 animate-pulse rounded bg-neutral-800" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-danger">{error}</p>
-      </div>
-    );
-  }
-
-  if (videos.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">{emptyMessage}</p>
-      </div>
-    );
-  }
+  const columns: ColumnDef<YoutubeChannelVideo, unknown>[] = [
+    {
+      accessorKey: 'title',
+      header: 'TITLE',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'STATUS',
+      cell: ({ row }) => <VideoStatusBadge status={row.original.status ?? 'Published'} />,
+    },
+    {
+      accessorKey: 'viewCount',
+      header: 'VIEWS',
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{formatCount(getValue<number | null | undefined>())}</span>
+      ),
+    },
+    {
+      accessorKey: 'likeCount',
+      header: 'LIKES',
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{formatCount(getValue<number | null | undefined>())}</span>
+      ),
+    },
+    {
+      accessorKey: 'commentCount',
+      header: 'COMMENTS',
+      cell: ({ row }) => {
+        const count = row.original.commentCount;
+        if (count != null && count > 0 && onCommentClick) {
+          return (
+            <button
+              type="button"
+              onClick={() => onCommentClick(row.original)}
+              className="cursor-pointer text-secondary-400 hover:text-secondary-300 hover:underline"
+            >
+              {formatCount(count)}
+            </button>
+          );
+        }
+        return <span className="text-neutral-300">{formatCount(count)}</span>;
+      },
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">
-            <th className="pb-3 pr-4 font-medium">TITLE</th>
-            <th className="pb-3 pr-4 font-medium">STATUS</th>
-            <th className="pb-3 pr-4 font-medium">VIEWS</th>
-            <th className="pb-3 pr-4 font-medium">LIKES</th>
-            <th className="pb-3 font-medium">COMMENTS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {videos.map((video) => (
-            <tr key={video.id} className="border-b border-border/50">
-              <td className="py-3 pr-4 font-medium text-neutral-100">{video.title}</td>
-              <td className="py-3 pr-4">
-                <VideoStatusBadge status={video.status ?? 'Published'} />
-              </td>
-              <td className="py-3 pr-4 text-neutral-300">{formatCount(video.viewCount)}</td>
-              <td className="py-3 pr-4 text-neutral-300">{formatCount(video.likeCount)}</td>
-              <td className="py-3 text-neutral-300">
-                {video.commentCount != null && video.commentCount > 0 && onCommentClick ? (
-                  <button
-                    type="button"
-                    onClick={() => onCommentClick(video)}
-                    className="cursor-pointer text-secondary-400 hover:text-secondary-300 hover:underline"
-                  >
-                    {formatCount(video.commentCount)}
-                  </button>
-                ) : (
-                  formatCount(video.commentCount)
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      data={videos}
+      columns={columns}
+      getRowId={video => video.id}
+      loading={loading}
+      error={error}
+      emptyMessage={emptyMessage}
+    />
   );
 }

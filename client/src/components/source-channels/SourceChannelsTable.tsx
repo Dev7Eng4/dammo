@@ -1,7 +1,8 @@
-import { PlatformIcon } from '../mail-accounts/PlatformIcon';
+import { type ColumnDef } from '@tanstack/react-table';
 import type { SourceChannel } from '../../types/sourceChannel';
+import { PlatformIcon } from '../mail-accounts/PlatformIcon';
+import { DataTable, Link } from '../ui';
 import { PurposePill } from './PurposePill';
-import { RiskPill } from './RiskPill';
 
 interface SourceChannelsTableProps {
   sources: SourceChannel[];
@@ -23,174 +24,98 @@ function truncateUrl(url: string, max = 14) {
   return url.slice(0, max) + '...';
 }
 
-const headerColumns = (allSelected: boolean, onToggleAll: () => void) => (
-  <>
-    <th className="pb-3 pr-3 font-medium w-10">
-      <input
-        type="checkbox"
-        checked={allSelected}
-        onChange={onToggleAll}
-        className="size-3.5 rounded border-border bg-surface-elevated"
-        aria-label="Select all sources"
-      />
-    </th>
-    <th className="pb-3 pr-4 font-medium w-12">PLAT</th>
-    <th className="pb-3 pr-4 font-medium">SOURCE NAME</th>
-    <th className="pb-3 pr-4 font-medium">URL (ID)</th>
-    <th className="pb-3 pr-4 font-medium">NICHE</th>
-    <th className="pb-3 pr-4 font-medium">PURPOSE</th>
-    <th className="pb-3 pr-4 font-medium">RISK</th>
-    <th className="pb-3 pr-4 font-medium">NOTES</th>
-    <th className="pb-3 font-medium w-12 text-center">ACTIONS</th>
-  </>
-);
-
 export function SourceChannelsTable({
   sources,
   loading,
   selectedIds,
-  bumpingRiskId,
+  bumpingRiskId: _bumpingRiskId,
   savingNotesId,
-  deletingId,
+  deletingId: _deletingId,
   onSelect,
   onToggleRow,
   onToggleAll,
-  onBumpRisk,
+  onBumpRisk: _onBumpRisk,
   onNotesChange,
-  onDelete,
+  onDelete: _onDelete,
 }: SourceChannelsTableProps) {
-  const allSelected = sources.length > 0 && selectedIds.size === sources.length;
-
-  if (loading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">
-              {headerColumns(false, onToggleAll)}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={9} className="py-3">
-                  <div className="h-4 animate-pulse rounded bg-neutral-800" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (sources.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">No source channels match your filter.</p>
-      </div>
-    );
-  }
+  const columns: ColumnDef<SourceChannel, unknown>[] = [
+    {
+      id: 'platform',
+      header: 'PLAT',
+      meta: { headerClassName: 'w-12' },
+      cell: ({ row }) => <PlatformIcon platform={row.original.platform} className="text-neutral-400" />,
+    },
+    {
+      accessorKey: 'name',
+      header: 'SOURCE NAME',
+      cell: ({ row }) => (
+        <span
+          className="font-medium text-green-600"
+          onClick={e => {
+            e.stopPropagation();
+            onSelect(row.original.id);
+          }}
+        >
+          <Link to={`/source-channels/${row.original.id}`}>{row.original.name}</Link>
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'url',
+      header: 'URL (ID)',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs text-neutral-500">{truncateUrl(getValue<string>())}</span>
+      ),
+    },
+    {
+      accessorKey: 'niche',
+      header: 'NICHE',
+      cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
+    },
+    {
+      accessorKey: 'purpose',
+      header: 'PURPOSE',
+      cell: ({ row }) => <PurposePill purpose={row.original.purpose} />,
+    },
+    {
+      id: 'notes',
+      header: 'NOTES',
+      cell: ({ row }) => {
+        const source = row.original;
+        const isSavingNotes = savingNotesId === source.id;
+        return (
+          <div className="min-w-[12rem]" onClick={e => e.stopPropagation()}>
+            {onNotesChange ? (
+              <input
+                key={`${source.id}-${source.notes ?? ''}`}
+                type="text"
+                defaultValue={source.notes ?? ''}
+                placeholder="Add note..."
+                disabled={isSavingNotes}
+                onBlur={e => onNotesChange(source.id, e.currentTarget.value)}
+                className="h-8 w-full min-w-[10rem] rounded-lg border border-border bg-surface-elevated px-2.5 text-xs text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 disabled:opacity-60"
+              />
+            ) : (
+              <span className="text-xs text-neutral-400">{source.notes || '—'}</span>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">
-            {headerColumns(allSelected, onToggleAll)}
-          </tr>
-        </thead>
-        <tbody>
-          {sources.map((source) => {
-            const isHighRisk = source.riskLevel === 'high';
-            const isBumping = bumpingRiskId === source.id;
-            const isSavingNotes = savingNotesId === source.id;
-            const isDeleting = deletingId === source.id;
-            const isSelected = selectedIds.has(source.id);
-
-            return (
-              <tr
-                key={source.id}
-                onClick={() => onSelect(source.id)}
-                className={`border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-elevated/50 ${
-                  isSelected ? 'bg-primary-500/10' : ''
-                }`}
-              >
-                <td className="py-3 pr-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => onToggleRow(source.id)}
-                    className="size-3.5 rounded border-border bg-surface-elevated"
-                    aria-label={`Select ${source.name}`}
-                  />
-                </td>
-                <td className="py-3 pr-4">
-                  <PlatformIcon platform={source.platform} className="text-neutral-400" />
-                </td>
-                <td className="py-3 pr-4 font-medium text-neutral-100">{source.name}</td>
-                <td className="py-3 pr-4 font-mono text-xs text-neutral-500">
-                  {truncateUrl(source.url)}
-                </td>
-                <td className="py-3 pr-4 text-neutral-300">{source.niche}</td>
-                <td className="py-3 pr-4">
-                  <PurposePill purpose={source.purpose} />
-                </td>
-                <td className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center gap-2">
-                    <RiskPill risk={source.riskLevel} />
-                    {onBumpRisk ? (
-                      <button
-                        type="button"
-                        title={isHighRisk ? 'Risk is already at maximum' : 'Increase risk level'}
-                        disabled={isHighRisk || isBumping}
-                        onClick={() => onBumpRisk(source.id)}
-                        className="inline-flex size-6 items-center justify-center rounded border border-border text-neutral-400 transition-colors hover:bg-surface-elevated hover:text-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="m18 15-6-6-6 6" />
-                        </svg>
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-                <td className="py-3 min-w-[12rem]" onClick={(e) => e.stopPropagation()}>
-                  {onNotesChange ? (
-                    <input
-                      key={`${source.id}-${source.notes ?? ''}`}
-                      type="text"
-                      defaultValue={source.notes ?? ''}
-                      placeholder="Add note..."
-                      disabled={isSavingNotes}
-                      onBlur={(e) => onNotesChange(source.id, e.currentTarget.value)}
-                      className="h-8 w-full min-w-[10rem] rounded-lg border border-border bg-surface-elevated px-2.5 text-xs text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 disabled:opacity-60"
-                    />
-                  ) : (
-                    <span className="text-xs text-neutral-400">{source.notes || '—'}</span>
-                  )}
-                </td>
-                <td className="py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                  {onDelete ? (
-                    <button
-                      type="button"
-                      title="Delete source"
-                      disabled={isDeleting}
-                      onClick={() => onDelete(source.id)}
-                      className="inline-flex size-7 items-center justify-center rounded border border-border text-neutral-400 transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 6h18" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      data={sources}
+      columns={columns}
+      getRowId={source => source.id}
+      loading={loading}
+      enableRowSelection
+      selectedIds={selectedIds}
+      onToggleRow={onToggleRow}
+      onToggleAll={onToggleAll}
+      onRowClick={source => onToggleRow(source.id)}
+      emptyMessage="No source channels match your filter."
+    />
   );
 }

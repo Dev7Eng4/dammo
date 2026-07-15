@@ -1,8 +1,10 @@
 import { AppError } from '../../../../shared/http/errors.js';
 
-export const CAPTION_STYLE_KEYS = ['default', 'klee_one', 'green'] as const;
+export const CAPTION_STYLE_KEYS = ['default', 'klee_one', 'green', 'blue_glow'] as const;
 
 export type CaptionStyleKey = (typeof CAPTION_STYLE_KEYS)[number];
+
+export type CaptionAssLayout = 'single' | 'glow_dual';
 
 export interface CaptionStylePreset {
   key: CaptionStyleKey;
@@ -14,6 +16,10 @@ export interface CaptionStylePreset {
   showBackgroundBox: boolean;
   outlinePx: number;
   shadowPx: number;
+  assLayout?: CaptionAssLayout;
+  glowPrimaryColor?: string;
+  glowOutlinePx?: number;
+  glowBlur?: number;
 }
 
 export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> = {
@@ -49,6 +55,21 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     showBackgroundBox: false,
     outlinePx: 3.6,
     shadowPx: 1.5,
+  },
+  blue_glow: {
+    key: 'blue_glow',
+    label: 'White + Blue glow',
+    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
+    fontAssName: 'Noto Sans JP Black',
+    fontSize: 60,
+    primaryColor: '&H00FFFFFF',
+    showBackgroundBox: false,
+    outlinePx: 3.6,
+    shadowPx: 0,
+    assLayout: 'glow_dual',
+    glowPrimaryColor: '&H00C8FF00',
+    glowOutlinePx: 10,
+    glowBlur: 10,
   },
 };
 

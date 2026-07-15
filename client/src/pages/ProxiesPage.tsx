@@ -42,8 +42,7 @@ export function ProxiesPage() {
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
   const list = usePaginatedList({
-    fetcher: ({ filter: currentFilter, page, limit, signal }) =>
-      fetchProxies(currentFilter, '', page, limit, { signal }),
+    fetcher: ({ filter: currentFilter, page, limit, signal }) => fetchProxies(currentFilter, '', page, limit, { signal }),
     query: { filter },
     limit: LIMIT,
     refreshKey: listRefreshKey,
@@ -51,7 +50,7 @@ export function ProxiesPage() {
   });
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       setStatsLoading(true);
       try {
         const data = await fetchProxyStats({ signal });
@@ -66,8 +65,8 @@ export function ProxiesPage() {
   );
 
   function refreshAll() {
-    setListRefreshKey((key) => key + 1);
-    setStatsRefreshKey((key) => key + 1);
+    setListRefreshKey(key => key + 1);
+    setStatsRefreshKey(key => key + 1);
     list.refresh();
   }
 
@@ -100,7 +99,7 @@ export function ProxiesPage() {
   }
 
   function handleToggleRow(id: string) {
-    setSelectedIds((prev) => {
+    setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -112,7 +111,7 @@ export function ProxiesPage() {
     if (selectedIds.size === list.items.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(list.items.map((proxy) => proxy.id)));
+      setSelectedIds(new Set(list.items.map(proxy => proxy.id)));
     }
   }
 
@@ -162,7 +161,7 @@ export function ProxiesPage() {
 
   async function handlePingRow(id: string) {
     if (pingingIds.has(id)) return;
-    setPingingIds((prev) => new Set(prev).add(id));
+    setPingingIds(prev => new Set(prev).add(id));
     try {
       const result = await testProxy(id);
       refreshAll();
@@ -174,7 +173,7 @@ export function ProxiesPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Ping failed');
     } finally {
-      setPingingIds((prev) => {
+      setPingingIds(prev => {
         const next = new Set(prev);
         next.delete(id);
         return next;
@@ -213,7 +212,7 @@ export function ProxiesPage() {
     }
   }
 
-  const extendTarget = list.items.find((proxy) => proxy.id === extendTargetId) ?? null;
+  const extendTarget = list.items.find(proxy => proxy.id === extendTargetId) ?? null;
 
   function handleTabChange(tab: ProxyTab) {
     setActiveTab(tab);
@@ -221,14 +220,14 @@ export function ProxiesPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+    <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
+      <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
+        <div className='flex-1 overflow-y-auto p-6'>
           <ProxyPageHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
           {activeTab === 'monitoring' ? (
             <>
-              <ProxyStatCards data={stats} loading={statsLoading} />
+              {/* <ProxyStatCards data={stats} loading={statsLoading} /> */}
               <ProxiesToolbar
                 total={list.total}
                 filter={filter}
@@ -241,8 +240,8 @@ export function ProxiesPage() {
                 importing={importing}
                 removingFailed={removingFailed}
               />
-              {list.error ? <p className="mt-2 text-xs text-danger">{list.error}</p> : null}
-              <div className="mt-4 card-surface px-5 pt-3 pb-4">
+              {list.error ? <p className='mt-2 text-xs text-danger'>{list.error}</p> : null}
+              <div className='mt-4 card-surface px-5 pt-3 pb-4'>
                 <ProxiesTable
                   proxies={list.items}
                   selectedId={selectedId}
@@ -270,68 +269,49 @@ export function ProxiesPage() {
         </div>
       </div>
 
-      <AddProxyModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
-      />
+      <AddProxyModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />
 
       <Modal
         open={extendTargetId !== null}
         onClose={handleCloseExtend}
-        title="Extend Proxy"
+        title='Extend Proxy'
         footer={
           <>
-            <Button
-              variant="outlined"
-              size="sm"
-              className="rounded-lg"
-              onClick={handleCloseExtend}
-              disabled={extending}
-            >
+            <Button variant='outlined' size='sm' className='rounded-lg' onClick={handleCloseExtend} disabled={extending}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              className="rounded-lg"
-              disabled={extending}
-              onClick={handleConfirmExtend}
-            >
+            <Button size='sm' className='rounded-lg' disabled={extending} onClick={handleConfirmExtend}>
               {extending ? 'Saving…' : 'Save'}
             </Button>
           </>
         }
       >
         {extendTarget ? (
-          <div className="space-y-4">
-            <p className="text-sm text-neutral-300">
+          <div className='space-y-4'>
+            <p className='text-sm text-neutral-300'>
               Extend expiry for{' '}
-              <span className="font-mono text-neutral-100">
+              <span className='font-mono text-neutral-100'>
                 {extendTarget.host}:{extendTarget.port}
               </span>
               {extendTarget.expiresAt ? (
-                <>
-                  {' '}
-                  (current:{' '}
-                  {new Date(extendTarget.expiresAt).toLocaleDateString('en-GB')})
-                </>
+                <> (current: {new Date(extendTarget.expiresAt).toLocaleDateString('en-GB')})</>
               ) : (
                 ' (no expiry set)'
               )}
             </p>
             <div>
-              <label htmlFor="extend-days" className="mb-1.5 block text-xs font-medium text-neutral-400">
+              <label htmlFor='extend-days' className='mb-1.5 block text-xs font-medium text-neutral-400'>
                 Days to extend
               </label>
               <Input
-                id="extend-days"
-                type="number"
+                id='extend-days'
+                type='number'
                 min={1}
                 step={1}
-                placeholder="e.g. 30"
+                placeholder='e.g. 30'
                 value={extendDays}
-                onChange={(e) => setExtendDays(e.target.value)}
-                className="h-10 rounded-lg text-sm"
+                onChange={e => setExtendDays(e.target.value)}
+                className='h-10 rounded-lg text-sm'
                 disabled={extending}
               />
             </div>
@@ -342,32 +322,25 @@ export function ProxiesPage() {
       <Modal
         open={showRemoveFailedModal}
         onClose={() => setShowRemoveFailedModal(false)}
-        title="Remove Failed Proxies"
+        title='Remove Failed Proxies'
         footer={
           <>
             <Button
-              variant="outlined"
-              size="sm"
-              className="rounded-lg"
+              variant='outlined'
+              size='sm'
+              className='rounded-lg'
               onClick={() => setShowRemoveFailedModal(false)}
               disabled={removingFailed}
             >
               Cancel
             </Button>
-            <Button
-              size="sm"
-              className="rounded-lg"
-              disabled={removingFailed}
-              onClick={handleRemoveFailed}
-            >
+            <Button size='sm' className='rounded-lg' disabled={removingFailed} onClick={handleRemoveFailed}>
               {removingFailed ? 'Removing...' : 'Remove All Failed'}
             </Button>
           </>
         }
       >
-        <p className="text-sm text-neutral-300">
-          Archive all proxies with Failed status? This action cannot be undone from the UI.
-        </p>
+        <p className='text-sm text-neutral-300'>Archive all proxies with Failed status? This action cannot be undone from the UI.</p>
       </Modal>
     </div>
   );

@@ -338,7 +338,12 @@ export class ProxiesService {
           return proxy;
         }
 
-        return { ...proxy, assignedProfileIds, updatedAt: now };
+        return {
+          ...proxy,
+          assignedProfileIds,
+          updatedAt: now,
+          ...(shouldAssign ? { lastUsed: now } : {}),
+        };
       }),
     }));
   }

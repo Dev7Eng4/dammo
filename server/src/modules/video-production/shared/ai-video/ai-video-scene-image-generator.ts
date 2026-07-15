@@ -3,6 +3,12 @@ import path from 'node:path';
 import type { Page } from 'playwright';
 import { DEFAULT_FLOW_PROJECT_ID } from '../../../../infrastructure/llm-browser/flow.config.js';
 import type { FlowToolVisual } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import {
+  connectPlaywrightToGpmProfile,
+  disconnectGpmPlaywright,
+  type GpmPlaywrightConnection,
+} from '../../../../infrastructure/gpm/gpm-playwright.connector.js';
+import type { GpmProfile } from '../../../../infrastructure/gpm/gpm-api.client.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import {
   createChromeProfilePage,
@@ -10,6 +16,7 @@ import {
 } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
+import { gpmManagerService } from '../../../gpm-manager/gpm-manager.service.js';
 import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
@@ -39,10 +46,17 @@ interface SceneVisualJob {
   outputPath: string;
 }
 
-interface MetaTabWorker {
-  tabIndex: number;
-  profile: ChromeProfile;
+interface MetaImageWorker {
+  workerIndex: number;
+  label: string;
   page: Page;
+  kind: 'chrome' | 'gpm';
+  profileId: string;
+}
+
+interface MetaWorkerPool {
+  workers: MetaImageWorker[];
+  gpmConnections: GpmPlaywrightConnection[];
 }
 
 function buildSceneName(index: number): string {
@@ -147,30 +161,154 @@ async function generateFlowSceneImages(
   }
 }
 
-async function openMetaTabWorkers(
+async function openChromeMetaWorkers(
   profiles: ChromeProfile[],
   tabCount: number,
+  startIndex: number,
   log: (msg: string) => void,
-): Promise<MetaTabWorker[]> {
-  const uniqueProfiles = [...new Map(profiles.map(profile => [profile.id, profile])).values()];
+): Promise<MetaImageWorker[]> {
+  if (tabCount <= 0 || profiles.length === 0) return [];
 
+  const uniqueProfiles = [...new Map(profiles.map(profile => [profile.id, profile])).values()];
   for (const profile of uniqueProfiles) {
     log(`[ai-video] Mở Chrome main profile ${profile.name} cho Meta scene images...`);
     await openChromeProfile(profile.id, profile.userDataDir);
   }
 
-  const workers: MetaTabWorker[] = [];
+  const workers: MetaImageWorker[] = [];
   for (let tabIndex = 0; tabIndex < tabCount; tabIndex += 1) {
     const profile = profiles[tabIndex % profiles.length];
-    const page = await createChromeProfilePage(profile.id);
-    await metaBrowserService.openOnPage(page);
-    workers.push({ tabIndex, profile, page });
-    log(
-      `[ai-video] Meta tab ${tabIndex + 1}/${tabCount} sẵn sàng trên profile ${profile.name}`,
-    );
+    try {
+      const page = await createChromeProfilePage(profile.id);
+      await metaBrowserService.openOnPage(page);
+      const workerIndex = startIndex + workers.length;
+      workers.push({
+        workerIndex,
+        label: `chrome:${profile.name}`,
+        page,
+        kind: 'chrome',
+        profileId: profile.id,
+      });
+      log(`[ai-video] Meta worker ${workerIndex + 1} sẵn sàng trên Chrome ${profile.name}`);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log(`[ai-video] Bỏ qua Chrome tab trên ${profile.name}: ${reason}`);
+    }
   }
 
   return workers;
+}
+
+async function openGpmMetaWorkers(
+  profiles: GpmProfile[],
+  startIndex: number,
+  log: (msg: string) => void,
+): Promise<{ workers: MetaImageWorker[]; connections: GpmPlaywrightConnection[] }> {
+  if (profiles.length === 0) return { workers: [], connections: [] };
+
+  const results = await Promise.all(
+    profiles.map(async profile => {
+      try {
+        log(`[ai-video] Start GPM profile ${profile.name} cho Meta scene images...`);
+        const connection = await connectPlaywrightToGpmProfile(profile.id);
+        await metaBrowserService.openOnPage(connection.page);
+        return { profile, connection, error: null as string | null };
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        log(`[ai-video] Bỏ qua GPM profile ${profile.name}: ${reason}`);
+        return { profile, connection: null, error: reason };
+      }
+    }),
+  );
+
+  const workers: MetaImageWorker[] = [];
+  const connections: GpmPlaywrightConnection[] = [];
+
+  for (const result of results) {
+    if (!result.connection) continue;
+    const workerIndex = startIndex + workers.length;
+    workers.push({
+      workerIndex,
+      label: `gpm:${result.profile.name}`,
+      page: result.connection.page,
+      kind: 'gpm',
+      profileId: result.connection.profileId,
+    });
+    connections.push(result.connection);
+    log(`[ai-video] Meta worker ${workerIndex + 1} sẵn sàng trên GPM ${result.profile.name}`);
+  }
+
+  return { workers, connections };
+}
+
+async function openMetaWorkerPool(
+  pendingCount: number,
+  log: (msg: string) => void,
+): Promise<MetaWorkerPool> {
+  const target = Math.min(META_IMAGE_MAX_TABS, pendingCount);
+  const mains = chromeProfilesService.listMainProfiles();
+
+  const chromeUniqueSlots = Math.min(mains.length, target);
+  const needGpm = chromeUniqueSlots < target;
+  const gpmCandidates = needGpm ? await gpmManagerService.listMetaEnabledProfiles() : [];
+  const gpmProfiles = gpmCandidates.slice(0, Math.max(0, target - chromeUniqueSlots));
+  const remainingAfterGpm = target - chromeUniqueSlots - gpmProfiles.length;
+  const chromeTabCount =
+    chromeUniqueSlots === 0 ? 0 : chromeUniqueSlots + remainingAfterGpm;
+
+  const chromeProfilesForTabs =
+    chromeTabCount > 0 ? mains.slice(0, Math.min(mains.length, META_IMAGE_MAX_TABS)) : [];
+
+  log(
+    `[ai-video] Meta capacity: target=${target}, chromeMains=${mains.length}, ` +
+      `chromeTabs=${chromeTabCount}, gpmMeta=${gpmProfiles.length}` +
+      (gpmProfiles.length > 0
+        ? ` (${gpmProfiles.map(profile => profile.name).join(', ')})`
+        : ''),
+  );
+
+  if (chromeTabCount === 0 && gpmProfiles.length === 0) {
+    throw new AppError(
+      'No Chrome main or GPM meta-enabled profiles available for Meta scene images',
+      400,
+      'AI_SCENE_IMAGE_NO_META_PROFILES',
+    );
+  }
+
+  const chromeWorkers = await openChromeMetaWorkers(chromeProfilesForTabs, chromeTabCount, 0, log);
+  const { workers: gpmWorkers, connections } = await openGpmMetaWorkers(
+    gpmProfiles,
+    chromeWorkers.length,
+    log,
+  );
+
+  const workers = [...chromeWorkers, ...gpmWorkers];
+  if (workers.length === 0) {
+    for (const connection of connections) {
+      await disconnectGpmPlaywright(connection).catch(() => undefined);
+    }
+    throw new AppError(
+      'Failed to open any Meta workers (Chrome/GPM)',
+      502,
+      'AI_SCENE_IMAGE_NO_META_WORKERS',
+    );
+  }
+
+  return { workers, gpmConnections: connections };
+}
+
+async function cleanupMetaWorkerPool(pool: MetaWorkerPool, log: (msg: string) => void): Promise<void> {
+  await Promise.all(
+    pool.gpmConnections.map(async connection => {
+      try {
+        await disconnectGpmPlaywright(connection);
+        log(`[ai-video] Closed GPM profile ${connection.profileId}`);
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        log(`[ai-video] Failed to close GPM ${connection.profileId}: ${reason}`);
+      }
+    }),
+  );
 }
 
 async function generateMetaSceneImages(
@@ -180,22 +318,18 @@ async function generateMetaSceneImages(
   log: (msg: string) => void,
   onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
 ): Promise<{ generatedCount: number; failedCount: number }> {
-  const mains = chromeProfilesService.listMainProfiles();
-  const profileCount = Math.min(META_IMAGE_MAX_TABS, mains.length);
-  const profiles = mains.slice(0, profileCount);
-  const tabCount = Math.min(META_IMAGE_MAX_TABS, pending.length);
-
-  log(
-    `[ai-video] Meta parallel: ${tabCount} tab(s) trên ${profileCount} main profile(s) ` +
-      `(${profiles.map(profile => profile.name).join(', ')}) cho ${pending.length} scene(s)`,
-  );
-
-  const workers = await openMetaTabWorkers(profiles, tabCount, log);
+  const pool = await openMetaWorkerPool(pending.length, log);
+  const { workers } = pool;
   let nextJobIndex = 0;
   let generatedCount = 0;
   let failedCount = 0;
 
-  async function runWorker(worker: MetaTabWorker): Promise<void> {
+  log(
+    `[ai-video] Meta parallel: ${workers.length} worker(s) ` +
+      `[${workers.map(worker => worker.label).join(', ')}] cho ${pending.length} scene(s)`,
+  );
+
+  async function runWorker(worker: MetaImageWorker): Promise<void> {
     while (true) {
       const jobIndex = nextJobIndex;
       nextJobIndex += 1;
@@ -210,7 +344,7 @@ async function generateMetaSceneImages(
       });
 
       log(
-        `[ai-video] tab ${worker.tabIndex + 1}/${tabCount} (${worker.profile.name}) → ${job.name}`,
+        `[ai-video] worker ${worker.workerIndex + 1}/${workers.length} (${worker.label}) → ${job.name}`,
       );
 
       let succeeded = false;
@@ -257,8 +391,12 @@ async function generateMetaSceneImages(
     }
   }
 
-  await Promise.all(workers.map(worker => runWorker(worker)));
-  return { generatedCount, failedCount };
+  try {
+    await Promise.all(workers.map(worker => runWorker(worker)));
+    return { generatedCount, failedCount };
+  } finally {
+    await cleanupMetaWorkerPool(pool, log);
+  }
 }
 
 async function finalizeScenesWithPaths(

@@ -72,6 +72,10 @@ export interface GpmProfile {
   updated_at?: string;
   tags?: string[];
   fingerprint?: Record<string, unknown>;
+  /** Dammo-local overlay — not sent to GPM Login API */
+  flowEnabled?: boolean;
+  /** Dammo-local overlay — not sent to GPM Login API */
+  metaEnabled?: boolean;
 }
 
 export interface GpmGroup {

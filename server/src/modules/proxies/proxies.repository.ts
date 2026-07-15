@@ -12,15 +12,12 @@ function normalizeStore(raw: LegacyProxiesStore | null): ProxiesStore {
 
   const needsMigration = raw.nextId !== undefined || raw.proxies.some((proxy) => !isUuid(proxy.id));
 
-  if (!needsMigration) {
-    return { proxies: raw.proxies };
-  }
-
   return {
     proxies: raw.proxies.map((proxy) => ({
       ...proxy,
-      id: ensureUuid(proxy.id),
+      id: needsMigration ? ensureUuid(proxy.id) : proxy.id,
       assignedProfileIds: proxy.assignedProfileIds ?? [],
+      lastUsed: proxy.lastUsed || undefined,
     })),
   };
 }

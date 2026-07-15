@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   type CaptionStyleKey,
+  type CaptionStylePreset,
   getCaptionStylePreset,
   resolveCaptionStyleKey,
 } from './caption-styles.js';
@@ -59,17 +60,52 @@ export function resolveJapaneseSubtitleStyle(subtitlePath: string | null, videoL
   return /\.ja\.(srt|vtt)$/i.test(path.basename(subtitlePath));
 }
 
-function buildAssStyle(
+function buildAssStyleLine(
+  name: string,
   fontName: string,
   fontSize: number,
   primaryColor: string,
   outlinePx: number,
   shadowPx: number,
 ): string {
-  return `Style: Default,${fontName},${fontSize},${primaryColor},&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,${SI_SUBTITLE_CHAR_SPACING},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
+  return `Style: ${name},${fontName},${fontSize},${primaryColor},&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,${SI_SUBTITLE_CHAR_SPACING},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
 }
 
-function buildAssEvent(start: string, end: string, eventMarginV: number, baseText: string): string {
+function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStylePreset): string {
+  if (preset.assLayout === 'glow_dual') {
+    const glowColor = preset.glowPrimaryColor ?? '&H00C8FF00';
+    const glowPx = preset.glowOutlinePx ?? 10;
+    return (
+      buildAssStyleLine('Glow', fontName, fontSize, glowColor, glowPx, 0) +
+      buildAssStyleLine('Default', fontName, fontSize, preset.primaryColor, preset.outlinePx, 0)
+    );
+  }
+
+  return buildAssStyleLine(
+    'Default',
+    fontName,
+    fontSize,
+    preset.primaryColor,
+    preset.outlinePx,
+    preset.shadowPx,
+  );
+}
+
+function buildAssEvent(
+  start: string,
+  end: string,
+  eventMarginV: number,
+  baseText: string,
+  preset: CaptionStylePreset,
+): string {
+  if (preset.assLayout === 'glow_dual') {
+    const blur = preset.glowBlur ?? 10;
+    return (
+      `Dialogue: 0,${start},${end},Glow,,0,0,${eventMarginV},,{\\blur${blur}}${baseText}\n` +
+      `Dialogue: 1,${start},${end},Default,,0,0,${eventMarginV},,${baseText}\n`
+    );
+  }
+
   return `Dialogue: 0,${start},${end},Default,,0,0,${eventMarginV},,${baseText}\n`;
 }
 
@@ -87,8 +123,6 @@ export function convertSrtToAss(
   const fontExists = fontFile ? fs.existsSync(fontFile) : false;
   const fontName = fontExists ? preset.fontAssName : 'Arial';
   const fontSize = preset.fontSize;
-  const outlinePx = preset.outlinePx;
-  const shadowPx = preset.shadowPx;
 
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
   const boxMidY = preset.showBackgroundBox
@@ -103,7 +137,7 @@ WrapStyle: 1\r
 \r
 [V4+ Styles]\r
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\r
-${buildAssStyle(fontName, fontSize, preset.primaryColor, outlinePx, shadowPx)}
+${buildAssStyles(fontName, fontSize, preset)}
 \r
 [Events]\r
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\r
@@ -166,7 +200,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
     const totalTextH = numLines * fontSize + Math.max(0, numLines - 1) * SI_SUBTITLE_LINE_GAP_PX;
     const eventMarginV = Math.max(0, Math.round(SI_CANVAS_H - boxMidY - totalTextH / 2));
 
-    events += buildAssEvent(start, end, eventMarginV, baseText);
+    events += buildAssEvent(start, end, eventMarginV, baseText, preset);
   }
 
   fs.writeFileSync(assPath, header + events, 'utf-8');

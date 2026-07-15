@@ -17,6 +17,7 @@ export interface Proxy {
   status: ProxyStatus;
   latencyMs?: number;
   lastCheckedAt?: string;
+  lastUsed?: string;
   assignedProfileIds: string[];
   maxProfiles: number;
   archivedAt?: string;

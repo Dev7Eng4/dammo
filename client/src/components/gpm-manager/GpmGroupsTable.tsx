@@ -1,4 +1,6 @@
+import { type ColumnDef } from '@tanstack/react-table';
 import type { GpmGroup } from '../../types/gpm';
+import { DataTable } from '../ui';
 
 interface GpmGroupsTableProps {
   groups: GpmGroup[];
@@ -23,83 +25,64 @@ export function GpmGroupsTable({
   onEdit,
   onDelete,
 }: GpmGroupsTableProps) {
-  if (loading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">
-              <th className="pb-3 pr-4 font-medium">NAME</th>
-              <th className="pb-3 pr-4 font-medium">SORT ORDER</th>
-              <th className="pb-3 pr-4 font-medium">CREATED</th>
-              {!readOnly ? <th className="pb-3 font-medium">ACTIONS</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={readOnly ? 3 : 4} className="py-3">
-                  <div className="h-4 animate-pulse rounded bg-neutral-800" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
+  const columns: ColumnDef<GpmGroup, unknown>[] = [
+    {
+      accessorKey: 'name',
+      header: 'NAME',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      ),
+    },
+    {
+      accessorKey: 'sort_order',
+      header: 'SORT ORDER',
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{getValue<number | undefined>() ?? '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'CREATED',
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{formatDate(getValue<string | undefined>())}</span>
+      ),
+    },
+  ];
 
-  if (groups.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">No GPM groups found.</p>
-      </div>
-    );
+  if (!readOnly) {
+    columns.push({
+      id: 'actions',
+      header: 'ACTIONS',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg border border-border px-2 py-1 text-xs"
+            onClick={() => onEdit?.(row.original)}
+            disabled={deletingId === row.original.id}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-border px-2 py-1 text-xs text-danger"
+            onClick={() => onDelete?.(row.original)}
+            disabled={deletingId === row.original.id}
+          >
+            {deletingId === row.original.id ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      ),
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">
-            <th className="pb-3 pr-4 font-medium">NAME</th>
-            <th className="pb-3 pr-4 font-medium">SORT ORDER</th>
-            <th className="pb-3 pr-4 font-medium">CREATED</th>
-            {!readOnly ? <th className="pb-3 font-medium">ACTIONS</th> : null}
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map((group) => (
-            <tr key={group.id} className="border-b border-border/50 last:border-0">
-              <td className="py-3 pr-4 font-medium text-neutral-100">{group.name}</td>
-              <td className="py-3 pr-4 text-neutral-300">{group.sort_order ?? '—'}</td>
-              <td className="py-3 pr-4 text-neutral-300">{formatDate(group.created_at)}</td>
-              {!readOnly ? (
-                <td className="py-3">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded-lg border border-border px-2 py-1 text-xs"
-                      onClick={() => onEdit?.(group)}
-                      disabled={deletingId === group.id}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-lg border border-border px-2 py-1 text-xs text-danger"
-                      onClick={() => onDelete?.(group)}
-                      disabled={deletingId === group.id}
-                    >
-                      {deletingId === group.id ? 'Deleting…' : 'Delete'}
-                    </button>
-                  </div>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      data={groups}
+      columns={columns}
+      getRowId={group => group.id}
+      loading={loading}
+      emptyMessage="No GPM groups found."
+    />
   );
 }

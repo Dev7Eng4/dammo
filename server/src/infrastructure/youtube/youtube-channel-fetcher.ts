@@ -56,7 +56,7 @@ export async function fetchYoutubeChannelMetadata(channelUrl: string): Promise<Y
 
     return {
       ...base,
-      niche: inferNiche(base.categories, base.description),
+      niche: inferNiche(base.categories),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown yt-dlp error';

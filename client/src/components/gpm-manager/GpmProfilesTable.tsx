@@ -1,6 +1,8 @@
-import { cn } from '../../lib/cn';
-import { Button } from '../ui';
+import { type ColumnDef } from '@tanstack/react-table';
 import type { GpmGroup, GpmProfile } from '../../types/gpm';
+import { Button, DataTable } from '../ui';
+
+export type GpmCapabilityKey = 'flowEnabled' | 'metaEnabled';
 
 interface GpmProfilesTableProps {
   profiles: GpmProfile[];
@@ -8,17 +10,17 @@ interface GpmProfilesTableProps {
   selectedId: string | null;
   runningProfileIds: Set<string>;
   actionBusyIds: Set<string>;
+  updatingCapabilityIds?: Set<string>;
   loading?: boolean;
   onSelect: (id: string) => void;
   onStart: (id: string) => void;
   onStop: (id: string) => void;
+  onCapabilityChange: (id: string, key: GpmCapabilityKey, value: boolean) => void;
 }
 
 function groupName(groups: GpmGroup[], groupId: string): string {
-  return groups.find((group) => group.id === groupId)?.name ?? (groupId || '—');
+  return groups.find(group => group.id === groupId)?.name ?? (groupId || '—');
 }
-
-const COL_SPAN = 4;
 
 export function GpmProfilesTable({
   profiles,
@@ -26,94 +28,119 @@ export function GpmProfilesTable({
   selectedId,
   runningProfileIds,
   actionBusyIds,
+  updatingCapabilityIds,
   loading,
   onSelect,
   onStart,
   onStop,
+  onCapabilityChange,
 }: GpmProfilesTableProps) {
-  if (loading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">
-              <th className="pb-3 pr-4 font-medium">NAME</th>
-              <th className="pb-3 pr-4 font-medium">GROUP</th>
-              <th className="pb-3 pr-4 font-medium">PROXY</th>
-              <th className="pb-3 font-medium">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={COL_SPAN} className="py-3">
-                  <div className="h-4 animate-pulse rounded bg-neutral-800" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (profiles.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">No GPM profiles found.</p>
-      </div>
-    );
-  }
+  const columns: ColumnDef<GpmProfile, unknown>[] = [
+    {
+      id: 'flow',
+      header: 'FLOW',
+      cell: ({ row }) => {
+        const profile = row.original;
+        const updating = updatingCapabilityIds?.has(profile.id) ?? false;
+        return (
+          <label
+            className="inline-flex cursor-pointer items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={profile.flowEnabled === true}
+              disabled={updating}
+              onChange={e => onCapabilityChange(profile.id, 'flowEnabled', e.target.checked)}
+              className="size-3.5 rounded border-border bg-surface accent-primary-500"
+              aria-label={`Flow enabled for ${profile.name}`}
+            />
+          </label>
+        );
+      },
+    },
+    {
+      id: 'meta',
+      header: 'META',
+      cell: ({ row }) => {
+        const profile = row.original;
+        const updating = updatingCapabilityIds?.has(profile.id) ?? false;
+        return (
+          <label
+            className="inline-flex cursor-pointer items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={profile.metaEnabled === true}
+              disabled={updating}
+              onChange={e => onCapabilityChange(profile.id, 'metaEnabled', e.target.checked)}
+              className="size-3.5 rounded border-border bg-surface accent-primary-500"
+              aria-label={`Meta enabled for ${profile.name}`}
+            />
+          </label>
+        );
+      },
+    },
+    {
+      accessorKey: 'name',
+      header: 'NAME',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      ),
+    },
+    {
+      id: 'group',
+      header: 'GROUP',
+      cell: ({ row }) => (
+        <span className="text-neutral-300">{groupName(groups, row.original.group_id)}</span>
+      ),
+    },
+    {
+      accessorKey: 'raw_proxy',
+      header: 'PROXY',
+      cell: ({ row }) => (
+        <span
+          className="max-w-48 truncate font-mono text-xs text-neutral-400"
+          title={row.original.raw_proxy}
+        >
+          {row.original.raw_proxy || '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'ACTIONS',
+      cell: ({ row }) => {
+        const profile = row.original;
+        const running = runningProfileIds.has(profile.id);
+        const busy = actionBusyIds.has(profile.id);
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="rounded-lg"
+              disabled={busy}
+              onClick={() => (running ? onStop(profile.id) : onStart(profile.id))}
+            >
+              {busy ? (running ? 'Stopping…' : 'Starting…') : running ? 'Stop' : 'Start'}
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">
-            <th className="pb-3 pr-4 font-medium">NAME</th>
-            <th className="pb-3 pr-4 font-medium">GROUP</th>
-            <th className="pb-3 pr-4 font-medium">PROXY</th>
-            <th className="pb-3 font-medium">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {profiles.map((profile) => {
-            const running = runningProfileIds.has(profile.id);
-            const busy = actionBusyIds.has(profile.id);
-
-            return (
-              <tr
-                key={profile.id}
-                onClick={() => onSelect(profile.id)}
-                className={cn(
-                  'cursor-pointer border-b border-border/50 transition-colors last:border-0',
-                  selectedId === profile.id ? 'bg-primary-500/10' : 'hover:bg-surface-elevated/50',
-                )}
-              >
-                <td className="py-3 pr-4 font-medium text-neutral-100">{profile.name}</td>
-                <td className="py-3 pr-4 text-neutral-300">{groupName(groups, profile.group_id)}</td>
-                <td
-                  className="max-w-48 truncate py-3 pr-4 font-mono text-xs text-neutral-400"
-                  title={profile.raw_proxy}
-                >
-                  {profile.raw_proxy || '—'}
-                </td>
-                <td className="py-3" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="outlined"
-                    size="sm"
-                    className="rounded-lg"
-                    disabled={busy}
-                    onClick={() => (running ? onStop(profile.id) : onStart(profile.id))}
-                  >
-                    {busy ? (running ? 'Stopping…' : 'Starting…') : running ? 'Stop' : 'Start'}
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      data={profiles}
+      columns={columns}
+      getRowId={profile => profile.id}
+      loading={loading}
+      activeRowId={selectedId}
+      onRowClick={profile => onSelect(profile.id)}
+      emptyMessage="No GPM profiles found."
+    />
   );
 }

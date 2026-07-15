@@ -7,6 +7,7 @@ import {
   startGpmProfile,
   stopGpmProfile,
   testGpmProfile,
+  updateGpmProfileCapabilities,
 } from '../api/gpm';
 import { setProfileProxy } from '../api/proxies';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
@@ -15,7 +16,10 @@ import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileMod
 import { GpmConnectionBanner } from '../components/gpm-manager/GpmConnectionBanner';
 import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
 import { GpmGroupsToolbar } from '../components/gpm-manager/GpmGroupsToolbar';
-import { GpmProfilesTable } from '../components/gpm-manager/GpmProfilesTable';
+import {
+  GpmProfilesTable,
+  type GpmCapabilityKey,
+} from '../components/gpm-manager/GpmProfilesTable';
 import { GpmProfilesToolbar } from '../components/gpm-manager/GpmProfilesToolbar';
 import { Button, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
@@ -62,6 +66,7 @@ export function GpmManagerPage() {
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [actionBusyIds, setActionBusyIds] = useState<Set<string>>(() => new Set());
+  const [updatingCapabilityIds, setUpdatingCapabilityIds] = useState<Set<string>>(() => new Set());
   const [testing, setTesting] = useState(false);
   const [deletingProfile, setDeletingProfile] = useState(false);
   const [testResult, setTestResult] = useState<GpmTestResult | null>(null);
@@ -232,6 +237,30 @@ export function GpmManagerPage() {
     }
   }
 
+  async function handleCapabilityChange(id: string, key: GpmCapabilityKey, value: boolean) {
+    if (updatingCapabilityIds.has(id)) return;
+    const previous = profiles.find((profile) => profile.id === id);
+    setUpdatingCapabilityIds((prev) => new Set(prev).add(id));
+    setProfiles((prev) =>
+      prev.map((profile) => (profile.id === id ? { ...profile, [key]: value } : profile)),
+    );
+    try {
+      const { item } = await updateGpmProfileCapabilities(id, { [key]: value });
+      setProfiles((prev) => prev.map((profile) => (profile.id === id ? item : profile)));
+    } catch (err) {
+      if (previous) {
+        setProfiles((prev) => prev.map((profile) => (profile.id === id ? previous : profile)));
+      }
+      toast.error(err instanceof Error ? err.message : 'Failed to update capabilities');
+    } finally {
+      setUpdatingCapabilityIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
   async function handleTestProfile() {
     if (!selectedProfileId || testing) return;
     setTesting(true);
@@ -338,10 +367,12 @@ export function GpmManagerPage() {
                   selectedId={selectedProfileId}
                   runningProfileIds={runningProfileIds}
                   actionBusyIds={actionBusyIds}
+                  updatingCapabilityIds={updatingCapabilityIds}
                   loading={profilesLoading}
                   onSelect={setSelectedProfileId}
                   onStart={handleStartRow}
                   onStop={handleStopRow}
+                  onCapabilityChange={handleCapabilityChange}
                 />
               </div>
             </>

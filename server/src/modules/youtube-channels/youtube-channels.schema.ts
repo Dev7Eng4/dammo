@@ -24,7 +24,7 @@ const channelConfigFields = {
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   backgroundFootageMode: z.enum(['source', 'local']).optional(),
   thumbnailStyleKey: z.string().optional(),
-  captionStyleKey: z.enum(['default', 'klee_one', 'green']).optional(),
+  captionStyleKey: z.enum(['default', 'klee_one', 'green', 'blue_glow']).optional(),
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),
   uploadFrequency: uploadFrequencySchema,

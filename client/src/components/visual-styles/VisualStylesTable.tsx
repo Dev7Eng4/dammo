@@ -1,5 +1,6 @@
-import { Button } from '../ui';
+import { type ColumnDef } from '@tanstack/react-table';
 import type { VisualStyle } from '../../types/visualStyle';
+import { Button, DataTable } from '../ui';
 
 interface VisualStylesTableProps {
   styles: VisualStyle[];
@@ -20,81 +21,57 @@ export function VisualStylesTable({
   onEdit,
   onDelete,
 }: VisualStylesTableProps) {
-  if (loading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">
-              <th className="pb-3 pr-4 font-medium">NAME</th>
-              <th className="pb-3 pr-4 font-medium">NICHE</th>
-              <th className="pb-3 pr-4 font-medium">RULE</th>
-              <th className="pb-3 font-medium">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={4} className="py-3">
-                  <div className="h-4 animate-pulse rounded bg-neutral-800" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (styles.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">Chưa có visual style nào.</p>
-        <p className="mt-1 text-xs text-neutral-500">
-          Thêm style đầu tiên (anime, chibi, cinematic, ...) để bắt đầu.
-        </p>
-      </div>
-    );
-  }
+  const columns: ColumnDef<VisualStyle, unknown>[] = [
+    {
+      accessorKey: 'name',
+      header: 'NAME',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      ),
+    },
+    {
+      accessorKey: 'niche',
+      header: 'NICHE',
+      cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
+    },
+    {
+      accessorKey: 'rule',
+      header: 'RULE',
+      cell: ({ row }) => (
+        <span className="text-neutral-400" title={row.original.rule}>
+          {truncateRule(row.original.rule)}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'ACTIONS',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
+            Edit
+          </Button>
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
+            onClick={() => onDelete(row.original)}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">
-            <th className="pb-3 pr-4 font-medium">NAME</th>
-            <th className="pb-3 pr-4 font-medium">NICHE</th>
-            <th className="pb-3 pr-4 font-medium">RULE</th>
-            <th className="pb-3 font-medium">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {styles.map((style) => (
-            <tr key={style.id} className="border-b border-border/50">
-              <td className="py-3 pr-4 font-medium text-neutral-100">{style.name}</td>
-              <td className="py-3 pr-4 text-neutral-300">{style.niche}</td>
-              <td className="py-3 pr-4 text-neutral-400" title={style.rule}>
-                {truncateRule(style.rule)}
-              </td>
-              <td className="py-3">
-                <div className="flex items-center gap-2">
-                  <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(style)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="sm"
-                    className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
-                    onClick={() => onDelete(style)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      data={styles}
+      columns={columns}
+      getRowId={style => style.id}
+      loading={loading}
+      emptyMessage="Chưa có visual style nào."
+      emptyDescription="Thêm style đầu tiên (anime, chibi, cinematic, ...) để bắt đầu."
+    />
   );
 }

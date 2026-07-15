@@ -87,11 +87,9 @@ export class TaskQueueRepository {
   setStatus(
     id: string,
     status: TaskStatus,
-    patch?: Partial<
-      Pick<TaskJob, 'progress' | 'progressLabel' | 'error' | 'result' | 'logs' | 'livePhase'>
-    >,
+    patch?: Partial<Pick<TaskJob, 'progress' | 'progressLabel' | 'error' | 'result' | 'logs' | 'livePhase'>>,
   ): TaskJob | null {
-    const updated = this.update(id, (job) => ({
+    const updated = this.update(id, job => ({
       ...job,
       ...patch,
       status,
@@ -102,7 +100,7 @@ export class TaskQueueRepository {
   }
 
   appendLog(id: string, entry: TaskLogEntry): TaskJob | null {
-    const updated = this.update(id, (job) => {
+    const updated = this.update(id, job => {
       const logs = [...(job.logs ?? []), entry].slice(-MAX_LOG_LINES);
       return { ...job, logs, updatedAt: new Date().toISOString() };
     });
@@ -122,7 +120,7 @@ export class TaskQueueRepository {
   }
 
   setLivePhase(id: string, livePhase: TaskLivePhase): TaskJob | null {
-    const updated = this.update(id, (job) => ({
+    const updated = this.update(id, job => ({
       ...job,
       livePhase,
       updatedAt: new Date().toISOString(),
@@ -143,8 +141,8 @@ export class TaskQueueRepository {
     if (!fs.existsSync(paths.taskQueueDir)) return [];
     return fs
       .readdirSync(paths.taskQueueDir)
-      .filter((f) => f.endsWith('.json') && f !== STATE_FILE)
-      .map((f) => readJson<TaskJob>(path.join(paths.taskQueueDir, f)))
+      .filter(f => f.endsWith('.json') && f !== STATE_FILE)
+      .map(f => readJson<TaskJob>(path.join(paths.taskQueueDir, f)))
       .filter((job): job is TaskJob => job !== null)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, limit);
@@ -157,7 +155,7 @@ export class TaskQueueRepository {
   findNextQueued(): TaskJob | null {
     return (
       this.listAll(200)
-        .filter((job) => job.status === 'queued')
+        .filter(job => job.status === 'queued')
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0] ?? null
     );
   }

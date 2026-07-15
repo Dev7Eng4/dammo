@@ -9,6 +9,7 @@ import {
   gpmTestProfileSchema,
   startGpmProfileSchema,
   updateGpmGroupSchema,
+  updateGpmProfileCapabilitiesSchema,
   updateGpmProfileSchema,
 } from './gpm-manager.schema.js';
 import { gpmLlmTestService } from './gpm-llm-test.service.js';
@@ -44,6 +45,16 @@ export function createGpmManagerRoutes() {
     const item = await gpmManagerService.updateProfile(c.req.param('id'), body);
     return c.json({ item });
   });
+
+  app.patch(
+    '/profiles/:id/capabilities',
+    zValidator('json', updateGpmProfileCapabilitiesSchema),
+    async (c) => {
+      const body = c.req.valid('json');
+      const item = await gpmManagerService.updateCapabilities(c.req.param('id'), body);
+      return c.json({ item });
+    },
+  );
 
   app.delete('/profiles/:id', zValidator('query', deleteGpmProfileQuerySchema), async (c) => {
     const { mode } = c.req.valid('query');

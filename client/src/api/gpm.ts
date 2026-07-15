@@ -61,6 +61,17 @@ export function updateGpmProfile(id: string, payload: UpdateGpmProfilePayload) {
   });
 }
 
+export function updateGpmProfileCapabilities(
+  id: string,
+  payload: { flowEnabled?: boolean; metaEnabled?: boolean },
+) {
+  return fetchJson<{ item: GpmProfile }>(`${API_V1}/gpm/profiles/${id}/capabilities`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function deleteGpmProfile(id: string, mode: 'soft' | 'hard' = 'soft') {
   return fetchJson<{ ok: boolean }>(`${API_V1}/gpm/profiles/${id}?mode=${mode}`, {
     method: 'DELETE',

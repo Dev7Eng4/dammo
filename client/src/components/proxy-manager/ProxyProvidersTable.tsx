@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button } from '../ui';
+import { type ColumnDef } from '@tanstack/react-table';
 import type { ProxyProvider } from '../../types/proxy';
+import { Button, DataTable } from '../ui';
 
 interface ProxyProvidersTableProps {
   providers: ProxyProvider[];
@@ -14,12 +15,10 @@ function MaskedPassword({ value }: { value: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="font-mono text-xs text-neutral-300">
-        {visible ? value : '••••••••'}
-      </span>
+      <span className="font-mono text-xs text-neutral-300">{visible ? value : '••••••••'}</span>
       <button
         type="button"
-        onClick={() => setVisible((v) => !v)}
+        onClick={() => setVisible(v => !v)}
         className="text-neutral-500 hover:text-neutral-300"
         title={visible ? 'Hide password' : 'Show password'}
       >
@@ -48,95 +47,70 @@ export function ProxyProvidersTable({
   onEdit,
   onDelete,
 }: ProxyProvidersTableProps) {
-  if (loading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-neutral-500">
-              <th className="pb-3 pr-4 font-medium">NAME</th>
-              <th className="pb-3 pr-4 font-medium">LOGIN URL</th>
-              <th className="pb-3 pr-4 font-medium">USERNAME</th>
-              <th className="pb-3 pr-4 font-medium">PASSWORD</th>
-              <th className="pb-3 font-medium">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={5} className="py-3">
-                  <div className="h-4 animate-pulse rounded bg-neutral-800" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (providers.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-neutral-400">No providers yet.</p>
-        <p className="mt-1 text-xs text-neutral-500">Add a login URL, username, and password to get started.</p>
-      </div>
-    );
-  }
+  const columns: ColumnDef<ProxyProvider, unknown>[] = [
+    {
+      accessorKey: 'name',
+      header: 'NAME',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      ),
+    },
+    {
+      accessorKey: 'loginUrl',
+      header: 'LOGIN URL',
+      cell: ({ row }) =>
+        row.original.loginUrl ? (
+          <a
+            href={row.original.loginUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-400 hover:underline"
+          >
+            {row.original.loginUrl}
+          </a>
+        ) : (
+          <span className="text-neutral-500">—</span>
+        ),
+    },
+    {
+      accessorKey: 'username',
+      header: 'USERNAME',
+      cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
+    },
+    {
+      accessorKey: 'password',
+      header: 'PASSWORD',
+      cell: ({ row }) => <MaskedPassword value={row.original.password} />,
+    },
+    {
+      id: 'actions',
+      header: 'ACTIONS',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
+            Edit
+          </Button>
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
+            onClick={() => onDelete(row.original)}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs text-neutral-500">
-            <th className="pb-3 pr-4 font-medium">NAME</th>
-            <th className="pb-3 pr-4 font-medium">LOGIN URL</th>
-            <th className="pb-3 pr-4 font-medium">USERNAME</th>
-            <th className="pb-3 pr-4 font-medium">PASSWORD</th>
-            <th className="pb-3 font-medium">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {providers.map((provider) => (
-            <tr key={provider.id} className="border-b border-border/50">
-              <td className="py-3 pr-4 font-medium text-neutral-100">{provider.name}</td>
-              <td className="py-3 pr-4">
-                {provider.loginUrl ? (
-                  <a
-                    href={provider.loginUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-400 hover:underline"
-                  >
-                    {provider.loginUrl}
-                  </a>
-                ) : (
-                  <span className="text-neutral-500">—</span>
-                )}
-              </td>
-              <td className="py-3 pr-4 text-neutral-300">{provider.username}</td>
-              <td className="py-3 pr-4">
-                <MaskedPassword value={provider.password} />
-              </td>
-              <td className="py-3">
-                <div className="flex items-center gap-2">
-                  <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(provider)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="sm"
-                    className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
-                    onClick={() => onDelete(provider)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      data={providers}
+      columns={columns}
+      getRowId={provider => provider.id}
+      loading={loading}
+      emptyMessage="No providers yet."
+      emptyDescription="Add a login URL, username, and password to get started."
+    />
   );
 }

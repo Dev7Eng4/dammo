@@ -25,8 +25,8 @@ const filterOptions: { value: ProxyFilter; label: string }[] = [
 ];
 
 const filterIcon = (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+  <svg className='size-4' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+    <path d='M22 3H2l8 9.46V19l4 2v-8.54L22 3z' />
   </svg>
 );
 
@@ -53,52 +53,34 @@ export function ProxiesToolbar({
   }
 
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-      <div className="flex items-center gap-3">
+    <div className='mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4'>
+      <div className='flex items-center gap-3'>
         <DropdownSelect
           options={filterOptions}
           value={filter}
           onChange={onFilterChange}
-          prefix="Filter"
+          prefix='Filter'
           leadingIcon={filterIcon}
-          menuClassName="w-40"
+          menuClassName='w-40'
         />
-        <span className="text-sm text-neutral-400">{total.toLocaleString()} Proxies Total</span>
+        {/* <span className="text-sm text-neutral-400">{total.toLocaleString()} Proxies Total</span> */}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-        <Button size="sm" className="rounded-lg" onClick={onAddProxy}>
+      <div className='flex flex-wrap items-center gap-2'>
+        <input ref={fileInputRef} type='file' accept='.xlsx,.xls' className='hidden' onChange={handleFileChange} />
+        <Button size='sm' className='rounded-lg' onClick={onAddProxy}>
           + Add Proxy
         </Button>
-        <Button
-          variant="outlined"
-          size="sm"
-          className="rounded-lg"
-          disabled={importing}
-          onClick={() => fileInputRef.current?.click()}
-        >
+        <Button variant='outlined' size='sm' className='rounded-lg' disabled={importing} onClick={() => fileInputRef.current?.click()}>
           {importing ? 'Importing...' : 'Import Excel'}
         </Button>
-        <Button
-          variant="outlined"
-          size="sm"
-          className="rounded-lg"
-          disabled={exporting}
-          onClick={onExportExcel}
-        >
+        <Button variant='outlined' size='sm' className='rounded-lg' disabled={exporting} onClick={onExportExcel}>
           {exporting ? 'Exporting...' : 'Export Excel'}
         </Button>
         <Button
-          variant="outlined"
-          size="sm"
-          className="rounded-lg text-danger hover:text-danger"
+          variant='outlined'
+          size='sm'
+          className='rounded-lg text-danger hover:text-danger'
           disabled={removingFailed}
           onClick={onRemoveFailed}
         >

@@ -69,7 +69,7 @@ export function AddProxyModal({ open, onClose, onSuccess }: AddProxyModalProps) 
   useEffect(() => {
     if (!open) return;
     fetchProxyProviders()
-      .then((res) => setProviders(res.items))
+      .then(res => setProviders(res.items))
       .catch(() => setProviders([]));
   }, [open]);
 
@@ -92,14 +92,11 @@ export function AddProxyModal({ open, onClose, onSuccess }: AddProxyModalProps) 
     if (parsed.password !== undefined) setValue('password', parsed.password);
   }
 
-  const providerOptions = [
-    { value: '', label: '— None —' },
-    ...providers.map((p) => ({ value: p.id, label: p.name })),
-  ];
+  const providerOptions = [{ value: '', label: '— None —' }, ...providers.map(p => ({ value: p.id, label: p.name }))];
 
   async function onSubmit(values: ProxyFormValues) {
     setApiError(null);
-    const selectedProvider = providers.find((p) => p.id === values.providerId);
+    const selectedProvider = providers.find(p => p.id === values.providerId);
     try {
       await createProxy({
         name: `${values.host}:${values.port}`,
@@ -124,120 +121,104 @@ export function AddProxyModal({ open, onClose, onSuccess }: AddProxyModalProps) 
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add Proxy"
+      title='Add Proxy'
       footer={
         <>
-          <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
+          <Button variant='outlined' size='sm' className='rounded-lg' onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-proxy-form" type="submit">
+          <Button size='sm' className='rounded-lg' disabled={isSubmitting} form='add-proxy-form' type='submit'>
             {isSubmitting ? 'Saving...' : 'Add Proxy'}
           </Button>
         </>
       }
     >
-      <form id="add-proxy-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
+      <form id='add-proxy-form' onSubmit={handleSubmit(onSubmit)} className='space-y-4' autoComplete='off'>
         {/* Type */}
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-400">Type</label>
-          <DropdownSelect
-            options={typeOptions}
-            value={proxyType}
-            onChange={(value) => setValue('type', value)}
-            menuClassName="w-full"
-          />
+          <label className='mb-1.5 block text-xs font-medium text-neutral-400'>Type</label>
+          <DropdownSelect options={typeOptions} value={proxyType} onChange={value => setValue('type', value)} menuClassName='w-full' />
         </div>
 
         {/* Host — hỗ trợ nhập dạng host:port:user:pass */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
-            <label htmlFor="add-host" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Host{' '}
-              <span className="text-neutral-500">(or host:port:user:pass)</span>
+        <div className='grid grid-cols-3 gap-3'>
+          <div className='col-span-2'>
+            <label htmlFor='add-host' className='mb-1.5 block text-xs font-medium text-neutral-400'>
+              Host <span className='text-neutral-500'>(or host:port:user:pass)</span>
             </label>
             <Input
-              id="add-host"
-              placeholder="117.0.182.133:11451:user:pass"
-              className="h-10 rounded-lg font-mono"
-              autoComplete="off"
+              id='add-host'
+              placeholder='117.0.182.133:11451:user:pass'
+              className='h-10 rounded-lg font-mono'
+              autoComplete='off'
               {...register('host', { required: 'Host is required' })}
               onBlur={handleHostBlur}
             />
-            {errors.host ? <p className="mt-1 text-xs text-danger">{errors.host.message}</p> : null}
+            {errors.host ? <p className='mt-1 text-xs text-danger'>{errors.host.message}</p> : null}
           </div>
           <div>
-            <label htmlFor="add-port" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            <label htmlFor='add-port' className='mb-1.5 block text-xs font-medium text-neutral-400'>
               Port
             </label>
             <Input
-              id="add-port"
-              type="text"
-              className="h-10 rounded-lg"
-              autoComplete="off"
+              id='add-port'
+              type='text'
+              className='h-10 rounded-lg'
+              autoComplete='off'
               {...register('port', {
                 required: 'Port is required',
                 min: { value: 1, message: 'Invalid port' },
                 max: { value: 65535, message: 'Invalid port' },
               })}
             />
-            {errors.port ? <p className="mt-1 text-xs text-danger">{errors.port.message}</p> : null}
+            {errors.port ? <p className='mt-1 text-xs text-danger'>{errors.port.message}</p> : null}
           </div>
         </div>
 
         {/* Username / Password */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className='grid grid-cols-2 gap-3'>
           <div>
-            <label htmlFor="add-username" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Username <span className="text-neutral-500">(optional)</span>
+            <label htmlFor='add-username' className='mb-1.5 block text-xs font-medium text-neutral-400'>
+              Username <span className='text-neutral-500'>(optional)</span>
             </label>
-            <Input id="add-username" className="h-10 rounded-lg" autoComplete="off" {...register('username')} />
+            <Input id='add-username' className='h-10 rounded-lg' autoComplete='off' {...register('username')} />
           </div>
           <div>
-            <label htmlFor="add-password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Password <span className="text-neutral-500">(optional)</span>
+            <label htmlFor='add-password' className='mb-1.5 block text-xs font-medium text-neutral-400'>
+              Password <span className='text-neutral-500'>(optional)</span>
             </label>
-            <Input id="add-password" type="password" className="h-10 rounded-lg" autoComplete="new-password" {...register('password')} />
+            <Input id='add-password' type='password' className='h-10 rounded-lg' autoComplete='new-password' {...register('password')} />
           </div>
         </div>
 
         {/* Country Code */}
         <div>
-          <label htmlFor="add-countryCode" className="mb-1.5 block text-xs font-medium text-neutral-400">
+          <label htmlFor='add-countryCode' className='mb-1.5 block text-xs font-medium text-neutral-400'>
             Country Code
           </label>
-          <Input
-            id="add-countryCode"
-            placeholder="VN"
-            className="h-10 rounded-lg uppercase"
-            {...register('countryCode')}
-          />
+          <Input id='add-countryCode' placeholder='VN' className='h-10 rounded-lg uppercase' {...register('countryCode')} />
         </div>
 
         {/* Provider — select từ danh sách providers */}
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-400">Provider</label>
+          <label className='mb-1.5 block text-xs font-medium text-neutral-400'>Provider</label>
           <DropdownSelect
             options={providerOptions}
             value={providerId ?? ''}
-            onChange={(value) => setValue('providerId', value)}
-            menuClassName="w-full"
+            onChange={value => setValue('providerId', value)}
+            menuClassName='w-full'
           />
         </div>
 
         {/* Ngày hết hạn */}
         <div>
-          <label htmlFor="add-expiresAt" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ngày hết hạn <span className="text-neutral-500">(optional)</span>
+          <label htmlFor='add-expiresAt' className='mb-1.5 block text-xs font-medium text-neutral-400'>
+            Ngày hết hạn <span className='text-neutral-500'>(optional)</span>
           </label>
-          <Input
-            id="add-expiresAt"
-            type="date"
-            className="h-10 rounded-lg"
-            {...register('expiresAt')}
-          />
+          <Input id='add-expiresAt' type='date' className='h-10 rounded-lg' {...register('expiresAt')} />
         </div>
 
-        {apiError ? <p className="text-xs text-danger">{apiError}</p> : null}
+        {apiError ? <p className='text-xs text-danger'>{apiError}</p> : null}
       </form>
     </Modal>
   );

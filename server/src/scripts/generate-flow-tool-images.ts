@@ -17,11 +17,13 @@ const PROJECT_ID = '37afa1aa-49e0-4d70-9407-bcb84afa09e5';
 const SAMPLE_VISUALS: FlowToolVisual[] = [
   {
     name: 'scene-001',
-    prompt: 'A soothing cinematic live-action scene of an elderly Japanese couple drinking green tea beside a window, warm morning light, photorealistic, 16:9',
+    prompt:
+      'A soothing cinematic live-action scene of an elderly Japanese couple drinking green tea beside a window, warm morning light, photorealistic, 16:9',
   },
   {
     name: 'scene-002',
-    prompt: 'Macro shot of fresh wholesome food ingredients on a wooden kitchen table, sunlight through a window, artistic composition, 16:9',
+    prompt:
+      'Macro shot of fresh wholesome food ingredients on a wooden kitchen table, sunlight through a window, artistic composition, 16:9',
   },
 ];
 

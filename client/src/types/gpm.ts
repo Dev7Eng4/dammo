@@ -17,6 +17,8 @@ export interface GpmProfile {
   created_at?: string;
   updated_at?: string;
   tags?: string[];
+  flowEnabled?: boolean;
+  metaEnabled?: boolean;
 }
 
 export interface GpmGroup {

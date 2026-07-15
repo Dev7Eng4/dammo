@@ -36,8 +36,8 @@ export const SI_SUBTITLE_BOX_OPACITY = 0.5;
 export const SI_SUBTITLE_CHAR_SPACING = 0;
 export const SI_SUBTITLE_FONT_ASS_NAME = 'Noto Sans JP Black';
 
-export const SI_AUDIO_SPEED_MIN = 0.91;
-export const SI_AUDIO_SPEED_MAX = 0.95;
+export const SI_AUDIO_SPEED_MIN = 0.95;
+export const SI_AUDIO_SPEED_MAX = 0.98;
 
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 

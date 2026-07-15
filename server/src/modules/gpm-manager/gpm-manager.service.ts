@@ -12,7 +12,12 @@ import {
   stopGpmProfile,
   updateGpmGroup,
   updateGpmProfile,
+  type GpmProfile,
 } from '../../infrastructure/gpm/gpm-api.client.js';
+import {
+  gpmProfileCapabilitiesRepository,
+  type GpmProfileCapabilitiesPatch,
+} from './gpm-profile-capabilities.repository.js';
 import type {
   GpmCreateGroupInput,
   GpmCreateProfileInput,
@@ -27,24 +32,48 @@ export class GpmManagerService {
     return pingGpm();
   }
 
+  private mergeCapabilities(profile: GpmProfile): GpmProfile {
+    const caps = gpmProfileCapabilitiesRepository.get(profile.id);
+    return {
+      ...profile,
+      flowEnabled: caps.flowEnabled,
+      metaEnabled: caps.metaEnabled,
+    };
+  }
+
   listProfiles(query: GpmListQuery) {
-    return listGpmProfiles(query);
+    return listGpmProfiles(query).then((item) => ({
+      ...item,
+      data: item.data.map((profile) => this.mergeCapabilities(profile)),
+    }));
+  }
+
+  async listMetaEnabledProfiles(): Promise<GpmProfile[]> {
+    const page = await this.listProfiles({ page: 1, page_size: 100 });
+    return page.data.filter((profile) => profile.metaEnabled === true);
   }
 
   getProfile(id: string) {
-    return getGpmProfile(id);
+    return getGpmProfile(id).then((profile) => this.mergeCapabilities(profile));
   }
 
   createProfile(input: GpmCreateProfileInput) {
-    return createGpmProfile(input);
+    return createGpmProfile(input).then((profile) => this.mergeCapabilities(profile));
   }
 
   updateProfile(id: string, input: GpmUpdateProfileInput) {
-    return updateGpmProfile(id, input);
+    return updateGpmProfile(id, input).then((profile) => this.mergeCapabilities(profile));
   }
 
-  deleteProfile(id: string, mode: 'soft' | 'hard') {
-    return deleteGpmProfile(id, mode);
+  async updateCapabilities(id: string, patch: GpmProfileCapabilitiesPatch) {
+    await getGpmProfile(id);
+    gpmProfileCapabilitiesRepository.set(id, patch);
+    return this.getProfile(id);
+  }
+
+  async deleteProfile(id: string, mode: 'soft' | 'hard') {
+    await deleteGpmProfile(id, mode);
+    gpmProfileCapabilitiesRepository.remove(id);
   }
 
   startProfile(id: string, options: GpmStartProfileOptions) {

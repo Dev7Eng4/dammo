@@ -26,6 +26,15 @@ export const updateGpmProfileSchema = z
     message: 'At least one field is required',
   });
 
+export const updateGpmProfileCapabilitiesSchema = z
+  .object({
+    flowEnabled: z.boolean().optional(),
+    metaEnabled: z.boolean().optional(),
+  })
+  .refine((data) => data.flowEnabled !== undefined || data.metaEnabled !== undefined, {
+    message: 'At least one capability field is required',
+  });
+
 export const deleteGpmProfileQuerySchema = z.object({
   mode: z.enum(['soft', 'hard']).default('soft'),
 });

@@ -9,7 +9,7 @@ export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
 
 export type ReupAudioVideoType = 'si' | 'ai';
 
-export type CaptionStyleKey = 'default' | 'klee_one' | 'green';
+export type CaptionStyleKey = 'default' | 'klee_one' | 'green' | 'blue_glow';
 
 export type BackgroundFootageMode = 'source' | 'local';
 

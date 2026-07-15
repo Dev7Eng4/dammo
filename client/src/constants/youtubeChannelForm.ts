@@ -26,6 +26,7 @@ export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] 
   { value: 'default', label: 'Default (Noto Sans, trắng)' },
   { value: 'klee_one', label: 'Klee One (trắng)' },
   { value: 'green', label: 'Cyan' },
+  { value: 'blue_glow', label: 'White + Blue glow' },
 ];
 
 export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }[] = [
