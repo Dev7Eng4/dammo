@@ -130,6 +130,19 @@ export async function getChromeProfilePage(profileId: string): Promise<Page> {
   }
 }
 
+export async function createChromeProfilePage(profileId: string): Promise<Page> {
+  const context = getChromeProfileContext(profileId);
+  if (!context) {
+    throw new AppError('Chrome profile is not open', 409, 'PROFILE_NOT_OPEN');
+  }
+
+  const page = await context.newPage();
+  if (!isProfileBackground(profileId)) {
+    await page.bringToFront();
+  }
+  return page;
+}
+
 export async function closeChromeProfile(profileId: string): Promise<boolean> {
   const context = activeContexts.get(profileId);
   if (!context) return false;

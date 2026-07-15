@@ -101,8 +101,8 @@ function keyboardModifier(): string {
   return process.platform === 'darwin' ? 'Meta' : 'Control';
 }
 
-/** Clear focused input via keyboard — safe for Slate/contenteditable editors. */
-async function clearInputViaKeyboard(page: Page): Promise<void> {
+/** Clear focused input via Ctrl/Meta+A then Backspace — safe for Slate/contenteditable. */
+export async function humanClearInput(page: Page): Promise<void> {
   const modifier = keyboardModifier();
   await page.keyboard.press(`${modifier}+a`, { delay: randomInt(30, 90) });
   await randomDelay(80, 150);
@@ -209,14 +209,14 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
       await humanClick(page, locator);
       await randomDelay(120, 300);
       await locator.focus();
-      await clearInputViaKeyboard(page);
+      await humanClearInput(page);
       await randomDelay(80, 180);
       await page.keyboard.insertText(text);
       let inputLength = await waitForInputText(locator, promptLength);
       logPasteResult('insertText', promptLength, inputLength);
 
       if (inputLength < promptLength) {
-        await clearInputViaKeyboard(page);
+        await humanClearInput(page);
         await pasteViaClipboard(page, text);
         inputLength = await waitForInputText(locator, promptLength);
         logPasteResult('insertText-fallback-clipboard', promptLength, inputLength);
@@ -229,7 +229,7 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
       await humanClick(page, locator);
       await randomDelay(120, 300);
       await locator.focus();
-      await clearInputViaKeyboard(page);
+      await humanClearInput(page);
       await locator.pressSequentially(text, { delay: randomInt(40, 120) });
       const inputLength = await getInputTextLength(locator);
       logPasteResult('insertText-fallback-sequential', promptLength, inputLength);
@@ -240,7 +240,8 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
   try {
     await humanClick(page, locator);
     await randomDelay(120, 300);
-    await clearInput(locator);
+    await locator.focus();
+    await humanClearInput(page);
     await pasteViaClipboard(page, text);
     const inputLength = await waitForInputText(locator, promptLength);
     logPasteResult('clipboard', promptLength, inputLength);

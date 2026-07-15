@@ -18,6 +18,8 @@ export interface AiVideoScenePrompt {
   prompt: string;
   startTime: string;
   endTime: string;
+  /** Relative path under workDir when image exists, e.g. ai-slides/scene-001.jpg */
+  path?: string;
 }
 
 export interface AiVideoScenePromptsFile {
@@ -50,7 +52,7 @@ export interface GenerateAiVideoImagesInput {
 
 export interface AssembleReupAiSlideshowVideoInput {
   workDir: string;
-  imagePaths: string[];
+  scenes: AiVideoScenePrompt[];
   audioPath: string;
   subtitlePath: string;
   language: string;
@@ -60,6 +62,7 @@ export interface AssembleReupAiSlideshowVideoInput {
 
 export interface GenerateAiSceneSlideImagesInput {
   workDir: string;
+  youtubeVideoId: string;
   scenes: AiVideoScenePrompt[];
   onLog?: (msg: string) => void;
   onProgress?: (progress: {
@@ -75,6 +78,8 @@ export interface GenerateAiSceneSlideImagesInput {
 export interface GenerateAiSceneSlideImagesResult {
   slidesDir: string;
   imagePaths: string[];
+  scenes: AiVideoScenePrompt[];
   generatedCount: number;
   skippedCount: number;
+  failedCount: number;
 }

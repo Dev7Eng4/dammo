@@ -25,7 +25,7 @@ import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumb
 import { isHorizontalMultiStepStyle, resolveThumbnailStyleKey } from '../../../prompts/thumbnail-styles.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
-import { generateAiVideoImages, generateAiSceneSlideImages } from '../../shared/ai-video/index.js';
+import { assembleReupAiSlideshowVideo, generateAiVideoImages, generateAiSceneSlideImages } from '../../shared/ai-video/index.js';
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
@@ -690,23 +690,28 @@ export class ReupAudioPipeline {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
             }
 
-            const aiScenePromptResult = await generateAiVideoImages({
-              workDir,
-              youtubeVideoId: downloaded.youtubeVideoId,
-              visualStyle: destination.visualStyle,
-              subtitlePath: subtitleForAssembly,
-              audioPath: downloaded.audioPath,
-              language: destination.language,
-              onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-              onProgress: taskJobId
-                ? progress =>
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`
-                    )
-                : undefined,
-            });
+            const aiScenePromptResult = await timedStep(
+              'AI scene prompts',
+              () =>
+                generateAiVideoImages({
+                  workDir,
+                  youtubeVideoId: downloaded.youtubeVideoId,
+                  visualStyle: destination.visualStyle!,
+                  subtitlePath: subtitleForAssembly,
+                  audioPath: downloaded.audioPath,
+                  language: destination.language,
+                  onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                  onProgress: taskJobId
+                    ? progress =>
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`
+                        )
+                    : undefined,
+                }),
+              stepTimer,
+            );
             aiScenePrompts = aiScenePromptResult.scenes;
             aiScenePromptsPath = aiScenePromptResult.filePath;
 
@@ -727,40 +732,47 @@ export class ReupAudioPipeline {
               );
             }
 
-            const aiSlideResult = await generateAiSceneSlideImages({
-              workDir,
-              scenes: aiScenePrompts,
-              onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-              onProgress: taskJobId
-                ? progress => {
-                    if (progress.status === 'skipped') {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `AI scene image ${progress.sceneName} skipped (already exists)`,
-                      );
-                      return;
-                    }
+            const aiSlideResult = await timedStep(
+              'AI scene images',
+              () =>
+                generateAiSceneSlideImages({
+                  workDir,
+                  youtubeVideoId: downloaded.youtubeVideoId,
+                  scenes: aiScenePrompts!,
+                  onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                  onProgress: taskJobId
+                    ? progress => {
+                        if (progress.status === 'skipped') {
+                          taskQueueRepository.appendLogMessage(
+                            taskJobId,
+                            'info',
+                            `AI scene image ${progress.sceneName} skipped (already exists)`,
+                          );
+                          return;
+                        }
 
-                    const batchLabel =
-                      progress.batchIndex && progress.totalBatches
-                        ? ` batch ${progress.batchIndex}/${progress.totalBatches}`
-                        : '';
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      `AI scene image ${progress.sceneName} (${progress.sceneIndex}/${progress.totalScenes})${batchLabel}...`,
-                    );
-                  }
-                : undefined,
-            });
+                        const batchLabel =
+                          progress.batchIndex && progress.totalBatches
+                            ? ` batch ${progress.batchIndex}/${progress.totalBatches}`
+                            : '';
+                        taskQueueRepository.appendLogMessage(
+                          taskJobId,
+                          'info',
+                          `AI scene image ${progress.sceneName} (${progress.sceneIndex}/${progress.totalScenes})${batchLabel}...`,
+                        );
+                      }
+                    : undefined,
+                }),
+              stepTimer,
+            );
             aiSlidesDir = aiSlideResult.slidesDir;
+            aiScenePrompts = aiSlideResult.scenes;
 
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(
                 taskJobId,
                 'ok',
-                `AI scene images saved (${aiSlideResult.generatedCount} generated, ${aiSlideResult.skippedCount} skipped) → ${aiSlidesDir}`,
+                `AI scene images saved (${aiSlideResult.generatedCount} generated, ${aiSlideResult.skippedCount} skipped, ${aiSlideResult.failedCount} failed) → ${aiSlidesDir}`,
               );
             }
           }
@@ -807,8 +819,45 @@ export class ReupAudioPipeline {
                   taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
                 }
               }
+            } else if (videoType === 'ai') {
+              const timedScenes = (aiScenePrompts ?? []).filter(scene => Boolean(scene.path?.trim()));
+              if (timedScenes.length === 0) {
+                console.warn(`[reup-video] AI video assembly skipped: no scene images`);
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'AI video assembly skipped: no scene images');
+                }
+              } else {
+                if (taskJobId) {
+                  taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    `Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`,
+                  );
+                }
+
+                reupVideoPath = await timedStep(
+                  'AI assemble video',
+                  () =>
+                    assembleReupAiSlideshowVideo({
+                      workDir,
+                      scenes: timedScenes,
+                      audioPath: downloaded.audioPath!,
+                      subtitlePath: subtitleForAssembly!,
+                      language: destination.language,
+                      captionStyleKey: destination.captionStyleKey,
+                      onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                    }),
+                  stepTimer,
+                );
+                primaryOutputPath = reupVideoPath;
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'AI video saved → video.mp4');
+                }
+              }
             }
-          } else if (options?.skipVideoAssembly && videoType === 'si' && taskJobId) {
+          } else if (options?.skipVideoAssembly && (videoType === 'si' || videoType === 'ai') && taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Video assembly skipped (prepare-only mode)');
           }
 

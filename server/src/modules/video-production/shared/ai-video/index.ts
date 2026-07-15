@@ -6,3 +6,10 @@ export { assembleReupAiSlideshowVideo } from './ai-video-assembler.js';
 export { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 export { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 export { persistAiScenePromptsFile, resolveAiScenePromptsFilePath } from './ai-video-scene-prompts-store.js';
+export {
+  attachSceneImagePaths,
+  redistributeMissingSceneTimes,
+  scenesWithImagePaths,
+  resolveSceneImageAbsolutePath,
+  sceneDurationSec,
+} from './ai-video-scene-timing.js';
