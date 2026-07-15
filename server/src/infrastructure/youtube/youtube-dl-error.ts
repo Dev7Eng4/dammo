@@ -17,7 +17,7 @@ function asString(value: unknown): string {
 function isMissingBinaryError(err: ExecaLikeError, detail: string): boolean {
   if (asString(err.code) === 'ENOENT') return true;
   const haystack = detail.toLowerCase();
-  return haystack.includes('enoent') || haystack.includes('yt-dlp');
+  return haystack.includes('enoent');
 }
 
 /**

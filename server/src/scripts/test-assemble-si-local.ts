@@ -94,20 +94,13 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 /** Resolve asset by preferred names first, then by extension fallback. */
-async function discoverFile(
-  workDir: string,
-  entries: string[],
-  preferredNames: string[],
-  extensions: string[],
-): Promise<string | null> {
+async function discoverFile(workDir: string, entries: string[], preferredNames: string[], extensions: string[]): Promise<string | null> {
   for (const name of preferredNames) {
     const candidate = path.join(workDir, name);
     if (await fileExists(candidate)) return candidate;
   }
 
-  const fallback = entries.find(entry =>
-    extensions.some(ext => entry.toLowerCase().endsWith(ext)),
-  );
+  const fallback = entries.find(entry => extensions.some(ext => entry.toLowerCase().endsWith(ext)));
   return fallback ? path.join(workDir, fallback) : null;
 }
 
@@ -124,19 +117,11 @@ async function main() {
     throw new Error(`Work dir not found: ${workDir}`);
   }
 
-  const audioPath =
-    options.audioPath ?? (await discoverFile(workDir, entries, ['audio.mp3'], ['.mp3']));
+  const audioPath = options.audioPath ?? (await discoverFile(workDir, entries, ['audio.mp3'], ['.mp3']));
   const subtitlePath =
     options.subtitlePath ??
-    (await discoverFile(
-      workDir,
-      entries,
-      ['transcript.srt', `transcript.${options.language}.srt`, 'transcript-updated.srt'],
-      ['.srt'],
-    ));
-  const centerImagePath =
-    options.centerImagePath ??
-    (await discoverFile(workDir, entries, ['background.jpg', 'thumbnail.jpg'], []));
+    (await discoverFile(workDir, entries, ['transcript.srt', `transcript.${options.language}.srt`, 'transcript-updated.srt'], ['.srt']));
+  const centerImagePath = options.centerImagePath ?? (await discoverFile(workDir, entries, ['background.jpg', 'thumbnail.jpg'], []));
 
   const missing: string[] = [];
   if (!audioPath) missing.push('audio (.mp3)');
@@ -158,6 +143,7 @@ async function main() {
   console.log(`Subtitle: ${subtitlePath}`);
   console.log(`Center image: ${centerImagePath}`);
   console.log(`Language: ${options.language}`);
+  console.log('Caption style: green');
   console.log(`Local stock dir: ${paths.siLocalStockDir} (cần ít nhất 1 file .mp4)`);
   console.log(`Output: ${path.join(workDir, 'video.mp4')}`);
   console.log('\nAssembling SI video...\n');
@@ -169,6 +155,7 @@ async function main() {
     centerImagePath: centerImagePath!,
     backgroundFootageMode: 'local',
     language: options.language,
+    captionStyleKey: 'klee_one',
     onLog: msg => console.log(msg),
     onFfmpegProgress: p => logFfmpegProgress('merge', p),
   });
