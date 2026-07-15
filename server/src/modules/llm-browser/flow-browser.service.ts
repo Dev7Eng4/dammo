@@ -10,7 +10,7 @@ import {
 import {
   downloadAndSaveFlowImage,
   extractFifeUrl,
-  beginBatchGenerateImagesCollector,
+  beginFlowToolBatchImagesCollector,
   beginBatchGenerateImagesWait,
   resolveFlowImageSavePath,
 } from '../../infrastructure/llm-browser/flow-api-response.js';
@@ -21,6 +21,7 @@ import {
   FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS,
   FLOW_RECAPTCHA_ACTION,
   FLOW_RECAPTCHA_SITE_KEY,
+  FLOW_TOOL_IDLE_MS,
   MAVID_EDITOR_TOOL_ID,
   buildFlowProjectUrl,
 } from '../../infrastructure/llm-browser/flow.config.js';
@@ -110,11 +111,11 @@ export class FlowBrowserService {
   }
 
   /**
-   * Generate multiple images in one shot via the "mavid editor" custom Flow tool.
+   * Generate multiple images in one shot via the custom Flow tool.
    *
-   * Injects `{ visuals: [{ name, prompt }] }` into the tool prompt input, submits,
-   * then captures one batchGenerateImages response per visual (in order) and saves
-   * each image as `${outputDir}/${name}.jpg` reusing the existing download pipeline.
+   * Injects `[{ prompt, name, references? }]` into `#david-input-prompts`, submits,
+   * then matches concurrent batchGenerateImages responses by structuredPrompt text
+   * and saves each image as `${outputDir}/${name}.jpg`.
    */
   async generateImagesViaTool(
     profileId: string,
@@ -129,6 +130,7 @@ export class FlowBrowserService {
     const toolId = options.toolId ?? MAVID_EDITOR_TOOL_ID;
     const timeoutMs = options.timeoutMs ?? 300_000;
     const startedAt = Date.now();
+    const outputDir = path.resolve(options.outputDir);
 
     if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
       await this.open(profileId, { projectId, skipInitialSetup: true });
@@ -143,28 +145,35 @@ export class FlowBrowserService {
 
     try {
       await openFlowToolPage(page, projectId, toolId);
+      await fs.mkdir(outputDir, { recursive: true });
 
-      const collectorPromise = beginBatchGenerateImagesCollector(page, projectId, visuals.length, timeoutMs);
+      const mediaAssets: LlmMediaAsset[] = [];
 
-      const promptPayload = JSON.stringify({ visuals });
+      const collectorPromise = beginFlowToolBatchImagesCollector({
+        page,
+        projectId,
+        visuals,
+        timeoutMs,
+        idleMs: FLOW_TOOL_IDLE_MS,
+        onMatch: async match => {
+          const outputPath = path.join(outputDir, `${match.name}.jpg`);
+          const asset = await downloadAndSaveFlowImage(page, match.imageUrl, outputPath);
+          console.log(`[flow-tool] saved image → ${outputPath}`);
+          mediaAssets.push(asset);
+        },
+      });
+
+      const promptPayload = JSON.stringify(
+        visuals.map(visual => ({
+          prompt: visual.prompt,
+          name: visual.name,
+          ...(visual.references?.length ? { references: visual.references } : {}),
+        })),
+      );
       await submitMavidEditorPrompt(page, promptPayload);
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
-      const responses = await collectorPromise;
-
-      await fs.mkdir(path.resolve(options.outputDir), { recursive: true });
-
-      const mediaAssets: LlmMediaAsset[] = [];
-      for (let index = 0; index < visuals.length; index += 1) {
-        const response = responses[index];
-        const visual = visuals[index];
-        const payload = await response.json();
-        const imageUrl = extractFifeUrl(payload);
-        const outputPath = path.join(path.resolve(options.outputDir), `${visual.name}.jpg`);
-        const asset = await downloadAndSaveFlowImage(page, imageUrl, outputPath);
-        console.log(`[flow-tool] saved image ${index + 1}/${visuals.length} → ${outputPath}`);
-        mediaAssets.push(asset);
-      }
+      await collectorPromise;
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
       return {

@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Page, Response } from 'playwright';
+import type { Page, Request, Response } from 'playwright';
 import { paths } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
-import { buildBatchGenerateImagesUrl } from './flow.config.js';
-import type { FlowGenerateImageOptions, LlmMediaAsset } from './llm-browser.types.js';
+import { FLOW_TOOL_IDLE_MS, buildBatchGenerateImagesUrl } from './flow.config.js';
+import type { FlowGenerateImageOptions, FlowToolVisual, LlmMediaAsset } from './llm-browser.types.js';
 
 const BATCH_GENERATE_IMAGES_PATH = 'flowMedia:batchGenerateImages';
 
@@ -57,6 +57,13 @@ function findImageUrlRecursive(value: unknown): string | null {
 }
 
 export function extractFifeUrl(payload: unknown): string {
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const url = extractFifeUrlFromMediaItem(item);
+      if (url) return url;
+    }
+  }
+
   if (isRecord(payload)) {
     const media = payload.media;
     if (Array.isArray(media)) {
@@ -71,6 +78,57 @@ export function extractFifeUrl(payload: unknown): string {
   if (fallback) return fallback;
 
   throw new AppError('Flow API response missing image fifeUrl', 502, 'FLOW_API_NO_IMAGE_URL');
+}
+
+/** Extract structuredPrompt.parts[0].text from a batchGenerateImages media item. */
+export function extractStructuredPromptText(item: unknown): string | null {
+  if (!isRecord(item)) return null;
+
+  const image = item.image;
+  if (!isRecord(image)) return null;
+
+  const generatedImage = image.generatedImage;
+  if (!isRecord(generatedImage)) return null;
+
+  const requestData = generatedImage.requestData;
+  if (!isRecord(requestData)) return null;
+
+  const promptInputs = requestData.promptInputs;
+  if (!Array.isArray(promptInputs) || promptInputs.length === 0) return null;
+
+  const firstInput = promptInputs[0];
+  if (!isRecord(firstInput)) return null;
+
+  const structuredPrompt = firstInput.structuredPrompt;
+  if (!isRecord(structuredPrompt)) return null;
+
+  const parts = structuredPrompt.parts;
+  if (!Array.isArray(parts) || parts.length === 0) return null;
+
+  const firstPart = parts[0];
+  if (!isRecord(firstPart)) return null;
+
+  const text = firstPart.text;
+  return typeof text === 'string' && text.trim().length > 0 ? text.trim() : null;
+}
+
+function listMediaItemsFromPayload(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+
+  if (isRecord(payload) && Array.isArray(payload.media)) {
+    return payload.media;
+  }
+
+  return [];
+}
+
+function normalizePrompt(value: string): string {
+  return value.trim();
+}
+
+function isBatchGenerateImagesRequest(request: Request, projectId: string): boolean {
+  const url = request.url();
+  return url.includes(BATCH_GENERATE_IMAGES_PATH) && url.includes(projectId) && request.method() === 'POST';
 }
 
 function normalizeJpgFileName(fileName: string): string {
@@ -127,13 +185,198 @@ export function beginBatchGenerateImagesWait(page: Page, projectId: string, time
   });
 }
 
+export interface FlowToolMatchedImage {
+  name: string;
+  prompt: string;
+  imageUrl: string;
+}
+
+export interface BeginFlowToolBatchCollectorOptions {
+  page: Page;
+  projectId: string;
+  visuals: Pick<FlowToolVisual, 'name' | 'prompt'>[];
+  timeoutMs: number;
+  idleMs?: number;
+  /** Called as soon as a prompt is matched; may download in parallel. */
+  onMatch?: (match: FlowToolMatchedImage) => Promise<void> | void;
+}
+
 /**
- * Collect multiple sequential batchGenerateImages responses for the same project.
+ * Collect concurrent batchGenerateImages responses for the Flow tool.
  *
- * Used by the "mavid editor" tool flow where a single submit produces several
- * images one after another. Resolves once `expectedCount` matching responses are
- * captured, preserving arrival order; rejects on timeout.
+ * Matches each response item to a visual by comparing
+ * `structuredPrompt.parts[0].text` with the visual prompt. Resolves once there
+ * are no in-flight batchGenerateImages requests for `idleMs` (after at least one
+ * request was seen). Rejects on overall timeout or unmatched visuals after idle.
  */
+export function beginFlowToolBatchImagesCollector(
+  options: BeginFlowToolBatchCollectorOptions,
+): Promise<FlowToolMatchedImage[]> {
+  const { page, projectId, visuals, timeoutMs, onMatch } = options;
+  const idleMs = options.idleMs ?? FLOW_TOOL_IDLE_MS;
+
+  return new Promise<FlowToolMatchedImage[]>((resolve, reject) => {
+    const unmatched = new Map<string, { name: string; prompt: string }>();
+    for (const visual of visuals) {
+      unmatched.set(normalizePrompt(visual.prompt), { name: visual.name, prompt: visual.prompt });
+    }
+
+    const matched: FlowToolMatchedImage[] = [];
+    const downloadTasks: Promise<void>[] = [];
+    let pending = 0;
+    let seenRequest = false;
+    let settled = false;
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      page.off('request', onRequest);
+      page.off('response', onResponse);
+      clearTimeout(overallTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+    };
+
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      fn();
+    };
+
+    const scheduleIdleCheck = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      if (pending !== 0 || !seenRequest) return;
+
+      idleTimer = setTimeout(() => {
+        void (async () => {
+          if (settled) return;
+          if (pending !== 0) {
+            scheduleIdleCheck();
+            return;
+          }
+
+          try {
+            await Promise.all(downloadTasks);
+          } catch (err) {
+            finish(() =>
+              reject(err instanceof AppError ? err : new AppError(String(err), 502, 'FLOW_TOOL_DOWNLOAD_FAILED')),
+            );
+            return;
+          }
+
+          if (settled) return;
+          if (pending !== 0) {
+            scheduleIdleCheck();
+            return;
+          }
+
+          if (unmatched.size > 0) {
+            const missing = [...unmatched.values()].map(v => v.name).join(', ');
+            finish(() =>
+              reject(
+                new AppError(
+                  `Flow tool idle complete but missing images for: ${missing}`,
+                  502,
+                  'FLOW_TOOL_MISSING_IMAGES',
+                ),
+              ),
+            );
+            return;
+          }
+
+          console.log(`[flow-api] tool batch idle ${idleMs}ms — matched ${matched.length}/${visuals.length}`);
+          finish(() => resolve(matched));
+        })();
+      }, idleMs);
+    };
+
+    const onRequest = (request: Request) => {
+      if (!isBatchGenerateImagesRequest(request, projectId)) return;
+      pending += 1;
+      seenRequest = true;
+      if (idleTimer) clearTimeout(idleTimer);
+      console.log(`[flow-api] batchGenerateImages request started (pending=${pending})`);
+    };
+
+    const onResponse = (response: Response) => {
+      if (!isBatchGenerateImagesRequest(response.request(), projectId)) return;
+
+      pending = Math.max(0, pending - 1);
+      console.log(`[flow-api] batchGenerateImages response (ok=${response.ok()}, pending=${pending})`);
+
+      if (!response.ok()) {
+        scheduleIdleCheck();
+        return;
+      }
+
+      const handleBody = async () => {
+        let payload: unknown;
+        try {
+          payload = await response.json();
+        } catch (err) {
+          console.error(`[flow-api] failed to parse batchGenerateImages JSON: ${err instanceof Error ? err.message : err}`);
+          return;
+        }
+
+        const items = listMediaItemsFromPayload(payload);
+        for (const item of items) {
+          const promptText = extractStructuredPromptText(item);
+          const imageUrl = extractFifeUrlFromMediaItem(item) ?? findImageUrlRecursive(item);
+          if (!promptText || !imageUrl) {
+            console.warn('[flow-api] skipping media item without prompt text or image url');
+            continue;
+          }
+
+          const key = normalizePrompt(promptText);
+          const visual = unmatched.get(key);
+          if (!visual) {
+            console.warn(`[flow-api] no unmatched visual for prompt (len=${promptText.length})`);
+            continue;
+          }
+
+          unmatched.delete(key);
+          const match: FlowToolMatchedImage = { name: visual.name, prompt: visual.prompt, imageUrl };
+          matched.push(match);
+          console.log(`[flow-api] matched prompt → ${visual.name} (${matched.length}/${visuals.length})`);
+
+          if (onMatch) {
+            downloadTasks.push(
+              Promise.resolve(onMatch(match)).catch(err => {
+                throw err instanceof AppError
+                  ? err
+                  : new AppError(
+                      `Flow tool download failed for ${visual.name}: ${err instanceof Error ? err.message : String(err)}`,
+                      502,
+                      'FLOW_TOOL_DOWNLOAD_FAILED',
+                    );
+              }),
+            );
+          }
+        }
+      };
+
+      void handleBody().finally(() => {
+        if (!settled) scheduleIdleCheck();
+      });
+    };
+
+    const overallTimer = setTimeout(() => {
+      finish(() =>
+        reject(
+          new AppError(
+            `Timed out waiting for Flow tool batchGenerateImages (matched ${matched.length}/${visuals.length}, pending=${pending})`,
+            502,
+            'FLOW_API_WAIT_TIMEOUT',
+          ),
+        ),
+      );
+    }, timeoutMs);
+
+    page.on('request', onRequest);
+    page.on('response', onResponse);
+  });
+}
+
+/** @deprecated Prefer beginFlowToolBatchImagesCollector for tool flows. */
 export function beginBatchGenerateImagesCollector(
   page: Page,
   projectId: string,

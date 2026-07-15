@@ -346,7 +346,7 @@ async function isMavidEditorReady(locator: Locator): Promise<boolean> {
  *
  * The custom tool DOM lives inside a child iframe of the Flow project page, so a
  * page-level locator never matches. Scan every frame (including the main frame)
- * for `textarea#mavid-editor-prompt`, polling until one is present, visible and
+ * for `textarea#david-input-prompts`, polling until one is present, visible and
  * enabled (i.e. the tool has finished loading).
  */
 async function locateMavidEditorInFrames(page: Page, timeoutMs: number): Promise<Locator> {
@@ -366,7 +366,7 @@ async function locateMavidEditorInFrames(page: Page, timeoutMs: number): Promise
     await randomDelay(300, 600);
   }
 
-  throw domTimeoutError('#mavid-editor-prompt not found in any frame (tool still loading)');
+  throw domTimeoutError('#david-input-prompts not found in any frame (tool still loading)');
 }
 
 /**

@@ -101,6 +101,8 @@ export interface FlowGenerateImageOptions {
 export interface FlowToolVisual {
   name: string;
   prompt: string;
+  /** Optional reference image URLs / ids for the custom Flow tool. */
+  references?: string[];
 }
 
 export interface FlowGenerateImagesViaToolOptions {

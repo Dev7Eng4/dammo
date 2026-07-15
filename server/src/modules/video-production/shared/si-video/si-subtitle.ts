@@ -67,17 +67,22 @@ function buildAssStyleLine(
   primaryColor: string,
   outlinePx: number,
   shadowPx: number,
+  outlineColor = '&H00000000',
+  charSpacing = SI_SUBTITLE_CHAR_SPACING,
 ): string {
-  return `Style: ${name},${fontName},${fontSize},${primaryColor},&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,${SI_SUBTITLE_CHAR_SPACING},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
+  return `Style: ${name},${fontName},${fontSize},${primaryColor},${primaryColor},${outlineColor},&H00000000,-1,0,0,0,100,100,${charSpacing},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
 }
 
 function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStylePreset): string {
+  const charSpacing = preset.charSpacing ?? SI_SUBTITLE_CHAR_SPACING;
+
   if (preset.assLayout === 'glow_dual') {
-    const glowColor = preset.glowPrimaryColor ?? '&H00C8FF00';
+    const glowColor = preset.glowPrimaryColor ?? '&H00FF6600';
+    const glowOutlineColor = preset.glowOutlineColor ?? glowColor;
     const glowPx = preset.glowOutlinePx ?? 10;
     return (
-      buildAssStyleLine('Glow', fontName, fontSize, glowColor, glowPx, 0) +
-      buildAssStyleLine('Default', fontName, fontSize, preset.primaryColor, preset.outlinePx, 0)
+      buildAssStyleLine('Glow', fontName, fontSize, glowColor, glowPx, 0, glowOutlineColor, charSpacing) +
+      buildAssStyleLine('Default', fontName, fontSize, preset.primaryColor, preset.outlinePx, 0, '&H00000000', charSpacing)
     );
   }
 
@@ -88,6 +93,8 @@ function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStyle
     preset.primaryColor,
     preset.outlinePx,
     preset.shadowPx,
+    preset.outlineColor ?? '&H00000000',
+    charSpacing,
   );
 }
 
@@ -175,7 +182,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
     const textLines = lines.slice(timeLineIdx + 1);
 
     const cw = SI_CANVAS_W - SI_SUBTITLE_PADDING_HORIZONTAL * 2;
-    const cSize = fontSize - SI_SUBTITLE_CHAR_SPACING * 5;
+    const charSpacing = preset.charSpacing ?? SI_SUBTITLE_CHAR_SPACING;
+    const cSize = fontSize + Math.max(0, charSpacing);
     const maxCharsPerLine = Math.max(1, Math.floor(cw / cSize));
 
     const wrappedLines: string[] = [];

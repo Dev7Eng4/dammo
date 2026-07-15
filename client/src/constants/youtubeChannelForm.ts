@@ -24,9 +24,12 @@ export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType; label: 
 
 export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] = [
   { value: 'default', label: 'Default (Noto Sans, trắng)' },
-  { value: 'klee_one', label: 'Klee One (trắng)' },
-  { value: 'green', label: 'Cyan' },
-  { value: 'blue_glow', label: 'White + Blue glow' },
+  { value: 'bizudp_gothic', label: 'BIZ UDPGothic' },
+  { value: 'zen_kaku', label: 'Zen Kaku Gothic New' },
+  { value: 'noto_serif', label: 'Noto Serif JP' },
+  { value: 'cyan', label: 'Cyan text' },
+  { value: 'cyan_navy', label: 'Cyan + Navy stroke' },
+  { value: 'yellow', label: 'Yellow text' },
 ];
 
 export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }[] = [

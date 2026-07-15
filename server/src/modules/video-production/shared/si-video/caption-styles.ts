@@ -1,8 +1,15 @@
 import { AppError } from '../../../../shared/http/errors.js';
 
-export const CAPTION_STYLE_KEYS = ['default', 'klee_one', 'green', 'blue_glow'] as const;
+export const CAPTION_STYLE_KEYS = ['default', 'bizudp_gothic', 'zen_kaku', 'noto_serif', 'cyan', 'cyan_navy', 'yellow'] as const;
 
 export type CaptionStyleKey = (typeof CAPTION_STYLE_KEYS)[number];
+
+/** Legacy keys persisted before rename/removal. */
+const LEGACY_CAPTION_STYLE_ALIASES: Record<string, CaptionStyleKey> = {
+  green: 'cyan',
+  klee_one: 'default',
+  blue_glow: 'cyan_navy',
+};
 
 export type CaptionAssLayout = 'single' | 'glow_dual';
 
@@ -13,11 +20,16 @@ export interface CaptionStylePreset {
   fontAssName: string;
   fontSize: number;
   primaryColor: string;
+  /** ASS OutlineColour (&HAABBGGRR). Default black when omitted. */
+  outlineColor?: string;
   showBackgroundBox: boolean;
   outlinePx: number;
   shadowPx: number;
+  /** ASS Spacing (extra px between characters). Defaults to SI_SUBTITLE_CHAR_SPACING. */
+  charSpacing?: number;
   assLayout?: CaptionAssLayout;
   glowPrimaryColor?: string;
+  glowOutlineColor?: string;
   glowOutlinePx?: number;
   glowBlur?: number;
 }
@@ -34,20 +46,43 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     outlinePx: 5.5,
     shadowPx: 0.3,
   },
-  klee_one: {
-    key: 'klee_one',
-    label: 'Klee One',
-    fontRelPath: 'fonts/KleeOne-Regular.ttf',
-    fontAssName: 'Klee One',
-    fontSize: 90,
+  bizudp_gothic: {
+    key: 'bizudp_gothic',
+    label: 'BIZ UDPGothic',
+    fontRelPath: 'fonts/BIZUDPGothic-Regular.ttf',
+    fontAssName: 'BIZ UDPGothic',
+    fontSize: 70,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
-    outlinePx: 5.4,
-    shadowPx: 1.5,
+    outlinePx: 5.5,
+    shadowPx: 0.3,
   },
-  green: {
-    key: 'green',
-    label: 'Cyan',
+  zen_kaku: {
+    key: 'zen_kaku',
+    label: 'Zen Kaku Gothic New',
+    fontRelPath: 'fonts/ZenKakuGothicNew-Regular.ttf',
+    fontAssName: 'Zen Kaku Gothic New',
+    fontSize: 70,
+    primaryColor: '&H00FFFFFF',
+    showBackgroundBox: true,
+    outlinePx: 5.5,
+    shadowPx: 0.3,
+  },
+  noto_serif: {
+    key: 'noto_serif',
+    label: 'Noto Serif JP',
+    fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
+    fontAssName: 'Noto Serif JP',
+    fontSize: 55,
+    primaryColor: '&H00FFFFFF',
+    showBackgroundBox: false,
+    outlinePx: 4.0,
+    shadowPx: 0.3,
+    charSpacing: 4,
+  },
+  cyan: {
+    key: 'cyan',
+    label: 'Cyan text',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
     fontSize: 60,
@@ -56,20 +91,32 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     outlinePx: 3.6,
     shadowPx: 1.5,
   },
-  blue_glow: {
-    key: 'blue_glow',
-    label: 'White + Blue glow',
+  cyan_navy: {
+    key: 'cyan_navy',
+    label: 'Cyan + Navy stroke',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
     fontSize: 60,
-    primaryColor: '&H00FFFFFF',
+    // #00FFFF → ASS &HAABBGGRR
+    primaryColor: '&H00FFFF00',
+    // #000080 → ASS &HAABBGGRR
+    outlineColor: '&H00800000',
     showBackgroundBox: false,
     outlinePx: 3.6,
-    shadowPx: 0,
-    assLayout: 'glow_dual',
-    glowPrimaryColor: '&H00C8FF00',
-    glowOutlinePx: 10,
-    glowBlur: 10,
+    shadowPx: 1.5,
+  },
+  yellow: {
+    key: 'yellow',
+    label: 'Yellow text',
+    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
+    fontAssName: 'Noto Sans JP Black',
+    fontSize: 50,
+    // #FFFF00 → ASS &HAABBGGRR
+    primaryColor: '&H0000FFFF',
+    showBackgroundBox: false,
+    outlinePx: 2.4,
+    shadowPx: 1.5,
+    charSpacing: 2,
   },
 };
 
@@ -81,12 +128,15 @@ export function isCaptionStyleKey(value: string): value is CaptionStyleKey {
   return (CAPTION_STYLE_KEYS as readonly string[]).includes(value);
 }
 
+function normalizeCaptionStyleKey(value: string): CaptionStyleKey | undefined {
+  if (isCaptionStyleKey(value)) return value;
+  return LEGACY_CAPTION_STYLE_ALIASES[value];
+}
+
 export function resolveCaptionStyleKey(key?: string | null): CaptionStyleKey {
   const trimmed = key?.trim();
-  if (trimmed && isCaptionStyleKey(trimmed)) {
-    return trimmed;
-  }
-  return 'default';
+  if (!trimmed) return 'default';
+  return normalizeCaptionStyleKey(trimmed) ?? 'default';
 }
 
 export function assertValidCaptionStyleKey(key: string | undefined, required = false): CaptionStyleKey | undefined {
@@ -98,11 +148,12 @@ export function assertValidCaptionStyleKey(key: string | undefined, required = f
     return undefined;
   }
 
-  if (!isCaptionStyleKey(trimmed)) {
+  const resolved = normalizeCaptionStyleKey(trimmed);
+  if (!resolved) {
     throw new AppError(`Invalid caption style: ${trimmed}`, 400, 'VALIDATION_ERROR');
   }
 
-  return trimmed;
+  return resolved;
 }
 
 export function getCaptionStylePreset(key?: string | null): CaptionStylePreset {

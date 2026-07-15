@@ -143,7 +143,7 @@ async function main() {
   console.log(`Subtitle: ${subtitlePath}`);
   console.log(`Center image: ${centerImagePath}`);
   console.log(`Language: ${options.language}`);
-  console.log('Caption style: green');
+  console.log('Caption style: cyan_navy');
   console.log(`Local stock dir: ${paths.siLocalStockDir} (cần ít nhất 1 file .mp4)`);
   console.log(`Output: ${path.join(workDir, 'video.mp4')}`);
   console.log('\nAssembling SI video...\n');
@@ -155,7 +155,7 @@ async function main() {
     centerImagePath: centerImagePath!,
     backgroundFootageMode: 'local',
     language: options.language,
-    captionStyleKey: 'klee_one',
+    captionStyleKey: 'noto_serif',
     onLog: msg => console.log(msg),
     onFfmpegProgress: p => logFfmpegProgress('merge', p),
   });

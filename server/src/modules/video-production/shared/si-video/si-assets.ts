@@ -54,13 +54,6 @@ export function assertRequiredSiAssets(captionStyleKey?: CaptionStyleKey | strin
     missing.push(DEFAULT_FONT_REL);
   }
 
-  if (styleKey === 'klee_one') {
-    const kleeFontPath = path.join(paths.reupSiAssetsDir, getCaptionStylePreset('klee_one').fontRelPath);
-    if (!fs.existsSync(kleeFontPath)) {
-      missing.push(getCaptionStylePreset('klee_one').fontRelPath);
-    }
-  }
-
   if (missing.length > 0) {
     throw new AppError(
       `Missing required SI video assets in ${paths.reupSiAssetsDir}: ${missing.join(', ')}`,

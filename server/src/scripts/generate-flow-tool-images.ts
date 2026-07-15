@@ -13,7 +13,10 @@ import type { FlowToolVisual } from '../infrastructure/llm-browser/llm-browser.t
  */
 const PROJECT_ID = '37afa1aa-49e0-4d70-9407-bcb84afa09e5';
 
-/** Sửa mảng visuals mẫu tại đây rồi chạy: npm run flow:generate-tool-images -- --project-id <id> */
+/**
+ * Sửa mảng mẫu tại đây rồi chạy: npm run flow:generate-tool-images -- --project-id <id>
+ * Format paste vào tool: [{ prompt, name, references? }]
+ */
 const SAMPLE_VISUALS: FlowToolVisual[] = [
   {
     name: 'scene-001',
@@ -24,6 +27,10 @@ const SAMPLE_VISUALS: FlowToolVisual[] = [
     name: 'scene-002',
     prompt:
       'Macro shot of fresh wholesome food ingredients on a wooden kitchen table, sunlight through a window, artistic composition, 16:9',
+  },
+  {
+    name: 'scene-003',
+    prompt: 'A serene live-action scene of a Japanese couple drinking green tea beside a window, warm morning light, photorealistic, 16:9',
   },
 ];
 
@@ -100,21 +107,36 @@ function normalizeVisuals(raw: unknown): FlowToolVisual[] {
       : null;
 
   if (!list) {
-    throw new AppError('Input must be an array of visuals or an object { visuals: [...] }', 400, 'INVALID_INPUT');
+    throw new AppError('Input must be an array of [{ prompt, name, references? }]', 400, 'INVALID_INPUT');
   }
 
   return list.map((item, idx) => {
     if (!item || typeof item !== 'object') {
       throw new AppError(`Visual at index ${idx} is not an object`, 400, 'INVALID_INPUT');
     }
-    const { name, prompt } = item as { name?: unknown; prompt?: unknown };
+    const { name, prompt, references } = item as {
+      name?: unknown;
+      prompt?: unknown;
+      references?: unknown;
+    };
     if (typeof name !== 'string' || !name.trim()) {
       throw new AppError(`Visual at index ${idx} is missing a valid "name"`, 400, 'INVALID_INPUT');
     }
     if (typeof prompt !== 'string' || !prompt.trim()) {
       throw new AppError(`Visual "${name}" is missing a valid "prompt"`, 400, 'INVALID_INPUT');
     }
-    return { name: name.trim(), prompt: prompt.trim() };
+
+    const visual: FlowToolVisual = { name: name.trim(), prompt: prompt.trim() };
+
+    if (references !== undefined) {
+      if (!Array.isArray(references) || references.some(ref => typeof ref !== 'string')) {
+        throw new AppError(`Visual "${name}" has invalid "references" (expected string[])`, 400, 'INVALID_INPUT');
+      }
+      const cleaned = references.map(ref => ref.trim()).filter(Boolean);
+      if (cleaned.length > 0) visual.references = cleaned;
+    }
+
+    return visual;
   });
 }
 
