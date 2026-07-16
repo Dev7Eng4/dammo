@@ -107,14 +107,19 @@ export class ProxiesService {
 
   create(input: CreateProxyInput): Proxy {
     const now = new Date().toISOString();
+    const host = input.host.trim();
+    const port = input.port;
+    const username = normalizeOptionalString(input.username);
+    const password = normalizeOptionalString(input.password);
     const proxy: Proxy = {
       id: generateId(),
       name: input.name.trim(),
       type: input.type,
-      host: input.host.trim(),
-      port: input.port,
-      username: normalizeOptionalString(input.username),
-      password: normalizeOptionalString(input.password),
+      host,
+      port,
+      username,
+      password,
+      rawProxy: buildRawProxy({ host, port, username, password }),
       location: normalizeOptionalString(input.location),
       countryCode: normalizeOptionalString(input.countryCode)?.toUpperCase(),
       provider: normalizeOptionalString(input.provider),
@@ -132,55 +137,63 @@ export class ProxiesService {
 
   async update(id: string, input: UpdateProxyInput): Promise<Proxy> {
     const existing = this.getById(id);
-    const oldRawProxy = buildRawProxy(existing);
+    const oldRawProxy = existing.rawProxy ?? buildRawProxy(existing);
     const now = new Date().toISOString();
 
-    const updated = proxiesRepository.update(id, (proxy) => ({
-      ...proxy,
-      name: input.name?.trim() ?? proxy.name,
-      type: input.type ?? proxy.type,
-      host: input.host?.trim() ?? proxy.host,
-      port: input.port ?? proxy.port,
-      username:
+    const updated = proxiesRepository.update(id, (proxy) => {
+      const host = input.host?.trim() ?? proxy.host;
+      const port = input.port ?? proxy.port;
+      const username =
         input.username === null
           ? undefined
           : input.username !== undefined
             ? normalizeOptionalString(input.username)
-            : proxy.username,
-      password:
+            : proxy.username;
+      const password =
         input.password === null
           ? undefined
           : input.password !== undefined
             ? normalizeOptionalString(input.password)
-            : proxy.password,
-      location:
-        input.location === null
-          ? undefined
-          : input.location !== undefined
-            ? normalizeOptionalString(input.location)
-            : proxy.location,
-      countryCode:
-        input.countryCode === null
-          ? undefined
-          : input.countryCode !== undefined
-            ? normalizeOptionalString(input.countryCode)?.toUpperCase()
-            : proxy.countryCode,
-      provider:
-        input.provider === null
-          ? undefined
-          : input.provider !== undefined
-            ? normalizeOptionalString(input.provider)
-            : proxy.provider,
-      tags: input.tags ?? proxy.tags,
-      status: input.status ?? proxy.status,
-      updatedAt: now,
-    }));
+            : proxy.password;
+
+      return {
+        ...proxy,
+        name: input.name?.trim() ?? proxy.name,
+        type: input.type ?? proxy.type,
+        host,
+        port,
+        username,
+        password,
+        rawProxy: buildRawProxy({ host, port, username, password }),
+        location:
+          input.location === null
+            ? undefined
+            : input.location !== undefined
+              ? normalizeOptionalString(input.location)
+              : proxy.location,
+        countryCode:
+          input.countryCode === null
+            ? undefined
+            : input.countryCode !== undefined
+              ? normalizeOptionalString(input.countryCode)?.toUpperCase()
+              : proxy.countryCode,
+        provider:
+          input.provider === null
+            ? undefined
+            : input.provider !== undefined
+              ? normalizeOptionalString(input.provider)
+              : proxy.provider,
+        tags: input.tags ?? proxy.tags,
+        status: input.status ?? proxy.status,
+        updatedAt: now,
+      };
+    });
 
     if (!updated) {
       throw new AppError('Proxy not found', 404, 'NOT_FOUND');
     }
 
-    const newRawProxy = buildRawProxy(updated);
+    const newRawProxy = updated.rawProxy;
 
     // Sync proxy changes to GPM Local API for all assigned profiles.
     // Best-effort: if GPM is unavailable, keep the local update.

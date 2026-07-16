@@ -6,6 +6,7 @@ import {
   parseIndexedTranscriptResponse,
   parseSrt,
   serializeSrt,
+  splitSrtBlocksByMaxDuration,
   srtBlocksToIndexedText,
   tryApplyIndexedCorrections,
   type SrtBlock,
@@ -24,6 +25,7 @@ const BATCH_SIZE = 80;
 const MAX_CONCURRENT_PROFILES = 5;
 const MAX_BATCH_RETRIES = 3;
 const BATCH_DELAY_MS = 2_000;
+const TRANSCRIPT_UPDATE_MAX_MINUTES = 30;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -185,7 +187,19 @@ export async function updateTranscriptWithLlm(
     throw new AppError('SRT file is empty or invalid', 400, 'INVALID_SRT');
   }
 
-  const batches = chunkSrtBlocks(blocks, BATCH_SIZE);
+  const maxMs = TRANSCRIPT_UPDATE_MAX_MINUTES * 60 * 1000;
+  const { head: headBlocks, tail: tailBlocks } = splitSrtBlocksByMaxDuration(blocks, maxMs);
+  if (headBlocks.length === 0) {
+    throw new AppError('SRT file is empty or invalid', 400, 'INVALID_SRT');
+  }
+
+  if (tailBlocks.length > 0) {
+    console.log(
+      `[transcript-update] Chỉ LLM ${TRANSCRIPT_UPDATE_MAX_MINUTES} phút đầu: ${headBlocks.length}/${blocks.length} block`,
+    );
+  }
+
+  const batches = chunkSrtBlocks(headBlocks, BATCH_SIZE);
   const totalBatches = batches.length;
   const provider = promptsSettingsService.get().defaultLlmProvider;
   const workerCount = Math.min(MAX_CONCURRENT_PROFILES, totalBatches);
@@ -231,7 +245,8 @@ export async function updateTranscriptWithLlm(
 
     await Promise.all(profiles.map(workerProfile));
 
-    const mergedBlocks = results.flat();
+    const updatedHeadBlocks = results.flat();
+    const mergedBlocks = [...updatedHeadBlocks, ...tailBlocks];
     const updatedContent = serializeSrt(mergedBlocks);
 
     const updatedPath = resolveUpdatedSrtPath(srtPath, language);

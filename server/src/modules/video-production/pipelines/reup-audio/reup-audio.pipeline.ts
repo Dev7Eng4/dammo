@@ -283,8 +283,6 @@ export class ReupAudioPipeline {
           let primaryOutputPath = downloaded.audioPath;
           let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
-            // TEMP: skip LLM transcript update — testing metadata only
-            /*
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${destination.language})...`);
             }
@@ -334,11 +332,6 @@ export class ReupAudioPipeline {
 
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → transcript.srt`);
-            }
-            */
-            updatedSrtPath = srtPath;
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'LLM transcript update skipped (temp, testing metadata)');
             }
 
             const jaSrtPath = updatedSrtPath;

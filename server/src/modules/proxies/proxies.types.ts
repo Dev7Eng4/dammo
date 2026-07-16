@@ -10,6 +10,7 @@ export interface Proxy {
   port: number;
   username?: string;
   password?: string;
+  rawProxy: string;
   location?: string;
   countryCode?: string;
   provider?: string;

@@ -166,6 +166,16 @@ export function filterSrtBlocksByMaxDuration(blocks: SrtBlock[], maxMs: number):
   return blocks.filter(block => srtTimestampToMs(block.start) < maxMs);
 }
 
+export function splitSrtBlocksByMaxDuration(
+  blocks: SrtBlock[],
+  maxMs: number,
+): { head: SrtBlock[]; tail: SrtBlock[] } {
+  const head = filterSrtBlocksByMaxDuration(blocks, maxMs);
+  const headIndices = new Set(head.map(block => block.index));
+  const tail = blocks.filter(block => !headIndices.has(block.index));
+  return { head, tail };
+}
+
 export async function extractTranscriptForMetadata(
   srtPath: string,
   maxMinutes = 25,

@@ -10,6 +10,7 @@ export interface Proxy {
   port: number;
   username?: string;
   password?: string;
+  rawProxy: string;
   location?: string;
   countryCode?: string;
   provider?: string;
@@ -88,13 +89,23 @@ export interface ProxyImportResult {
 
 export interface ProxyFormValues {
   type: ProxyType;
+  rawProxy: string;
+  countryCode?: string;
+  providerId?: string;
+  expiresAt?: string;
+}
+
+export interface EditProxyFormValues {
+  name: string;
+  type: ProxyType;
   host: string;
   port: number;
   username?: string;
   password?: string;
+  location?: string;
   countryCode?: string;
-  providerId?: string;
-  expiresAt?: string;
+  provider?: string;
+  tags?: string;
 }
 
 export type ProxyTab = 'monitoring' | 'providers' | 'automations' | 'library';

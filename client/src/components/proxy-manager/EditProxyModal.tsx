@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { updateProxy } from '../../api/proxies';
 import { Button, DropdownSelect, Input, Modal } from '../ui';
-import type { Proxy, ProxyFormValues, ProxyType } from '../../types/proxy';
+import type { EditProxyFormValues, Proxy, ProxyType } from '../../types/proxy';
 
 interface EditProxyModalProps {
   open: boolean;
@@ -27,7 +27,7 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<ProxyFormValues>();
+  } = useForm<EditProxyFormValues>();
 
   const proxyType = watch('type');
 
@@ -53,7 +53,7 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
     onClose();
   }
 
-  async function onSubmit(values: ProxyFormValues) {
+  async function onSubmit(values: EditProxyFormValues) {
     if (!proxy) return;
     setApiError(null);
     try {

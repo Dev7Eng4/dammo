@@ -3,7 +3,12 @@ import { useForm } from 'react-hook-form';
 import { updateGpmProfile } from '../../api/gpm';
 import { fetchProxies, setProfileProxy } from '../../api/proxies';
 import { buildRawProxy, formatProxyLabel } from '../../lib/proxy-format';
-import type { EditGpmProfileFormValues, GpmGroup, GpmProfile } from '../../types/gpm';
+import type {
+  EditGpmProfileFormValues,
+  GpmGroup,
+  GpmProfile,
+  UpdateGpmProfilePayload,
+} from '../../types/gpm';
 import type { Proxy } from '../../types/proxy';
 import { Button, Input, Modal, Select, Textarea } from '../ui';
 
@@ -101,12 +106,13 @@ export function EditGpmProfileModal({ open, profile, groups, onClose, onSuccess 
         ? proxies.find((proxy) => proxy.id === values.proxyId)
         : undefined;
 
-      await updateGpmProfile(profile.id, {
-        name: values.name.trim(),
-        group_id: values.group_id || null,
-        raw_proxy: selectedProxy ? buildRawProxy(selectedProxy) : '',
-        note: values.note.trim() || null,
-      });
+      const payload: UpdateGpmProfilePayload = { name: values.name.trim() };
+      if (values.group_id) payload.group_id = values.group_id;
+      if (selectedProxy) payload.raw_proxy = buildRawProxy(selectedProxy);
+      const note = values.note.trim();
+      if (note) payload.note = note;
+
+      await updateGpmProfile(profile.id, payload);
 
       await setProfileProxy(profile.id, values.proxyId || null);
 

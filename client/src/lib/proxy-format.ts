@@ -1,6 +1,7 @@
 import type { Proxy } from '../types/proxy';
 
 export function buildRawProxy(proxy: Proxy): string {
+  if (proxy.rawProxy) return proxy.rawProxy;
   const hostPort = `${proxy.host}:${proxy.port}`;
   if (proxy.username) {
     return `${hostPort}:${proxy.username}:${proxy.password ?? ''}`;
