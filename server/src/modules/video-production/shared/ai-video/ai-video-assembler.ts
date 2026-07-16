@@ -13,7 +13,7 @@ import {
   AUTO_TRANSITION_ROTATION,
   KEN_BURNS_PRESETS,
 } from '../slideshow/slideshow-presets.js';
-import { SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
+import { SS_CACHE_DIRNAME, SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { resolveCaptionFont } from '../si-video/si-assets.js';
 import { getCaptionStylePreset, resolveCaptionStyleKey } from '../si-video/caption-styles.js';
@@ -215,6 +215,10 @@ export async function assembleReupAiSlideshowVideo(
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }
+
+  const cacheDir = path.join(workDir, SS_CACHE_DIRNAME);
+  await fs.rm(cacheDir, { recursive: true, force: true }).catch(() => undefined);
+  log(`[ai-video] Cleaned ${SS_CACHE_DIRNAME}`);
 
   log(`[ai-video] Video saved → ${outputPath}`);
   return outputPath;

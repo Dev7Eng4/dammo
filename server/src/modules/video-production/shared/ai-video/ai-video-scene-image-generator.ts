@@ -252,7 +252,19 @@ async function openMetaWorkerPool(
 
   const chromeUniqueSlots = Math.min(mains.length, target);
   const needGpm = chromeUniqueSlots < target;
-  const gpmCandidates = needGpm ? await gpmManagerService.listMetaEnabledProfiles() : [];
+  let gpmCandidates: GpmProfile[] = [];
+  if (needGpm) {
+    try {
+      gpmCandidates = await gpmManagerService.listMetaEnabledProfiles();
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      const code = err instanceof AppError ? err.code : undefined;
+      log(
+        `[ai-video] GPM meta profiles unavailable (${code ?? 'error'}): ${reason} — tiếp tục Chrome-only`,
+      );
+      gpmCandidates = [];
+    }
+  }
   const gpmProfiles = gpmCandidates.slice(0, Math.max(0, target - chromeUniqueSlots));
   const remainingAfterGpm = target - chromeUniqueSlots - gpmProfiles.length;
   const chromeTabCount =

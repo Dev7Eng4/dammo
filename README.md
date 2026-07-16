@@ -40,3 +40,6 @@ Các ngách đặc thù (như thị trường Châu Á, Nhật Bản): Với cá
 sms-22
 
 meta -> logic chờ response sai, input prompt phải clear trước
+
+ai -> check 2 image gần nhau nếu thời gian xa quá -> lỗi
+- thêm effect -> đang ít quá

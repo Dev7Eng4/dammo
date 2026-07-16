@@ -339,7 +339,7 @@ export class ReupAudioPipeline {
 
             subtitleForAssembly = updatedSrtPath;
 
-            if (videoType === 'si') {
+            if (videoType === 'si' || videoType === 'ai') {
               if (taskJobId) {
                 taskQueueRepository.setLivePhase(taskJobId, 'metadata');
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata...');
@@ -383,6 +383,12 @@ export class ReupAudioPipeline {
                     videoMetaOutput.detected_niche ?? 'n/a'
                   }`
                 );
+              }
+            }
+
+            if (videoType === 'si') {
+              if (!videoMetaOutput) {
+                throw new AppError('Metadata is required for SI video', 400, 'INVALID_INPUT');
               }
 
               const workDir = jaWorkDir;
@@ -679,7 +685,6 @@ export class ReupAudioPipeline {
             }
 
             if (taskJobId) {
-              taskQueueRepository.setLivePhase(taskJobId, 'metadata');
               taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
             }
 
