@@ -36,6 +36,7 @@ import {
 import { AI_SLIDESHOW_RAW_BASENAME } from './ai-video.constants.js';
 import {
   resolveSceneImageAbsolutePath,
+  scaleSceneTimestamps,
   sceneDurationSec,
   scenesWithImagePaths,
 } from './ai-video-scene-timing.js';
@@ -101,7 +102,13 @@ export async function assembleReupAiSlideshowVideo(
     throw new AppError('AI slideshow requires at least one image', 400, 'AI_SLIDESHOW_NO_IMAGES');
   }
 
-  let slides = buildTimedSlides(workDir, usableScenes);
+  const assets = resolveCaptionFont(captionStyleKey);
+  const speed = resolveRandomSiAudioSpeed();
+  const originalAudioDuration = await getAudioDurationSeconds(audioPath);
+  const audioDurationAfterTempo = originalAudioDuration / speed;
+  const scaledScenes = scaleSceneTimestamps(usableScenes, speed);
+
+  let slides = buildTimedSlides(workDir, scaledScenes);
   const imagePaths = slides.map(slide => slide.imagePath);
 
   for (const requiredPath of [audioPath, subtitlePath, ...imagePaths]) {
@@ -111,11 +118,6 @@ export async function assembleReupAiSlideshowVideo(
       throw new AppError(`AI slideshow missing input file: ${requiredPath}`, 400, 'AI_INPUT_MISSING');
     }
   }
-
-  const assets = resolveCaptionFont(captionStyleKey);
-  const speed = resolveRandomSiAudioSpeed();
-  const originalAudioDuration = await getAudioDurationSeconds(audioPath);
-  const audioDurationAfterTempo = originalAudioDuration / speed;
 
   log(
     `[ai-video] Audio ${originalAudioDuration.toFixed(1)}s → ${formatClockDuration(audioDurationAfterTempo)} after atempo ${speed.toFixed(3)}`,
@@ -127,15 +129,6 @@ export async function assembleReupAiSlideshowVideo(
     scaledSrtPath = path.join(workDir, 'ai_temp_scaled_sub.srt');
     scaleSrtTimestamps(subtitlePath, scaledSrtPath, speed);
     activeSubtitlePath = scaledSrtPath;
-  }
-
-  if (speed !== 1) {
-    slides = slides.map(slide => ({
-      ...slide,
-      durationSec: slide.durationSec / speed,
-      transitionDurationSec:
-        slide.transitionDurationSec !== undefined ? slide.transitionDurationSec / speed : undefined,
-    }));
   }
 
   slides = padSlidesToAudioDuration(slides, audioDurationAfterTempo);

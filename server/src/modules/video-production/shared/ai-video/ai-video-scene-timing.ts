@@ -121,3 +121,17 @@ export function sceneDurationSec(scene: AiVideoScenePrompt): number {
   const endMs = srtTimestampToMs(scene.endTime);
   return Math.max(0.2, (endMs - startMs) / 1_000);
 }
+
+/** Scale scene start/end to match audio after atempo (factor = 1/speed), same as scaleSrtTimestamps. */
+export function scaleSceneTimestamps(
+  scenes: AiVideoScenePrompt[],
+  speed: number,
+): AiVideoScenePrompt[] {
+  if (speed === 1) return scenes.map(scene => ({ ...scene }));
+  const factor = 1 / speed;
+  return scenes.map(scene => ({
+    ...scene,
+    startTime: msToSrtTimestamp(srtTimestampToMs(scene.startTime) * factor),
+    endTime: msToSrtTimestamp(srtTimestampToMs(scene.endTime) * factor),
+  }));
+}

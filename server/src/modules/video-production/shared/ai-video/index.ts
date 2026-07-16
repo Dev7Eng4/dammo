@@ -12,4 +12,5 @@ export {
   scenesWithImagePaths,
   resolveSceneImageAbsolutePath,
   sceneDurationSec,
+  scaleSceneTimestamps,
 } from './ai-video-scene-timing.js';

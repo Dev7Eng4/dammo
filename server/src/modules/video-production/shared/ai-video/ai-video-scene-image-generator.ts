@@ -11,6 +11,8 @@ import {
 import type { GpmProfile } from '../../../../infrastructure/gpm/gpm-api.client.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import {
+  closeChromeProfile,
+  closeChromeProfiles,
   createChromeProfilePage,
   openChromeProfile,
 } from '../../../chrome-profiles/chrome-profile.runner.js';
@@ -309,6 +311,17 @@ async function cleanupMetaWorkerPool(pool: MetaWorkerPool, log: (msg: string) =>
       }
     }),
   );
+
+  const chromeProfileIds = [
+    ...new Set(pool.workers.filter(worker => worker.kind === 'chrome').map(worker => worker.profileId)),
+  ];
+
+  if (chromeProfileIds.length === 0) return;
+
+  const closedIds = await closeChromeProfiles(chromeProfileIds);
+  for (const profileId of closedIds) {
+    log(`[ai-video] Closed Chrome profile ${profileId} after scene images`);
+  }
 }
 
 async function generateMetaSceneImages(
@@ -475,8 +488,15 @@ export async function generateAiSceneSlideImages(
   if (imageProvider === 'flow') {
     const profile = chromeProfilesService.requireMainProfile();
     log(`[ai-video] Mở Chrome main profile ${profile.name} cho scene images...`);
-    await generateFlowSceneImages(profile.id, slidesDir, pending, input.scenes.length, input.onProgress);
-    generatedCount = pending.length;
+    try {
+      await generateFlowSceneImages(profile.id, slidesDir, pending, input.scenes.length, input.onProgress);
+      generatedCount = pending.length;
+    } finally {
+      const closed = await closeChromeProfile(profile.id);
+      if (closed) {
+        log(`[ai-video] Closed Chrome profile ${profile.name} after scene images`);
+      }
+    }
   } else {
     const metaResult = await generateMetaSceneImages(
       slidesDir,
