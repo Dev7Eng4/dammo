@@ -6,6 +6,7 @@ import {
   FLOW_CONFIG,
   FLOW_BASE_URL,
   FLOW_INITIAL_SETUP_SELECTORS,
+  FLOW_PROJECT_INITIAL_DATA_PATH,
   FLOW_UPLOAD_IMAGE_PATH,
   MAVID_EDITOR_TOOL_ID,
   buildFlowProjectUrl,
@@ -110,6 +111,67 @@ async function isPromptInputReady(page: Page): Promise<boolean> {
 function parseProjectIdFromUrl(pageUrl: string): string | null {
   const match = pageUrl.match(/\/flow\/project\/([^/?#]+)/);
   return match?.[1] ?? null;
+}
+
+function isProjectInitialDataUrl(url: string, projectId: string): boolean {
+  return url.includes(FLOW_PROJECT_INITIAL_DATA_PATH) && url.includes(projectId);
+}
+
+async function parseProjectInitialDataSuccess(response: Response): Promise<boolean> {
+  if (!response.ok()) return false;
+
+  try {
+    const body: unknown = await response.json();
+    if (!body || typeof body !== 'object') return false;
+    if ('error' in body && body.error) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Returns true when flow.projectInitialData responds without a tRPC error. */
+export async function validateFlowProjectOnPage(page: Page, projectId: string, timeoutMs = 45_000): Promise<boolean> {
+  try {
+    const response = await page.waitForResponse(resp => isProjectInitialDataUrl(resp.url(), projectId), {
+      timeout: timeoutMs,
+    });
+    return parseProjectInitialDataSuccess(response);
+  } catch {
+    return false;
+  }
+}
+
+/** Navigate to a Flow project and wait for projectInitialData validation. */
+export async function openFlowProjectPage(page: Page, projectId: string, timeoutMs = 60_000): Promise<boolean> {
+  const validationPromise = page.waitForResponse(resp => isProjectInitialDataUrl(resp.url(), projectId), {
+    timeout: timeoutMs,
+  });
+
+  await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+  await page.keyboard.press('Escape');
+
+  try {
+    const response = await validationPromise;
+    const valid = await parseProjectInitialDataSuccess(response);
+    if (!valid) return false;
+    await waitForFlowProjectReady(page);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Open Flow home, create a new project, run initial setup, and return the new project id. */
+export async function createNewFlowProject(page: Page): Promise<string> {
+  await warmUpBeforeFlow(page);
+  await page.goto(FLOW_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  await randomDelay(2_000, 4_000);
+  await clickNewProjectButton(page);
+  await waitForFlowProjectReady(page);
+  const newProjectId = resolveProjectId(page);
+  await ensureInitialProjectSetup(page, newProjectId);
+  return newProjectId;
 }
 
 function resolveProjectId(page: Page, explicitProjectId?: string): string {
@@ -301,7 +363,7 @@ async function runSetupStep(page: Page, popover: Locator, selectorKey: FlowSetup
   }
 }
 
-async function ensureInitialProjectSetup(page: Page, projectId: string): Promise<void> {
+export async function ensureInitialProjectSetup(page: Page, projectId: string): Promise<void> {
   if (configuredProjects.has(projectId)) return;
 
   console.log(`[flow] running initial setup for project ${projectId}...`);
@@ -485,29 +547,19 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
         return;
       }
 
-      if (skipInitialSetup && projectId) {
-        await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
-        await page.keyboard.press('Escape');
-        await waitForFlowProjectReady(page);
-        return;
-      }
-
-      await warmUpBeforeFlow(page);
-
       if (projectId) {
-        await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: 60_000 });
-        await randomDelay(2_000, 4_000);
-        await waitForFlowProjectReady(page);
-        await ensureInitialProjectSetup(page, projectId);
+        const valid = await openFlowProjectPage(page, projectId);
+        if (!valid) {
+          throw domTimeoutError(`Flow project ${projectId} failed projectInitialData validation`);
+        }
+        if (!skipInitialSetup) {
+          await randomDelay(2_000, 4_000);
+          await ensureInitialProjectSetup(page, projectId);
+        }
         return;
       }
 
-      await page.goto(FLOW_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-      await randomDelay(2_000, 4_000);
-      await clickNewProjectButton(page);
-      await waitForFlowProjectReady(page);
-      const newProjectId = resolveProjectId(page);
-      await ensureInitialProjectSetup(page, newProjectId);
+      await createNewFlowProject(page);
     },
 
     async setupConfig(page: Page, setup: LlmSetupConfig): Promise<void> {

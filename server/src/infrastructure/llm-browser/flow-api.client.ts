@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { AppError } from '../../shared/http/errors.js';
+import { FLOW_DAILY_QUOTA_EXHAUSTED, isFlowDailyQuotaExhausted } from './flow-api-errors.js';
 import { FLOW_API_REQUEST_HEADERS, FLOW_SESSION_URL, buildBatchGenerateImagesUrl, buildUploadImageUrl } from './flow.config.js';
 
 function randomBatchId(): string {
@@ -238,6 +239,18 @@ export interface CallBatchGenerateImagesResult {
 
 export function assertFlowApiResponseOk(result: CallBatchGenerateImagesResult): void {
   if (result.ok) return;
+
+  if (isFlowDailyQuotaExhausted(result.status, result.body)) {
+    const detail = extractFlowApiErrorDetail(result.body, result.bodyText);
+    const message = detail
+      ? `Flow daily quota exhausted: ${detail}`
+      : 'Flow daily quota exhausted (RESOURCE_EXHAUSTED / PUBLIC_ERROR_PER_MODEL_DAILY_QUOTA_REACHED)';
+    console.warn(`[flow-quota] ${message}`);
+    if (result.bodyText) {
+      console.error(`[flow-api] response body: ${result.bodyText.slice(0, 1_000)}`);
+    }
+    throw new AppError(message, 429, FLOW_DAILY_QUOTA_EXHAUSTED);
+  }
 
   const detail = extractFlowApiErrorDetail(result.body, result.bodyText);
   const code = flowApiHttpErrorCode(result.status);

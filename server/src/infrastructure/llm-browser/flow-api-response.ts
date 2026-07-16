@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { Page, Request, Response } from 'playwright';
 import { paths } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
+import { createFlowDailyQuotaError, isFlowDailyQuotaExhausted, throwIfFlowBatchGenerateFailed } from './flow-api-errors.js';
 import { FLOW_TOOL_IDLE_MS, buildBatchGenerateImagesUrl } from './flow.config.js';
 import type { FlowGenerateImageOptions, FlowToolVisual, LlmMediaAsset } from './llm-browser.types.js';
 
@@ -173,16 +174,34 @@ export function resolveFlowImageOutputPath(outputPath?: string): string {
 export function beginBatchGenerateImagesWait(page: Page, projectId: string, timeoutMs: number): Promise<Response> {
   const expectedUrl = buildBatchGenerateImagesUrl(projectId);
 
-  return page.waitForResponse(
-    response => {
-      const url = response.url();
-      return url.includes(BATCH_GENERATE_IMAGES_PATH) && url.includes(projectId) && response.request().method() === 'POST' && response.ok();
-    },
-    { timeout: timeoutMs },
-  ).then(response => {
-    console.log(`[flow-api] matched batchGenerateImages: ${response.url() || expectedUrl}`);
-    return response;
-  });
+  return page
+    .waitForResponse(
+      response => {
+        const url = response.url();
+        return url.includes(BATCH_GENERATE_IMAGES_PATH) && url.includes(projectId) && response.request().method() === 'POST';
+      },
+      { timeout: timeoutMs },
+    )
+    .then(async response => {
+      console.log(`[flow-api] matched batchGenerateImages: ${response.url() || expectedUrl} (status=${response.status()})`);
+
+      if (response.ok()) {
+        return response;
+      }
+
+      let body: unknown = null;
+      let bodyText = '';
+      try {
+        bodyText = await response.text();
+        body = bodyText ? JSON.parse(bodyText) : null;
+      } catch {
+        // keep raw text
+      }
+
+      throwIfFlowBatchGenerateFailed(response.status(), body, bodyText);
+      // throwIfFlowBatchGenerateFailed always throws; satisfy TypeScript
+      return response;
+    });
 }
 
 export interface FlowToolMatchedImage {
@@ -304,7 +323,35 @@ export function beginFlowToolBatchImagesCollector(
       console.log(`[flow-api] batchGenerateImages response (ok=${response.ok()}, pending=${pending})`);
 
       if (!response.ok()) {
-        scheduleIdleCheck();
+        void (async () => {
+          let body: unknown = null;
+          let bodyText = '';
+          try {
+            bodyText = await response.text();
+            body = bodyText ? JSON.parse(bodyText) : null;
+          } catch {
+            // keep raw text
+          }
+
+          if (isFlowDailyQuotaExhausted(response.status(), body)) {
+            const detail =
+              typeof body === 'object' &&
+              body !== null &&
+              typeof (body as { error?: { message?: unknown } }).error?.message === 'string'
+                ? String((body as { error: { message: string } }).error.message)
+                : bodyText.slice(0, 300);
+            console.warn(
+              `[flow-quota] tool batch hit daily quota after matching ${matched.length}/${visuals.length}`,
+            );
+            finish(() => reject(createFlowDailyQuotaError(detail)));
+            return;
+          }
+
+          console.warn(
+            `[flow-api] batchGenerateImages non-OK ${response.status()} (continuing idle check): ${bodyText.slice(0, 200)}`,
+          );
+          if (!settled) scheduleIdleCheck();
+        })();
         return;
       }
 

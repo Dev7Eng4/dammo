@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from 'playwright';
-import { DEFAULT_FLOW_PROJECT_ID } from '../../../../infrastructure/llm-browser/flow.config.js';
 import type { FlowToolVisual } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import {
   connectPlaywrightToGpmProfile,
@@ -11,7 +10,6 @@ import {
 import type { GpmProfile } from '../../../../infrastructure/gpm/gpm-api.client.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import {
-  closeChromeProfile,
   closeChromeProfiles,
   createChromeProfilePage,
   openChromeProfile,
@@ -19,7 +17,7 @@ import {
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
 import { gpmManagerService } from '../../../gpm-manager/gpm-manager.service.js';
-import { flowBrowserService } from '../../../llm-browser/flow-browser.service.js';
+import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
@@ -129,13 +127,15 @@ async function resolvePendingJobs(jobs: SceneVisualJob[]): Promise<{
 }
 
 async function generateFlowSceneImages(
-  profileId: string,
   slidesDir: string,
   pending: SceneVisualJob[],
   totalScenes: number,
+  log: (msg: string) => void,
   onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
-): Promise<void> {
+): Promise<{ generatedCount: number; failedCount: number }> {
   const batches = chunkArray(pending, AI_FLOW_TOOL_BATCH_SIZE);
+  let generatedCount = 0;
+  let failedCount = 0;
 
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
     const batch = batches[batchIndex];
@@ -155,12 +155,33 @@ async function generateFlowSceneImages(
       });
     }
 
-    await flowBrowserService.generateImagesViaTool(profileId, visuals, {
-      projectId: DEFAULT_FLOW_PROJECT_ID,
-      outputDir: slidesDir,
-      timeoutMs: FLOW_TOOL_TIMEOUT_MS,
-    });
+    try {
+      await generateImagesViaToolWithFailover(visuals, {
+        outputDir: slidesDir,
+        timeoutMs: FLOW_TOOL_TIMEOUT_MS,
+      }, {
+        onProfileSwitch: (from, to, remainingCount) => {
+          log(
+            `[ai-video] Flow quota exhausted on ${from.name}, switching to ${to.name} ` +
+              `(${remainingCount} image(s) remaining)`,
+          );
+        },
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log(`[ai-video] Flow batch ${batchIndex + 1}/${batches.length} failed: ${reason}`);
+    }
+
+    for (const job of batch) {
+      if (await fileExists(job.outputPath)) {
+        generatedCount += 1;
+      } else {
+        failedCount += 1;
+      }
+    }
   }
+
+  return { generatedCount, failedCount };
 }
 
 async function openChromeMetaWorkers(
@@ -498,15 +519,25 @@ export async function generateAiSceneSlideImages(
   let failedCount = 0;
 
   if (imageProvider === 'flow') {
-    const profile = chromeProfilesService.requireMainProfile();
-    log(`[ai-video] Mở Chrome main profile ${profile.name} cho scene images...`);
+    const mains = chromeProfilesService.listMainProfiles();
+    log(
+      `[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`,
+    );
     try {
-      await generateFlowSceneImages(profile.id, slidesDir, pending, input.scenes.length, input.onProgress);
-      generatedCount = pending.length;
+      const flowResult = await generateFlowSceneImages(
+        slidesDir,
+        pending,
+        input.scenes.length,
+        log,
+        input.onProgress,
+      );
+      generatedCount = flowResult.generatedCount;
+      failedCount = flowResult.failedCount;
     } finally {
-      const closed = await closeChromeProfile(profile.id);
-      if (closed) {
-        log(`[ai-video] Closed Chrome profile ${profile.name} after scene images`);
+      const closedIds = await closeChromeProfiles(mains.map(profile => profile.id));
+      for (const profileId of closedIds) {
+        const name = mains.find(profile => profile.id === profileId)?.name ?? profileId;
+        log(`[ai-video] Closed Chrome profile ${name} after scene images`);
       }
     }
   } else {

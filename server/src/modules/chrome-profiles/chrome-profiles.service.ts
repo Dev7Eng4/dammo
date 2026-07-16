@@ -2,11 +2,7 @@ import fs from 'node:fs/promises';
 import { chromeProfileDir } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
-import {
-  closeChromeProfiles,
-  initializeChromeProfile,
-  openChromeProfile,
-} from './chrome-profile.runner.js';
+import { closeChromeProfiles, initializeChromeProfile, openChromeProfile } from './chrome-profile.runner.js';
 import { chromeProfilesRepository } from './chrome-profiles.repository.js';
 import {
   SUB_PROFILE_COUNT,
@@ -36,11 +32,7 @@ export class ChromeProfilesService {
   listMainProfiles(): ChromeProfile[] {
     const mains = chromeProfilesRepository.findByRole('main');
     if (mains.length === 0) {
-      throw new AppError(
-        'No main Chrome profile configured. Set a profile as main first.',
-        409,
-        'NO_MAIN_PROFILE',
-      );
+      throw new AppError('No main Chrome profile configured. Set a profile as main first.', 409, 'NO_MAIN_PROFILE');
     }
     return mains;
   }
@@ -52,18 +44,10 @@ export class ChromeProfilesService {
   pickSubProfiles(count: number): ChromeProfile[] {
     const subs = chromeProfilesRepository.findByRole('sub');
     if (subs.length === 0) {
-      throw new AppError(
-        'No sub Chrome profile available. Create sub profiles first.',
-        409,
-        'NO_SUB_PROFILE',
-      );
+      throw new AppError('No sub Chrome profile available. Create sub profiles first.', 409, 'NO_SUB_PROFILE');
     }
     if (count > subs.length) {
-      throw new AppError(
-        `Need at least ${count} sub Chrome profile(s), but only ${subs.length} available.`,
-        409,
-        'NO_SUB_PROFILE',
-      );
+      throw new AppError(`Need at least ${count} sub Chrome profile(s), but only ${subs.length} available.`, 409, 'NO_SUB_PROFILE');
     }
     return subs.slice(0, count);
   }
@@ -72,11 +56,7 @@ export class ChromeProfilesService {
     return this.createProfile(input.name.trim(), 'sub', 'prepend');
   }
 
-  private async createProfile(
-    name: string,
-    role: ChromeProfileRole,
-    position: 'prepend' | 'append',
-  ): Promise<ChromeProfile> {
+  private async createProfile(name: string, role: ChromeProfileRole, position: 'prepend' | 'append'): Promise<ChromeProfile> {
     if (chromeProfilesRepository.findByName(name)) {
       throw new AppError('Chrome profile name already exists', 400, 'DUPLICATE_NAME');
     }
@@ -94,9 +74,7 @@ export class ChromeProfilesService {
       role,
     };
 
-    return position === 'prepend'
-      ? chromeProfilesRepository.prepend(profile)
-      : chromeProfilesRepository.append(profile);
+    return position === 'prepend' ? chromeProfilesRepository.prepend(profile) : chromeProfilesRepository.append(profile);
   }
 
   async open(id: string): Promise<ChromeProfile> {
@@ -154,8 +132,8 @@ export class ChromeProfilesService {
     let deletedCount = 0;
 
     if (subs.length > 0) {
-      await closeChromeProfiles(subs.map((profile) => profile.id));
-      const removed = chromeProfilesRepository.removeByIds(subs.map((profile) => profile.id));
+      await closeChromeProfiles(subs.map(profile => profile.id));
+      const removed = chromeProfilesRepository.removeByIds(subs.map(profile => profile.id));
       deletedCount = removed.length;
 
       for (const profile of removed) {
