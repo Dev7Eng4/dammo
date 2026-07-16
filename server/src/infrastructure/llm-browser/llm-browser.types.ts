@@ -106,7 +106,7 @@ export interface FlowToolVisual {
 }
 
 export interface FlowGenerateImagesViaToolOptions {
-  projectId: string;
+  projectId?: string;
   toolId?: string;
   outputDir: string;
   timeoutMs?: number;

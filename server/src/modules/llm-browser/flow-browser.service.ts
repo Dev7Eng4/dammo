@@ -15,7 +15,6 @@ import {
   resolveFlowImageSavePath,
 } from '../../infrastructure/llm-browser/flow-api-response.js';
 import {
-  DEFAULT_FLOW_PROJECT_ID,
   FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS,
   FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS,
   FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS,
@@ -23,9 +22,9 @@ import {
   FLOW_RECAPTCHA_SITE_KEY,
   FLOW_TOOL_IDLE_MS,
   MAVID_EDITOR_TOOL_ID,
-  buildFlowProjectUrl,
 } from '../../infrastructure/llm-browser/flow.config.js';
 import {
+  openFlowProjectPage,
   openFlowToolPage,
   submitMavidEditorPrompt,
   waitForFlowProjectReady,
@@ -48,6 +47,7 @@ import type {
 import { AppError } from '../../shared/http/errors.js';
 import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
+import { recordFlowProjectUsage, resolveFlowProjectId } from './flow-project.service.js';
 
 const FLOW_PROVIDER = 'flow' as const;
 
@@ -79,15 +79,23 @@ async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<v
   }
 }
 
-function isOnFlowProjectPage(pageUrl: string, projectId: string): boolean {
-  return pageUrl.includes('flow/project/') && pageUrl.includes(projectId);
-}
-
 function toFlowApiGenerationError(err: unknown): AppError {
   if (err instanceof AppError) return err;
 
   const message = err instanceof Error ? err.message : String(err);
   return new AppError(`Flow API image generation failed: ${message}`, 502, 'FLOW_API_GENERATE_FAILED');
+}
+
+async function ensureFlowChromeSession(profileId: string): Promise<Page> {
+  if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
+    const profile = chromeProfilesService.getById(profileId);
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
+    upsertLlmBrowserSession(profileId, FLOW_PROVIDER);
+  }
+
+  assertProfileOpen(profileId);
+  assertFlowSession(profileId);
+  return getChromeProfilePage(profileId);
 }
 
 export class FlowBrowserService {
@@ -97,7 +105,18 @@ export class FlowBrowserService {
 
     await openChromeProfile(profile.id, profile.userDataDir, { background: true });
     const page = await getChromeProfilePage(profile.id);
-    await handler.open(page, options);
+
+    const projectId = await resolveFlowProjectId(profileId, page, {
+      explicitProjectId: options?.projectId,
+      skipInitialSetup: options?.skipInitialSetup,
+    });
+
+    if (options?.projectId) {
+      await handler.open(page, {
+        projectId,
+        skipInitialSetup: options?.skipInitialSetup,
+      });
+    }
 
     return upsertLlmBrowserSession(profileId, FLOW_PROVIDER);
   }
@@ -126,24 +145,21 @@ export class FlowBrowserService {
       throw new AppError('generateImagesViaTool requires at least one visual', 400, 'INVALID_INPUT');
     }
 
-    const projectId = options.projectId;
     const toolId = options.toolId ?? MAVID_EDITOR_TOOL_ID;
     const timeoutMs = options.timeoutMs ?? 300_000;
     const startedAt = Date.now();
     const outputDir = path.resolve(options.outputDir);
 
-    if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
-      await this.open(profileId, { projectId, skipInitialSetup: true });
-    }
-
-    assertProfileOpen(profileId);
-    assertFlowSession(profileId);
-
-    const page = await getChromeProfilePage(profileId);
+    const page = await ensureFlowChromeSession(profileId);
 
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
     try {
+      const projectId = await resolveFlowProjectId(profileId, page, {
+        explicitProjectId: options.projectId,
+        skipInitialSetup: true,
+      });
+
       await openFlowToolPage(page, projectId, toolId);
       await fs.mkdir(outputDir, { recursive: true });
 
@@ -176,6 +192,7 @@ export class FlowBrowserService {
       await collectorPromise;
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      recordFlowProjectUsage(profileId, options.projectId);
       return {
         provider: FLOW_PROVIDER,
         content: '',
@@ -200,19 +217,17 @@ export class FlowBrowserService {
     prompt: string,
     options?: FlowGenerateImageOptions
   ): Promise<LlmBrowserResponse> {
-    if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
-      await this.open(profileId, {
-        projectId: options?.projectId ?? DEFAULT_FLOW_PROJECT_ID,
-      });
+    const handler = getFlowBrowserHandler();
+    const page = await ensureFlowChromeSession(profileId);
+
+    const projectId = await resolveFlowProjectId(profileId, page, {
+      explicitProjectId: options?.projectId,
+    });
+
+    if (options?.projectId) {
+      await handler.open(page, { projectId });
     }
 
-    assertProfileOpen(profileId);
-    assertFlowSession(profileId);
-
-    const handler = getFlowBrowserHandler();
-    const page = await getChromeProfilePage(profileId);
-
-    const projectId = options?.projectId ?? DEFAULT_FLOW_PROJECT_ID;
     const timeoutMs = options?.timeoutMs ?? 300_000;
     const outputPath = resolveFlowImageSavePath(options);
 
@@ -237,6 +252,7 @@ export class FlowBrowserService {
       });
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      recordFlowProjectUsage(profileId, options?.projectId);
       return response;
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
@@ -245,35 +261,28 @@ export class FlowBrowserService {
   }
 
   private async generateImageViaApi(profileId: string, prompt: string, options?: FlowGenerateImageOptions): Promise<LlmBrowserResponse> {
-    const projectId = options?.projectId ?? DEFAULT_FLOW_PROJECT_ID;
     const timeoutMs = options?.timeoutMs ?? 300_000;
     const outputPath = resolveFlowImageSavePath(options);
     const startedAt = Date.now();
 
-    if (!getLlmBrowserSession(profileId, FLOW_PROVIDER)) {
-      await this.open(profileId, { projectId, skipInitialSetup: true });
-    }
-
-    assertProfileOpen(profileId);
-    assertFlowSession(profileId);
-
-    const page = await getChromeProfilePage(profileId);
+    const page = await ensureFlowChromeSession(profileId);
     const bearerCapture = attachBearerCapture(page);
 
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
     try {
-      const projectUrl = buildFlowProjectUrl(projectId);
-      if (!isOnFlowProjectPage(page.url(), projectId)) {
-        console.log(`[flow-api] navigating to ${projectUrl}`);
-        try {
-          await page.goto(projectUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-          await page.keyboard.press('Escape');
-        } catch (err) {
+      const projectId = await resolveFlowProjectId(profileId, page, {
+        explicitProjectId: options?.projectId,
+        skipInitialSetup: true,
+      });
+
+      if (options?.projectId) {
+        const valid = await openFlowProjectPage(page, projectId, timeoutMs);
+        if (!valid) {
           throw new AppError(
-            `Failed to open Flow project page: ${err instanceof Error ? err.message : String(err)}`,
+            `Flow project ${projectId} failed projectInitialData validation`,
             502,
-            'FLOW_API_NAVIGATION_FAILED'
+            'FLOW_PROJECT_INVALID',
           );
         }
       }
@@ -372,6 +381,7 @@ export class FlowBrowserService {
       }
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+      recordFlowProjectUsage(profileId, options?.projectId);
       return {
         provider: FLOW_PROVIDER,
         content: '',

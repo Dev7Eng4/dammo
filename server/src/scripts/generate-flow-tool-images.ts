@@ -8,13 +8,9 @@ import { flowBrowserService } from '../modules/llm-browser/flow-browser.service.
 import type { FlowToolVisual } from '../infrastructure/llm-browser/llm-browser.types.js';
 
 /**
- * Điền project id (động) tại đây để chạy nhanh qua task, hoặc override bằng --project-id.
- * VD: npm run flow:generate-tool-images -- --project-id <id>
- */
-const PROJECT_ID = '37afa1aa-49e0-4d70-9407-bcb84afa09e5';
-
-/**
- * Sửa mảng mẫu tại đây rồi chạy: npm run flow:generate-tool-images -- --project-id <id>
+ * Override project id for testing: npm run flow:generate-tool-images -- --project-id <id>
+ *
+ * Sửa mảng mẫu tại đây rồi chạy: npm run flow:generate-tool-images
  * Format paste vào tool: [{ prompt, name, references? }]
  */
 const SAMPLE_VISUALS: FlowToolVisual[] = [
@@ -173,10 +169,7 @@ async function main() {
   ensureDataDirs();
 
   const options = parseArgs(process.argv.slice(2));
-  const projectId = (options.projectId ?? PROJECT_ID).trim();
-  if (!projectId) {
-    throw new AppError('Missing project id — pass --project-id <id> or set PROJECT_ID in the script', 400, 'INVALID_INPUT');
-  }
+  const projectId = options.projectId?.trim();
 
   const visuals = await resolveVisuals(options.inputPath);
   const outputDir = resolveOutputDir(options.outputDir);
@@ -185,13 +178,17 @@ async function main() {
   await fs.mkdir(outputDir, { recursive: true });
 
   console.log(`Profile: ${profile.name} (${profile.id})`);
-  console.log(`Project: ${projectId}`);
+  if (projectId) {
+    console.log(`Project override: ${projectId}`);
+  } else {
+    console.log('Project: dynamic (from flow-projects.json or auto-create)');
+  }
   console.log(`Output dir: ${outputDir}`);
   console.log(`Visuals: ${visuals.length}`);
   console.log('Generating images via Flow tool...');
 
   const response = await flowBrowserService.generateImagesViaTool(profile.id, visuals, {
-    projectId,
+    ...(projectId ? { projectId } : {}),
     toolId: options.toolId,
     outputDir,
     timeoutMs: options.timeoutMs,

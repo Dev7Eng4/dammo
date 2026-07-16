@@ -20,7 +20,12 @@ export const FLOW_UPLOAD_IMAGE_PATH = 'flow/uploadImage';
 
 export const FLOW_SESSION_URL = 'https://labs.google/fx/api/auth/session';
 
-export const DEFAULT_FLOW_PROJECT_ID = '5d5f6b2b-377f-4b30-b595-d44ffe12a02f';
+export const FLOW_TRPC_BASE_URL = 'https://labs.google/fx/api/trpc';
+
+export const FLOW_PROJECT_INITIAL_DATA_PATH = 'flow.projectInitialData';
+
+/** Rotate Flow project after this many successful generate calls per Chrome profile. */
+export const FLOW_PROJECT_MAX_USAGE_COUNT = 70;
 
 /** Fixed tool id for the "mavid editor" custom Flow tool (project id is dynamic). */
 export const MAVID_EDITOR_TOOL_ID = 'c28faaec-2222-4172-b2d6-29b8293642ba';
@@ -68,8 +73,7 @@ export const FLOW_API_REQUEST_HEADERS: Record<string, string> = {
   'sec-fetch-dest': 'empty',
   'sec-fetch-mode': 'cors',
   'sec-fetch-site': 'cross-site',
-  'user-agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
   'x-browser-channel': 'stable',
   'x-browser-copyright': 'Copyright 2026 Google LLC. All Rights Reserved.',
   'x-browser-validation': 'zyMeDuba02HE8LHzcfWdkJ+F6HE=',
@@ -79,6 +83,11 @@ export const FLOW_API_REQUEST_HEADERS: Record<string, string> = {
 
 export function buildFlowProjectUrl(projectId: string): string {
   return `${FLOW_BASE_URL}/project/${projectId}`;
+}
+
+export function buildFlowProjectInitialDataUrl(projectId: string): string {
+  const input = encodeURIComponent(JSON.stringify({ json: { projectId } }));
+  return `${FLOW_TRPC_BASE_URL}/${FLOW_PROJECT_INITIAL_DATA_PATH}?input=${input}`;
 }
 
 export function buildFlowToolUrl(projectId: string, toolId: string = MAVID_EDITOR_TOOL_ID): string {
