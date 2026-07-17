@@ -631,48 +631,60 @@ export class ReupAudioPipeline {
                 throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
               }
 
-              const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
-              if (!generalImageTitle) {
-                throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
-              }
+              const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
+              if (siBackgroundImage !== 'one_image') {
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    `Skipping general image (backgroundImage=${siBackgroundImage})`,
+                  );
+                }
+                console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
+              } else {
+                const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
+                if (!generalImageTitle) {
+                  throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
+                }
 
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating general image via Flow (general + reference)...');
-              }
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating general image via Flow (general + reference)...');
+                }
 
-              const heroResult = await timedStep(
-                'General image (Flow + reference)',
-                () =>
-                  runGeneralImage(generalImageTitle, destination.language, workDir, {
-                    referenceImagePath: downloaded.thumbnailPath,
-                    onProgress: taskJobId
-                      ? progress => {
-                          const profileLabel = progress.profileName;
-                          if (progress.status === 'retry') {
+                const heroResult = await timedStep(
+                  'General image (Flow + reference)',
+                  () =>
+                    runGeneralImage(generalImageTitle, destination.language, workDir, {
+                      referenceImagePath: downloaded.thumbnailPath,
+                      onProgress: taskJobId
+                        ? progress => {
+                            const profileLabel = progress.profileName;
+                            if (progress.status === 'retry') {
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `General image on ${profileLabel} retry (attempt ${progress.attempt})...`
+                              );
+                              return;
+                            }
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `General image on ${profileLabel} retry (attempt ${progress.attempt})...`
+                              `General image on ${profileLabel} (attempt ${progress.attempt})...`
                             );
-                            return;
                           }
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `General image on ${profileLabel} (attempt ${progress.attempt})...`
-                          );
-                        }
-                      : undefined,
-                  }),
-                stepTimer
-              );
-              heroImagePath = heroResult.heroImagePath;
+                        : undefined,
+                    }),
+                  stepTimer
+                );
+                heroImagePath = heroResult.heroImagePath;
 
-              const flowDebugPath = path.join(workDir, 'flow-debug.png');
-              await fs.unlink(flowDebugPath).catch(() => undefined);
+                const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                await fs.unlink(flowDebugPath).catch(() => undefined);
 
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
+                }
               }
             }
           }
@@ -777,7 +789,10 @@ export class ReupAudioPipeline {
 
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
             if (videoType === 'si') {
-              if (!heroImagePath) {
+              const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
+              const needsCenterImage = siBackgroundImage === 'one_image';
+
+              if (needsCenterImage && !heroImagePath) {
                 console.warn(`[reup-video] SI video assembly skipped: hero image not generated`);
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped: hero image missing');
@@ -797,14 +812,20 @@ export class ReupAudioPipeline {
               } else {
                 if (taskJobId) {
                   taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Assembling SI video (stock + overlay + subtitles)...');
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    needsCenterImage
+                      ? 'Assembling SI video (stock + overlay + subtitles)...'
+                      : `Assembling SI video (stock + subtitles, backgroundImage=${siBackgroundImage})...`,
+                  );
                 }
 
                 reupVideoPath = await assembleReupSiVideo({
                   workDir,
                   audioPath: downloaded.audioPath,
                   subtitlePath: subtitleForAssembly,
-                  centerImagePath: heroImagePath,
+                  ...(heroImagePath ? { centerImagePath: heroImagePath } : {}),
                   backgroundFootageMode: destination.backgroundFootageMode ?? 'source',
                   backgroundFootageSourceIds: destination.backgroundFootageSources,
                   language: destination.language,

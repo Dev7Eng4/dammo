@@ -8,6 +8,7 @@ import {
   createEmptyPublishTimes,
   getChannelUploadTimes,
   getPublishTimeSlotCount,
+  REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS,
   REUP_AUDIO_VIDEO_TYPE_OPTIONS,
   CAPTION_STYLE_OPTIONS,
   UPLOAD_FREQUENCY_OPTIONS,
@@ -58,6 +59,7 @@ const defaultValues: EditYoutubeChannelFormValues = {
   captionStyleKey: 'default',
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
+  reupAudioBackgroundImage: '',
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -180,6 +182,7 @@ export function EditYoutubeChannelModal({
           captionStyleKey: channel.captionStyleKey ?? 'default',
           reupAudioVideoType: channel.reupAudioVideoType ?? '',
           reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
+          reupAudioBackgroundImage: channel.reupAudioBackgroundImage ?? '',
           uploadFrequency: frequency,
           publishTimes,
         });
@@ -208,14 +211,24 @@ export function EditYoutubeChannelModal({
     if (!formReady || isReupAudio) return;
     setValue('reupAudioVideoType', '');
     setValue('reupAudioVisualStyleId', '');
+    setValue('reupAudioBackgroundImage', '');
     setValue('captionStyleKey', '');
   }, [isReupAudio, formReady, setValue]);
 
+  useEffect(() => {
+    if (!formReady || !isReupAudio || !reupAudioVideoType) return;
+    if (reupAudioVideoType === 'si') {
+      setValue('reupAudioVisualStyleId', '');
+    } else if (reupAudioVideoType === 'ai') {
+      setValue('reupAudioBackgroundImage', '');
+    }
+  }, [formReady, isReupAudio, reupAudioVideoType, setValue]);
+
   useAbortableEffect(
     async (signal) => {
-      if (!open || !formReady || !isReupAudio || !reupAudioVideoType) {
+      if (!open || !formReady || !isReupAudio || reupAudioVideoType !== 'ai') {
         setVisualStyleOptions([]);
-        if (formReady && !reupAudioVideoType) {
+        if (formReady && reupAudioVideoType !== 'ai') {
           setValue('reupAudioVisualStyleId', '');
         }
         return;
@@ -298,6 +311,11 @@ export function EditYoutubeChannelModal({
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId
           ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId }
+          : {}),
+        ...(values.type === 'reup_audio' &&
+        values.reupAudioVideoType === 'si' &&
+        values.reupAudioBackgroundImage
+          ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey
           ? { captionStyleKey: values.captionStyleKey }
@@ -402,42 +420,77 @@ export function EditYoutubeChannelModal({
               />
             </FormField>
 
-            <FormField
-              label="Video Style"
-              htmlFor="edit-reup-audio-visual-style"
-              error={errors.reupAudioVisualStyleId?.message}
-              className="min-w-0"
-            >
-              <Controller
-                name="reupAudioVisualStyleId"
-                control={control}
-                rules={{
-                  required:
-                    isReupAudio && reupAudioVideoType === 'ai'
-                      ? 'Video style is required for Animate Images (AI)'
-                      : false,
-                }}
-                render={({ field }) => (
-                  <Select
-                    id="edit-reup-audio-visual-style"
-                    options={visualStyleOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder={getReupAudioVideoStylePlaceholder(
-                      reupAudioVideoType,
-                      visualStylesLoading,
-                      visualStyleOptions.length,
-                    )}
-                    searchPlaceholder="Search video styles..."
-                    searchable
-                    disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
-                    className="w-full"
-                    triggerClassName={selectTriggerClass}
-                  />
-                )}
-              />
-            </FormField>
+            {reupAudioVideoType === 'si' ? (
+              <FormField
+                label="Background Image"
+                htmlFor="edit-reup-audio-background-image"
+                error={errors.reupAudioBackgroundImage?.message}
+                className="min-w-0"
+              >
+                <Controller
+                  name="reupAudioBackgroundImage"
+                  control={control}
+                  rules={{
+                    required:
+                      isReupAudio && reupAudioVideoType === 'si'
+                        ? 'Background image is required for Stock Video + Image'
+                        : false,
+                  }}
+                  render={({ field }) => (
+                    <Select
+                      id="edit-reup-audio-background-image"
+                      options={REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Select background image"
+                      disabled={isSubmitting}
+                      className="w-full"
+                      triggerClassName={selectTriggerClass}
+                    />
+                  )}
+                />
+              </FormField>
+            ) : null}
+
+            {reupAudioVideoType === 'ai' ? (
+              <FormField
+                label="Video Style"
+                htmlFor="edit-reup-audio-visual-style"
+                error={errors.reupAudioVisualStyleId?.message}
+                className="min-w-0"
+              >
+                <Controller
+                  name="reupAudioVisualStyleId"
+                  control={control}
+                  rules={{
+                    required:
+                      isReupAudio && reupAudioVideoType === 'ai'
+                        ? 'Video style is required for Animate Images (AI)'
+                        : false,
+                  }}
+                  render={({ field }) => (
+                    <Select
+                      id="edit-reup-audio-visual-style"
+                      options={visualStyleOptions}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder={getReupAudioVideoStylePlaceholder(
+                        reupAudioVideoType,
+                        visualStylesLoading,
+                        visualStyleOptions.length,
+                      )}
+                      searchPlaceholder="Search video styles..."
+                      searchable
+                      disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
+                      className="w-full"
+                      triggerClassName={selectTriggerClass}
+                    />
+                  )}
+                />
+              </FormField>
+            ) : null}
 
             <FormField
               label="Caption Style"

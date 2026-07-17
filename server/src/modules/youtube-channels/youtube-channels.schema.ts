@@ -40,6 +40,9 @@ const channelConfigFields = {
     .optional(),
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),
+  reupAudioBackgroundImage: z
+    .enum(['no_image', 'local_image', 'one_image', 'multi_image'])
+    .optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
 };
@@ -55,6 +58,7 @@ function applyChannelConfigRefine(
     thumbnailStyleKey?: string;
     reupAudioVideoType?: z.infer<typeof channelConfigFields.reupAudioVideoType>;
     reupAudioVisualStyleId?: string;
+    reupAudioBackgroundImage?: z.infer<typeof channelConfigFields.reupAudioBackgroundImage>;
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
   },
@@ -83,6 +87,13 @@ function applyChannelConfigRefine(
         code: 'custom',
         message: 'Video style is required for Animate Images (AI)',
         path: ['reupAudioVisualStyleId'],
+      });
+    }
+    if (data.reupAudioVideoType === 'si' && !data.reupAudioBackgroundImage) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Background image is required for Stock Video + Image',
+        path: ['reupAudioBackgroundImage'],
       });
     }
   }

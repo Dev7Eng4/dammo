@@ -29,6 +29,7 @@ import type {
   CreateYoutubeChannelInput,
   BackgroundFootageMode,
   MonetizationStatus,
+  ReupAudioBackgroundImage,
   ReupAudioVideoType,
   UpdateYoutubeChannelInput,
   YoutubeChannel,
@@ -110,6 +111,7 @@ type ChannelConfigInput = Pick<
   | 'captionStyleKey'
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
+  | 'reupAudioBackgroundImage'
   | 'uploadFrequency'
   | 'publishTimes'
 >;
@@ -136,6 +138,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
+  reupAudioBackgroundImage?: ReupAudioBackgroundImage;
 } {
   let linkedEmail = 'Default';
   if (input.mailAccountId && input.mailAccountId.toLowerCase() !== 'default') {
@@ -182,6 +185,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
 
   let reupAudioVideoType: ReupAudioVideoType | undefined;
   let reupAudioVisualStyleId: string | undefined;
+  let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
 
   if (isReupAudioChannelType(input.type)) {
@@ -200,13 +204,15 @@ function validateChannelConfig(input: ChannelConfigInput): {
         input.language,
       );
       reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
-    } else if (input.reupAudioVisualStyleId?.trim()) {
-      validateReupAudioVisualStyleId(
-        input.reupAudioVideoType,
-        input.reupAudioVisualStyleId.trim(),
-        input.language,
-      );
-      reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+    } else if (input.reupAudioVideoType === 'si') {
+      if (!input.reupAudioBackgroundImage) {
+        throw new AppError(
+          'Background image is required for Stock Video + Image',
+          400,
+          'VALIDATION_ERROR',
+        );
+      }
+      reupAudioBackgroundImage = input.reupAudioBackgroundImage;
     }
     captionStyleKey = assertValidCaptionStyleKey(input.captionStyleKey);
   }
@@ -224,6 +230,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(captionStyleKey ? { captionStyleKey } : {}),
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
+    ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
   };
 }
 
@@ -494,6 +501,9 @@ export class YoutubeChannelsService {
       ...(config.reupAudioVisualStyleId
         ? { reupAudioVisualStyleId: config.reupAudioVisualStyleId }
         : {}),
+      ...(config.reupAudioBackgroundImage
+        ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
+        : {}),
     };
 
     return youtubeChannelsRepository.prepend(channel);
@@ -540,6 +550,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.reupAudioVisualStyleId;
         }
+        if (config.reupAudioBackgroundImage) {
+          next.reupAudioBackgroundImage = config.reupAudioBackgroundImage;
+        } else {
+          delete next.reupAudioBackgroundImage;
+        }
         if (config.captionStyleKey) {
           next.captionStyleKey = config.captionStyleKey;
         } else {
@@ -548,6 +563,7 @@ export class YoutubeChannelsService {
       } else {
         delete next.reupAudioVideoType;
         delete next.reupAudioVisualStyleId;
+        delete next.reupAudioBackgroundImage;
         delete next.captionStyleKey;
       }
 

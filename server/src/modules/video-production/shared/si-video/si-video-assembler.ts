@@ -62,7 +62,8 @@ export interface AssembleReupSiVideoInput {
   workDir: string;
   audioPath: string;
   subtitlePath: string;
-  centerImagePath: string;
+  /** When omitted, assemble stock + subtitles without center image overlay. */
+  centerImagePath?: string;
   backgroundFootageMode?: SiBackgroundFootageMode;
   backgroundFootageSourceIds?: string[];
   language: string;
@@ -89,7 +90,8 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     onLog?.(msg);
   };
 
-  for (const requiredPath of [audioPath, subtitlePath, centerImagePath]) {
+  const requiredPaths = [audioPath, subtitlePath, ...(centerImagePath ? [centerImagePath] : [])];
+  for (const requiredPath of requiredPaths) {
     try {
       await fs.access(requiredPath);
     } catch {
@@ -105,6 +107,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   log(
     `[reup-si] Audio ${originalAudioDuration.toFixed(1)}s → ${formatClockDuration(audioDurationAfterTempo)} after atempo ${speed.toFixed(3)}`,
   );
+  if (!centerImagePath) {
+    log('[reup-si] Assembling without center image overlay');
+  }
 
   const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
   const stepOpts = { prefix: '[reup-si]', onLog };
@@ -142,7 +147,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         activeSubtitlePath = scaledSrtPath;
       }
 
-      await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
+      if (centerImagePath) {
+        await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
+      }
 
       // TODO: re-enable SI noise
       // if (!isLocalStock) {
@@ -165,8 +172,11 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       const audioIndex = inputIdx++;
       mergeArgs.push('-i', audioPath);
 
-      const centerImgIndex = inputIdx++;
-      mergeArgs.push('-loop', '1', '-i', resizedCenterImagePath);
+      let centerImgIndex: number | null = null;
+      if (centerImagePath) {
+        centerImgIndex = inputIdx++;
+        mergeArgs.push('-loop', '1', '-i', resizedCenterImagePath);
+      }
 
       // TODO: re-enable SI noise
       // let siNoiseIndex: number | null = null;
@@ -192,14 +202,16 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         currentVLabel = 'v_dimmed';
       }
 
-      const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
-      filterParts.push(
-        `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
-      );
-      filterParts.push(
-        `[${currentVLabel}][center_img]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2:shortest=1[v_centered_img]`,
-      );
-      currentVLabel = 'v_centered_img';
+      if (centerImgIndex !== null) {
+        const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+        filterParts.push(
+          `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
+        );
+        filterParts.push(
+          `[${currentVLabel}][center_img]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2:shortest=1[v_centered_img]`,
+        );
+        currentVLabel = 'v_centered_img';
+      }
 
       // TODO: re-enable SI noise
       // if (!isLocalStock && siNoiseIndex !== null) {
@@ -277,7 +289,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
-  await fs.unlink(resizedCenterImagePath).catch(() => undefined);
+  if (centerImagePath) {
+    await fs.unlink(resizedCenterImagePath).catch(() => undefined);
+  }
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }

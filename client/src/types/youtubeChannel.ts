@@ -9,6 +9,8 @@ export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
 
 export type ReupAudioVideoType = 'si' | 'ai';
 
+export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image';
+
 export type CaptionStyleKey =
   | 'default'
   | 'bizudp_gothic'
@@ -111,6 +113,7 @@ export interface YoutubeChannel {
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
+  reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
@@ -417,6 +420,7 @@ export interface CreateYoutubeChannelPayload {
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
+  reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }
@@ -435,6 +439,7 @@ export interface AddYoutubeChannelFormValues {
   captionStyleKey: CaptionStyleKey | '';
   reupAudioVideoType: ReupAudioVideoType | '';
   reupAudioVisualStyleId: string;
+  reupAudioBackgroundImage: ReupAudioBackgroundImage | '';
   uploadFrequency: UploadFrequency | '';
   publishTimes: string[];
 }

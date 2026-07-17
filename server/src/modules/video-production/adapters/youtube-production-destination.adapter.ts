@@ -1,13 +1,21 @@
 import { youtubeChannelVideoDir } from '../../../config/paths.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { resolveReupAudioVisualStyle } from '../../youtube-channels/reup-audio-visual-style.js';
-import type { StoredYoutubeChannelType, YoutubeChannel } from '../../youtube-channels/youtube-channels.types.js';
+import type {
+  ReupAudioBackgroundImage,
+  StoredYoutubeChannelType,
+  YoutubeChannel,
+} from '../../youtube-channels/youtube-channels.types.js';
 import { videoPrepareRepository } from '../../youtube-channels/video-prepare.repository.js';
 import type { VideoPrepareItem } from '../../youtube-channels/video-prepare.types.js';
 import type { ProductionDestination, ProductionPipelineType } from '../ports/production-destination.port.js';
 
 function isReupPipelineType(type: StoredYoutubeChannelType): type is ProductionPipelineType {
   return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+}
+
+function resolveSiBackgroundImage(channel: YoutubeChannel): ReupAudioBackgroundImage {
+  return channel.reupAudioBackgroundImage ?? 'one_image';
 }
 
 async function resolveReupAudioConfig(channel: YoutubeChannel) {
@@ -37,6 +45,9 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
 
   return {
     reupAudioVideoType: channel.reupAudioVideoType,
+    ...(channel.reupAudioVideoType === 'si'
+      ? { reupAudioBackgroundImage: resolveSiBackgroundImage(channel) }
+      : {}),
     ...(channel.reupAudioVisualStyleId?.trim()
       ? { reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim() }
       : {}),
