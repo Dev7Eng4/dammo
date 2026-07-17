@@ -228,6 +228,7 @@ async function main() {
             backgroundFootageSourceIds: channel.backgroundFootageSources,
             language: channel.language,
             captionStyleKey: channel.captionStyleKey,
+            showAudioBar: channel.showAudioBar === true,
             onLog: msg => console.log(`      ${msg}`),
           });
         }

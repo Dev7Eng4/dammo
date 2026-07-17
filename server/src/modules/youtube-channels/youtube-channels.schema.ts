@@ -43,6 +43,7 @@ const channelConfigFields = {
   reupAudioBackgroundImage: z
     .enum(['no_image', 'local_image', 'one_image', 'multi_image'])
     .optional(),
+  showAudioBar: z.boolean().optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
 };

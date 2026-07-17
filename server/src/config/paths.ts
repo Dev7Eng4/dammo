@@ -30,6 +30,7 @@ export const paths = {
   playgroundDir: path.join(env.dataDir, 'playground'),
   reupSiAssetsDir: path.join(env.dataDir, 'assets'),
   siLocalStockDir: path.join(env.dataDir, 'assets', 'si-local-stock'),
+  siAudioBarDir: path.join(env.dataDir, 'assets', 'audioBar'),
   siTempStockDir: path.join(env.dataDir, 'assets', 'temp_stock'),
 };
 
@@ -195,6 +196,7 @@ export function ensureDataDirs(): void {
     path.join(paths.reupSiAssetsDir, 'overlay'),
     path.join(paths.reupSiAssetsDir, 'fonts'),
     paths.siLocalStockDir,
+    paths.siAudioBarDir,
     paths.siTempStockDir,
   ];
   for (const dir of dirs) {

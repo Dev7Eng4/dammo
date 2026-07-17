@@ -46,7 +46,10 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
   return {
     reupAudioVideoType: channel.reupAudioVideoType,
     ...(channel.reupAudioVideoType === 'si'
-      ? { reupAudioBackgroundImage: resolveSiBackgroundImage(channel) }
+      ? {
+          reupAudioBackgroundImage: resolveSiBackgroundImage(channel),
+          showAudioBar: channel.showAudioBar === true,
+        }
       : {}),
     ...(channel.reupAudioVisualStyleId?.trim()
       ? { reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim() }

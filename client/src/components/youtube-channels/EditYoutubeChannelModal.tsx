@@ -60,6 +60,7 @@ const defaultValues: EditYoutubeChannelFormValues = {
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
   reupAudioBackgroundImage: '',
+  showAudioBar: false,
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -183,6 +184,7 @@ export function EditYoutubeChannelModal({
           reupAudioVideoType: channel.reupAudioVideoType ?? '',
           reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
           reupAudioBackgroundImage: channel.reupAudioBackgroundImage ?? '',
+          showAudioBar: channel.showAudioBar === true,
           uploadFrequency: frequency,
           publishTimes,
         });
@@ -212,6 +214,7 @@ export function EditYoutubeChannelModal({
     setValue('reupAudioVideoType', '');
     setValue('reupAudioVisualStyleId', '');
     setValue('reupAudioBackgroundImage', '');
+    setValue('showAudioBar', false);
     setValue('captionStyleKey', '');
   }, [isReupAudio, formReady, setValue]);
 
@@ -221,6 +224,7 @@ export function EditYoutubeChannelModal({
       setValue('reupAudioVisualStyleId', '');
     } else if (reupAudioVideoType === 'ai') {
       setValue('reupAudioBackgroundImage', '');
+      setValue('showAudioBar', false);
     }
   }, [formReady, isReupAudio, reupAudioVideoType, setValue]);
 
@@ -316,6 +320,9 @@ export function EditYoutubeChannelModal({
         values.reupAudioVideoType === 'si' &&
         values.reupAudioBackgroundImage
           ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
+          : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
+          ? { showAudioBar: values.showAudioBar }
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey
           ? { captionStyleKey: values.captionStyleKey }
@@ -448,6 +455,30 @@ export function EditYoutubeChannelModal({
                       className="w-full"
                       triggerClassName={selectTriggerClass}
                     />
+                  )}
+                />
+              </FormField>
+
+              <FormField label="Show Audio Bar" htmlFor="edit-reup-audio-show-audio-bar" className="min-w-0">
+                <Controller
+                  name="showAudioBar"
+                  control={control}
+                  render={({ field }) => (
+                    <label
+                      htmlFor="edit-reup-audio-show-audio-bar"
+                      className="flex cursor-pointer items-center gap-2 text-sm text-neutral-200"
+                    >
+                      <input
+                        id="edit-reup-audio-show-audio-bar"
+                        type="checkbox"
+                        checked={!!field.value}
+                        onChange={e => field.onChange(e.target.checked)}
+                        onBlur={field.onBlur}
+                        disabled={isSubmitting}
+                        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                      />
+                      Overlay audio bar on the left side of the video
+                    </label>
                   )}
                 />
               </FormField>

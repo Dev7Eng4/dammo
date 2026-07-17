@@ -1,3 +1,5 @@
+import { env } from '../../../../config/env.js';
+
 /**
  * Slideshow effect library constants.
  * Horizontal canvas, image-only output (no audio in this phase).
@@ -18,6 +20,12 @@ export const SS_DEFAULT_TRANSITION_DURATION = 1;
  */
 export const SS_TEMP_SCALE_FACTOR = 4;
 
+/** Parallel FFmpeg workers when rendering Ken Burns slide clips. */
+export const SS_CLIP_RENDER_CONCURRENCY = 4;
+
+const SS_CLIP_RENDER_CONCURRENCY_MIN = 1;
+const SS_CLIP_RENDER_CONCURRENCY_MAX = 8;
+
 /** Encoder settings for intermediate per-slide clips (kept high quality). */
 export const SS_CLIP_CRF = 18;
 export const SS_CLIP_PRESET = 'veryfast';
@@ -33,3 +41,12 @@ export const SS_OUTPUT_VIDEO_BASENAME = 'slideshow';
 
 /** Sub-directory name used for cached intermediate clips. */
 export const SS_CACHE_DIRNAME = '.slideshow-cache';
+
+export function resolveSlideshowClipConcurrency(): number {
+  const raw = env.slideshowClipConcurrency ?? SS_CLIP_RENDER_CONCURRENCY;
+  if (!Number.isFinite(raw)) return SS_CLIP_RENDER_CONCURRENCY;
+  return Math.min(
+    SS_CLIP_RENDER_CONCURRENCY_MAX,
+    Math.max(SS_CLIP_RENDER_CONCURRENCY_MIN, Math.floor(raw)),
+  );
+}

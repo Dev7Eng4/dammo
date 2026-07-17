@@ -30,6 +30,7 @@ export interface ProductionDestination {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  showAudioBar?: boolean;
   visualStyle?: ProductionVisualStyle;
   getVideoOutputDir(mediaId: string): string;
   getPreparedVideoIds(): Set<string>;

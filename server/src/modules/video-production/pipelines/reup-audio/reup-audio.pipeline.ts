@@ -830,6 +830,7 @@ export class ReupAudioPipeline {
                   backgroundFootageSourceIds: destination.backgroundFootageSources,
                   language: destination.language,
                   captionStyleKey: destination.captionStyleKey,
+                  showAudioBar: destination.showAudioBar,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                 });
                 primaryOutputPath = reupVideoPath;

@@ -45,3 +45,5 @@ ai -> check 2 image gần nhau nếu thời gian xa quá -> lỗi
   thêm xu lý flow -> chạm mốc tối đa 1 ngày -> xử lý nhu nào
 
 xem xét khi hết quote đổi profile -> nêu đổi hết profile thì đổi model
+
+- thêm show avatar -> kiểm tra trong youtube channel có file tên avatar hay không -> nếu có thực hiện hiển thị ở góc trái màn hình

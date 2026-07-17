@@ -38,8 +38,8 @@ export function resolveOutputPixelFormat(encoder?: FfmpegHwEncoder): 'yuv420p' |
 
 export function appendPixelFormatToVideoFilter(filter: string, encoder?: FfmpegHwEncoder): string {
   const pixFmt = resolveOutputPixelFormat(encoder);
-  if (filter.includes(`format=${pixFmt}`)) return filter;
-  return `${filter},format=${pixFmt}`;
+  const withoutFormat = filter.replace(/,format=(?:yuv420p|nv12)/g, '');
+  return `${withoutFormat},format=${pixFmt}`;
 }
 
 export function buildH264VideoEncoderArgs(
@@ -163,8 +163,7 @@ export async function buildCpuEncoderFallbackArgs(
     const scriptPath = patched[scriptIdx + 1];
     const content = await fs.readFile(scriptPath, 'utf8');
     const cpuContent = content
-      .replace(/,format=nv12/g, '')
-      .replace(/format=nv12,?/g, 'format=yuv420p')
+      .replace(/format=nv12/g, 'format=yuv420p')
       .replace(/\[venc\]/g, '[vout_final]');
     const tempPath = `${scriptPath}.cpu_fallback.txt`;
     await fs.writeFile(tempPath, cpuContent, 'utf8');

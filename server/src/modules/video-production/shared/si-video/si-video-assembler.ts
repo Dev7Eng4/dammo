@@ -12,8 +12,11 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from './si-assets.js';
 import {
+  SI_AUDIO_BAR_MARGIN_LEFT_PX,
+  SI_AUDIO_BAR_WIDTH_PX,
   SI_CANVAS_H,
   SI_CANVAS_W,
+  SI_CENTER_IMAGE_MARGIN_TOP_PX,
   SI_CENTER_IMAGE_OPACITY,
   SI_CENTER_IMAGE_WIDTH_RATIO,
   SI_FPS,
@@ -25,8 +28,10 @@ import {
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
   type SiBackgroundFootageMode,
   resolveRandomSiAudioSpeed,
+  resolveSiCenterImageOverlayX,
 } from './si.constants.js';
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
+import { selectRandomSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
 import { cleanupSiStockTempDir, prepareSiStockBackground } from './si-stock-background.js';
 import type { CaptionStyleKey } from './caption-styles.js';
@@ -64,6 +69,7 @@ export interface AssembleReupSiVideoInput {
   subtitlePath: string;
   /** When omitted, assemble stock + subtitles without center image overlay. */
   centerImagePath?: string;
+  showAudioBar?: boolean;
   backgroundFootageMode?: SiBackgroundFootageMode;
   backgroundFootageSourceIds?: string[];
   language: string;
@@ -78,6 +84,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     audioPath,
     subtitlePath,
     centerImagePath,
+    showAudioBar = false,
     backgroundFootageMode = 'source',
     backgroundFootageSourceIds = [],
     language,
@@ -109,6 +116,13 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   );
   if (!centerImagePath) {
     log('[reup-si] Assembling without center image overlay');
+  }
+
+  let audioBarPath: string | undefined;
+  if (showAudioBar) {
+    const audioBarClip = await selectRandomSiAudioBarClip();
+    audioBarPath = audioBarClip.path;
+    log(`[reup-si] Audio bar clip: ${audioBarClip.filename}`);
   }
 
   const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
@@ -178,6 +192,12 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         mergeArgs.push('-loop', '1', '-i', resizedCenterImagePath);
       }
 
+      let audioBarIndex: number | null = null;
+      if (audioBarPath) {
+        audioBarIndex = inputIdx++;
+        mergeArgs.push('-stream_loop', '-1', '-i', audioBarPath);
+      }
+
       // TODO: re-enable SI noise
       // let siNoiseIndex: number | null = null;
       // if (!isLocalStock) {
@@ -204,13 +224,22 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
       if (centerImgIndex !== null) {
         const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+        const centerImageOverlayX = resolveSiCenterImageOverlayX(showAudioBar);
         filterParts.push(
           `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
         );
         filterParts.push(
-          `[${currentVLabel}][center_img]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2:shortest=1[v_centered_img]`,
+          `[${currentVLabel}][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:shortest=1[v_centered_img]`,
         );
         currentVLabel = 'v_centered_img';
+      }
+
+      if (audioBarIndex !== null) {
+        appendSiAudioBarScaleFilters(filterParts, `${audioBarIndex}:v`);
+        filterParts.push(
+          `[${currentVLabel}][audio_bar_scaled]overlay=${SI_AUDIO_BAR_MARGIN_LEFT_PX}:(main_h-overlay_h)/2:shortest=1[v_audio_bar]`,
+        );
+        currentVLabel = 'v_audio_bar';
       }
 
       // TODO: re-enable SI noise

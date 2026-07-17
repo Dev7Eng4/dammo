@@ -49,6 +49,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
   reupAudioBackgroundImage: '',
+  showAudioBar: false,
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -176,6 +177,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
       setValue('reupAudioVideoType', '');
       setValue('reupAudioVisualStyleId', '');
       setValue('reupAudioBackgroundImage', '');
+      setValue('showAudioBar', false);
       setValue('captionStyleKey', '');
     }
   }, [isReupAudio, setValue]);
@@ -186,6 +188,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
       setValue('reupAudioVisualStyleId', '');
     } else if (reupAudioVideoType === 'ai') {
       setValue('reupAudioBackgroundImage', '');
+      setValue('showAudioBar', false);
     }
   }, [isReupAudio, reupAudioVideoType, setValue]);
 
@@ -285,6 +288,9 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         values.reupAudioVideoType === 'si' &&
         values.reupAudioBackgroundImage
           ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
+          : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
+          ? { showAudioBar: values.showAudioBar }
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey
           ? { captionStyleKey: values.captionStyleKey }
@@ -445,6 +451,30 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                       className="w-full"
                       triggerClassName={selectTriggerClass}
                     />
+                  )}
+                />
+              </FormField>
+
+              <FormField label="Show Audio Bar" htmlFor="reup-audio-show-audio-bar" className="min-w-0">
+                <Controller
+                  name="showAudioBar"
+                  control={control}
+                  render={({ field }) => (
+                    <label
+                      htmlFor="reup-audio-show-audio-bar"
+                      className="flex cursor-pointer items-center gap-2 text-sm text-neutral-200"
+                    >
+                      <input
+                        id="reup-audio-show-audio-bar"
+                        type="checkbox"
+                        checked={!!field.value}
+                        onChange={e => field.onChange(e.target.checked)}
+                        onBlur={field.onBlur}
+                        disabled={isSubmitting}
+                        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                      />
+                      Overlay audio bar on the left side of the video
+                    </label>
                   )}
                 />
               </FormField>

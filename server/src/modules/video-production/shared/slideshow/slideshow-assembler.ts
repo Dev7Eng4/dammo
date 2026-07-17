@@ -2,11 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
   buildH264VideoEncoderArgs,
+  resolveFfmpegHwEncoder,
   resolveOutputPixelFormat,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
+import { mapPool } from '../../../../shared/async/map-pool.js';
 import { renderSlideClip } from './slideshow-clip-renderer.js';
 import {
+  resolveSlideshowClipConcurrency,
   SS_CACHE_DIRNAME,
   SS_CANVAS_H,
   SS_CANVAS_W,
@@ -48,20 +51,25 @@ export async function assembleSlideshow(spec: SlideshowSpec): Promise<string> {
   const cfg = resolveOutputConfig(spec.output);
   await fs.mkdir(workDir, { recursive: true });
   const cacheDir = path.join(workDir, SS_CACHE_DIRNAME);
+  await fs.mkdir(cacheDir, { recursive: true });
 
-  log(`[slideshow] rendering ${slides.length} slide clip(s) @ ${cfg.width}x${cfg.height} ${cfg.fps}fps`);
-  const clipPaths: string[] = [];
-  for (const slide of slides) {
-    const clip = await renderSlideClip(slide, {
+  const concurrency = resolveSlideshowClipConcurrency();
+  const encoder = resolveFfmpegHwEncoder();
+  log(
+    `[slideshow] rendering ${slides.length} slide clip(s) @ ${cfg.width}x${cfg.height} ${cfg.fps}fps ` +
+      `(concurrency=${concurrency}, encoder=${encoder})`,
+  );
+
+  const clipPaths = await mapPool(slides, concurrency, (slide, index) =>
+    renderSlideClip(slide, {
       width: cfg.width,
       height: cfg.height,
       fps: cfg.fps,
       tempScaleFactor: cfg.tempScaleFactor,
       cacheDir,
-      onLog: spec.onLog,
-    });
-    clipPaths.push(clip);
-  }
+      onLog: msg => spec.onLog?.(`[slideshow] [${index + 1}/${slides.length}] ${msg}`),
+    }),
+  );
 
   const durations = slides.map(s => s.durationSec);
   const transitions: ChainTransition[] = slides.slice(0, -1).map(s => ({

@@ -11,8 +11,8 @@ import {
   SI_CANVAS_W,
   SI_SUBTITLE_CHAR_SPACING,
   SI_SUBTITLE_LINE_GAP_PX,
-  SI_SUBTITLE_MARGIN_BOTTOM_PX,
   SI_SUBTITLE_PADDING_HORIZONTAL,
+  resolveSiSubtitleMarginBottomPx,
 } from './si.constants.js';
 
 export interface ConvertSrtToAssOptions {
@@ -132,9 +132,10 @@ export function convertSrtToAss(
   const fontSize = preset.fontSize;
 
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
+  const marginBottomPx = resolveSiSubtitleMarginBottomPx(preset.showBackgroundBox);
   const boxMidY = preset.showBackgroundBox
-    ? Math.round(SI_CANVAS_H - SI_SUBTITLE_MARGIN_BOTTOM_PX - subtitleBoxHeight / 2)
-    : Math.round(SI_CANVAS_H - SI_SUBTITLE_MARGIN_BOTTOM_PX - fontSize / 2);
+    ? Math.round(SI_CANVAS_H - marginBottomPx - subtitleBoxHeight / 2)
+    : Math.round(SI_CANVAS_H - marginBottomPx - fontSize / 2);
 
   const header = `[Script Info]\r
 ScriptType: v4.00+\r

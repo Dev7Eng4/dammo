@@ -112,6 +112,7 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
+  | 'showAudioBar'
   | 'uploadFrequency'
   | 'publishTimes'
 >;
@@ -139,6 +140,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  showAudioBar?: boolean;
 } {
   let linkedEmail = 'Default';
   if (input.mailAccountId && input.mailAccountId.toLowerCase() !== 'default') {
@@ -186,6 +188,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioVideoType: ReupAudioVideoType | undefined;
   let reupAudioVisualStyleId: string | undefined;
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
+  let showAudioBar: boolean | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
 
   if (isReupAudioChannelType(input.type)) {
@@ -213,6 +216,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
         );
       }
       reupAudioBackgroundImage = input.reupAudioBackgroundImage;
+      showAudioBar = input.showAudioBar === true;
     }
     captionStyleKey = assertValidCaptionStyleKey(input.captionStyleKey);
   }
@@ -231,6 +235,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
+    ...(showAudioBar ? { showAudioBar: true } : {}),
   };
 }
 
@@ -504,6 +509,7 @@ export class YoutubeChannelsService {
       ...(config.reupAudioBackgroundImage
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
+      ...(config.showAudioBar ? { showAudioBar: true } : {}),
     };
 
     return youtubeChannelsRepository.prepend(channel);
@@ -555,6 +561,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.reupAudioBackgroundImage;
         }
+        if (config.reupAudioVideoType === 'si' && config.showAudioBar) {
+          next.showAudioBar = true;
+        } else {
+          delete next.showAudioBar;
+        }
         if (config.captionStyleKey) {
           next.captionStyleKey = config.captionStyleKey;
         } else {
@@ -564,6 +575,7 @@ export class YoutubeChannelsService {
         delete next.reupAudioVideoType;
         delete next.reupAudioVisualStyleId;
         delete next.reupAudioBackgroundImage;
+        delete next.showAudioBar;
         delete next.captionStyleKey;
       }
 
