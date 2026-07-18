@@ -40,6 +40,8 @@ interface EditYoutubeChannelModalProps {
   onSuccess: (channel: YoutubeChannel) => void;
 }
 
+const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: "", label: "Default" };
+
 function toSourceOption(source: SourceChannel, niches: Niche[]) {
   return {
     value: source.id,
@@ -108,7 +110,9 @@ export function EditYoutubeChannelModal({
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [formReady, setFormReady] = useState(false);
-  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([]);
+  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([
+    DEFAULT_THUMBNAIL_STYLE_OPTION,
+  ]);
   const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
   const [visualStyleOptions, setVisualStyleOptions] = useState<{ value: string; label: string }[]>([]);
   const [visualStylesLoading, setVisualStylesLoading] = useState(false);
@@ -275,14 +279,17 @@ export function EditYoutubeChannelModal({
   useAbortableEffect(
     async (signal) => {
       if (!open || !language) {
-        setThumbnailStyleOptions([]);
+        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
         return;
       }
 
       setThumbnailStylesLoading(true);
       try {
         const { items } = await fetchThumbnailStyles(language, { signal });
-        const options = items.map((item) => ({ value: item.key, label: item.name }));
+        const options = [
+          DEFAULT_THUMBNAIL_STYLE_OPTION,
+          ...items.map((item) => ({ value: item.key, label: item.name })),
+        ];
         setThumbnailStyleOptions(options);
 
         const current = getValues('thumbnailStyleKey');
@@ -291,7 +298,7 @@ export function EditYoutubeChannelModal({
         }
       } catch {
         if (signal.aborted) return;
-        setThumbnailStyleOptions([]);
+        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
       } finally {
         if (!signal.aborted) setThumbnailStylesLoading(false);
       }
