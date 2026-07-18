@@ -7,3 +7,4 @@ data/assets/*
 !data/prompts/**
 !data/prompts.json
 !data/visual-styles.json
+!data/niches.json

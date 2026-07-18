@@ -15,3 +15,4 @@ server/data/assets/*
 !server/data/prompts/**
 !server/data/prompts.json
 !server/data/visual-styles.json
+!server/data/niches.json

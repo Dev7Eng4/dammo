@@ -1,0 +1,19 @@
+{
+  "niches": [
+    {
+      "key": "drama",
+      "label": "Drama",
+      "createdAt": "2026-07-17T15:59:55.986Z"
+    },
+    {
+      "key": "senior-exercise",
+      "label": "Senior Exercise",
+      "createdAt": "2026-07-17T15:57:28.190Z"
+    },
+    {
+      "key": "senior-food-health",
+      "label": "Senior Food Health",
+      "createdAt": "2026-07-17T15:48:19.496Z"
+    }
+  ]
+}
