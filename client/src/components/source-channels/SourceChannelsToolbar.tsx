@@ -18,6 +18,7 @@ interface SourceChannelsToolbarProps {
   onRiskFilterChange: (value: SourceRiskFilter) => void;
   onSearchChange: (value: string) => void;
   onAddSource: () => void;
+  onAddNiche?: () => void;
   onDownload?: () => void;
   onDelete?: () => void;
 }
@@ -59,6 +60,7 @@ export function SourceChannelsToolbar({
   onRiskFilterChange,
   onSearchChange,
   onAddSource,
+  onAddNiche,
   onDownload,
   onDelete,
 }: SourceChannelsToolbarProps) {
@@ -136,6 +138,15 @@ export function SourceChannelsToolbar({
               <path d="M4 19h16" />
             </svg>
             Download
+          </Button>
+        ) : null}
+        {onAddNiche ? (
+          <Button size="sm" variant="secondary" className="rounded-lg" onClick={onAddNiche}>
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            Add Niche
           </Button>
         ) : null}
         <Button size="sm" className="rounded-lg" onClick={onAddSource}>

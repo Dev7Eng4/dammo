@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
+import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { createYoutubeChannel, fetchYoutubeChannels } from '../../api/youtubeChannels';
@@ -15,19 +16,15 @@ import {
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
+import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import type { AddYoutubeChannelFormValues } from '../../types/youtubeChannel';
 import { BACKGROUND_FOOTAGE_LOCAL_SENTINEL } from '../../types/youtubeChannel';
 import { isReupAudioChannelType, isReupYoutubeChannelType } from '../../types/youtubeChannel';
-import {
-  buildBackgroundFootageSelectValue,
-  handleBackgroundFootageSelectChange,
-} from '../../utils/backgroundFootage';
-import {
-  getReupAudioVideoStylePlaceholder,
-  loadReupAudioVideoStyleOptions,
-} from '../../utils/youtubeChannel';
+import { buildBackgroundFootageSelectValue, handleBackgroundFootageSelectChange } from '../../utils/backgroundFootage';
+import { formatSourceChannelOptionLabel } from '../../utils/niche';
+import { getReupAudioVideoStylePlaceholder, loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select } from '../ui';
 
 interface AddYoutubeChannelModalProps {
@@ -36,11 +33,14 @@ interface AddYoutubeChannelModalProps {
   onSuccess: () => void;
 }
 
+const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: '', label: 'Default' };
+
 const defaultValues: AddYoutubeChannelFormValues = {
   mailAccountId: 'default',
   channelUrl: '',
   type: '',
   language: '',
+  niche: '',
   sourceChannels: [],
   backgroundFootageSources: [],
   backgroundFootageMode: 'source',
@@ -54,10 +54,10 @@ const defaultValues: AddYoutubeChannelFormValues = {
   publishTimes: [],
 };
 
-function toSourceOption(source: SourceChannel) {
+function toSourceOption(source: SourceChannel, niches: Niche[]) {
   return {
     value: source.id,
-    label: `${source.name} (${source.url})`,
+    label: formatSourceChannelOptionLabel(source, niches),
   };
 }
 
@@ -78,12 +78,12 @@ function FormField({
 }) {
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-xs font-medium text-neutral-400">
+      <label htmlFor={htmlFor} className='mb-1.5 block text-xs font-medium text-neutral-400'>
         {label}
-        {optional ? <span className="text-neutral-500"> (optional)</span> : null}
+        {optional ? <span className='text-neutral-500'> (optional)</span> : null}
       </label>
       {children}
-      {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
+      {error ? <p className='mt-1 text-xs text-danger'>{error}</p> : null}
     </div>
   );
 }
@@ -93,7 +93,10 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
   const [sources, setSources] = useState<SourceChannel[]>([]);
-  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([
+    DEFAULT_THUMBNAIL_STYLE_OPTION,
+  ]);
   const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
   const [visualStyleOptions, setVisualStyleOptions] = useState<{ value: string; label: string }[]>([]);
   const [visualStylesLoading, setVisualStylesLoading] = useState(false);
@@ -120,46 +123,61 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
   const sourceOptions = useMemo(
-    () => sources.filter((s) => s.purpose !== 'background_footage').map(toSourceOption),
-    [sources],
+    () => sources.filter(s => s.purpose !== 'background_footage').map(s => toSourceOption(s, niches)),
+    [sources, niches],
   );
   const backgroundFootageOptions = useMemo(
     () => [
       { value: BACKGROUND_FOOTAGE_LOCAL_SENTINEL, label: 'Local' },
-      ...sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
+      ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
     ],
-    [sources],
+    [sources, niches],
+  );
+  const nicheOptions = useMemo(
+    () => niches.map(item => ({ value: item.key, label: item.label })),
+    [niches],
   );
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       setOptionsLoading(true);
 
       try {
-        const [mails, sourceList, channels] = await Promise.all([
+        const [mails, sourceList, channels, nicheList] = await Promise.all([
           fetchMailAccounts('', 1, 100, { signal }),
           fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal }),
           fetchYoutubeChannels('all', 'all', '', 1, 100, { signal }),
+          fetchNiches({ signal }),
         ]);
 
-        const usedEmails = new Set(
-          channels.items.map((channel) => channel.linkedEmail.toLowerCase()),
-        );
+        const usedEmails = new Set(channels.items.map(channel => channel.linkedEmail.toLowerCase()));
+        const defaultAvailable = !usedEmails.has('default');
 
-        setMailOptions([
-          { value: 'default', label: 'Default' },
+        const availableMailOptions = [
+          ...(defaultAvailable ? [{ value: 'default', label: 'Default' }] : []),
           ...mails.items
-            .filter((account) => !usedEmails.has(account.email.toLowerCase()))
-            .map((account) => ({
+            .filter(account => !usedEmails.has(account.email.toLowerCase()))
+            .map(account => ({
               value: account.id,
               label: account.email,
             })),
-        ]);
+        ];
+
+        setMailOptions(availableMailOptions);
         setSources(sourceList.items);
+        setNiches(nicheList.items);
+
+        const currentMailId = getValues('mailAccountId');
+        const hasCurrentOption = availableMailOptions.some(option => option.value === currentMailId);
+        if (!hasCurrentOption) {
+          setValue('mailAccountId', availableMailOptions[0]?.value ?? '');
+        }
       } catch {
         if (signal.aborted) return;
-        setMailOptions([{ value: 'default', label: 'Default' }]);
+        setMailOptions([]);
         setSources([]);
+        setNiches([]);
+        setValue('mailAccountId', '');
       } finally {
         if (!signal.aborted) setOptionsLoading(false);
       }
@@ -193,7 +211,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   }, [isReupAudio, reupAudioVideoType, setValue]);
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       if (!open || !isReupAudio || reupAudioVideoType !== 'ai') {
         setVisualStyleOptions([]);
         if (reupAudioVideoType !== 'ai') {
@@ -208,7 +226,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         setVisualStyleOptions(options);
 
         const current = getValues('reupAudioVisualStyleId');
-        if (current && !options.some((option) => option.value === current)) {
+        if (current && !options.some(option => option.value === current)) {
           setValue('reupAudioVisualStyleId', '');
         }
       } catch {
@@ -224,9 +242,9 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   );
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       if (!language) {
-        setThumbnailStyleOptions([]);
+        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
         setValue('thumbnailStyleKey', '');
         return;
       }
@@ -234,16 +252,19 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
       setThumbnailStylesLoading(true);
       try {
         const { items } = await fetchThumbnailStyles(language, { signal });
-        const options = items.map((item) => ({ value: item.key, label: item.name }));
+        const options = [
+          DEFAULT_THUMBNAIL_STYLE_OPTION,
+          ...items.map(item => ({ value: item.key, label: item.name })),
+        ];
         setThumbnailStyleOptions(options);
 
         const current = getValues('thumbnailStyleKey');
-        if (current && !options.some((option) => option.value === current)) {
+        if (current && !options.some(option => option.value === current)) {
           setValue('thumbnailStyleKey', '');
         }
       } catch {
         if (signal.aborted) return;
-        setThumbnailStyleOptions([]);
+        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
         setValue('thumbnailStyleKey', '');
       } finally {
         if (!signal.aborted) setThumbnailStylesLoading(false);
@@ -260,7 +281,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
   }
 
   async function onSubmit(values: AddYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency || !values.language) return;
+    if (!values.type || !values.uploadFrequency || !values.language || !values.niche) return;
 
     setApiError(null);
     try {
@@ -269,6 +290,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
         channelUrl: values.channelUrl.trim(),
         type: values.type,
         language: values.language,
+        niche: values.niche,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
@@ -278,23 +300,13 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
             ? { backgroundFootageSources: values.backgroundFootageSources }
             : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
-        ...(values.type === 'reup_audio' && values.reupAudioVideoType
-          ? { reupAudioVideoType: values.reupAudioVideoType }
-          : {}),
-        ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId
-          ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId }
-          : {}),
-        ...(values.type === 'reup_audio' &&
-        values.reupAudioVideoType === 'si' &&
-        values.reupAudioBackgroundImage
+        ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' && values.reupAudioBackgroundImage
           ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
           : {}),
-        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
-          ? { showAudioBar: values.showAudioBar }
-          : {}),
-        ...(values.type === 'reup_audio' && values.captionStyleKey
-          ? { captionStyleKey: values.captionStyleKey }
-          : {}),
+        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' ? { showAudioBar: values.showAudioBar } : {}),
+        ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
       });
       reset(defaultValues);
       onSuccess();
@@ -310,20 +322,20 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add YouTube Channel"
-      className="max-h-[90vh] max-w-3xl flex flex-col"
-      bodyClassName="max-h-[60vh] overflow-y-auto"
+      title='Add YouTube Channel'
+      className='max-h-[90vh] max-w-5xl flex flex-col'
+      bodyClassName='max-h-[60vh] overflow-y-auto'
       footer={
         <>
-          <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
+          <Button variant='outlined' size='sm' className='rounded-lg' onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button
-            size="sm"
-            className="rounded-lg"
+            size='sm'
+            className='rounded-lg'
             disabled={isSubmitting || optionsLoading || mailOptions.length === 0}
-            form="add-youtube-channel-form"
-            type="submit"
+            form='add-youtube-channel-form'
+            type='submit'
           >
             {isSubmitting ? 'Fetching channel info...' : 'Add Channel'}
           </Button>
@@ -331,64 +343,60 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
       }
     >
       <form
-        id="add-youtube-channel-form"
+        id='add-youtube-channel-form'
         onSubmit={handleSubmit(onSubmit)}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+        className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'
       >
-        <FormField label="Linked Email" htmlFor="mail-account" error={errors.mailAccountId?.message} className="min-w-0">
+        <FormField label='Linked Email' htmlFor='mail-account' error={errors.mailAccountId?.message} className='min-w-0'>
           <Controller
-            name="mailAccountId"
+            name='mailAccountId'
             control={control}
             rules={{ required: 'Email is required' }}
             render={({ field }) => (
               <Select
-                id="mail-account"
+                id='mail-account'
                 options={mailOptions}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 placeholder={
-                  optionsLoading
-                    ? 'Loading emails...'
-                    : mailOptions.length === 0
-                      ? 'No available email accounts'
-                      : 'Select email account'
+                  optionsLoading ? 'Loading emails...' : mailOptions.length === 0 ? 'No available email accounts' : 'Select email account'
                 }
-                searchPlaceholder="Search email..."
+                searchPlaceholder='Search email...'
                 searchable
                 disabled={isSubmitting || optionsLoading || mailOptions.length === 0}
-                className="w-full"
+                className='w-full'
                 triggerClassName={selectTriggerClass}
               />
             )}
           />
         </FormField>
 
-        <FormField label="Channel URL" htmlFor="channel-url" optional error={errors.channelUrl?.message} className="min-w-0">
+        <FormField label='Channel URL' htmlFor='channel-url' optional error={errors.channelUrl?.message} className='min-w-0'>
           <Input
-            id="channel-url"
-            placeholder="https://youtube.com/@channel or @handle"
-            className="h-10 rounded-lg font-mono text-sm"
+            id='channel-url'
+            placeholder='https://youtube.com/@channel or @handle'
+            className='h-10 rounded-lg font-mono text-sm'
             disabled={isSubmitting}
             {...register('channelUrl')}
           />
         </FormField>
 
-        <FormField label="Channel Type" htmlFor="channel-type" error={errors.type?.message} className="min-w-0">
+        <FormField label='Channel Type' htmlFor='channel-type' error={errors.type?.message} className='min-w-0'>
           <Controller
-            name="type"
+            name='type'
             control={control}
             rules={{ required: 'Channel type is required' }}
             render={({ field }) => (
               <Select
-                id="channel-type"
+                id='channel-type'
                 options={YOUTUBE_CHANNEL_TYPE_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select channel type"
+                placeholder='Select channel type'
                 disabled={isSubmitting}
-                className="w-full"
+                className='w-full'
                 triggerClassName={selectTriggerClass}
               />
             )}
@@ -397,26 +405,21 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
 
         {isReupAudio ? (
           <>
-            <FormField
-              label="Video Type"
-              htmlFor="reup-audio-video-type"
-              error={errors.reupAudioVideoType?.message}
-              className="min-w-0"
-            >
+            <FormField label='Video Type' htmlFor='reup-audio-video-type' error={errors.reupAudioVideoType?.message} className='min-w-0'>
               <Controller
-                name="reupAudioVideoType"
+                name='reupAudioVideoType'
                 control={control}
                 rules={{ required: isReupAudio ? 'Video type is required' : false }}
                 render={({ field }) => (
                   <Select
-                    id="reup-audio-video-type"
+                    id='reup-audio-video-type'
                     options={REUP_AUDIO_VIDEO_TYPE_OPTIONS}
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder="Select video type"
+                    placeholder='Select video type'
                     disabled={isSubmitting}
-                    className="w-full"
+                    className='w-full'
                     triggerClassName={selectTriggerClass}
                   />
                 )}
@@ -424,94 +427,86 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
             </FormField>
 
             {reupAudioVideoType === 'si' ? (
-              <FormField
-                label="Background Image"
-                htmlFor="reup-audio-background-image"
-                error={errors.reupAudioBackgroundImage?.message}
-                className="min-w-0"
-              >
-                <Controller
-                  name="reupAudioBackgroundImage"
-                  control={control}
-                  rules={{
-                    required:
-                      isReupAudio && reupAudioVideoType === 'si'
-                        ? 'Background image is required for Stock Video + Image'
-                        : false,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      id="reup-audio-background-image"
-                      options={REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      placeholder="Select background image"
-                      disabled={isSubmitting}
-                      className="w-full"
-                      triggerClassName={selectTriggerClass}
-                    />
-                  )}
-                />
-              </FormField>
-
-              <FormField label="Show Audio Bar" htmlFor="reup-audio-show-audio-bar" className="min-w-0">
-                <Controller
-                  name="showAudioBar"
-                  control={control}
-                  render={({ field }) => (
-                    <label
-                      htmlFor="reup-audio-show-audio-bar"
-                      className="flex cursor-pointer items-center gap-2 text-sm text-neutral-200"
-                    >
-                      <input
-                        id="reup-audio-show-audio-bar"
-                        type="checkbox"
-                        checked={!!field.value}
-                        onChange={e => field.onChange(e.target.checked)}
+              <>
+                <FormField
+                  label='Background Image'
+                  htmlFor='reup-audio-background-image'
+                  error={errors.reupAudioBackgroundImage?.message}
+                  className='min-w-0'
+                >
+                  <Controller
+                    name='reupAudioBackgroundImage'
+                    control={control}
+                    rules={{
+                      required: isReupAudio && reupAudioVideoType === 'si' ? 'Background image is required for Stock Video + Image' : false,
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        id='reup-audio-background-image'
+                        options={REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS}
+                        value={field.value}
+                        onChange={field.onChange}
                         onBlur={field.onBlur}
+                        placeholder='Select background image'
                         disabled={isSubmitting}
-                        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                        className='w-full'
+                        triggerClassName={selectTriggerClass}
                       />
-                      Overlay audio bar on the left side of the video
-                    </label>
-                  )}
-                />
-              </FormField>
+                    )}
+                  />
+                </FormField>
+
+                <FormField label='Show Audio Bar' htmlFor='reup-audio-show-audio-bar' className='min-w-0'>
+                  <Controller
+                    name='showAudioBar'
+                    control={control}
+                    render={({ field }) => (
+                      <label
+                        htmlFor='reup-audio-show-audio-bar'
+                        className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'
+                      >
+                        <input
+                          id='reup-audio-show-audio-bar'
+                          type='checkbox'
+                          checked={!!field.value}
+                          onChange={e => field.onChange(e.target.checked)}
+                          onBlur={field.onBlur}
+                          disabled={isSubmitting}
+                          className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                        />
+                        Overlay audio bar on the left side of the video
+                      </label>
+                    )}
+                  />
+                </FormField>
+              </>
             ) : null}
 
             {reupAudioVideoType === 'ai' ? (
               <FormField
-                label="Video Style"
-                htmlFor="reup-audio-visual-style"
+                label='Video Style'
+                htmlFor='reup-audio-visual-style'
                 error={errors.reupAudioVisualStyleId?.message}
-                className="min-w-0"
+                className='min-w-0'
               >
                 <Controller
-                  name="reupAudioVisualStyleId"
+                  name='reupAudioVisualStyleId'
                   control={control}
                   rules={{
-                    required:
-                      isReupAudio && reupAudioVideoType === 'ai'
-                        ? 'Video style is required for Animate Images (AI)'
-                        : false,
+                    required: isReupAudio && reupAudioVideoType === 'ai' ? 'Video style is required for Animate Images (AI)' : false,
                   }}
                   render={({ field }) => (
                     <Select
-                      id="reup-audio-visual-style"
+                      id='reup-audio-visual-style'
                       options={visualStyleOptions}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
-                      placeholder={getReupAudioVideoStylePlaceholder(
-                        reupAudioVideoType,
-                        visualStylesLoading,
-                        visualStyleOptions.length,
-                      )}
-                      searchPlaceholder="Search video styles..."
+                      placeholder={getReupAudioVideoStylePlaceholder(reupAudioVideoType, visualStylesLoading, visualStyleOptions.length)}
+                      searchPlaceholder='Search video styles...'
                       searchable
                       disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
-                      className="w-full"
+                      className='w-full'
                       triggerClassName={selectTriggerClass}
                     />
                   )}
@@ -519,26 +514,20 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
               </FormField>
             ) : null}
 
-            <FormField
-              label="Caption Style"
-              htmlFor="caption-style"
-              optional
-              error={errors.captionStyleKey?.message}
-              className="min-w-0"
-            >
+            <FormField label='Caption Style' htmlFor='caption-style' optional error={errors.captionStyleKey?.message} className='min-w-0'>
               <Controller
-                name="captionStyleKey"
+                name='captionStyleKey'
                 control={control}
                 render={({ field }) => (
                   <Select
-                    id="caption-style"
+                    id='caption-style'
                     options={CAPTION_STYLE_OPTIONS}
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder="Select caption style"
+                    placeholder='Select caption style'
                     disabled={isSubmitting}
-                    className="w-full"
+                    className='w-full'
                     triggerClassName={selectTriggerClass}
                   />
                 )}
@@ -547,45 +536,61 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
           </>
         ) : null}
 
-        <FormField
-          label="Language"
-          htmlFor="channel-language"
-          error={errors.language?.message}
-          className="min-w-0"
-        >
+        <FormField label='Language' htmlFor='channel-language' error={errors.language?.message} className='min-w-0'>
           <Controller
-            name="language"
+            name='language'
             control={control}
             rules={{ required: 'Language is required' }}
             render={({ field }) => (
               <Select
-                id="channel-language"
+                id='channel-language'
                 options={YOUTUBE_CHANNEL_LANGUAGE_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select language"
+                placeholder='Select language'
                 disabled={isSubmitting}
-                className="w-full"
+                className='w-full'
                 triggerClassName={selectTriggerClass}
               />
             )}
           />
         </FormField>
 
-        <FormField
-          label="Thumbnail Style"
-          htmlFor="thumbnail-style"
-          optional
-          error={errors.thumbnailStyleKey?.message}
-          className="min-w-0"
-        >
+        <FormField label='Niche' htmlFor='channel-niche' error={errors.niche?.message} className='min-w-0'>
           <Controller
-            name="thumbnailStyleKey"
+            name='niche'
+            control={control}
+            rules={{ required: 'Niche is required' }}
+            render={({ field }) => (
+              <Select
+                id='channel-niche'
+                options={nicheOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  optionsLoading
+                    ? 'Loading niches...'
+                    : nicheOptions.length === 0
+                      ? 'No niches yet — add one first'
+                      : 'Select niche'
+                }
+                disabled={isSubmitting || optionsLoading || nicheOptions.length === 0}
+                className='w-full'
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField label='Thumbnail Style' htmlFor='thumbnail-style' optional error={errors.thumbnailStyleKey?.message} className='min-w-0'>
+          <Controller
+            name='thumbnailStyleKey'
             control={control}
             render={({ field }) => (
               <Select
-                id="thumbnail-style"
+                id='thumbnail-style'
                 options={thumbnailStyleOptions}
                 value={field.value}
                 onChange={field.onChange}
@@ -600,28 +605,23 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                         : 'Select thumbnail style'
                 }
                 disabled={isSubmitting || !language || thumbnailStylesLoading}
-                className="w-full"
+                className='w-full'
                 triggerClassName={selectTriggerClass}
               />
             )}
           />
         </FormField>
 
-        <FormField
-          label="Background Footage"
-          htmlFor="background-footage"
-          optional
-          className="min-w-0"
-        >
+        <FormField label='Background Footage' htmlFor='background-footage' optional className='min-w-0'>
           <Controller
-            name="backgroundFootageSources"
+            name='backgroundFootageSources'
             control={control}
             render={({ field }) => (
               <MultiSelect
-                id="background-footage"
+                id='background-footage'
                 options={backgroundFootageOptions}
                 value={buildBackgroundFootageSelectValue(watch('backgroundFootageMode'), field.value)}
-                onChange={(next) => {
+                onChange={next => {
                   const resolved = handleBackgroundFootageSelectChange(
                     buildBackgroundFootageSelectValue(watch('backgroundFootageMode'), field.value),
                     next,
@@ -631,68 +631,62 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                 }}
                 onBlur={field.onBlur}
                 placeholder={optionsLoading ? 'Loading sources...' : 'Select background footage'}
-                searchPlaceholder="Search background footage..."
+                searchPlaceholder='Search background footage...'
                 searchable
                 disabled={isSubmitting || optionsLoading}
-                className="w-full"
-                triggerClassName="min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5"
+                className='w-full'
+                triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
               />
             )}
           />
         </FormField>
 
         <FormField
-          label="Source Channels"
-          htmlFor="source-channel"
+          label='Source Channels'
+          htmlFor='source-channel'
           optional={!isReupType}
           error={errors.sourceChannels?.message}
-          className="min-w-0 sm:col-span-2"
+          className='min-w-0'
         >
           <Controller
-            name="sourceChannels"
+            name='sourceChannels'
             control={control}
             rules={{
-              validate: (value) =>
-                !isReupType || value.length > 0 || 'Source channels are required',
+              validate: value => !isReupType || value.length > 0 || 'Source channels are required',
             }}
             render={({ field }) => (
               <MultiSelect
-                id="source-channel"
+                id='source-channel'
                 options={sourceOptions}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 placeholder={optionsLoading ? 'Loading sources...' : 'Select source channels'}
-                searchPlaceholder="Search source channels..."
+                searchPlaceholder='Search source channels...'
                 searchable
                 disabled={isSubmitting || optionsLoading}
-                className="w-full"
-                triggerClassName="min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5"
+                className='w-full'
+                triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
               />
             )}
           />
         </FormField>
 
-        <FormField
-          label="Upload Frequency"
-          htmlFor="upload-frequency"
-          error={errors.uploadFrequency?.message}
-          className="min-w-0"
-        >
+        <FormField label='Upload Frequency' htmlFor='upload-frequency' error={errors.uploadFrequency?.message} className='min-w-0'>
           <Controller
-            name="uploadFrequency"
+            name='uploadFrequency'
             control={control}
             rules={{ required: 'Upload frequency is required' }}
             render={({ field }) => (
               <Select
-                id="upload-frequency"
+                id='upload-frequency'
                 options={UPLOAD_FREQUENCY_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select upload frequency"
+                placeholder='Select upload frequency'
                 disabled={isSubmitting}
-                className="w-full"
+                className='w-full'
                 triggerClassName={selectTriggerClass}
               />
             )}
@@ -706,12 +700,12 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
                 label={publishTimeSlotCount === 1 ? 'Publish Time' : `Publish Time ${index + 1}`}
                 htmlFor={`publish-time-${index}`}
                 error={errors.publishTimes?.[index]?.message}
-                className="min-w-0"
+                className='min-w-0'
               >
                 <Input
                   id={`publish-time-${index}`}
-                  type="time"
-                  className="h-10 rounded-lg text-sm"
+                  type='time'
+                  className='h-10 rounded-lg text-sm'
                   disabled={isSubmitting}
                   {...register(`publishTimes.${index}` as const, {
                     required: 'Publish time is required',
@@ -721,9 +715,7 @@ export function AddYoutubeChannelModal({ open, onClose, onSuccess }: AddYoutubeC
             ))
           : null}
 
-        {apiError ? (
-          <p className="text-xs text-danger sm:col-span-2">{apiError}</p>
-        ) : null}
+        {apiError ? <p className='text-xs text-danger sm:col-span-2 lg:col-span-3'>{apiError}</p> : null}
       </form>
     </Modal>
   );

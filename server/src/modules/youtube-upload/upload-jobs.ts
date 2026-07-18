@@ -18,6 +18,7 @@ export interface UploadJob {
 export interface ListUploadJobsOptions {
   maxUploads?: number | null;
   videoIds?: string[] | null;
+  allowOldThumbnail?: boolean;
 }
 
 function assertSafeVideoId(videoId: string | undefined | null): string | null {
@@ -79,10 +80,15 @@ export function listUploadJobs(channelId: string, options: ListUploadJobsOptions
     }
 
     const mp4Path = path.join(folderPath, mp4File);
-    const thumbnailPath = findThumbnailPath(folderPath);
+    const thumbnailPath = findThumbnailPath(folderPath, {
+      allowOldThumbnail: options.allowOldThumbnail,
+    });
     const metaPath = path.join(folderPath, VIDEO_META_FILENAME);
     if (!thumbnailPath) {
-      console.warn(`[youtube-upload] Skip ${videoId} — missing thumbnail (thumbnail.*)`);
+      const expectedThumbnail = options.allowOldThumbnail
+        ? 'thumbnail.* or old-thumbnail.*'
+        : 'thumbnail.*';
+      console.warn(`[youtube-upload] Skip ${videoId} — missing thumbnail (${expectedThumbnail})`);
       continue;
     }
     if (!fs.existsSync(metaPath)) {

@@ -10,6 +10,7 @@ export const createSourceChannelSchema = z.object({
     'reup',
     'background_footage',
   ]),
+  niche: z.string().min(1),
 });
 
 export const sourceChannelVideosQuerySchema = z.object({

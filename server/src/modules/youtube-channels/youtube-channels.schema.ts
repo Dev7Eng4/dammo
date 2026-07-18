@@ -20,6 +20,7 @@ const channelConfigFields = {
   mailAccountId: z.string().min(1),
   type: youtubeChannelTypeSchema,
   language: channelLanguageSchema,
+  niche: z.string().min(1),
   sourceChannels: z.array(z.string().min(1)).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   backgroundFootageMode: z.enum(['source', 'local']).optional(),

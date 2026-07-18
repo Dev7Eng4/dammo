@@ -414,6 +414,7 @@ export interface CreateYoutubeChannelPayload {
   channelUrl: string;
   type: YoutubeChannelType;
   language: YoutubeChannelLanguage;
+  niche: string;
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
@@ -434,6 +435,7 @@ export interface AddYoutubeChannelFormValues {
   channelUrl: string;
   type: YoutubeChannelType | '';
   language: YoutubeChannelLanguage | '';
+  niche: string;
   sourceChannels: string[];
   backgroundFootageSources: string[];
   backgroundFootageMode: BackgroundFootageMode;

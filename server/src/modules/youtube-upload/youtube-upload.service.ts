@@ -77,11 +77,12 @@ export class YoutubeUploadService {
     const jobs = listUploadJobs(channelId, {
       maxUploads: options.maxUploads,
       videoIds: options.videoIds,
+      allowOldThumbnail: !channel.thumbnailStyleKey?.trim(),
     });
 
     if (jobs.length === 0) {
       throw new AppError(
-        'No upload-ready videos (status Created with video.mp4, thumbnail.*, and title in video-meta.json)',
+        'No upload-ready videos (status Created with video.mp4, an eligible thumbnail, and title in video-meta.json)',
         400,
         'NO_UPLOAD_JOBS',
       );

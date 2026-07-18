@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Button, Input } from '../ui';
 import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm';
+import type { Niche } from '../../types/niche';
 import { formatChannelLanguageLabel, type YoutubeChannel } from '../../types/youtubeChannel';
+import { resolveNicheLabel } from '../../utils/niche';
 import { ChannelStatusPill } from './ChannelStatusPill';
 import { MonetizationPill } from './MonetizationPill';
 
 interface YoutubeChannelDetailPanelProps {
   channel: YoutubeChannel | null;
+  niches?: Niche[];
   loading?: boolean;
   onClose: () => void;
 }
@@ -60,7 +63,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function YoutubeChannelDetailPanel({ channel, loading, onClose }: YoutubeChannelDetailPanelProps) {
+export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClose }: YoutubeChannelDetailPanelProps) {
   if (!channel && !loading) return null;
 
   if (loading) {
@@ -146,7 +149,11 @@ export function YoutubeChannelDetailPanel({ channel, loading, onClose }: Youtube
               </div>
               <div>
                 <FieldLabel>Niche</FieldLabel>
-                <Input readOnly value={channel.niche} className="h-9 rounded-lg text-sm" />
+                <Input
+                  readOnly
+                  value={resolveNicheLabel(channel.niche, niches) || '—'}
+                  className="h-9 rounded-lg text-sm"
+                />
               </div>
               <div>
                 <FieldLabel>Language</FieldLabel>

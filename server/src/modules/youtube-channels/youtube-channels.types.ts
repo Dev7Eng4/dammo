@@ -94,6 +94,7 @@ export interface CreateYoutubeChannelInput {
   channelUrl?: string;
   type: YoutubeChannelType;
   language: ChannelLanguage;
+  niche: string;
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
@@ -111,6 +112,7 @@ export interface UpdateYoutubeChannelInput {
   mailAccountId: string;
   type: YoutubeChannelType;
   language: ChannelLanguage;
+  niche: string;
   sourceChannels?: string[];
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;

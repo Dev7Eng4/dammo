@@ -1,11 +1,14 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
+import { resolveNicheLabel } from '../../utils/niche';
 import { PlatformIcon } from '../mail-accounts/PlatformIcon';
 import { DataTable, Link } from '../ui';
 import { PurposePill } from './PurposePill';
 
 interface SourceChannelsTableProps {
   sources: SourceChannel[];
+  niches?: Niche[];
   loading?: boolean;
   selectedIds: Set<string>;
   bumpingRiskId?: string | null;
@@ -26,6 +29,7 @@ function truncateUrl(url: string, max = 14) {
 
 export function SourceChannelsTable({
   sources,
+  niches = [],
   loading,
   selectedIds,
   bumpingRiskId: _bumpingRiskId,
@@ -70,7 +74,9 @@ export function SourceChannelsTable({
     {
       accessorKey: 'niche',
       header: 'NICHE',
-      cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{resolveNicheLabel(getValue<string>(), niches)}</span>
+      ),
     },
     {
       accessorKey: 'purpose',

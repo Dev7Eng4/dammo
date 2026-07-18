@@ -10,6 +10,7 @@ const addSourcePayloadSchema = z.object({
     'reup',
     'background_footage',
   ]),
+  niche: z.string().min(1),
 });
 
 const createVideoPayloadSchema = z

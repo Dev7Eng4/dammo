@@ -38,6 +38,8 @@ export interface SourceChannel {
   description?: string;
   channelId?: string;
   metadataFetchedAt?: string;
+  /** Derived: number of YouTube channels using this source (reup and/or footage). */
+  youtubeChannelUsageCount?: number;
 }
 
 export interface SourceChannelsStore {
@@ -66,6 +68,7 @@ export interface SourceVideosStore {
 export interface CreateSourceChannelInput {
   url: string;
   purpose: SourcePurpose;
+  niche: string;
 }
 
 export interface UpdateSourceChannelInput {

@@ -2,17 +2,33 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const THUMBNAIL_BASENAME = 'thumbnail';
+const OLD_THUMBNAIL_BASENAME = 'old-thumbnail';
 
-export function findThumbnailPath(folderPath: string): string | null {
+export interface FindThumbnailPathOptions {
+  allowOldThumbnail?: boolean;
+}
+
+export function findThumbnailPath(
+  folderPath: string,
+  options: FindThumbnailPathOptions = {},
+): string | null {
   const files = fs.readdirSync(folderPath);
-  const matches = files.filter(file => {
-    const ext = path.extname(file);
-    if (!ext) return false;
-    return path.basename(file, ext).toLowerCase() === THUMBNAIL_BASENAME;
-  });
+  const basenames = options.allowOldThumbnail
+    ? [THUMBNAIL_BASENAME, OLD_THUMBNAIL_BASENAME]
+    : [THUMBNAIL_BASENAME];
 
-  if (matches.length === 0) return null;
+  for (const basename of basenames) {
+    const matches = files.filter(file => {
+      const ext = path.extname(file);
+      if (!ext) return false;
+      return path.basename(file, ext).toLowerCase() === basename;
+    });
 
-  matches.sort((a, b) => a.localeCompare(b));
-  return path.join(folderPath, matches[0]);
+    if (matches.length > 0) {
+      matches.sort((a, b) => a.localeCompare(b));
+      return path.join(folderPath, matches[0]!);
+    }
+  }
+
+  return null;
 }

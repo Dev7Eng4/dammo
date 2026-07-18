@@ -1,0 +1,463 @@
+{
+  "youtubeVideoId": "Q2UdQ2OcvQo",
+  "generatedAt": "2026-07-16T15:04:30.598Z",
+  "sceneCount": 76,
+  "scenes": [
+    {
+      "prompt": "A warm welcome greeting, an open traditional Japanese dining room with soft sunlight streaming through the window, a peaceful and welcoming atmosphere, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:00,240",
+      "endTime": "00:00:06,720",
+      "path": "ai-slides/scene-001.jpg"
+    },
+    {
+      "prompt": "A close-up shot of an elderly person's hands gently holding a warm cup of green tea, steam rising softly, cozy morning light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:06,720",
+      "endTime": "00:00:13,519",
+      "path": "ai-slides/scene-002.jpg"
+    },
+    {
+      "prompt": "A wide shot of a beautifully prepared traditional Japanese breakfast table next to a sliding screen door, fields visible outside, serene and vibrant morning vibe, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:13,519",
+      "endTime": "00:00:19,720",
+      "path": "ai-slides/scene-003.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of healthy ingredients like fresh vegetables and fish arranged neatly on ceramic plates, colorful and wholesome, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:19,720",
+      "endTime": "00:00:25,680",
+      "path": "ai-slides/scene-004.jpg"
+    },
+    {
+      "prompt": "A wide shot of a bright kitchen where a gentle grandmother is happily preparing a meal, sunlight illuminating the rustic wooden counters, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:25,680",
+      "endTime": "00:00:32,439",
+      "path": "ai-slides/scene-005.jpg"
+    },
+    {
+      "prompt": "A close-up shot of five different high-quality protein items, including an egg and tofu, sitting elegantly on a rustic cloth mat, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:32,439",
+      "endTime": "00:00:37,920",
+      "path": "ai-slides/scene-006.jpg"
+    },
+    {
+      "prompt": "A macro shot of a single, perfect fresh egg sitting in a small woven straw basket on a kitchen counter, glowing under soft golden light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:37,920",
+      "endTime": "00:00:45,360",
+      "path": "ai-slides/scene-007.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cozy dining table where everyday familiar ingredients are laid out, inviting and warm, daytime interior setting, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:45,360",
+      "endTime": "00:00:53,359",
+      "path": "ai-slides/scene-008.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a small, elegant ceramic bowl containing thick and creamy Greek yogurt, sitting on a wooden tray, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:53,359",
+      "endTime": "00:00:59,079",
+      "path": "ai-slides/scene-009.jpg"
+    },
+    {
+      "prompt": "A wide shot of an elderly person sitting comfortably on a veranda, enjoying a small light snack during a breezy afternoon, lush green garden in the background, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:00:59,079",
+      "endTime": "00:01:05,119",
+      "path": "ai-slides/scene-010.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of a spoon scooping into rich, thick Greek yogurt, showing its smooth texture, soft diffuse kitchen lighting, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:05,119",
+      "endTime": "00:01:13,240",
+      "path": "ai-slides/scene-011.jpg"
+    },
+    {
+      "prompt": "A wide shot of the Greek yogurt bowl alongside a glass of milk on a sunny wooden table, clear afternoon shadows, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:13,240",
+      "endTime": "00:01:21,079",
+      "path": "ai-slides/scene-012.jpg"
+    },
+    {
+      "prompt": "A close-up shot of fresh milk pouring into a jug next to yogurt, illustrating calcium and wellness, bright and clean aesthetic, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:21,079",
+      "endTime": "00:01:27,119",
+      "path": "ai-slides/scene-013.jpg"
+    },
+    {
+      "prompt": "A wide shot of a peaceful old house garden in autumn, dynamic wind blowing leaves, representing the passage of time and aging, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:27,119",
+      "endTime": "00:01:33,520",
+      "path": "ai-slides/scene-014.jpg"
+    },
+    {
+      "prompt": "A close-up shot of an untouched dinner plate on a table at dusk, a soft melancholic but gentle atmosphere, long shadows, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:33,520",
+      "endTime": "00:01:39,920",
+      "path": "ai-slides/scene-015.jpg"
+    },
+    {
+      "prompt": "A wide shot of an elderly character walking slowly down a beautiful country path lined with wildflowers under a vast sunset sky, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:39,920",
+      "endTime": "00:01:46,079",
+      "path": "ai-slides/scene-016.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a small cup of yogurt being placed gently on a table by a helpful daughter's hand, warm comforting atmosphere, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:46,079",
+      "endTime": "00:01:52,200",
+      "path": "ai-slides/scene-017.jpg"
+    },
+    {
+      "prompt": "A wide shot of a bright morning dining room, an elderly woman in her 70s sitting by the window with a simple cup of hot green tea, peaceful expression, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:52,200",
+      "endTime": "00:01:57,119",
+      "path": "ai-slides/scene-018.jpg"
+    },
+    {
+      "prompt": "A close-up shot of plain Greek yogurt neatly topped with fresh sliced yellow bananas in a rustic ceramic bowl, sunbeam hitting the table, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:01:57,119",
+      "endTime": "00:02:03,200",
+      "path": "ai-slides/scene-019.jpg"
+    },
+    {
+      "prompt": "A wide shot of the elderly woman smiling and looking out at her sunny garden while enjoying her breakfast, full of vitality and new energy, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:03,200",
+      "endTime": "00:02:09,280",
+      "path": "ai-slides/scene-020.jpg"
+    },
+    {
+      "prompt": "A close-up shot of hands slicing a fresh yellow banana and red strawberries on a wooden cutting board, vibrant colors, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:09,280",
+      "endTime": "00:02:14,720",
+      "path": "ai-slides/scene-021.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cheerful kitchen filled with the morning light, a bowl of yogurt with fruits and crushed nuts sits on the wooden counter, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:14,720",
+      "endTime": "00:02:22,840",
+      "path": "ai-slides/scene-022.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a jar of golden honey and sweet red jam sitting together on a shelf, softly blurred background, cozy kitchen vibe, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:22,840",
+      "endTime": "00:02:30,519",
+      "path": "ai-slides/scene-023.jpg"
+    },
+    {
+      "prompt": "A wide shot of a balanced healthy breakfast spread on a table, including the small yogurt cup, grains, and tea, beautiful soft morning glow, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:30,519",
+      "endTime": "00:02:36,640",
+      "path": "ai-slides/scene-024.jpg"
+    },
+    {
+      "prompt": "A close-up shot of an elderly person's content smile, soft wrinkles around the eyes, bathed in a warm, healthy light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:36,640",
+      "endTime": "00:02:44,440",
+      "path": "ai-slides/scene-025.jpg"
+    },
+    {
+      "prompt": "A wide shot of an older couple happily tending to a lush green backyard vegetable garden together under a clear blue sky, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:44,440",
+      "endTime": "00:02:50,879",
+      "path": "ai-slides/scene-026.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a small white yogurt cup sitting on a beautifully woven fabric coaster next to a blooming flower vase, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:50,879",
+      "endTime": "00:02:58,920",
+      "path": "ai-slides/scene-027.jpg"
+    },
+    {
+      "prompt": "A wide shot of a vibrant, healthy elderly person walking briskly through a gorgeous park filled with green trees and dappled sunlight, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:02:58,920",
+      "endTime": "00:03:04,840",
+      "path": "ai-slides/scene-028.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of a single fresh green leaf with dew drops, symbolizing the foundation of health and life, crisp natural morning light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:04,840",
+      "endTime": "00:03:13,200",
+      "path": "ai-slides/scene-029.jpg"
+    },
+    {
+      "prompt": "A wide shot of a peaceful wooden kitchen interior, showing a neat display of wholesome everyday cooking ingredients on a wooden shelf, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:13,200",
+      "endTime": "00:03:22,120",
+      "path": "ai-slides/scene-030.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a pristine, uncooked chicken breast slice placed carefully on a rustic ceramic plate, surrounded by fresh herbs, bright daylight, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:22,120",
+      "endTime": "00:03:29,280",
+      "path": "ai-slides/scene-031.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cheerful elderly man out on a morning jog in a beautiful countryside lane, full of vitality and strength, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:29,280",
+      "endTime": "00:03:36,000",
+      "path": "ai-slides/scene-032.jpg"
+    },
+    {
+      "prompt": "A close-up shot of lean, perfectly sliced grilled chicken breast arranged beautifully on a warm plate with green garnishes, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:36,000",
+      "endTime": "00:03:42,799",
+      "path": "ai-slides/scene-033.jpg"
+    },
+    {
+      "prompt": "A wide shot of an elderly person doing light stretching exercises on a sunny tatami room floor, peaceful and determined expression, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:42,799",
+      "endTime": "00:03:47,959",
+      "path": "ai-slides/scene-034.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of healthy, glowing ingredients like green vegetables, beans, and lean meat arranged together, showcasing pure nutrition, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:47,959",
+      "endTime": "00:03:53,920",
+      "path": "ai-slides/scene-035.jpg"
+    },
+    {
+      "prompt": "A wide shot of a modern yet cozy nutritional center clinic room, soft bright lighting, inviting and trustworthy atmosphere, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:03:53,920",
+      "endTime": "00:04:01,000",
+      "path": "ai-slides/scene-036.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a healthy heartbeat graphic or medical symbol gently illustrated on a vintage wooden background, symbolizing heart health, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:01,000",
+      "endTime": "00:04:06,959",
+      "path": "ai-slides/scene-037.jpg"
+    },
+    {
+      "prompt": "A wide shot of a sunny living room where an elderly woman stands actively watering her indoor potted plants, radiant morning environment, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:06,959",
+      "endTime": "00:04:13,120",
+      "path": "ai-slides/scene-038.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a steaming bowl of wholesome chicken soup with fresh vegetables, comforting vapor rising, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:13,120",
+      "endTime": "00:04:19,359",
+      "path": "ai-slides/scene-039.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cozy neighborhood community center room where senior citizens are gathering happily, vibrant afternoon light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:19,359",
+      "endTime": "00:04:25,479",
+      "path": "ai-slides/scene-040.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a family chef's hands gently patting olive oil onto a chicken breast on a wooden table, preparing a tender meal, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:25,479",
+      "endTime": "00:04:31,520",
+      "path": "ai-slides/scene-041.jpg"
+    },
+    {
+      "prompt": "A wide shot of a complete, warm evening dinner setting with tenderly cooked chicken and rice, comforting home atmosphere, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:31,520",
+      "endTime": "00:04:38,560",
+      "path": "ai-slides/scene-042.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of succulent, juicy steam rising from a freshly sliced open, tenderly poached chicken piece, mouthwatering texture, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:38,560",
+      "endTime": "00:04:44,199",
+      "path": "ai-slides/scene-043.jpg"
+    },
+    {
+      "prompt": "A wide shot of a bright kitchen window with plants, a plate of soft, delicious home-cooked chicken food sitting ready on the counter, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:44,199",
+      "endTime": "00:04:52,880",
+      "path": "ai-slides/scene-044.jpg"
+    },
+    {
+      "prompt": "A close-up shot of an elderly person taking a happy, satisfied bite of a soft, perfectly cooked piece of meat, peaceful culinary joy, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:52,880",
+      "endTime": "00:04:59,000",
+      "path": "ai-slides/scene-045.jpg"
+    },
+    {
+      "prompt": "A wide shot of a steaming pot on a rustic wooden stove, colorful vegetables like carrots and green onions boiling alongside tender meat pieces, beautiful kitchen steam filling the morning air, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:04:59,000",
+      "endTime": "00:05:04,960",
+      "path": "ai-slides/scene-046.jpg"
+    },
+    {
+      "prompt": "A close-up shot of gentle hands pouring a splash of clear cooking sake from a traditional bottle onto raw meat in a small ceramic bowl, soft kitchen illumination, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:04,960",
+      "endTime": "00:05:12,440",
+      "path": "ai-slides/scene-047.jpg"
+    },
+    {
+      "prompt": "A macro shot of bite-sized, perfectly cut pieces of cooked chicken breast arranged neatly on a beautiful Japanese ceramic plate, showing juicy and soft texture, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:12,440",
+      "endTime": "00:05:18,680",
+      "path": "ai-slides/scene-048.jpg"
+    },
+    {
+      "prompt": "A wide shot of an elderly couple sitting side-by-side at a sunny dining table, enjoying a modest and healthy meal, soft sunlight filtering through the window, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:18,680",
+      "endTime": "00:05:26,919",
+      "path": "ai-slides/scene-049.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a beautifully balanced meal set, featuring a modest portion of chicken breast, a bowl of brown rice, and colorful steamed vegetables on small side dishes, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:26,919",
+      "endTime": "00:05:34,519",
+      "path": "ai-slides/scene-050.jpg"
+    },
+    {
+      "prompt": "A wide shot of a modest, serene countryside kitchen counter with humble, fresh ingredients neatly arranged, cozy and warm morning atmosphere, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:34,519",
+      "endTime": "00:05:42,119",
+      "path": "ai-slides/scene-051.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a warm, steamy chicken breast dish placed beautifully on a dark rustic plate, green herbs scattered on top, inviting steam rising gently, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:42,119",
+      "endTime": "00:05:49,720",
+      "path": "ai-slides/scene-052.jpg"
+    },
+    {
+      "prompt": "A wide shot of an elderly person walking confidently along a sunny pathway lined with lush green trees, looking healthy and full of life, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:49,720",
+      "endTime": "00:05:56,880",
+      "path": "ai-slides/scene-053.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a small, perfect brown egg resting inside a woven straw basket on a sun-drenched wooden kitchen table, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:05:56,880",
+      "endTime": "00:06:02,639",
+      "path": "ai-slides/scene-054.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cozy family kitchen filled with warm morning light, various cooking utensils and fresh ingredients scattered neatly around the counter, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:06:02,639",
+      "endTime": "00:06:08,560",
+      "path": "ai-slides/scene-055.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of a shiny, smooth egg yolk sitting perfectly inside a ceramic bowl, vibrant golden-yellow color, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:06:08,560",
+      "endTime": "00:06:14,599",
+      "path": "ai-slides/scene-056.jpg"
+    },
+    {
+      "prompt": "A wide shot of a bright dining room during lunchtime, an egg dish placed elegantly in the center of the table, welcoming house interior, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:06:14,599",
+      "endTime": "00:06:21,240",
+      "path": "ai-slides/scene-057.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of a single brown egg being gently cracked into a blue ceramic bowl, the clear white and rich golden yolk sliding out beautifully under soft morning light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:06:21,240",
+      "endTime": "00:06:35,080",
+      "path": "ai-slides/scene-058.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cheerful elderly person with dynamic energy lifting a watering can in a bright, sun-drenched greenhouse filled with colorful blooming flowers, feeling strong and vital, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:06:35,080",
+      "endTime": "00:07:00,680",
+      "path": "ai-slides/scene-059.jpg"
+    },
+    {
+      "prompt": "A close-up shot of an elderly person's steady feet in comfortable walking shoes stepping firmly onto a beautiful, winding stone path in a village, surrounded by wild summer grasses, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:07:00,680",
+      "endTime": "00:07:22,639",
+      "path": "ai-slides/scene-060.jpg"
+    },
+    {
+      "prompt": "A wide shot of a clean, wooden dining table showing a simple meal layout featuring a soft boiled egg slice next to vibrant green broccoli and a steaming bowl of clear soup, morning rays filling the room, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:07:22,639",
+      "endTime": "00:07:48,199",
+      "path": "ai-slides/scene-061.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of a freshly boiled egg being gently sliced into perfect halves with a fine thread, revealing the smooth texture of the perfectly set golden yolk, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:07:48,199",
+      "endTime": "00:08:15,159",
+      "path": "ai-slides/scene-062.jpg"
+    },
+    {
+      "prompt": "A wide shot of an elderly woman standing contentedly on her traditional Japanese wooden veranda, gazing out at a serene landscape of rolling hills under a gentle afternoon sky, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:08:15,159",
+      "endTime": "00:08:50,680",
+      "path": "ai-slides/scene-063.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a beautifully grilled blue mackerel fish (saba) with its skin perfectly crisped and patterned, placed on a long, dark ceramic plate with a slice of white radish, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:08:50,680",
+      "endTime": "00:09:18,440",
+      "path": "ai-slides/scene-064.jpg"
+    },
+    {
+      "prompt": "A wide shot of a deep blue ocean scene with schools of fish swimming beneath glistening sunbeams piercing the water surface, creating a peaceful marine ecosystem view, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:09:18,440",
+      "endTime": "00:09:46,120",
+      "path": "ai-slides/scene-065.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a healthy traditional lunch spread consisting of a rich mackerel fillet, a bowl of steaming white rice, and fresh green tea in a clay cup on a woven mat, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:09:46,120",
+      "endTime": "00:10:15,839",
+      "path": "ai-slides/scene-066.jpg"
+    },
+    {
+      "prompt": "A wide shot of a cozy interior kitchen where an elderly home cook is preparing a traditional fish dish, steam gently swirling toward an open window showing autumn trees outside, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:10:15,839",
+      "endTime": "00:10:43,872",
+      "path": "ai-slides/scene-067.jpg"
+    },
+    {
+      "prompt": "A close-up macro shot of healthy red blood cells moving smoothly through a glowing, warm-lit pathway, symbolizing strong circulation and pure bodily health, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:10:43,872",
+      "endTime": "00:11:09,480",
+      "path": "ai-slides/scene-068.jpg"
+    },
+    {
+      "prompt": "A wide shot of a happy family dining scene where grandparents and children are sitting around a vibrant, food-filled table, sharing laughs under a warm hanging lamp, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:11:09,480",
+      "endTime": "00:11:20,920",
+      "path": "ai-slides/scene-069.jpg"
+    },
+    {
+      "prompt": "A wide shot of a serene, beautiful Japanese countryside village during a peaceful sunset, soft gold and purple hues filling the vast sky, cozy houses nestled among lush green fields, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:11:20,920",
+      "endTime": "00:12:02,519",
+      "path": "ai-slides/scene-070.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a smooth ceramic pitcher pouring rich, fresh white soy milk into a matching rustic clay cup, steam rising gently under the cozy kitchen lighting, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:12:02,519",
+      "endTime": "00:12:32,360",
+      "path": "ai-slides/scene-071.jpg"
+    },
+    {
+      "prompt": "A wide shot of a sunlit traditional tatami room, an elderly gentleman sitting comfortably by the open sliding door, holding a warm cup of soy milk and looking out at his garden, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:12:32,360",
+      "endTime": "00:13:27,240",
+      "path": "ai-slides/scene-072.jpg"
+    },
+    {
+      "prompt": "A macro shot of fresh yellow soybeans scattered on a textured fabric cloth next to a glass bottle filled with thick soy milk, detailed light reflection, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:13:27,240",
+      "endTime": "00:14:22,959",
+      "path": "ai-slides/scene-073.jpg"
+    },
+    {
+      "prompt": "A wide shot of a serene living room at golden hour, an elderly character sitting straight with a calm expression, closing eyes and gently placing hands on the chest, a peaceful relaxation routine, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:14:22,959",
+      "endTime": "00:15:15,320",
+      "path": "ai-slides/scene-074.jpg"
+    },
+    {
+      "prompt": "A close-up shot of a grandmother smiling warmly, looking directly ahead with deep gratitude, soft wrinkles framing her bright eyes under the gentle evening light, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:15:15,320",
+      "endTime": "00:15:41,160",
+      "path": "ai-slides/scene-075.jpg"
+    },
+    {
+      "prompt": "A wide shot of a happy family walking together along a beautiful field path during twilight, fireflies starting to glow around them, creating a magical, loving conclusion, masterpiece, highly detailed, Studio Ghibli style, traditional cel-shaded animation, soft natural colors, warm lighting, detailed hand-drawn background, nostalgic atmosphere, classic movie feel, peaceful --niji 6 --style expressive.",
+      "startTime": "00:15:41,160",
+      "endTime": "00:15:58,600",
+      "path": "ai-slides/scene-076.jpg"
+    }
+  ]
+}

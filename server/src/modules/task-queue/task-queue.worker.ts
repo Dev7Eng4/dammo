@@ -25,6 +25,7 @@ async function processAddSource(job: TaskJob): Promise<unknown> {
   const item = await sourceChannelsService.create({
     url: payload.url,
     purpose: payload.purpose as SourcePurpose,
+    niche: payload.niche,
   });
   updateProgress(job.id, 80, 'Saving videos');
   return { item };

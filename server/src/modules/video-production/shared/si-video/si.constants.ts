@@ -42,6 +42,17 @@ export const SI_SUBTITLE_BOX_OPACITY = 0.5;
 export const SI_SUBTITLE_CHAR_SPACING = 0;
 export const SI_SUBTITLE_FONT_ASS_NAME = 'Noto Sans JP Black';
 
+/** Top-left disclaimer overlay (first N seconds of assembled video). */
+export const SI_DISCLAIMER_DURATION_SEC = 5;
+export const SI_DISCLAIMER_FONT_SIZE = 20;
+export const SI_DISCLAIMER_MARGIN_LEFT_PX = 20;
+export const SI_DISCLAIMER_MARGIN_TOP_PX = 20;
+export const SI_DISCLAIMER_OPACITY = 0.9;
+/** #D9D9D9 @ SI_DISCLAIMER_OPACITY → ASS &HAABBGGRR (alpha = round((1-opacity)*255)=0x19). */
+export const SI_DISCLAIMER_PRIMARY_COLOR = '&H19D9D9D9';
+export const SI_DISCLAIMER_TEXT =
+  '【免責事項】\\N本動画の情報は一般知識の共有であり、医学的アドバイスではありません。健康状態や摂取については、必ず医師にご相談ください。';
+
 export const SI_AUDIO_SPEED_MIN = 0.95;
 export const SI_AUDIO_SPEED_MAX = 0.98;
 

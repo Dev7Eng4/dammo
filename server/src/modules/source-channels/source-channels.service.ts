@@ -12,8 +12,12 @@ import {
 } from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 import { sourceChannelsRepository } from './source-channels.repository.js';
-import { getSourceChannelUsage } from './source-channel-usage.js';
+import {
+  buildYoutubeChannelUsageCountMap,
+  getSourceChannelUsage,
+} from './source-channel-usage.js';
 import { sourceVideosRepository } from './source-videos.repository.js';
+import { nichesService } from '../niches/niches.service.js';
 import type {
   CreateSourceChannelInput,
   SourceChannel,
@@ -129,7 +133,16 @@ export class SourceChannelsService {
       risk,
       query,
     );
-    return paginate(filtered, page, limit);
+    const result = paginate(filtered, page, limit);
+    const usageCounts = buildYoutubeChannelUsageCountMap();
+
+    return {
+      ...result,
+      items: result.items.map((source) => ({
+        ...source,
+        youtubeChannelUsageCount: usageCounts.get(source.id) ?? 0,
+      })),
+    };
   }
 
   getById(id: string): SourceChannel {
@@ -137,7 +150,11 @@ export class SourceChannelsService {
     if (!source) {
       throw new AppError('Source channel not found', 404, 'NOT_FOUND');
     }
-    return source;
+    const usageCounts = buildYoutubeChannelUsageCountMap();
+    return {
+      ...source,
+      youtubeChannelUsageCount: usageCounts.get(source.id) ?? 0,
+    };
   }
 
   getVideos(
@@ -175,7 +192,6 @@ export class SourceChannelsService {
         name: metadata.name,
         url: handle,
         fullUrl: `https://youtube.com/${handle}`,
-        niche: metadata.niche,
         videoCount: metadata.videoCount,
         subscriberCount: metadata.subscriberCount,
         description: metadata.description,
@@ -200,6 +216,14 @@ export class SourceChannelsService {
       throw new AppError('URL is required');
     }
 
+    if (!input.niche.trim()) {
+      throw new AppError('Niche is required');
+    }
+
+    if (!nichesService.exists(input.niche)) {
+      throw new AppError('Niche not found', 400, 'INVALID_NICHE');
+    }
+
     const { platform, url, fullUrl } = parseSourceUrl(input.url);
     const canonicalUrl = canonicalizeSourceUrl(fullUrl);
 
@@ -212,7 +236,6 @@ export class SourceChannelsService {
 
     const id = generateId();
     let name: string;
-    let niche: string;
     let videoCount: number | undefined;
     let subscriberCount: number | undefined;
     let description: string | undefined;
@@ -233,7 +256,6 @@ export class SourceChannelsService {
         }
 
         name = metadata.name;
-        niche = metadata.niche;
         videoCount = metadata.videoCount;
         subscriberCount = metadata.subscriberCount;
         description = metadata.description;
@@ -259,7 +281,6 @@ export class SourceChannelsService {
       }
     } else {
       name = buildMinimalName(url, platform);
-      niche = 'Unknown';
     }
 
     const source: SourceChannel = {
@@ -268,7 +289,7 @@ export class SourceChannelsService {
       name,
       url: displayUrl,
       fullUrl: storedFullUrl,
-      niche,
+      niche: input.niche,
       purpose: input.purpose,
       riskLevel: 'low',
       mappedOwnedChannels: [],

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
+import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
+import { resolveNicheLabel } from '../../utils/niche';
 import { PlatformIcon } from '../mail-accounts/PlatformIcon';
 import { Button } from '../ui';
 import { PurposePill } from './PurposePill';
@@ -7,12 +9,19 @@ import { RiskPill } from './RiskPill';
 
 interface SourceChannelDetailHeaderProps {
   source: SourceChannel;
+  niches?: Niche[];
   refreshing?: boolean;
   refreshError?: string | null;
   onRefresh?: () => void;
 }
 
-export function SourceChannelDetailHeader({ source, refreshing, refreshError, onRefresh }: SourceChannelDetailHeaderProps) {
+export function SourceChannelDetailHeader({
+  source,
+  niches = [],
+  refreshing,
+  refreshError,
+  onRefresh,
+}: SourceChannelDetailHeaderProps) {
   return (
     <div className='space-y-4'>
       <Link to='/source-channels' className='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200'>
@@ -37,7 +46,7 @@ export function SourceChannelDetailHeader({ source, refreshing, refreshError, on
             >
               {source.fullUrl.replace('https://', '')}
             </a>
-            <p className='mt-1 text-sm text-neutral-500'>{source.niche}</p>
+            <p className='mt-1 text-sm text-neutral-500'>{resolveNicheLabel(source.niche, niches)}</p>
           </div>
         </div>
 

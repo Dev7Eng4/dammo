@@ -91,7 +91,7 @@ async function main() {
   if (options.profileId) {
     console.log(`Flow profile id: ${options.profileId}`);
   }
-  console.log('\nGenerating thumbnail via Flow (thumbnail_default)...\n');
+  console.log('\nGenerating thumbnail via Flow (recreate)...\n');
 
   const result = await runDefaultFlowThumbnail(options.workDir, options.language, {
     referenceImagePath: options.referenceImagePath,

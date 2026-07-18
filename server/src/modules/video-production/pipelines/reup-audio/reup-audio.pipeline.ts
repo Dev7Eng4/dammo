@@ -19,10 +19,9 @@ import { runMetadata } from '../../shared/meta/run-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
 import { runThumbnailVisualGeneration } from '../../shared/thumbnail/hero-image.js';
 import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
-import { runDirectFlowThumbnail } from '../../shared/thumbnail/direct-flow-thumbnail.js';
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
-import { isHorizontalMultiStepStyle, resolveThumbnailStyleKey } from '../../../prompts/thumbnail-styles.js';
+import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
 import { assembleReupAiSlideshowVideo, generateAiVideoImages, generateAiSceneSlideImages } from '../../shared/ai-video/index.js';
@@ -96,7 +95,7 @@ function createStepTimer(taskJobId: string | undefined, videoId: string): Pick<T
 async function resolveReupAudioDownload(
   task: ReupVideoTask,
   language: ChannelLanguage,
-  taskJobId?: string
+  taskJobId?: string,
 ): Promise<ReupAudioDownloadResult> {
   const outputDir = mediaDownloadDir('youtube', task.videoId);
 
@@ -131,7 +130,7 @@ async function resolveReupAudioDownload(
     taskQueueRepository.appendLogMessage(
       taskJobId,
       'info',
-      `Downloading thumbnail + audio + transcript (${language}) for source video ${task.videoId}...`
+      `Downloading thumbnail + audio + transcript (${language}) for source video ${task.videoId}...`,
     );
   }
 
@@ -142,7 +141,7 @@ async function resolveReupVideoDownload(
   task: ReupVideoTask,
   pipelineType: ProductionDestination['pipelineType'],
   language: ChannelLanguage,
-  taskJobId?: string
+  taskJobId?: string,
 ): Promise<ReupDownloadResult> {
   if (task.sourceStatus === 'Downloaded') {
     const outputDir = mediaDownloadDir('youtube', task.videoId);
@@ -358,7 +357,7 @@ export class ReupAudioPipeline {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Metadata on ${profileLabel} retry (attempt ${progress.attempt})...`
+                              `Metadata on ${profileLabel} retry (attempt ${progress.attempt})...`,
                             );
                             return;
                           }
@@ -366,12 +365,12 @@ export class ReupAudioPipeline {
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `Metadata on ${profileLabel} (attempt ${progress.attempt})...`
+                            `Metadata on ${profileLabel} (attempt ${progress.attempt})...`,
                           );
                         }
                       : undefined,
                   }),
-                stepTimer
+                stepTimer,
               );
 
               if (taskJobId) {
@@ -381,30 +380,33 @@ export class ReupAudioPipeline {
                   'ok',
                   `Metadata done → ${videoMetaPath}, title: ${videoMetaOutput.metadata.title}, niche: ${
                     videoMetaOutput.detected_niche ?? 'n/a'
-                  }`
+                  }`,
                 );
               }
             }
 
-            if (videoType === 'si') {
+            if (videoType === 'si' || videoType === 'ai') {
               if (!videoMetaOutput) {
-                throw new AppError('Metadata is required for SI video', 400, 'INVALID_INPUT');
+                throw new AppError('Metadata is required for thumbnail generation', 400, 'INVALID_INPUT');
               }
 
               const workDir = jaWorkDir;
-              const styleKey = resolveThumbnailStyleKey(destination.thumbnailStyleKey, destination.language);
-              let useHorizontalFlow = false;
+              const styleKey = destination.thumbnailStyleKey?.trim();
+              const useHorizontalFlow = styleKey
+                ? isHorizontalMultiStepStyle(styleKey, destination.language)
+                : false;
 
-              if (styleKey === 'thumbnail_default') {
+              if (styleKey && !useHorizontalFlow) {
                 if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating thumbnail via Flow (thumbnail_default)...');
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', `Creating thumbnail via Flow (${styleKey})...`);
                 }
 
                 try {
                   const defaultResult = await timedStep(
-                    'Thumbnail Flow (thumbnail_default)',
+                    `Thumbnail Flow (${styleKey})`,
                     () =>
                       runDefaultFlowThumbnail(workDir, destination.language, {
+                        promptKey: styleKey,
                         referenceImagePath: downloaded.thumbnailPath,
                         onProgress: taskJobId
                           ? progress => {
@@ -413,19 +415,19 @@ export class ReupAudioPipeline {
                                 taskQueueRepository.appendLogMessage(
                                   taskJobId,
                                   'info',
-                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`
+                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
                                 );
                                 return;
                               }
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`
+                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
                               );
                             }
                           : undefined,
                       }),
-                    stepTimer
+                    stepTimer,
                   );
                   reupThumbnailPath = defaultResult.thumbnailPath;
 
@@ -440,9 +442,8 @@ export class ReupAudioPipeline {
                     taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail skipped: ${message}`);
                   }
                 }
-              } else if (hasLegacyVisualMeta(videoMetaOutput)) {
+              } else if (useHorizontalFlow && hasLegacyVisualMeta(videoMetaOutput)) {
                 const metaOutput: MetaStep3Output = videoMetaOutput;
-                useHorizontalFlow = styleKey ? isHorizontalMultiStepStyle(styleKey, destination.language) : false;
 
                 if (useHorizontalFlow && styleKey) {
                   if (taskJobId) {
@@ -463,7 +464,7 @@ export class ReupAudioPipeline {
                                   taskQueueRepository.appendLogMessage(
                                     taskJobId,
                                     'info',
-                                    `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`
+                                    `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
                                   );
                                   return;
                                 }
@@ -471,12 +472,12 @@ export class ReupAudioPipeline {
                                 taskQueueRepository.appendLogMessage(
                                   taskJobId,
                                   'info',
-                                  `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`
+                                  `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
                                 );
                               }
                             : undefined,
                         }),
-                      stepTimer
+                      stepTimer,
                     );
 
                     if (taskJobId) {
@@ -488,50 +489,6 @@ export class ReupAudioPipeline {
                     console.warn(`[reup-video] thumbnail LLM skipped (non-fatal): ${message}`);
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail LLM skipped: ${message}`);
-                    }
-                  }
-                } else if (styleKey) {
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Creating thumbnail via Flow (${styleKey})...`);
-                  }
-
-                  try {
-                    const directResult = await timedStep(
-                      `Thumbnail Flow (${styleKey})`,
-                      () =>
-                        runDirectFlowThumbnail(metaOutput, destination.language, styleKey, workDir, {
-                          onProgress: taskJobId
-                            ? progress => {
-                                const profileLabel = progress.profileName;
-                                if (progress.status === 'retry') {
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`
-                                  );
-                                  return;
-                                }
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer
-                    );
-                    reupThumbnailPath = directResult.thumbnailPath;
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Thumbnail saved → thumbnail.jpg');
-                    }
-                  } catch (err) {
-                    const message =
-                      err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
-                    console.warn(`[reup-video] direct flow thumbnail skipped (non-fatal): ${message}`);
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail skipped: ${message}`);
                     }
                   }
                 }
@@ -559,20 +516,20 @@ export class ReupAudioPipeline {
                                     taskQueueRepository.appendLogMessage(
                                       taskJobId,
                                       'info',
-                                      `Thumbnail visual on ${profileLabel} retry (attempt ${progress.attempt})...`
+                                      `Thumbnail visual on ${profileLabel} retry (attempt ${progress.attempt})...`,
                                     );
                                     return;
                                   }
                                   taskQueueRepository.appendLogMessage(
                                     taskJobId,
                                     'info',
-                                    `Thumbnail visual on ${profileLabel} (attempt ${progress.attempt})...`
+                                    `Thumbnail visual on ${profileLabel} (attempt ${progress.attempt})...`,
                                   );
                                 }
                               : undefined,
-                          }
+                          },
                         ),
-                      stepTimer
+                      stepTimer,
                     );
                     thumbnailVisualPath = visualResult.thumbnailVisualPath;
 
@@ -609,7 +566,7 @@ export class ReupAudioPipeline {
                             },
                             outPath: compositeOutPath,
                           }),
-                        stepTimer
+                        stepTimer,
                       );
 
                       if (taskJobId) {
@@ -627,18 +584,15 @@ export class ReupAudioPipeline {
                 }
               }
 
-              if (!videoMetaOutput) {
+              if (videoType === 'si') {
+                if (!videoMetaOutput) {
                 throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
               }
 
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
               if (siBackgroundImage !== 'one_image') {
                 if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    `Skipping general image (backgroundImage=${siBackgroundImage})`,
-                  );
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipping general image (backgroundImage=${siBackgroundImage})`);
                 }
                 console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
               } else {
@@ -663,19 +617,19 @@ export class ReupAudioPipeline {
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `General image on ${profileLabel} retry (attempt ${progress.attempt})...`
+                                `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
                               );
                               return;
                             }
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `General image on ${profileLabel} (attempt ${progress.attempt})...`
+                              `General image on ${profileLabel} (attempt ${progress.attempt})...`,
                             );
                           }
                         : undefined,
                     }),
-                  stepTimer
+                  stepTimer,
                 );
                 heroImagePath = heroResult.heroImagePath;
 
@@ -685,6 +639,7 @@ export class ReupAudioPipeline {
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
                 }
+              }
               }
             }
           }
@@ -716,7 +671,7 @@ export class ReupAudioPipeline {
                         taskQueueRepository.appendLogMessage(
                           taskJobId,
                           'info',
-                          `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`
+                          `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`,
                         )
                     : undefined,
                 }),
@@ -729,17 +684,13 @@ export class ReupAudioPipeline {
               taskQueueRepository.appendLogMessage(
                 taskJobId,
                 'ok',
-                `AI scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`
+                `AI scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`,
               );
             }
 
             const imageProvider = promptsSettingsService.get().defaultImageProvider;
             if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'info',
-                `Generating AI scene images via ${imageProvider}...`,
-              );
+              taskQueueRepository.appendLogMessage(taskJobId, 'info', `Generating AI scene images via ${imageProvider}...`);
             }
 
             const aiSlideResult = await timedStep(
@@ -762,9 +713,7 @@ export class ReupAudioPipeline {
                         }
 
                         const batchLabel =
-                          progress.batchIndex && progress.totalBatches
-                            ? ` batch ${progress.batchIndex}/${progress.totalBatches}`
-                            : '';
+                          progress.batchIndex && progress.totalBatches ? ` batch ${progress.batchIndex}/${progress.totalBatches}` : '';
                         taskQueueRepository.appendLogMessage(
                           taskJobId,
                           'info',
@@ -788,6 +737,9 @@ export class ReupAudioPipeline {
           }
 
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
+            // Temporary flag — wire to channel config later.
+            const showDisclaim = false;
+
             if (videoType === 'si') {
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
               const needsCenterImage = siBackgroundImage === 'one_image';
@@ -797,16 +749,13 @@ export class ReupAudioPipeline {
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped: hero image missing');
                 }
-              } else if (
-                destination.backgroundFootageMode !== 'local' &&
-                !destination.backgroundFootageSources?.length
-              ) {
+              } else if (destination.backgroundFootageMode !== 'local' && !destination.backgroundFootageSources?.length) {
                 console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(
                     taskJobId,
                     'info',
-                    'SI video assembly skipped: no backgroundFootageSources configured on channel'
+                    'SI video assembly skipped: no backgroundFootageSources configured on channel',
                   );
                 }
               } else {
@@ -831,6 +780,7 @@ export class ReupAudioPipeline {
                   language: destination.language,
                   captionStyleKey: destination.captionStyleKey,
                   showAudioBar: destination.showAudioBar,
+                  showDisclaim,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                 });
                 primaryOutputPath = reupVideoPath;
@@ -866,6 +816,7 @@ export class ReupAudioPipeline {
                       subtitlePath: subtitleForAssembly!,
                       language: destination.language,
                       captionStyleKey: destination.captionStyleKey,
+                      showDisclaim,
                       onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                     }),
                   stepTimer,
@@ -913,7 +864,7 @@ export class ReupAudioPipeline {
           const downloaded = await timedStep(
             'Tải source video',
             () => resolveReupVideoDownload(task, destination.pipelineType, destination.language, taskJobId),
-            stepTimer
+            stepTimer,
           );
 
           if (taskJobId) {
@@ -936,7 +887,7 @@ export class ReupAudioPipeline {
         const destDir = await timedStep(
           'Di chuyển thư mục video',
           () => moveVideoFolderToDestination('youtube', outputItem.youtubeVideoId, expectedDestDir),
-          stepTimer
+          stepTimer,
         );
         outputItem = remapOutputItemPaths(outputItem, sourceDir, destDir);
 

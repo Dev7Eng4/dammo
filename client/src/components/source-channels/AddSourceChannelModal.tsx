@@ -1,6 +1,9 @@
 import { Controller, useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { fetchNiches } from '../../api/niches';
 import { SOURCE_PURPOSE_OPTIONS } from './PurposePill';
 import { Button, Modal, Select } from '../ui';
+import type { Niche } from '../../types/niche';
 import type { AddSourceChannelFormValues, CreateSourceChannelPayload } from '../../types/sourceChannel';
 
 interface AddSourceChannelModalProps {
@@ -12,9 +15,14 @@ interface AddSourceChannelModalProps {
 const defaultValues: AddSourceChannelFormValues = {
   url: '',
   purpose: '',
+  niche: '',
 };
 
 export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannelModalProps) {
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [nichesLoading, setNichesLoading] = useState(false);
+  const [nichesError, setNichesError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -25,13 +33,35 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     defaultValues,
   });
 
+  useEffect(() => {
+    if (!open) return;
+
+    const controller = new AbortController();
+    setNichesLoading(true);
+    setNichesError(null);
+
+    fetchNiches({ signal: controller.signal })
+      .then((data) => {
+        setNiches(data.items);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setNichesError(err instanceof Error ? err.message : 'Failed to load niches');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setNichesLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [open]);
+
   function handleClose() {
     reset(defaultValues);
     onClose();
   }
 
   function onSubmit(values: AddSourceChannelFormValues) {
-    if (!values.purpose) return;
+    if (!values.purpose || !values.niche) return;
 
     const urls = values.url
       .split('\n')
@@ -43,12 +73,18 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     const payloads: CreateSourceChannelPayload[] = urls.map((url) => ({
       url,
       purpose: values.purpose as CreateSourceChannelPayload['purpose'],
+      niche: values.niche,
     }));
 
     reset(defaultValues);
     onAdd(payloads);
     onClose();
   }
+
+  const nicheOptions = niches.map((item) => ({
+    value: item.key,
+    label: item.label,
+  }));
 
   return (
     <Modal
@@ -104,6 +140,38 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
             )}
           />
           {errors.purpose ? <p className="mt-1 text-xs text-danger">{errors.purpose.message}</p> : null}
+        </div>
+
+        <div>
+          <label htmlFor="source-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            Niche
+          </label>
+          <Controller
+            name="niche"
+            control={control}
+            rules={{ required: 'Niche is required' }}
+            render={({ field }) => (
+              <Select
+                id="source-niche"
+                options={nicheOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  nichesLoading
+                    ? 'Loading niches...'
+                    : nicheOptions.length === 0
+                      ? 'No niches yet — add one first'
+                      : 'Select niche'
+                }
+                disabled={nichesLoading || nicheOptions.length === 0}
+                className="w-full"
+                triggerClassName="h-10 w-full min-w-0 rounded-lg px-3 py-0"
+              />
+            )}
+          />
+          {errors.niche ? <p className="mt-1 text-xs text-danger">{errors.niche.message}</p> : null}
+          {nichesError ? <p className="mt-1 text-xs text-danger">{nichesError}</p> : null}
         </div>
 
         <p className="text-xs text-neutral-500">

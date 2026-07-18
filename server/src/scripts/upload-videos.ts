@@ -14,7 +14,9 @@ function listReupChannelIds(): string[] {
 function logEligibleUploadJobs(channelIds: string[]): void {
   for (const channelId of channelIds) {
     const channel = youtubeChannelsRepository.findById(channelId);
-    const jobs = listUploadJobs(channelId);
+    const jobs = listUploadJobs(channelId, {
+      allowOldThumbnail: !channel?.thumbnailStyleKey?.trim(),
+    });
     const label = channel ? `${channel.name} (${channel.handle})` : channelId;
     console.log(`  ${label}: ${jobs.length} video(s) ready to upload`);
   }

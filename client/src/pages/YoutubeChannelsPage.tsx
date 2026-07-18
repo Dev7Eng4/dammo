@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
 import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
@@ -9,6 +10,7 @@ import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeC
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
+import type { Niche } from '../types/niche';
 import type { YoutubeChannel, YoutubeChannelStats, YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../types/youtubeChannel';
 import type { SourceChannel } from '../types/sourceChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
@@ -29,6 +31,7 @@ export function YoutubeChannelsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [sources, setSources] = useState<SourceChannel[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -103,6 +106,16 @@ export function YoutubeChannelsPage() {
     },
     [channelsRefreshKey]
   );
+
+  useAbortableEffect(async signal => {
+    try {
+      const data = await fetchNiches({ signal });
+      setNiches(data.items);
+    } catch {
+      if (signal.aborted) return;
+      setNiches([]);
+    }
+  }, [channelsRefreshKey]);
 
   function clearSelection() {
     setSelectedIds(new Set());
@@ -279,6 +292,7 @@ export function YoutubeChannelsPage() {
             <YoutubeChannelsTable
               channels={list.items}
               sources={sources}
+              niches={niches}
               selectedIds={selectedIds}
               loading={list.loading}
               onSelect={handleSelect}

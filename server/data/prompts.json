@@ -1,6 +1,17 @@
 {
   "prompts": [
     {
+      "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
+      "key": "remove_logo",
+      "language": "ja",
+      "name": "Remove Logo",
+      "category": "thumbnail",
+      "outputType": "image",
+      "useReferenceImage": true,
+      "createdAt": "2026-07-18T06:38:33.017Z",
+      "updatedAt": "2026-07-18T06:38:33.017Z"
+    },
+    {
       "id": "8050ea1f-30d7-4889-ae82-dc5b16b8bc0c",
       "key": "video_image",
       "language": "ja",
@@ -25,9 +36,9 @@
     },
     {
       "id": "a55b6634-4968-4940-8acb-233c98880d1e",
-      "key": "thumbnail_default",
+      "key": "recreate",
       "language": "ja",
-      "name": "Default",
+      "name": "Recreate",
       "category": "thumbnail",
       "outputType": "image",
       "useReferenceImage": true,

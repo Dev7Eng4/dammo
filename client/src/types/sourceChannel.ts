@@ -50,6 +50,8 @@ export interface SourceChannel {
   description?: string;
   channelId?: string;
   metadataFetchedAt?: string;
+  /** Derived: number of YouTube channels using this source (reup and/or footage). */
+  youtubeChannelUsageCount?: number;
 }
 
 export type SourceVideoStatus = 'Downloaded';
@@ -87,6 +89,7 @@ export type SourceVideoDurationFilter = 'all' | 'under_8m' | '8m_30m' | '30m_60m
 export interface CreateSourceChannelPayload {
   url: string;
   purpose: SourcePurpose;
+  niche: string;
 }
 
 export interface UpdateSourceChannelPayload {
@@ -97,4 +100,5 @@ export interface UpdateSourceChannelPayload {
 export interface AddSourceChannelFormValues {
   url: string;
   purpose: SourcePurpose | '';
+  niche: string;
 }

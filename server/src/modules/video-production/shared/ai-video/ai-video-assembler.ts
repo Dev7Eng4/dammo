@@ -91,7 +91,7 @@ function padSlidesToAudioDuration(slides: SlideSpec[], audioDurationSec: number)
 export async function assembleReupAiSlideshowVideo(
   input: AssembleReupAiSlideshowVideoInput,
 ): Promise<string> {
-  const { workDir, scenes, audioPath, subtitlePath, language, captionStyleKey, onLog } = input;
+  const { workDir, scenes, audioPath, subtitlePath, language, captionStyleKey, showDisclaim = false, onLog } = input;
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
@@ -156,6 +156,7 @@ export async function assembleReupAiSlideshowVideo(
     captionStyleKey: resolvedCaptionStyleKey,
     japaneseStyle: useJaSubtitleStyle,
     fontFile: assets.fontPath,
+    showDisclaim,
   });
   const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
   const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);

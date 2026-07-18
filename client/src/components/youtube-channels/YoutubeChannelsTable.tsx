@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import type { Niche } from '../../types/niche';
 import {
   formatChannelLanguageLabel,
   YOUTUBE_CHANNEL_TYPE_LABELS,
@@ -6,6 +7,7 @@ import {
   type YoutubeChannel,
 } from '../../types/youtubeChannel';
 import type { SourceChannel } from '../../types/sourceChannel';
+import { resolveNicheLabel } from '../../utils/niche';
 import { formatChannelSources } from '../../utils/youtubeChannel';
 import { DataTable } from '../ui';
 import { ChannelStatusPill } from './ChannelStatusPill';
@@ -13,6 +15,7 @@ import { ChannelStatusPill } from './ChannelStatusPill';
 interface YoutubeChannelsTableProps {
   channels: YoutubeChannel[];
   sources: SourceChannel[];
+  niches?: Niche[];
   selectedIds: Set<string>;
   loading?: boolean;
   onSelect: (id: string) => void;
@@ -41,6 +44,7 @@ function SourceCell({ value }: { value: string }) {
 export function YoutubeChannelsTable({
   channels,
   sources,
+  niches = [],
   selectedIds,
   loading,
   onSelect,
@@ -93,7 +97,8 @@ export function YoutubeChannelsTable({
       header: 'NICHE / LANG',
       cell: ({ row }) => (
         <span className="text-neutral-400">
-          {row.original.niche} ({formatChannelLanguageLabel(row.original.language)})
+          {resolveNicheLabel(row.original.niche, niches) || '—'} (
+          {formatChannelLanguageLabel(row.original.language)})
         </span>
       ),
     },

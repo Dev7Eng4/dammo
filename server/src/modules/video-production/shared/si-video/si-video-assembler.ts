@@ -74,6 +74,8 @@ export interface AssembleReupSiVideoInput {
   backgroundFootageSourceIds?: string[];
   language: string;
   captionStyleKey?: CaptionStyleKey;
+  /** Temporary: burn top-left disclaimer for the first N seconds. */
+  showDisclaim?: boolean;
   onLog?: (msg: string) => void;
   onFfmpegProgress?: (progress: FfmpegProgress) => void;
 }
@@ -89,6 +91,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     backgroundFootageSourceIds = [],
     language,
     captionStyleKey,
+    showDisclaim = false,
     onLog,
     onFfmpegProgress,
   } = input;
@@ -261,6 +264,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         captionStyleKey: resolvedCaptionStyleKey,
         japaneseStyle: useJaSubtitleStyle,
         fontFile: assets.fontPath,
+        showDisclaim,
       });
       const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
       const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);

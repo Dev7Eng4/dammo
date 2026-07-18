@@ -8,11 +8,12 @@ import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 import type { FlowProfileOptions, HeroImageProgress } from './hero-image.js';
 
-const DEFAULT_PROMPT_KEY = 'thumbnail_default';
+const DEFAULT_PROMPT_KEY = 'recreate';
 const OLD_THUMBNAIL_FILENAME = 'old-thumbnail.jpg';
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
 export interface RunDefaultFlowThumbnailOptions extends FlowProfileOptions {
+  promptKey?: string;
   referenceImagePath?: string;
   onProgress?: (progress: HeroImageProgress) => void;
 }
@@ -38,6 +39,7 @@ export async function runDefaultFlowThumbnail(
   language: ChannelLanguage,
   options?: RunDefaultFlowThumbnailOptions,
 ): Promise<DefaultFlowThumbnailResult> {
+  const promptKey = options?.promptKey?.trim() || DEFAULT_PROMPT_KEY;
   const referenceImagePath = options?.referenceImagePath ?? path.join(workDir, OLD_THUMBNAIL_FILENAME);
 
   try {
@@ -46,15 +48,15 @@ export async function runDefaultFlowThumbnail(
     throw new AppError(`Reference thumbnail not found: ${referenceImagePath}`, 400, 'INVALID_INPUT');
   }
 
-  const promptUsed = await executePromptTemplate(language, DEFAULT_PROMPT_KEY, []);
+  const promptUsed = await executePromptTemplate(language, promptKey, []);
   if (!promptUsed.trim()) {
-    throw new AppError(`Empty prompt for thumbnail style ${DEFAULT_PROMPT_KEY}`, 500, 'PROMPT_EMPTY');
+    throw new AppError(`Empty prompt for thumbnail style ${promptKey}`, 500, 'PROMPT_EMPTY');
   }
 
   const profile = resolveFlowProfile(options);
   const debugScreenshotPath = path.join(workDir, 'flow-debug.png');
 
-  console.log(`[default-flow-thumbnail] Mở Chrome main profile ${profile.name} cho style ${DEFAULT_PROMPT_KEY}...`);
+  console.log(`[default-flow-thumbnail] Mở Chrome main profile ${profile.name} cho style ${promptKey}...`);
 
   try {
     const { savedPath, response } = await runWithFlowRetries({
@@ -63,8 +65,7 @@ export async function runDefaultFlowThumbnail(
       prompt: promptUsed,
       logPrefix: '[default-flow-thumbnail]',
       failureCode: 'DEFAULT_FLOW_THUMBNAIL_FAILED',
-      buildFailureMessage: reason =>
-        `Default flow thumbnail failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
+      buildFailureMessage: reason => `Default flow thumbnail failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
       generateOptions: {
         outputDir: workDir,
         fileName: THUMBNAIL_FILENAME,

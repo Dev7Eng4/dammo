@@ -37,6 +37,30 @@ export function findYoutubeChannelsUsingSource(sourceId: string): ChannelUsingSo
     .map((channel) => ({ id: channel.id, name: channel.name, platform: 'youtube' as const }));
 }
 
+/** Build sourceId -> unique YouTube channel count in a single pass. */
+export function buildYoutubeChannelUsageCountMap(): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const channel of youtubeChannelsRepository.findAll()) {
+    const sourceIds = new Set<string>();
+
+    for (const sourceId of channel.sourceChannels) {
+      if (sourceId) sourceIds.add(sourceId);
+    }
+    for (const sourceId of channel.backgroundFootageSources ?? []) {
+      if (sourceId) sourceIds.add(sourceId);
+    }
+    if (channel.reupVideoSourceId) sourceIds.add(channel.reupVideoSourceId);
+    if (channel.reupAudioSourceId) sourceIds.add(channel.reupAudioSourceId);
+
+    for (const sourceId of sourceIds) {
+      counts.set(sourceId, (counts.get(sourceId) ?? 0) + 1);
+    }
+  }
+
+  return counts;
+}
+
 export function findTiktokChannelsUsingSource(_sourceId: string): ChannelUsingSource[] {
   return [];
 }

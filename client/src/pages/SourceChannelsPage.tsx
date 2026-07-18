@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchNiches } from '../api/niches';
 import {
   fetchSourceChannels,
   updateSourceChannel,
@@ -7,13 +8,15 @@ import {
   fetchSourceChannelUsage,
 } from '../api/sourceChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
+import { AddNicheModal } from '../components/source-channels/AddNicheModal';
 import { AddSourceChannelModal } from '../components/source-channels/AddSourceChannelModal';
 import { DeleteSourceChannelModal } from '../components/source-channels/DeleteSourceChannelModal';
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
 import { useToast } from '../components/ui';
+import { useAbortableEffect, useDebouncedValue, usePaginatedList } from '../hooks';
 import { useTaskQueue } from '../hooks/useTaskQueue';
-import { useDebouncedValue, usePaginatedList } from '../hooks';
+import type { Niche } from '../types/niche';
 import type {
   CreateSourceChannelPayload,
   SourceChannel,
@@ -36,6 +39,8 @@ export function SourceChannelsPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddNicheModal, setShowAddNicheModal] = useState(false);
+  const [niches, setNiches] = useState<Niche[]>([]);
   const [bumpingRiskId, setBumpingRiskId] = useState<string | null>(null);
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -57,6 +62,16 @@ export function SourceChannelsPage() {
     },
     limit: LIMIT,
   });
+
+  useAbortableEffect(async (signal) => {
+    try {
+      const data = await fetchNiches({ signal });
+      setNiches(data.items);
+    } catch {
+      if (signal.aborted) return;
+      setNiches([]);
+    }
+  }, []);
 
   const selectedSources = list.items.filter(source => selectedIds.has(source.id));
   const selectedSource = selectedSources.length === 1 ? selectedSources[0] : null;
@@ -159,6 +174,7 @@ export function SourceChannelsPage() {
           payload: {
             url: payload.url,
             purpose: payload.purpose,
+            niche: payload.niche,
           },
         },
         {
@@ -179,6 +195,15 @@ export function SourceChannelsPage() {
       ).catch((err) => {
         console.error(err);
       });
+    }
+  }
+
+  async function refreshNiches() {
+    try {
+      const data = await fetchNiches();
+      setNiches(data.items);
+    } catch {
+      // keep existing niches on refresh failure
     }
   }
 
@@ -295,6 +320,7 @@ export function SourceChannelsPage() {
             onRiskFilterChange={handleRiskFilterChange}
             onSearchChange={handleSearchChange}
             onAddSource={() => setShowAddModal(true)}
+            onAddNiche={() => setShowAddNicheModal(true)}
             onDownload={handleDownload}
             onDelete={handleBulkDelete}
             canDelete={selectedIds.size > 0 && !checkingDelete}
@@ -305,6 +331,7 @@ export function SourceChannelsPage() {
           <div className="mt-4 card-surface px-5 pt-3 pb-4">
             <SourceChannelsTable
               sources={list.items}
+              niches={niches}
               loading={list.loading}
               selectedIds={selectedIds}
               bumpingRiskId={bumpingRiskId}
@@ -332,6 +359,15 @@ export function SourceChannelsPage() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddSource}
+      />
+
+      <AddNicheModal
+        open={showAddNicheModal}
+        onClose={() => setShowAddNicheModal(false)}
+        onSuccess={() => {
+          void refreshNiches();
+          toast.success('Niche added');
+        }}
       />
 
       <DeleteSourceChannelModal

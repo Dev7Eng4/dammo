@@ -9,6 +9,12 @@ import {
 import {
   SI_CANVAS_H,
   SI_CANVAS_W,
+  SI_DISCLAIMER_DURATION_SEC,
+  SI_DISCLAIMER_FONT_SIZE,
+  SI_DISCLAIMER_MARGIN_LEFT_PX,
+  SI_DISCLAIMER_MARGIN_TOP_PX,
+  SI_DISCLAIMER_PRIMARY_COLOR,
+  SI_DISCLAIMER_TEXT,
   SI_SUBTITLE_CHAR_SPACING,
   SI_SUBTITLE_LINE_GAP_PX,
   SI_SUBTITLE_PADDING_HORIZONTAL,
@@ -19,6 +25,8 @@ export interface ConvertSrtToAssOptions {
   captionStyleKey?: CaptionStyleKey | string | null;
   japaneseStyle?: boolean;
   fontFile?: string;
+  /** Temporary flag: burn top-left disclaimer for the first N seconds. */
+  showDisclaim?: boolean;
 }
 
 function srtTimeToMs(h: string, m: string, s: string, ms: string): number {
@@ -71,6 +79,26 @@ function buildAssStyleLine(
   charSpacing = SI_SUBTITLE_CHAR_SPACING,
 ): string {
   return `Style: ${name},${fontName},${fontSize},${primaryColor},${primaryColor},${outlineColor},&H00000000,-1,0,0,0,100,100,${charSpacing},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
+}
+
+/** Top-left disclaimer style (Alignment 7). */
+function buildDisclaimerAssStyleLine(fontName: string): string {
+  return `Style: Disclaimer,${fontName},${SI_DISCLAIMER_FONT_SIZE},${SI_DISCLAIMER_PRIMARY_COLOR},${SI_DISCLAIMER_PRIMARY_COLOR},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,${SI_DISCLAIMER_MARGIN_LEFT_PX},0,${SI_DISCLAIMER_MARGIN_TOP_PX},1\r`;
+}
+
+function formatAssCentiseconds(totalSec: number): string {
+  const totalCs = Math.round(totalSec * 100);
+  const h = Math.floor(totalCs / 360000);
+  const m = Math.floor((totalCs % 360000) / 6000);
+  const s = Math.floor((totalCs % 6000) / 100);
+  const cs = totalCs % 100;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+}
+
+function buildDisclaimerAssEvent(): string {
+  const start = formatAssCentiseconds(0);
+  const end = formatAssCentiseconds(SI_DISCLAIMER_DURATION_SEC);
+  return `Dialogue: 0,${start},${end},Disclaimer,,0,0,0,,${SI_DISCLAIMER_TEXT}\n`;
 }
 
 function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStylePreset): string {
@@ -145,13 +173,13 @@ WrapStyle: 1\r
 \r
 [V4+ Styles]\r
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\r
-${buildAssStyles(fontName, fontSize, preset)}
+${buildAssStyles(fontName, fontSize, preset)}${options.showDisclaim ? buildDisclaimerAssStyleLine(fontName) : ''}
 \r
 [Events]\r
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\r
 `;
 
-  let events = '';
+  let events = options.showDisclaim ? buildDisclaimerAssEvent() : '';
   for (const cue of cues) {
     const lines = cue
       .split('\n')

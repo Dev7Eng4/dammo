@@ -37,7 +37,7 @@ export const env = {
   /** cpu | intel | amd | nvidia — selects H.264 hardware encoder when available */
   ffmpegHwEncoder: (process.env.FFMPEG_HW_ENCODER ?? 'cpu').toLowerCase(),
   /** Parallel Ken Burns clip renders for AI slideshow (1–8, default 4). Override: SLIDESHOW_CLIP_CONCURRENCY */
-  slideshowClipConcurrency: Number(process.env.SLIDESHOW_CLIP_CONCURRENCY) || 4,
+  slideshowClipConcurrency: Number(process.env.SLIDESHOW_CLIP_CONCURRENCY) || 14,
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',

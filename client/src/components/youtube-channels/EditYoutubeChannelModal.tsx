@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
+import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { updateYoutubeChannel } from '../../api/youtubeChannels';
@@ -16,6 +17,7 @@ import {
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
+import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type { EditYoutubeChannelFormValues, StoredYoutubeChannelType, YoutubeChannel, YoutubeChannelLanguage } from '../../types/youtubeChannel';
 import { BACKGROUND_FOOTAGE_LOCAL_SENTINEL } from '../../types/youtubeChannel';
@@ -24,6 +26,7 @@ import {
   buildBackgroundFootageSelectValue,
   handleBackgroundFootageSelectChange,
 } from '../../utils/backgroundFootage';
+import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import {
   getReupAudioVideoStylePlaceholder,
   loadReupAudioVideoStyleOptions,
@@ -37,10 +40,10 @@ interface EditYoutubeChannelModalProps {
   onSuccess: (channel: YoutubeChannel) => void;
 }
 
-function toSourceOption(source: SourceChannel) {
+function toSourceOption(source: SourceChannel, niches: Niche[]) {
   return {
     value: source.id,
-    label: `${source.name} (${source.url})`,
+    label: formatSourceChannelOptionLabel(source, niches),
   };
 }
 
@@ -52,6 +55,7 @@ const defaultValues: EditYoutubeChannelFormValues = {
   mailAccountId: '',
   type: '',
   language: '',
+  niche: '',
   sourceChannels: [],
   backgroundFootageSources: [],
   backgroundFootageMode: 'source',
@@ -102,6 +106,7 @@ export function EditYoutubeChannelModal({
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailAccountId, setMailAccountId] = useState('');
   const [sources, setSources] = useState<SourceChannel[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
   const [formReady, setFormReady] = useState(false);
   const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([]);
   const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
@@ -128,15 +133,19 @@ export function EditYoutubeChannelModal({
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
 
   const sourceOptions = useMemo(
-    () => sources.filter((s) => s.purpose !== 'background_footage').map(toSourceOption),
-    [sources],
+    () => sources.filter((s) => s.purpose !== 'background_footage').map((s) => toSourceOption(s, niches)),
+    [sources, niches],
   );
   const backgroundFootageOptions = useMemo(
     () => [
       { value: BACKGROUND_FOOTAGE_LOCAL_SENTINEL, label: 'Local' },
-      ...sources.filter((s) => s.purpose === 'background_footage').map(toSourceOption),
+      ...sources.filter((s) => s.purpose === 'background_footage').map((s) => toSourceOption(s, niches)),
     ],
-    [sources],
+    [sources, niches],
+  );
+  const nicheOptions = useMemo(
+    () => niches.map((item) => ({ value: item.key, label: item.label })),
+    [niches],
   );
 
   useAbortableEffect(
@@ -151,9 +160,10 @@ export function EditYoutubeChannelModal({
       setFormReady(false);
 
       try {
-        const [mails, sourceList] = await Promise.all([
+        const [mails, sourceList, nicheList] = await Promise.all([
           fetchMailAccounts('', 1, 100, { signal }),
           fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal }),
+          fetchNiches({ signal }),
         ]);
 
         const mailAccount = mails.items.find(
@@ -165,6 +175,7 @@ export function EditYoutubeChannelModal({
 
         setMailAccountId(mailAccountIdValue);
         setSources(sourceList.items);
+        setNiches(nicheList.items);
 
         const frequency = channel.uploadFrequency ?? '';
         const slotCount = getPublishTimeSlotCount(frequency);
@@ -176,6 +187,7 @@ export function EditYoutubeChannelModal({
           mailAccountId: mailAccountIdValue,
           type: normalizeChannelType(channel.type),
           language: parseStoredChannelLanguage(channel.language),
+          niche: channel.niche ?? '',
           sourceChannels: channel.sourceChannels ?? [],
           backgroundFootageSources: channel.backgroundFootageSources ?? [],
           backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
@@ -193,6 +205,7 @@ export function EditYoutubeChannelModal({
         if (signal.aborted) return;
         setMailAccountId('');
         setSources([]);
+        setNiches([]);
       } finally {
         if (!signal.aborted) setOptionsLoading(false);
       }
@@ -293,7 +306,7 @@ export function EditYoutubeChannelModal({
   }
 
   async function onSubmit(values: EditYoutubeChannelFormValues) {
-    if (!values.type || !values.uploadFrequency || !values.language || !mailAccountId) return;
+    if (!values.type || !values.uploadFrequency || !values.language || !values.niche || !mailAccountId) return;
 
     setApiError(null);
     try {
@@ -301,6 +314,7 @@ export function EditYoutubeChannelModal({
         mailAccountId,
         type: values.type,
         language: values.language,
+        niche: values.niche,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
@@ -342,7 +356,7 @@ export function EditYoutubeChannelModal({
       open={open}
       onClose={handleClose}
       title="Edit YouTube Channel"
-      className="max-h-[90vh] max-w-3xl flex flex-col"
+      className="max-h-[90vh] max-w-5xl flex flex-col"
       bodyClassName="max-h-[60vh] overflow-y-auto"
       footer={
         <>
@@ -364,7 +378,7 @@ export function EditYoutubeChannelModal({
       <form
         id="edit-youtube-channel-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         <FormField label="Linked Email" className="min-w-0">
           <div className="flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300">
@@ -428,60 +442,62 @@ export function EditYoutubeChannelModal({
             </FormField>
 
             {reupAudioVideoType === 'si' ? (
-              <FormField
-                label="Background Image"
-                htmlFor="edit-reup-audio-background-image"
-                error={errors.reupAudioBackgroundImage?.message}
-                className="min-w-0"
-              >
-                <Controller
-                  name="reupAudioBackgroundImage"
-                  control={control}
-                  rules={{
-                    required:
-                      isReupAudio && reupAudioVideoType === 'si'
-                        ? 'Background image is required for Stock Video + Image'
-                        : false,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      id="edit-reup-audio-background-image"
-                      options={REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      placeholder="Select background image"
-                      disabled={isSubmitting}
-                      className="w-full"
-                      triggerClassName={selectTriggerClass}
-                    />
-                  )}
-                />
-              </FormField>
-
-              <FormField label="Show Audio Bar" htmlFor="edit-reup-audio-show-audio-bar" className="min-w-0">
-                <Controller
-                  name="showAudioBar"
-                  control={control}
-                  render={({ field }) => (
-                    <label
-                      htmlFor="edit-reup-audio-show-audio-bar"
-                      className="flex cursor-pointer items-center gap-2 text-sm text-neutral-200"
-                    >
-                      <input
-                        id="edit-reup-audio-show-audio-bar"
-                        type="checkbox"
-                        checked={!!field.value}
-                        onChange={e => field.onChange(e.target.checked)}
+              <>
+                <FormField
+                  label="Background Image"
+                  htmlFor="edit-reup-audio-background-image"
+                  error={errors.reupAudioBackgroundImage?.message}
+                  className="min-w-0"
+                >
+                  <Controller
+                    name="reupAudioBackgroundImage"
+                    control={control}
+                    rules={{
+                      required:
+                        isReupAudio && reupAudioVideoType === 'si'
+                          ? 'Background image is required for Stock Video + Image'
+                          : false,
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        id="edit-reup-audio-background-image"
+                        options={REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS}
+                        value={field.value}
+                        onChange={field.onChange}
                         onBlur={field.onBlur}
+                        placeholder="Select background image"
                         disabled={isSubmitting}
-                        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                        className="w-full"
+                        triggerClassName={selectTriggerClass}
                       />
-                      Overlay audio bar on the left side of the video
-                    </label>
-                  )}
-                />
-              </FormField>
+                    )}
+                  />
+                </FormField>
+
+                <FormField label="Show Audio Bar" htmlFor="edit-reup-audio-show-audio-bar" className="min-w-0">
+                  <Controller
+                    name="showAudioBar"
+                    control={control}
+                    render={({ field }) => (
+                      <label
+                        htmlFor="edit-reup-audio-show-audio-bar"
+                        className="flex cursor-pointer items-center gap-2 text-sm text-neutral-200"
+                      >
+                        <input
+                          id="edit-reup-audio-show-audio-bar"
+                          type="checkbox"
+                          checked={!!field.value}
+                          onChange={e => field.onChange(e.target.checked)}
+                          onBlur={field.onBlur}
+                          disabled={isSubmitting}
+                          className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                        />
+                        Overlay audio bar on the left side of the video
+                      </label>
+                    )}
+                  />
+                </FormField>
+              </>
             ) : null}
 
             {reupAudioVideoType === 'ai' ? (
@@ -577,6 +593,33 @@ export function EditYoutubeChannelModal({
           />
         </FormField>
 
+        <FormField label="Niche" htmlFor="edit-channel-niche" error={errors.niche?.message} className="min-w-0">
+          <Controller
+            name="niche"
+            control={control}
+            rules={{ required: 'Niche is required' }}
+            render={({ field }) => (
+              <Select
+                id="edit-channel-niche"
+                options={nicheOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  optionsLoading
+                    ? 'Loading niches...'
+                    : nicheOptions.length === 0
+                      ? 'No niches yet — add one first'
+                      : 'Select niche'
+                }
+                disabled={isSubmitting || optionsLoading || nicheOptions.length === 0 || !formReady}
+                className="w-full"
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
         <FormField
           label="Thumbnail Style"
           htmlFor="edit-thumbnail-style"
@@ -645,7 +688,7 @@ export function EditYoutubeChannelModal({
           htmlFor="edit-source-channel"
           optional={!isReupType}
           error={errors.sourceChannels?.message}
-          className="min-w-0 sm:col-span-2"
+          className="min-w-0"
         >
           <Controller
             name="sourceChannels"
@@ -720,9 +763,9 @@ export function EditYoutubeChannelModal({
             ))
           : null}
 
-        {apiError ? <p className="text-xs text-danger sm:col-span-2">{apiError}</p> : null}
+        {apiError ? <p className="text-xs text-danger sm:col-span-2 lg:col-span-3">{apiError}</p> : null}
         {!optionsLoading && formReady && !mailAccountId ? (
-          <p className="text-xs text-danger sm:col-span-2">
+          <p className="text-xs text-danger sm:col-span-2 lg:col-span-3">
             Linked mail account not found. Cannot save changes.
           </p>
         ) : null}

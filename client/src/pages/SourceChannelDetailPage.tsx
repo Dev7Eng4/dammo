@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { fetchNiches } from '../api/niches';
 import {
   fetchSourceChannel,
   fetchSourceChannelVideos,
@@ -13,6 +14,7 @@ import {
 import { SourceChannelVideosTable } from '../components/source-channels/SourceChannelVideosTable';
 import { SourceChannelVideosToolbar } from '../components/source-channels/SourceChannelVideosToolbar';
 import { useAbortableEffect, usePaginatedList } from '../hooks';
+import type { Niche } from '../types/niche';
 import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceChannel';
 
 const VIDEO_LIMIT = 20;
@@ -20,6 +22,7 @@ const VIDEO_LIMIT = 20;
 export function SourceChannelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [source, setSource] = useState<SourceChannel | null>(null);
+  const [niches, setNiches] = useState<Niche[]>([]);
   const [durationFilter, setDurationFilter] = useState<SourceVideoDurationFilter>('all');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(!id);
@@ -33,6 +36,16 @@ export function SourceChannelDetailPage() {
     limit: VIDEO_LIMIT,
     enabled: Boolean(id),
   });
+
+  useAbortableEffect(async (signal) => {
+    try {
+      const data = await fetchNiches({ signal });
+      setNiches(data.items);
+    } catch {
+      if (signal.aborted) return;
+      setNiches([]);
+    }
+  }, []);
 
   useAbortableEffect(
     async (signal) => {
@@ -102,6 +115,7 @@ export function SourceChannelDetailPage() {
         ) : (
           <SourceChannelDetailHeader
             source={source}
+            niches={niches}
             refreshing={refreshing}
             refreshError={refreshError}
             onRefresh={handleRefreshSource}

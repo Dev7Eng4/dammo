@@ -8,6 +8,7 @@ import { fetchYoutubeVideoComments } from '../../infrastructure/youtube/youtube-
 import type { YoutubeVideoComment } from '../../infrastructure/youtube/youtube-comment.types.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
+import { nichesService } from '../niches/niches.service.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelVideosRepository } from './youtube-channel-videos.repository.js';
@@ -241,15 +242,30 @@ function validateChannelConfig(input: ChannelConfigInput): {
 
 function assertEmailAvailableForChannel(email: string, channelId?: string): void {
   const normalized = email.toLowerCase();
-  if (normalized === 'default') {
-    return;
-  }
   const taken = youtubeChannelsRepository
     .findAll()
     .some((c) => c.id !== channelId && c.linkedEmail.toLowerCase() === normalized);
   if (taken) {
     throw new AppError('Email already linked to another channel', 400, 'DUPLICATE_EMAIL');
   }
+}
+
+function isDefaultLinkedEmail(email: string): boolean {
+  return email.toLowerCase() === 'default';
+}
+
+/** Stable-sort: Default-linked channels first, preserve relative order of the rest. */
+function prioritizeDefaultChannels(channels: YoutubeChannel[]): YoutubeChannel[] {
+  const defaults: YoutubeChannel[] = [];
+  const others: YoutubeChannel[] = [];
+  for (const channel of channels) {
+    if (isDefaultLinkedEmail(channel.linkedEmail)) {
+      defaults.push(channel);
+    } else {
+      others.push(channel);
+    }
+  }
+  return [...defaults, ...others];
 }
 
 export class YoutubeChannelsService {
@@ -279,7 +295,8 @@ export class YoutubeChannelsService {
     limit: number,
   ) {
     const filtered = filterChannels(youtubeChannelsRepository.findAll(), type, monetization, query);
-    const result = paginate(filtered, page, limit);
+    const ordered = prioritizeDefaultChannels(filtered);
+    const result = paginate(ordered, page, limit);
     return {
       ...result,
       items: result.items.map((channel) => ({
@@ -421,11 +438,17 @@ export class YoutubeChannelsService {
     const config = validateChannelConfig(input);
     assertEmailAvailableForChannel(config.linkedEmail);
 
+    if (!input.niche.trim()) {
+      throw new AppError('Niche is required');
+    }
+    if (!nichesService.exists(input.niche)) {
+      throw new AppError('Niche not found', 400, 'INVALID_NICHE');
+    }
+
     let name = '';
     let handle = '';
     let youtubeUrl = '';
     let channelId: string | undefined = undefined;
-    let niche = '';
 
     if (input.channelUrl && input.channelUrl.trim() !== '') {
       const { platform, fullUrl } = parseSourceUrl(input.channelUrl);
@@ -484,7 +507,7 @@ export class YoutubeChannelsService {
       youtubeUrl,
       channelId,
       type: input.type,
-      niche,
+      niche: input.niche,
       language: input.language,
       monetizationStatus: 'in_review',
       healthScore: 'medium',
@@ -520,11 +543,19 @@ export class YoutubeChannelsService {
     const config = validateChannelConfig(input);
     assertEmailAvailableForChannel(config.linkedEmail, id);
 
+    if (!input.niche.trim()) {
+      throw new AppError('Niche is required');
+    }
+    if (!nichesService.exists(input.niche)) {
+      throw new AppError('Niche not found', 400, 'INVALID_NICHE');
+    }
+
     const updated = youtubeChannelsRepository.update(id, (current) => {
       const next: YoutubeChannel = {
         ...current,
         type: input.type,
         language: input.language,
+        niche: input.niche,
         linkedEmail: config.linkedEmail,
         sourceChannels: config.sourceChannels,
         uploadSchedule: config.uploadSchedule,
