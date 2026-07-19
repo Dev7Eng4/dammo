@@ -56,7 +56,7 @@ export function VideoCommentsDrawer({ open, channelId, video, onClose }: VideoCo
       } catch (err) {
         if (isAbortError(err)) return;
         setComments([]);
-        setError(err instanceof Error ? err.message : 'Failed to load comments');
+        setError(err instanceof Error ? err.message : 'Không thể tải bình luận');
       } finally {
         if (!signal.aborted) setLoading(false);
       }
@@ -73,15 +73,15 @@ export function VideoCommentsDrawer({ open, channelId, video, onClose }: VideoCo
     <Drawer
       open={open}
       onClose={onClose}
-      title="Comments"
+      title="Bình luận"
       subtitle={video.title}
     >
       <div className="p-4">
         {!loading && !error ? (
           <p className="mb-4 text-xs text-neutral-500">
             {totalComments > 0
-              ? `${totalComments.toLocaleString()} comments`
-              : 'No comments on this video'}
+              ? `${totalComments.toLocaleString('vi-VN')} bình luận`
+              : 'Video này chưa có bình luận'}
           </p>
         ) : null}
 
@@ -95,7 +95,7 @@ export function VideoCommentsDrawer({ open, channelId, video, onClose }: VideoCo
 
         {!loading && !error && comments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm text-neutral-400">No comments found.</p>
+            <p className="text-sm text-neutral-400">Không tìm thấy bình luận nào.</p>
           </div>
         ) : null}
 

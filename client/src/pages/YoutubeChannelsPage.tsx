@@ -5,7 +5,6 @@ import { fetchSourceChannels } from '../api/sourceChannels';
 import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
-import { EditYoutubeChannelModal } from '../components/youtube-channels/EditYoutubeChannelModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
@@ -58,27 +57,27 @@ export function YoutubeChannelsPage() {
   const canUpload = canCreateVideo;
   const createVideoDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
-      ? 'All selected channels must be Reup Audio or Reup Video'
+      ? 'Tất cả kênh đã chọn phải thuộc loại Reup âm thanh hoặc Reup video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-      ? 'Only Reup Audio or Reup Video channels can create videos'
+      ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tạo video'
       : isBulkCreate
-      ? 'Tạo video cho tất cả reup channels'
+      ? 'Tạo video cho tất cả kênh reup'
       : selectedIds.size > 1
       ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
       : undefined;
   const uploadDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
-      ? 'All selected channels must be Reup Audio or Reup Video'
+      ? 'Tất cả kênh đã chọn phải thuộc loại Reup âm thanh hoặc Reup video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-      ? 'Only Reup Audio or Reup Video channels can upload videos'
+      ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tải video lên'
       : isBulkCreate
-      ? 'Upload videos for all reup channels'
+      ? 'Tải video lên cho tất cả kênh reup'
       : selectedIds.size > 1
-      ? `Upload videos for ${selectedIds.size} selected channels`
+      ? `Tải video lên cho ${selectedIds.size} kênh đã chọn`
       : undefined;
   const canEdit = selectedIds.size === 1;
   const editDisabledReason =
-    selectedIds.size === 0 ? 'Select a channel to edit' : selectedIds.size > 1 ? 'Select exactly one channel to edit' : undefined;
+    selectedIds.size === 0 ? 'Chọn một kênh để chỉnh sửa' : selectedIds.size > 1 ? 'Chỉ chọn một kênh để chỉnh sửa' : undefined;
 
   useAbortableEffect(async signal => {
     setStatsLoading(true);
@@ -194,8 +193,8 @@ export function YoutubeChannelsPage() {
     if (selectedIds.size === 0) {
       void enqueueTask({
         type: 'create_video',
-        title: 'Creating videos for all reup channels',
-        subtitle: 'Bulk reup run',
+        title: 'Đang tạo video cho tất cả kênh reup',
+        subtitle: 'Tác vụ reup hàng loạt',
         payload: { allReupChannels: true },
       });
       return;
@@ -206,8 +205,8 @@ export function YoutubeChannelsPage() {
 
       void enqueueTask({
         type: 'create_video',
-        title: `Creating videos for ${selectedIds.size} channels`,
-        subtitle: `${selectedIds.size} selected channels`,
+        title: `Đang tạo video cho ${selectedIds.size} kênh`,
+        subtitle: `${selectedIds.size} kênh đã chọn`,
         payload: { channelIds: Array.from(selectedIds) },
       });
       return;
@@ -218,7 +217,7 @@ export function YoutubeChannelsPage() {
 
     void enqueueTask({
       type: 'create_video',
-      title: `Creating video: ${selectedChannel.name}`,
+      title: `Đang tạo video: ${selectedChannel.name}`,
       subtitle: selectedChannel.handle,
       payload: {
         channelId: selectedChannel.id,
@@ -232,8 +231,8 @@ export function YoutubeChannelsPage() {
     if (selectedIds.size === 0) {
       void enqueueTask({
         type: 'upload_video',
-        title: 'Uploading videos for all reup channels',
-        subtitle: 'Bulk upload run',
+        title: 'Đang tải video lên cho tất cả kênh reup',
+        subtitle: 'Tác vụ tải lên hàng loạt',
         payload: { allReupChannels: true },
       });
       return;
@@ -244,8 +243,8 @@ export function YoutubeChannelsPage() {
 
       void enqueueTask({
         type: 'upload_video',
-        title: `Uploading videos for ${selectedIds.size} channels`,
-        subtitle: `${selectedIds.size} selected channels`,
+        title: `Đang tải video lên cho ${selectedIds.size} kênh`,
+        subtitle: `${selectedIds.size} kênh đã chọn`,
         payload: { channelIds: Array.from(selectedIds) },
       });
       return;
@@ -256,7 +255,7 @@ export function YoutubeChannelsPage() {
 
     void enqueueTask({
       type: 'upload_video',
-      title: `Uploading: ${selectedChannel.name}`,
+      title: `Đang tải lên: ${selectedChannel.name}`,
       subtitle: selectedChannel.handle,
       payload: { channelId: selectedChannel.id },
     });
@@ -287,7 +286,7 @@ export function YoutubeChannelsPage() {
               onEdit={() => setShowEditModal(true)}
             />
           </div>
-          {list.error ? <p className='mt-2 text-xs text-danger'>{list.error}</p> : null}
+          {list.error ? <p className='mt-2 text-xs text-danger'>Không thể tải danh sách kênh YouTube.</p> : null}
           <div className='mt-4 card-surface px-5 pt-3 pb-4'>
             <YoutubeChannelsTable
               channels={list.items}
@@ -305,6 +304,7 @@ export function YoutubeChannelsPage() {
               total={list.total}
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
+              locale="vi"
             />
           </div>
         </div>
@@ -313,7 +313,7 @@ export function YoutubeChannelsPage() {
       <AddYoutubeChannelModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />
 
       {selectedChannel ? (
-        <EditYoutubeChannelModal
+        <AddYoutubeChannelModal
           open={showEditModal}
           channel={selectedChannel}
           onClose={() => setShowEditModal(false)}

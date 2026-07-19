@@ -45,6 +45,8 @@ const channelConfigFields = {
     .enum(['no_image', 'local_image', 'one_image', 'multi_image'])
     .optional(),
   showAudioBar: z.boolean().optional(),
+  showDisclaimer: z.boolean().optional(),
+  disclaimerText: z.string().max(2000).optional(),
   uploadFrequency: uploadFrequencySchema,
   publishTimes: z.array(publishTimeSchema),
 };
@@ -131,4 +133,10 @@ export const listYoutubeChannelsQuerySchema = z.object({
 
 export const createVideosBatchSchema = z.object({
   channelIds: z.array(z.string().min(1)).min(1).optional(),
+});
+
+export const updateYoutubeVideoContentSchema = z.object({
+  title: z.string().trim().min(1).max(100),
+  description: z.string().max(5000),
+  tags: z.array(z.string().trim().min(1).max(100)).max(100),
 });

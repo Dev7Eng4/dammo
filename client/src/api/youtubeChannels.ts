@@ -14,6 +14,8 @@ import type {
   CreateReupVideosResponse,
   CreateReupVideosBatchResponse,
   UploadYoutubeVideosBatchResponse,
+  UpdateYoutubeVideoContentPayload,
+  YoutubeVideoContent,
 } from '../types/youtubeChannel';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
@@ -88,6 +90,38 @@ export function fetchYoutubeVideoComments(
   return fetchJson<YoutubeVideoCommentsResponse>(
     `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/comments`,
     withSignal(undefined, options),
+  );
+}
+
+export function fetchYoutubeVideoContent(
+  channelId: string,
+  videoId: string,
+  options?: FetchOptions,
+) {
+  return fetchJson<YoutubeVideoContent>(
+    `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/content`,
+    withSignal(undefined, options),
+  );
+}
+
+export function updateYoutubeVideoContent(
+  channelId: string,
+  videoId: string,
+  payload: UpdateYoutubeVideoContentPayload,
+  thumbnail?: File | null,
+) {
+  const formData = new FormData();
+  formData.append('title', payload.title);
+  formData.append('description', payload.description);
+  formData.append('tags', JSON.stringify(payload.tags));
+  if (thumbnail) formData.append('thumbnail', thumbnail);
+
+  return fetchJson<YoutubeVideoContent>(
+    `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/content`,
+    {
+      method: 'PATCH',
+      body: formData,
+    },
   );
 }
 

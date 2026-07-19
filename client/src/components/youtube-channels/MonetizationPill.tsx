@@ -6,25 +6,25 @@ const config: Record<
   { label: string; dot: string; text: string; bg: string }
 > = {
   monetized: {
-    label: 'Monetized',
+    label: 'Đã bật kiếm tiền',
     dot: 'bg-success',
     text: 'text-success',
     bg: 'bg-success/10 border-success/30',
   },
   in_review: {
-    label: 'In Review',
+    label: 'Đang xét duyệt',
     dot: 'bg-warning',
     text: 'text-warning',
     bg: 'bg-warning/10 border-warning/30',
   },
   demonetized: {
-    label: 'Demonetized',
+    label: 'Đã tắt kiếm tiền',
     dot: 'bg-danger',
     text: 'text-danger',
     bg: 'bg-danger/10 border-danger/30',
   },
   limited: {
-    label: 'Limited',
+    label: 'Bị hạn chế',
     dot: 'bg-danger',
     text: 'text-danger',
     bg: 'bg-danger/10 border-danger/30',

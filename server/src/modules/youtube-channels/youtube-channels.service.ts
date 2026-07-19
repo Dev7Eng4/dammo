@@ -114,6 +114,8 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
   | 'showAudioBar'
+  | 'showDisclaimer'
+  | 'disclaimerText'
   | 'uploadFrequency'
   | 'publishTimes'
 >;
@@ -142,6 +144,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   showAudioBar?: boolean;
+  showDisclaimer?: boolean;
+  disclaimerText?: string;
 } {
   let linkedEmail = 'Default';
   if (input.mailAccountId && input.mailAccountId.toLowerCase() !== 'default') {
@@ -191,6 +195,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
   let showAudioBar: boolean | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
+  const disclaimerText = input.disclaimerText?.trim();
+  const showDisclaimer = input.showDisclaimer === true;
 
   if (isReupAudioChannelType(input.type)) {
     if (!input.reupAudioVideoType) {
@@ -237,6 +243,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
+    ...(showDisclaimer ? { showDisclaimer: true } : {}),
+    ...(disclaimerText ? { disclaimerText } : {}),
   };
 }
 
@@ -398,7 +406,13 @@ export class YoutubeChannelsService {
       };
     }
 
-    const videos = await this.fetchVideos(channel);
+    let videos: YoutubeChannelVideo[];
+    try {
+      videos = await this.fetchVideos(channel);
+    } catch {
+      return { items: this.mergeVideosWithPrepare(id, []) };
+    }
+
     const fetchedAt = this.persistVideos(id, videos);
     return { items: this.mergeVideosWithPrepare(id, videos), fetchedAt };
   }
@@ -533,6 +547,8 @@ export class YoutubeChannelsService {
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
+      ...(config.showDisclaimer ? { showDisclaimer: true } : {}),
+      ...(config.disclaimerText ? { disclaimerText: config.disclaimerText } : {}),
     };
 
     return youtubeChannelsRepository.prepend(channel);
@@ -578,6 +594,17 @@ export class YoutubeChannelsService {
         next.thumbnailStyleKey = config.thumbnailStyleKey;
       } else {
         delete next.thumbnailStyleKey;
+      }
+
+      if (config.showDisclaimer) {
+        next.showDisclaimer = true;
+      } else {
+        delete next.showDisclaimer;
+      }
+      if (config.disclaimerText) {
+        next.disclaimerText = config.disclaimerText;
+      } else {
+        delete next.disclaimerText;
       }
 
       if (isReupAudioChannelType(input.type)) {

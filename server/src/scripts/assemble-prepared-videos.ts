@@ -207,6 +207,8 @@ async function main() {
         console.log(`    [ghép] ${item.videoId} (${videoType})...`);
         const startedAt = performance.now();
         let outputPath: string;
+        const disclaimerText = channel.disclaimerText?.trim();
+        const showDisclaim = channel.showDisclaimer === true && Boolean(disclaimerText);
 
         if (videoType === 'ai') {
           outputPath = await assembleReupAiSlideshowVideo({
@@ -216,6 +218,8 @@ async function main() {
             subtitlePath: subtitlePath!,
             language: channel.language,
             captionStyleKey: channel.captionStyleKey,
+            showDisclaim,
+            disclaimerText,
             onLog: msg => console.log(`      ${msg}`),
           });
         } else {
@@ -229,6 +233,8 @@ async function main() {
             language: channel.language,
             captionStyleKey: channel.captionStyleKey,
             showAudioBar: channel.showAudioBar === true,
+            showDisclaim,
+            disclaimerText,
             onLog: msg => console.log(`      ${msg}`),
           });
         }

@@ -32,3 +32,14 @@ export function findThumbnailPath(
 
   return null;
 }
+
+export function findOldThumbnailPath(folderPath: string): string | null {
+  const files = fs.readdirSync(folderPath);
+  const matches = files.filter(file => {
+    const ext = path.extname(file);
+    if (!ext) return false;
+    return path.basename(file, ext).toLowerCase() === OLD_THUMBNAIL_BASENAME;
+  });
+  matches.sort((a, b) => a.localeCompare(b));
+  return matches[0] ? path.join(folderPath, matches[0]) : null;
+}

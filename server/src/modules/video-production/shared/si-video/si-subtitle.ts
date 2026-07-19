@@ -27,6 +27,7 @@ export interface ConvertSrtToAssOptions {
   fontFile?: string;
   /** Temporary flag: burn top-left disclaimer for the first N seconds. */
   showDisclaim?: boolean;
+  disclaimerText?: string;
 }
 
 function srtTimeToMs(h: string, m: string, s: string, ms: string): number {
@@ -95,10 +96,19 @@ function formatAssCentiseconds(totalSec: number): string {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
 }
 
-function buildDisclaimerAssEvent(): string {
+export function escapeDisclaimerAssText(text: string): string {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\\/g, '＼')
+    .replace(/\{/g, '｛')
+    .replace(/\}/g, '｝')
+    .replace(/\n/g, '\\N');
+}
+
+function buildDisclaimerAssEvent(text: string): string {
   const start = formatAssCentiseconds(0);
   const end = formatAssCentiseconds(SI_DISCLAIMER_DURATION_SEC);
-  return `Dialogue: 0,${start},${end},Disclaimer,,0,0,0,,${SI_DISCLAIMER_TEXT}\n`;
+  return `Dialogue: 0,${start},${end},Disclaimer,,0,0,0,,${escapeDisclaimerAssText(text)}\n`;
 }
 
 function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStylePreset): string {
@@ -158,6 +168,7 @@ export function convertSrtToAss(
   const fontExists = fontFile ? fs.existsSync(fontFile) : false;
   const fontName = fontExists ? preset.fontAssName : 'Arial';
   const fontSize = preset.fontSize;
+  const disclaimerText = options.disclaimerText?.trim() || SI_DISCLAIMER_TEXT;
 
   const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
   const marginBottomPx = resolveSiSubtitleMarginBottomPx(preset.showBackgroundBox);
@@ -179,7 +190,7 @@ ${buildAssStyles(fontName, fontSize, preset)}${options.showDisclaim ? buildDiscl
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\r
 `;
 
-  let events = options.showDisclaim ? buildDisclaimerAssEvent() : '';
+  let events = options.showDisclaim ? buildDisclaimerAssEvent(disclaimerText) : '';
   for (const cue of cues) {
     const lines = cue
       .split('\n')

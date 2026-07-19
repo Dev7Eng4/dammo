@@ -737,8 +737,8 @@ export class ReupAudioPipeline {
           }
 
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
-            // Temporary flag — wire to channel config later.
-            const showDisclaim = false;
+            const disclaimerText = destination.disclaimerText?.trim();
+            const showDisclaim = destination.showDisclaimer === true && Boolean(disclaimerText);
 
             if (videoType === 'si') {
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
@@ -781,6 +781,7 @@ export class ReupAudioPipeline {
                   captionStyleKey: destination.captionStyleKey,
                   showAudioBar: destination.showAudioBar,
                   showDisclaim,
+                  disclaimerText,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                 });
                 primaryOutputPath = reupVideoPath;
@@ -817,6 +818,7 @@ export class ReupAudioPipeline {
                       language: destination.language,
                       captionStyleKey: destination.captionStyleKey,
                       showDisclaim,
+                      disclaimerText,
                       onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                     }),
                   stepTimer,

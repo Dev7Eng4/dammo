@@ -11,6 +11,12 @@ function countReplies(comment: YoutubeVideoComment): number {
   return comment.replies.reduce((total, reply) => total + 1 + countReplies(reply), 0);
 }
 
+function formatCommentTimestamp(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('vi-VN');
+}
+
 function CommentAvatar({ name, thumbnail }: { name: string; thumbnail?: string }) {
   const initial = name.charAt(0).toUpperCase();
 
@@ -37,12 +43,16 @@ function CommentBody({ comment }: { comment: YoutubeVideoComment }) {
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-medium text-neutral-100">{comment.author}</span>
         {comment.timestamp ? (
-          <span className="text-xs text-neutral-500">{comment.timestamp}</span>
+          <span className="text-xs text-neutral-500">
+            {formatCommentTimestamp(comment.timestamp)}
+          </span>
         ) : null}
       </div>
       <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-300">{comment.text}</p>
       {comment.likeCount != null && comment.likeCount > 0 ? (
-        <p className="mt-1.5 text-xs text-neutral-500">{comment.likeCount.toLocaleString()} likes</p>
+        <p className="mt-1.5 text-xs text-neutral-500">
+          {comment.likeCount.toLocaleString('vi-VN')} lượt thích
+        </p>
       ) : null}
     </div>
   );
@@ -67,7 +77,9 @@ export function CommentThread({ comment, depth = 0 }: CommentThreadProps) {
             onClick={() => setShowReplies((open) => !open)}
             className="text-xs font-medium text-secondary-400 hover:text-secondary-300"
           >
-            {showReplies ? 'Ẩn phản hồi' : `Xem ${replyCount.toLocaleString()} phản hồi`}
+            {showReplies
+              ? 'Ẩn phản hồi'
+              : `Xem ${replyCount.toLocaleString('vi-VN')} phản hồi`}
           </button>
 
           {showReplies ? (

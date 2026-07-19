@@ -1,21 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { isAbortError } from '../api/http';
-import {
-  fetchYoutubeChannel,
-  fetchYoutubeChannelVideos,
-  syncYoutubeChannelVideos,
-} from '../api/youtubeChannels';
+import { fetchYoutubeChannel, fetchYoutubeChannelVideos, syncYoutubeChannelVideos } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
-import { EditYoutubeChannelModal } from '../components/youtube-channels/EditYoutubeChannelModal';
-import {
-  YoutubeChannelDetailHeader,
-  YoutubeChannelDetailHeaderSkeleton,
-} from '../components/youtube-channels/YoutubeChannelDetailHeader';
+import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
+import { YoutubeChannelDetailHeader, YoutubeChannelDetailHeaderSkeleton } from '../components/youtube-channels/YoutubeChannelDetailHeader';
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
-import { YoutubeChannelVideoSummary } from '../components/youtube-channels/YoutubeChannelVideoSummary';
 import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
 import { VideoCommentsDrawer } from '../components/youtube-channels/VideoCommentsDrawer';
+import { VideoContentModal } from '../components/youtube-channels/VideoContentModal';
 import { useAbortableEffect, useClientPaginatedList, useTaskQueue } from '../hooks';
 import type { YoutubeChannel, YoutubeChannelVideo, YoutubeChannelVideoStatusFilter } from '../types/youtubeChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
@@ -37,24 +30,21 @@ export function YoutubeChannelDetailPage() {
   const [videosError, setVideosError] = useState<string | null>(null);
   const [videoResetKey, setVideoResetKey] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
+  const [contentVideo, setContentVideo] = useState<YoutubeChannelVideo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<YoutubeChannelVideoStatusFilter>('all');
 
-  const filteredVideos = useMemo(
-    () => filterYoutubeChannelVideosByStatus(allVideos, statusFilter),
-    [allVideos, statusFilter],
-  );
+  const filteredVideos = useMemo(() => filterYoutubeChannelVideosByStatus(allVideos, statusFilter), [allVideos, statusFilter]);
 
   const videos = useClientPaginatedList(filteredVideos, {
     limit: VIDEO_LIMIT,
     resetKey: `${videoResetKey}:${statusFilter}`,
   });
 
-  const videosEmptyMessage =
-    statusFilter !== 'all' ? 'No videos match the selected status.' : 'No videos found.';
+  const videosEmptyMessage = statusFilter !== 'all' ? 'Không có video nào khớp với trạng thái đã chọn.' : 'Không tìm thấy video nào.';
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       if (!id) return;
 
       setLoading(true);
@@ -76,7 +66,7 @@ export function YoutubeChannelDetailPage() {
   );
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       if (!id) return;
 
       setVideosLoading(true);
@@ -86,11 +76,11 @@ export function YoutubeChannelDetailPage() {
         const data = await fetchYoutubeChannelVideos(id, { signal });
         setAllVideos(data.items);
         setVideosFetchedAt(data.fetchedAt ?? null);
-        setVideoResetKey((key) => key + 1);
+        setVideoResetKey(key => key + 1);
       } catch (err) {
         if (isAbortError(err)) return;
         setAllVideos([]);
-        setVideosError(err instanceof Error ? err.message : 'Failed to load videos');
+        setVideosError(err instanceof Error ? err.message : 'Không thể tải video');
       } finally {
         if (!signal.aborted) setVideosLoading(false);
       }
@@ -104,7 +94,7 @@ export function YoutubeChannelDetailPage() {
 
     void enqueueTask({
       type: 'create_video',
-      title: `Creating video: ${channel.name}`,
+      title: `Đang tạo video: ${channel.name}`,
       subtitle: channel.handle,
       payload: {
         channelId: id,
@@ -127,9 +117,9 @@ export function YoutubeChannelDetailPage() {
       setChannel(item);
       setAllVideos(syncedVideos);
       setVideosFetchedAt(fetchedAt);
-      setVideoResetKey((key) => key + 1);
+      setVideoResetKey(key => key + 1);
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : 'Failed to sync videos');
+      setSyncError(err instanceof Error ? err.message : 'Không thể đồng bộ video');
     } finally {
       setSyncing(false);
       setVideosLoading(false);
@@ -138,11 +128,11 @@ export function YoutubeChannelDetailPage() {
 
   if (!id || notFound) {
     return (
-      <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
-        <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-          <p className="text-sm text-neutral-400">YouTube channel not found.</p>
-          <Link to="/youtube-channels" className="mt-3 text-sm text-secondary-400 hover:text-secondary-300">
-            Back to YouTube Channels
+      <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
+        <div className='flex flex-1 flex-col items-center justify-center p-6 text-center'>
+          <p className='text-sm text-neutral-400'>Không tìm thấy kênh YouTube.</p>
+          <Link to='/youtube-channels' className='mt-3 text-sm text-secondary-400 hover:text-secondary-300'>
+            Quay lại danh sách kênh YouTube
           </Link>
         </div>
       </div>
@@ -150,9 +140,9 @@ export function YoutubeChannelDetailPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row">
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+    <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row'>
+      <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
+        <div className='flex-1 overflow-y-auto p-6'>
           {loading || !channel ? (
             <YoutubeChannelDetailHeaderSkeleton />
           ) : (
@@ -169,38 +159,34 @@ export function YoutubeChannelDetailPage() {
           )}
 
           {channel ? (
-            <EditYoutubeChannelModal
+            <AddYoutubeChannelModal
               open={editOpen}
               channel={channel}
               onClose={() => setEditOpen(false)}
-              onSuccess={async (updated) => {
+              onSuccess={async updated => {
                 try {
                   const live = await fetchYoutubeChannel(id);
                   setChannel(live);
                 } catch {
-                  setChannel((current) =>
-                    current ? { ...current, ...updated } : updated,
-                  );
+                  setChannel(current => (current ? { ...current, ...updated } : updated));
                 }
               }}
             />
           ) : null}
 
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-            <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} />
-            <YoutubeChannelVideosToolbar
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-            />
+          <div className='mt-4 flex flex-wrap items-end justify-between gap-3'>
+            {/* <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} /> */}
+            <YoutubeChannelVideosToolbar statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} />
           </div>
 
-          <div className="mt-3 card-surface px-5 pt-3 pb-4">
+          <div className='mt-3 card-surface px-5 pt-3 pb-4'>
             <YoutubeChannelVideosTable
               videos={videos.pageItems}
               loading={videosLoading}
               error={videosError}
               emptyMessage={videosEmptyMessage}
               onCommentClick={setSelectedVideo}
+              onTitleClick={setContentVideo}
             />
             <MailAccountsPagination
               page={videos.page}
@@ -208,20 +194,33 @@ export function YoutubeChannelDetailPage() {
               total={videos.total}
               totalPages={videos.totalPages}
               onPageChange={videos.setPage}
+              locale='vi'
             />
           </div>
         </div>
       </div>
 
       {selectedVideo ? (
-        <div className="fixed inset-y-0 right-0 z-50 flex lg:static lg:z-auto">
-          <VideoCommentsDrawer
-            open={Boolean(selectedVideo)}
-            channelId={id}
-            video={selectedVideo}
-            onClose={() => setSelectedVideo(null)}
-          />
+        <div className='fixed inset-y-0 right-0 z-50 flex lg:static lg:z-auto'>
+          <VideoCommentsDrawer open={Boolean(selectedVideo)} channelId={id} video={selectedVideo} onClose={() => setSelectedVideo(null)} />
         </div>
+      ) : null}
+
+      {contentVideo ? (
+        <VideoContentModal
+          key={contentVideo.id}
+          open
+          channelId={id}
+          video={contentVideo}
+          onClose={() => setContentVideo(null)}
+          onSaved={content => {
+            setAllVideos(current =>
+              current.map(video =>
+                video.id === contentVideo.id ? { ...video, title: content.title } : video,
+              ),
+            );
+          }}
+        />
       ) : null}
     </div>
   );

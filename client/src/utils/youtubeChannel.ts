@@ -59,7 +59,7 @@ export function getChannelBackgroundFootageLabels(
   sources: SourceChannel[],
 ): string[] {
   if (channel.backgroundFootageMode === 'local') {
-    return ['Local'];
+    return ['Cục bộ'];
   }
 
   const lookup = buildSourceLookup(sources);
@@ -111,13 +111,13 @@ export function getReupAudioVideoStylePlaceholder(
   optionCount: number,
 ): string {
   if (loading) {
-    return 'Loading styles...';
+    return 'Đang tải kiểu hình ảnh...';
   }
   if (!videoType) {
-    return 'Select video type first';
+    return 'Hãy chọn loại video trước';
   }
   if (optionCount === 0) {
-    return 'No visual styles available';
+    return 'Không có kiểu hình ảnh nào';
   }
-  return 'Select video style';
+  return 'Chọn kiểu video';
 }

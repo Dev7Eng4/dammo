@@ -19,7 +19,9 @@ export function mergeChannelVideos(
     status: 'Published' as const,
   }));
 
-  const prepareVideos = prepare.map(prepareItemToVideo);
+  const prepareVideos = prepare
+    .filter(item => item.status !== 'Uploaded')
+    .map(prepareItemToVideo);
 
   return [...publishedWithStatus, ...prepareVideos];
 }

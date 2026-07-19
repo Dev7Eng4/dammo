@@ -77,6 +77,8 @@ export async function createYoutubeProductionDestination(
     backgroundFootageMode: channel.backgroundFootageMode,
     thumbnailStyleKey: channel.thumbnailStyleKey,
     captionStyleKey: channel.captionStyleKey,
+    showDisclaimer: channel.showDisclaimer === true,
+    disclaimerText: channel.disclaimerText,
     ...reupAudioConfig,
 
     getVideoOutputDir(mediaId: string) {

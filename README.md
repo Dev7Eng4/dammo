@@ -47,3 +47,6 @@ ai -> check 2 image gần nhau nếu thời gian xa quá -> lỗi
 xem xét khi hết quote đổi profile -> nêu đổi hết profile thì đổi model
 
 - thêm show avatar -> kiểm tra trong youtube channel có file tên avatar hay không -> nếu có thực hiện hiển thị ở góc trái màn hình
+
+flow -> khi vào url có thể là New Project có thể là create with flow -> cần xử lý
+meta -> hiện tại đang mở 1 profile 3 tabs, 1 profile 2 tabs -> mong muốn 2 profile đều 5 tabs

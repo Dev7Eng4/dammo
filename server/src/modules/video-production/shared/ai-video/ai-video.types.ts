@@ -59,6 +59,7 @@ export interface AssembleReupAiSlideshowVideoInput {
   captionStyleKey?: CaptionStyleKey;
   /** Temporary: burn top-left disclaimer for the first N seconds. */
   showDisclaim?: boolean;
+  disclaimerText?: string;
   onLog?: (msg: string) => void;
 }
 

@@ -8,8 +8,8 @@ interface YoutubeChannelVideoSummaryProps {
 }
 
 const summaryItems = [
-  { key: 'Created' as const, label: 'Created' },
-  { key: 'Prepared' as const, label: 'Prepared' },
+  { key: 'Created' as const, label: 'Đã tạo' },
+  { key: 'Prepared' as const, label: 'Đã chuẩn bị' },
 ];
 
 export function YoutubeChannelVideoSummary({ videos, loading }: YoutubeChannelVideoSummaryProps) {
@@ -28,7 +28,7 @@ export function YoutubeChannelVideoSummary({ videos, loading }: YoutubeChannelVi
                 loading && 'animate-pulse text-neutral-700',
               )}
             >
-              {loading ? '—' : value.toLocaleString()}
+              {loading ? '—' : value.toLocaleString('vi-VN')}
             </p>
           </div>
         );

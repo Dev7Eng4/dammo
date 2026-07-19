@@ -1,15 +1,26 @@
 {
   "prompts": [
     {
-      "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
+      "id": "71e34378-0029-40dc-94ee-9aa4a38f477b",
       "key": "remove_logo",
       "language": "ja",
       "name": "Remove Logo",
       "category": "thumbnail",
       "outputType": "image",
       "useReferenceImage": true,
+      "createdAt": "2026-07-18T09:05:10.245Z",
+      "updatedAt": "2026-07-18T09:05:10.245Z"
+    },
+    {
+      "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
+      "key": "remove_logo_and_change_background",
+      "language": "ja",
+      "name": "Remove Logo & Change Background",
+      "category": "thumbnail",
+      "outputType": "image",
+      "useReferenceImage": true,
       "createdAt": "2026-07-18T06:38:33.017Z",
-      "updatedAt": "2026-07-18T06:38:33.017Z"
+      "updatedAt": "2026-07-18T09:03:49.519Z"
     },
     {
       "id": "8050ea1f-30d7-4889-ae82-dc5b16b8bc0c",

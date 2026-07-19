@@ -35,7 +35,7 @@ import type {
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
 const META_IMAGE_TIMEOUT_MS = 300_000;
-const META_IMAGE_MAX_TABS = 5;
+const META_IMAGE_TABS_PER_MAIN_PROFILE = 5;
 const META_IMAGE_MAX_RETRIES = 3;
 const FLOW_TOOL_TIMEOUT_MS = 300_000;
 
@@ -185,22 +185,20 @@ async function generateFlowSceneImages(
 }
 
 async function openChromeMetaWorkers(
-  profiles: ChromeProfile[],
-  tabCount: number,
+  tabProfiles: ChromeProfile[],
   startIndex: number,
   log: (msg: string) => void,
 ): Promise<MetaImageWorker[]> {
-  if (tabCount <= 0 || profiles.length === 0) return [];
+  if (tabProfiles.length === 0) return [];
 
-  const uniqueProfiles = [...new Map(profiles.map(profile => [profile.id, profile])).values()];
+  const uniqueProfiles = [...new Map(tabProfiles.map(profile => [profile.id, profile])).values()];
   for (const profile of uniqueProfiles) {
     log(`[ai-video] Mở Chrome main profile ${profile.name} cho Meta scene images...`);
     await openChromeProfile(profile.id, profile.userDataDir);
   }
 
   const workers: MetaImageWorker[] = [];
-  for (let tabIndex = 0; tabIndex < tabCount; tabIndex += 1) {
-    const profile = profiles[tabIndex % profiles.length];
+  for (const profile of tabProfiles) {
     try {
       const page = await createChromeProfilePage(profile.id);
       await metaBrowserService.openOnPage(page);
@@ -220,6 +218,25 @@ async function openChromeMetaWorkers(
   }
 
   return workers;
+}
+
+function allocateChromeMetaTabProfiles(
+  profiles: ChromeProfile[],
+  pendingCount: number,
+): ChromeProfile[] {
+  const tabProfiles: ChromeProfile[] = [];
+
+  for (const profile of profiles) {
+    const remaining = pendingCount - tabProfiles.length;
+    if (remaining <= 0) break;
+
+    const tabCount = Math.min(META_IMAGE_TABS_PER_MAIN_PROFILE, remaining);
+    for (let tabIndex = 0; tabIndex < tabCount; tabIndex += 1) {
+      tabProfiles.push(profile);
+    }
+  }
+
+  return tabProfiles;
 }
 
 async function openGpmMetaWorkers(
@@ -268,13 +285,12 @@ async function openMetaWorkerPool(
   pendingCount: number,
   log: (msg: string) => void,
 ): Promise<MetaWorkerPool> {
-  const target = Math.min(META_IMAGE_MAX_TABS, pendingCount);
   const mains = chromeProfilesService.listMainProfiles();
+  const chromeTabProfiles = allocateChromeMetaTabProfiles(mains, pendingCount);
+  const remainingAfterChrome = Math.max(0, pendingCount - chromeTabProfiles.length);
 
-  const chromeUniqueSlots = Math.min(mains.length, target);
-  const needGpm = chromeUniqueSlots < target;
   let gpmCandidates: GpmProfile[] = [];
-  if (needGpm) {
+  if (remainingAfterChrome > 0) {
     try {
       gpmCandidates = await gpmManagerService.listMetaEnabledProfiles();
     } catch (err) {
@@ -286,23 +302,18 @@ async function openMetaWorkerPool(
       gpmCandidates = [];
     }
   }
-  const gpmProfiles = gpmCandidates.slice(0, Math.max(0, target - chromeUniqueSlots));
-  const remainingAfterGpm = target - chromeUniqueSlots - gpmProfiles.length;
-  const chromeTabCount =
-    chromeUniqueSlots === 0 ? 0 : chromeUniqueSlots + remainingAfterGpm;
-
-  const chromeProfilesForTabs =
-    chromeTabCount > 0 ? mains.slice(0, Math.min(mains.length, META_IMAGE_MAX_TABS)) : [];
+  const gpmProfiles = gpmCandidates.slice(0, remainingAfterChrome);
 
   log(
-    `[ai-video] Meta capacity: target=${target}, chromeMains=${mains.length}, ` +
-      `chromeTabs=${chromeTabCount}, gpmMeta=${gpmProfiles.length}` +
+    `[ai-video] Meta capacity: pending=${pendingCount}, chromeMains=${mains.length}, ` +
+      `tabsPerMain=${META_IMAGE_TABS_PER_MAIN_PROFILE}, chromeTabs=${chromeTabProfiles.length}, ` +
+      `gpmMeta=${gpmProfiles.length}` +
       (gpmProfiles.length > 0
         ? ` (${gpmProfiles.map(profile => profile.name).join(', ')})`
         : ''),
   );
 
-  if (chromeTabCount === 0 && gpmProfiles.length === 0) {
+  if (chromeTabProfiles.length === 0 && gpmProfiles.length === 0) {
     throw new AppError(
       'No Chrome main or GPM meta-enabled profiles available for Meta scene images',
       400,
@@ -310,7 +321,7 @@ async function openMetaWorkerPool(
     );
   }
 
-  const chromeWorkers = await openChromeMetaWorkers(chromeProfilesForTabs, chromeTabCount, 0, log);
+  const chromeWorkers = await openChromeMetaWorkers(chromeTabProfiles, 0, log);
   const { workers: gpmWorkers, connections } = await openGpmMetaWorkers(
     gpmProfiles,
     chromeWorkers.length,

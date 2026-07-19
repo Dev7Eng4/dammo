@@ -7,6 +7,7 @@ interface MailAccountsPaginationProps {
   total: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  locale?: 'en' | 'vi';
 }
 
 export function MailAccountsPagination({
@@ -15,16 +16,20 @@ export function MailAccountsPagination({
   total,
   totalPages,
   onPageChange,
+  locale = 'en',
 }: MailAccountsPaginationProps) {
   if (total === 0) return null;
 
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
+  const numberLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       <p className="text-sm text-neutral-400">
-        Showing {start.toLocaleString()}–{end.toLocaleString()} of {total.toLocaleString()}
+        {locale === 'vi' ? 'Hiển thị' : 'Showing'} {start.toLocaleString(numberLocale)}–
+        {end.toLocaleString(numberLocale)} {locale === 'vi' ? 'trên' : 'of'}{' '}
+        {total.toLocaleString(numberLocale)}
       </p>
       <div className="flex items-center gap-2">
         <Button
@@ -34,10 +39,10 @@ export function MailAccountsPagination({
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          Previous
+          {locale === 'vi' ? 'Trước' : 'Previous'}
         </Button>
         <span className="text-sm text-neutral-400">
-          Page {page} of {totalPages}
+          {locale === 'vi' ? 'Trang' : 'Page'} {page} {locale === 'vi' ? 'trên' : 'of'} {totalPages}
         </span>
         <Button
           variant="outlined"
@@ -46,7 +51,7 @@ export function MailAccountsPagination({
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next
+          {locale === 'vi' ? 'Sau' : 'Next'}
         </Button>
       </div>
     </div>

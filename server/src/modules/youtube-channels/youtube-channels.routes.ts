@@ -1,16 +1,69 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import fs from 'node:fs';
+import { Readable } from 'node:stream';
 import { isAppError } from '../../shared/http/errors.js';
 import {
   createVideosBatchSchema,
   createYoutubeChannelSchema,
   listYoutubeChannelsQuerySchema,
+  updateYoutubeVideoContentSchema,
   updateYoutubeChannelSchema,
 } from './youtube-channels.schema.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelsService } from './youtube-channels.service.js';
 import { uploadVideosBatchSchema, uploadVideosSchema } from '../youtube-upload/youtube-upload.schema.js';
 import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.js';
+import {
+  youtubeVideoContentService,
+  type YoutubeThumbnailUpload,
+  type YoutubeVideoAssetKind,
+} from './youtube-video-content.service.js';
+
+const THUMBNAIL_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const THUMBNAIL_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+function streamVideoAsset(
+  request: Request,
+  asset: ReturnType<typeof youtubeVideoContentService.getAsset>,
+): Response {
+  const range = request.headers.get('range');
+  const commonHeaders = {
+    'Accept-Ranges': 'bytes',
+    'Content-Type': asset.contentType,
+    'Cache-Control': 'private, no-cache',
+  };
+
+  if (!range) {
+    const body = Readable.toWeb(fs.createReadStream(asset.filePath));
+    return new Response(body as ReadableStream, {
+      status: 200,
+      headers: { ...commonHeaders, 'Content-Length': String(asset.size) },
+    });
+  }
+
+  const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  const start = match?.[1] ? Number(match[1]) : 0;
+  const requestedEnd = match?.[2] ? Number(match[2]) : asset.size - 1;
+  const end = Math.min(requestedEnd, asset.size - 1);
+
+  if (!match || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end) {
+    return new Response(null, {
+      status: 416,
+      headers: { ...commonHeaders, 'Content-Range': `bytes */${asset.size}` },
+    });
+  }
+
+  const body = Readable.toWeb(fs.createReadStream(asset.filePath, { start, end }));
+  return new Response(body as ReadableStream, {
+    status: 206,
+    headers: {
+      ...commonHeaders,
+      'Content-Length': String(end - start + 1),
+      'Content-Range': `bytes ${start}-${end}/${asset.size}`,
+    },
+  });
+}
 
 export function createYoutubeChannelsRoutes() {
   const app = new Hono();
@@ -40,6 +93,85 @@ export function createYoutubeChannelsRoutes() {
       c.req.param('videoId'),
     );
     return c.json(result);
+  });
+
+  app.get('/:id/videos/:videoId/content', (c) => {
+    const item = youtubeVideoContentService.get(c.req.param('id'), c.req.param('videoId'));
+    const baseUrl = c.req.path;
+    return c.json({
+      ...item,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail` : null,
+      oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+    });
+  });
+
+  app.patch('/:id/videos/:videoId/content', async (c) => {
+    const body = await c.req.parseBody();
+    let tags: unknown = [];
+    try {
+      tags = JSON.parse(typeof body.tags === 'string' ? body.tags : '[]');
+    } catch {
+      return c.json({ error: 'Tags must be a valid JSON array' }, 400);
+    }
+
+    const parsed = updateYoutubeVideoContentSchema.safeParse({
+      title: body.title,
+      description: body.description,
+      tags,
+    });
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0]?.message ?? 'Invalid video content' }, 400);
+    }
+
+    const thumbnail = body.thumbnail;
+    let thumbnailUpload: YoutubeThumbnailUpload | undefined;
+    if (thumbnail !== undefined) {
+      if (!(thumbnail instanceof File) || thumbnail.size === 0) {
+        return c.json({ error: 'Thumbnail image is required' }, 400);
+      }
+      if (!THUMBNAIL_CONTENT_TYPES.has(thumbnail.type)) {
+        return c.json({ error: 'Thumbnail must be a JPEG, PNG, or WebP image' }, 400);
+      }
+      if (thumbnail.size > THUMBNAIL_MAX_SIZE_BYTES) {
+        return c.json({ error: 'Thumbnail image must not exceed 10 MB' }, 400);
+      }
+      thumbnailUpload = {
+        buffer: Buffer.from(await thumbnail.arrayBuffer()),
+        contentType: thumbnail.type as YoutubeThumbnailUpload['contentType'],
+      };
+    }
+
+    const item = await youtubeVideoContentService.update(
+      c.req.param('id'),
+      c.req.param('videoId'),
+      parsed.data,
+      thumbnailUpload,
+    );
+    const baseUrl = c.req.path;
+    return c.json({
+      ...item,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail` : null,
+      oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+    });
+  });
+
+  app.get('/:id/videos/:videoId/content/:asset', (c) => {
+    const assetKind = c.req.param('asset');
+    if (
+      assetKind !== 'thumbnail' &&
+      assetKind !== 'old-thumbnail' &&
+      assetKind !== 'video'
+    ) {
+      return c.json({ error: 'Asset not found' }, 404);
+    }
+    const asset = youtubeVideoContentService.getAsset(
+      c.req.param('id'),
+      c.req.param('videoId'),
+      assetKind as YoutubeVideoAssetKind,
+    );
+    return streamVideoAsset(c.req.raw, asset);
   });
 
   app.get('/:id/videos', async (c) => {

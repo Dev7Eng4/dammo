@@ -6,13 +6,13 @@ const statusConfig: Record<
   { label: string; dot: string; text: string; bg: string }
 > = {
   active: {
-    label: 'Active',
+    label: 'Đang hoạt động',
     dot: 'bg-success',
     text: 'text-success',
     bg: 'bg-success/10 border-success/30',
   },
   suspended: {
-    label: 'Suspended',
+    label: 'Đã đình chỉ',
     dot: 'bg-danger',
     text: 'text-danger',
     bg: 'bg-danger/10 border-danger/30',

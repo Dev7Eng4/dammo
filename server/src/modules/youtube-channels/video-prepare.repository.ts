@@ -63,6 +63,23 @@ export class VideoPrepareRepository {
     return updated;
   }
 
+  updateTitle(channelId: string, videoId: string, title: string): VideoPrepareItem | null {
+    const normalizedVideoId = videoId.trim();
+    const normalizedTitle = title.trim();
+    if (!normalizedVideoId || !normalizedTitle) return null;
+
+    let updated: VideoPrepareItem | null = null;
+    const items = this.read(channelId).map(item => {
+      if (normalizeVideoId(item.videoId) !== normalizedVideoId) return item;
+      updated = { ...item, title: normalizedTitle };
+      return updated;
+    });
+
+    if (!updated) return null;
+    writeJson(youtubeChannelVideoPrepareFile(channelId), items);
+    return updated;
+  }
+
   markCreated(channelId: string, videoId: string): VideoPrepareItem | null {
     return this.updateStatus(channelId, videoId, 'Created');
   }

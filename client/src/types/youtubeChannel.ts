@@ -11,22 +11,13 @@ export type ReupAudioVideoType = 'si' | 'ai';
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image';
 
-export type CaptionStyleKey =
-  | 'default'
-  | 'bizudp_gothic'
-  | 'zen_kaku'
-  | 'noto_serif'
-  | 'cyan'
-  | 'cyan_navy'
-  | 'yellow';
+export type CaptionStyleKey = 'default' | 'bizudp_gothic' | 'zen_kaku' | 'noto_serif' | 'cyan' | 'cyan_navy' | 'yellow';
 
 export type BackgroundFootageMode = 'source' | 'local';
 
 export const BACKGROUND_FOOTAGE_LOCAL_SENTINEL = '__local__';
 
-export function isReupYoutubeChannelType(
-  type: YoutubeChannelType | '',
-): type is ReupYoutubeChannelType {
+export function isReupYoutubeChannelType(type: YoutubeChannelType | ''): type is ReupYoutubeChannelType {
   return type === 'reup_audio' || type === 'reup_video';
 }
 
@@ -44,10 +35,10 @@ export type YoutubeChannelLanguage = 'en' | 'ko' | 'ja' | 'es';
 export type TargetAudience = YoutubeChannelLanguage;
 
 export const YOUTUBE_CHANNEL_LANGUAGE_LABELS: Record<YoutubeChannelLanguage, string> = {
-  en: 'English',
-  ko: 'Korean',
-  ja: 'Japanese',
-  es: 'Spanish',
+  en: 'Tiếng Anh',
+  ko: 'Tiếng Hàn',
+  ja: 'Tiếng Nhật',
+  es: 'Tiếng Tây Ban Nha',
 };
 
 /** @deprecated Use YOUTUBE_CHANNEL_LANGUAGE_LABELS */
@@ -79,13 +70,7 @@ export function formatChannelLanguageLabel(value: string): string {
 export function formatTargetAudienceLabel(value: string): string {
   return formatChannelLanguageLabel(value);
 }
-export type UploadFrequency =
-  | 'every_5_days'
-  | 'every_3_days'
-  | 'every_2_days'
-  | 'daily_1'
-  | 'daily_2'
-  | 'daily_3';
+export type UploadFrequency = 'every_5_days' | 'every_3_days' | 'every_2_days' | 'daily_1' | 'daily_2' | 'daily_3';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
@@ -115,6 +100,8 @@ export interface YoutubeChannel {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   showAudioBar?: boolean;
+  showDisclaimer?: boolean;
+  disclaimerText?: string;
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
@@ -146,11 +133,11 @@ export interface YoutubeChannelStats {
 export type YoutubeChannelTypeFilter = 'all' | YoutubeChannelType;
 
 export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType | 'reup', string> = {
-  content: 'Content',
-  reup_audio: 'Reup Audio',
-  reup_video: 'Reup Video',
-  content_sale: 'Content Sale',
-  reup: 'Reup',
+  content: 'Nội dung',
+  reup_audio: 'Đăng lại âm thanh',
+  reup_video: 'Đăng lại video',
+  content_sale: 'Bán nội dung',
+  reup: 'Đăng lại',
 };
 export type YoutubeMonetizationFilter = 'all' | MonetizationStatus;
 
@@ -162,13 +149,12 @@ export const YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS: {
   value: YoutubeChannelVideoStatusFilter;
   label: string;
 }[] = [
-  { value: 'all', label: 'All Status' },
-  { value: 'Published', label: 'Published' },
-  { value: 'Prepared', label: 'Prepared' },
-  { value: 'Created', label: 'Created' },
-  { value: 'Uploaded', label: 'Uploaded' },
-  { value: 'Error', label: 'Error' },
-  { value: 'Draft', label: 'Draft' },
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'Published', label: 'Đã xuất bản' },
+  { value: 'Prepared', label: 'Đã chuẩn bị' },
+  { value: 'Created', label: 'Đã tạo' },
+  { value: 'Draft', label: 'Bản nháp' },
+  { value: 'Error', label: 'Lỗi' },
 ];
 
 export interface YoutubeChannelVideo {
@@ -185,6 +171,25 @@ export interface YoutubeChannelVideo {
 export interface YoutubeChannelVideosResponse {
   items: YoutubeChannelVideo[];
   fetchedAt?: string;
+}
+
+export interface YoutubeVideoContent {
+  title: string;
+  description: string;
+  tags: string[];
+  hasThumbnail: boolean;
+  hasOldThumbnail: boolean;
+  hasVideo: boolean;
+  thumbnailUrl: string | null;
+  oldThumbnailUrl: string | null;
+  oldThumbnailFolderPath: string | null;
+  videoUrl: string | null;
+}
+
+export interface UpdateYoutubeVideoContentPayload {
+  title: string;
+  description: string;
+  tags: string[];
 }
 
 export interface YoutubeVideoComment {
@@ -424,6 +429,8 @@ export interface CreateYoutubeChannelPayload {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   showAudioBar?: boolean;
+  showDisclaimer?: boolean;
+  disclaimerText?: string;
   uploadFrequency: UploadFrequency;
   publishTimes: string[];
 }
@@ -445,8 +452,8 @@ export interface AddYoutubeChannelFormValues {
   reupAudioVisualStyleId: string;
   reupAudioBackgroundImage: ReupAudioBackgroundImage | '';
   showAudioBar: boolean;
+  showDisclaimer: boolean;
+  disclaimerText: string;
   uploadFrequency: UploadFrequency | '';
   publishTimes: string[];
 }
-
-export type EditYoutubeChannelFormValues = Omit<AddYoutubeChannelFormValues, 'channelUrl'>;

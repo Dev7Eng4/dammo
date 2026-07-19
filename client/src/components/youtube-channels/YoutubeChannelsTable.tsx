@@ -1,16 +1,15 @@
 import { type ColumnDef } from '@tanstack/react-table';
 import type { Niche } from '../../types/niche';
 import {
-  formatChannelLanguageLabel,
-  YOUTUBE_CHANNEL_TYPE_LABELS,
   type StoredYoutubeChannelType,
   type YoutubeChannel,
+  type YoutubeChannelLanguage,
+  type YoutubeChannelStatus,
 } from '../../types/youtubeChannel';
 import type { SourceChannel } from '../../types/sourceChannel';
 import { resolveNicheLabel } from '../../utils/niche';
 import { formatChannelSources } from '../../utils/youtubeChannel';
 import { DataTable } from '../ui';
-import { ChannelStatusPill } from './ChannelStatusPill';
 
 interface YoutubeChannelsTableProps {
   channels: YoutubeChannel[];
@@ -23,14 +22,33 @@ interface YoutubeChannelsTableProps {
   onToggleAll: () => void;
 }
 
+const typeLabels: Record<StoredYoutubeChannelType, string> = {
+  content: 'Nội dung',
+  reup_audio: 'Reup âm thanh',
+  reup_video: 'Reup video',
+  content_sale: 'Bán nội dung',
+  reup: 'Reup',
+};
+
+const languageLabels: Record<YoutubeChannelLanguage, string> = {
+  en: 'Tiếng Anh',
+  ko: 'Tiếng Hàn',
+  ja: 'Tiếng Nhật',
+  es: 'Tiếng Tây Ban Nha',
+};
+
 function typeLabel(type: StoredYoutubeChannelType): string {
-  return YOUTUBE_CHANNEL_TYPE_LABELS[type] ?? type;
+  return typeLabels[type] ?? type;
+}
+
+function languageLabel(language: YoutubeChannelLanguage): string {
+  return languageLabels[language] ?? language;
 }
 
 function formatDate(value?: string): string {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('en-US');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
 }
 
 function SourceCell({ value }: { value: string }) {
@@ -38,6 +56,23 @@ function SourceCell({ value }: { value: string }) {
     <p className="max-w-[12rem] truncate text-xs text-neutral-400" title={value}>
       {value}
     </p>
+  );
+}
+
+function StatusCell({ status }: { status: YoutubeChannelStatus }) {
+  const isActive = status === 'active';
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+        isActive
+          ? 'border-success/30 bg-success/10 text-success'
+          : 'border-danger/30 bg-danger/10 text-danger'
+      }`}
+    >
+      <span className={`size-1.5 rounded-full ${isActive ? 'bg-success' : 'bg-danger'}`} />
+      {isActive ? 'Đang hoạt động' : 'Bị tạm ngưng'}
+    </span>
   );
 }
 
@@ -54,7 +89,7 @@ export function YoutubeChannelsTable({
   const columns: ColumnDef<YoutubeChannel, unknown>[] = [
     {
       id: 'channel',
-      header: 'CHANNEL',
+      header: 'KÊNH',
       cell: ({ row }) => {
         const channel = row.original;
         return (
@@ -75,44 +110,44 @@ export function YoutubeChannelsTable({
     },
     {
       accessorKey: 'linkedEmail',
-      header: 'LINKED EMAIL',
+      header: 'EMAIL LIÊN KẾT',
       cell: ({ getValue }) => (
         <p className="max-w-[14rem] truncate font-mono text-xs text-neutral-400">{getValue<string>()}</p>
       ),
     },
     {
       accessorKey: 'type',
-      header: 'TYPE',
+      header: 'LOẠI',
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{typeLabel(getValue<StoredYoutubeChannelType>())}</span>
       ),
     },
     {
       id: 'source',
-      header: 'SOURCE',
+      header: 'NGUỒN',
       cell: ({ row }) => <SourceCell value={formatChannelSources(row.original, sources)} />,
     },
     {
       id: 'nicheLang',
-      header: 'NICHE / LANG',
+      header: 'CHỦ ĐỀ / NGÔN NGỮ',
       cell: ({ row }) => (
         <span className="text-neutral-400">
           {resolveNicheLabel(row.original.niche, niches) || '—'} (
-          {formatChannelLanguageLabel(row.original.language)})
+          {languageLabel(row.original.language)})
         </span>
       ),
     },
     {
       accessorKey: 'lastUploadAt',
-      header: 'LAST UPLOAD',
+      header: 'LẦN TẢI LÊN GẦN NHẤT',
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatDate(getValue<string | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'STATUS',
-      cell: ({ row }) => <ChannelStatusPill status={row.original.status} />,
+      header: 'TRẠNG THÁI',
+      cell: ({ row }) => <StatusCell status={row.original.status} />,
     },
   ];
 
@@ -127,7 +162,7 @@ export function YoutubeChannelsTable({
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
       onRowClick={channel => onToggleRow(channel.id)}
-      emptyMessage="No channels match your filter."
+      emptyMessage="Không có kênh nào phù hợp với bộ lọc."
     />
   );
 }
