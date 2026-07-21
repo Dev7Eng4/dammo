@@ -89,7 +89,7 @@ export type SourceVideoDurationFilter = 'all' | 'under_8m' | '8m_30m' | '30m_60m
 export interface CreateSourceChannelPayload {
   url: string;
   purpose: SourcePurpose;
-  niche: string;
+  niche?: string;
 }
 
 export interface UpdateSourceChannelPayload {

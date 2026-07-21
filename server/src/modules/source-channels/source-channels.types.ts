@@ -68,7 +68,7 @@ export interface SourceVideosStore {
 export interface CreateSourceChannelInput {
   url: string;
   purpose: SourcePurpose;
-  niche: string;
+  niche?: string;
 }
 
 export interface UpdateSourceChannelInput {

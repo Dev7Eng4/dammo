@@ -1,5 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table';
 import type { GpmGroup, GpmProfile } from '../../types/gpm';
+import { cn } from '../../lib/cn';
 import { Button, DataTable } from '../ui';
 
 export type GpmCapabilityKey = 'flowEnabled' | 'metaEnabled';
@@ -118,9 +119,12 @@ export function GpmProfilesTable({
         return (
           <div onClick={e => e.stopPropagation()}>
             <Button
-              variant="outlined"
+              variant={running ? 'danger' : 'outlined'}
               size="sm"
-              className="rounded-lg"
+              className={cn(
+                'rounded-lg',
+                !running && 'border-success/30 text-success hover:border-success/50 hover:bg-success/10',
+              )}
               disabled={busy}
               onClick={() => (running ? onStop(profile.id) : onStart(profile.id))}
             >

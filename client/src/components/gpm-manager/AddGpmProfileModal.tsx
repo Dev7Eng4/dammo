@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { createGpmProfile } from '../../api/gpm';
 import { fetchProxies, setProfileProxy } from '../../api/proxies';
+import { fetchMailAccounts } from '../../api/mailAccounts';
 import { buildRawProxy, formatProxyOptionLabel } from '../../lib/proxy-format';
 import type { AddGpmProfileFormValues, GpmGroup } from '../../types/gpm';
+import type { MailAccount } from '../../types/mailAccount';
 import type { Proxy } from '../../types/proxy';
-import { Button, Input, Modal, Select, Textarea } from '../ui';
+import { Button, Modal, Select, Textarea } from '../ui';
 
 interface AddGpmProfileModalProps {
   open: boolean;
   groups: GpmGroup[];
+  usedEmails: string[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -21,10 +24,32 @@ const defaultValues: AddGpmProfileFormValues = {
   note: '',
 };
 
-export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmProfileModalProps) {
+export function AddGpmProfileModal({ open, groups, usedEmails, onClose, onSuccess }: AddGpmProfileModalProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [proxies, setProxies] = useState<Proxy[]>([]);
   const [proxiesLoading, setProxiesLoading] = useState(false);
+  const [mailAccounts, setMailAccounts] = useState<MailAccount[]>([]);
+  const [mailAccountsLoading, setMailAccountsLoading] = useState(false);
+
+  const usedEmailsSet = useMemo(
+    () => new Set(usedEmails.map((email) => email.trim().toLowerCase()).filter(Boolean)),
+    [usedEmails],
+  );
+
+  const emailOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return mailAccounts
+      .map((account) => account.email)
+      .filter(Boolean)
+      .filter((email) => {
+        const normalized = email.trim().toLowerCase();
+        if (!normalized) return false;
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return !usedEmailsSet.has(normalized);
+      })
+      .map((email) => ({ value: email, label: email }));
+  }, [mailAccounts, usedEmailsSet]);
 
   const groupOptions = useMemo(
     () => [
@@ -49,6 +74,7 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
     register,
     handleSubmit,
     reset,
+    control,
     setValue,
     watch,
     formState: { errors, isSubmitting },
@@ -71,7 +97,7 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
     const controller = new AbortController();
     setProxiesLoading(true);
 
-    fetchProxies('active', '', 1, 100, { signal: controller.signal })
+    fetchProxies('all', '', 1, 100, { signal: controller.signal })
       .then((response) => setProxies(response.items))
       .catch((err) => {
         if (!controller.signal.aborted) {
@@ -85,6 +111,39 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
 
     return () => controller.abort();
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const controller = new AbortController();
+    setMailAccountsLoading(true);
+
+    fetchMailAccounts('', 1, 100, { signal: controller.signal })
+      .then((res) => {
+        setMailAccounts(res.items);
+
+        const available = res.items
+          .map((a) => a.email)
+          .filter((email) => {
+            const normalized = email.trim().toLowerCase();
+            return normalized && !usedEmailsSet.has(normalized);
+          });
+
+        setValue('name', available[0] ?? '');
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          setMailAccounts([]);
+          setApiError(err instanceof Error ? err.message : 'Failed to load emails');
+          setValue('name', '');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setMailAccountsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [open, setValue, usedEmailsSet]);
 
   function handleClose() {
     reset(defaultValues);
@@ -131,7 +190,7 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
           <Button
             size="sm"
             className="rounded-lg"
-            disabled={isSubmitting || proxiesLoading}
+            disabled={isSubmitting || proxiesLoading || mailAccountsLoading || emailOptions.length === 0}
             form="add-gpm-profile-form"
             type="submit"
           >
@@ -142,15 +201,33 @@ export function AddGpmProfileModal({ open, groups, onClose, onSuccess }: AddGpmP
     >
       <form id="add-gpm-profile-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label htmlFor="gpm-profile-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Name
+          <label htmlFor="gpm-profile-email" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            Email
           </label>
-          <Input
-            id="gpm-profile-name"
-            placeholder="Profile name"
-            className="h-10 rounded-lg text-sm"
-            disabled={isSubmitting}
-            {...register('name', { required: 'Name is required' })}
+          <Controller
+            name="name"
+            control={control}
+            rules={{ required: 'Email is required' }}
+            render={({ field }) => (
+              <Select
+                id="gpm-profile-email"
+                options={emailOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  mailAccountsLoading
+                    ? 'Loading emails...'
+                    : emailOptions.length === 0
+                      ? 'No available email'
+                      : 'Select email'
+                }
+                searchable
+                searchPlaceholder="Tìm kiếm email..."
+                disabled={isSubmitting || mailAccountsLoading || emailOptions.length === 0}
+                triggerClassName="h-10 rounded-lg text-sm"
+              />
+            )}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>

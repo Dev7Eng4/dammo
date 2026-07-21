@@ -83,18 +83,24 @@ export function GpmProfilesToolbar({
         <Button variant='outlined' size='sm' className='rounded-lg' onClick={onRefresh} disabled={busy}>
           Refresh
         </Button>
-        {/* <Button
+        <Button
           variant="outlined"
           size="sm"
-          className="rounded-lg"
+          className="rounded-lg border-success/30 text-success hover:border-success/50 hover:bg-success/10"
           onClick={onStart}
           disabled={!canStart || starting || busy}
         >
           {starting ? 'Starting…' : 'Start'}
-        </Button> */}
-        {/* <Button variant='outlined' size='sm' className='rounded-lg' onClick={onStop} disabled={!canStop || stopping || busy}>
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          className="rounded-lg"
+          onClick={onStop}
+          disabled={!canStop || stopping || busy}
+        >
           {stopping ? 'Stopping…' : 'Stop'}
-        </Button> */}
+        </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' onClick={onTest} disabled={!canTest || testing || busy}>
           {testing ? 'Testing…' : 'Test'}
         </Button>

@@ -15,7 +15,7 @@ export interface TaskLogEntry {
 export interface AddSourceTaskPayload {
   url: string;
   purpose: string;
-  niche: string;
+  niche?: string;
 }
 
 export interface CreateVideoTaskPayload {

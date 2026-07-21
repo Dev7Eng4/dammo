@@ -216,11 +216,9 @@ export class SourceChannelsService {
       throw new AppError('URL is required');
     }
 
-    if (!input.niche.trim()) {
-      throw new AppError('Niche is required');
-    }
+    const niche = input.niche?.trim() ?? '';
 
-    if (!nichesService.exists(input.niche)) {
+    if (niche && !nichesService.exists(niche)) {
       throw new AppError('Niche not found', 400, 'INVALID_NICHE');
     }
 
@@ -289,7 +287,7 @@ export class SourceChannelsService {
       name,
       url: displayUrl,
       fullUrl: storedFullUrl,
-      niche: input.niche,
+      niche,
       purpose: input.purpose,
       riskLevel: 'low',
       mappedOwnedChannels: [],

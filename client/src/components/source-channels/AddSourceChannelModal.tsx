@@ -20,7 +20,6 @@ const defaultValues: AddSourceChannelFormValues = {
 
 export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannelModalProps) {
   const [niches, setNiches] = useState<Niche[]>([]);
-  const [nichesLoading, setNichesLoading] = useState(false);
   const [nichesError, setNichesError] = useState<string | null>(null);
 
   const {
@@ -37,31 +36,31 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     if (!open) return;
 
     const controller = new AbortController();
-    setNichesLoading(true);
-    setNichesError(null);
 
     fetchNiches({ signal: controller.signal })
       .then((data) => {
         setNiches(data.items);
+        setNichesError(null);
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
         setNichesError(err instanceof Error ? err.message : 'Failed to load niches');
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setNichesLoading(false);
       });
 
     return () => controller.abort();
   }, [open]);
 
+  const nichesLoading = open && niches.length === 0 && nichesError === null;
+
   function handleClose() {
+    setNiches([]);
+    setNichesError(null);
     reset(defaultValues);
     onClose();
   }
 
   function onSubmit(values: AddSourceChannelFormValues) {
-    if (!values.purpose || !values.niche) return;
+    if (!values.purpose) return;
 
     const urls = values.url
       .split('\n')
@@ -70,10 +69,12 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
 
     if (urls.length === 0) return;
 
+    const niche = values.niche.trim();
+
     const payloads: CreateSourceChannelPayload[] = urls.map((url) => ({
       url,
       purpose: values.purpose as CreateSourceChannelPayload['purpose'],
-      niche: values.niche,
+      ...(niche ? { niche } : {}),
     }));
 
     reset(defaultValues);
@@ -145,11 +146,11 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
         <div>
           <label htmlFor="source-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
             Niche
+            <span className="ml-1 font-normal text-neutral-500">(tùy chọn)</span>
           </label>
           <Controller
             name="niche"
             control={control}
-            rules={{ required: 'Niche is required' }}
             render={({ field }) => (
               <Select
                 id="source-niche"
@@ -161,7 +162,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
                   nichesLoading
                     ? 'Loading niches...'
                     : nicheOptions.length === 0
-                      ? 'No niches yet — add one first'
+                      ? 'Chưa có niche'
                       : 'Select niche'
                 }
                 disabled={nichesLoading || nicheOptions.length === 0}

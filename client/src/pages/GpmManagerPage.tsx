@@ -75,6 +75,11 @@ export function GpmManagerPage() {
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const isSelectedRunning = selectedProfileId ? runningProfileIds.has(selectedProfileId) : false;
 
+  const usedEmails = useMemo(
+    () => Array.from(new Set(profiles.map((profile) => profile.name.trim().toLowerCase()).filter(Boolean))),
+    [profiles],
+  );
+
   const filteredGroups = useMemo(() => {
     const query = groupSearch.trim().toLowerCase();
     if (!query) return groups;
@@ -402,6 +407,7 @@ export function GpmManagerPage() {
       <AddGpmProfileModal
         open={showAddProfileModal}
         groups={groups}
+        usedEmails={usedEmails}
         onClose={() => setShowAddProfileModal(false)}
         onSuccess={() => {
           toast.success('GPM profile created');
@@ -422,6 +428,7 @@ export function GpmManagerPage() {
         open={showEditProfileModal}
         profile={selectedProfile}
         groups={groups}
+        usedEmails={usedEmails}
         onClose={() => setShowEditProfileModal(false)}
         onSuccess={() => {
           toast.success('GPM profile updated');

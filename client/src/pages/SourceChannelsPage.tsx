@@ -174,7 +174,7 @@ export function SourceChannelsPage() {
           payload: {
             url: payload.url,
             purpose: payload.purpose,
-            niche: payload.niche,
+            ...(payload.niche ? { niche: payload.niche } : {}),
           },
         },
         {
