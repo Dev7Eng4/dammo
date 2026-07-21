@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { startGpmProfileByEmail } from '../api/gpm';
 import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
 import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
@@ -8,6 +9,7 @@ import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutub
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
+import { useToast } from '../components/ui';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
 import type { Niche } from '../types/niche';
 import type { YoutubeChannel, YoutubeChannelStats, YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../types/youtubeChannel';
@@ -17,8 +19,14 @@ import { isStoredReupChannelType } from '../types/youtubeChannel';
 const LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
+function canOpenGpmProfile(linkedEmail: string): boolean {
+  const normalized = linkedEmail.trim().toLowerCase();
+  return normalized.length > 0 && normalized !== 'default';
+}
+
 export function YoutubeChannelsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
   const [stats, setStats] = useState<YoutubeChannelStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -31,6 +39,7 @@ export function YoutubeChannelsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
+  const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
@@ -261,6 +270,32 @@ export function YoutubeChannelsPage() {
     });
   }
 
+  async function handleOpenProfile(channel: YoutubeChannel) {
+    if (!canOpenGpmProfile(channel.linkedEmail)) return;
+    if (openingProfileIds.has(channel.id)) return;
+
+    setOpeningProfileIds(prev => new Set(prev).add(channel.id));
+    try {
+      const { item } = await startGpmProfileByEmail(channel.linkedEmail);
+      const debugInfo =
+        item.remote_debugging_address ??
+        (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
+      toast.success(
+        debugInfo
+          ? `Đã mở profile GPM cho ${channel.linkedEmail} — debug ${debugInfo}`
+          : `Đã mở profile GPM cho ${channel.linkedEmail}`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể mở profile GPM');
+    } finally {
+      setOpeningProfileIds(prev => {
+        const next = new Set(prev);
+        next.delete(channel.id);
+        return next;
+      });
+    }
+  }
+
   return (
     <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
@@ -294,9 +329,11 @@ export function YoutubeChannelsPage() {
               niches={niches}
               selectedIds={selectedIds}
               loading={list.loading}
+              openingProfileIds={openingProfileIds}
               onSelect={handleSelect}
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
+              onOpenProfile={handleOpenProfile}
             />
             <MailAccountsPagination
               page={list.page}

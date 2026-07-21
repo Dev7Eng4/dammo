@@ -86,6 +86,14 @@ export function startGpmProfile(id: string) {
   });
 }
 
+export function startGpmProfileByEmail(email: string) {
+  return fetchJson<{ item: GpmStartResult }>(`${API_V1}/gpm/profiles/start-by-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+}
+
 export function stopGpmProfile(id: string) {
   return fetchJson<{ ok: boolean }>(`${API_V1}/gpm/profiles/${id}/stop`, {
     method: 'POST',

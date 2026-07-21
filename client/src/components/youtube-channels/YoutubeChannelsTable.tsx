@@ -9,7 +9,7 @@ import {
 import type { SourceChannel } from '../../types/sourceChannel';
 import { resolveNicheLabel } from '../../utils/niche';
 import { formatChannelSources } from '../../utils/youtubeChannel';
-import { DataTable } from '../ui';
+import { Button, DataTable } from '../ui';
 
 interface YoutubeChannelsTableProps {
   channels: YoutubeChannel[];
@@ -17,9 +17,11 @@ interface YoutubeChannelsTableProps {
   niches?: Niche[];
   selectedIds: Set<string>;
   loading?: boolean;
+  openingProfileIds: Set<string>;
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
+  onOpenProfile: (channel: YoutubeChannel) => void;
 }
 
 const typeLabels: Record<StoredYoutubeChannelType, string> = {
@@ -59,6 +61,11 @@ function SourceCell({ value }: { value: string }) {
   );
 }
 
+function canOpenGpmProfile(linkedEmail: string): boolean {
+  const normalized = linkedEmail.trim().toLowerCase();
+  return normalized.length > 0 && normalized !== 'default';
+}
+
 function StatusCell({ status }: { status: YoutubeChannelStatus }) {
   const isActive = status === 'active';
 
@@ -82,9 +89,11 @@ export function YoutubeChannelsTable({
   niches = [],
   selectedIds,
   loading,
+  openingProfileIds,
   onSelect,
   onToggleRow,
   onToggleAll,
+  onOpenProfile,
 }: YoutubeChannelsTableProps) {
   const columns: ColumnDef<YoutubeChannel, unknown>[] = [
     {
@@ -148,6 +157,30 @@ export function YoutubeChannelsTable({
       accessorKey: 'status',
       header: 'TRẠNG THÁI',
       cell: ({ row }) => <StatusCell status={row.original.status} />,
+    },
+    {
+      id: 'actions',
+      header: 'THAO TÁC',
+      cell: ({ row }) => {
+        const channel = row.original;
+        const opening = openingProfileIds.has(channel.id);
+        const canOpen = canOpenGpmProfile(channel.linkedEmail);
+
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="rounded-lg"
+              disabled={!canOpen || opening}
+              title={canOpen ? undefined : 'Kênh chưa có email liên kết'}
+              onClick={() => onOpenProfile(channel)}
+            >
+              {opening ? 'Đang mở…' : 'Mở Profile'}
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 

@@ -14,6 +14,7 @@ import {
   updateGpmProfile,
   type GpmProfile,
 } from '../../infrastructure/gpm/gpm-api.client.js';
+import { resolveGpmProfileIdByEmail } from '../../infrastructure/gpm/gpm-playwright.connector.js';
 import {
   gpmProfileCapabilitiesRepository,
   type GpmProfileCapabilitiesPatch,
@@ -78,6 +79,11 @@ export class GpmManagerService {
 
   startProfile(id: string, options: GpmStartProfileOptions) {
     return startGpmProfile(id, options);
+  }
+
+  async startProfileByEmail(email: string, options: GpmStartProfileOptions = {}) {
+    const profileId = await resolveGpmProfileIdByEmail(email);
+    return this.startProfile(profileId, options);
   }
 
   stopProfile(id: string) {

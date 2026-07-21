@@ -82,17 +82,64 @@ async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<v
   }
 }
 
+async function findVisibleRoleButton(page: Page, name: RegExp): Promise<Locator | null> {
+  const button = page.getByRole('button', { name }).first();
+  if (await button.isVisible().catch(() => false)) {
+    return button;
+  }
+  return null;
+}
+
+async function findVisibleSelectorButton(page: Page, selector: string): Promise<Locator | null> {
+  for (const candidate of splitSelectors(selector)) {
+    const locator = page.locator(candidate).last();
+    if (await locator.isVisible().catch(() => false)) {
+      return locator;
+    }
+  }
+  return null;
+}
+
 async function clickNewProjectButton(page: Page): Promise<void> {
-  const roleButton = page.getByRole('button', { name: /New project/i }).first();
-  if (await roleButton.isVisible().catch(() => false)) {
-    await humanClick(page, roleButton);
-    await randomDelay(500, 1_000);
-    return;
+  const pollTimeoutMs = 15_000;
+  const deadline = Date.now() + pollTimeoutMs;
+  let clickedCreateWithFlow = false;
+
+  while (Date.now() < deadline) {
+    const newProjectButton =
+      (await findVisibleRoleButton(page, /New project/i)) ??
+      (await findVisibleSelectorButton(page, FLOW_CONFIG.selectors.newProjectButton));
+    if (newProjectButton) {
+      await humanClick(page, newProjectButton);
+      await randomDelay(500, 1_000);
+      return;
+    }
+
+    if (!clickedCreateWithFlow) {
+      const createWithFlowButton =
+        (await findVisibleRoleButton(page, /Create with Google Flow/i)) ??
+        (await findVisibleSelectorButton(page, FLOW_CONFIG.selectors.createWithGoogleFlowButton));
+      if (createWithFlowButton) {
+        await humanClick(page, createWithFlowButton);
+        await randomDelay(500, 1_000);
+        clickedCreateWithFlow = true;
+      }
+    }
+
+    await randomDelay(200, 400);
   }
 
-  const selectorButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.newProjectButton, 15_000);
-  await humanClick(page, selectorButton);
-  await randomDelay(500, 1_000);
+  try {
+    const newProjectButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.newProjectButton, 15_000);
+    await humanClick(page, newProjectButton);
+    await randomDelay(500, 1_000);
+  } catch {
+    throw domTimeoutError(
+      clickedCreateWithFlow
+        ? 'Timed out waiting for "New project" after clicking "Create with Google Flow"'
+        : 'Neither "New project" nor "Create with Google Flow" button found on Flow landing page',
+    );
+  }
 }
 
 function isOnFlowProjectPage(pageUrl: string, projectId: string): boolean {

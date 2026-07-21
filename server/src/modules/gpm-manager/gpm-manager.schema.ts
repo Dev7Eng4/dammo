@@ -46,6 +46,10 @@ export const startGpmProfileSchema = z.object({
   addition_args: z.string().optional(),
 });
 
+export const startGpmProfileByEmailSchema = z.object({
+  email: z.string().trim().min(1),
+});
+
 export const gpmTestProfileSchema = z.object({}).default({});
 
 export const createGpmGroupSchema = z.object({

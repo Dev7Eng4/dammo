@@ -21,7 +21,7 @@ import type { Proxy, ProxyFilter, ProxyStats, ProxyTab } from '../types/proxy';
 
 const LIMIT = 20;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const EXPIRY_WARNING_DAYS = 30;
+const EXPIRY_WARNING_DAYS = 5;
 const EXPIRY_MODAL_MAX_ITEMS = 10;
 
 function getExpiryEndMs(expiresAt?: string): number | null {

@@ -9,7 +9,7 @@ import { env } from '../../config/env.js';
  * - loading / stop indicator while generating
  * - result image container
  * - download button on generated asset
- * - New project button on project list
+ * - New project button on project list (or onboarding "Create with Google Flow" first)
  * - initial project setup (config button XPath + option buttons scoped to popover)
  */
 export const FLOW_BASE_URL = 'https://labs.google/fx/tools/flow';
@@ -107,6 +107,7 @@ export interface FlowDomSelectors {
   resultImages: string;
   downloadButton: string;
   newProjectButton: string;
+  createWithGoogleFlowButton: string;
   btnConfig: string;
   /** Open config popover container — option selectors below must be scoped here, not page-wide. */
   configPopover: string;
@@ -146,6 +147,7 @@ export const FLOW_CONFIG: FlowConfig = {
     resultImages: 'img[src*="blob:"], img[src*="googleusercontent"], img[src*="ggpht"], main img, [class*="result" i] img',
     downloadButton: 'button:has-text("Download"), button[aria-label*="Download" i], a[download]',
     newProjectButton: 'button:has-text("New project")',
+    createWithGoogleFlowButton: 'button:has-text("Create with Google Flow")',
     btnConfig: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[2]/div[2]/button[1]',
     configPopover: '[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]:has([data-state="open"])',
     configPopoverFallback: '/html/body/div[3]',

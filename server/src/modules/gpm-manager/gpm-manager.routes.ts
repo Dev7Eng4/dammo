@@ -7,6 +7,7 @@ import {
   deleteGpmProfileQuerySchema,
   gpmListQuerySchema,
   gpmTestProfileSchema,
+  startGpmProfileByEmailSchema,
   startGpmProfileSchema,
   updateGpmGroupSchema,
   updateGpmProfileCapabilitiesSchema,
@@ -60,6 +61,12 @@ export function createGpmManagerRoutes() {
     const { mode } = c.req.valid('query');
     await gpmManagerService.deleteProfile(c.req.param('id'), mode);
     return c.json({ ok: true });
+  });
+
+  app.post('/profiles/start-by-email', zValidator('json', startGpmProfileByEmailSchema), async (c) => {
+    const { email } = c.req.valid('json');
+    const item = await gpmManagerService.startProfileByEmail(email);
+    return c.json({ item });
   });
 
   app.post('/profiles/:id/start', zValidator('json', startGpmProfileSchema), async (c) => {
