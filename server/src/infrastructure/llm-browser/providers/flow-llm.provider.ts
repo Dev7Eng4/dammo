@@ -100,7 +100,20 @@ async function findVisibleSelectorButton(page: Page, selector: string): Promise<
   return null;
 }
 
+async function dismissDialogIfPresent(page: Page): Promise<void> {
+  const dialog = page.locator(FLOW_CONFIG.selectors.dialog).last();
+  if (!(await dialog.isVisible().catch(() => false))) return;
+
+  const lastButton = dialog.locator('button').last();
+  if (!(await lastButton.isVisible().catch(() => false))) return;
+
+  await humanClick(page, lastButton);
+  await randomDelay(500, 1_000);
+}
+
 async function clickNewProjectButton(page: Page): Promise<void> {
+  await dismissDialogIfPresent(page);
+
   const pollTimeoutMs = 15_000;
   const deadline = Date.now() + pollTimeoutMs;
   let clickedCreateWithFlow = false;

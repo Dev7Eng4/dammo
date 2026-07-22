@@ -148,6 +148,7 @@ export const FLOW_CONFIG: FlowConfig = {
     downloadButton: 'button:has-text("Download"), button[aria-label*="Download" i], a[download]',
     newProjectButton: 'button:has-text("New project")',
     createWithGoogleFlowButton: 'button:has-text("Create with Google Flow")',
+    dialog: 'div[role="dialog"]',
     btnConfig: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[2]/div[2]/button[1]',
     configPopover: '[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]:has([data-state="open"])',
     configPopoverFallback: '/html/body/div[3]',
