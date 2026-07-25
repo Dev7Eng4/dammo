@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { startGpmProfileByEmail } from '../api/gpm';
 import { isAbortError } from '../api/http';
 import { fetchYoutubeChannel, fetchYoutubeChannelVideos, syncYoutubeChannelVideos } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
@@ -9,6 +10,7 @@ import { YoutubeChannelVideosTable } from '../components/youtube-channels/Youtub
 import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
 import { VideoCommentsDrawer } from '../components/youtube-channels/VideoCommentsDrawer';
 import { VideoContentModal } from '../components/youtube-channels/VideoContentModal';
+import { useToast } from '../components/ui';
 import { useAbortableEffect, useClientPaginatedList, useTaskQueue } from '../hooks';
 import type { YoutubeChannel, YoutubeChannelVideo, YoutubeChannelVideoStatusFilter } from '../types/youtubeChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
@@ -16,8 +18,14 @@ import { filterYoutubeChannelVideosByStatus } from '../utils/youtubeChannelVideo
 
 const VIDEO_LIMIT = 20;
 
+function canOpenGpmProfile(linkedEmail: string): boolean {
+  const normalized = linkedEmail.trim().toLowerCase();
+  return normalized.length > 0 && normalized !== 'default';
+}
+
 export function YoutubeChannelDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
   const [channel, setChannel] = useState<YoutubeChannel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +41,7 @@ export function YoutubeChannelDetailPage() {
   const [contentVideo, setContentVideo] = useState<YoutubeChannelVideo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<YoutubeChannelVideoStatusFilter>('all');
+  const [openingProfile, setOpeningProfile] = useState(false);
 
   const filteredVideos = useMemo(() => filterYoutubeChannelVideosByStatus(allVideos, statusFilter), [allVideos, statusFilter]);
 
@@ -126,6 +135,27 @@ export function YoutubeChannelDetailPage() {
     }
   }
 
+  async function handleOpenProfile() {
+    if (!channel || !canOpenGpmProfile(channel.linkedEmail) || openingProfile) return;
+
+    setOpeningProfile(true);
+    try {
+      const { item } = await startGpmProfileByEmail(channel.linkedEmail);
+      const debugInfo =
+        item.remote_debugging_address ??
+        (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
+      toast.success(
+        debugInfo
+          ? `Đã mở profile GPM cho ${channel.linkedEmail} — debug ${debugInfo}`
+          : `Đã mở profile GPM cho ${channel.linkedEmail}`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể mở profile GPM');
+    } finally {
+      setOpeningProfile(false);
+    }
+  }
+
   if (!id || notFound) {
     return (
       <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
@@ -152,9 +182,11 @@ export function YoutubeChannelDetailPage() {
               syncError={syncError}
               videosFetchedAt={videosFetchedAt}
               canCreateVideo={isStoredReupChannelType(channel.type)}
+              openingProfile={openingProfile}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}
               onCreateVideo={handleCreateVideo}
+              onOpenProfile={handleOpenProfile}
             />
           )}
 
@@ -176,7 +208,11 @@ export function YoutubeChannelDetailPage() {
 
           <div className='mt-4 flex flex-wrap items-end justify-between gap-3'>
             {/* <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} /> */}
-            <YoutubeChannelVideosToolbar statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} />
+            <YoutubeChannelVideosToolbar
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              nextUploadAt={channel?.nextUploadAt}
+            />
           </div>
 
           <div className='mt-3 card-surface px-5 pt-3 pb-4'>
@@ -214,11 +250,13 @@ export function YoutubeChannelDetailPage() {
           video={contentVideo}
           onClose={() => setContentVideo(null)}
           onSaved={content => {
-            setAllVideos(current =>
-              current.map(video =>
-                video.id === contentVideo.id ? { ...video, title: content.title } : video,
-              ),
-            );
+            setAllVideos(current => current.map(video => (video.id === contentVideo.id ? { ...video, title: content.title } : video)));
+          }}
+          onMarkedUploaded={videoId => {
+            setAllVideos(current => current.map(video => (video.id === videoId ? { ...video, status: 'Uploaded' } : video)));
+            void fetchYoutubeChannel(id)
+              .then(live => setChannel(live))
+              .catch(() => undefined);
           }}
         />
       ) : null}

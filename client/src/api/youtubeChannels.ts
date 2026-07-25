@@ -16,6 +16,7 @@ import type {
   UploadYoutubeVideosBatchResponse,
   UpdateYoutubeVideoContentPayload,
   YoutubeVideoContent,
+  MarkYoutubeVideoUploadedResponse,
 } from '../types/youtubeChannel';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
@@ -122,6 +123,13 @@ export function updateYoutubeVideoContent(
       method: 'PATCH',
       body: formData,
     },
+  );
+}
+
+export function markYoutubeVideoUploaded(channelId: string, videoId: string) {
+  return fetchJson<MarkYoutubeVideoUploadedResponse>(
+    `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/mark-uploaded`,
+    { method: 'POST' },
   );
 }
 

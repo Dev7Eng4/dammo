@@ -324,7 +324,15 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         });
 
         try {
-          mediaAssets.push(await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image'));
+          mediaAssets.push(
+            await downloadAndSaveMetaAsset(
+              page,
+              sourceUrl,
+              outputPath,
+              'image',
+              metaOptions.aspectRatio ?? '16:9',
+            ),
+          );
         } catch (err) {
           await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
           const message = err instanceof Error ? err.message : String(err);

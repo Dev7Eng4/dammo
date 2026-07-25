@@ -129,14 +129,34 @@ function isDirectory(dirPath: string): boolean {
   }
 }
 
-/** Move a prepared video folder into `uploads/{videoId}` after YouTube upload. Never throws. */
-export function moveYoutubeChannelVideoToUploads(
+const MOVE_RETRY_DELAYS_MS = [200, 400, 800];
+const RETRIABLE_MOVE_ERROR_CODES = new Set(['EPERM', 'EBUSY', 'EACCES']);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRetriableMoveError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    RETRIABLE_MOVE_ERROR_CODES.has(String((err as NodeJS.ErrnoException).code))
+  );
+}
+
+/**
+ * Move a prepared video folder into `uploads/{videoId}` after YouTube upload.
+ * Never throws; returns true when the folder is (or already was) in uploads.
+ * Retries rename on Windows file locks (EPERM/EBUSY) and falls back to copy+delete.
+ */
+export async function moveYoutubeChannelVideoToUploads(
   channelId: string,
   videoId: string,
   sourceFolderPath?: string,
-): void {
+): Promise<boolean> {
   const normalizedVideoId = videoId.trim();
-  if (!normalizedVideoId) return;
+  if (!normalizedVideoId) return false;
 
   const uploadsDir = youtubeChannelUploadsDir(channelId);
   const dest = youtubeChannelUploadedVideoDir(channelId, normalizedVideoId);
@@ -147,33 +167,57 @@ export function moveYoutubeChannelVideoToUploads(
       : resolveYoutubeChannelVideoDir(channelId, normalizedVideoId);
 
   if (!source) {
-    if (isDirectory(dest)) return;
+    if (isDirectory(dest)) return true;
     console.warn(
       `[youtube-upload] move to uploads: source folder not found for videoId «${normalizedVideoId}»`,
     );
-    return;
+    return false;
   }
 
   source = path.resolve(source);
   const resolvedUploadsDir = path.resolve(uploadsDir);
   if (source === dest || source.startsWith(resolvedUploadsDir + path.sep)) {
-    return;
+    return true;
   }
 
   if (isDirectory(dest)) {
     console.warn(
       `[youtube-upload] move to uploads: destination already exists for videoId «${normalizedVideoId}»`,
     );
-    return;
+    return true;
   }
 
+  fs.mkdirSync(uploadsDir, { recursive: true });
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MOVE_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      fs.renameSync(source, dest);
+      console.log(`[youtube-upload] moved ${normalizedVideoId} → uploads/`);
+      return true;
+    } catch (err) {
+      lastError = err;
+      if (!isRetriableMoveError(err)) break;
+      if (attempt < MOVE_RETRY_DELAYS_MS.length) {
+        await sleep(MOVE_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+  }
+
+  // Fallback: copy then delete (works even when a directory handle blocks rename)
   try {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    fs.renameSync(source, dest);
-    console.log(`[youtube-upload] moved ${normalizedVideoId} → uploads/`);
+    fs.cpSync(source, dest, { recursive: true });
+    fs.rmSync(source, { recursive: true, force: true });
+    console.log(`[youtube-upload] moved (copy+delete) ${normalizedVideoId} → uploads/`);
+    return true;
   } catch (err) {
+    fs.rmSync(dest, { recursive: true, force: true });
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(`[youtube-upload] move to uploads failed for «${normalizedVideoId}»: ${message}`);
+    const renameMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    console.warn(
+      `[youtube-upload] move to uploads failed for «${normalizedVideoId}»: rename: ${renameMessage}; copy: ${message}`,
+    );
+    return false;
   }
 }
 

@@ -12,15 +12,22 @@ interface YoutubeChannelDetailHeaderProps {
   videosFetchedAt?: string | null;
   creatingVideo?: boolean;
   canCreateVideo?: boolean;
+  openingProfile?: boolean;
   onSync?: () => void;
   onEdit?: () => void;
   onCreateVideo?: () => void;
+  onOpenProfile?: () => void;
 }
 
 function formatVideosFetchedAt(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('vi-VN');
+}
+
+function canOpenGpmProfile(linkedEmail: string): boolean {
+  const normalized = linkedEmail.trim().toLowerCase();
+  return normalized.length > 0 && normalized !== 'default';
 }
 
 export function YoutubeChannelDetailHeader({
@@ -30,11 +37,14 @@ export function YoutubeChannelDetailHeader({
   videosFetchedAt,
   creatingVideo,
   canCreateVideo,
+  openingProfile,
   onSync,
   onEdit,
   onCreateVideo,
+  onOpenProfile,
 }: YoutubeChannelDetailHeaderProps) {
   const initial = channel.name.charAt(0).toUpperCase();
+  const canOpenProfile = canOpenGpmProfile(channel.linkedEmail);
 
   return (
     <div className='space-y-4'>
@@ -65,6 +75,17 @@ export function YoutubeChannelDetailHeader({
         </div>
 
         <div className='flex shrink-0 flex-wrap items-start gap-2'>
+          {onOpenProfile ? (
+            <Button
+              variant='outlined'
+              className='rounded-lg'
+              disabled={!canOpenProfile || openingProfile}
+              title={canOpenProfile ? undefined : 'Kênh chưa có email liên kết'}
+              onClick={onOpenProfile}
+            >
+              {openingProfile ? 'Đang mở…' : 'Mở Profile'}
+            </Button>
+          ) : null}
           {onCreateVideo ? (
             <Button variant='outlined' className='rounded-lg' disabled={!canCreateVideo || creatingVideo} onClick={onCreateVideo}>
               {creatingVideo ? 'Đang tạo…' : 'Tạo video'}

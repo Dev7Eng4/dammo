@@ -105,6 +105,8 @@ export interface YoutubeChannel {
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
+  /** Computed server-side for detail responses */
+  nextUploadAt?: string | null;
   createdAt: string;
   channelId?: string;
   /** Resolved server-side for list responses */
@@ -190,6 +192,12 @@ export interface UpdateYoutubeVideoContentPayload {
   title: string;
   description: string;
   tags: string[];
+}
+
+export interface MarkYoutubeVideoUploadedResponse {
+  videoId: string;
+  status: 'Uploaded';
+  lastUploadAt: string;
 }
 
 export interface YoutubeVideoComment {

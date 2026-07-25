@@ -25,6 +25,7 @@ import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
 import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
+import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
 import type {
   CaptionStyleKey,
   CreateYoutubeChannelInput,
@@ -327,6 +328,7 @@ export class YoutubeChannelsService {
       sourceNames: resolveSourceNamesForChannel(channel),
       sourceChannelNames: resolveSourceChannelNamesOnly(channel),
       backgroundFootageNames: resolveBackgroundFootageNamesOnly(channel),
+      nextUploadAt: getNextYoutubePublishSlot(channel)?.iso ?? null,
     };
   }
 
@@ -350,6 +352,7 @@ export class YoutubeChannelsService {
       return {
         ...channel,
         language: normalizeChannelLanguage(channel.language),
+        nextUploadAt: getNextYoutubePublishSlot(channel)?.iso ?? null,
       };
     }
     const metadata = await fetchYoutubeChannelMetadata(channel.youtubeUrl);
@@ -369,6 +372,7 @@ export class YoutubeChannelsService {
     return {
       ...updated,
       language: normalizeChannelLanguage(updated.language),
+      nextUploadAt: getNextYoutubePublishSlot(updated)?.iso ?? null,
     };
   }
 

@@ -27,7 +27,9 @@
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts",
     "flow:generate-tool-images": "tsx src/scripts/generate-flow-tool-images.ts",
     "meta:generate-videos": "tsx src/scripts/generate-meta-videos.ts",
-    "slideshow:demo": "tsx src/scripts/create-slideshow.ts"
+    "slideshow:demo": "tsx src/scripts/create-slideshow.ts",
+    "whatif:generate-prompts": "tsx src/remotion/whatif/generate-prompts.ts",
+    "whatif:generate-images": "tsx src/remotion/whatif/generate-images.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

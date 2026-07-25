@@ -8,6 +8,7 @@ import {
 } from 'react';
 import {
   fetchYoutubeVideoContent,
+  markYoutubeVideoUploaded,
   updateYoutubeVideoContent,
 } from '../../api/youtubeChannels';
 import { isAbortError } from '../../api/http';
@@ -20,6 +21,7 @@ interface VideoContentModalProps {
   video: YoutubeChannelVideo;
   onClose: () => void;
   onSaved: (content: YoutubeVideoContent) => void;
+  onMarkedUploaded: (videoId: string) => void;
 }
 
 const THUMBNAIL_ACCEPT = 'image/jpeg,image/png,image/webp';
@@ -29,12 +31,39 @@ function normalizeTag(value: string): string {
   return value.trim().replace(/^#+/, '');
 }
 
+function FieldCopyButton({
+  disabled,
+  label,
+  onClick,
+}: {
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={`Sao chép ${label}`}
+      aria-label={`Sao chép ${label}`}
+      className="inline-flex size-6 items-center justify-center rounded text-neutral-500 transition hover:text-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </svg>
+    </button>
+  );
+}
+
 export function VideoContentModal({
   open,
   channelId,
   video,
   onClose,
   onSaved,
+  onMarkedUploaded,
 }: VideoContentModalProps) {
   const { toast } = useToast();
   const [content, setContent] = useState<YoutubeVideoContent | null>(null);
@@ -46,9 +75,11 @@ export function VideoContentModal({
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [marking, setMarking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const thumbnailPreviewUrlRef = useRef<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   function clearSelectedThumbnail() {
     if (thumbnailPreviewUrlRef.current) {
@@ -121,7 +152,7 @@ export function VideoContentModal({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedTitle = title.trim();
-    if (!normalizedTitle || saving) return;
+    if (!normalizedTitle || saving || marking) return;
     const pendingTag = normalizeTag(tagDraft);
     const submittedTags =
       pendingTag && !tags.some(tag => tag.toLowerCase() === pendingTag.toLowerCase())
@@ -156,10 +187,38 @@ export function VideoContentModal({
   }
 
   const handleClose = () => {
-    if (saving) return;
+    if (saving || marking) return;
     clearSelectedThumbnail();
     onClose();
   };
+
+  async function handleMarkUploaded() {
+    if (loading || saving || marking || video.status !== 'Created') return;
+
+    // Release the video.mp4 file handle so Windows can move the folder
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.pause();
+      videoElement.removeAttribute('src');
+      videoElement.load();
+    }
+
+    setMarking(true);
+    setError(null);
+    try {
+      await markYoutubeVideoUploaded(channelId, video.id);
+      toast.success('Đã đánh dấu video là đã upload');
+      onMarkedUploaded(video.id);
+      clearSelectedThumbnail();
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể đánh dấu video đã upload';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setMarking(false);
+    }
+  }
 
   function handleThumbnailChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -195,6 +254,27 @@ export function VideoContentModal({
     }
   }
 
+  async function copyText(text: string, label: string) {
+    const value = text.trim();
+    if (!value || saving || marking) return;
+
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`Đã sao chép ${label}`);
+    } catch {
+      toast.error(`Không thể sao chép ${label}`);
+    }
+  }
+
+  function getTagsCopyText(): string {
+    const pendingTag = normalizeTag(tagDraft);
+    const tagsToCopy =
+      pendingTag && !tags.some(tag => tag.toLowerCase() === pendingTag.toLowerCase())
+        ? [...tags, pendingTag]
+        : tags;
+    return tagsToCopy.join(', ');
+  }
+
   const thumbnailSrc = thumbnailPreviewUrl ?? content?.thumbnailUrl ?? null;
 
   return (
@@ -206,13 +286,31 @@ export function VideoContentModal({
       bodyClassName="max-h-[calc(100svh-10rem)] overflow-y-auto"
       footer={
         <>
-          <Button variant="secondary" onClick={handleClose} disabled={saving}>
+          <Button
+            variant="secondary"
+            className="mr-auto"
+            onClick={() => void handleCopyOldThumbnailFolderPath()}
+            disabled={!content?.oldThumbnailFolderPath || saving || marking}
+            title="Sao chép đường dẫn folder chứa thumbnail cũ"
+          >
+            Copy path
+          </Button>
+          {video.status === 'Created' ? (
+            <Button
+              variant="outlined"
+              onClick={() => void handleMarkUploaded()}
+              disabled={loading || saving || marking || !content}
+            >
+              {marking ? 'Đang xử lý...' : 'Đã Upload'}
+            </Button>
+          ) : null}
+          <Button variant="secondary" onClick={handleClose} disabled={saving || marking}>
             Hủy
           </Button>
           <Button
             type="submit"
             form="video-content-form"
-            disabled={loading || saving || !content || !title.trim()}
+            disabled={loading || saving || marking || !content || !title.trim()}
           >
             {saving ? 'Đang lưu...' : 'Lưu'}
           </Button>
@@ -238,9 +336,16 @@ export function VideoContentModal({
           ) : null}
 
           <div>
-            <label htmlFor="video-content-title" className="mb-1.5 block text-sm font-medium text-neutral-200">
-              Tiêu đề
-            </label>
+            <div className="mb-1.5 flex items-center gap-2">
+              <label htmlFor="video-content-title" className="text-sm font-medium text-neutral-200">
+                Tiêu đề
+              </label>
+              <FieldCopyButton
+                label="tiêu đề"
+                disabled={!title.trim() || saving || marking}
+                onClick={() => void copyText(title, 'tiêu đề')}
+              />
+            </div>
             <Input
               id="video-content-title"
               value={title}
@@ -253,9 +358,16 @@ export function VideoContentModal({
           </div>
 
           <div>
-            <label htmlFor="video-content-description" className="mb-1.5 block text-sm font-medium text-neutral-200">
-              Mô tả
-            </label>
+            <div className="mb-1.5 flex items-center gap-2">
+              <label htmlFor="video-content-description" className="text-sm font-medium text-neutral-200">
+                Mô tả
+              </label>
+              <FieldCopyButton
+                label="mô tả"
+                disabled={!description.trim() || saving || marking}
+                onClick={() => void copyText(description, 'mô tả')}
+              />
+            </div>
             <Textarea
               id="video-content-description"
               value={description}
@@ -267,9 +379,16 @@ export function VideoContentModal({
           </div>
 
           <div>
-            <label htmlFor="video-content-tags" className="mb-1.5 block text-sm font-medium text-neutral-200">
-              Tags
-            </label>
+            <div className="mb-1.5 flex items-center gap-2">
+              <label htmlFor="video-content-tags" className="text-sm font-medium text-neutral-200">
+                Tags
+              </label>
+              <FieldCopyButton
+                label="tags"
+                disabled={!getTagsCopyText() || saving || marking}
+                onClick={() => void copyText(getTagsCopyText(), 'tags')}
+              />
+            </div>
             <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-elevated px-3 py-2 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-400/30">
               {tags.map(tag => (
                 <span
@@ -371,43 +490,21 @@ export function VideoContentModal({
 
             <section>
               <h3 className="mb-2 text-sm font-medium text-neutral-200">Thumbnail cũ</h3>
-              <div className="group relative">
-                <Image
-                  src={content.oldThumbnailUrl}
-                  alt={`Thumbnail cũ ${title || video.title}`}
-                  aspectRatio="video"
-                  fit="contain"
-                  className="border border-border"
-                  fallback={<span className="px-4 text-center text-sm">Không tìm thấy old-thumbnail</span>}
-                />
-                {content.oldThumbnailFolderPath ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleCopyOldThumbnailFolderPath()}
-                    className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg border border-white/15 bg-black/70 text-white opacity-0 shadow-lg backdrop-blur-sm transition hover:bg-black/85 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 group-hover:opacity-100 group-focus-within:opacity-100"
-                    title="Sao chép đường dẫn folder chứa thumbnail cũ"
-                    aria-label="Sao chép đường dẫn folder chứa thumbnail cũ"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="size-4"
-                      aria-hidden="true"
-                    >
-                      <rect x="9" y="9" width="13" height="13" rx="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                  </button>
-                ) : null}
-              </div>
+              <Image
+                src={content.oldThumbnailUrl}
+                alt={`Thumbnail cũ ${title || video.title}`}
+                aspectRatio="video"
+                fit="contain"
+                className="border border-border"
+                fallback={<span className="px-4 text-center text-sm">Không tìm thấy old-thumbnail</span>}
+              />
             </section>
 
             <section>
               <h3 className="mb-2 text-sm font-medium text-neutral-200">Video</h3>
               {content.videoUrl ? (
                 <video
+                  ref={videoRef}
                   key={content.videoUrl}
                   src={content.videoUrl}
                   controls

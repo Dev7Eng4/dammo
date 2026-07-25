@@ -1,0 +1,422 @@
+[
+  {
+    "name": "scene_1",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A centered office desk chair with simple geometric construction, showing curved motion trails around its seat and backrest to depict rapid micro-movements, with a small stylized flame symbol emerging from the seat cushion. Friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_2",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A modern bed is positioned on the left side of the frame, and a smartphone rests on a small table placed far on the right side, emphasizing a wide physical separation between them. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_3",
+    "prompt": "A modern colorful flat vector outline illustration of a bare foot tiptoeing on a wet bathroom tile surface, losing balance near a small water puddle with a slippery hazard warning icon nearby, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_4",
+    "prompt": "A modern colorful outline illustration of a digital thermometer floating directly beside a large simplified snowflake symbol, showing a display reading of 18°C. Flat vector graphic, thick black outline with uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_5",
+    "prompt": "Modern colorful outline illustration of a water tap with a small cylindrical water filter mounted directly on its spout, pouring a clear stream of fresh water into a transparent glass below. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_6",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A top-down flat lay view featuring a weekly meal planner calendar with simple checkmarks on planned days, resting neatly beside a fresh apple and a fork. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_7",
+    "prompt": "A modern colorful flat vector outline illustration of a foam roller being applied directly underneath a person's leg muscle, side view, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_8",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A glass of water is positioned directly in front of a plate containing a minimal healthy meal with a fork beside it on a plain surface. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with the glass in the foreground, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_9",
+    "prompt": "A modern colorful outline illustration of a ringing alarm clock resting on a high wall shelf on one side, with a simple bed positioned far on the opposite side to emphasize physical distance. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered wide composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_10",
+    "prompt": "Modern colorful outline illustration of a plate full of food placed in front of a smartphone screen playing a video, with a large red prohibition cross symbol placed over the scene. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_11",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A three-quarter top-down view showing a car parked in a distant parking space with a clear path of footprints leading towards a destination building entry mark. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_12",
+    "prompt": "A modern colorful flat vector outline illustration of two hands engaged in a supportive handshake, with one hand guiding the other upward along a rising growth arrow, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_13",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A foot wearing a sneaker is shown stepping backward away from a set of forward-pointing directional arrows, with a reverse movement arrow indicating the backward motion. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with a low angle side profile view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_14",
+    "prompt": "Modern colorful outline illustration of a heart rate monitor display showing a smooth heartbeat line, surrounded by soft curved arrows indicating breathing in and out. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_15",
+    "prompt": "A modern colorful outline illustration of a single bare human foot stepping onto a smooth patch of ground surrounded by simple movement accent lines indicating sensory ground connection. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side view close-up composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_16",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A foot wearing a sneaker in mid-step positioned next to a large piece of chewing gum with a clean motion icon. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level side view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_17",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a pair of sunglasses positioned in front of a shining sun symbol, deflecting bright UV ray arrows away from behind the lenses. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_18",
+    "prompt": "Modern colorful outline illustration of a smooth spa massage stone resting gently atop a blooming lotus flower, with soft relaxation wave lines emitting around it. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_19",
+    "prompt": "A modern colorful outline illustration of a hand firmly squeezing a hand gripper with dynamic spark accents radiating outward to indicate strength and vitality. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered close-up front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_20",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A fresh bulb of garlic with a single green leaf standing beside a heart icon encased in a protective barrier bubble. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_21",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a jump rope spinning in a dynamic arched motion around a heart shape with a bone symbol inside it. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_22",
+    "prompt": "Modern colorful outline illustration of a smartphone displaying social media app icons on its screen, locked firmly with a large padlock placed over it. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_23",
+    "prompt": "A modern colorful outline illustration of a variety of fresh culinary mushrooms gathered together alongside a heart-shaped shield icon symbolizing health protection. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered cluster front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_24",
+    "prompt": "A modern colorful flat vector outline illustration of a hand dropping a small heart shape into a jar that is filled with bright smile icons and hearts, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_25",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A lush potted indoor plant sits in the center, flanked by a glowing lightbulb symbol on one side and a brain icon on the other side, symbolizing creativity and mental focus. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_26",
+    "prompt": "Modern colorful outline illustration of a simplified human stomach tilted to the left, showing stomach acid resting stably at the bottom without flowing back up into the esophagus. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_27",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a bottle of olive oil pouring a golden drop onto a balance scale, tipping it down while a block of butter rises up on the opposite side. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_28",
+    "prompt": "A modern colorful outline illustration of a music note emitting vibrant motion lines and sparkle accents to represent dancing to music. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_29",
+    "prompt": "A modern colorful flat vector outline illustration of a speech bubble filled with a bright thumbs-up icon releasing glowing stars toward a heart-shaped shield symbol, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_30",
+    "prompt": "Modern colorful outline illustration of a warm pair of socks next to a thermometer indicating warm temperature, with soft heat wave lines radiating outward. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_31",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A warm mug of water with a lemon slice floating inside, flanked by a shield icon indicating immune system protection. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_32",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal slightly elevated view of a plate containing a cut bitter melon and fresh dark leafy greens, shielded under a protective bubble with a heart and shield symbol beside it. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_33",
+    "prompt": "A modern colorful outline illustration of a soda can with a bold red cross sign superimposed over it next to a glass filled with water showing a green checkmark to emphasize avoiding sugary drinks. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side-by-side comparison front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_34",
+    "prompt": "A modern colorful flat vector outline illustration of a weight dumbbell overloaded with heavy weight plates cracking under stress next to a warning shield symbol, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_35",
+    "prompt": "Modern colorful outline illustration of an open journal notebook with a pen lying beside it, featuring a glowing brain icon radiating bright stars on the open page. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_36",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a single brain icon connected to a toggle switch that points directly from multiple scattered task icons to a single clear target icon, with a large red stop symbol placed over the multi-task paths. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_37",
+    "prompt": "A modern colorful outline illustration of a step-by-step staircase with an upward directional arrow alongside a burning calorie flame icon. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side profile view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_38",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A stylized sleeping brain icon curled safely into a gentle fetus-like protective posture resting on a soft pillow, next to a brain health shield icon. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level side view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_39",
+    "prompt": "A modern colorful flat vector outline illustration of a speech bubble containing a negative lightning bolt storm cloud being closed with a prominent zipper, revealing a small cheerful sun icon, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_40",
+    "prompt": "Modern colorful outline illustration of a heart symbol wrapped in a metal chain that has just broken open and unlocked. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_41",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal slightly angled side view of a stair-step ladder leading up to a large glowing star symbol, with a target mark and checkmark placed on the top step. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_42",
+    "prompt": "A modern colorful outline illustration of two hands coming together in a friendly high-five gesture inside a glowing heart outline. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_43",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A stylized human figure bending forward smoothly to touch their toes on a yoga mat, accompanied by a subtle curved flexibility indicator arc showcasing flexibility and physical balance. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level side view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_44",
+    "prompt": "A modern colorful flat vector outline illustration of a swimmer's upper body wearing swim goggles gliding smoothly through water waves, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_45",
+    "prompt": "Modern colorful outline illustration of a brain wearing audio headphones, surrounded by speech bubbles containing different language character symbols. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_46",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a showerhead spraying cool water drops onto a vibrant lightning bolt symbol that is charging up a heart icon. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_47",
+    "prompt": "A modern colorful outline illustration of an artist's paint palette with a paintbrush brushing vibrant color splatters that transform into a happy smiling face icon. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_48",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A hand gently stroking a smiling cat that is sitting peacefully beside a floating heart symbol. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level side view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_49",
+    "prompt": "A modern colorful flat vector outline illustration of a coffee mug inside a prohibition cross symbol positioned next to a sleeping moon icon with small stars, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_50",
+    "prompt": "Modern colorful outline illustration of a ringing alarm clock with gentle motion lines around its bells, featuring a clear red prohibition slash symbol across the top snooze button. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_51",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal slightly elevated view of a neatly folded blanket and plumped pillow resting at the head of a freshly made bed with a prominent checkmark icon floating directly above. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_52",
+    "prompt": "A modern colorful outline illustration of a drinking glass filled with ice water surrounded by a snowflake symbol placed next to a stylized stomach icon that is contracting with dynamic squeeze lines. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side-by-side front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_53",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A bright pair of over-ear headphones placed over a vibrant heart icon, with cheerful musical notes floating upwards. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_54",
+    "prompt": "A modern colorful flat vector outline illustration of a side-by-side comparison of a small plate filled with a balanced portion of food next to a larger plate with a much smaller portion of food, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_55",
+    "prompt": "Modern colorful outline illustration of a healthy plate of food placed next to a hot cup of coffee, with a prohibition red slash symbol positioned between them to indicate separation. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_56",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a cluttered cardboard box overflowing with unnecessary items being organized into a neat storage box with a glowing sparkle icon overhead. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_57",
+    "prompt": "A modern colorful outline illustration of a crescent moon emitting gentle glowing rays next to a closed eye symbol, positioned over a dark blue backdrop. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_58",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A glass jar of fermented kimchi sitting next to a healthy stomach icon containing active beneficial bacteria symbols. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_59",
+    "prompt": "A modern colorful flat vector outline illustration of a glowing wall clock showing late midnight hours next to a bowl of food marked with a prohibition cross sign, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_60",
+    "prompt": "Modern colorful outline illustration of a simple toilet with a smartphone inside a red prohibition slash symbol placed directly above it. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_61",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a heart symbol breaking free from a heavy iron lock, with chains unlocking and falling away. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_62",
+    "prompt": "A modern colorful outline illustration of a steaming teacup filled with green tea adorned with a fresh green leaf sprouting from the side. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_63",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A glowing heart icon placed gently inside an open journal, accompanied by a pencil resting beside it. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with a top-down angled view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_64",
+    "prompt": "A modern colorful flat vector outline illustration of a friendly smiling face emoji radiating bright sparkle stars around it, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_65",
+    "prompt": "Modern colorful outline illustration of a potted fresh microgreens plant growing, placed next to a shield symbol deflecting a lipid fat droplet with a downward-pointing arrow. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_66",
+    "prompt": "A modern colorful outline illustration of a bright smiling sun icon wearing sunglasses next to a heart symbol with an infinity sign inside it. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side-by-side front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_67",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a lung icon protected inside a clear bubble shield that deflects black smog and pollution clouds away. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_68",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A clean tooth icon shielded by a protective heart symbol, next to a toothbrush with toothpaste. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_69",
+    "prompt": "A modern colorful flat vector outline illustration of a human leg muscle diagram with flowing directional circulation arrows showing smooth blood flow, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_70",
+    "prompt": "Modern colorful outline illustration of a healthy heart icon protected inside a clear bubble shield, deflecting spiky storm clouds surrounding it. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_71",
+    "prompt": "I can search for images, but can't create any for you at the moment. You might be signed out or image creation may not be available in your location yet."
+  },
+  {
+    "name": "scene_72",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a clock icon showing the number 32 next to a glowing stomach icon receiving easily digestible food particles from a fork. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_73",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A digital computer screen featuring a pause icon, positioned next to an hourglass and an eye symbol looking away. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_74",
+    "prompt": "A modern colorful flat vector outline illustration of a red meat steak with a heart symbol overlay and a down arrow indicating reduction, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_75",
+    "prompt": "Modern colorful outline illustration showing a comparison between nose breathing and mouth breathing: a nose icon inhaling a clean air stream marked with a green checkmark on one side, alongside an open mouth icon inhaling air marked with a red prohibition slash symbol on the other. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_76",
+    "prompt": "A modern colorful outline illustration of a stylized green leaf intertwined with a calm, smiling brain icon. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_77",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a shining lightbulb inside a brain icon connected directly to a directional compass pointing to a star. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_78",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. An open book with a glowing lightbulb emerging from its center, connected to a brain icon with gear symbols inside. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_79",
+    "prompt": "A modern colorful flat vector outline illustration of two hands reaching toward each other to form a warm handshake, enclosed inside a protective heart outline, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_80",
+    "prompt": "Modern colorful outline illustration of a blister pack of pills with a red prohibition slash symbol over excess pills, while a protective shield icon safeguards an internal organ symbol (liver and kidney) behind it. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_81",
+    "prompt": "A modern colorful outline illustration of a comparison between a large plate overflowing with food next to a smaller plate with a modest, balanced portion size. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side-by-side view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_82",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a sugar cube icon being crossed out with a red prohibition cross next to a glowing, vibrant heart symbol. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_83",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A vibrant bowl filled with fresh vegetables and fruits, accompanied by a heart icon with a shield symbol. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_84",
+    "prompt": "A modern colorful flat vector outline illustration of a liquid fish oil softgel capsule next to a glowing heart symbol, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_85",
+    "prompt": "Modern colorful outline illustration of a medical record clipboard featuring a green checkmark, wrapped with a stethoscope, and paired with a small calendar icon for regular checkups. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_86",
+    "prompt": "A modern colorful outline illustration of a bottle of sunscreen standing next to a protective shield symbol reflecting hot sun rays. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_87",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A top-down view of a plate showing a food portion filled to 80 percent with an energy battery gauge next to it showing an optimal green level. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_88",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A car steering wheel protected inside a large shield icon with a glowing checkmark. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_89",
+    "prompt": "A modern colorful flat vector outline illustration of a small bowl filled with healthy nuts next to a heart icon with a longevity sparkle symbol, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_90",
+    "prompt": "Modern colorful outline illustration of a perfectly aligned, glowing healthy spine symbol positioned vertically, with a green checkmark icon above it. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_91",
+    "prompt": "A modern colorful outline illustration of a green leaf symbol placed inside a protective shield while deflecting a crossed-out packaged junk food icon. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_92",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a battery symbol rapidly charging with an 80 percent energy level icon inside a crescent moon and sleeping clock ring showing 20 minutes. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_93",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A pair of hands receiving soap foam under flowing water droplets, with germ symbols being washed away. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_94",
+    "prompt": "A modern colorful flat vector outline illustration of an office chair crossed out with a red sign, paired with a walking shoe showing forward motion lines, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_95",
+    "prompt": "Modern colorful outline illustration of a full glass of clear water with small water droplets splashing gently around it, alongside a small reminder clock icon with a green checkmark. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_96",
+    "prompt": "A modern colorful outline illustration of a wine bottle with a big red prohibition cross mark next to an hourglass running out of sand. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered side-by-side front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_97",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A frontal eye-level view of a protective face mask placed over a pair of healthy lungs, blocking fine dust particles and PM2.5 icons. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_98",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. An open paper book with a heart symbol and an hourglass showing extended time above its pages. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_99",
+    "prompt": "A modern colorful flat vector outline illustration of a human brain floating with a glowing protective shield around it, deflecting negative lightning symbols, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_100",
+    "prompt": "Modern colorful outline illustration of a shower head running water over a clock set to 11 o'clock at night, covered by a prominent red prohibition slash symbol. Flat vector illustration, thick black outlines, uniform stroke width, rounded line caps and corners, simple geometric shapes, friendly proportions, minimal details, bright flat colors with very subtle soft gradients, no realistic lighting or textures, no shadows. Isolated on a plain white background, centered composition."
+  },
+  {
+    "name": "scene_101",
+    "prompt": "A modern colorful outline illustration of a vibrant heart symbol surrounded by a fresh apple, a carrot, and a broccoli icon inside a protective aura. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  },
+  {
+    "name": "scene_102",
+    "prompt": "A modern colorful outline illustration, flat vector style, thick black outlines with uniform stroke width, rounded line caps, and rounded corners. A top-down view of a body weight scale icon with an arrow pointer pointing cleanly at a green healthy zone indicator tick mark. Simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or shadows, no texture. Centered composition, isolated on a transparent background, clean vector graphics, premium iconography style."
+  },
+  {
+    "name": "scene_103",
+    "prompt": "A modern colorful outline illustration, flat vector style with thick black outlines, uniform stroke width, rounded line caps, and rounded corners. Simple geometric construction with friendly proportions and minimal detail. A sleeping heart icon wearing a nightcap resting peacefully on a soft pillow beside a crescent moon symbol. Bright flat colors with subtle soft gradients, no realistic lighting, no textures, and no shadows. Clean centered composition with an eye-level front view, isolated illustration on a transparent background, no borders, no text, no logos. Premium vector icon set aesthetic."
+  },
+  {
+    "name": "scene_104",
+    "prompt": "A modern colorful flat vector outline illustration of a classic dumbbell paired with a beating heart symbol showing energy sparks around it, isolated on a white background. Designed with thick black outlines, uniform stroke width, rounded line caps, rounded corners, simple geometric construction, friendly proportions, minimal detail, and bright flat colors with very subtle soft gradients. No shadows, no realistic lighting, no textures, centered composition, no text, no labels, high-quality icon style consistent with premium illustration libraries."
+  },
+  {
+    "name": "scene_105",
+    "prompt": "A modern colorful outline illustration of a lit cigarette snapped in half with a green checkmark icon floating above it. Flat vector illustration, thick black outline, uniform stroke width, rounded line caps and rounded corners, simple geometric construction, friendly proportions, minimal detail, bright flat colors with very subtle soft gradients, no realistic lighting or textures, isolated on a solid white background, centered front view composition, no text, no labels, no watermark."
+  }
+]

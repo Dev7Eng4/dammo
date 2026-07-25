@@ -59,6 +59,8 @@ export interface YoutubeChannel {
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
+  /** Computed for API responses; not persisted */
+  nextUploadAt?: string | null;
   createdAt: string;
   channelId?: string;
   /** Resolved server-side for API responses */

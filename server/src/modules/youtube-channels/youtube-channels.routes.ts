@@ -106,6 +106,14 @@ export function createYoutubeChannelsRoutes() {
     });
   });
 
+  app.post('/:id/videos/:videoId/mark-uploaded', async (c) => {
+    const result = await youtubeUploadService.markAsUploaded(
+      c.req.param('id'),
+      c.req.param('videoId'),
+    );
+    return c.json(result);
+  });
+
   app.patch('/:id/videos/:videoId/content', async (c) => {
     const body = await c.req.parseBody();
     let tags: unknown = [];

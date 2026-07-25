@@ -26,5 +26,5 @@ export async function syncAfterYoutubeUpload(params: SyncAfterUploadParams): Pro
     lastUploadAt: uploadedAt,
   }));
 
-  moveYoutubeChannelVideoToUploads(params.channelId, videoId, params.folderPath);
+  await moveYoutubeChannelVideoToUploads(params.channelId, videoId, params.folderPath);
 }

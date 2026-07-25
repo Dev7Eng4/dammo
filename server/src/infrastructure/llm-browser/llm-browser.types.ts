@@ -53,6 +53,8 @@ export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOption
   fileName?: string;
   debugScreenshotPath?: string;
   mediaKind?: 'image' | 'video' | 'auto';
+  /** Image prompt aspect ratio prefix. Default: '16:9'. */
+  aspectRatio?: '16:9' | '3:4';
   baselineMediaCount?: number;
 }
 
@@ -122,6 +124,8 @@ export interface MetaGenerateMediaOptions {
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
   mediaKind?: 'image' | 'video' | 'auto';
+  /** Image prompt aspect ratio prefix. Default: '16:9'. */
+  aspectRatio?: '16:9' | '3:4';
 }
 
 /** @deprecated Use FlowGenerateImageOptions */

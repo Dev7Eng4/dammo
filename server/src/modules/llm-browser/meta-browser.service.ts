@@ -34,13 +34,17 @@ function resolveMediaKind(options?: MetaGenerateMediaOptions): 'image' | 'video'
   return options?.mediaKind ?? 'auto';
 }
 
-const META_MEDIA_PREFIX: Record<'image' | 'video', string> = {
-  image: 'Create image 16:9',
-  video: 'Create video 16:9',
-};
+function resolveAspectRatio(options?: MetaGenerateMediaOptions): '16:9' | '3:4' {
+  return options?.aspectRatio ?? '16:9';
+}
 
-function prependMetaMediaPrefix(prompt: string, mediaKind: 'image' | 'video' | 'auto'): string {
-  const prefix = mediaKind === 'video' ? META_MEDIA_PREFIX.video : META_MEDIA_PREFIX.image;
+function prependMetaMediaPrefix(
+  prompt: string,
+  mediaKind: 'image' | 'video' | 'auto',
+  aspectRatio: '16:9' | '3:4',
+): string {
+  const prefix =
+    mediaKind === 'video' ? 'Create video 16:9' : `Create image ${aspectRatio}`;
   const trimmed = prompt.trim();
   if (trimmed.toLowerCase().startsWith(prefix.toLowerCase())) {
     return prompt;
@@ -99,8 +103,9 @@ export class MetaBrowserService {
   ): Promise<LlmBrowserResponse> {
     const handler = getMetaBrowserHandler();
     const mediaKind = resolveMediaKind(options);
+    const aspectRatio = resolveAspectRatio(options);
     const timeoutMs = options?.timeoutMs ?? 300_000;
-    const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind);
+    const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind, aspectRatio);
 
     await handler.sendPrompt(page, effectivePrompt, {
       pasteStrategy: options?.pasteStrategy ?? 'human',
@@ -110,6 +115,7 @@ export class MetaBrowserService {
 
     return handler.receiveResponse(page, {
       mediaKind,
+      aspectRatio,
       outputPath: options?.outputPath,
       outputDir: options?.outputDir,
       fileName: options?.fileName,

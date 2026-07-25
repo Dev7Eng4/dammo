@@ -196,6 +196,10 @@ export function getYoutubePublishPlan(channel: YoutubeChannel, uploadCount: numb
   return { settings, schedule };
 }
 
+export function getNextYoutubePublishSlot(channel: YoutubeChannel): PublishScheduleSlot | null {
+  return getYoutubePublishPlan(channel, 1).schedule[0] ?? null;
+}
+
 export function scheduleSlotToUnixMs(slot: PublishScheduleSlot | null | undefined): number {
   if (!slot) return Number.MAX_SAFE_INTEGER;
   const iso = String(slot.iso ?? '').trim();

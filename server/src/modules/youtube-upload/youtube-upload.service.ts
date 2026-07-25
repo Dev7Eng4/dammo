@@ -7,9 +7,11 @@ import {
   scheduleDelayedGpmDisconnect,
   type GpmPlaywrightConnection,
 } from '../../infrastructure/gpm/gpm-playwright.connector.js';
+import { moveYoutubeChannelVideoToUploads } from '../../config/paths.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { syncAfterYoutubeUpload } from './upload-after-sync.js';
-import { getYoutubePublishPlan, scheduleSlotToUnixMs } from './publish-schedule.js';
+import { getNextYoutubePublishSlot, getYoutubePublishPlan, scheduleSlotToUnixMs } from './publish-schedule.js';
 import { listUploadJobs, type UploadJob } from './upload-jobs.js';
 import {
   addRelatedVideo,
@@ -207,6 +209,62 @@ export class YoutubeUploadService {
     }
 
     return { results };
+  }
+
+  async markAsUploaded(channelId: string, videoId: string): Promise<{
+    videoId: string;
+    status: 'Uploaded';
+    lastUploadAt: string;
+  }> {
+    const channel = youtubeChannelsRepository.findById(channelId);
+    if (!channel) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    const normalizedVideoId = videoId.trim();
+    if (!normalizedVideoId) {
+      throw new AppError('Video ID is required', 400, 'INVALID_VIDEO_ID');
+    }
+
+    const prepareItem = videoPrepareRepository
+      .read(channelId)
+      .find(item => item.videoId.trim() === normalizedVideoId);
+
+    if (!prepareItem) {
+      throw new AppError('Video prepare item not found', 404, 'VIDEO_PREPARE_NOT_FOUND');
+    }
+
+    if (prepareItem.status === 'Uploaded') {
+      throw new AppError('Video is already marked as uploaded', 400, 'ALREADY_UPLOADED');
+    }
+
+    const nextSlot = getNextYoutubePublishSlot(channel);
+    const lastUploadAt = nextSlot?.iso ?? new Date().toISOString();
+
+    const moved = await moveYoutubeChannelVideoToUploads(channelId, normalizedVideoId);
+    if (!moved) {
+      throw new AppError(
+        'Không thể chuyển folder video vào uploads (file có thể đang được mở). Hãy đóng video/preview rồi thử lại.',
+        409,
+        'MOVE_TO_UPLOADS_FAILED',
+      );
+    }
+
+    videoPrepareRepository.markUploaded(channelId, normalizedVideoId);
+
+    const updatedChannel = youtubeChannelsRepository.update(channelId, current => ({
+      ...current,
+      lastUploadAt,
+    }));
+    if (!updatedChannel) {
+      throw new AppError('Failed to update channel lastUploadAt', 500, 'CHANNEL_UPDATE_FAILED');
+    }
+
+    return {
+      videoId: normalizedVideoId,
+      status: 'Uploaded',
+      lastUploadAt,
+    };
   }
 }
 

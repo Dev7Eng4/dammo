@@ -97,6 +97,7 @@ export async function downloadAndSaveMetaAsset(
   sourceUrl: string,
   outputPath: string,
   kind: 'image' | 'video',
+  aspectRatio: '16:9' | '3:4' = '16:9',
 ): Promise<LlmMediaAsset> {
   const response = await page.request.get(sourceUrl);
   if (!response.ok()) {
@@ -110,7 +111,7 @@ export async function downloadAndSaveMetaAsset(
   const buffer = await response.body();
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
-  if (kind === 'image') {
+  if (kind === 'image' && aspectRatio === '16:9') {
     const tmpPath = `${outputPath}.download.tmp`;
     try {
       await fs.writeFile(tmpPath, buffer);
