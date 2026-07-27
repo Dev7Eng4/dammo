@@ -20,12 +20,12 @@ export interface PromptsListPanelProps {
 }
 
 const categoryFilterOptions = [
-  { value: 'all' as const, label: 'All categories' },
+  { value: 'all' as const, label: 'Tất cả danh mục' },
   ...PROMPT_CATEGORY_OPTIONS,
 ];
 
 const languageFilterOptions = [
-  { value: 'all' as const, label: 'All languages' },
+  { value: 'all' as const, label: 'Tất cả ngôn ngữ' },
   ...PROMPT_LANGUAGE_OPTIONS,
 ];
 
@@ -61,13 +61,13 @@ export function PromptsListPanel({
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-neutral-100">Prompts</h2>
           <Button size="sm" onClick={onNew}>
-            + New
+            + Mới
           </Button>
         </div>
         <SearchInput
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search prompts..."
+          placeholder="Tìm prompt..."
           className="h-9 text-sm"
         />
         <div className="grid grid-cols-1 gap-2">
@@ -96,7 +96,7 @@ export function PromptsListPanel({
             ))}
           </div>
         ) : prompts.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-neutral-500">No prompts found</p>
+          <p className="px-2 py-6 text-center text-sm text-neutral-500">Không tìm thấy prompt</p>
         ) : (
           <ul className="space-y-1">
             {prompts.map((prompt) => {
@@ -128,7 +128,7 @@ export function PromptsListPanel({
                       </span>
                       {prompt.isSystem ? (
                         <span className="inline-flex rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
-                          System
+                          Hệ thống
                         </span>
                       ) : null}
                     </div>

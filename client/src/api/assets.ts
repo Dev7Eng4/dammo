@@ -9,6 +9,10 @@ export function fetchAssets(kind: AssetKind, options?: FetchOptions) {
   );
 }
 
+export function assetFileUrl(kind: AssetKind, filename: string): string {
+  return `${API_V1}/assets/${encodeURIComponent(kind)}/${encodeURIComponent(filename)}`;
+}
+
 export function uploadAsset(kind: AssetKind, file: File) {
   const body = new FormData();
   body.append('file', file);

@@ -25,7 +25,7 @@ function countryFlag(code?: string) {
 function formatDate(value?: string): string {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-GB');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
 }
 
 export function ProxiesTable({
@@ -43,7 +43,7 @@ export function ProxiesTable({
   const columns: ColumnDef<Proxy, unknown>[] = [
     {
       accessorKey: 'type',
-      header: 'TYPE',
+      header: 'LOẠI',
       cell: ({ getValue }) => (
         <span className="uppercase text-neutral-400">{getValue<string>()}</span>
       ),
@@ -62,7 +62,7 @@ export function ProxiesTable({
     },
     {
       id: 'country',
-      header: 'COUNTRY',
+      header: 'QUỐC GIA',
       cell: ({ row }) => (
         <span className="text-lg" title={row.original.countryCode}>
           {countryFlag(row.original.countryCode)}
@@ -71,40 +71,40 @@ export function ProxiesTable({
     },
     {
       accessorKey: 'provider',
-      header: 'PROVIDER',
+      header: 'NHÀ CUNG CẤP',
       cell: ({ getValue }) => (
         <span className="text-neutral-400">{getValue<string | undefined>() ?? '—'}</span>
       ),
     },
     {
       accessorKey: 'expiresAt',
-      header: 'EXPIRES',
+      header: 'HẾT HẠN',
       cell: ({ getValue }) => (
         <span className="text-neutral-400">{formatDate(getValue<string | undefined>())}</span>
       ),
     },
     {
       id: 'profiles',
-      header: 'PROFILES',
+      header: 'PROFILE',
       cell: ({ row }) => (
         <span className="text-neutral-300">{row.original.assignedProfileIds.length}</span>
       ),
     },
     {
       accessorKey: 'lastUsed',
-      header: 'LAST USED',
+      header: 'DÙNG GẦN NHẤT',
       cell: ({ getValue }) => (
         <span className="text-neutral-400">{formatDate(getValue<string | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'STATUS',
+      header: 'TRẠNG THÁI',
       cell: ({ row }) => <ProxyStatusPill status={row.original.status} />,
     },
     {
       id: 'actions',
-      header: 'ACTIONS',
+      header: 'THAO TÁC',
       cell: ({ row }) => {
         const proxy = row.original;
         return (
@@ -116,10 +116,10 @@ export function ProxiesTable({
               disabled={pingingIds.has(proxy.id)}
               onClick={() => onPing(proxy.id)}
             >
-              {pingingIds.has(proxy.id) ? 'Pinging…' : 'Ping'}
+              {pingingIds.has(proxy.id) ? 'Đang ping…' : 'Ping'}
             </Button>
             <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onExtend(proxy.id)}>
-              Extend
+              Gia hạn
             </Button>
           </div>
         );
@@ -139,8 +139,8 @@ export function ProxiesTable({
       onToggleAll={onToggleAll}
       activeRowId={selectedId}
       onRowClick={proxy => onSelect(proxy.id)}
-      emptyMessage="No proxies match your filter."
-      emptyDescription="Add a proxy or import from Excel to get started."
+      emptyMessage="Không có proxy khớp bộ lọc."
+      emptyDescription="Thêm proxy hoặc nhập từ Excel để bắt đầu."
     />
   );
 }

@@ -50,3 +50,24 @@ export async function selectRandomSiAudioBarClip(): Promise<SiAudioBarClip> {
     filename,
   };
 }
+
+export async function resolveSiAudioBarClip(filename?: string): Promise<SiAudioBarClip> {
+  const selected = filename?.trim();
+  if (!selected) {
+    return selectRandomSiAudioBarClip();
+  }
+
+  const safeName = path.basename(selected);
+  if (!AUDIO_BAR_EXTENSIONS.has(path.extname(safeName).toLowerCase())) {
+    throw new AppError(`Unsupported audio bar file type: ${safeName}`, 400, 'INVALID_AUDIO_BAR');
+  }
+
+  const filePath = path.join(paths.siAudioBarDir, safeName);
+  try {
+    await fs.access(filePath);
+  } catch {
+    throw new AppError(`Audio bar asset not found: ${safeName}`, 400, 'SI_AUDIO_BAR_MISSING');
+  }
+
+  return { path: filePath, filename: safeName };
+}

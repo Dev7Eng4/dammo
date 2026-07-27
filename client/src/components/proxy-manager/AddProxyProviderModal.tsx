@@ -47,7 +47,7 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to create provider');
+      setApiError(err instanceof Error ? err.message : 'Tạo nhà cung cấp thất bại');
     }
   }
 
@@ -55,14 +55,14 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add Provider"
+      title="Thêm nhà cung cấp"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-provider-form" type="submit">
-            {isSubmitting ? 'Saving...' : 'Add Provider'}
+            {isSubmitting ? 'Đang lưu...' : 'Thêm nhà cung cấp'}
           </Button>
         </>
       }
@@ -70,20 +70,20 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
       <form id="add-provider-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="provider-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Provider Name
+            Tên nhà cung cấp
           </label>
           <Input
             id="provider-name"
             placeholder="Luminati Network"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Tên là bắt buộc' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="provider-url" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Login URL <span className="text-neutral-500">(optional)</span>
+            URL đăng nhập <span className="text-neutral-500">(tùy chọn)</span>
           </label>
           <Input
             id="provider-url"
@@ -93,7 +93,7 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
             {...register('loginUrl', {
               pattern: {
                 value: /^$|^https?:\/\/.+/i,
-                message: 'URL must start with http:// or https://',
+                message: 'URL phải bắt đầu bằng http:// hoặc https://',
               },
             })}
           />
@@ -103,12 +103,12 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="provider-username" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Username
+              Tên đăng nhập
             </label>
             <Input
               id="provider-username"
               className="h-10 rounded-lg"
-              {...register('username', { required: 'Username is required' })}
+              {...register('username', { required: 'Tên đăng nhập là bắt buộc' })}
             />
             {errors.username ? (
               <p className="mt-1 text-xs text-danger">{errors.username.message}</p>
@@ -116,13 +116,13 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
           </div>
           <div>
             <label htmlFor="provider-password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Password
+              Mật khẩu
             </label>
             <Input
               id="provider-password"
               type="password"
               className="h-10 rounded-lg"
-              {...register('password', { required: 'Password is required' })}
+              {...register('password', { required: 'Mật khẩu là bắt buộc' })}
             />
             {errors.password ? (
               <p className="mt-1 text-xs text-danger">{errors.password.message}</p>
@@ -132,7 +132,7 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
 
         <div>
           <label htmlFor="provider-notes" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Notes <span className="text-neutral-500">(optional)</span>
+            Ghi chú <span className="text-neutral-500">(tùy chọn)</span>
           </label>
           <Textarea id="provider-notes" rows={3} className="text-sm" {...register('notes')} />
         </div>

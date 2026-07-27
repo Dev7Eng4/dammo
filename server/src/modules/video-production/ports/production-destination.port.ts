@@ -25,6 +25,7 @@ export interface ProductionDestination {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
   /** Set for reup_audio channels only */
   reupAudioVideoType?: ReupAudioVideoType;
@@ -32,7 +33,9 @@ export interface ProductionDestination {
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  audioBarFile?: string;
   showSmallVideo?: boolean;
+  smallVideoFile?: string;
   showChannelAvatar?: boolean;
   showDisclaimer?: boolean;
   disclaimerText?: string;

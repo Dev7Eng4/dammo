@@ -23,6 +23,7 @@ import type {
   LlmSetupConfig,
 } from '../llm-browser.types.js';
 import { humanClick, humanPaste, humanPressEnter, humanWander, randomDelay, setupClick } from '../human-interaction.js';
+import { resolveReferenceImagePaths } from '../resolve-reference-image-paths.js';
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'flow' as const;
@@ -633,8 +634,10 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
     },
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
-      if (options?.referenceImagePath) {
-        await uploadReferenceImage(page, options.referenceImagePath);
+      const referencePaths = resolveReferenceImagePaths(options);
+      for (const imagePath of referencePaths) {
+        await uploadReferenceImage(page, imagePath);
+        await randomDelay(400, 900);
       }
 
       const input = await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput);

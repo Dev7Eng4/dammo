@@ -14,7 +14,7 @@ interface ChromeProfilesTableProps {
 
 function formatCreatedAt(value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('en-US');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
 }
 
 export function ChromeProfilesTable({
@@ -28,7 +28,7 @@ export function ChromeProfilesTable({
   const columns: ColumnDef<ChromeProfile, unknown>[] = [
     {
       id: 'role',
-      header: 'ROLE',
+      header: 'VAI TRÒ',
       cell: ({ row }) => {
         const profile = row.original;
         return (
@@ -49,7 +49,7 @@ export function ChromeProfilesTable({
                 profile.role === 'main' ? 'text-primary-400' : 'text-neutral-500',
               )}
             >
-              {profile.role === 'main' ? 'Main' : 'Sub'}
+              {profile.role === 'main' ? 'Chính' : 'Phụ'}
             </span>
           </label>
         );
@@ -57,7 +57,7 @@ export function ChromeProfilesTable({
     },
     {
       accessorKey: 'name',
-      header: 'NAME',
+      header: 'TÊN',
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
@@ -76,7 +76,7 @@ export function ChromeProfilesTable({
     },
     {
       accessorKey: 'createdAt',
-      header: 'CREATED',
+      header: 'TẠO LÚC',
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatCreatedAt(getValue<string>())}</span>
       ),
@@ -91,7 +91,7 @@ export function ChromeProfilesTable({
       loading={loading}
       activeRowId={selectedId}
       onRowClick={profile => onSelect(profile.id)}
-      emptyMessage="No Chrome profiles yet. Add one to get started."
+      emptyMessage="Chưa có Chrome profile nào. Thêm một profile để bắt đầu."
     />
   );
 }

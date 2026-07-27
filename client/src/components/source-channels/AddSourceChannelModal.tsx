@@ -44,7 +44,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
-        setNichesError(err instanceof Error ? err.message : 'Failed to load niches');
+        setNichesError(err instanceof Error ? err.message : 'Không thể tải niches');
       });
 
     return () => controller.abort();
@@ -91,14 +91,14 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add Source Channel"
+      title="Thêm kênh nguồn"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose}>
-            Cancel
+            Hủy
           </Button>
           <Button size="sm" className="rounded-lg" form="add-source-form" type="submit">
-            Add Source
+            Thêm nguồn
           </Button>
         </>
       }
@@ -121,12 +121,12 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
 
         <div>
           <label htmlFor="source-purpose" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Purpose
+            Mục đích
           </label>
           <Controller
             name="purpose"
             control={control}
-            rules={{ required: 'Purpose is required' }}
+            rules={{ required: 'Mục đích là bắt buộc' }}
             render={({ field }) => (
               <Select
                 id="source-purpose"
@@ -134,7 +134,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select purpose"
+                placeholder="Chọn mục đích"
                 className="w-full"
                 triggerClassName="h-10 w-full min-w-0 rounded-lg px-3 py-0"
               />
@@ -160,10 +160,10 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
                 onBlur={field.onBlur}
                 placeholder={
                   nichesLoading
-                    ? 'Loading niches...'
+                    ? 'Đang tải niches...'
                     : nicheOptions.length === 0
                       ? 'Chưa có niche'
-                      : 'Select niche'
+                      : 'Chọn niche'
                 }
                 disabled={nichesLoading || nicheOptions.length === 0}
                 className="w-full"
@@ -176,7 +176,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
         </div>
 
         <p className="text-xs text-neutral-500">
-          Platform is detected automatically. YouTube channels fetch metadata and videos in the background after add.
+          Nền tảng được nhận diện tự động. Kênh YouTube sẽ lấy metadata và video ở nền sau khi thêm.
         </p>
       </form>
     </Modal>

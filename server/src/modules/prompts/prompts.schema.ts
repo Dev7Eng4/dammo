@@ -12,6 +12,7 @@ export const createPromptSchema = z.object({
   outputType: promptOutputTypeSchema.default('text'),
   description: z.string().max(500).optional(),
   useReferenceImage: z.boolean().optional(),
+  useChannelBackgroundImage: z.boolean().optional(),
 });
 
 export const updatePromptSchema = z
@@ -23,6 +24,7 @@ export const updatePromptSchema = z
     outputType: promptOutputTypeSchema.optional(),
     description: z.string().max(500).optional(),
     useReferenceImage: z.boolean().optional(),
+    useChannelBackgroundImage: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field is required',

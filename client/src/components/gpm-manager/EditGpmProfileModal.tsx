@@ -41,7 +41,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
 
   const groupOptions = useMemo(
     () => [
-      { value: '', label: 'No group' },
+      { value: '', label: 'Không nhóm' },
       ...groups.map((group) => ({ value: group.id, label: group.name })),
     ],
     [groups],
@@ -49,7 +49,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
 
   const proxyOptions = useMemo(
     () => [
-      { value: '', label: 'No proxy' },
+      { value: '', label: 'Không proxy' },
       ...proxies.map((proxy) => ({
         value: proxy.id,
         label: formatProxyLabel(proxy),
@@ -109,7 +109,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       .catch((err) => {
         if (!controller.signal.aborted) {
           setProxies([]);
-          setApiError(err instanceof Error ? err.message : 'Failed to load proxies');
+          setApiError(err instanceof Error ? err.message : 'Không tải được danh sách proxy');
         }
       })
       .finally(() => {
@@ -130,7 +130,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       .catch((err) => {
         if (!controller.signal.aborted) {
           setMailAccounts([]);
-          setApiError(err instanceof Error ? err.message : 'Failed to load emails');
+          setApiError(err instanceof Error ? err.message : 'Không tải được danh sách email');
         }
       })
       .finally(() => {
@@ -178,7 +178,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to update profile');
+      setApiError(err instanceof Error ? err.message : 'Cập nhật profile thất bại');
     }
   }
 
@@ -188,11 +188,11 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
     <Modal
       open={open}
       onClose={handleClose}
-      title="Edit GPM Profile"
+      title="Sửa GPM Profile"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -201,7 +201,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
             form="edit-gpm-profile-form"
             type="submit"
           >
-            {isSubmitting ? 'Saving…' : 'Save Changes'}
+            {isSubmitting ? 'Đang lưu…' : 'Lưu thay đổi'}
           </Button>
         </>
       }
@@ -214,7 +214,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
           <Controller
             name="name"
             control={control}
-            rules={{ required: 'Email is required' }}
+            rules={{ required: 'Email là bắt buộc' }}
             render={({ field }) => (
               <Select
                 id="edit-gpm-profile-email"
@@ -222,7 +222,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder={mailAccountsLoading ? 'Loading emails...' : 'Select email'}
+                placeholder={mailAccountsLoading ? 'Đang tải email...' : 'Chọn email'}
                 searchable
                 searchPlaceholder="Tìm kiếm email..."
                 disabled={isSubmitting || mailAccountsLoading || emailOptions.length === 0}
@@ -235,7 +235,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
 
         <div>
           <label htmlFor="edit-gpm-profile-group" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Group
+            Nhóm
           </label>
           <Select
             id="edit-gpm-profile-group"
@@ -260,13 +260,13 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
             triggerClassName="h-10 rounded-lg font-mono text-sm"
           />
           {proxiesLoading ? (
-            <p className="mt-1 text-xs text-neutral-500">Loading proxies…</p>
+            <p className="mt-1 text-xs text-neutral-500">Đang tải proxy…</p>
           ) : null}
         </div>
 
         <div>
           <label htmlFor="edit-gpm-profile-note" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Note
+            Ghi chú
           </label>
           <Textarea
             id="edit-gpm-profile-note"

@@ -28,6 +28,8 @@ import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import fs from 'node:fs';
+import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
+import { assetsService } from '../assets/assets.service.js';
 import type {
   CaptionStyleKey,
   CreateYoutubeChannelInput,
@@ -118,9 +120,11 @@ type ChannelConfigInput = Pick<
   | 'reupAudioBackgroundImage'
   | 'useReferenceImage'
   | 'showAudioBar'
+  | 'audioBarFile'
   | 'showChannelAvatar'
   | 'showSubscribe'
   | 'showSmallVideo'
+  | 'smallVideoFile'
   | 'showDisclaimer'
   | 'disclaimerText'
   | 'descriptionDisclaimerText'
@@ -153,9 +157,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  audioBarFile?: string;
   showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
+  smallVideoFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -208,13 +214,15 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
   let useReferenceImage: boolean | undefined;
   let showAudioBar: boolean | undefined;
+  let audioBarFile: string | undefined;
+  let showSmallVideo: boolean | undefined;
+  let smallVideoFile: string | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
   const disclaimerText = input.disclaimerText?.trim();
   const descriptionDisclaimerText = input.descriptionDisclaimerText?.trim();
   const showDisclaimer = input.showDisclaimer === true;
   const showChannelAvatar = input.showChannelAvatar === true;
   const showSubscribe = input.showSubscribe === true;
-  const showSmallVideo = input.showSmallVideo === true;
 
   if (isReupAudioChannelType(input.type)) {
     if (!input.reupAudioVideoType) {
@@ -242,7 +250,23 @@ function validateChannelConfig(input: ChannelConfigInput): {
         );
       }
       reupAudioBackgroundImage = input.reupAudioBackgroundImage;
-      showAudioBar = input.showAudioBar === true;
+      const selectedAudioBar = input.audioBarFile?.trim();
+      if (selectedAudioBar) {
+        assetsService.getAsset('audioBar', selectedAudioBar);
+        audioBarFile = selectedAudioBar;
+        showAudioBar = true;
+      } else {
+        showAudioBar = input.showAudioBar === true;
+      }
+
+      const selectedSmallVideo = input.smallVideoFile?.trim();
+      if (selectedSmallVideo) {
+        assetsService.getAsset('smallVideo', selectedSmallVideo);
+        smallVideoFile = selectedSmallVideo;
+        showSmallVideo = true;
+      } else {
+        showSmallVideo = input.showSmallVideo === true;
+      }
 
       const needsVisualStyle =
         input.reupAudioBackgroundImage === 'multi_image' || input.useReferenceImage === true;
@@ -296,9 +320,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
     ...(useReferenceImage ? { useReferenceImage: true } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
+    ...(audioBarFile ? { audioBarFile } : {}),
     ...(showChannelAvatar ? { showChannelAvatar: true } : {}),
     ...(showSubscribe ? { showSubscribe: true } : {}),
     ...(showSmallVideo ? { showSmallVideo: true } : {}),
+    ...(smallVideoFile ? { smallVideoFile } : {}),
     ...(showDisclaimer ? { showDisclaimer: true } : {}),
     ...(disclaimerText ? { disclaimerText } : {}),
     ...(descriptionDisclaimerText ? { descriptionDisclaimerText } : {}),
@@ -637,15 +663,32 @@ export class YoutubeChannelsService {
         : {}),
       ...(config.useReferenceImage ? { useReferenceImage: true } : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
+      ...(config.audioBarFile ? { audioBarFile: config.audioBarFile } : {}),
       ...(config.showChannelAvatar ? { showChannelAvatar: true } : {}),
       ...(config.showSubscribe ? { showSubscribe: true } : {}),
       ...(config.showSmallVideo ? { showSmallVideo: true } : {}),
+      ...(config.smallVideoFile ? { smallVideoFile: config.smallVideoFile } : {}),
       ...(config.showDisclaimer ? { showDisclaimer: true } : {}),
       ...(config.disclaimerText ? { disclaimerText: config.disclaimerText } : {}),
       ...(config.descriptionDisclaimerText
         ? { descriptionDisclaimerText: config.descriptionDisclaimerText }
         : {}),
     };
+
+    if (input.thumbnailBackgroundTempSessionId?.trim()) {
+      thumbnailBackgroundsService.moveTempToChannel(
+        input.thumbnailBackgroundTempSessionId.trim(),
+        channel.id,
+      );
+    }
+
+    const selectedBackground = input.thumbnailBackgroundFile?.trim();
+    if (selectedBackground) {
+      channel.thumbnailBackgroundFile = thumbnailBackgroundsService.assertChannelFile(
+        channel.id,
+        selectedBackground,
+      );
+    }
 
     return youtubeChannelsRepository.prepend(channel);
   }
@@ -692,6 +735,16 @@ export class YoutubeChannelsService {
         delete next.thumbnailStyleKey;
       }
 
+      const selectedBackground = input.thumbnailBackgroundFile?.trim();
+      if (selectedBackground) {
+        next.thumbnailBackgroundFile = thumbnailBackgroundsService.assertChannelFile(
+          id,
+          selectedBackground,
+        );
+      } else {
+        delete next.thumbnailBackgroundFile;
+      }
+
       if (config.showDisclaimer) {
         next.showDisclaimer = true;
       } else {
@@ -706,11 +759,6 @@ export class YoutubeChannelsService {
         next.showSubscribe = true;
       } else {
         delete next.showSubscribe;
-      }
-      if (config.showSmallVideo) {
-        next.showSmallVideo = true;
-      } else {
-        delete next.showSmallVideo;
       }
       if (config.disclaimerText) {
         next.disclaimerText = config.disclaimerText;
@@ -745,6 +793,21 @@ export class YoutubeChannelsService {
         } else {
           delete next.showAudioBar;
         }
+        if (config.reupAudioVideoType === 'si' && config.audioBarFile) {
+          next.audioBarFile = config.audioBarFile;
+        } else {
+          delete next.audioBarFile;
+        }
+        if (config.reupAudioVideoType === 'si' && config.showSmallVideo) {
+          next.showSmallVideo = true;
+        } else {
+          delete next.showSmallVideo;
+        }
+        if (config.reupAudioVideoType === 'si' && config.smallVideoFile) {
+          next.smallVideoFile = config.smallVideoFile;
+        } else {
+          delete next.smallVideoFile;
+        }
         if (config.captionStyleKey) {
           next.captionStyleKey = config.captionStyleKey;
         } else {
@@ -756,6 +819,9 @@ export class YoutubeChannelsService {
         delete next.reupAudioBackgroundImage;
         delete next.useReferenceImage;
         delete next.showAudioBar;
+        delete next.audioBarFile;
+        delete next.showSmallVideo;
+        delete next.smallVideoFile;
         delete next.captionStyleKey;
       }
 

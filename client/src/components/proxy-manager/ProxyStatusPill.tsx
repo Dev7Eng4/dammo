@@ -6,31 +6,31 @@ const statusConfig: Record<
   { label: string; dot: string; text: string; bg: string }
 > = {
   active: {
-    label: 'Active',
+    label: 'Hoạt động',
     dot: 'bg-success',
     text: 'text-success',
     bg: 'bg-success/10 border-success/30',
   },
   failed: {
-    label: 'Failed',
+    label: 'Thất bại',
     dot: 'bg-danger',
     text: 'text-danger',
     bg: 'bg-danger/10 border-danger/30',
   },
   slow: {
-    label: 'Slow',
+    label: 'Chậm',
     dot: 'bg-warning',
     text: 'text-warning',
     bg: 'bg-warning/10 border-warning/30',
   },
   expired: {
-    label: 'Expired',
+    label: 'Hết hạn',
     dot: 'bg-neutral-500',
     text: 'text-neutral-400',
     bg: 'bg-neutral-500/10 border-neutral-500/30',
   },
   in_use: {
-    label: 'In Use',
+    label: 'Đang dùng',
     dot: 'bg-primary-400',
     text: 'text-primary-400',
     bg: 'bg-primary-500/10 border-primary-500/30',

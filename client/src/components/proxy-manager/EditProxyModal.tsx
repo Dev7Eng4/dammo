@@ -75,7 +75,7 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to update proxy');
+      setApiError(err instanceof Error ? err.message : 'Cập nhật proxy thất bại');
     }
   }
 
@@ -83,14 +83,14 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
     <Modal
       open={open}
       onClose={handleClose}
-      title="Edit Proxy"
+      title="Sửa Proxy"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting || !proxy} form="edit-proxy-form" type="submit">
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
           </Button>
         </>
       }
@@ -98,18 +98,18 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
       <form id="edit-proxy-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Proxy Name
+            Tên Proxy
           </label>
           <Input
             id="edit-name"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Tên là bắt buộc' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-400">Type</label>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-400">Loại</label>
           <DropdownSelect
             options={typeOptions}
             value={proxyType}
@@ -126,7 +126,7 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
             <Input
               id="edit-host"
               className="h-10 rounded-lg font-mono"
-              {...register('host', { required: 'Host is required' })}
+              {...register('host', { required: 'Host là bắt buộc' })}
             />
             {errors.host ? <p className="mt-1 text-xs text-danger">{errors.host.message}</p> : null}
           </div>
@@ -139,9 +139,9 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
               type="number"
               className="h-10 rounded-lg"
               {...register('port', {
-                required: 'Port is required',
-                min: { value: 1, message: 'Invalid port' },
-                max: { value: 65535, message: 'Invalid port' },
+                required: 'Port là bắt buộc',
+                min: { value: 1, message: 'Port không hợp lệ' },
+                max: { value: 65535, message: 'Port không hợp lệ' },
               })}
             />
             {errors.port ? <p className="mt-1 text-xs text-danger">{errors.port.message}</p> : null}
@@ -151,13 +151,13 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="edit-username" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Username
+              Tên đăng nhập
             </label>
             <Input id="edit-username" className="h-10 rounded-lg" {...register('username')} />
           </div>
           <div>
             <label htmlFor="edit-password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Password
+              Mật khẩu
             </label>
             <Input id="edit-password" type="password" className="h-10 rounded-lg" {...register('password')} />
           </div>
@@ -166,13 +166,13 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="edit-location" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Location
+              Vị trí
             </label>
             <Input id="edit-location" className="h-10 rounded-lg" {...register('location')} />
           </div>
           <div>
             <label htmlFor="edit-countryCode" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Country Code
+              Mã quốc gia
             </label>
             <Input id="edit-countryCode" className="h-10 rounded-lg uppercase" {...register('countryCode')} />
           </div>
@@ -180,14 +180,14 @@ export function EditProxyModal({ open, proxy, onClose, onSuccess }: EditProxyMod
 
         <div>
           <label htmlFor="edit-provider" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Provider
+            Nhà cung cấp
           </label>
           <Input id="edit-provider" className="h-10 rounded-lg" {...register('provider')} />
         </div>
 
         <div>
           <label htmlFor="edit-tags" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tags <span className="text-neutral-500">(comma-separated)</span>
+            Tags <span className="text-neutral-500">(phân tách bằng dấu phẩy)</span>
           </label>
           <Input id="edit-tags" className="h-10 rounded-lg" {...register('tags')} />
         </div>

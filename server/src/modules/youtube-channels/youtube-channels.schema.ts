@@ -25,6 +25,7 @@ const channelConfigFields = {
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   backgroundFootageMode: z.enum(['source', 'local']).optional(),
   thumbnailStyleKey: z.string().optional(),
+  thumbnailBackgroundFile: z.string().optional(),
   captionStyleKey: z
     .enum([
       'default',
@@ -46,9 +47,11 @@ const channelConfigFields = {
     .optional(),
   useReferenceImage: z.boolean().optional(),
   showAudioBar: z.boolean().optional(),
+  audioBarFile: z.string().optional(),
   showChannelAvatar: z.boolean().optional(),
   showSubscribe: z.boolean().optional(),
   showSmallVideo: z.boolean().optional(),
+  smallVideoFile: z.string().optional(),
   showDisclaimer: z.boolean().optional(),
   disclaimerText: z.string().max(2000).optional(),
   descriptionDisclaimerText: z.string().max(2000).optional(),
@@ -140,6 +143,7 @@ export const createYoutubeChannelSchema = z
   .object({
     ...channelConfigFields,
     channelUrl: z.string().optional(),
+    thumbnailBackgroundTempSessionId: z.string().min(8).max(64).optional(),
   })
   .superRefine(applyChannelConfigRefine);
 

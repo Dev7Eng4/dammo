@@ -7,10 +7,10 @@ interface StatCardsProps {
 }
 
 const stats = [
-  { key: 'youtubeChannels' as const, label: 'YouTube Channels', icon: 'youtube' },
-  { key: 'tiktokAccounts' as const, label: 'TikTok Accounts', icon: 'tiktok' },
-  { key: 'facebookAssets' as const, label: 'Facebook Assets', icon: 'facebook' },
-  { key: 'sourceChannels' as const, label: 'Source Channels', icon: 'source' },
+  { key: 'youtubeChannels' as const, label: 'Kênh YouTube', icon: 'youtube' },
+  { key: 'tiktokAccounts' as const, label: 'Tài khoản TikTok', icon: 'tiktok' },
+  { key: 'facebookAssets' as const, label: 'Tài nguyên Facebook', icon: 'facebook' },
+  { key: 'sourceChannels' as const, label: 'Kênh nguồn', icon: 'source' },
 ];
 
 function PlatformIcon({ icon }: { icon: string }) {

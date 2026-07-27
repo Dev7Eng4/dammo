@@ -11,25 +11,25 @@ export function RecentProjectsTable({ projects, loading }: RecentProjectsTablePr
   const columns: ColumnDef<RecentProject, unknown>[] = [
     {
       accessorKey: 'name',
-      header: 'Project Name',
+      header: 'Tên dự án',
       cell: ({ getValue }) => <span className="text-neutral-100">{getValue<string>()}</span>,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
     {
       accessorKey: 'format',
-      header: 'Format',
+      header: 'Định dạng',
       cell: ({ getValue }) => <span className="text-neutral-400">{getValue<string>()}</span>,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
     {
       accessorKey: 'target',
-      header: 'Target',
+      header: 'Đích',
       cell: ({ getValue }) => <span className="text-neutral-400">{getValue<string>()}</span>,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: 'Trạng thái',
       cell: ({ row }) => <Badge status={row.original.status} />,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
@@ -38,9 +38,9 @@ export function RecentProjectsTable({ projects, loading }: RecentProjectsTablePr
   return (
     <div className="card-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Recent Projects</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Dự án gần đây</p>
         <button type="button" className="text-xs text-secondary-400 hover:text-secondary-300">
-          View All
+          Xem tất cả
         </button>
       </div>
       <DataTable
@@ -48,7 +48,7 @@ export function RecentProjectsTable({ projects, loading }: RecentProjectsTablePr
         columns={columns}
         getRowId={project => project.id}
         loading={loading}
-        emptyMessage="No recent projects."
+        emptyMessage="Chưa có dự án gần đây."
       />
     </div>
   );

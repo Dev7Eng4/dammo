@@ -1,6 +1,18 @@
 {
   "prompts": [
     {
+      "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
+      "key": "change_background_channel",
+      "language": "ja",
+      "name": "Change Background Channel",
+      "category": "thumbnail",
+      "outputType": "image",
+      "useReferenceImage": true,
+      "createdAt": "2026-07-27T16:24:41.606Z",
+      "updatedAt": "2026-07-27T16:38:45.864Z",
+      "useChannelBackgroundImage": true
+    },
+    {
       "id": "d1983313-bba7-47ff-9aa5-cd83af46a5a1",
       "key": "video_image_with_reference",
       "language": "ja",

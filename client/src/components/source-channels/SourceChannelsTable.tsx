@@ -45,13 +45,13 @@ export function SourceChannelsTable({
   const columns: ColumnDef<SourceChannel, unknown>[] = [
     {
       id: 'platform',
-      header: 'PLAT',
+      header: 'NỀN TẢNG',
       meta: { headerClassName: 'w-12' },
       cell: ({ row }) => <PlatformIcon platform={row.original.platform} className="text-neutral-400" />,
     },
     {
       accessorKey: 'name',
-      header: 'SOURCE NAME',
+      header: 'TÊN NGUỒN',
       cell: ({ row }) => (
         <span
           className="font-medium text-green-600"
@@ -80,12 +80,12 @@ export function SourceChannelsTable({
     },
     {
       accessorKey: 'purpose',
-      header: 'PURPOSE',
+      header: 'MỤC ĐÍCH',
       cell: ({ row }) => <PurposePill purpose={row.original.purpose} />,
     },
     {
       id: 'notes',
-      header: 'NOTES',
+      header: 'GHI CHÚ',
       cell: ({ row }) => {
         const source = row.original;
         const isSavingNotes = savingNotesId === source.id;
@@ -96,7 +96,7 @@ export function SourceChannelsTable({
                 key={`${source.id}-${source.notes ?? ''}`}
                 type="text"
                 defaultValue={source.notes ?? ''}
-                placeholder="Add note..."
+                placeholder="Thêm ghi chú..."
                 disabled={isSavingNotes}
                 onBlur={e => onNotesChange(source.id, e.currentTarget.value)}
                 className="h-8 w-full min-w-[10rem] rounded-lg border border-border bg-surface-elevated px-2.5 text-xs text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 disabled:opacity-60"
@@ -121,7 +121,7 @@ export function SourceChannelsTable({
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
       onRowClick={source => onToggleRow(source.id)}
-      emptyMessage="No source channels match your filter."
+      emptyMessage="Không có kênh nguồn khớp bộ lọc."
     />
   );
 }

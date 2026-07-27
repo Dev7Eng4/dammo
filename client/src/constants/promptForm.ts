@@ -1,22 +1,22 @@
 import type { PlaygroundProvider, PromptCategory, PromptLanguage, PromptOutputType, ImageBrowserProvider, VideoBrowserProvider } from '../types/prompt';
 
 export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[] = [
-  { value: 'thumbnail', label: 'Thumbnail' },
-  { value: 'transcript', label: 'Transcript' },
+  { value: 'thumbnail', label: 'Ảnh thumbnail' },
+  { value: 'transcript', label: 'Bản ghi' },
   { value: 'meta', label: 'Meta' },
-  { value: 'image', label: 'Image' },
+  { value: 'image', label: 'Hình ảnh' },
 ];
 
 export const PROMPT_LANGUAGE_OPTIONS: { value: PromptLanguage; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'ko', label: 'Korean' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'es', label: 'Spanish' },
+  { value: 'en', label: 'Tiếng Anh' },
+  { value: 'ko', label: 'Tiếng Hàn' },
+  { value: 'ja', label: 'Tiếng Nhật' },
+  { value: 'es', label: 'Tiếng Tây Ban Nha' },
 ];
 
 export const PROMPT_OUTPUT_TYPE_OPTIONS: { value: PromptOutputType; label: string }[] = [
-  { value: 'text', label: 'Text' },
-  { value: 'image', label: 'Image' },
+  { value: 'text', label: 'Văn bản' },
+  { value: 'image', label: 'Hình ảnh' },
   { value: 'video', label: 'Video' },
 ];
 
@@ -35,10 +35,10 @@ export const PLAYGROUND_PROVIDER_OPTIONS: { value: PlaygroundProvider; label: st
 ];
 
 export const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
-  thumbnail: 'Thumbnail',
-  transcript: 'Transcript',
+  thumbnail: 'Ảnh thumbnail',
+  transcript: 'Bản ghi',
   meta: 'Meta',
-  image: 'Image',
+  image: 'Hình ảnh',
 };
 
 export const PROMPT_LANGUAGE_LABELS: Record<PromptLanguage, string> = {

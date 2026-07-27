@@ -34,8 +34,8 @@ import {
   resolveSiCenterImageOverlayX,
 } from './si.constants.js';
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
-import { selectRandomSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
-import { selectRandomSiSmallVideoClip, appendSiSmallVideoScaleFilters } from './si-small-video.js';
+import { resolveSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
+import { resolveSiSmallVideoClip, appendSiSmallVideoScaleFilters } from './si-small-video.js';
 import { appendChannelAvatarOverlayFilters } from './channel-avatar-overlay.js';
 import {
   buildSiCenterSlideshow,
@@ -81,7 +81,9 @@ export interface AssembleReupSiVideoInput {
   /** When set (multi_image), build Ken Burns slideshow and overlay instead of a static center image. */
   centerImagePaths?: string[];
   showAudioBar?: boolean;
+  audioBarFile?: string;
   showSmallVideo?: boolean;
+  smallVideoFile?: string;
   channelAvatarPath?: string;
   backgroundFootageMode?: SiBackgroundFootageMode;
   backgroundFootageSourceIds?: string[];
@@ -102,7 +104,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     centerImagePath,
     centerImagePaths,
     showAudioBar = false,
+    audioBarFile,
     showSmallVideo = false,
+    smallVideoFile,
     channelAvatarPath,
     backgroundFootageMode = 'source',
     backgroundFootageSourceIds = [],
@@ -158,15 +162,15 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   }
 
   let audioBarPath: string | undefined;
-  if (showAudioBar) {
-    const audioBarClip = await selectRandomSiAudioBarClip();
+  if (showAudioBar || audioBarFile?.trim()) {
+    const audioBarClip = await resolveSiAudioBarClip(audioBarFile);
     audioBarPath = audioBarClip.path;
     log(`[reup-si] Audio bar clip: ${audioBarClip.filename}`);
   }
 
   let smallVideoPath: string | undefined;
-  if (showSmallVideo) {
-    const smallVideoClip = await selectRandomSiSmallVideoClip();
+  if (showSmallVideo || smallVideoFile?.trim()) {
+    const smallVideoClip = await resolveSiSmallVideoClip(smallVideoFile);
     smallVideoPath = smallVideoClip.path;
     log(`[reup-si] Small video clip: ${smallVideoClip.filename}`);
   }

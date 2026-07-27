@@ -1,22 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Page } from 'playwright';
-import type { FlowToolVisual } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
-import {
-  connectPlaywrightToGpmProfile,
-  disconnectGpmPlaywright,
-  type GpmPlaywrightConnection,
-} from '../../../../infrastructure/gpm/gpm-playwright.connector.js';
-import type { GpmProfile } from '../../../../infrastructure/gpm/gpm-api.client.js';
+import type {
+  FlowToolVisual,
+  MetaConcurrencyMode,
+  MetaMediaBatchJob,
+} from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import {
-  closeChromeProfiles,
-  createChromeProfilePage,
-  openChromeProfile,
-} from '../../../chrome-profiles/chrome-profile.runner.js';
+import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-import { gpmManagerService } from '../../../gpm-manager/gpm-manager.service.js';
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
@@ -32,12 +23,10 @@ import type {
   AiVideoScenePrompt,
   GenerateAiSceneSlideImagesInput,
   GenerateAiSceneSlideImagesResult,
+  MetaImageConcurrencyMode,
 } from './ai-video.types.js';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
-const META_IMAGE_TIMEOUT_MS = 300_000;
-const META_IMAGE_TABS_PER_MAIN_PROFILE = 5;
-const META_IMAGE_MAX_RETRIES = 3;
 const FLOW_TOOL_TIMEOUT_MS = 300_000;
 
 interface SceneVisualJob {
@@ -46,19 +35,6 @@ interface SceneVisualJob {
   prompt: string;
   outputPath: string;
   referenceIds?: string[];
-}
-
-interface MetaImageWorker {
-  workerIndex: number;
-  label: string;
-  page: Page;
-  kind: 'chrome' | 'gpm';
-  profileId: string;
-}
-
-interface MetaWorkerPool {
-  workers: MetaImageWorker[];
-  gpmConnections: GpmPlaywrightConnection[];
 }
 
 function buildSceneName(index: number): string {
@@ -187,289 +163,67 @@ async function generateFlowSceneImages(
   return { generatedCount, failedCount };
 }
 
-async function openChromeMetaWorkers(
-  tabProfiles: ChromeProfile[],
-  startIndex: number,
-  log: (msg: string) => void,
-): Promise<MetaImageWorker[]> {
-  if (tabProfiles.length === 0) return [];
-
-  const uniqueProfiles = [...new Map(tabProfiles.map(profile => [profile.id, profile])).values()];
-  for (const profile of uniqueProfiles) {
-    log(`[ai-video] Mở Chrome main profile ${profile.name} cho Meta scene images...`);
-    await openChromeProfile(profile.id, profile.userDataDir);
-  }
-
-  const workers: MetaImageWorker[] = [];
-  for (const profile of tabProfiles) {
-    try {
-      const page = await createChromeProfilePage(profile.id);
-      await metaBrowserService.openOnPage(page);
-      const workerIndex = startIndex + workers.length;
-      workers.push({
-        workerIndex,
-        label: `chrome:${profile.name}`,
-        page,
-        kind: 'chrome',
-        profileId: profile.id,
-      });
-      log(`[ai-video] Meta worker ${workerIndex + 1} sẵn sàng trên Chrome ${profile.name}`);
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      log(`[ai-video] Bỏ qua Chrome tab trên ${profile.name}: ${reason}`);
-    }
-  }
-
-  return workers;
-}
-
-function allocateChromeMetaTabProfiles(
-  profiles: ChromeProfile[],
-  pendingCount: number,
-): ChromeProfile[] {
-  const tabProfiles: ChromeProfile[] = [];
-
-  for (const profile of profiles) {
-    const remaining = pendingCount - tabProfiles.length;
-    if (remaining <= 0) break;
-
-    const tabCount = Math.min(META_IMAGE_TABS_PER_MAIN_PROFILE, remaining);
-    for (let tabIndex = 0; tabIndex < tabCount; tabIndex += 1) {
-      tabProfiles.push(profile);
-    }
-  }
-
-  return tabProfiles;
-}
-
-async function openGpmMetaWorkers(
-  profiles: GpmProfile[],
-  startIndex: number,
-  log: (msg: string) => void,
-): Promise<{ workers: MetaImageWorker[]; connections: GpmPlaywrightConnection[] }> {
-  if (profiles.length === 0) return { workers: [], connections: [] };
-
-  const results = await Promise.all(
-    profiles.map(async profile => {
-      try {
-        log(`[ai-video] Start GPM profile ${profile.name} cho Meta scene images...`);
-        const connection = await connectPlaywrightToGpmProfile(profile.id);
-        await metaBrowserService.openOnPage(connection.page);
-        return { profile, connection, error: null as string | null };
-      } catch (err) {
-        const reason = err instanceof Error ? err.message : String(err);
-        log(`[ai-video] Bỏ qua GPM profile ${profile.name}: ${reason}`);
-        return { profile, connection: null, error: reason };
-      }
-    }),
-  );
-
-  const workers: MetaImageWorker[] = [];
-  const connections: GpmPlaywrightConnection[] = [];
-
-  for (const result of results) {
-    if (!result.connection) continue;
-    const workerIndex = startIndex + workers.length;
-    workers.push({
-      workerIndex,
-      label: `gpm:${result.profile.name}`,
-      page: result.connection.page,
-      kind: 'gpm',
-      profileId: result.connection.profileId,
-    });
-    connections.push(result.connection);
-    log(`[ai-video] Meta worker ${workerIndex + 1} sẵn sàng trên GPM ${result.profile.name}`);
-  }
-
-  return { workers, connections };
-}
-
-async function openMetaWorkerPool(
-  pendingCount: number,
-  log: (msg: string) => void,
-): Promise<MetaWorkerPool> {
-  const mains = chromeProfilesService.listMainProfiles();
-  const chromeTabProfiles = allocateChromeMetaTabProfiles(mains, pendingCount);
-  const remainingAfterChrome = Math.max(0, pendingCount - chromeTabProfiles.length);
-
-  let gpmCandidates: GpmProfile[] = [];
-  if (remainingAfterChrome > 0) {
-    try {
-      gpmCandidates = await gpmManagerService.listMetaEnabledProfiles();
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      const code = err instanceof AppError ? err.code : undefined;
-      log(
-        `[ai-video] GPM meta profiles unavailable (${code ?? 'error'}): ${reason} — tiếp tục Chrome-only`,
-      );
-      gpmCandidates = [];
-    }
-  }
-  const gpmProfiles = gpmCandidates.slice(0, remainingAfterChrome);
-
-  log(
-    `[ai-video] Meta capacity: pending=${pendingCount}, chromeMains=${mains.length}, ` +
-      `tabsPerMain=${META_IMAGE_TABS_PER_MAIN_PROFILE}, chromeTabs=${chromeTabProfiles.length}, ` +
-      `gpmMeta=${gpmProfiles.length}` +
-      (gpmProfiles.length > 0
-        ? ` (${gpmProfiles.map(profile => profile.name).join(', ')})`
-        : ''),
-  );
-
-  if (chromeTabProfiles.length === 0 && gpmProfiles.length === 0) {
-    throw new AppError(
-      'No Chrome main or GPM meta-enabled profiles available for Meta scene images',
-      400,
-      'AI_SCENE_IMAGE_NO_META_PROFILES',
-    );
-  }
-
-  const chromeWorkers = await openChromeMetaWorkers(chromeTabProfiles, 0, log);
-  const { workers: gpmWorkers, connections } = await openGpmMetaWorkers(
-    gpmProfiles,
-    chromeWorkers.length,
-    log,
-  );
-
-  const workers = [...chromeWorkers, ...gpmWorkers];
-  if (workers.length === 0) {
-    for (const connection of connections) {
-      await disconnectGpmPlaywright(connection).catch(() => undefined);
-    }
-    throw new AppError(
-      'Failed to open any Meta workers (Chrome/GPM)',
-      502,
-      'AI_SCENE_IMAGE_NO_META_WORKERS',
-    );
-  }
-
-  return { workers, gpmConnections: connections };
-}
-
-async function cleanupMetaWorkerPool(pool: MetaWorkerPool, log: (msg: string) => void): Promise<void> {
-  await Promise.all(
-    pool.gpmConnections.map(async connection => {
-      try {
-        await disconnectGpmPlaywright(connection);
-        log(`[ai-video] Closed GPM profile ${connection.profileId}`);
-      } catch (err) {
-        const reason = err instanceof Error ? err.message : String(err);
-        log(`[ai-video] Failed to close GPM ${connection.profileId}: ${reason}`);
-      }
-    }),
-  );
-
-  const chromeProfileIds = [
-    ...new Set(pool.workers.filter(worker => worker.kind === 'chrome').map(worker => worker.profileId)),
-  ];
-
-  if (chromeProfileIds.length === 0) return;
-
-  const closedIds = await closeChromeProfiles(chromeProfileIds);
-  for (const profileId of closedIds) {
-    log(`[ai-video] Closed Chrome profile ${profileId} after scene images`);
-  }
-}
-
 async function generateMetaSceneImages(
   workDir: string,
   slidesDir: string,
   pending: SceneVisualJob[],
   totalScenes: number,
   log: (msg: string) => void,
-  onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
+  onProgress: GenerateAiSceneSlideImagesInput['onProgress'] | undefined,
+  mode: MetaConcurrencyMode,
 ): Promise<{ generatedCount: number; failedCount: number }> {
-  const pool = await openMetaWorkerPool(pending.length, log);
-  const { workers } = pool;
-  let nextJobIndex = 0;
-  let generatedCount = 0;
-  let failedCount = 0;
+  const jobs: MetaMediaBatchJob[] = [];
 
-  log(
-    `[ai-video] Meta parallel: ${workers.length} worker(s) ` +
-      `[${workers.map(worker => worker.label).join(', ')}] cho ${pending.length} scene(s)`,
-  );
+  for (const job of pending) {
+    const referenceImagePaths = await resolveCharacterReferenceImagePaths(
+      workDir,
+      job.referenceIds ?? [],
+      log,
+    );
+    if ((job.referenceIds?.length ?? 0) > 0 && referenceImagePaths.length === 0) {
+      log(`[ai-video] ${job.name}: no reference images resolved — continuing with prompt only`);
+    }
 
-  async function runWorker(worker: MetaImageWorker): Promise<void> {
-    while (true) {
-      const jobIndex = nextJobIndex;
-      nextJobIndex += 1;
-      if (jobIndex >= pending.length) return;
+    jobs.push({
+      id: job.name,
+      prompt: job.prompt,
+      outputDir: slidesDir,
+      fileName: `${job.name}.jpg`,
+      mediaKind: 'image',
+      ...(referenceImagePaths.length > 0 ? { referenceImagePaths } : {}),
+    });
+  }
 
-      const job = pending[jobIndex];
-      onProgress?.({
-        sceneIndex: job.index + 1,
-        totalScenes,
-        sceneName: job.name,
-        status: 'generating',
-      });
-
-      log(
-        `[ai-video] worker ${worker.workerIndex + 1}/${workers.length} (${worker.label}) → ${job.name}`,
-      );
-
-      let succeeded = false;
-      for (let attempt = 1; attempt <= META_IMAGE_MAX_RETRIES; attempt += 1) {
-        try {
-          const referenceImagePaths = await resolveCharacterReferenceImagePaths(
-            workDir,
-            job.referenceIds ?? [],
-            log,
-          );
-          if ((job.referenceIds?.length ?? 0) > 0 && referenceImagePaths.length === 0) {
-            log(
-              `[ai-video] ${job.name}: no reference images resolved — continuing with prompt only`,
-            );
-          }
-
-          const response = await metaBrowserService.generateMediaOnPage(worker.page, job.prompt, {
-            mediaKind: 'image',
-            outputDir: slidesDir,
-            fileName: `${job.name}.jpg`,
-            timeoutMs: META_IMAGE_TIMEOUT_MS,
-            ...(referenceImagePaths.length > 0 ? { referenceImagePaths } : {}),
-          });
-
-          const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-          if (!savedPath || !(await fileExists(savedPath))) {
-            throw new AppError(`Meta image generation failed for ${job.name}`, 502, 'AI_SCENE_IMAGE_FAILED');
-          }
-
-          generatedCount += 1;
-          succeeded = true;
-          break;
-        } catch (err) {
-          const reason = err instanceof Error ? err.message : String(err);
-          if (attempt === META_IMAGE_MAX_RETRIES) {
-            log(
-              `[ai-video] bỏ qua ${job.name} sau ${META_IMAGE_MAX_RETRIES} lần: ${reason}`,
-            );
-            failedCount += 1;
-          } else {
-            log(
-              `[ai-video] ${job.name} attempt ${attempt}/${META_IMAGE_MAX_RETRIES} failed → retry (${reason})`,
-            );
-          }
-        }
-      }
-
-      if (!succeeded) {
+  const result = await metaBrowserService.generateMediaBatch(jobs, {
+    concurrency: mode,
+    onLog: log,
+    onJobProgress: progress => {
+      const pendingJob = pending.find(job => job.name === progress.jobId);
+      if (!pendingJob) return;
+      if (progress.status === 'generating') {
         onProgress?.({
-          sceneIndex: job.index + 1,
+          sceneIndex: pendingJob.index + 1,
           totalScenes,
-          sceneName: job.name,
+          sceneName: pendingJob.name,
+          status: 'generating',
+        });
+        return;
+      }
+      if (progress.status === 'failed') {
+        onProgress?.({
+          sceneIndex: pendingJob.index + 1,
+          totalScenes,
+          sceneName: pendingJob.name,
           status: 'skipped',
         });
       }
-    }
-  }
+    },
+  });
 
-  try {
-    await Promise.all(workers.map(worker => runWorker(worker)));
-    return { generatedCount, failedCount };
-  } finally {
-    await cleanupMetaWorkerPool(pool, log);
-  }
+  return {
+    generatedCount: result.generatedCount,
+    failedCount: result.failedCount,
+  };
 }
 
 async function finalizeScenesWithPaths(
@@ -518,6 +272,7 @@ export async function generateAiSceneSlideImages(
   }
 
   const imageProvider = promptsSettingsService.get().defaultImageProvider;
+  const metaConcurrency: MetaImageConcurrencyMode = input.metaConcurrency ?? 'batch';
 
   if (pending.length === 0) {
     const imagePaths = await listSlideImagePaths(slidesDir);
@@ -539,7 +294,9 @@ export async function generateAiSceneSlideImages(
   }
 
   log(
-    `[ai-video] Generating ${pending.length} scene image(s) via ${imageProvider} (${skippedCount} skipped) → ${slidesDir}`,
+    `[ai-video] Generating ${pending.length} scene image(s) via ${imageProvider}` +
+      (imageProvider === 'meta' ? ` mode=${metaConcurrency}` : '') +
+      ` (${skippedCount} skipped) → ${slidesDir}`,
   );
 
   let generatedCount = 0;
@@ -575,6 +332,7 @@ export async function generateAiSceneSlideImages(
       input.scenes.length,
       log,
       input.onProgress,
+      metaConcurrency,
     );
     generatedCount = metaResult.generatedCount;
     failedCount = metaResult.failedCount;

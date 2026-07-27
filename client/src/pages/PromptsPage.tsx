@@ -37,6 +37,10 @@ function supportsReferenceImage(category: PromptCategory): boolean {
   return category === 'thumbnail' || category === 'image';
 }
 
+function supportsChannelBackgroundImage(category: PromptCategory): boolean {
+  return category === 'thumbnail';
+}
+
 const EMPTY_DRAFT: PromptFormDraft = {
   id: null,
   key: '',
@@ -48,6 +52,7 @@ const EMPTY_DRAFT: PromptFormDraft = {
   template: '',
   templateParams: [],
   useReferenceImage: false,
+  useChannelBackgroundImage: false,
 };
 
 function resolveDraftOutputType(item: {
@@ -72,6 +77,7 @@ function serializeDraft(draft: PromptFormDraft): string {
     template: draft.template,
     templateParams: draft.templateParams,
     useReferenceImage: draft.useReferenceImage,
+    useChannelBackgroundImage: draft.useChannelBackgroundImage,
   });
 }
 
@@ -94,6 +100,7 @@ function draftFromResolved(item: {
   description?: string;
   isSystem?: boolean;
   useReferenceImage?: boolean;
+  useChannelBackgroundImage?: boolean;
   template: string;
 }): PromptFormDraft {
   const outputType = resolveDraftOutputType(item);
@@ -111,6 +118,7 @@ function draftFromResolved(item: {
       templateParams: managed.params,
       isSystem: item.isSystem,
       useReferenceImage: item.useReferenceImage ?? false,
+      useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
     };
   }
 
@@ -126,6 +134,7 @@ function draftFromResolved(item: {
     templateParams: [],
     isSystem: item.isSystem,
     useReferenceImage: item.useReferenceImage ?? false,
+    useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
   };
 }
 
@@ -218,7 +227,7 @@ export function PromptsPage() {
       setProvider(item.defaultLlmProvider);
     } catch (err) {
       setProvider(previous);
-      setProviderSettingsError(err instanceof Error ? err.message : 'Failed to update default provider');
+      setProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp mặc định');
     } finally {
       setProviderSaving(false);
     }
@@ -235,7 +244,7 @@ export function PromptsPage() {
       setImageProvider(item.defaultImageProvider);
     } catch (err) {
       setImageProvider(previous);
-      setImageProviderSettingsError(err instanceof Error ? err.message : 'Failed to update image provider');
+      setImageProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp hình ảnh');
     } finally {
       setImageProviderSaving(false);
     }
@@ -252,7 +261,7 @@ export function PromptsPage() {
       setVideoProvider(item.defaultVideoProvider);
     } catch (err) {
       setVideoProvider(previous);
-      setVideoProviderSettingsError(err instanceof Error ? err.message : 'Failed to update video provider');
+      setVideoProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp video');
     } finally {
       setVideoProviderSaving(false);
     }
@@ -315,6 +324,10 @@ export function PromptsPage() {
         next.useReferenceImage = false;
       }
 
+      if (patch.category !== undefined && !supportsChannelBackgroundImage(patch.category)) {
+        next.useChannelBackgroundImage = false;
+      }
+
       if (patch.template !== undefined && isUserFunctionTemplate(next.template)) {
         next.templateParams = [];
       }
@@ -337,7 +350,7 @@ export function PromptsPage() {
     if (!draft) return;
     if (draft.isSystem) return;
     if (!draft.name.trim()) {
-      setSaveError('Name is required');
+      setSaveError('Tên là bắt buộc');
       return;
     }
 
@@ -346,6 +359,9 @@ export function PromptsPage() {
       : buildManagedTemplateExpression(draft.template, draft.templateParams);
 
     const useReferenceImage = supportsReferenceImage(draft.category) ? draft.useReferenceImage : false;
+    const useChannelBackgroundImage = supportsChannelBackgroundImage(draft.category)
+      ? draft.useChannelBackgroundImage
+      : false;
 
     setSaving(true);
     setSaveError(null);
@@ -359,6 +375,7 @@ export function PromptsPage() {
           description: draft.description || undefined,
           template: templatePayload,
           useReferenceImage,
+          useChannelBackgroundImage,
         });
         const nextDraft = {
           ...draft,
@@ -367,6 +384,7 @@ export function PromptsPage() {
           language: item.language,
           name: item.name,
           useReferenceImage: item.useReferenceImage ?? false,
+          useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
         };
         setDraft(nextDraft);
         setBaseline(serializeDraft(nextDraft));
@@ -380,6 +398,7 @@ export function PromptsPage() {
           description: draft.description || undefined,
           template: templatePayload,
           useReferenceImage,
+          useChannelBackgroundImage,
         });
         const nextDraft = {
           ...draft,
@@ -388,6 +407,7 @@ export function PromptsPage() {
           language: item.language,
           name: item.name,
           useReferenceImage: item.useReferenceImage ?? false,
+          useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
         };
         setDraft(nextDraft);
         setBaseline(serializeDraft(nextDraft));
@@ -395,7 +415,7 @@ export function PromptsPage() {
       }
       await refreshList();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Save failed';
+      const message = err instanceof Error ? err.message : 'Lưu thất bại';
       setSaveError(message);
     } finally {
       setSaving(false);
@@ -404,7 +424,7 @@ export function PromptsPage() {
 
   function handleDuplicate() {
     if (!draft) return;
-    const copyName = draft.name ? `${draft.name} (copy)` : 'Untitled (copy)';
+    const copyName = draft.name ? `${draft.name} (bản sao)` : 'Chưa đặt tên (bản sao)';
     const copy: PromptFormDraft = {
       ...draft,
       id: null,
@@ -423,7 +443,7 @@ export function PromptsPage() {
   async function handleDelete() {
     if (!draft?.id) return;
     if (draft.isSystem) return;
-    if (!window.confirm('Delete this prompt?')) return;
+    if (!window.confirm('Xóa prompt này?')) return;
 
     try {
       await deletePrompt(draft.id);
@@ -432,7 +452,7 @@ export function PromptsPage() {
       setBaseline('');
       await refreshList();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Delete failed');
+      window.alert(err instanceof Error ? err.message : 'Xóa thất bại');
     }
   }
 
@@ -456,7 +476,7 @@ export function PromptsPage() {
       });
       setPlaygroundResult(item);
     } catch (err) {
-      setPlaygroundError(err instanceof Error ? err.message : 'Playground run failed');
+      setPlaygroundError(err instanceof Error ? err.message : 'Chạy thử thất bại');
     } finally {
       setRunning(false);
     }

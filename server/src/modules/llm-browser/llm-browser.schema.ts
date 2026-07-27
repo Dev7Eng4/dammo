@@ -53,6 +53,7 @@ export const llmBrowserGenerateImageSchema = z.object({
   stableMs: z.number().int().positive().max(60_000).optional(),
   generationMode: z.enum(['browser', 'api']).default('browser'),
   referenceImagePath: z.string().min(1).optional(),
+  referenceImagePaths: z.array(z.string().min(1)).optional(),
   projectId: z.string().uuid().optional(),
 });
 

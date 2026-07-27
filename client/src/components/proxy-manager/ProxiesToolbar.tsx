@@ -16,12 +16,12 @@ interface ProxiesToolbarProps {
 }
 
 const filterOptions: { value: ProxyFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'slow', label: 'Slow' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'in_use', label: 'In Use' },
+  { value: 'all', label: 'Tất cả' },
+  { value: 'active', label: 'Hoạt động' },
+  { value: 'failed', label: 'Thất bại' },
+  { value: 'slow', label: 'Chậm' },
+  { value: 'expired', label: 'Hết hạn' },
+  { value: 'in_use', label: 'Đang dùng' },
 ];
 
 const filterIcon = (
@@ -59,7 +59,7 @@ export function ProxiesToolbar({
           options={filterOptions}
           value={filter}
           onChange={onFilterChange}
-          prefix='Filter'
+          prefix='Lọc'
           leadingIcon={filterIcon}
           menuClassName='w-40'
         />
@@ -69,13 +69,13 @@ export function ProxiesToolbar({
       <div className='flex flex-wrap items-center gap-2'>
         <input ref={fileInputRef} type='file' accept='.xlsx,.xls' className='hidden' onChange={handleFileChange} />
         <Button size='sm' className='rounded-lg' onClick={onAddProxy}>
-          + Add Proxy
+          + Thêm Proxy
         </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' disabled={importing} onClick={() => fileInputRef.current?.click()}>
-          {importing ? 'Importing...' : 'Import Excel'}
+          {importing ? 'Đang nhập...' : 'Nhập Excel'}
         </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' disabled={exporting} onClick={onExportExcel}>
-          {exporting ? 'Exporting...' : 'Export Excel'}
+          {exporting ? 'Đang xuất...' : 'Xuất Excel'}
         </Button>
         <Button
           variant='outlined'
@@ -84,7 +84,7 @@ export function ProxiesToolbar({
           disabled={removingFailed}
           onClick={onRemoveFailed}
         >
-          {removingFailed ? 'Removing...' : 'Remove Failed'}
+          {removingFailed ? 'Đang xóa...' : 'Xóa thất bại'}
         </Button>
       </div>
     </div>

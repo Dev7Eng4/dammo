@@ -122,6 +122,14 @@ export function youtubeChannelUploadedVideoDir(channelId: string, youtubeVideoId
   return path.join(youtubeChannelUploadsDir(channelId), youtubeVideoId);
 }
 
+export function youtubeChannelThumbnailBackgroundsDir(channelId: string): string {
+  return path.join(youtubeChannelDir(channelId), 'thumbnail-backgrounds');
+}
+
+export function youtubeChannelThumbnailBackgroundsTempDir(sessionId: string): string {
+  return path.join(paths.youtubeChannelsDir, '_temp', sessionId, 'thumbnail-backgrounds');
+}
+
 function isDirectory(dirPath: string): boolean {
   try {
     return fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory();

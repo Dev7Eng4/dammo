@@ -143,8 +143,8 @@ export function SourceChannelsPage() {
     if (selectedIds.size > 1) {
       void enqueueTask({
         type: 'download_source',
-        title: `Downloading videos for ${selectedIds.size} sources`,
-        subtitle: `${selectedIds.size} selected sources`,
+        title: `Đang tải video cho ${selectedIds.size} nguồn`,
+        subtitle: `${selectedIds.size} nguồn đã chọn`,
         payload: { sourceIds: Array.from(selectedIds) },
       });
       return;
@@ -155,7 +155,7 @@ export function SourceChannelsPage() {
 
     void enqueueTask({
       type: 'download_source',
-      title: `Downloading: ${selectedSource.name}`,
+      title: `Đang tải: ${selectedSource.name}`,
       subtitle: selectedSource.url,
       payload: {
         sourceId: selectedSource.id,
@@ -169,7 +169,7 @@ export function SourceChannelsPage() {
       void enqueueTask(
         {
           type: 'add_source',
-          title: `Importing: ${payload.url}`,
+          title: `Đang nhập: ${payload.url}`,
           subtitle: payload.purpose,
           payload: {
             url: payload.url,
@@ -213,7 +213,7 @@ export function SourceChannelsPage() {
       await updateSourceChannel(id, { bumpRisk: true });
       list.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to increase risk level');
+      toast.error(err instanceof Error ? err.message : 'Không thể tăng mức rủi ro');
     } finally {
       setBumpingRiskId(null);
     }
@@ -228,7 +228,7 @@ export function SourceChannelsPage() {
       await updateSourceChannel(id, { notes });
       list.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save note');
+      toast.error(err instanceof Error ? err.message : 'Không thể lưu ghi chú');
     } finally {
       setSavingNotesId(null);
     }
@@ -249,7 +249,7 @@ export function SourceChannelsPage() {
       setDeleteModalSources(sources);
       setDeleteModalUsages(usages);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể kiểm tra source đang được sử dụng');
+      toast.error(err instanceof Error ? err.message : 'Không thể kiểm tra nguồn đang được sử dụng');
     } finally {
       setCheckingDelete(false);
     }
@@ -285,14 +285,14 @@ export function SourceChannelsPage() {
       const count = deleteModalSources.length;
       toast.success(
         count === 1
-          ? `Đã xóa source "${deleteModalSources[0]?.name ?? ''}"`
-          : `Đã xóa ${count} source channels`,
+          ? `Đã xóa nguồn "${deleteModalSources[0]?.name ?? ''}"`
+          : `Đã xóa ${count} kênh nguồn`,
       );
       closeDeleteModal();
       list.refresh();
       clearSelection();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa source');
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa nguồn');
     } finally {
       setConfirmDeleting(false);
     }
@@ -310,9 +310,9 @@ export function SourceChannelsPage() {
             canDownload={canDownload}
             downloadDisabledReason={
               selectedIds.size === 0
-                ? 'Chọn source để download'
+                ? 'Chọn nguồn để tải xuống'
                 : !canDownload
-                  ? 'Chỉ hỗ trợ download cho YouTube sources'
+                  ? 'Chỉ hỗ trợ tải xuống cho nguồn YouTube'
                   : undefined
             }
             onPlatformFilterChange={handlePlatformFilterChange}
@@ -366,7 +366,7 @@ export function SourceChannelsPage() {
         onClose={() => setShowAddNicheModal(false)}
         onSuccess={() => {
           void refreshNiches();
-          toast.success('Niche added');
+          toast.success('Đã thêm niche');
         }}
       />
 

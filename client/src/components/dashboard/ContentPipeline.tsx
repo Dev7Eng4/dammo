@@ -16,7 +16,7 @@ export function ContentPipeline({ steps, loading }: ContentPipelineProps) {
   if (loading) {
     return (
       <div className="card-surface p-4">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">Content Pipeline</p>
+        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">Luồng nội dung</p>
         <div className="flex animate-pulse gap-2">
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="h-16 flex-1 rounded-lg bg-neutral-800" />
@@ -28,7 +28,7 @@ export function ContentPipeline({ steps, loading }: ContentPipelineProps) {
 
   return (
     <div className="card-surface p-4">
-      <p className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">Content Pipeline</p>
+      <p className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">Luồng nội dung</p>
       <div className="flex items-center gap-1 overflow-x-auto">
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center gap-1">

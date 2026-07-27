@@ -1,22 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Page } from 'playwright';
-import type { FlowToolVisual } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
-import {
-  connectPlaywrightToGpmProfile,
-  disconnectGpmPlaywright,
-  type GpmPlaywrightConnection,
-} from '../../../../infrastructure/gpm/gpm-playwright.connector.js';
-import type { GpmProfile } from '../../../../infrastructure/gpm/gpm-api.client.js';
+import type {
+  FlowToolVisual,
+  MetaConcurrencyMode,
+  MetaMediaBatchJob,
+} from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import {
-  closeChromeProfiles,
-  createChromeProfilePage,
-  openChromeProfile,
-} from '../../../chrome-profiles/chrome-profile.runner.js';
+import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-import { gpmManagerService } from '../../../gpm-manager/gpm-manager.service.js';
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
@@ -38,12 +29,11 @@ import type {
   AiVideoCharacterReference,
   AiVideoCharacterReferencesFile,
   AiVideoVisualStyle,
+  MetaImageConcurrencyMode,
 } from './ai-video.types.js';
 
 const MAX_LLM_RETRIES = 3;
 const FLOW_TOOL_TIMEOUT_MS = 300_000;
-const META_IMAGE_TIMEOUT_MS = 300_000;
-const META_IMAGE_MAX_RETRIES = 3;
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'] as const;
 
 export interface GenerateCharacterReferencesInput {
@@ -249,99 +239,34 @@ async function generateCharacterImagesViaMeta(
   characters: AiVideoCharacterReference[],
   imageReferencesDir: string,
   log: (msg: string) => void,
+  mode: MetaConcurrencyMode,
 ): Promise<{ generatedCount: number; failedCount: number }> {
-  const pending = [];
+  const jobs: MetaMediaBatchJob[] = [];
   for (const character of characters) {
     const name = sanitizeCharacterId(character.id);
     const outputPath = path.join(imageReferencesDir, `${name}.jpg`);
-    if (!(await fileExists(outputPath))) {
-      pending.push({ character, name, outputPath });
-    }
+    if (await fileExists(outputPath)) continue;
+    jobs.push({
+      id: name,
+      prompt: character.prompt,
+      outputDir: imageReferencesDir,
+      fileName: `${name}.jpg`,
+      mediaKind: 'image',
+    });
   }
 
-  if (pending.length === 0) {
+  if (jobs.length === 0) {
     return { generatedCount: 0, failedCount: 0 };
   }
 
-  const chromeProfiles = chromeProfilesService.listMainProfiles();
-  let gpmProfiles: GpmProfile[] = [];
-  try {
-    gpmProfiles = await gpmManagerService.listMetaEnabledProfiles();
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    log(`[ai-video] GPM meta profiles unavailable for characters: ${reason}`);
-  }
-  let page: Page | null = null;
-  let gpmConnection: GpmPlaywrightConnection | null = null;
-  let chromeProfileId: string | undefined;
-
-  try {
-    if (chromeProfiles.length > 0) {
-      const profile: ChromeProfile = chromeProfiles[0];
-      chromeProfileId = profile.id;
-      log(`[ai-video] Mở Chrome main profile ${profile.name} cho Meta character images...`);
-      await openChromeProfile(profile.id, profile.userDataDir);
-      page = await createChromeProfilePage(profile.id);
-      await metaBrowserService.openOnPage(page);
-    } else if (gpmProfiles.length > 0) {
-      const profile = gpmProfiles[0];
-      log(`[ai-video] Start GPM profile ${profile.name} cho Meta character images...`);
-      gpmConnection = await connectPlaywrightToGpmProfile(profile.id);
-      page = gpmConnection.page;
-      await metaBrowserService.openOnPage(page);
-    } else {
-      throw new AppError('No Meta image profiles available for character images', 400, 'NO_META_PROFILE');
-    }
-
-    let generatedCount = 0;
-    let failedCount = 0;
-
-    for (const job of pending) {
-      log(`[ai-video] Meta character image → ${job.name}`);
-      let succeeded = false;
-
-      for (let attempt = 1; attempt <= META_IMAGE_MAX_RETRIES; attempt += 1) {
-        try {
-          const response = await metaBrowserService.generateMediaOnPage(page!, job.character.prompt, {
-            mediaKind: 'image',
-            outputDir: imageReferencesDir,
-            fileName: `${job.name}.jpg`,
-            timeoutMs: META_IMAGE_TIMEOUT_MS,
-          });
-          const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-          if (!savedPath || !(await fileExists(savedPath))) {
-            throw new AppError(`Meta image generation failed for ${job.name}`, 502, 'AI_CHARACTER_IMAGE_FAILED');
-          }
-          generatedCount += 1;
-          succeeded = true;
-          break;
-        } catch (err) {
-          const reason = err instanceof Error ? err.message : String(err);
-          if (attempt === META_IMAGE_MAX_RETRIES) {
-            log(`[ai-video] bỏ qua character ${job.name} sau ${META_IMAGE_MAX_RETRIES} lần: ${reason}`);
-            failedCount += 1;
-          } else {
-            log(
-              `[ai-video] character ${job.name} attempt ${attempt}/${META_IMAGE_MAX_RETRIES} failed → retry (${reason})`,
-            );
-          }
-        }
-      }
-
-      if (!succeeded) {
-        // already counted in failedCount
-      }
-    }
-
-    return { generatedCount, failedCount };
-  } finally {
-    if (gpmConnection) {
-      await disconnectGpmPlaywright(gpmConnection).catch(() => undefined);
-    }
-    if (chromeProfileId) {
-      await closeChromeProfiles([chromeProfileId]);
-    }
-  }
+  const result = await metaBrowserService.generateMediaBatch(jobs, {
+    concurrency: mode,
+    onLog: log,
+  });
+  return {
+    generatedCount: result.generatedCount,
+    failedCount: result.failedCount,
+  };
 }
 
 async function attachCharacterImagePaths(
@@ -364,6 +289,108 @@ async function attachCharacterImagePaths(
   }
 
   return attached;
+}
+
+export interface GenerateCharacterReferenceImagesFromListInput {
+  workDir: string;
+  youtubeVideoId: string;
+  characters: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    prompt: string;
+  }>;
+  /** Meta only. Default `single`. */
+  metaConcurrency?: MetaImageConcurrencyMode;
+  onLog?: (msg: string) => void;
+}
+
+/** Generate character reference images from a pre-built list (no LLM character design). */
+export async function generateCharacterReferenceImagesFromList(
+  input: GenerateCharacterReferenceImagesFromListInput,
+): Promise<GenerateCharacterReferencesResult> {
+  const log = (msg: string) => {
+    console.log(msg);
+    input.onLog?.(msg);
+  };
+
+  const characters: AiVideoCharacterReference[] = input.characters.map(character => ({
+    id: character.id.trim(),
+    name: character.name.trim(),
+    description: (character.description ?? character.name).trim(),
+    prompt: character.prompt.trim(),
+  }));
+
+  for (const character of characters) {
+    if (!character.id) {
+      throw new AppError('Character id is required', 400, 'INVALID_INPUT');
+    }
+    if (!character.prompt) {
+      throw new AppError(`Character ${character.id} has an empty prompt`, 400, 'INVALID_INPUT');
+    }
+  }
+
+  const imageReferencesDir = resolveImageReferencesDir(input.workDir);
+  await fs.mkdir(imageReferencesDir, { recursive: true });
+
+  let skippedCount = 0;
+  for (const character of characters) {
+    if (await findExistingCharacterImage(imageReferencesDir, character.id)) {
+      skippedCount += 1;
+    }
+  }
+
+  let generatedCount = 0;
+  let failedCount = 0;
+  const metaConcurrency: MetaImageConcurrencyMode = input.metaConcurrency ?? 'single';
+
+  if (characters.length > 0) {
+    const imageProvider = promptsSettingsService.get().defaultImageProvider;
+    const pendingCount = characters.length - skippedCount;
+    log(
+      `[ai-video] Generating ${pendingCount} character image(s) via ${imageProvider}` +
+        (imageProvider === 'meta' ? ` mode=${metaConcurrency}` : '') +
+        ` (${skippedCount} skipped) → ${imageReferencesDir}`,
+    );
+
+    if (pendingCount > 0) {
+      if (imageProvider === 'flow') {
+        const mains = chromeProfilesService.listMainProfiles();
+        log(`[ai-video] Flow character images via main profile(s): ${mains.map(p => p.name).join(', ')}`);
+        try {
+          const flowResult = await generateCharacterImagesViaFlow(characters, imageReferencesDir, log);
+          generatedCount = flowResult.generatedCount;
+          failedCount = flowResult.failedCount;
+        } finally {
+          await closeChromeProfiles(mains.map(profile => profile.id));
+        }
+      } else {
+        const metaResult = await generateCharacterImagesViaMeta(
+          characters,
+          imageReferencesDir,
+          log,
+          metaConcurrency,
+        );
+        generatedCount = metaResult.generatedCount;
+        failedCount = metaResult.failedCount;
+      }
+    }
+  } else {
+    log('[ai-video] No characters to generate images for');
+  }
+
+  const withPaths = await attachCharacterImagePaths(characters, input.workDir, imageReferencesDir);
+  const filePath = await persistCharacterReferencesFile(input.workDir, input.youtubeVideoId, withPaths);
+  log(`[ai-video] Character references saved → ${filePath}`);
+
+  return {
+    characters: withPaths,
+    filePath,
+    imageReferencesDir,
+    generatedCount,
+    skippedCount,
+    failedCount,
+  };
 }
 
 export async function generateCharacterReferences(
@@ -389,57 +416,10 @@ export async function generateCharacterReferences(
   const characters = await generateCharacterPromptsViaLlm(input, JSON.stringify(cues), log);
   log(`[ai-video] Character design → ${characters.length} character(s)`);
 
-  const imageReferencesDir = resolveImageReferencesDir(input.workDir);
-  await fs.mkdir(imageReferencesDir, { recursive: true });
-
-  let skippedCount = 0;
-  for (const character of characters) {
-    if (await findExistingCharacterImage(imageReferencesDir, character.id)) {
-      skippedCount += 1;
-    }
-  }
-
-  let generatedCount = 0;
-  let failedCount = 0;
-
-  if (characters.length > 0) {
-    const imageProvider = promptsSettingsService.get().defaultImageProvider;
-    const pendingCount = characters.length - skippedCount;
-    log(
-      `[ai-video] Generating ${pendingCount} character image(s) via ${imageProvider} (${skippedCount} skipped) → ${imageReferencesDir}`,
-    );
-
-    if (pendingCount > 0) {
-      if (imageProvider === 'flow') {
-        const mains = chromeProfilesService.listMainProfiles();
-        log(`[ai-video] Flow character images via main profile(s): ${mains.map(p => p.name).join(', ')}`);
-        try {
-          const flowResult = await generateCharacterImagesViaFlow(characters, imageReferencesDir, log);
-          generatedCount = flowResult.generatedCount;
-          failedCount = flowResult.failedCount;
-        } finally {
-          await closeChromeProfiles(mains.map(profile => profile.id));
-        }
-      } else {
-        const metaResult = await generateCharacterImagesViaMeta(characters, imageReferencesDir, log);
-        generatedCount = metaResult.generatedCount;
-        failedCount = metaResult.failedCount;
-      }
-    }
-  } else {
-    log('[ai-video] No characters to generate images for');
-  }
-
-  const withPaths = await attachCharacterImagePaths(characters, input.workDir, imageReferencesDir);
-  const filePath = await persistCharacterReferencesFile(input.workDir, input.youtubeVideoId, withPaths);
-  log(`[ai-video] Character references saved → ${filePath}`);
-
-  return {
-    characters: withPaths,
-    filePath,
-    imageReferencesDir,
-    generatedCount,
-    skippedCount,
-    failedCount,
-  };
+  return generateCharacterReferenceImagesFromList({
+    workDir: input.workDir,
+    youtubeVideoId: input.youtubeVideoId,
+    characters,
+    onLog: input.onLog,
+  });
 }

@@ -48,7 +48,7 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to create group');
+      setApiError(err instanceof Error ? err.message : 'Tạo nhóm thất bại');
     }
   }
 
@@ -56,11 +56,11 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
     <Modal
       open={open}
       onClose={handleClose}
-      title="Create GPM Group"
+      title="Tạo nhóm GPM"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -69,7 +69,7 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
             form="add-gpm-group-form"
             type="submit"
           >
-            {isSubmitting ? 'Creating…' : 'Create'}
+            {isSubmitting ? 'Đang tạo…' : 'Tạo'}
           </Button>
         </>
       }
@@ -77,14 +77,14 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
       <form id="add-gpm-group-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="gpm-group-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Name
+            Tên
           </label>
           <Input
             id="gpm-group-name"
-            placeholder="Group name"
+            placeholder="Tên nhóm"
             className="h-10 rounded-lg text-sm"
             disabled={isSubmitting}
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Tên là bắt buộc' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>

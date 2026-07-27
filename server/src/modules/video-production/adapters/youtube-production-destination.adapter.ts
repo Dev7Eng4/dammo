@@ -55,8 +55,10 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     ...(channel.reupAudioVideoType === 'si'
       ? {
           reupAudioBackgroundImage: siBackgroundImage!,
-          showAudioBar: channel.showAudioBar === true,
-          showSmallVideo: channel.showSmallVideo === true,
+          showAudioBar: channel.showAudioBar === true || Boolean(channel.audioBarFile?.trim()),
+          ...(channel.audioBarFile?.trim() ? { audioBarFile: channel.audioBarFile.trim() } : {}),
+          showSmallVideo: channel.showSmallVideo === true || Boolean(channel.smallVideoFile?.trim()),
+          ...(channel.smallVideoFile?.trim() ? { smallVideoFile: channel.smallVideoFile.trim() } : {}),
         }
       : {}),
     ...(channel.reupAudioVisualStyleId?.trim()
@@ -85,6 +87,9 @@ export async function createYoutubeProductionDestination(
     backgroundFootageSources: channel.backgroundFootageSources,
     backgroundFootageMode: channel.backgroundFootageMode,
     thumbnailStyleKey: channel.thumbnailStyleKey,
+    ...(channel.thumbnailBackgroundFile?.trim()
+      ? { thumbnailBackgroundFile: channel.thumbnailBackgroundFile.trim() }
+      : {}),
     captionStyleKey: channel.captionStyleKey,
     showDisclaimer: channel.showDisclaimer === true,
     ...(channel.showChannelAvatar === true ? { showChannelAvatar: true } : {}),

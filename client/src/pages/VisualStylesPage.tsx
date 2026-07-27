@@ -55,9 +55,9 @@ export function VisualStylesPage() {
       setShowDeleteModal(false);
       setSelectedStyle(null);
       refresh();
-      toast.success('Visual style deleted');
+      toast.success('Đã xóa phong cách hình ảnh');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Delete failed');
+      toast.error(err instanceof Error ? err.message : 'Xóa thất bại');
     } finally {
       setDeleting(false);
     }
@@ -66,18 +66,18 @@ export function VisualStylesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-100">Visual Styles</h1>
+        <h1 className="text-xl font-semibold text-neutral-100">Phong cách hình ảnh</h1>
         <p className="mt-1 text-sm text-neutral-400">
-          Quản lý preset visual style (anime, chibi, cinematic, ...).
+          Quản lý preset phong cách hình ảnh (anime, chibi, cinematic, ...).
         </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <span className="text-sm text-neutral-400">
-          {styles.length.toLocaleString()} styles
+          {styles.length.toLocaleString()} phong cách
         </span>
         <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-          + Add Style
+          + Thêm phong cách
         </Button>
       </div>
 
@@ -95,7 +95,7 @@ export function VisualStylesPage() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           refresh();
-          toast.success('Visual style added');
+          toast.success('Đã thêm phong cách hình ảnh');
         }}
       />
 
@@ -108,14 +108,14 @@ export function VisualStylesPage() {
         }}
         onSuccess={() => {
           refresh();
-          toast.success('Visual style updated');
+          toast.success('Đã cập nhật phong cách hình ảnh');
         }}
       />
 
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Delete Visual Style"
+        title="Xóa phong cách hình ảnh"
         footer={
           <>
             <Button
@@ -125,16 +125,16 @@ export function VisualStylesPage() {
               onClick={() => setShowDeleteModal(false)}
               disabled={deleting}
             >
-              Cancel
+              Hủy
             </Button>
             <Button size="sm" className="rounded-lg" disabled={deleting} onClick={handleConfirmDelete}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Đang xóa...' : 'Xóa'}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Xóa visual style <strong className="text-neutral-100">{selectedStyle?.name}</strong>?
+          Xóa phong cách hình ảnh <strong className="text-neutral-100">{selectedStyle?.name}</strong>?
         </p>
       </Modal>
     </div>

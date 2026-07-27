@@ -1,10 +1,10 @@
 import { Button } from '../ui';
 
 const actions = [
-  { label: 'Add Mail', icon: 'mail' },
-  { label: 'Add YT Ch.', icon: 'youtube' },
-  { label: 'New Project', icon: 'project' },
-  { label: 'Import Excel', icon: 'excel' },
+  { label: 'Thêm email', icon: 'mail' },
+  { label: 'Thêm kênh YT', icon: 'youtube' },
+  { label: 'Dự án mới', icon: 'project' },
+  { label: 'Nhập Excel', icon: 'excel' },
 ];
 
 function ActionIcon({ icon }: { icon: string }) {
@@ -44,7 +44,7 @@ function ActionIcon({ icon }: { icon: string }) {
 export function QuickActions() {
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Quick Actions</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Thao tác nhanh</p>
       <div className="grid grid-cols-2 gap-2">
         {actions.map((action) => (
           <button
@@ -61,7 +61,7 @@ export function QuickActions() {
         <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
           <path d="M8 5v14l11-7z" />
         </svg>
-        START RENDER QUEUE
+        BẮT ĐẦU HÀNG ĐỢI RENDER
       </Button>
     </div>
   );

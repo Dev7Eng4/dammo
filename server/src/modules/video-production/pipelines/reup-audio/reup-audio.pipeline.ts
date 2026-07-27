@@ -19,6 +19,7 @@ import { runMetadata } from '../../shared/meta/run-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
 import { runThumbnailVisualGeneration } from '../../shared/thumbnail/hero-image.js';
 import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
+import { buildThumbnailReferenceImagePaths } from '../../shared/thumbnail/thumbnail-reference-images.js';
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
 import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js';
@@ -413,12 +414,19 @@ export class ReupAudioPipeline {
                 }
 
                 try {
+                  const referenceImagePaths = buildThumbnailReferenceImagePaths({
+                    promptKey: styleKey,
+                    language: destination.language,
+                    oldThumbnailPath: downloaded.thumbnailPath,
+                    channelId: destination.id,
+                    thumbnailBackgroundFile: destination.thumbnailBackgroundFile,
+                  });
                   const defaultResult = await timedStep(
                     `Thumbnail Flow (${styleKey})`,
                     () =>
                       runDefaultFlowThumbnail(workDir, destination.language, {
                         promptKey: styleKey,
-                        referenceImagePath: downloaded.thumbnailPath,
+                        referenceImagePaths,
                         onProgress: taskJobId
                           ? progress => {
                               const profileLabel = progress.profileName;
@@ -620,7 +628,7 @@ export class ReupAudioPipeline {
                   'General image (Flow + reference)',
                   () =>
                     runGeneralImage(generalImageTitle, destination.language, workDir, {
-                      referenceImagePath: downloaded.thumbnailPath,
+                      referenceImagePaths: [downloaded.thumbnailPath],
                       onProgress: taskJobId
                         ? progress => {
                             const profileLabel = progress.profileName;
@@ -859,7 +867,9 @@ export class ReupAudioPipeline {
                   language: destination.language,
                   captionStyleKey: destination.captionStyleKey,
                   showAudioBar: destination.showAudioBar,
+                  audioBarFile: destination.audioBarFile,
                   showSmallVideo: destination.showSmallVideo,
+                  smallVideoFile: destination.smallVideoFile,
                   showDisclaim,
                   disclaimerText,
                   ...(channelAvatarPath ? { channelAvatarPath } : {}),

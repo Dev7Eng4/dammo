@@ -2,10 +2,10 @@ import { Input, Select, Button } from '../ui';
 import type { GpmProfileSort } from '../../types/gpm';
 
 const SORT_OPTIONS = [
-  { value: '0', label: 'Newest first' },
-  { value: '1', label: 'Oldest first' },
-  { value: '2', label: 'Name A–Z' },
-  { value: '3', label: 'Name Z–A' },
+  { value: '0', label: 'Mới nhất trước' },
+  { value: '1', label: 'Cũ nhất trước' },
+  { value: '2', label: 'Tên A–Z' },
+  { value: '3', label: 'Tên Z–A' },
 ];
 
 interface GpmProfilesToolbarProps {
@@ -62,11 +62,11 @@ export function GpmProfilesToolbar({
   return (
     <div className='flex flex-wrap items-center justify-between gap-3'>
       <div className='flex flex-wrap items-center gap-3'>
-        <span className='text-sm text-neutral-400'>{count.toLocaleString()} Profiles</span>
+        <span className='text-sm text-neutral-400'>{count.toLocaleString()} profile</span>
         <Input
           value={search}
           onChange={e => onSearchChange(e.target.value)}
-          placeholder='Search profiles…'
+          placeholder='Tìm profile…'
           className='h-9 w-48 rounded-lg text-sm'
           disabled={busy}
         />
@@ -81,7 +81,7 @@ export function GpmProfilesToolbar({
 
       <div className='flex flex-wrap items-center gap-2'>
         <Button variant='outlined' size='sm' className='rounded-lg' onClick={onRefresh} disabled={busy}>
-          Refresh
+          Làm mới
         </Button>
         <Button
           variant='outlined'
@@ -90,16 +90,16 @@ export function GpmProfilesToolbar({
           onClick={onStart}
           disabled={!canStart || starting || busy}
         >
-          {starting ? 'Starting…' : 'Start'}
+          {starting ? 'Đang khởi động…' : 'Khởi động'}
         </Button>
         <Button variant='danger' size='sm' className='rounded-lg' onClick={onStop} disabled={!canStop || stopping || busy}>
-          {stopping ? 'Stopping…' : 'Stop'}
+          {stopping ? 'Đang dừng…' : 'Dừng'}
         </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' onClick={onTest} disabled={!canTest || testing || busy}>
-          {testing ? 'Testing…' : 'Test'}
+          {testing ? 'Đang kiểm tra…' : 'Kiểm tra'}
         </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' onClick={onEdit} disabled={!canEdit || busy}>
-          Edit
+          Sửa
         </Button>
         <Button
           variant='outlined'
@@ -108,10 +108,10 @@ export function GpmProfilesToolbar({
           onClick={onDelete}
           disabled={!canDelete || deleting || busy}
         >
-          {deleting ? 'Deleting…' : 'Delete'}
+          {deleting ? 'Đang xóa…' : 'Xóa'}
         </Button>
         <Button size='sm' className='rounded-lg' onClick={onAddProfile} disabled={busy}>
-          Add Profile
+          Thêm Profile
         </Button>
       </div>
     </div>

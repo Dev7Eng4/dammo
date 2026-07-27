@@ -143,6 +143,32 @@ export class AssetsService {
 
     return { deleted };
   }
+
+  getAsset(kind: AssetKind, filename: string): { filePath: string; contentType: string; size: number } {
+    if (kind === 'fonts') {
+      throw new AppError('Font assets cannot be streamed', 400, 'UNSUPPORTED_ASSET_KIND');
+    }
+
+    const safeName = sanitizeFileName(filename);
+    assertAllowedExtension(kind, safeName);
+
+    const dir = resolveKindDir(kind);
+    const filePath = path.join(dir, safeName);
+    if (!filePath.startsWith(dir + path.sep) && filePath !== dir) {
+      throw new AppError('Invalid file path', 400, 'INVALID_FILE_PATH');
+    }
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      throw new AppError('Asset not found', 404, 'NOT_FOUND');
+    }
+
+    const ext = path.extname(safeName).toLowerCase();
+    const contentType = ext === '.mov' ? 'video/quicktime' : 'video/mp4';
+    return {
+      filePath,
+      contentType,
+      size: fs.statSync(filePath).size,
+    };
+  }
 }
 
 export const assetsService = new AssetsService();

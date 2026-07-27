@@ -64,8 +64,9 @@ export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
   /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
   pasteStrategy?: 'human' | 'direct' | 'insertText';
+  /** Single reference image (Flow/Meta). Prefer referenceImagePaths for multiple. */
   referenceImagePath?: string;
-  /** Meta: attach multiple reference images before sending the prompt. */
+  /** Multiple local reference images (Flow browser/API + Meta). */
   referenceImagePaths?: string[];
 }
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}
@@ -97,7 +98,10 @@ export interface FlowGenerateImageOptions {
   timeoutMs?: number;
   stableMs?: number;
   pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
+  /** Single reference image. Prefer referenceImagePaths for multiple. */
   referenceImagePath?: string;
+  /** Multiple local reference images (uploaded/attached in order). */
+  referenceImagePaths?: string[];
   /** Default: 'browser'. Use 'api' for direct Flow API calls. */
   generationMode?: FlowGenerationMode;
 }
@@ -130,6 +134,49 @@ export interface MetaGenerateMediaOptions {
   aspectRatio?: '16:9' | '3:4';
   /** Local paths to attach as reference images before the prompt (Meta only). */
   referenceImagePaths?: string[];
+}
+
+/** Meta worker pool: batch = multi-tab/profile parallel; single = 1 tab sequential. */
+export type MetaConcurrencyMode = 'batch' | 'single';
+
+export interface MetaMediaBatchJob {
+  /** Log / result key (e.g. scene-001, char_001). */
+  id: string;
+  prompt: string;
+  outputDir: string;
+  fileName: string;
+  referenceImagePaths?: string[];
+  aspectRatio?: '16:9' | '3:4';
+  mediaKind?: 'image' | 'video' | 'auto';
+}
+
+export interface MetaGenerateMediaBatchOptions {
+  /** Default `batch`. */
+  concurrency?: MetaConcurrencyMode;
+  timeoutMs?: number;
+  /** Default 3. */
+  maxRetries?: number;
+  pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
+  onLog?: (msg: string) => void;
+  onJobProgress?: (progress: {
+    jobId: string;
+    index: number;
+    total: number;
+    status: 'generating' | 'done' | 'failed';
+  }) => void;
+}
+
+export interface MetaMediaBatchJobResult {
+  id: string;
+  ok: boolean;
+  localPath?: string;
+  error?: string;
+}
+
+export interface MetaMediaBatchResult {
+  results: MetaMediaBatchJobResult[];
+  generatedCount: number;
+  failedCount: number;
 }
 
 /** @deprecated Use FlowGenerateImageOptions */

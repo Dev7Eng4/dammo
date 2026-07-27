@@ -44,3 +44,24 @@ export async function selectRandomSiSmallVideoClip(): Promise<SiSmallVideoClip> 
     filename,
   };
 }
+
+export async function resolveSiSmallVideoClip(filename?: string): Promise<SiSmallVideoClip> {
+  const selected = filename?.trim();
+  if (!selected) {
+    return selectRandomSiSmallVideoClip();
+  }
+
+  const safeName = path.basename(selected);
+  if (!SMALL_VIDEO_EXTENSIONS.has(path.extname(safeName).toLowerCase())) {
+    throw new AppError(`Unsupported small video file type: ${safeName}`, 400, 'INVALID_SMALL_VIDEO');
+  }
+
+  const filePath = path.join(paths.siSmallVideoDir, safeName);
+  try {
+    await fs.access(filePath);
+  } catch {
+    throw new AppError(`Small video asset not found: ${safeName}`, 400, 'SI_SMALL_VIDEO_MISSING');
+  }
+
+  return { path: filePath, filename: safeName };
+}

@@ -20,13 +20,18 @@ import {
   type YoutubeThumbnailUpload,
   type YoutubeVideoAssetKind,
 } from './youtube-video-content.service.js';
+import {
+  thumbnailBackgroundsService,
+  type ThumbnailBackgroundContentType,
+  type ThumbnailBackgroundUpload,
+} from './thumbnail-backgrounds.service.js';
 
 const THUMBNAIL_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const THUMBNAIL_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-function streamVideoAsset(
+function streamFileAsset(
   request: Request,
-  asset: ReturnType<typeof youtubeVideoContentService.getAsset>,
+  asset: { filePath: string; contentType: string; size: number },
 ): Response {
   const range = request.headers.get('range');
   const commonHeaders = {
@@ -66,6 +71,37 @@ function streamVideoAsset(
   });
 }
 
+function streamVideoAsset(
+  request: Request,
+  asset: ReturnType<typeof youtubeVideoContentService.getAsset>,
+): Response {
+  return streamFileAsset(request, asset);
+}
+
+async function parseThumbnailBackgroundUpload(body: Record<string, unknown>): Promise<
+  | { ok: true; upload: ThumbnailBackgroundUpload }
+  | { ok: false; error: string; status: 400 }
+> {
+  const file = body.file;
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: 'File is required', status: 400 };
+  }
+  if (!THUMBNAIL_CONTENT_TYPES.has(file.type)) {
+    return { ok: false, error: 'Image must be a JPEG, PNG, or WebP', status: 400 };
+  }
+  if (file.size > THUMBNAIL_MAX_SIZE_BYTES) {
+    return { ok: false, error: 'Image must not exceed 10 MB', status: 400 };
+  }
+  return {
+    ok: true,
+    upload: {
+      buffer: Buffer.from(await file.arrayBuffer()),
+      contentType: file.type as ThumbnailBackgroundContentType,
+      originalName: file.name || 'background',
+    },
+  };
+}
+
 export function createYoutubeChannelsRoutes() {
   const app = new Hono();
 
@@ -86,6 +122,80 @@ export function createYoutubeChannelsRoutes() {
   app.get('/', zValidator('query', listYoutubeChannelsQuerySchema), (c) => {
     const { type, monetization, q, page, limit } = c.req.valid('query');
     return c.json(youtubeChannelsService.listPaginated(type, monetization, q, page, limit));
+  });
+
+  app.get('/thumbnail-backgrounds/temp/:sessionId', (c) => {
+    const sessionId = c.req.param('sessionId');
+    const urlPrefix = `/api/v1/youtube-channels/thumbnail-backgrounds/temp/${encodeURIComponent(sessionId)}`;
+    return c.json({ items: thumbnailBackgroundsService.listTemp(sessionId, urlPrefix) });
+  });
+
+  app.post('/thumbnail-backgrounds/temp/:sessionId', async (c) => {
+    const sessionId = c.req.param('sessionId');
+    const body = await c.req.parseBody();
+    const parsed = await parseThumbnailBackgroundUpload(body);
+    if (!parsed.ok) {
+      return c.json({ error: parsed.error }, parsed.status);
+    }
+    const urlPrefix = `/api/v1/youtube-channels/thumbnail-backgrounds/temp/${encodeURIComponent(sessionId)}`;
+    const item = await thumbnailBackgroundsService.uploadTemp(sessionId, parsed.upload, urlPrefix);
+    return c.json({ item }, 201);
+  });
+
+  app.get('/thumbnail-backgrounds/temp/:sessionId/:filename', (c) => {
+    const asset = thumbnailBackgroundsService.getTempAsset(
+      c.req.param('sessionId'),
+      c.req.param('filename'),
+    );
+    return streamFileAsset(c.req.raw, asset);
+  });
+
+  app.delete('/thumbnail-backgrounds/temp/:sessionId/:filename', (c) => {
+    const name = thumbnailBackgroundsService.deleteTemp(
+      c.req.param('sessionId'),
+      c.req.param('filename'),
+    );
+    return c.json({ deleted: name });
+  });
+
+  app.get('/:id/thumbnail-backgrounds', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/thumbnail-backgrounds`;
+    return c.json({ items: thumbnailBackgroundsService.listForChannel(id, urlPrefix) });
+  });
+
+  app.post('/:id/thumbnail-backgrounds', async (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const body = await c.req.parseBody();
+    const parsed = await parseThumbnailBackgroundUpload(body);
+    if (!parsed.ok) {
+      return c.json({ error: parsed.error }, parsed.status);
+    }
+    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/thumbnail-backgrounds`;
+    const item = await thumbnailBackgroundsService.uploadForChannel(id, parsed.upload, urlPrefix);
+    return c.json({ item }, 201);
+  });
+
+  app.get('/:id/thumbnail-backgrounds/:filename', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const asset = thumbnailBackgroundsService.getChannelAsset(id, c.req.param('filename'));
+    return streamFileAsset(c.req.raw, asset);
+  });
+
+  app.delete('/:id/thumbnail-backgrounds/:filename', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const name = thumbnailBackgroundsService.deleteForChannel(id, c.req.param('filename'));
+    youtubeChannelsRepository.update(id, current => {
+      if (current.thumbnailBackgroundFile !== name) return current;
+      const next = { ...current };
+      delete next.thumbnailBackgroundFile;
+      return next;
+    });
+    return c.json({ deleted: name });
   });
 
   app.get('/:id/videos/:videoId/comments', async (c) => {

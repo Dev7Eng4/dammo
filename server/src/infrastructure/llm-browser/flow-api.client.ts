@@ -70,11 +70,14 @@ export interface BuildBatchGeneratePayloadOptions {
   prompt: string;
   projectId: string;
   recaptchaToken: string;
+  /** @deprecated Prefer referenceMediaIds */
   primaryMediaId?: string | null;
+  /** Uploaded Flow media ids to attach as IMAGE_INPUT_TYPE_REFERENCE. */
+  referenceMediaIds?: string[];
 }
 
 export function buildBatchGeneratePayload(options: BuildBatchGeneratePayloadOptions): Record<string, unknown> {
-  const { prompt, projectId, recaptchaToken, primaryMediaId } = options;
+  const { prompt, projectId, recaptchaToken, primaryMediaId, referenceMediaIds } = options;
   const sessionId = buildSessionId();
   const batchId = randomBatchId();
   const seed = randomSeed();
@@ -91,7 +94,15 @@ export function buildBatchGeneratePayload(options: BuildBatchGeneratePayloadOpti
     sessionId,
   };
 
-  const imageInputs = primaryMediaId ? [{ imageInputType: 'IMAGE_INPUT_TYPE_REFERENCE', name: primaryMediaId }] : [];
+  const mediaIds = [
+    ...(referenceMediaIds ?? []),
+    ...(primaryMediaId ? [primaryMediaId] : []),
+  ].filter((id): id is string => Boolean(id?.trim()));
+
+  const imageInputs = mediaIds.map(name => ({
+    imageInputType: 'IMAGE_INPUT_TYPE_REFERENCE',
+    name,
+  }));
 
   return {
     clientContext,
@@ -226,7 +237,9 @@ export async function uploadReferenceImageViaApi(accessToken: string, imagePath:
 export interface CallBatchGenerateImagesOptions {
   prompt: string;
   projectId: string;
+  /** @deprecated Prefer referenceMediaIds */
   primaryMediaId?: string | null;
+  referenceMediaIds?: string[];
 }
 
 export interface CallBatchGenerateImagesResult {
@@ -388,6 +401,7 @@ export async function callBatchGenerateImagesOnPage(
     projectId: options.projectId,
     recaptchaToken: '',
     primaryMediaId: options.primaryMediaId,
+    referenceMediaIds: options.referenceMediaIds,
   });
 
   const url = buildBatchGenerateImagesUrl(options.projectId);
@@ -428,6 +442,7 @@ export async function callBatchGenerateImages(
     projectId: options.projectId,
     recaptchaToken,
     primaryMediaId: options.primaryMediaId,
+    referenceMediaIds: options.referenceMediaIds,
   });
 
   let response: Response;

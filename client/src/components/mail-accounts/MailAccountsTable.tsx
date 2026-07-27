@@ -38,7 +38,7 @@ const columns: ColumnDef<MailAccount, unknown>[] = [
   },
   {
     accessorKey: 'purpose',
-    header: 'PURPOSE',
+    header: 'MỤC ĐÍCH',
     cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
   },
 ];
@@ -64,7 +64,7 @@ export function MailAccountsTable({
       onToggleAll={onToggleAll}
       activeRowId={selectedId}
       onRowClick={account => onToggleRow(account.id)}
-      emptyMessage="No mail accounts found."
+      emptyMessage="Không tìm thấy tài khoản email."
     />
   );
 }

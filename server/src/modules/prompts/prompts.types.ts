@@ -14,6 +14,7 @@ export interface Prompt {
   description?: string;
   isSystem?: boolean;
   useReferenceImage?: boolean;
+  useChannelBackgroundImage?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +33,7 @@ export interface CreatePromptInput {
   isSystem?: boolean;
   key?: string;
   useReferenceImage?: boolean;
+  useChannelBackgroundImage?: boolean;
 }
 
 export interface UpdatePromptInput {
@@ -42,6 +44,7 @@ export interface UpdatePromptInput {
   outputType?: PromptOutputType;
   description?: string;
   useReferenceImage?: boolean;
+  useChannelBackgroundImage?: boolean;
 }
 
 export interface PromptResolved extends Prompt {

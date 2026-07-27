@@ -95,15 +95,18 @@ export interface YoutubeChannel {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  audioBarFile?: string;
   showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
+  smallVideoFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -437,15 +440,19 @@ export interface CreateYoutubeChannelPayload {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  thumbnailBackgroundFile?: string;
+  thumbnailBackgroundTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  audioBarFile?: string;
   showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
+  smallVideoFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -453,7 +460,10 @@ export interface CreateYoutubeChannelPayload {
   publishTimes: string[];
 }
 
-export type UpdateYoutubeChannelPayload = Omit<CreateYoutubeChannelPayload, 'channelUrl'>;
+export type UpdateYoutubeChannelPayload = Omit<
+  CreateYoutubeChannelPayload,
+  'channelUrl' | 'thumbnailBackgroundTempSessionId'
+>;
 
 export interface AddYoutubeChannelFormValues {
   mailAccountId: string;
@@ -465,18 +475,24 @@ export interface AddYoutubeChannelFormValues {
   backgroundFootageSources: string[];
   backgroundFootageMode: BackgroundFootageMode;
   thumbnailStyleKey: string;
+  thumbnailBackgroundFile: string;
   captionStyleKey: CaptionStyleKey | '';
   reupAudioVideoType: ReupAudioVideoType | '';
   reupAudioVisualStyleId: string;
   reupAudioBackgroundImage: ReupAudioBackgroundImage | '';
   useReferenceImage: boolean;
-  showAudioBar: boolean;
+  audioBarFile: string;
   showChannelAvatar: boolean;
   showSubscribe: boolean;
-  showSmallVideo: boolean;
+  smallVideoFile: string;
   showDisclaimer: boolean;
   disclaimerText: string;
   descriptionDisclaimerText: string;
   uploadFrequency: UploadFrequency | '';
   publishTimes: string[];
+}
+
+export interface ThumbnailBackgroundItem {
+  name: string;
+  url: string;
 }

@@ -10,7 +10,7 @@ const OLD_THUMBNAIL_FILE = 'old-thumbnail.jpg';
 
 interface CliOptions {
   workDir: string;
-  referenceImagePath: string;
+  referenceImagePaths: string[];
   language: ChannelLanguage;
   profileId?: string;
 }
@@ -20,7 +20,7 @@ function parseArgs(argv: string[]): CliOptions {
 
   const options: CliOptions = {
     workDir: defaultWorkDir,
-    referenceImagePath: path.join(defaultWorkDir, OLD_THUMBNAIL_FILE),
+    referenceImagePaths: [path.join(defaultWorkDir, OLD_THUMBNAIL_FILE)],
     language: DEFAULT_LANGUAGE,
   };
 
@@ -31,7 +31,7 @@ function parseArgs(argv: string[]): CliOptions {
       const value = argv[index + 1]?.trim() ?? '';
       if (!value) throw new Error('--work-dir requires a value');
       options.workDir = path.resolve(value);
-      options.referenceImagePath = path.join(options.workDir, OLD_THUMBNAIL_FILE);
+      options.referenceImagePaths = [path.join(options.workDir, OLD_THUMBNAIL_FILE)];
       index += 1;
       continue;
     }
@@ -39,7 +39,7 @@ function parseArgs(argv: string[]): CliOptions {
     if (arg === '--reference-image' || arg === '-r') {
       const value = argv[index + 1]?.trim() ?? '';
       if (!value) throw new Error('--reference-image requires a value');
-      options.referenceImagePath = path.resolve(value);
+      options.referenceImagePaths = [path.resolve(value)];
       index += 1;
       continue;
     }
@@ -82,11 +82,13 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   await assertFileExists(options.workDir, 'work dir');
-  await assertFileExists(options.referenceImagePath, 'reference image (attach file)');
+  for (const imagePath of options.referenceImagePaths) {
+    await assertFileExists(imagePath, 'reference image (attach file)');
+  }
 
   console.log('Test Flow thumbnail with attach file');
   console.log(`Work dir: ${options.workDir}`);
-  console.log(`Reference image: ${options.referenceImagePath}`);
+  console.log(`Reference images: ${options.referenceImagePaths.join(', ')}`);
   console.log(`Language: ${options.language}`);
   if (options.profileId) {
     console.log(`Flow profile id: ${options.profileId}`);
@@ -94,7 +96,7 @@ async function main() {
   console.log('\nGenerating thumbnail via Flow (recreate)...\n');
 
   const result = await runDefaultFlowThumbnail(options.workDir, options.language, {
-    referenceImagePath: options.referenceImagePath,
+    referenceImagePaths: options.referenceImagePaths,
     profileId: options.profileId,
     onProgress: progress => {
       if (progress.status === 'retry') {

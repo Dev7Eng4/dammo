@@ -28,7 +28,7 @@ export function SourceChannelDetailHeader({
         <svg className='size-4' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
           <path d='m15 18-6-6 6-6' />
         </svg>
-        Back to Sources
+        Quay lại nguồn
       </Link>
 
       <div className='flex flex-wrap items-start justify-between gap-4'>
@@ -53,7 +53,7 @@ export function SourceChannelDetailHeader({
         {source.platform === 'youtube' && onRefresh ? (
           <div className='shrink-0'>
             <Button className='rounded-lg' disabled={refreshing} onClick={onRefresh}>
-              {refreshing ? 'Updating source...' : 'Update Source'}
+              {refreshing ? 'Đang cập nhật nguồn...' : 'Cập nhật nguồn'}
             </Button>
             {refreshError ? <p className='mt-2 text-xs text-danger'>{refreshError}</p> : null}
           </div>
@@ -62,26 +62,26 @@ export function SourceChannelDetailHeader({
 
       <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         <div className='card-surface px-4 py-3'>
-          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Purpose</p>
+          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Mục đích</p>
           <div className='mt-2'>
             <PurposePill purpose={source.purpose} />
           </div>
         </div>
         <div className='card-surface px-4 py-3'>
-          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Risk Level</p>
+          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Mức rủi ro</p>
           <div className='mt-2'>
             <RiskPill risk={source.riskLevel} />
           </div>
         </div>
         {source.subscriberCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
-            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Subscribers</p>
+            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Người đăng ký</p>
             <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.subscriberCount.toLocaleString()}</p>
           </div>
         ) : null}
         {source.videoCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
-            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Videos</p>
+            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Video</p>
             <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.videoCount.toLocaleString()}</p>
           </div>
         ) : null}

@@ -29,7 +29,7 @@ export function GpmConnectionBanner({ status, loading, className }: GpmConnectio
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="inline-flex items-center gap-1.5 text-sm font-medium text-success">
             <span className="size-2 rounded-full bg-success" />
-            Connected to GPM
+            Đã kết nối GPM
           </span>
           {status.sender ? (
             <span className="text-xs text-neutral-400">{status.sender}</span>
@@ -47,9 +47,9 @@ export function GpmConnectionBanner({ status, loading, className }: GpmConnectio
         className,
       )}
     >
-      <p className="text-sm font-medium text-warning">GPM app not reachable</p>
+      <p className="text-sm font-medium text-warning">Không kết nối được ứng dụng GPM</p>
       <p className="mt-1 text-xs text-neutral-400">
-        {status.message ?? 'Start GPMLogin and ensure the Local API is running.'}
+        {status.message ?? 'Hãy khởi động GPMLogin và đảm bảo Local API đang chạy.'}
       </p>
       <p className="mt-1 font-mono text-xs text-neutral-500">{status.baseUrl}</p>
     </div>

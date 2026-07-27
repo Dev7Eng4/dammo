@@ -69,6 +69,18 @@ function resolveUseReferenceImage(
   return useReferenceImage ?? false;
 }
 
+function supportsChannelBackgroundImage(category: PromptCategory): boolean {
+  return category === 'thumbnail';
+}
+
+function resolveUseChannelBackgroundImage(
+  category: PromptCategory,
+  useChannelBackgroundImage?: boolean,
+): boolean {
+  if (!supportsChannelBackgroundImage(category)) return false;
+  return useChannelBackgroundImage ?? false;
+}
+
 function assertUniqueKeyLanguage(key: string, language: PromptLanguage, excludeId?: string): void {
   const existing = promptsRepository.findByKeyAndLanguage(key, language);
   if (existing && existing.id !== excludeId) {
@@ -126,6 +138,10 @@ export class PromptsService {
     const category = input.category ?? 'meta';
     const now = new Date().toISOString();
     const useReferenceImage = resolveUseReferenceImage(category, input.useReferenceImage);
+    const useChannelBackgroundImage = resolveUseChannelBackgroundImage(
+      category,
+      input.useChannelBackgroundImage,
+    );
     const prompt: Prompt = {
       id: generateId(),
       key,
@@ -136,6 +152,7 @@ export class PromptsService {
       ...(input.isSystem ? { isSystem: true } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
       ...(useReferenceImage ? { useReferenceImage: true } : {}),
+      ...(useChannelBackgroundImage ? { useChannelBackgroundImage: true } : {}),
       createdAt: now,
       updatedAt: now,
     };
@@ -186,6 +203,18 @@ export class PromptsService {
         next.useReferenceImage = true;
       } else {
         delete next.useReferenceImage;
+      }
+
+      const nextUseChannelBackgroundImage = resolveUseChannelBackgroundImage(
+        nextCategory,
+        input.useChannelBackgroundImage !== undefined
+          ? input.useChannelBackgroundImage
+          : next.useChannelBackgroundImage,
+      );
+      if (nextUseChannelBackgroundImage) {
+        next.useChannelBackgroundImage = true;
+      } else {
+        delete next.useChannelBackgroundImage;
       }
 
       if (input.description !== undefined) {

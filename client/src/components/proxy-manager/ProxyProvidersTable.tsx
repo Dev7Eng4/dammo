@@ -20,7 +20,7 @@ function MaskedPassword({ value }: { value: string }) {
         type="button"
         onClick={() => setVisible(v => !v)}
         className="text-neutral-500 hover:text-neutral-300"
-        title={visible ? 'Hide password' : 'Show password'}
+        title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
       >
         <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           {visible ? (
@@ -50,14 +50,14 @@ export function ProxyProvidersTable({
   const columns: ColumnDef<ProxyProvider, unknown>[] = [
     {
       accessorKey: 'name',
-      header: 'NAME',
+      header: 'TÊN',
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'loginUrl',
-      header: 'LOGIN URL',
+      header: 'URL ĐĂNG NHẬP',
       cell: ({ row }) =>
         row.original.loginUrl ? (
           <a
@@ -74,21 +74,21 @@ export function ProxyProvidersTable({
     },
     {
       accessorKey: 'username',
-      header: 'USERNAME',
+      header: 'TÊN ĐĂNG NHẬP',
       cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
     },
     {
       accessorKey: 'password',
-      header: 'PASSWORD',
+      header: 'MẬT KHẨU',
       cell: ({ row }) => <MaskedPassword value={row.original.password} />,
     },
     {
       id: 'actions',
-      header: 'ACTIONS',
+      header: 'THAO TÁC',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
-            Edit
+            Sửa
           </Button>
           <Button
             variant="outlined"
@@ -96,7 +96,7 @@ export function ProxyProvidersTable({
             className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
             onClick={() => onDelete(row.original)}
           >
-            Delete
+            Xóa
           </Button>
         </div>
       ),
@@ -109,8 +109,8 @@ export function ProxyProvidersTable({
       columns={columns}
       getRowId={provider => provider.id}
       loading={loading}
-      emptyMessage="No providers yet."
-      emptyDescription="Add a login URL, username, and password to get started."
+      emptyMessage="Chưa có nhà cung cấp."
+      emptyDescription="Thêm URL đăng nhập, tên đăng nhập và mật khẩu để bắt đầu."
     />
   );
 }

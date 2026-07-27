@@ -55,9 +55,9 @@ export function ProxyProvidersTab() {
       setShowDeleteModal(false);
       setSelectedProvider(null);
       refresh();
-      toast.success('Provider deleted');
+      toast.success('Đã xóa nhà cung cấp');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Delete failed');
+      toast.error(err instanceof Error ? err.message : 'Xóa thất bại');
     } finally {
       setDeleting(false);
     }
@@ -67,10 +67,10 @@ export function ProxyProvidersTab() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <span className="text-sm text-neutral-400">
-          {providers.length.toLocaleString()} providers
+          {providers.length.toLocaleString()} nhà cung cấp
         </span>
         <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-          + Add Provider
+          + Thêm nhà cung cấp
         </Button>
       </div>
 
@@ -88,7 +88,7 @@ export function ProxyProvidersTab() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           refresh();
-          toast.success('Provider added');
+          toast.success('Đã thêm nhà cung cấp');
         }}
       />
 
@@ -101,14 +101,14 @@ export function ProxyProvidersTab() {
         }}
         onSuccess={() => {
           refresh();
-          toast.success('Provider updated');
+          toast.success('Đã cập nhật nhà cung cấp');
         }}
       />
 
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Delete Provider"
+        title="Xóa nhà cung cấp"
         footer={
           <>
             <Button
@@ -118,16 +118,16 @@ export function ProxyProvidersTab() {
               onClick={() => setShowDeleteModal(false)}
               disabled={deleting}
             >
-              Cancel
+              Hủy
             </Button>
             <Button size="sm" className="rounded-lg" disabled={deleting} onClick={handleConfirmDelete}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Đang xóa...' : 'Xóa'}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Delete provider <strong className="text-neutral-100">{selectedProvider?.name}</strong>?
+          Xóa nhà cung cấp <strong className="text-neutral-100">{selectedProvider?.name}</strong>?
         </p>
       </Modal>
     </>

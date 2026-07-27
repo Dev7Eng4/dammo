@@ -91,7 +91,12 @@ export function createLlmBrowserRoutes() {
         debugScreenshotPath: body.debugScreenshotPath,
         stableMs: body.stableMs,
         generationMode: body.generationMode,
-        referenceImagePath: body.referenceImagePath,
+        referenceImagePaths:
+          body.referenceImagePaths?.length
+            ? body.referenceImagePaths
+            : body.referenceImagePath
+              ? [body.referenceImagePath]
+              : undefined,
         projectId: body.projectId,
       },
     });

@@ -12,14 +12,14 @@ const cards: Array<{
   valueClass?: string;
   format?: (value: number) => string;
 }> = [
-  { key: 'total', label: 'Total Proxies' },
-  { key: 'active', label: 'Active', valueClass: 'text-success' },
-  { key: 'failed', label: 'Failed', valueClass: 'text-danger' },
-  { key: 'assigned', label: 'Assigned', valueClass: 'text-primary-400' },
-  { key: 'unassigned', label: 'Unassigned', valueClass: 'text-neutral-400' },
+  { key: 'total', label: 'Tổng Proxy' },
+  { key: 'active', label: 'Hoạt động', valueClass: 'text-success' },
+  { key: 'failed', label: 'Thất bại', valueClass: 'text-danger' },
+  { key: 'assigned', label: 'Đã gán', valueClass: 'text-primary-400' },
+  { key: 'unassigned', label: 'Chưa gán', valueClass: 'text-neutral-400' },
   {
     key: 'avgLatencyMs',
-    label: 'Avg Latency',
+    label: 'Độ trễ TB',
     valueClass: 'text-warning',
     format: (value) => (value > 0 ? `${value}ms` : '—'),
   },

@@ -35,7 +35,7 @@ export function ChromeProfilesPage() {
       } catch (err) {
         if (signal.aborted) return;
         setProfiles([]);
-        setError(err instanceof Error ? err.message : 'Failed to load profiles');
+        setError(err instanceof Error ? err.message : 'Không thể tải profile');
       } finally {
         if (!signal.aborted) setLoading(false);
       }
@@ -48,7 +48,7 @@ export function ChromeProfilesPage() {
   }
 
   function handleAddSuccess() {
-    toast.success('Chrome profile created successfully');
+    toast.success('Đã tạo Chrome profile thành công');
     handleRefresh();
   }
 
@@ -62,14 +62,14 @@ export function ChromeProfilesPage() {
     try {
       if (role === 'main') {
         await setMainChromeProfile(id);
-        toast.success(`"${target.name}" is now a main profile`);
+        toast.success(`"${target.name}" đã đặt làm profile chính`);
       } else {
         await setSubChromeProfile(id);
-        toast.success(`"${target.name}" is now a sub profile`);
+        toast.success(`"${target.name}" đã đặt làm profile phụ`);
       }
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update profile role');
+      toast.error(err instanceof Error ? err.message : 'Không thể cập nhật vai trò profile');
     } finally {
       setSettingRole(false);
     }
@@ -93,12 +93,12 @@ export function ChromeProfilesPage() {
       const result = await resetSubChromeProfiles();
       const deletedMessage =
         result.deletedCount > 0
-          ? `Removed ${result.deletedCount} sub profile(s) and created 8 new ones.`
-          : 'Created 8 new sub profiles.';
+          ? `Đã xóa ${result.deletedCount} profile phụ và tạo 8 profile mới.`
+          : 'Đã tạo 8 profile phụ mới.';
       toast.success(deletedMessage);
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to reset sub profiles');
+      toast.error(err instanceof Error ? err.message : 'Không thể đặt lại profile phụ');
     } finally {
       setResettingSub(false);
     }
@@ -110,9 +110,9 @@ export function ChromeProfilesPage() {
     setOpening(true);
     try {
       const { item } = await openChromeProfile(selectedId);
-      toast.success(`Opened Chrome profile "${item.name}"`);
+      toast.success(`Đã mở Chrome profile "${item.name}"`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to open profile');
+      toast.error(err instanceof Error ? err.message : 'Không thể mở profile');
     } finally {
       setOpening(false);
     }

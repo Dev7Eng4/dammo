@@ -40,7 +40,7 @@ export function AddChromeProfileModal({ open, onClose, onSuccess }: AddChromePro
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to create profile');
+      setApiError(err instanceof Error ? err.message : 'Không thể tạo profile');
     }
   }
 
@@ -48,11 +48,11 @@ export function AddChromeProfileModal({ open, onClose, onSuccess }: AddChromePro
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add Chrome Profile"
+      title="Thêm Chrome profile"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -61,7 +61,7 @@ export function AddChromeProfileModal({ open, onClose, onSuccess }: AddChromePro
             form="add-chrome-profile-form"
             type="submit"
           >
-            {isSubmitting ? 'Creating...' : 'Add Profile'}
+            {isSubmitting ? 'Đang tạo...' : 'Thêm profile'}
           </Button>
         </>
       }
@@ -69,14 +69,14 @@ export function AddChromeProfileModal({ open, onClose, onSuccess }: AddChromePro
       <form id="add-chrome-profile-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="profile-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Profile Name
+            Tên profile
           </label>
           <Input
             id="profile-name"
-            placeholder="e.g. Channel A"
+            placeholder="vd. Kênh A"
             className="h-10 rounded-lg text-sm"
             disabled={isSubmitting}
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Vui lòng nhập tên' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
@@ -84,7 +84,7 @@ export function AddChromeProfileModal({ open, onClose, onSuccess }: AddChromePro
         {apiError ? <p className="text-xs text-danger">{apiError}</p> : null}
 
         <p className="text-xs text-neutral-500">
-          A Playwright Chromium profile will be initialized on the server with a dedicated user data directory.
+          Profile Playwright Chromium sẽ được khởi tạo trên server với thư mục user data riêng.
         </p>
       </form>
     </Modal>

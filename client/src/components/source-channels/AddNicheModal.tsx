@@ -58,7 +58,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
       setNiches((prev) => [item, ...prev.filter((n) => n.key !== item.key)]);
       onSuccess?.();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to create niche');
+      setApiError(err instanceof Error ? err.message : 'Không thể tạo niche');
     }
   }
 
@@ -66,7 +66,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add Niche"
+      title="Thêm niche"
       footer={
         <>
           <Button
@@ -76,7 +76,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
             onClick={handleClose}
             disabled={isSubmitting}
           >
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -85,7 +85,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
             form="add-niche-form"
             type="submit"
           >
-            {isSubmitting ? 'Saving...' : 'Add Niche'}
+            {isSubmitting ? 'Đang lưu...' : 'Thêm niche'}
           </Button>
         </>
       }
@@ -93,13 +93,13 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
       <form id="add-niche-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="niche-label" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Niche name (English)
+            Tên niche (tiếng Anh)
           </label>
           <Input
             id="niche-label"
             placeholder="Senior Health"
             className="h-10 rounded-lg"
-            {...register('label', { required: 'Niche name is required' })}
+            {...register('label', { required: 'Tên niche là bắt buộc' })}
           />
           {errors.label ? <p className="mt-1 text-xs text-danger">{errors.label.message}</p> : null}
         </div>
@@ -107,16 +107,16 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
 
         <div>
           <p className="mb-1.5 text-xs font-medium text-neutral-400">
-            Existing niches
+            Niche hiện có
             {!nichesLoading && niches.length > 0 ? (
               <span className="ml-1 font-normal text-neutral-500">({niches.length})</span>
             ) : null}
           </p>
           <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-900">
             {nichesLoading ? (
-              <p className="px-3 py-2.5 text-xs text-neutral-500">Loading...</p>
+              <p className="px-3 py-2.5 text-xs text-neutral-500">Đang tải...</p>
             ) : niches.length === 0 ? (
-              <p className="px-3 py-2.5 text-xs text-neutral-500">No niches yet</p>
+              <p className="px-3 py-2.5 text-xs text-neutral-500">Chưa có niche</p>
             ) : (
               <ul className="divide-y divide-neutral-800">
                 {niches.map((niche) => (

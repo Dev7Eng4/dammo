@@ -14,7 +14,7 @@ const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
 export interface RunDefaultFlowThumbnailOptions extends FlowProfileOptions {
   promptKey?: string;
-  referenceImagePath?: string;
+  referenceImagePaths?: string[];
   onProgress?: (progress: HeroImageProgress) => void;
 }
 
@@ -34,19 +34,28 @@ function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
   return chromeProfilesService.requireMainProfile();
 }
 
+async function assertReferenceImagesExist(paths: string[]): Promise<void> {
+  for (const imagePath of paths) {
+    try {
+      await fs.access(imagePath);
+    } catch {
+      throw new AppError(`Reference thumbnail not found: ${imagePath}`, 400, 'INVALID_INPUT');
+    }
+  }
+}
+
 export async function runDefaultFlowThumbnail(
   workDir: string,
   language: ChannelLanguage,
   options?: RunDefaultFlowThumbnailOptions,
 ): Promise<DefaultFlowThumbnailResult> {
   const promptKey = options?.promptKey?.trim() || DEFAULT_PROMPT_KEY;
-  const referenceImagePath = options?.referenceImagePath ?? path.join(workDir, OLD_THUMBNAIL_FILENAME);
+  const referenceImagePaths =
+    options?.referenceImagePaths !== undefined
+      ? options.referenceImagePaths
+      : [path.join(workDir, OLD_THUMBNAIL_FILENAME)];
 
-  try {
-    await fs.access(referenceImagePath);
-  } catch {
-    throw new AppError(`Reference thumbnail not found: ${referenceImagePath}`, 400, 'INVALID_INPUT');
-  }
+  await assertReferenceImagesExist(referenceImagePaths);
 
   const promptUsed = await executePromptTemplate(language, promptKey, []);
   if (!promptUsed.trim()) {
@@ -69,7 +78,7 @@ export async function runDefaultFlowThumbnail(
       generateOptions: {
         outputDir: workDir,
         fileName: THUMBNAIL_FILENAME,
-        referenceImagePath,
+        referenceImagePaths,
         debugScreenshotPath,
       },
       onProgress: options?.onProgress,

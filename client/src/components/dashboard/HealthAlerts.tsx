@@ -15,7 +15,7 @@ export function HealthAlerts({ alerts, loading }: HealthAlertsProps) {
           <path d="M12 9v4" />
           <path d="M12 17h.01" />
         </svg>
-        <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Health Alerts</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Cảnh báo sức khỏe</p>
       </div>
       <div className="space-y-2">
         {loading

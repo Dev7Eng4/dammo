@@ -9,6 +9,7 @@ export { generateAiSceneSlideImages } from './ai-video-scene-image-generator.js'
 export { assembleReupAiSlideshowVideo } from './ai-video-assembler.js';
 export {
   generateCharacterReferences,
+  generateCharacterReferenceImagesFromList,
   persistCharacterReferencesFile,
   resolveCharacterReferencesFilePath,
   resolveImageReferencesDir,

@@ -52,7 +52,7 @@ export function EditVisualStyleModal({
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to update visual style');
+      setApiError(err instanceof Error ? err.message : 'Không thể cập nhật phong cách hình ảnh');
     }
   }
 
@@ -60,11 +60,11 @@ export function EditVisualStyleModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Edit Visual Style"
+      title="Sửa phong cách hình ảnh"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -73,7 +73,7 @@ export function EditVisualStyleModal({
             form="edit-visual-style-form"
             type="submit"
           >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
           </Button>
         </>
       }
@@ -81,33 +81,33 @@ export function EditVisualStyleModal({
       <form id="edit-visual-style-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-style-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Name
+            Tên
           </label>
           <Input
             id="edit-style-name"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Vui lòng nhập tên' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-style-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Niche
+            Chủ đề
           </label>
           <Input
             id="edit-style-niche"
             className="h-10 rounded-lg"
-            {...register('niche', { required: 'Niche is required' })}
+            {...register('niche', { required: 'Vui lòng nhập chủ đề' })}
           />
           {errors.niche ? <p className="mt-1 text-xs text-danger">{errors.niche.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-style-rule" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Rule
+            Quy tắc
           </label>
-          <Textarea id="edit-style-rule" rows={6} className="text-sm" {...register('rule', { required: 'Rule is required' })} />
+          <Textarea id="edit-style-rule" rows={6} className="text-sm" {...register('rule', { required: 'Vui lòng nhập quy tắc' })} />
           {errors.rule ? <p className="mt-1 text-xs text-danger">{errors.rule.message}</p> : null}
         </div>
 

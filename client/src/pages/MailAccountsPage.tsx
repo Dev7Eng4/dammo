@@ -76,7 +76,7 @@ export function MailAccountsPage() {
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
       await exportMailAccountsExcel('', ids);
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Export failed');
+      setExportError(err instanceof Error ? err.message : 'Xuất file thất bại');
     } finally {
       setExporting(false);
     }
@@ -114,6 +114,7 @@ export function MailAccountsPage() {
               total={list.total}
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
+              locale="vi"
             />
           </div>
         </div>
@@ -123,7 +124,7 @@ export function MailAccountsPage() {
         <>
           <button
             type="button"
-            aria-label="Close detail panel"
+            aria-label="Đóng panel chi tiết"
             onClick={handleClosePanel}
             className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           />

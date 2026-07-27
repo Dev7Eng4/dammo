@@ -15,7 +15,7 @@ const GENERAL_PROMPT_KEY = 'general';
 const OLD_THUMBNAIL_FILENAME = 'old-thumbnail.jpg';
 
 export interface RunGeneralImageOptions extends FlowProfileOptions {
-  referenceImagePath?: string;
+  referenceImagePaths?: string[];
   onProgress?: (progress: HeroImageProgress) => void;
 }
 
@@ -36,6 +36,16 @@ function resolveGeneralPromptKey(language: PromptLanguage): string {
   return prompt.key;
 }
 
+async function assertReferenceImagesExist(paths: string[]): Promise<void> {
+  for (const imagePath of paths) {
+    try {
+      await fs.access(imagePath);
+    } catch {
+      throw new AppError(`Reference thumbnail not found: ${imagePath}`, 400, 'INVALID_INPUT');
+    }
+  }
+}
+
 export async function runGeneralImage(
   title: string,
   language: PromptLanguage,
@@ -46,13 +56,12 @@ export async function runGeneralImage(
     throw new AppError('General image generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
 
-  const referenceImagePath = options?.referenceImagePath ?? path.join(workDir, OLD_THUMBNAIL_FILENAME);
+  const referenceImagePaths =
+    options?.referenceImagePaths?.length && options.referenceImagePaths.length > 0
+      ? options.referenceImagePaths
+      : [path.join(workDir, OLD_THUMBNAIL_FILENAME)];
 
-  try {
-    await fs.access(referenceImagePath);
-  } catch {
-    throw new AppError(`Reference thumbnail not found: ${referenceImagePath}`, 400, 'INVALID_INPUT');
-  }
+  await assertReferenceImagesExist(referenceImagePaths);
 
   const promptKey = resolveGeneralPromptKey(language);
   const promptUsed = await executePromptTemplate(language, promptKey, [title]);
@@ -64,7 +73,7 @@ export async function runGeneralImage(
 
   const flowResult = await runFlowImageGeneration(promptUsed, workDir, {
     fileName: DEFAULT_HERO_IMAGE_FILENAME,
-    referenceImagePath,
+    referenceImagePaths,
     profileId: options?.profileId,
     onProgress: options?.onProgress,
   });

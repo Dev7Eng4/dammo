@@ -46,7 +46,7 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to update group');
+      setApiError(err instanceof Error ? err.message : 'Cập nhật nhóm thất bại');
     }
   }
 
@@ -56,11 +56,11 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
     <Modal
       open={open}
       onClose={handleClose}
-      title="Edit GPM Group"
+      title="Sửa nhóm GPM"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -69,7 +69,7 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
             form="edit-gpm-group-form"
             type="submit"
           >
-            {isSubmitting ? 'Saving…' : 'Save Changes'}
+            {isSubmitting ? 'Đang lưu…' : 'Lưu thay đổi'}
           </Button>
         </>
       }
@@ -77,20 +77,20 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
       <form id="edit-gpm-group-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-gpm-group-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Name
+            Tên
           </label>
           <Input
             id="edit-gpm-group-name"
             className="h-10 rounded-lg text-sm"
             disabled={isSubmitting}
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Tên là bắt buộc' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-gpm-group-sort" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Sort order
+            Thứ tự sắp xếp
           </label>
           <Input
             id="edit-gpm-group-sort"

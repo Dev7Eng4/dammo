@@ -54,7 +54,7 @@ export function GpmProfilesTable({
               disabled={updating}
               onChange={e => onCapabilityChange(profile.id, 'flowEnabled', e.target.checked)}
               className="size-3.5 rounded border-border bg-surface accent-primary-500"
-              aria-label={`Flow enabled for ${profile.name}`}
+              aria-label={`Bật Flow cho ${profile.name}`}
             />
           </label>
         );
@@ -77,7 +77,7 @@ export function GpmProfilesTable({
               disabled={updating}
               onChange={e => onCapabilityChange(profile.id, 'metaEnabled', e.target.checked)}
               className="size-3.5 rounded border-border bg-surface accent-primary-500"
-              aria-label={`Meta enabled for ${profile.name}`}
+              aria-label={`Bật Meta cho ${profile.name}`}
             />
           </label>
         );
@@ -85,14 +85,14 @@ export function GpmProfilesTable({
     },
     {
       accessorKey: 'name',
-      header: 'NAME',
+      header: 'TÊN',
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       id: 'group',
-      header: 'GROUP',
+      header: 'NHÓM',
       cell: ({ row }) => (
         <span className="text-neutral-300">{groupName(groups, row.original.group_id)}</span>
       ),
@@ -111,7 +111,7 @@ export function GpmProfilesTable({
     },
     {
       id: 'actions',
-      header: 'ACTIONS',
+      header: 'THAO TÁC',
       cell: ({ row }) => {
         const profile = row.original;
         const running = runningProfileIds.has(profile.id);
@@ -128,7 +128,7 @@ export function GpmProfilesTable({
               disabled={busy}
               onClick={() => (running ? onStop(profile.id) : onStart(profile.id))}
             >
-              {busy ? (running ? 'Stopping…' : 'Starting…') : running ? 'Stop' : 'Start'}
+              {busy ? (running ? 'Đang dừng…' : 'Đang khởi động…') : running ? 'Dừng' : 'Khởi động'}
             </Button>
           </div>
         );
@@ -144,7 +144,7 @@ export function GpmProfilesTable({
       loading={loading}
       activeRowId={selectedId}
       onRowClick={profile => onSelect(profile.id)}
-      emptyMessage="No GPM profiles found."
+      emptyMessage="Không tìm thấy GPM profile."
     />
   );
 }

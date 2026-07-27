@@ -39,14 +39,14 @@ export interface NavSection {
 export const navSections: NavSection[] = [
   {
     id: 'main',
-    label: 'MAIN',
-    items: [{ id: 'dashboard', label: 'Dashboard', path: '/', icon: 'dashboard' }],
+    label: 'CHÍNH',
+    items: [{ id: 'dashboard', label: 'Tổng quan', path: '/', icon: 'dashboard' }],
   },
   {
     id: 'accounts',
-    label: 'ACCOUNTS',
+    label: 'TÀI KHOẢN',
     items: [
-      { id: 'mail', label: 'Mail', path: '/mail-accounts', icon: 'mail' },
+      { id: 'mail', label: 'Email', path: '/mail-accounts', icon: 'mail' },
       { id: 'youtube', label: 'YouTube', path: '/youtube-channels', icon: 'youtube' },
       { id: 'tiktok', label: 'TikTok', path: '/tiktok-accounts', icon: 'tiktok' },
       { id: 'facebook', label: 'Facebook', path: '/facebook-assets', icon: 'facebook' },
@@ -54,43 +54,43 @@ export const navSections: NavSection[] = [
   },
   {
     id: 'browser-operations',
-    label: 'BROWSER OPERATIONS',
+    label: 'TRÌNH DUYỆT',
     items: [
-      { id: 'chrome-profiles', label: 'Chrome Profiles', path: '/chrome-profiles', icon: 'browser' },
-      { id: 'gpm-manager', label: 'GPM Manager', path: '/gpm-manager', icon: 'gpm' },
-      { id: 'proxies', label: 'Proxies', path: '/proxies', icon: 'proxies' },
-      { id: 'launch-logs', label: 'Launch Logs', path: '/launch-logs', icon: 'launch-logs' },
+      { id: 'chrome-profiles', label: 'Hồ sơ Chrome', path: '/chrome-profiles', icon: 'browser' },
+      { id: 'gpm-manager', label: 'Quản lý GPM', path: '/gpm-manager', icon: 'gpm' },
+      { id: 'proxies', label: 'Proxy', path: '/proxies', icon: 'proxies' },
+      { id: 'launch-logs', label: 'Nhật ký khởi chạy', path: '/launch-logs', icon: 'launch-logs' },
     ],
   },
   {
     id: 'sources',
-    label: 'SOURCES',
-    items: [{ id: 'source', label: 'Source Channels', path: '/source-channels', icon: 'source' }],
+    label: 'NGUỒN',
+    items: [{ id: 'source', label: 'Kênh nguồn', path: '/source-channels', icon: 'source' }],
   },
   {
     id: 'content',
-    label: 'CONTENT',
+    label: 'NỘI DUNG',
     items: [
-      { id: 'prompts', label: 'Prompts', path: '/prompts', icon: 'prompt' },
-      { id: 'visual-styles', label: 'Visual Styles', path: '/visual-styles', icon: 'visual-styles' },
-      { id: 'assets', label: 'Assets', path: '/assets', icon: 'assets' },
+      { id: 'prompts', label: 'Prompt', path: '/prompts', icon: 'prompt' },
+      { id: 'visual-styles', label: 'Phong cách hình ảnh', path: '/visual-styles', icon: 'visual-styles' },
+      { id: 'assets', label: 'Tài nguyên', path: '/assets', icon: 'assets' },
     ],
   },
   {
     id: 'video-factory',
-    label: 'VIDEO FACTORY',
+    label: 'NHÀ MÁY VIDEO',
     items: [
-      { id: 'templates', label: 'Templates', path: '/video-factory/templates', icon: 'templates' },
-      { id: 'factory', label: 'Video Factory', path: '/video-factory', icon: 'factory' },
-      { id: 'task-queue', label: 'Active Jobs', path: '/task-queue', icon: 'task-queue' },
-      { id: 'queue', label: 'Render Queue', path: '/render-queue', icon: 'queue' },
+      { id: 'templates', label: 'Mẫu', path: '/video-factory/templates', icon: 'templates' },
+      { id: 'factory', label: 'Nhà máy video', path: '/video-factory', icon: 'factory' },
+      { id: 'task-queue', label: 'Công việc đang chạy', path: '/task-queue', icon: 'task-queue' },
+      { id: 'queue', label: 'Hàng đợi render', path: '/render-queue', icon: 'queue' },
     ],
   },
 ];
 
 export const footerNavItems: NavItem[] = [
-  { id: 'support', label: 'Support', path: '/support', icon: 'support' },
-  { id: 'logs', label: 'Logs', path: '/logs', icon: 'logs' },
+  { id: 'support', label: 'Hỗ trợ', path: '/support', icon: 'support' },
+  { id: 'logs', label: 'Nhật ký', path: '/logs', icon: 'logs' },
 ];
 
 export function flattenNavItems(): NavItem[] {

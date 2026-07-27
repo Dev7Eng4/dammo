@@ -67,7 +67,7 @@ export function DeleteSourceChannelModal({
         if (deleting) return;
         onClose();
       }}
-      title={blocked ? 'Không thể xóa source' : isBulk ? 'Xóa source channels' : 'Xóa source channel'}
+      title={blocked ? 'Không thể xóa nguồn' : isBulk ? 'Xóa kênh nguồn' : 'Xóa kênh nguồn'}
       footer={
         blocked ? (
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose}>
@@ -101,14 +101,14 @@ export function DeleteSourceChannelModal({
         <div className="space-y-4">
           {isBulk ? (
             <p className="text-sm text-neutral-300">
-              Một hoặc nhiều source đang được sử dụng. Không source nào được xóa.
+              Một hoặc nhiều nguồn đang được sử dụng. Không nguồn nào được xóa.
             </p>
           ) : null}
 
           {blockedEntries.map(({ source, usage }) => (
             <div key={source.id} className="space-y-3 rounded-lg border border-border/60 p-3">
               <p className="text-sm text-neutral-300">
-                Source &quot;{source.name}&quot; đang được sử dụng bởi các kênh sau:
+                Nguồn &quot;{source.name}&quot; đang được sử dụng bởi các kênh sau:
               </p>
               <UsageChannelsList usage={usage} />
             </div>
@@ -116,11 +116,11 @@ export function DeleteSourceChannelModal({
         </div>
       ) : isBulk ? (
         <p className="text-sm text-neutral-300">
-          Xóa {sources.length} source channels? Hành động này không thể hoàn tác.
+          Xóa {sources.length} kênh nguồn? Hành động này không thể hoàn tác.
         </p>
       ) : (
         <p className="text-sm text-neutral-300">
-          Xóa source &quot;{sources[0]?.name ?? ''}&quot;? Hành động này không thể hoàn tác.
+          Xóa nguồn &quot;{sources[0]?.name ?? ''}&quot;? Hành động này không thể hoàn tác.
         </p>
       )}
     </Modal>

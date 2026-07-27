@@ -37,7 +37,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to create account');
+      setApiError(err instanceof Error ? err.message : 'Không thể tạo tài khoản');
     }
   }
 
@@ -45,14 +45,14 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
     <Modal
       open={open}
       onClose={handleClose}
-      title="Add Mail Account"
+      title="Thêm tài khoản email"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-mail-form" type="submit">
-            {isSubmitting ? 'Saving...' : 'Add Mail'}
+            {isSubmitting ? 'Đang lưu...' : 'Thêm email'}
           </Button>
         </>
       }
@@ -68,8 +68,8 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
             placeholder="name@example.com"
             className="h-10 rounded-lg"
             {...register('email', {
-              required: 'Email is required',
-              pattern: { value: EMAIL_PATTERN, message: 'Invalid email address' },
+              required: 'Vui lòng nhập email',
+              pattern: { value: EMAIL_PATTERN, message: 'Email không hợp lệ' },
             })}
           />
           {errors.email ? (
@@ -79,7 +79,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
 
         <div>
           <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Password <span className="text-neutral-500">(optional)</span>
+            Mật khẩu <span className="text-neutral-500">(tuỳ chọn)</span>
           </label>
           <Input
             id="password"
@@ -87,7 +87,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
             placeholder="••••••••"
             className="h-10 rounded-lg"
             {...register('password', {
-              minLength: { value: 6, message: 'Password must be at least 6 characters' },
+              minLength: { value: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
             })}
           />
           {errors.password ? (
@@ -97,12 +97,12 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
 
         <div>
           <label htmlFor="twoFactorAuth" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            2FA <span className="text-neutral-500">(optional)</span>
+            2FA <span className="text-neutral-500">(tuỳ chọn)</span>
           </label>
           <Input
             id="twoFactorAuth"
             type="text"
-            placeholder="Backup codes or secret"
+            placeholder="Mã dự phòng hoặc secret"
             className="h-10 rounded-lg"
             {...register('twoFactorAuth')}
           />
@@ -110,7 +110,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
 
         <div>
           <label htmlFor="recoveryEmail" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Mail khôi phục <span className="text-neutral-500">(optional)</span>
+            Email khôi phục <span className="text-neutral-500">(tuỳ chọn)</span>
           </label>
           <Input
             id="recoveryEmail"
@@ -118,7 +118,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
             placeholder="recovery@example.com"
             className="h-10 rounded-lg"
             {...register('recoveryEmail', {
-              pattern: { value: EMAIL_PATTERN, message: 'Invalid email address' },
+              pattern: { value: EMAIL_PATTERN, message: 'Email không hợp lệ' },
             })}
           />
           {errors.recoveryEmail ? (
@@ -128,7 +128,7 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
 
         <div>
           <label htmlFor="phone" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Phone <span className="text-neutral-500">(optional)</span>
+            Số điện thoại <span className="text-neutral-500">(tuỳ chọn)</span>
           </label>
           <Input
             id="phone"

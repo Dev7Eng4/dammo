@@ -1,7 +1,12 @@
+import type { MetaConcurrencyMode } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import type { CaptionStyleKey } from '../si-video/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { AiVideoDensityLevel } from './ai-video.constants.js';
 
+export type { MetaConcurrencyMode };
+
+/** @deprecated Use MetaConcurrencyMode — alias kept for existing ai-video callers. */
+export type MetaImageConcurrencyMode = MetaConcurrencyMode;
 export interface AiVideoVisualStyle {
   name: string;
   rule: string;
@@ -98,6 +103,8 @@ export interface GenerateAiSceneSlideImagesInput {
   workDir: string;
   youtubeVideoId: string;
   scenes: AiVideoScenePrompt[];
+  /** Meta only. Default `batch`. */
+  metaConcurrency?: MetaImageConcurrencyMode;
   onLog?: (msg: string) => void;
   onProgress?: (progress: {
     sceneIndex: number;

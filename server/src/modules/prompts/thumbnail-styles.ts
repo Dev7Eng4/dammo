@@ -6,6 +6,7 @@ import type { PromptLanguage } from './prompts.types.js';
 export interface ThumbnailStyleOption {
   key: string;
   name: string;
+  useChannelBackgroundImage: boolean;
 }
 
 const STEP_SUFFIX_PATTERN = /_step_\d+$/;
@@ -31,18 +32,22 @@ export function listThumbnailStyleOptions(language: ChannelLanguage | PromptLang
     .findAll()
     .filter(prompt => prompt.category === 'thumbnail' && prompt.language === lang);
 
-  const groups = new Map<string, string[]>();
+  const groups = new Map<string, { keys: string[]; useChannelBackgroundImage: boolean }>();
   for (const prompt of thumbnailPrompts) {
     const name = prompt.name.trim();
-    const existing = groups.get(name) ?? [];
-    existing.push(prompt.key);
+    const existing = groups.get(name) ?? { keys: [], useChannelBackgroundImage: false };
+    existing.keys.push(prompt.key);
+    if (prompt.useChannelBackgroundImage) {
+      existing.useChannelBackgroundImage = true;
+    }
     groups.set(name, existing);
   }
 
   return [...groups.entries()]
-    .map(([name, keys]) => ({
-      key: resolveCanonicalKey(keys),
+    .map(([name, group]) => ({
+      key: resolveCanonicalKey(group.keys),
       name,
+      useChannelBackgroundImage: group.useChannelBackgroundImage,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }

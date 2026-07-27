@@ -102,7 +102,7 @@ export function GpmManagerPage() {
         setStatus({
           connected: false,
           baseUrl: 'http://127.0.0.1:19995/api/v3',
-          message: err instanceof Error ? err.message : 'Failed to check GPM status',
+          message: err instanceof Error ? err.message : 'Không kiểm tra được trạng thái GPM',
         });
       } finally {
         if (!signal.aborted) setStatusLoading(false);
@@ -132,7 +132,7 @@ export function GpmManagerPage() {
       } catch (err) {
         if (signal.aborted) return;
         setProfiles([]);
-        setProfilesError(err instanceof Error ? err.message : 'Failed to load profiles');
+        setProfilesError(err instanceof Error ? err.message : 'Không tải được danh sách profile');
       } finally {
         if (!signal.aborted) setProfilesLoading(false);
       }
@@ -150,7 +150,7 @@ export function GpmManagerPage() {
       } catch (err) {
         if (signal.aborted) return;
         setGroups([]);
-        setGroupsError(err instanceof Error ? err.message : 'Failed to load groups');
+        setGroupsError(err instanceof Error ? err.message : 'Không tải được danh sách nhóm');
       } finally {
         if (!signal.aborted) setGroupsLoading(false);
       }
@@ -171,7 +171,7 @@ export function GpmManagerPage() {
       item.remote_debugging_address ??
       (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
     toast.success(
-      debugInfo ? `Started "${name}" — debug ${debugInfo}` : `Started profile "${name}"`,
+      debugInfo ? `Đã khởi động "${name}" — debug ${debugInfo}` : `Đã khởi động profile "${name}"`,
     );
   }
 
@@ -183,7 +183,7 @@ export function GpmManagerPage() {
       next.delete(id);
       return next;
     });
-    toast.success(`Stopped profile "${profile?.name ?? id}"`);
+    toast.success(`Đã dừng profile "${profile?.name ?? id}"`);
   }
 
   async function handleStartProfile() {
@@ -192,7 +192,7 @@ export function GpmManagerPage() {
     try {
       await startProfileById(selectedProfileId);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start profile');
+      toast.error(err instanceof Error ? err.message : 'Khởi động profile thất bại');
     } finally {
       setStarting(false);
     }
@@ -204,7 +204,7 @@ export function GpmManagerPage() {
     try {
       await stopProfileById(selectedProfileId);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to stop profile');
+      toast.error(err instanceof Error ? err.message : 'Dừng profile thất bại');
     } finally {
       setStopping(false);
     }
@@ -216,7 +216,7 @@ export function GpmManagerPage() {
     try {
       await startProfileById(id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start profile');
+      toast.error(err instanceof Error ? err.message : 'Khởi động profile thất bại');
     } finally {
       setActionBusyIds((prev) => {
         const next = new Set(prev);
@@ -232,7 +232,7 @@ export function GpmManagerPage() {
     try {
       await stopProfileById(id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to stop profile');
+      toast.error(err instanceof Error ? err.message : 'Dừng profile thất bại');
     } finally {
       setActionBusyIds((prev) => {
         const next = new Set(prev);
@@ -256,7 +256,7 @@ export function GpmManagerPage() {
       if (previous) {
         setProfiles((prev) => prev.map((profile) => (profile.id === id ? previous : profile)));
       }
-      toast.error(err instanceof Error ? err.message : 'Failed to update capabilities');
+      toast.error(err instanceof Error ? err.message : 'Cập nhật quyền thất bại');
     } finally {
       setUpdatingCapabilityIds((prev) => {
         const next = new Set(prev);
@@ -275,7 +275,7 @@ export function GpmManagerPage() {
       setTestResult(item);
       setShowTestResultModal(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Gemini test failed');
+      toast.error(err instanceof Error ? err.message : 'Kiểm tra Gemini thất bại');
     } finally {
       setTesting(false);
     }
@@ -296,15 +296,15 @@ export function GpmManagerPage() {
       });
       toast.success(
         deleteHardMode
-          ? `Permanently deleted "${selectedProfile?.name ?? selectedProfileId}"`
-          : `Deleted "${selectedProfile?.name ?? selectedProfileId}"`,
+          ? `Đã xóa vĩnh viễn "${selectedProfile?.name ?? selectedProfileId}"`
+          : `Đã xóa "${selectedProfile?.name ?? selectedProfileId}"`,
       );
       setShowDeleteProfileModal(false);
       setDeleteHardMode(false);
       setSelectedProfileId(null);
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete profile');
+      toast.error(err instanceof Error ? err.message : 'Xóa profile thất bại');
     } finally {
       setDeletingProfile(false);
     }
@@ -317,19 +317,24 @@ export function GpmManagerPage() {
           <GpmConnectionBanner status={status} loading={statusLoading} className="mb-4" />
 
           <div className="mb-4 flex gap-1 border-b border-border">
-            {(['profiles', 'groups'] as const).map((tab) => (
+            {(
+              [
+                { id: 'profiles' as const, label: 'Hồ sơ' },
+                { id: 'groups' as const, label: 'Nhóm' },
+              ] as const
+            ).map((tab) => (
               <button
-                key={tab}
+                key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'border-b-2 px-4 py-2 text-sm font-medium capitalize transition-colors',
-                  activeTab === tab
+                  'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
+                  activeTab === tab.id
                     ? 'border-primary-400 text-primary-400'
                     : 'border-transparent text-neutral-400 hover:text-neutral-200',
                 )}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -410,7 +415,7 @@ export function GpmManagerPage() {
         usedEmails={usedEmails}
         onClose={() => setShowAddProfileModal(false)}
         onSuccess={() => {
-          toast.success('GPM profile created');
+          toast.success('Đã tạo GPM profile');
           handleRefresh();
         }}
       />
@@ -419,7 +424,7 @@ export function GpmManagerPage() {
         open={showAddGroupModal}
         onClose={() => setShowAddGroupModal(false)}
         onSuccess={() => {
-          toast.success('GPM group created');
+          toast.success('Đã tạo nhóm GPM');
           handleRefresh();
         }}
       />
@@ -431,7 +436,7 @@ export function GpmManagerPage() {
         usedEmails={usedEmails}
         onClose={() => setShowEditProfileModal(false)}
         onSuccess={() => {
-          toast.success('GPM profile updated');
+          toast.success('Đã cập nhật GPM profile');
           handleRefresh();
         }}
       />
@@ -442,7 +447,7 @@ export function GpmManagerPage() {
           setShowTestResultModal(false);
           setTestResult(null);
         }}
-        title="Gemini Test Result"
+        title="Kết quả kiểm tra Gemini"
         footer={
           <Button
             size="sm"
@@ -452,7 +457,7 @@ export function GpmManagerPage() {
               setTestResult(null);
             }}
           >
-            Close
+            Đóng
           </Button>
         }
       >
@@ -467,13 +472,13 @@ export function GpmManagerPage() {
               <p className="mt-1 text-neutral-300">{testResult.prompt}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Response</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Phản hồi</p>
               <pre className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-surface-elevated p-3 text-neutral-200">
-                {testResult.content || '(empty response)'}
+                {testResult.content || '(phản hồi trống)'}
               </pre>
             </div>
             <p className="text-xs text-neutral-500">
-              Completed in {(testResult.elapsedMs / 1000).toFixed(1)}s — profile remains open.
+              Hoàn thành trong {(testResult.elapsedMs / 1000).toFixed(1)}s — profile vẫn đang mở.
             </p>
           </div>
         ) : null}
@@ -486,7 +491,7 @@ export function GpmManagerPage() {
           setShowDeleteProfileModal(false);
           setDeleteHardMode(false);
         }}
-        title="Delete GPM Profile"
+        title="Xóa GPM Profile"
         footer={
           <>
             <Button
@@ -499,7 +504,7 @@ export function GpmManagerPage() {
               }}
               disabled={deletingProfile}
             >
-              Cancel
+              Hủy
             </Button>
             <Button
               size="sm"
@@ -507,13 +512,13 @@ export function GpmManagerPage() {
               onClick={handleConfirmDeleteProfile}
               disabled={deletingProfile}
             >
-              {deletingProfile ? 'Deleting…' : deleteHardMode ? 'Delete permanently' : 'Delete'}
+              {deletingProfile ? 'Đang xóa…' : deleteHardMode ? 'Xóa vĩnh viễn' : 'Xóa'}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Delete profile &quot;{selectedProfile?.name ?? selectedProfileId}&quot;?
+          Xóa profile &quot;{selectedProfile?.name ?? selectedProfileId}&quot;?
         </p>
         <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-neutral-400">
           <input
@@ -523,10 +528,10 @@ export function GpmManagerPage() {
             disabled={deletingProfile}
             className="size-3.5 rounded border-border bg-surface accent-primary-500"
           />
-          Permanently delete (mode 2 — database + storage)
+          Xóa vĩnh viễn (mode 2 — database + storage)
         </label>
         <p className="mt-2 text-xs text-neutral-500">
-          Unchecked uses mode 1 (database only).
+          Bỏ chọn sẽ dùng mode 1 (chỉ database).
         </p>
       </Modal>
     </div>

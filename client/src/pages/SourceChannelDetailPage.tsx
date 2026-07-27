@@ -82,7 +82,7 @@ export function SourceChannelDetailPage() {
       videos.resetPage();
       videos.refresh();
     } catch (err) {
-      setRefreshError(err instanceof Error ? err.message : 'Failed to update source');
+      setRefreshError(err instanceof Error ? err.message : 'Không thể cập nhật nguồn');
     } finally {
       setRefreshing(false);
     }
@@ -98,9 +98,9 @@ export function SourceChannelDetailPage() {
     return (
       <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
         <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-          <p className="text-sm text-neutral-400">Source channel not found.</p>
+          <p className="text-sm text-neutral-400">Không tìm thấy kênh nguồn.</p>
           <Link to="/source-channels" className="mt-3 text-sm text-secondary-400 hover:text-secondary-300">
-            Back to Sources
+            Quay lại nguồn
           </Link>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function SourceChannelDetailPage() {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm text-neutral-400">Video list is only available for YouTube sources.</p>
+              <p className="text-sm text-neutral-400">Danh sách video chỉ khả dụng cho nguồn YouTube.</p>
             </div>
           )}
         </div>

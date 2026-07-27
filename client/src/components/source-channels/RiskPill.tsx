@@ -6,19 +6,19 @@ const config: Record<
   { label: string; dot: string; text: string; bg: string }
 > = {
   low: {
-    label: 'Low',
+    label: 'Thấp',
     dot: 'bg-success',
     text: 'text-success',
     bg: 'bg-success/10 border-success/30',
   },
   medium: {
-    label: 'Medium',
+    label: 'Trung bình',
     dot: 'bg-warning',
     text: 'text-warning',
     bg: 'bg-warning/10 border-warning/30',
   },
   high: {
-    label: 'High',
+    label: 'Cao',
     dot: 'bg-danger',
     text: 'text-danger',
     bg: 'bg-danger/10 border-danger/30',

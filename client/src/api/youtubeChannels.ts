@@ -17,6 +17,7 @@ import type {
   UpdateYoutubeVideoContentPayload,
   YoutubeVideoContent,
   MarkYoutubeVideoUploadedResponse,
+  ThumbnailBackgroundItem,
 } from '../types/youtubeChannel';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
@@ -192,4 +193,41 @@ export function uploadYoutubeChannelVideosForChannels(channelIds: string[]) {
       body: JSON.stringify({ channelIds }),
     },
   );
+}
+
+export type ThumbnailBackgroundScope =
+  | { channelId: string }
+  | { tempSessionId: string };
+
+function thumbnailBackgroundsBasePath(scope: ThumbnailBackgroundScope): string {
+  if ('channelId' in scope) {
+    return `${API_V1}/youtube-channels/${encodeURIComponent(scope.channelId)}/thumbnail-backgrounds`;
+  }
+  return `${API_V1}/youtube-channels/thumbnail-backgrounds/temp/${encodeURIComponent(scope.tempSessionId)}`;
+}
+
+export function thumbnailBackgroundFileUrl(scope: ThumbnailBackgroundScope, filename: string): string {
+  return `${thumbnailBackgroundsBasePath(scope)}/${encodeURIComponent(filename)}`;
+}
+
+export function listThumbnailBackgrounds(scope: ThumbnailBackgroundScope, options?: FetchOptions) {
+  return fetchJson<{ items: ThumbnailBackgroundItem[] }>(
+    thumbnailBackgroundsBasePath(scope),
+    withSignal(undefined, options),
+  );
+}
+
+export function uploadThumbnailBackground(scope: ThumbnailBackgroundScope, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return fetchJson<{ item: ThumbnailBackgroundItem }>(thumbnailBackgroundsBasePath(scope), {
+    method: 'POST',
+    body,
+  });
+}
+
+export function deleteThumbnailBackground(scope: ThumbnailBackgroundScope, filename: string) {
+  return fetchJson<{ deleted: string }>(thumbnailBackgroundFileUrl(scope, filename), {
+    method: 'DELETE',
+  });
 }

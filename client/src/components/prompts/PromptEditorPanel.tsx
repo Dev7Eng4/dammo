@@ -30,7 +30,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
   return (
     <span className="text-xs font-medium text-neutral-400">
       {children}
-      {optional ? <span className="text-neutral-500"> (optional)</span> : null}
+      {optional ? <span className="text-neutral-500"> (tuỳ chọn)</span> : null}
     </span>
   );
 }
@@ -78,9 +78,9 @@ export function PromptEditorPanel({
             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
           </svg>
         </div>
-        <p className="mt-4 text-sm font-medium text-neutral-200">Select a prompt from the list</p>
+        <p className="mt-4 text-sm font-medium text-neutral-200">Chọn một prompt từ danh sách</p>
         <p className="mt-1 text-xs text-neutral-500">
-          Or click <span className="font-medium text-neutral-400">+ New</span> to create one
+          Hoặc bấm <span className="font-medium text-neutral-400">+ Mới</span> để tạo mới
         </p>
       </section>
     );
@@ -104,7 +104,7 @@ export function PromptEditorPanel({
     draft.templateParams.length > 0
       ? `export default (${draft.templateParams.join(', ')}) => \`...\``
       : 'export default () => `...`';
-  const headerTitle = isNew ? 'New prompt' : draft.name || 'Untitled prompt';
+  const headerTitle = isNew ? 'Prompt mới' : draft.name || 'Prompt chưa đặt tên';
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
@@ -114,7 +114,7 @@ export function PromptEditorPanel({
             <h1 className="truncate text-lg font-semibold text-neutral-50">{headerTitle}</h1>
             {isNew ? (
               <span className="inline-flex rounded-full border border-primary-400/30 bg-primary-400/10 px-2 py-0.5 text-[10px] font-medium text-primary-300">
-                Draft
+                Nháp
               </span>
             ) : (
               <span className="inline-flex rounded-full border border-border bg-surface-elevated px-2 py-0.5 font-mono text-[10px] text-neutral-400">
@@ -125,15 +125,15 @@ export function PromptEditorPanel({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button variant="outlined" size="sm" onClick={onDuplicate} disabled={saving}>
-            Duplicate
+            Nhân bản
           </Button>
           {!readOnly ? (
             <>
               <Button variant="danger" size="sm" onClick={onDelete} disabled={saving || !draft.id}>
-                Delete
+                Xóa
               </Button>
               <Button size="sm" onClick={onSave} disabled={saving || !dirty || !draft.name.trim()}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Đang lưu...' : 'Lưu'}
               </Button>
             </>
           ) : null}
@@ -142,20 +142,20 @@ export function PromptEditorPanel({
 
       {readOnly ? (
         <div className="border-b border-l-2 border-warning/50 bg-warning/5 px-6 py-2">
-          <p className="text-xs text-warning">System prompt — read only</p>
+          <p className="text-xs text-warning">Prompt hệ thống — chỉ xem</p>
         </div>
       ) : null}
 
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-6">
         <div className="card-surface space-y-4 rounded-xl p-4">
-          <h2 className="text-sm font-medium text-neutral-100">General</h2>
+          <h2 className="text-sm font-medium text-neutral-100">Chung</h2>
 
           <label className="block space-y-1.5">
-            <FieldLabel>Name</FieldLabel>
+            <FieldLabel>Tên</FieldLabel>
             <Input
               value={draft.name}
               onChange={(e) => onChange({ name: e.target.value })}
-              placeholder="Prompt name"
+              placeholder="Tên prompt"
               className="h-10 rounded-lg"
               readOnly={readOnly}
               disabled={readOnly}
@@ -165,14 +165,14 @@ export function PromptEditorPanel({
               <p className="text-xs text-danger">{saveError}</p>
             ) : isNew ? (
               <p className="text-xs text-neutral-500">
-                Will be saved as <span className="font-mono text-neutral-400">{displayKey}</span>
+                Sẽ lưu với key <span className="font-mono text-neutral-400">{displayKey}</span>
               </p>
             ) : null}
           </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <label className="block space-y-1.5">
-              <FieldLabel>Language</FieldLabel>
+              <FieldLabel>Ngôn ngữ</FieldLabel>
               <DropdownSelect
                 value={draft.language}
                 onChange={(language) => onChange({ language })}
@@ -183,7 +183,7 @@ export function PromptEditorPanel({
               />
             </label>
             <label className="block space-y-1.5">
-              <FieldLabel>Category</FieldLabel>
+              <FieldLabel>Danh mục</FieldLabel>
               <DropdownSelect
                 value={draft.category}
                 onChange={(category) => onChange({ category })}
@@ -194,7 +194,7 @@ export function PromptEditorPanel({
               />
             </label>
             <label className="block space-y-1.5">
-              <FieldLabel>Type</FieldLabel>
+              <FieldLabel>Loại</FieldLabel>
               <DropdownSelect
                 value={draft.outputType}
                 onChange={(outputType) => onChange({ outputType })}
@@ -206,14 +206,14 @@ export function PromptEditorPanel({
             </label>
           </div>
           <p className="text-[10px] text-neutral-500">
-            Text → LLM · Image → Flow/Meta · Video → Meta AI
+            Văn bản → LLM · Hình ảnh → Flow/Meta · Video → Meta AI
           </p>
 
           {showReferenceImageOption ? (
             <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
               <div>
-                <p className="text-xs font-medium text-neutral-300">Use reference image</p>
-                <p className="text-[10px] text-neutral-500">Attach a reference image when generating</p>
+                <p className="text-xs font-medium text-neutral-300">Dùng ảnh tham chiếu</p>
+                <p className="text-[10px] text-neutral-500">Đính kèm ảnh tham chiếu khi tạo</p>
               </div>
               <input
                 type="checkbox"
@@ -225,12 +225,28 @@ export function PromptEditorPanel({
             </div>
           ) : null}
 
+          {draft.category === 'thumbnail' ? (
+            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
+              <div>
+                <p className="text-xs font-medium text-neutral-300">Dùng ảnh nền của kênh</p>
+                <p className="text-[10px] text-neutral-500">Dùng ảnh nền kênh YouTube khi tạo thumbnail</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={draft.useChannelBackgroundImage}
+                onChange={(e) => onChange({ useChannelBackgroundImage: e.target.checked })}
+                disabled={readOnly}
+                className="size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+          ) : null}
+
           <label className="block space-y-1.5">
-            <FieldLabel optional>Description</FieldLabel>
+            <FieldLabel optional>Mô tả</FieldLabel>
             <Input
               value={draft.description}
               onChange={(e) => onChange({ description: e.target.value })}
-              placeholder="Short description"
+              placeholder="Mô tả ngắn"
               className="h-10 rounded-lg"
               readOnly={readOnly}
               disabled={readOnly}
@@ -241,14 +257,14 @@ export function PromptEditorPanel({
         <div className="card-surface space-y-3 rounded-xl p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h2 className="text-sm font-medium text-neutral-100">User Prompt Template</h2>
+              <h2 className="text-sm font-medium text-neutral-100">Mẫu User Prompt</h2>
               <p className="mt-0.5 text-xs text-neutral-500">
                 {userFunctionTemplate ? (
-                  <>Function template — variables are not used</>
+                  <>Mẫu function — không dùng biến</>
                 ) : (
                   <>
-                    Saved as <code className="text-neutral-400">{exportDefaultPreview}</code> · use{' '}
-                    <code className="text-neutral-400">${'{param}'}</code> in body
+                    Lưu dạng <code className="text-neutral-400">{exportDefaultPreview}</code> · dùng{' '}
+                    <code className="text-neutral-400">${'{param}'}</code> trong nội dung
                   </>
                 )}
               </p>
@@ -262,7 +278,7 @@ export function PromptEditorPanel({
             onChange={(e) => onChange({ template: e.target.value })}
             rows={12}
             className="min-h-[240px] font-mono text-xs leading-relaxed"
-            placeholder="Write your prompt template body..."
+            placeholder="Viết nội dung mẫu prompt..."
             readOnly={readOnly}
             disabled={readOnly}
           />
@@ -282,7 +298,7 @@ export function PromptEditorPanel({
                   className="h-9 min-w-0 flex-1 rounded-lg font-mono text-xs"
                 />
                 <Button variant="secondary" size="sm" className="shrink-0" onClick={handleInsertVariable}>
-                  Insert Variable
+                  Thêm biến
                 </Button>
               </div>
               {draft.templateParams.length > 0 ? (
@@ -297,7 +313,7 @@ export function PromptEditorPanel({
                         type="button"
                         onClick={() => handleRemoveVariable(name)}
                         className="rounded-full px-1 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-                        aria-label={`Remove ${name}`}
+                        aria-label={`Xóa ${name}`}
                       >
                         ×
                       </button>

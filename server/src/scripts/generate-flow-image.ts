@@ -18,12 +18,30 @@ interface CliOptions {
   profileId?: string;
   timeoutMs: number;
   browserMode: boolean;
-  referenceImagePath?: string;
+  referenceImagePaths: string[];
   projectId?: string;
 }
 
+function pushReferencePaths(target: string[], raw: string | undefined): void {
+  const value = raw?.trim() ?? '';
+  if (!value) {
+    throw new Error('--reference-image / --reference-images requires a value');
+  }
+
+  for (const part of value.split(',')) {
+    const trimmed = part.trim();
+    if (trimmed) {
+      target.push(path.resolve(trimmed));
+    }
+  }
+}
+
 function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { timeoutMs: DEFAULT_TIMEOUT_MS, browserMode: true };
+  const options: CliOptions = {
+    timeoutMs: DEFAULT_TIMEOUT_MS,
+    browserMode: true,
+    referenceImagePaths: [],
+  };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -41,7 +59,13 @@ function parseArgs(argv: string[]): CliOptions {
     }
 
     if (arg === '--reference-image' || arg === '--ref') {
-      options.referenceImagePath = argv[index + 1];
+      pushReferencePaths(options.referenceImagePaths, argv[index + 1]);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--reference-images') {
+      pushReferencePaths(options.referenceImagePaths, argv[index + 1]);
       index += 1;
       continue;
     }
@@ -127,6 +151,12 @@ async function main() {
   console.log(`Profile: ${profile.name} (${profile.id})`);
   console.log(`Output: ${outputPath}`);
   console.log(`Mode: ${options.browserMode ? 'browser' : 'api'}`);
+  if (options.referenceImagePaths.length > 0) {
+    console.log(`Reference images (${options.referenceImagePaths.length}):`);
+    for (const imagePath of options.referenceImagePaths) {
+      console.log(`  ${imagePath}`);
+    }
+  }
   console.log(`Prompt:\n${promptUsed}\n`);
   console.log('Generating image...');
 
@@ -134,7 +164,9 @@ async function main() {
     outputPath,
     timeoutMs: options.timeoutMs,
     generationMode: options.browserMode ? 'browser' : 'api',
-    referenceImagePath: options.referenceImagePath,
+    ...(options.referenceImagePaths.length > 0
+      ? { referenceImagePaths: options.referenceImagePaths }
+      : {}),
     projectId: options.projectId,
   });
 

@@ -34,14 +34,14 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
   const columns: ColumnDef<SourceChannelVideo, unknown>[] = [
     {
       accessorKey: 'title',
-      header: 'TITLE',
+      header: 'TIÊU ĐỀ',
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'url',
-      header: 'LINK',
+      header: 'LIÊN KẾT',
       cell: ({ row }) => (
         <span className="font-mono text-xs text-neutral-500">
           <Link href={row.original.url}>{truncateLink(row.original.url)}</Link>
@@ -50,24 +50,24 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
     },
     {
       accessorKey: 'viewCount',
-      header: 'VIEWS',
+      header: 'LƯỢT XEM',
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatViews(getValue<number | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'duration',
-      header: 'DURATION',
+      header: 'THỜI LƯỢNG',
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatDuration(getValue<number | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'STATUS',
+      header: 'TRẠNG THÁI',
       cell: ({ row }) =>
         row.original.status === 'Downloaded' ? (
-          <span className="text-xs font-medium text-primary-400">Downloaded</span>
+          <span className="text-xs font-medium text-primary-400">Đã tải xuống</span>
         ) : (
           <span className="text-xs text-neutral-500">—</span>
         ),
@@ -81,7 +81,7 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
       getRowId={video => video.id}
       loading={loading}
       error={error}
-      emptyMessage="No videos found."
+      emptyMessage="Không tìm thấy video."
     />
   );
 }

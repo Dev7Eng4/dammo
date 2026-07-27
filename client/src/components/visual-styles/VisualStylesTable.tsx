@@ -24,19 +24,19 @@ export function VisualStylesTable({
   const columns: ColumnDef<VisualStyle, unknown>[] = [
     {
       accessorKey: 'name',
-      header: 'NAME',
+      header: 'TÊN',
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'niche',
-      header: 'NICHE',
+      header: 'CHỦ ĐỀ',
       cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
     },
     {
       accessorKey: 'rule',
-      header: 'RULE',
+      header: 'QUY TẮC',
       cell: ({ row }) => (
         <span className="text-neutral-400" title={row.original.rule}>
           {truncateRule(row.original.rule)}
@@ -45,11 +45,11 @@ export function VisualStylesTable({
     },
     {
       id: 'actions',
-      header: 'ACTIONS',
+      header: 'THAO TÁC',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
-            Edit
+            Sửa
           </Button>
           <Button
             variant="outlined"
@@ -57,7 +57,7 @@ export function VisualStylesTable({
             className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
             onClick={() => onDelete(row.original)}
           >
-            Delete
+            Xóa
           </Button>
         </div>
       ),
@@ -70,8 +70,8 @@ export function VisualStylesTable({
       columns={columns}
       getRowId={style => style.id}
       loading={loading}
-      emptyMessage="Chưa có visual style nào."
-      emptyDescription="Thêm style đầu tiên (anime, chibi, cinematic, ...) để bắt đầu."
+      emptyMessage="Chưa có phong cách hình ảnh nào."
+      emptyDescription="Thêm phong cách đầu tiên (anime, chibi, cinematic, ...) để bắt đầu."
     />
   );
 }

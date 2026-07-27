@@ -168,18 +168,32 @@ function logPasteResult(method: string, promptLength: number, inputLength: numbe
   console.log(`[human-paste] method=${method} promptLength=${promptLength} inputLength=${inputLength}`);
 }
 
-export async function setInputTextDirect(page: Page, locator: Locator, text: string): Promise<void> {
+export async function setInputTextDirect(
+  page: Page,
+  locator: Locator,
+  text: string,
+  options?: { skipClear?: boolean },
+): Promise<void> {
   await humanClick(page, locator);
   await randomDelay(120, 300);
-  await clearInput(locator);
+  if (!options?.skipClear) {
+    await clearInput(locator);
+  }
   await setInputTextContent(locator, text);
   await randomDelay(150, 350);
 }
 
-export async function humanTypeSequential(page: Page, locator: Locator, text: string): Promise<void> {
+export async function humanTypeSequential(
+  page: Page,
+  locator: Locator,
+  text: string,
+  options?: { skipClear?: boolean },
+): Promise<void> {
   await humanClick(page, locator);
   await randomDelay(120, 300);
-  await clearInput(locator);
+  if (!options?.skipClear) {
+    await clearInput(locator);
+  }
 
   try {
     await locator.pressSequentially(text, { delay: randomInt(40, 120) });
@@ -190,12 +204,18 @@ export async function humanTypeSequential(page: Page, locator: Locator, text: st
   await randomDelay(150, 350);
 }
 
-export async function humanPaste(page: Page, locator: Locator, text: string, options?: { pasteStrategy?: PasteStrategy }): Promise<void> {
+export async function humanPaste(
+  page: Page,
+  locator: Locator,
+  text: string,
+  options?: { pasteStrategy?: PasteStrategy; skipClear?: boolean },
+): Promise<void> {
   const strategy = options?.pasteStrategy ?? 'human';
+  const skipClear = options?.skipClear === true;
   const promptLength = text.length;
 
   if (strategy === 'direct') {
-    await setInputTextDirect(page, locator, text);
+    await setInputTextDirect(page, locator, text, { skipClear });
     const inputLength = await getInputTextLength(locator);
     logPasteResult('direct', promptLength, inputLength);
     if (inputLength < promptLength) {
@@ -209,14 +229,18 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
       await humanClick(page, locator);
       await randomDelay(120, 300);
       await locator.focus();
-      await humanClearInput(page);
+      if (!skipClear) {
+        await humanClearInput(page);
+      }
       await randomDelay(80, 180);
       await page.keyboard.insertText(text);
       let inputLength = await waitForInputText(locator, promptLength);
       logPasteResult('insertText', promptLength, inputLength);
 
       if (inputLength < promptLength) {
-        await humanClearInput(page);
+        if (!skipClear) {
+          await humanClearInput(page);
+        }
         await pasteViaClipboard(page, text);
         inputLength = await waitForInputText(locator, promptLength);
         logPasteResult('insertText-fallback-clipboard', promptLength, inputLength);
@@ -229,7 +253,9 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
       await humanClick(page, locator);
       await randomDelay(120, 300);
       await locator.focus();
-      await humanClearInput(page);
+      if (!skipClear) {
+        await humanClearInput(page);
+      }
       await locator.pressSequentially(text, { delay: randomInt(40, 120) });
       const inputLength = await getInputTextLength(locator);
       logPasteResult('insertText-fallback-sequential', promptLength, inputLength);
@@ -241,13 +267,15 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
     await humanClick(page, locator);
     await randomDelay(120, 300);
     await locator.focus();
-    await humanClearInput(page);
+    if (!skipClear) {
+      await humanClearInput(page);
+    }
     await pasteViaClipboard(page, text);
     const inputLength = await waitForInputText(locator, promptLength);
     logPasteResult('clipboard', promptLength, inputLength);
 
     if (inputLength < promptLength) {
-      await setInputTextDirect(page, locator, text);
+      await setInputTextDirect(page, locator, text, { skipClear });
       const finalLength = await getInputTextLength(locator);
       logPasteResult('clipboard-fallback-direct', promptLength, finalLength);
       if (finalLength < promptLength) {
@@ -255,7 +283,7 @@ export async function humanPaste(page: Page, locator: Locator, text: string, opt
       }
     }
   } catch {
-    await humanTypeSequential(page, locator, text);
+    await humanTypeSequential(page, locator, text, { skipClear });
     const inputLength = await getInputTextLength(locator);
     logPasteResult('sequential', promptLength, inputLength);
   }

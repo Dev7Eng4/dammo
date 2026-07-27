@@ -302,17 +302,24 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         ...(options?.referenceImagePaths ?? []),
         ...(options?.referenceImagePath ? [options.referenceImagePath] : []),
       ];
-      if (referencePaths.length > 0) {
-        await attachMetaReferenceFiles(page, referencePaths);
-        await randomDelay(500, 1_000);
-      }
 
+      // Clear composer BEFORE attaching reference images so Ctrl+A/Backspace
+      // does not remove already-uploaded attachments.
       const input = await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
       await humanClick(page, input);
       await randomDelay(150, 400);
       await input.focus();
       await humanClearInput(page);
-      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'human' });
+
+      if (referencePaths.length > 0) {
+        await attachMetaReferenceFiles(page, referencePaths);
+        await randomDelay(500, 1_000);
+      }
+
+      await humanPaste(page, input, prompt, {
+        pasteStrategy: options?.pasteStrategy ?? 'human',
+        skipClear: true,
+      });
       await randomDelay(500, 1_200);
 
       const submitWith = options?.submitWith ?? 'button';

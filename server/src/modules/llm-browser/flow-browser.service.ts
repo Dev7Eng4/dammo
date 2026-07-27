@@ -35,6 +35,7 @@ import {
   setLlmBrowserSessionStatus,
   upsertLlmBrowserSession,
 } from '../../infrastructure/llm-browser/llm-browser.session.js';
+import { resolveReferenceImagePaths } from '../../infrastructure/llm-browser/resolve-reference-image-paths.js';
 import type {
   FlowGenerateImageOptions,
   FlowGenerateImagesViaToolOptions,
@@ -240,6 +241,7 @@ export class FlowBrowserService {
         pasteStrategy: options?.pasteStrategy ?? 'insertText',
         submitWith: 'enter',
         referenceImagePath: options?.referenceImagePath,
+        referenceImagePaths: options?.referenceImagePaths,
       });
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
@@ -318,24 +320,33 @@ export class FlowBrowserService {
         );
       }
 
-      let primaryMediaId: string | null = null;
-      if (options?.referenceImagePath) {
-        console.log('[flow-api] uploading reference image...');
-        try {
-          primaryMediaId = await uploadReferenceImageViaApi(accessToken, options.referenceImagePath, projectId);
-          if (!primaryMediaId) {
-            throw new AppError('Flow reference image upload failed', 502, 'FLOW_API_REFERENCE_UPLOAD_FAILED');
+      const referenceMediaIds: string[] = [];
+      const referencePaths = resolveReferenceImagePaths(options);
+
+      if (referencePaths.length > 0) {
+        console.log(`[flow-api] uploading ${referencePaths.length} reference image(s)...`);
+        for (const imagePath of referencePaths) {
+          try {
+            const mediaId = await uploadReferenceImageViaApi(accessToken, imagePath, projectId);
+            if (!mediaId) {
+              throw new AppError(
+                `Flow reference image upload failed: ${imagePath}`,
+                502,
+                'FLOW_API_REFERENCE_UPLOAD_FAILED',
+              );
+            }
+            referenceMediaIds.push(mediaId);
+            console.log(`[flow-api] reference mediaId: ${mediaId} ← ${imagePath}`);
+          } catch (err) {
+            if (err instanceof AppError) {
+              throw err;
+            }
+            throw new AppError(
+              `Flow reference image upload error: ${err instanceof Error ? err.message : String(err)}`,
+              502,
+              'FLOW_API_REFERENCE_UPLOAD_FAILED',
+            );
           }
-          console.log(`[flow-api] primaryMediaId: ${primaryMediaId}`);
-        } catch (err) {
-          if (err instanceof AppError) {
-            throw err;
-          }
-          throw new AppError(
-            `Flow reference image upload error: ${err instanceof Error ? err.message : String(err)}`,
-            502,
-            'FLOW_API_REFERENCE_UPLOAD_FAILED'
-          );
         }
       }
 
@@ -348,7 +359,7 @@ export class FlowBrowserService {
       const apiResponse = await callBatchGenerateImagesOnPage(page, accessToken, {
         prompt,
         projectId,
-        primaryMediaId,
+        referenceMediaIds,
         siteKey: FLOW_RECAPTCHA_SITE_KEY,
         recaptchaAction: FLOW_RECAPTCHA_ACTION,
         recaptchaTimeoutMs: timeoutMs,

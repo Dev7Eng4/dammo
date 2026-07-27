@@ -57,7 +57,7 @@ export function EditProxyProviderModal({
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to update provider');
+      setApiError(err instanceof Error ? err.message : 'Cập nhật nhà cung cấp thất bại');
     }
   }
 
@@ -65,11 +65,11 @@ export function EditProxyProviderModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Edit Provider"
+      title="Sửa nhà cung cấp"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
+            Hủy
           </Button>
           <Button
             size="sm"
@@ -78,7 +78,7 @@ export function EditProxyProviderModal({
             form="edit-provider-form"
             type="submit"
           >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
           </Button>
         </>
       }
@@ -86,19 +86,19 @@ export function EditProxyProviderModal({
       <form id="edit-provider-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-provider-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Provider Name
+            Tên nhà cung cấp
           </label>
           <Input
             id="edit-provider-name"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Name is required' })}
+            {...register('name', { required: 'Tên là bắt buộc' })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-provider-url" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Login URL <span className="text-neutral-500">(optional)</span>
+            URL đăng nhập <span className="text-neutral-500">(tùy chọn)</span>
           </label>
           <Input
             id="edit-provider-url"
@@ -107,7 +107,7 @@ export function EditProxyProviderModal({
             {...register('loginUrl', {
               pattern: {
                 value: /^$|^https?:\/\/.+/i,
-                message: 'URL must start with http:// or https://',
+                message: 'URL phải bắt đầu bằng http:// hoặc https://',
               },
             })}
           />
@@ -117,12 +117,12 @@ export function EditProxyProviderModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="edit-provider-username" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Username
+              Tên đăng nhập
             </label>
             <Input
               id="edit-provider-username"
               className="h-10 rounded-lg"
-              {...register('username', { required: 'Username is required' })}
+              {...register('username', { required: 'Tên đăng nhập là bắt buộc' })}
             />
             {errors.username ? (
               <p className="mt-1 text-xs text-danger">{errors.username.message}</p>
@@ -130,12 +130,12 @@ export function EditProxyProviderModal({
           </div>
           <div>
             <label htmlFor="edit-provider-password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              New Password
+              Mật khẩu mới
             </label>
             <Input
               id="edit-provider-password"
               type="password"
-              placeholder="Leave blank to keep current"
+              placeholder="Để trống nếu giữ nguyên"
               className="h-10 rounded-lg"
               {...register('password')}
             />
@@ -144,7 +144,7 @@ export function EditProxyProviderModal({
 
         <div>
           <label htmlFor="edit-provider-notes" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Notes
+            Ghi chú
           </label>
           <Textarea id="edit-provider-notes" rows={3} className="text-sm" {...register('notes')} />
         </div>

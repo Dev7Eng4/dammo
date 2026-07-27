@@ -6,25 +6,25 @@ const config: Record<
   { label: string; dot: string; text: string; bg: string }
 > = {
   trend_tracking: {
-    label: 'Trend Tracking',
+    label: 'Theo dõi xu hướng',
     dot: 'bg-secondary-400',
     text: 'text-secondary-400',
     bg: 'bg-secondary-500/10 border-secondary-500/30',
   },
   idea_reference: {
-    label: 'Idea Reference',
+    label: 'Tham khảo ý tưởng',
     dot: 'bg-warning',
     text: 'text-warning',
     bg: 'bg-warning/10 border-warning/30',
   },
   licensed_source: {
-    label: 'Licensed Source',
+    label: 'Nguồn có bản quyền',
     dot: 'bg-primary-400',
     text: 'text-primary-400',
     bg: 'bg-primary-500/10 border-primary-500/30',
   },
   competitor_tracking: {
-    label: 'Competitor Tracking',
+    label: 'Theo dõi đối thủ',
     dot: 'bg-neutral-400',
     text: 'text-neutral-400',
     bg: 'bg-neutral-500/10 border-neutral-500/30',
@@ -36,7 +36,7 @@ const config: Record<
     bg: 'bg-success/10 border-success/30',
   },
   background_footage: {
-    label: 'Background Footage',
+    label: 'Footage nền',
     dot: 'bg-info',
     text: 'text-info',
     bg: 'bg-info/10 border-info/30',

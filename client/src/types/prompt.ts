@@ -43,6 +43,8 @@ export interface Prompt {
 
   useReferenceImage?: boolean;
 
+  useChannelBackgroundImage?: boolean;
+
   createdAt: string;
 
   updatedAt: string;
@@ -52,6 +54,7 @@ export interface Prompt {
 export interface ThumbnailStyleOption {
   key: string;
   name: string;
+  useChannelBackgroundImage: boolean;
 }
 
 
@@ -80,6 +83,8 @@ export interface CreatePromptPayload {
 
   useReferenceImage?: boolean;
 
+  useChannelBackgroundImage?: boolean;
+
 }
 
 
@@ -99,6 +104,8 @@ export interface UpdatePromptPayload {
   description?: string;
 
   useReferenceImage?: boolean;
+
+  useChannelBackgroundImage?: boolean;
 
 }
 
@@ -185,6 +192,8 @@ export interface PromptFormDraft {
   isSystem?: boolean;
 
   useReferenceImage: boolean;
+
+  useChannelBackgroundImage: boolean;
 
 }
 

@@ -39,7 +39,7 @@ function CopyButton({ value }: { value: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      title={copied ? 'Copied!' : 'Copy'}
+      title={copied ? 'Đã sao chép!' : 'Sao chép'}
       className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
     >
       {copied ? (
@@ -57,14 +57,14 @@ function CopyButton({ value }: { value: string }) {
 }
 
 function formatLastChecked(iso?: string) {
-  if (!iso) return 'Never checked';
+  if (!iso) return 'Chưa kiểm tra';
   const diff = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return 'Vừa xong';
+  if (minutes < 60) return `${minutes} phút trước`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `${hours} giờ trước`;
+  return `${Math.floor(hours / 24)} ngày trước`;
 }
 
 export function ProxyDetailPanel({
@@ -124,14 +124,14 @@ export function ProxyDetailPanel({
         <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
           <ProxyStatusPill status={proxy.status} />
           <span className="text-xs text-neutral-500">
-            Last checked: {formatLastChecked(proxy.lastCheckedAt)}
+            Kiểm tra lần cuối: {formatLastChecked(proxy.lastCheckedAt)}
           </span>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           <div>
             <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
-              Connection
+              Kết nối
             </p>
             <FieldLabel>Host:Port</FieldLabel>
             <div className="relative">
@@ -139,7 +139,7 @@ export function ProxyDetailPanel({
               <CopyButton value={hostPort} />
             </div>
             <div className="mt-3">
-              <FieldLabel>Auth</FieldLabel>
+              <FieldLabel>Xác thực</FieldLabel>
               <div className="relative">
                 <Input readOnly value={authValue} className="h-9 rounded-lg pr-16 font-mono text-sm" />
                 {proxy.password ? (
@@ -147,7 +147,7 @@ export function ProxyDetailPanel({
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
                     className="absolute top-1/2 right-9 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
-                    title={showPassword ? 'Hide password' : 'Show password'}
+                    title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
                     <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       {showPassword ? (
@@ -174,11 +174,11 @@ export function ProxyDetailPanel({
             <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-neutral-500">Meta</p>
             <div className="space-y-2 text-sm">
               <div>
-                <FieldLabel>Location</FieldLabel>
+                <FieldLabel>Vị trí</FieldLabel>
                 <p className="text-neutral-300">{proxy.location ?? '—'}</p>
               </div>
               <div>
-                <FieldLabel>Provider</FieldLabel>
+                <FieldLabel>Nhà cung cấp</FieldLabel>
                 <p className="text-neutral-300">{proxy.provider ?? '—'}</p>
               </div>
               {(proxy.tags?.length ?? 0) > 0 ? (
@@ -202,7 +202,7 @@ export function ProxyDetailPanel({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">
-                Assigned Profiles ({proxy.assignedProfileIds.length})
+                Profile đã gán ({proxy.assignedProfileIds.length})
               </p>
             </div>
             {proxy.assignedProfileIds.length > 0 ? (
@@ -215,17 +215,17 @@ export function ProxyDetailPanel({
               </ul>
             ) : (
               <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-neutral-500">
-                No profiles assigned
+                Chưa gán profile nào
               </p>
             )}
           </div>
 
           <div className="card-surface px-3 py-3">
-            <FieldLabel>Performance</FieldLabel>
+            <FieldLabel>Hiệu năng</FieldLabel>
             <p className="text-2xl font-semibold text-neutral-50">
               {proxy.latencyMs != null ? `${proxy.latencyMs}ms` : '—'}
             </p>
-            <p className="mt-0.5 text-xs text-neutral-500">Last test latency</p>
+            <p className="mt-0.5 text-xs text-neutral-500">Độ trễ lần kiểm tra gần nhất</p>
           </div>
         </div>
 
@@ -234,11 +234,11 @@ export function ProxyDetailPanel({
             <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
-            {testing ? 'Testing...' : 'Test Connection'}
+            {testing ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
           </Button>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outlined" size="sm" className="rounded-lg" onClick={onEdit}>
-              Edit
+              Sửa
             </Button>
             <Button
               variant="outlined"
@@ -248,11 +248,11 @@ export function ProxyDetailPanel({
               disabled={testing || proxy.assignedProfileIds.length > 0}
               title={
                 proxy.assignedProfileIds.length > 0
-                  ? `Cannot archive while proxy has ${proxy.assignedProfileIds.length} assigned profile(s)`
+                  ? `Không thể lưu trữ khi proxy còn ${proxy.assignedProfileIds.length} profile đã gán`
                   : undefined
               }
             >
-              Archive
+              Lưu trữ
             </Button>
           </div>
         </div>

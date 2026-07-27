@@ -33,7 +33,7 @@ export function DashboardPage() {
       setData(nextData);
     } catch (err) {
       if (signal.aborted) return;
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      setError(err instanceof Error ? err.message : 'Không thể tải tổng quan');
     } finally {
       if (!signal.aborted) setLoading(false);
     }
@@ -48,7 +48,7 @@ export function DashboardPage() {
           className="mt-3 text-sm text-secondary-400 hover:text-secondary-300"
           onClick={() => window.location.reload()}
         >
-          Retry
+          Thử lại
         </button>
       </div>
     );
