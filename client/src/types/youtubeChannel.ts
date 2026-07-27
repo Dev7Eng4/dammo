@@ -99,7 +99,9 @@ export interface YoutubeChannel {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   showDisclaimer?: boolean;
@@ -439,7 +441,9 @@ export interface CreateYoutubeChannelPayload {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   showDisclaimer?: boolean;
@@ -465,7 +469,9 @@ export interface AddYoutubeChannelFormValues {
   reupAudioVideoType: ReupAudioVideoType | '';
   reupAudioVisualStyleId: string;
   reupAudioBackgroundImage: ReupAudioBackgroundImage | '';
+  useReferenceImage: boolean;
   showAudioBar: boolean;
+  showChannelAvatar: boolean;
   showSubscribe: boolean;
   showSmallVideo: boolean;
   showDisclaimer: boolean;

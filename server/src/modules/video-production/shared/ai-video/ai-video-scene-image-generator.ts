@@ -20,6 +20,7 @@ import { gpmManagerService } from '../../../gpm-manager/gpm-manager.service.js';
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
+import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';
 import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import {
@@ -44,6 +45,7 @@ interface SceneVisualJob {
   name: string;
   prompt: string;
   outputPath: string;
+  referenceIds?: string[];
 }
 
 interface MetaImageWorker {
@@ -101,6 +103,7 @@ function buildSceneVisualJobs(scenes: AiVideoScenePrompt[], slidesDir: string): 
       name,
       prompt: scene.prompt.trim(),
       outputPath: path.join(slidesDir, `${name}.jpg`),
+      ...(scene.references?.length ? { referenceIds: scene.references } : {}),
     };
   });
 }
@@ -369,6 +372,7 @@ async function cleanupMetaWorkerPool(pool: MetaWorkerPool, log: (msg: string) =>
 }
 
 async function generateMetaSceneImages(
+  workDir: string,
   slidesDir: string,
   pending: SceneVisualJob[],
   totalScenes: number,
@@ -407,11 +411,23 @@ async function generateMetaSceneImages(
       let succeeded = false;
       for (let attempt = 1; attempt <= META_IMAGE_MAX_RETRIES; attempt += 1) {
         try {
+          const referenceImagePaths = await resolveCharacterReferenceImagePaths(
+            workDir,
+            job.referenceIds ?? [],
+            log,
+          );
+          if ((job.referenceIds?.length ?? 0) > 0 && referenceImagePaths.length === 0) {
+            log(
+              `[ai-video] ${job.name}: no reference images resolved — continuing with prompt only`,
+            );
+          }
+
           const response = await metaBrowserService.generateMediaOnPage(worker.page, job.prompt, {
             mediaKind: 'image',
             outputDir: slidesDir,
             fileName: `${job.name}.jpg`,
             timeoutMs: META_IMAGE_TIMEOUT_MS,
+            ...(referenceImagePaths.length > 0 ? { referenceImagePaths } : {}),
           });
 
           const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
@@ -553,6 +569,7 @@ export async function generateAiSceneSlideImages(
     }
   } else {
     const metaResult = await generateMetaSceneImages(
+      input.workDir,
       slidesDir,
       pending,
       input.scenes.length,

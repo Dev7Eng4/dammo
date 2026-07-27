@@ -116,7 +116,9 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
+  | 'useReferenceImage'
   | 'showAudioBar'
+  | 'showChannelAvatar'
   | 'showSubscribe'
   | 'showSmallVideo'
   | 'showDisclaimer'
@@ -149,7 +151,9 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   showDisclaimer?: boolean;
@@ -202,11 +206,13 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioVideoType: ReupAudioVideoType | undefined;
   let reupAudioVisualStyleId: string | undefined;
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
+  let useReferenceImage: boolean | undefined;
   let showAudioBar: boolean | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
   const disclaimerText = input.disclaimerText?.trim();
   const descriptionDisclaimerText = input.descriptionDisclaimerText?.trim();
   const showDisclaimer = input.showDisclaimer === true;
+  const showChannelAvatar = input.showChannelAvatar === true;
   const showSubscribe = input.showSubscribe === true;
   const showSmallVideo = input.showSmallVideo === true;
 
@@ -215,6 +221,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
       throw new AppError('Video type is required for Reup Audio channels', 400, 'VALIDATION_ERROR');
     }
     reupAudioVideoType = input.reupAudioVideoType;
+    useReferenceImage = input.useReferenceImage === true;
 
     if (input.reupAudioVideoType === 'ai') {
       if (!input.reupAudioVisualStyleId?.trim()) {
@@ -236,6 +243,39 @@ function validateChannelConfig(input: ChannelConfigInput): {
       }
       reupAudioBackgroundImage = input.reupAudioBackgroundImage;
       showAudioBar = input.showAudioBar === true;
+
+      const needsVisualStyle =
+        input.reupAudioBackgroundImage === 'multi_image' || input.useReferenceImage === true;
+      if (needsVisualStyle) {
+        if (!input.reupAudioVisualStyleId?.trim()) {
+          throw new AppError(
+            'Video style is required for Stock Video + multi image / reference images',
+            400,
+            'VALIDATION_ERROR',
+          );
+        }
+        validateReupAudioVisualStyleId(
+          input.reupAudioVideoType,
+          input.reupAudioVisualStyleId.trim(),
+          input.language,
+        );
+        reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+      } else if (input.reupAudioVisualStyleId?.trim()) {
+        validateReupAudioVisualStyleId(
+          input.reupAudioVideoType,
+          input.reupAudioVisualStyleId.trim(),
+          input.language,
+        );
+        reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+      }
+    }
+
+    if (useReferenceImage && !reupAudioVisualStyleId) {
+      throw new AppError(
+        'Video style is required when using reference images',
+        400,
+        'VALIDATION_ERROR',
+      );
     }
     captionStyleKey = assertValidCaptionStyleKey(input.captionStyleKey);
   }
@@ -254,7 +294,9 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
+    ...(useReferenceImage ? { useReferenceImage: true } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
+    ...(showChannelAvatar ? { showChannelAvatar: true } : {}),
     ...(showSubscribe ? { showSubscribe: true } : {}),
     ...(showSmallVideo ? { showSmallVideo: true } : {}),
     ...(showDisclaimer ? { showDisclaimer: true } : {}),
@@ -593,7 +635,9 @@ export class YoutubeChannelsService {
       ...(config.reupAudioBackgroundImage
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
+      ...(config.useReferenceImage ? { useReferenceImage: true } : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
+      ...(config.showChannelAvatar ? { showChannelAvatar: true } : {}),
       ...(config.showSubscribe ? { showSubscribe: true } : {}),
       ...(config.showSmallVideo ? { showSmallVideo: true } : {}),
       ...(config.showDisclaimer ? { showDisclaimer: true } : {}),
@@ -653,6 +697,11 @@ export class YoutubeChannelsService {
       } else {
         delete next.showDisclaimer;
       }
+      if (config.showChannelAvatar) {
+        next.showChannelAvatar = true;
+      } else {
+        delete next.showChannelAvatar;
+      }
       if (config.showSubscribe) {
         next.showSubscribe = true;
       } else {
@@ -686,6 +735,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.reupAudioBackgroundImage;
         }
+        if (config.useReferenceImage) {
+          next.useReferenceImage = true;
+        } else {
+          delete next.useReferenceImage;
+        }
         if (config.reupAudioVideoType === 'si' && config.showAudioBar) {
           next.showAudioBar = true;
         } else {
@@ -700,6 +754,7 @@ export class YoutubeChannelsService {
         delete next.reupAudioVideoType;
         delete next.reupAudioVisualStyleId;
         delete next.reupAudioBackgroundImage;
+        delete next.useReferenceImage;
         delete next.showAudioBar;
         delete next.captionStyleKey;
       }

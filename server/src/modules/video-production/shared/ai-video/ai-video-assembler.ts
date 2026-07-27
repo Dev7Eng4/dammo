@@ -27,6 +27,7 @@ import {
   resolveRandomSiAudioSpeed,
 } from '../si-video/si.constants.js';
 import { runFfmpegFilterComplex } from '../si-video/si-ffmpeg.js';
+import { appendChannelAvatarOverlayFilters } from '../si-video/channel-avatar-overlay.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
@@ -100,6 +101,7 @@ export async function assembleReupAiSlideshowVideo(
     captionStyleKey,
     showDisclaim = false,
     disclaimerText,
+    channelAvatarPath,
     onLog,
   } = input;
   const log = (msg: string) => {
@@ -121,7 +123,7 @@ export async function assembleReupAiSlideshowVideo(
   let slides = buildTimedSlides(workDir, scaledScenes);
   const imagePaths = slides.map(slide => slide.imagePath);
 
-  for (const requiredPath of [audioPath, subtitlePath, ...imagePaths]) {
+  for (const requiredPath of [audioPath, subtitlePath, ...imagePaths, ...(channelAvatarPath ? [channelAvatarPath] : [])]) {
     try {
       await fs.access(requiredPath);
     } catch {
@@ -146,6 +148,10 @@ export async function assembleReupAiSlideshowVideo(
   log(
     `[ai-video] ${slides.length} timed slides (Ken Burns, no shuffle) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
   );
+
+  if (channelAvatarPath) {
+    log(`[ai-video] Channel avatar overlay: ${path.basename(channelAvatarPath)}`);
+  }
 
   const slideshowRawPath = path.join(workDir, `${AI_SLIDESHOW_RAW_BASENAME}.mp4`);
   await assembleSlideshow({
@@ -185,10 +191,18 @@ export async function assembleReupAiSlideshowVideo(
   const videoMapLabel = isHardwareEncoder(hwEncoder) ? 'venc' : 'vout_final';
   const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
 
-  const filterParts = [
-    `[0:v]format=yuv420p,fps=${SI_FPS},${videoFilters}${finalFormat}[${videoMapLabel}]`,
-    `[1:a]atempo=${speed}[aout]`,
-  ];
+  const filterParts: string[] = [];
+  let videoInputLabel = '0:v';
+
+  if (channelAvatarPath) {
+    appendChannelAvatarOverlayFilters(filterParts, videoInputLabel, '2:v', 'v_with_avatar');
+    videoInputLabel = 'v_with_avatar';
+  }
+
+  filterParts.push(
+    `[${videoInputLabel}]format=yuv420p,fps=${SI_FPS},${videoFilters}${finalFormat}[${videoMapLabel}]`,
+  );
+  filterParts.push(`[1:a]atempo=${speed}[aout]`);
 
   await fs.writeFile(filterScriptPath, filterParts.join(';'), 'utf-8');
 
@@ -199,6 +213,7 @@ export async function assembleReupAiSlideshowVideo(
     slideshowRawPath,
     '-i',
     audioPath,
+    ...(channelAvatarPath ? ['-loop', '1', '-i', channelAvatarPath] : []),
     '-filter_complex_script',
     filterScriptPath,
     '-map',

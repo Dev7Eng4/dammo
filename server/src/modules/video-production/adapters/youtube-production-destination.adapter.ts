@@ -31,7 +31,14 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     );
   }
 
-  if (channel.reupAudioVideoType === 'ai' && !channel.reupAudioVisualStyleId?.trim()) {
+  const siBackgroundImage =
+    channel.reupAudioVideoType === 'si' ? resolveSiBackgroundImage(channel) : undefined;
+  const requiresVisualStyle =
+    channel.reupAudioVideoType === 'ai' ||
+    siBackgroundImage === 'multi_image' ||
+    channel.useReferenceImage === true;
+
+  if (requiresVisualStyle && !channel.reupAudioVisualStyleId?.trim()) {
     throw new AppError(
       'Reup Audio channel is missing reupAudioVisualStyleId',
       400,
@@ -47,7 +54,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     reupAudioVideoType: channel.reupAudioVideoType,
     ...(channel.reupAudioVideoType === 'si'
       ? {
-          reupAudioBackgroundImage: resolveSiBackgroundImage(channel),
+          reupAudioBackgroundImage: siBackgroundImage!,
           showAudioBar: channel.showAudioBar === true,
           showSmallVideo: channel.showSmallVideo === true,
         }
@@ -55,6 +62,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     ...(channel.reupAudioVisualStyleId?.trim()
       ? { reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim() }
       : {}),
+    ...(channel.useReferenceImage === true ? { useReferenceImage: true } : {}),
     ...(visualStyle ? { visualStyle } : {}),
   };
 }
@@ -79,6 +87,7 @@ export async function createYoutubeProductionDestination(
     thumbnailStyleKey: channel.thumbnailStyleKey,
     captionStyleKey: channel.captionStyleKey,
     showDisclaimer: channel.showDisclaimer === true,
+    ...(channel.showChannelAvatar === true ? { showChannelAvatar: true } : {}),
     disclaimerText: channel.disclaimerText,
     descriptionDisclaimerText: channel.descriptionDisclaimerText,
     ...reupAudioConfig,

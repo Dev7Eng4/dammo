@@ -30,8 +30,10 @@ export interface ProductionDestination {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
   showSmallVideo?: boolean;
+  showChannelAvatar?: boolean;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;

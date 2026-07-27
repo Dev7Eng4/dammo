@@ -19,6 +19,7 @@ export const DIALOG_APPEAR_TIMEOUT_MS = 3_000;
 
 export interface MetaDomSelectors {
   composerAddAttachmentButton: string;
+  composerAttachmentDropzone: string;
   composerMenuItemCheckbox: string;
   promptInput: string;
   composerSendButton: string;
@@ -44,6 +45,7 @@ export const META_CONFIG: MetaConfig = {
   defaultTimeoutMs: 300_000,
   selectors: {
     composerAddAttachmentButton: 'button[data-testid="composer-add-attachment-button"]',
+    composerAttachmentDropzone: 'button[data-testid="composer-attachment-dropzone"]',
     composerMenuItemCheckbox: 'div[role="menuitemcheckbox"]',
     promptInput:
       'div[contenteditable="true"], textarea[placeholder*="Ask" i], textarea[placeholder*="Meta" i], [role="textbox"]',

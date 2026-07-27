@@ -25,12 +25,18 @@ import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
 import { listSiMultiImagePaths } from '../../shared/si-video/si-multi-image.js';
-import { assembleReupAiSlideshowVideo, generateAiVideoImages, generateAiSceneSlideImages } from '../../shared/ai-video/index.js';
+import {
+  AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC,
+  assembleReupAiSlideshowVideo,
+  generateAiScenePromptsForPipeline,
+  generateAiSceneSlideImages,
+} from '../../shared/ai-video/index.js';
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
 import { SI_OUTPUT_VIDEO_BASENAME } from '../../shared/si-video/si.constants.js';
 import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
+import { resolveChannelAvatarForVideoAssembly } from '../../../youtube-channels/resolve-channel-avatar.js';
 import { moveVideoFolderToDestination, remapOutputItemPaths } from './video-folder-mover.js';
 import { REUP_VIDEOS_PER_RUN } from './reup-audio.constants.js';
 import type { CreateReupVideosResult, ReupVideoOutputItem, ReupVideoTask } from './reup-audio.types.js';
@@ -650,56 +656,88 @@ export class ReupAudioPipeline {
           }
 
           const workDir = subtitleForAssembly ? path.dirname(subtitleForAssembly) : path.dirname(srtPath);
+          const useReferenceImage = destination.useReferenceImage === true;
 
-          if (videoType === 'ai' && downloaded.audioPath && subtitleForAssembly) {
+          const runSharedScenePromptAndImages = async (options: {
+            label: string;
+            maxTranscriptSec?: number;
+          }) => {
             if (!destination.visualStyle) {
-              throw new AppError('Reup Audio AI channel is missing visual style', 400, 'VALIDATION_ERROR');
+              throw new AppError(
+                `Reup Audio ${options.label} channel is missing visual style`,
+                400,
+                'VALIDATION_ERROR',
+              );
+            }
+            if (!downloaded.audioPath || !subtitleForAssembly) {
+              return;
             }
 
             if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating AI scene prompts via LLM...');
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'info',
+                useReferenceImage
+                  ? `Generating ${options.label} scene prompts with character references via LLM...`
+                  : `Generating ${options.label} scene prompts via LLM...`,
+              );
             }
 
-            const aiScenePromptResult = await timedStep(
-              'AI scene prompts',
+            const promptResult = await timedStep(
+              `${options.label} scene prompts`,
               () =>
-                generateAiVideoImages({
+                generateAiScenePromptsForPipeline({
                   workDir,
                   youtubeVideoId: downloaded.youtubeVideoId,
                   visualStyle: destination.visualStyle!,
-                  subtitlePath: subtitleForAssembly,
+                  subtitlePath: subtitleForAssembly!,
                   audioPath: downloaded.audioPath,
                   language: destination.language,
+                  maxTranscriptSec: options.maxTranscriptSec,
+                  useReferenceImage,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                   onProgress: taskJobId
                     ? progress =>
                         taskQueueRepository.appendLogMessage(
                           taskJobId,
                           'info',
-                          `AI scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`,
+                          `${options.label} scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`,
                         )
                     : undefined,
                 }),
               stepTimer,
             );
-            aiScenePrompts = aiScenePromptResult.scenes;
-            aiScenePromptsPath = aiScenePromptResult.filePath;
+
+            aiScenePrompts = promptResult.scenes;
+            aiScenePromptsPath = promptResult.filePath;
 
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(
                 taskJobId,
                 'ok',
-                `AI scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`,
+                `${options.label} scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`,
+              );
+            }
+
+            if (useReferenceImage && taskJobId) {
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'info',
+                `${options.label}: generating scene images (Meta may attach character references per scene)...`,
               );
             }
 
             const imageProvider = promptsSettingsService.get().defaultImageProvider;
             if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'info', `Generating AI scene images via ${imageProvider}...`);
+              taskQueueRepository.appendLogMessage(
+                taskJobId,
+                'info',
+                `Generating ${options.label} scene images via ${imageProvider}...`,
+              );
             }
 
             const aiSlideResult = await timedStep(
-              'AI scene images',
+              `${options.label} scene images`,
               () =>
                 generateAiSceneSlideImages({
                   workDir,
@@ -712,17 +750,19 @@ export class ReupAudioPipeline {
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `AI scene image ${progress.sceneName} skipped (already exists)`,
+                            `${options.label} scene image ${progress.sceneName} skipped (already exists)`,
                           );
                           return;
                         }
 
                         const batchLabel =
-                          progress.batchIndex && progress.totalBatches ? ` batch ${progress.batchIndex}/${progress.totalBatches}` : '';
+                          progress.batchIndex && progress.totalBatches
+                            ? ` batch ${progress.batchIndex}/${progress.totalBatches}`
+                            : '';
                         taskQueueRepository.appendLogMessage(
                           taskJobId,
                           'info',
-                          `AI scene image ${progress.sceneName} (${progress.sceneIndex}/${progress.totalScenes})${batchLabel}...`,
+                          `${options.label} scene image ${progress.sceneName} (${progress.sceneIndex}/${progress.totalScenes})${batchLabel}...`,
                         );
                       }
                     : undefined,
@@ -736,14 +776,37 @@ export class ReupAudioPipeline {
               taskQueueRepository.appendLogMessage(
                 taskJobId,
                 'ok',
-                `AI scene images saved (${aiSlideResult.generatedCount} generated, ${aiSlideResult.skippedCount} skipped, ${aiSlideResult.failedCount} failed) → ${aiSlidesDir}`,
+                `${options.label} scene images saved (${aiSlideResult.generatedCount} generated, ${aiSlideResult.skippedCount} skipped, ${aiSlideResult.failedCount} failed) → ${aiSlidesDir}`,
               );
             }
+          };
+
+          if (videoType === 'ai' && downloaded.audioPath && subtitleForAssembly) {
+            await runSharedScenePromptAndImages({ label: 'AI' });
+          }
+
+          if (
+            videoType === 'si' &&
+            (destination.reupAudioBackgroundImage ?? 'one_image') === 'multi_image' &&
+            downloaded.audioPath &&
+            subtitleForAssembly
+          ) {
+            await runSharedScenePromptAndImages({
+              label: 'SI multi_image',
+              maxTranscriptSec: AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC,
+            });
           }
 
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
             const disclaimerText = destination.disclaimerText?.trim();
             const showDisclaim = destination.showDisclaimer === true && Boolean(disclaimerText);
+            const assemblyLog = taskJobId
+              ? (msg: string) => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg)
+              : undefined;
+            const channelAvatarPath = await resolveChannelAvatarForVideoAssembly(destination.id, {
+              enabled: destination.showChannelAvatar,
+              onLog: assemblyLog,
+            });
 
             if (videoType === 'si') {
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
@@ -799,6 +862,7 @@ export class ReupAudioPipeline {
                   showSmallVideo: destination.showSmallVideo,
                   showDisclaim,
                   disclaimerText,
+                  ...(channelAvatarPath ? { channelAvatarPath } : {}),
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                 });
                 primaryOutputPath = reupVideoPath;
@@ -810,42 +874,43 @@ export class ReupAudioPipeline {
             } else if (videoType === 'ai') {
               const timedScenes = (aiScenePrompts ?? []).filter(scene => Boolean(scene.path?.trim()));
               if (timedScenes.length === 0) {
-                console.warn(`[reup-video] AI video assembly skipped: no scene images`);
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'AI video assembly skipped: no scene images');
-                }
-              } else {
-                if (taskJobId) {
-                  taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    `Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`,
+                  console.warn(`[reup-video] AI video assembly skipped: no scene images`);
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', 'AI video assembly skipped: no scene images');
+                  }
+                } else {
+                  if (taskJobId) {
+                    taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      `Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`,
+                    );
+                  }
+
+                  reupVideoPath = await timedStep(
+                    'AI assemble video',
+                    () =>
+                      assembleReupAiSlideshowVideo({
+                        workDir,
+                        scenes: timedScenes,
+                        audioPath: downloaded.audioPath!,
+                        subtitlePath: subtitleForAssembly!,
+                        language: destination.language,
+                        captionStyleKey: destination.captionStyleKey,
+                        showDisclaim,
+                        disclaimerText,
+                        ...(channelAvatarPath ? { channelAvatarPath } : {}),
+                        onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
+                      }),
+                    stepTimer,
                   );
-                }
+                  primaryOutputPath = reupVideoPath;
 
-                reupVideoPath = await timedStep(
-                  'AI assemble video',
-                  () =>
-                    assembleReupAiSlideshowVideo({
-                      workDir,
-                      scenes: timedScenes,
-                      audioPath: downloaded.audioPath!,
-                      subtitlePath: subtitleForAssembly!,
-                      language: destination.language,
-                      captionStyleKey: destination.captionStyleKey,
-                      showDisclaim,
-                      disclaimerText,
-                      onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                    }),
-                  stepTimer,
-                );
-                primaryOutputPath = reupVideoPath;
-
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'AI video saved → video.mp4');
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'AI video saved → video.mp4');
+                  }
                 }
-              }
             }
           } else if (options?.skipVideoAssembly && (videoType === 'si' || videoType === 'ai') && taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Video assembly skipped (prepare-only mode)');

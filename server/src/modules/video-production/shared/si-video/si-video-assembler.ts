@@ -36,6 +36,7 @@ import {
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 import { selectRandomSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
 import { selectRandomSiSmallVideoClip, appendSiSmallVideoScaleFilters } from './si-small-video.js';
+import { appendChannelAvatarOverlayFilters } from './channel-avatar-overlay.js';
 import {
   buildSiCenterSlideshow,
   cleanupSiMultiImageArtifacts,
@@ -81,6 +82,7 @@ export interface AssembleReupSiVideoInput {
   centerImagePaths?: string[];
   showAudioBar?: boolean;
   showSmallVideo?: boolean;
+  channelAvatarPath?: string;
   backgroundFootageMode?: SiBackgroundFootageMode;
   backgroundFootageSourceIds?: string[];
   language: string;
@@ -101,6 +103,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     centerImagePaths,
     showAudioBar = false,
     showSmallVideo = false,
+    channelAvatarPath,
     backgroundFootageMode = 'source',
     backgroundFootageSourceIds = [],
     language,
@@ -125,7 +128,13 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     );
   }
 
-  const requiredPaths = [audioPath, subtitlePath, ...(centerImagePath ? [centerImagePath] : []), ...multiImagePaths];
+  const requiredPaths = [
+    audioPath,
+    subtitlePath,
+    ...(centerImagePath ? [centerImagePath] : []),
+    ...multiImagePaths,
+    ...(channelAvatarPath ? [channelAvatarPath] : []),
+  ];
   for (const requiredPath of requiredPaths) {
     try {
       await fs.access(requiredPath);
@@ -160,6 +169,10 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     const smallVideoClip = await selectRandomSiSmallVideoClip();
     smallVideoPath = smallVideoClip.path;
     log(`[reup-si] Small video clip: ${smallVideoClip.filename}`);
+  }
+
+  if (channelAvatarPath) {
+    log(`[reup-si] Channel avatar overlay: ${path.basename(channelAvatarPath)}`);
   }
 
   let centerSlideshowPath: string | undefined;
@@ -252,6 +265,12 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         mergeArgs.push('-stream_loop', '-1', '-i', smallVideoPath);
       }
 
+      let channelAvatarIndex: number | null = null;
+      if (channelAvatarPath) {
+        channelAvatarIndex = inputIdx++;
+        mergeArgs.push('-loop', '1', '-i', channelAvatarPath);
+      }
+
       // TODO: re-enable SI noise
       // let siNoiseIndex: number | null = null;
       // if (!isLocalStock) {
@@ -302,6 +321,16 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           `[${currentVLabel}][audio_bar_scaled]overlay=${SI_AUDIO_BAR_MARGIN_LEFT_PX}:(main_h-overlay_h)/2+${SI_AUDIO_BAR_OFFSET_Y_PX}:shortest=1[v_audio_bar]`,
         );
         currentVLabel = 'v_audio_bar';
+      }
+
+      if (channelAvatarIndex !== null) {
+        appendChannelAvatarOverlayFilters(
+          filterParts,
+          currentVLabel,
+          `${channelAvatarIndex}:v`,
+          'v_channel_avatar',
+        );
+        currentVLabel = 'v_channel_avatar';
       }
 
       // TODO: re-enable SI noise

@@ -18,8 +18,26 @@ export interface AiVideoScenePrompt {
   prompt: string;
   startTime: string;
   endTime: string;
+  /** Character ids from video_image_with_reference output. */
+  references?: string[];
   /** Relative path under workDir when image exists, e.g. images/scene-001.jpg */
   path?: string;
+}
+
+export interface AiVideoCharacterReference {
+  id: string;
+  name: string;
+  description: string;
+  prompt: string;
+  /** Relative path under workDir when image exists, e.g. image-references/tanaka.jpg */
+  path?: string;
+}
+
+export interface AiVideoCharacterReferencesFile {
+  youtubeVideoId: string;
+  generatedAt: string;
+  characterCount: number;
+  characters: AiVideoCharacterReference[];
 }
 
 export interface AiVideoScenePromptsFile {
@@ -41,6 +59,10 @@ export interface GenerateAiVideoImagesInput {
   subtitlePath: string;
   audioPath?: string;
   language: PromptLanguage;
+  /** When set, only the first N seconds of transcript are used for scene prompts. */
+  maxTranscriptSec?: number;
+  /** Use create_characters_design + video_image_with_reference; pause before scene images. */
+  useReferenceImage?: boolean;
   onLog?: (msg: string) => void;
   onProgress?: (progress: {
     density: AiVideoDensityLevel;
@@ -48,6 +70,14 @@ export interface GenerateAiVideoImagesInput {
     totalChunks: number;
     attempt: number;
   }) => void;
+}
+
+export interface GenerateAiVideoImagesWithCharactersResult extends GenerateAiVideoImagesResult {
+  characters: AiVideoCharacterReference[];
+  characterFilePath: string;
+  imageReferencesDir: string;
+  /** True when scene image generation should be skipped (reference flow phase 1). */
+  pauseBeforeSceneImages: boolean;
 }
 
 export interface AssembleReupAiSlideshowVideoInput {
@@ -60,6 +90,7 @@ export interface AssembleReupAiSlideshowVideoInput {
   /** Temporary: burn top-left disclaimer for the first N seconds. */
   showDisclaim?: boolean;
   disclaimerText?: string;
+  channelAvatarPath?: string;
   onLog?: (msg: string) => void;
 }
 

@@ -53,7 +53,9 @@ export interface YoutubeChannel {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   showDisclaimer?: boolean;
@@ -110,7 +112,9 @@ export interface CreateYoutubeChannelInput {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
+  showChannelAvatar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   showDisclaimer?: boolean;
@@ -133,6 +137,7 @@ export interface UpdateYoutubeChannelInput {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  useReferenceImage?: boolean;
   showAudioBar?: boolean;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;

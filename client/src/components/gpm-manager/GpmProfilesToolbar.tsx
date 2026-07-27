@@ -70,13 +70,13 @@ export function GpmProfilesToolbar({
           className='h-9 w-48 rounded-lg text-sm'
           disabled={busy}
         />
-        <Select
+        {/* <Select
           value={String(sort)}
           onChange={value => onSortChange(Number(value) as GpmProfileSort)}
           options={SORT_OPTIONS}
           disabled={busy}
           triggerClassName='h-9 w-40 rounded-lg text-sm'
-        />
+        /> */}
       </div>
 
       <div className='flex flex-wrap items-center gap-2'>
@@ -84,21 +84,15 @@ export function GpmProfilesToolbar({
           Refresh
         </Button>
         <Button
-          variant="outlined"
-          size="sm"
-          className="rounded-lg border-success/30 text-success hover:border-success/50 hover:bg-success/10"
+          variant='outlined'
+          size='sm'
+          className='rounded-lg border-success/30 text-success hover:border-success/50 hover:bg-success/10'
           onClick={onStart}
           disabled={!canStart || starting || busy}
         >
           {starting ? 'Starting…' : 'Start'}
         </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          className="rounded-lg"
-          onClick={onStop}
-          disabled={!canStop || stopping || busy}
-        >
+        <Button variant='danger' size='sm' className='rounded-lg' onClick={onStop} disabled={!canStop || stopping || busy}>
           {stopping ? 'Stopping…' : 'Stop'}
         </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' onClick={onTest} disabled={!canTest || testing || busy}>

@@ -44,7 +44,9 @@ const channelConfigFields = {
   reupAudioBackgroundImage: z
     .enum(['no_image', 'local_image', 'one_image', 'multi_image'])
     .optional(),
+  useReferenceImage: z.boolean().optional(),
   showAudioBar: z.boolean().optional(),
+  showChannelAvatar: z.boolean().optional(),
   showSubscribe: z.boolean().optional(),
   showSmallVideo: z.boolean().optional(),
   showDisclaimer: z.boolean().optional(),
@@ -66,6 +68,7 @@ function applyChannelConfigRefine(
     reupAudioVideoType?: z.infer<typeof channelConfigFields.reupAudioVideoType>;
     reupAudioVisualStyleId?: string;
     reupAudioBackgroundImage?: z.infer<typeof channelConfigFields.reupAudioBackgroundImage>;
+    useReferenceImage?: boolean;
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
   },
@@ -101,6 +104,24 @@ function applyChannelConfigRefine(
         code: 'custom',
         message: 'Background image is required for Stock Video + Image',
         path: ['reupAudioBackgroundImage'],
+      });
+    }
+    if (
+      data.reupAudioVideoType === 'si' &&
+      data.reupAudioBackgroundImage === 'multi_image' &&
+      !data.reupAudioVisualStyleId?.trim()
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Video style is required for Stock Video + multi image',
+        path: ['reupAudioVisualStyleId'],
+      });
+    }
+    if (data.useReferenceImage === true && !data.reupAudioVisualStyleId?.trim()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Video style is required when using reference images',
+        path: ['reupAudioVisualStyleId'],
       });
     }
   }

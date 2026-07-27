@@ -135,6 +135,16 @@ export function resolveTranscriptDurationSec(cues: TranscriptCue[]): number {
   return lastEndMs / 1000;
 }
 
+/** Keep cues whose start time falls within the first `maxSec` seconds. */
+export function clipTranscriptCuesToMaxSec(cues: TranscriptCue[], maxSec: number): TranscriptCue[] {
+  if (!Number.isFinite(maxSec) || maxSec <= 0) {
+    return cues;
+  }
+
+  const maxMs = maxSec * 1000;
+  return cues.filter(cue => srtTimestampToMs(cue.startTime) < maxMs);
+}
+
 export async function loadTranscriptCuesFromSrt(subtitlePath: string): Promise<TranscriptCue[]> {
   const content = await fs.readFile(subtitlePath, 'utf8');
   const blocks = parseSrt(content);
@@ -173,6 +183,7 @@ export async function resolveTotalDurationSec(
 export async function prepareTranscriptDensityChunks(
   subtitlePath: string,
   audioPath?: string,
+  options?: { maxTranscriptSec?: number },
 ): Promise<{
   totalDurationSec: number;
   tier: AiVideoDensityTier;
@@ -183,8 +194,23 @@ export async function prepareTranscriptDensityChunks(
     low: TranscriptCue[][];
   };
 }> {
-  const cues = await loadTranscriptCuesFromSrt(subtitlePath);
-  const totalDurationSec = await resolveTotalDurationSec(cues, audioPath);
+  const allCues = await loadTranscriptCuesFromSrt(subtitlePath);
+  let totalDurationSec = await resolveTotalDurationSec(allCues, audioPath);
+  const maxTranscriptSec = options?.maxTranscriptSec;
+
+  if (maxTranscriptSec != null && maxTranscriptSec > 0 && totalDurationSec > maxTranscriptSec) {
+    totalDurationSec = maxTranscriptSec;
+  }
+
+  const cues =
+    maxTranscriptSec != null && maxTranscriptSec > 0
+      ? clipTranscriptCuesToMaxSec(allCues, maxTranscriptSec)
+      : allCues;
+
+  if (cues.length === 0) {
+    throw new AppError('No transcript cues within the configured time window', 400, 'INVALID_INPUT');
+  }
+
   const tier = resolveDensityTier(totalDurationSec);
   const segments = splitTranscriptByDensity(cues, totalDurationSec, tier);
 

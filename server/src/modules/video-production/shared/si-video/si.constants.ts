@@ -78,6 +78,11 @@ export const SI_SMALL_VIDEO_H = 150;
 export const SI_SMALL_VIDEO_OVERLAY_X = 25;
 export const SI_SMALL_VIDEO_OVERLAY_Y = 25;
 
+export const CHANNEL_AVATAR_SIZE_PX = 150;
+export const CHANNEL_AVATAR_MARGIN_TOP_PX = 30;
+export const CHANNEL_AVATAR_MARGIN_RIGHT_PX = 30;
+export const CHANNEL_AVATAR_BASENAME = 'avatar';
+
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 
 /** Minimum target duration for one local-stock concat cycle before stream_loop in merge. */

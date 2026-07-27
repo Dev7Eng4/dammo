@@ -1,6 +1,28 @@
 {
   "prompts": [
     {
+      "id": "d1983313-bba7-47ff-9aa5-cd83af46a5a1",
+      "key": "video_image_with_reference",
+      "language": "ja",
+      "name": "Video Image With Reference",
+      "category": "image",
+      "outputType": "text",
+      "useReferenceImage": true,
+      "createdAt": "2026-07-27T08:44:32.880Z",
+      "updatedAt": "2026-07-27T08:44:32.880Z"
+    },
+    {
+      "id": "595e4082-7af6-4091-9a0b-9f5295a8bfb8",
+      "key": "create_characters_design",
+      "language": "ja",
+      "name": "Create Characters Design",
+      "category": "image",
+      "outputType": "text",
+      "createdAt": "2026-07-27T08:22:56.051Z",
+      "updatedAt": "2026-07-27T08:47:18.496Z",
+      "useReferenceImage": true
+    },
+    {
       "id": "71e34378-0029-40dc-94ee-9aa4a38f477b",
       "key": "remove_logo",
       "language": "ja",

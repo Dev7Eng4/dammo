@@ -204,6 +204,39 @@ function resolveMetaOptions(options?: LlmReceiveResponseOptions): MetaReceiveRes
   return (options ?? {}) as MetaReceiveResponseOptions;
 }
 
+async function attachMetaReferenceFile(page: Page, imagePath: string): Promise<void> {
+  await fs.access(imagePath);
+
+  const attachButton = await waitForFirstVisible(page, META_CONFIG.selectors.composerAddAttachmentButton);
+  await humanClick(page, attachButton);
+  await randomDelay(500, 1_000);
+
+  try {
+    const dropzone = await waitForFirstVisible(page, META_CONFIG.selectors.composerAttachmentDropzone, 10_000);
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser', { timeout: 10_000 }),
+      humanClick(page, dropzone),
+    ]);
+    await fileChooser.setFiles(imagePath);
+    console.log(`[meta] selected reference image via dropzone: ${imagePath}`);
+    return;
+  } catch {
+    // fallback below
+  }
+
+  const fileInput = page.locator('input[type="file"]').first();
+  await fileInput.waitFor({ state: 'attached', timeout: 10_000 });
+  await fileInput.setInputFiles(imagePath);
+  console.log(`[meta] selected reference image via file input: ${imagePath}`);
+}
+
+async function attachMetaReferenceFiles(page: Page, imagePaths: string[]): Promise<void> {
+  for (const imagePath of imagePaths) {
+    await attachMetaReferenceFile(page, imagePath);
+    await randomDelay(400, 900);
+  }
+}
+
 async function dismissDialogIfPresent(page: Page): Promise<void> {
   await randomDelay(300, 800);
 
@@ -264,6 +297,16 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
       await humanIdleBrief(page);
+
+      const referencePaths = [
+        ...(options?.referenceImagePaths ?? []),
+        ...(options?.referenceImagePath ? [options.referenceImagePath] : []),
+      ];
+      if (referencePaths.length > 0) {
+        await attachMetaReferenceFiles(page, referencePaths);
+        await randomDelay(500, 1_000);
+      }
+
       const input = await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
       await humanClick(page, input);
       await randomDelay(150, 400);

@@ -65,6 +65,8 @@ export interface LlmSendPromptOptions {
   /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
   pasteStrategy?: 'human' | 'direct' | 'insertText';
   referenceImagePath?: string;
+  /** Meta: attach multiple reference images before sending the prompt. */
+  referenceImagePaths?: string[];
 }
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}
 
@@ -126,6 +128,8 @@ export interface MetaGenerateMediaOptions {
   mediaKind?: 'image' | 'video' | 'auto';
   /** Image prompt aspect ratio prefix. Default: '16:9'. */
   aspectRatio?: '16:9' | '3:4';
+  /** Local paths to attach as reference images before the prompt (Meta only). */
+  referenceImagePaths?: string[];
 }
 
 /** @deprecated Use FlowGenerateImageOptions */

@@ -110,6 +110,7 @@ export class MetaBrowserService {
     await handler.sendPrompt(page, effectivePrompt, {
       pasteStrategy: options?.pasteStrategy ?? 'human',
       submitWith: 'enter',
+      referenceImagePaths: options?.referenceImagePaths,
     });
     hooks?.onPromptSent?.();
 

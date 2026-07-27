@@ -15,6 +15,7 @@ import { listSiMultiImagePaths } from '../modules/video-production/shared/si-vid
 import { SI_MULTI_IMAGE_DIRNAME } from '../modules/video-production/shared/si-video/si.constants.js';
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
+import { resolveChannelAvatarForVideoAssembly } from '../modules/youtube-channels/resolve-channel-avatar.js';
 import type { StoredYoutubeChannelType, YoutubeChannel } from '../modules/youtube-channels/youtube-channels.types.js';
 import { formatElapsedMs } from '../shared/timing/step-timer.js';
 import { pickReupChannels } from './lib/reup-channel-picker.js';
@@ -219,6 +220,10 @@ async function main() {
         let outputPath: string;
         const disclaimerText = channel.disclaimerText?.trim();
         const showDisclaim = channel.showDisclaimer === true && Boolean(disclaimerText);
+        const channelAvatarPath = await resolveChannelAvatarForVideoAssembly(channel.id, {
+          enabled: channel.showChannelAvatar,
+          onLog: msg => console.log(`      ${msg}`),
+        });
 
         if (videoType === 'ai') {
           outputPath = await assembleReupAiSlideshowVideo({
@@ -230,6 +235,7 @@ async function main() {
             captionStyleKey: channel.captionStyleKey,
             showDisclaim,
             disclaimerText,
+            ...(channelAvatarPath ? { channelAvatarPath } : {}),
             onLog: msg => console.log(`      ${msg}`),
           });
         } else {
@@ -253,6 +259,7 @@ async function main() {
             showSmallVideo: channel.showSmallVideo === true,
             showDisclaim,
             disclaimerText,
+            ...(channelAvatarPath ? { channelAvatarPath } : {}),
             onLog: msg => console.log(`      ${msg}`),
           });
         }

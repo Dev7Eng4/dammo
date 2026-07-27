@@ -143,7 +143,9 @@ const defaultValues: AddYoutubeChannelFormValues = {
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
   reupAudioBackgroundImage: '',
+  useReferenceImage: false,
   showAudioBar: false,
+  showChannelAvatar: false,
   showSubscribe: false,
   showSmallVideo: false,
   showDisclaimer: false,
@@ -176,7 +178,9 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     reupAudioVideoType: channel.reupAudioVideoType ?? '',
     reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
     reupAudioBackgroundImage: channel.reupAudioBackgroundImage ?? '',
+    useReferenceImage: channel.useReferenceImage === true,
     showAudioBar: channel.showAudioBar === true,
+    showChannelAvatar: channel.showChannelAvatar === true,
     showSubscribe: channel.showSubscribe === true,
     showSmallVideo: channel.showSmallVideo === true,
     showDisclaimer: channel.showDisclaimer === true,
@@ -254,6 +258,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const isReupAudio = isReupAudioChannelType(channelType);
   const language = watch('language') as YoutubeChannelLanguage | '';
   const reupAudioVideoType = watch('reupAudioVideoType');
+  const reupAudioBackgroundImage = watch('reupAudioBackgroundImage');
+  const useReferenceImage = watch('useReferenceImage');
   const showDisclaimer = watch('showDisclaimer');
   const uploadFrequency = watch('uploadFrequency');
   const backgroundFootageMode = watch('backgroundFootageMode');
@@ -344,15 +350,15 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setValue('reupAudioVideoType', '');
     setValue('reupAudioVisualStyleId', '');
     setValue('reupAudioBackgroundImage', '');
+    setValue('useReferenceImage', false);
     setValue('showAudioBar', false);
+    setValue('showChannelAvatar', false);
     setValue('captionStyleKey', '');
   }, [isReupAudio, formReady, setValue]);
 
   useEffect(() => {
     if (!formReady || !isReupAudio || !reupAudioVideoType) return;
-    if (reupAudioVideoType === 'si') {
-      setValue('reupAudioVisualStyleId', '');
-    } else if (reupAudioVideoType === 'ai') {
+    if (reupAudioVideoType === 'ai') {
       setValue('reupAudioBackgroundImage', '');
       setValue('showAudioBar', false);
     }
@@ -360,11 +366,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
   useAbortableEffect(
     async signal => {
-      if (!open || !formReady || !isReupAudio || reupAudioVideoType !== 'ai') {
+      if (!open || !formReady || !isReupAudio || !reupAudioVideoType) {
         setVisualStyleOptions([]);
-        if (formReady && reupAudioVideoType !== 'ai') {
-          setValue('reupAudioVisualStyleId', '');
-        }
         return;
       }
 
@@ -446,11 +449,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
+        ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' && values.reupAudioBackgroundImage
           ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' ? { showAudioBar: values.showAudioBar } : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
+        showChannelAvatar: values.showChannelAvatar,
         showSubscribe: values.showSubscribe,
         showSmallVideo: values.showSmallVideo,
         showDisclaimer: values.showDisclaimer,
@@ -715,38 +720,65 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               </>
             ) : null}
 
-            {reupAudioVideoType === 'ai' ? (
-              <FormField
-                label='Phong cách hình ảnh'
-                htmlFor='reup-audio-visual-style'
-                error={errors.reupAudioVisualStyleId?.message}
-                className='min-w-0'
-              >
-                <Controller
-                  name='reupAudioVisualStyleId'
-                  control={control}
-                  rules={{
-                    required:
-                      isReupAudio && reupAudioVideoType === 'ai' ? 'Phong cách hình ảnh là bắt buộc đối với Hình ảnh chuyển động' : false,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      id='reup-audio-visual-style'
-                      options={visualStyleOptions}
-                      value={field.value}
-                      onChange={field.onChange}
+            <FormField
+              label='Phong cách hình ảnh'
+              htmlFor='reup-audio-visual-style'
+              error={errors.reupAudioVisualStyleId?.message}
+              className='min-w-0'
+            >
+              <Controller
+                name='reupAudioVisualStyleId'
+                control={control}
+                rules={{
+                  required:
+                    isReupAudio &&
+                    (reupAudioVideoType === 'ai' ||
+                      reupAudioBackgroundImage === 'multi_image' ||
+                      useReferenceImage)
+                      ? 'Phong cách hình ảnh là bắt buộc'
+                      : false,
+                }}
+                render={({ field }) => (
+                  <Select
+                    id='reup-audio-visual-style'
+                    options={visualStyleOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={getVideoStylePlaceholder(reupAudioVideoType, visualStylesLoading, visualStyleOptions.length)}
+                    searchPlaceholder='Tìm kiếm phong cách hình ảnh...'
+                    searchable
+                    disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
+                    className='w-full'
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+
+            <FormField label='' htmlFor='reup-audio-use-reference-image' className='min-w-0'>
+              <Controller
+                name='useReferenceImage'
+                control={control}
+                render={({ field }) => (
+                  <label
+                    htmlFor='reup-audio-use-reference-image'
+                    className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'
+                  >
+                    <input
+                      id='reup-audio-use-reference-image'
+                      type='checkbox'
+                      checked={!!field.value}
+                      onChange={e => field.onChange(e.target.checked)}
                       onBlur={field.onBlur}
-                      placeholder={getVideoStylePlaceholder(reupAudioVideoType, visualStylesLoading, visualStyleOptions.length)}
-                      searchPlaceholder='Tìm kiếm phong cách hình ảnh...'
-                      searchable
-                      disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
-                      className='w-full'
-                      triggerClassName={selectTriggerClass}
+                      disabled={isSubmitting}
+                      className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
                     />
-                  )}
-                />
-              </FormField>
-            ) : null}
+                    Sử dụng hình ảnh tham chiếu
+                  </label>
+                )}
+              />
+            </FormField>
           </>
         ) : null}
 
@@ -766,6 +798,27 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
                 />
                 Hiển thị phổ âm thanh
+              </label>
+            )}
+          />
+        </FormField>
+
+        <FormField label='' htmlFor='show-channel-avatar' className='min-w-0'>
+          <Controller
+            name='showChannelAvatar'
+            control={control}
+            render={({ field }) => (
+              <label htmlFor='show-channel-avatar' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                <input
+                  id='show-channel-avatar'
+                  type='checkbox'
+                  checked={!!field.value}
+                  onChange={e => field.onChange(e.target.checked)}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting}
+                  className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                />
+                Hiển thị avatar kênh
               </label>
             )}
           />
