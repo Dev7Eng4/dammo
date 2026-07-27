@@ -3,6 +3,11 @@ import path from 'node:path';
 import { ensureDataDirs, mediaDownloadDir, paths } from '../config/paths.js';
 import type { FfmpegProgress } from '../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
+import { listSiMultiImagePaths } from '../modules/video-production/shared/si-video/si-multi-image.js';
+import {
+  SI_MULTI_IMAGE_DIRNAME,
+  SI_MULTI_IMAGE_DURATION_SEC,
+} from '../modules/video-production/shared/si-video/si.constants.js';
 
 const DEFAULT_LANGUAGE = 'ja';
 
@@ -25,7 +30,6 @@ interface CliOptions {
   language: string;
   audioPath?: string;
   subtitlePath?: string;
-  centerImagePath?: string;
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -64,14 +68,6 @@ function parseArgs(argv: string[]): CliOptions {
       const value = argv[index + 1]?.trim() ?? '';
       if (!value) throw new Error('--subtitle requires a value');
       options.subtitlePath = path.resolve(value);
-      index += 1;
-      continue;
-    }
-
-    if (arg === '--center-image') {
-      const value = argv[index + 1]?.trim() ?? '';
-      if (!value) throw new Error('--center-image requires a value');
-      options.centerImagePath = path.resolve(value);
       index += 1;
       continue;
     }
@@ -121,12 +117,12 @@ async function main() {
   const subtitlePath =
     options.subtitlePath ??
     (await discoverFile(workDir, entries, ['transcript.srt', `transcript.${options.language}.srt`, 'transcript-updated.srt'], ['.srt']));
-  const centerImagePath = options.centerImagePath ?? (await discoverFile(workDir, entries, ['background.jpg', 'thumbnail.jpg'], []));
+  const centerImagePaths = await listSiMultiImagePaths(workDir);
 
   const missing: string[] = [];
   if (!audioPath) missing.push('audio (.mp3)');
   if (!subtitlePath) missing.push('subtitle (.srt)');
-  if (!centerImagePath) missing.push('center image (background.jpg / thumbnail.jpg)');
+  if (centerImagePaths.length === 0) missing.push(`multi-image folder (${SI_MULTI_IMAGE_DIRNAME}/*.jpg)`);
 
   if (missing.length > 0) {
     console.error(`Missing required input(s): ${missing.join(', ')}`);
@@ -137,25 +133,30 @@ async function main() {
     throw new Error('Cannot assemble SI video without required inputs');
   }
 
-  console.log('Test assemble SI video with LOCAL stock');
+  console.log('Test assemble SI video with LOCAL stock (multi_image)');
   console.log(`Work dir: ${workDir}`);
   console.log(`Audio: ${audioPath}`);
   console.log(`Subtitle: ${subtitlePath}`);
-  console.log(`Center image: ${centerImagePath}`);
+  console.log(`Images dir: ${path.join(workDir, SI_MULTI_IMAGE_DIRNAME)} (${centerImagePaths.length} images × ${SI_MULTI_IMAGE_DURATION_SEC}s)`);
+  for (const imagePath of centerImagePaths) {
+    console.log(`  - ${path.basename(imagePath)}`);
+  }
   console.log(`Language: ${options.language}`);
-  console.log('Caption style: cyan_navy');
+  console.log('Caption style: default');
   console.log(`Local stock dir: ${paths.siLocalStockDir} (cần ít nhất 1 file .mp4)`);
   console.log(`Output: ${path.join(workDir, 'video.mp4')}`);
-  console.log('\nAssembling SI video...\n');
+  console.log('\nAssembling SI multi_image video...\n');
 
   const outputPath = await assembleReupSiVideo({
     workDir,
     audioPath: audioPath!,
     subtitlePath: subtitlePath!,
-    centerImagePath: centerImagePath!,
+    centerImagePaths,
     backgroundFootageMode: 'local',
     language: options.language,
-    captionStyleKey: 'noto_serif',
+    captionStyleKey: 'default',
+    showAudioBar: false,
+    showSmallVideo: false,
     onLog: msg => console.log(msg),
     onFfmpegProgress: p => logFfmpegProgress('merge', p),
   });

@@ -26,6 +26,8 @@ import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
 import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
+import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
+import fs from 'node:fs';
 import type {
   CaptionStyleKey,
   CreateYoutubeChannelInput,
@@ -115,8 +117,11 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
   | 'showAudioBar'
+  | 'showSubscribe'
+  | 'showSmallVideo'
   | 'showDisclaimer'
   | 'disclaimerText'
+  | 'descriptionDisclaimerText'
   | 'uploadFrequency'
   | 'publishTimes'
 >;
@@ -145,8 +150,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   showAudioBar?: boolean;
+  showSubscribe?: boolean;
+  showSmallVideo?: boolean;
   showDisclaimer?: boolean;
   disclaimerText?: string;
+  descriptionDisclaimerText?: string;
 } {
   let linkedEmail = 'Default';
   if (input.mailAccountId && input.mailAccountId.toLowerCase() !== 'default') {
@@ -197,7 +205,10 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let showAudioBar: boolean | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
   const disclaimerText = input.disclaimerText?.trim();
+  const descriptionDisclaimerText = input.descriptionDisclaimerText?.trim();
   const showDisclaimer = input.showDisclaimer === true;
+  const showSubscribe = input.showSubscribe === true;
+  const showSmallVideo = input.showSmallVideo === true;
 
   if (isReupAudioChannelType(input.type)) {
     if (!input.reupAudioVideoType) {
@@ -244,8 +255,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
+    ...(showSubscribe ? { showSubscribe: true } : {}),
+    ...(showSmallVideo ? { showSmallVideo: true } : {}),
     ...(showDisclaimer ? { showDisclaimer: true } : {}),
     ...(disclaimerText ? { disclaimerText } : {}),
+    ...(descriptionDisclaimerText ? { descriptionDisclaimerText } : {}),
   };
 }
 
@@ -421,6 +435,35 @@ export class YoutubeChannelsService {
     return { items: this.mergeVideosWithPrepare(id, videos), fetchedAt };
   }
 
+  deleteVideos(id: string, videoIds: string[]): { deleted: string[] } {
+    this.getById(id);
+
+    const requested = [...new Set(videoIds.map(videoId => videoId.trim()).filter(Boolean))];
+    if (requested.length === 0) {
+      throw new AppError('No video IDs provided', 400, 'VALIDATION_ERROR');
+    }
+
+    const prepareIds = videoPrepareRepository.getPreparedVideoIds(id);
+    const deletable = requested.filter(videoId => prepareIds.has(videoId));
+    if (deletable.length === 0) {
+      throw new AppError(
+        'No deletable videos found (Published videos cannot be deleted)',
+        400,
+        'NO_DELETABLE_VIDEOS',
+      );
+    }
+
+    for (const videoId of deletable) {
+      const folder = resolveYoutubeChannelVideoDir(id, videoId);
+      if (folder) {
+        fs.rmSync(folder, { recursive: true, force: true });
+      }
+    }
+
+    const deleted = videoPrepareRepository.removeByVideoIds(id, deletable);
+    return { deleted };
+  }
+
   async syncVideos(
     id: string,
   ): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string }> {
@@ -551,8 +594,13 @@ export class YoutubeChannelsService {
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
+      ...(config.showSubscribe ? { showSubscribe: true } : {}),
+      ...(config.showSmallVideo ? { showSmallVideo: true } : {}),
       ...(config.showDisclaimer ? { showDisclaimer: true } : {}),
       ...(config.disclaimerText ? { disclaimerText: config.disclaimerText } : {}),
+      ...(config.descriptionDisclaimerText
+        ? { descriptionDisclaimerText: config.descriptionDisclaimerText }
+        : {}),
     };
 
     return youtubeChannelsRepository.prepend(channel);
@@ -605,10 +653,25 @@ export class YoutubeChannelsService {
       } else {
         delete next.showDisclaimer;
       }
+      if (config.showSubscribe) {
+        next.showSubscribe = true;
+      } else {
+        delete next.showSubscribe;
+      }
+      if (config.showSmallVideo) {
+        next.showSmallVideo = true;
+      } else {
+        delete next.showSmallVideo;
+      }
       if (config.disclaimerText) {
         next.disclaimerText = config.disclaimerText;
       } else {
         delete next.disclaimerText;
+      }
+      if (config.descriptionDisclaimerText) {
+        next.descriptionDisclaimerText = config.descriptionDisclaimerText;
+      } else {
+        delete next.descriptionDisclaimerText;
       }
 
       if (isReupAudioChannelType(input.type)) {

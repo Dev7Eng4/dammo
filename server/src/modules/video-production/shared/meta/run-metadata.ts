@@ -26,6 +26,7 @@ export interface MetadataProgress {
 
 export interface RunMetadataOptions {
   outputDir?: string;
+  descriptionDisclaimer?: string;
   onProgress?: (progress: MetadataProgress) => void;
 }
 
@@ -55,9 +56,15 @@ async function persistMetadataOutput(
   sourceTitle: string,
   videoId: string,
   language: PromptLanguage,
-  outputDir?: string
+  outputDir?: string,
+  descriptionDisclaimer?: string,
 ): Promise<void> {
   if (!outputDir) return;
+
+  const disclaimer = descriptionDisclaimer?.trim();
+  const description = disclaimer
+    ? `${parsed.metadata.description}\n\n${disclaimer}`
+    : parsed.metadata.description;
 
   const outputPath = path.join(outputDir, 'video-meta.json');
   const output: MetadataPersistedOutput = {
@@ -65,7 +72,10 @@ async function persistMetadataOutput(
     language,
     source_title: sourceTitle.trim(),
     detected_niche: parsed.detected_niche,
-    metadata: parsed.metadata,
+    metadata: {
+      ...parsed.metadata,
+      description,
+    },
     alternative_titles: parsed.alternative_titles,
   };
   await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
@@ -76,11 +86,23 @@ async function persistMetadataOutput(
   );
 }
 
-function toVideoMetaOutput(parsed: MetadataLlmOutput, sourceTitle: string): VideoMetaOutput {
+function toVideoMetaOutput(
+  parsed: MetadataLlmOutput,
+  sourceTitle: string,
+  descriptionDisclaimer?: string,
+): VideoMetaOutput {
+  const disclaimer = descriptionDisclaimer?.trim();
+  const description = disclaimer
+    ? `${parsed.metadata.description}\n\n${disclaimer}`
+    : parsed.metadata.description;
+
   return {
     source_title: sourceTitle.trim(),
     detected_niche: parsed.detected_niche,
-    metadata: parsed.metadata,
+    metadata: {
+      ...parsed.metadata,
+      description,
+    },
     alternative_titles: parsed.alternative_titles,
   };
 }
@@ -118,8 +140,15 @@ export async function executeMetadata(
 
       const parsed = tryParseMetadataResponse(response);
       if (parsed) {
-        await persistMetadataOutput(parsed, sourceTitle, videoId, language, options?.outputDir);
-        return toVideoMetaOutput(parsed, sourceTitle);
+        await persistMetadataOutput(
+          parsed,
+          sourceTitle,
+          videoId,
+          language,
+          options?.outputDir,
+          options?.descriptionDisclaimer,
+        );
+        return toVideoMetaOutput(parsed, sourceTitle, options?.descriptionDisclaimer);
       }
 
       lastReason = 'invalid JSON or schema mismatch';

@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { isAbortError } from '../api/http';
-import { fetchYoutubeChannel, fetchYoutubeChannelVideos, syncYoutubeChannelVideos } from '../api/youtubeChannels';
+import { fetchYoutubeChannel, fetchYoutubeChannelVideos, syncYoutubeChannelVideos, deleteYoutubeChannelVideos } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
+import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
+import { DeleteVideosConfirmModal } from '../components/youtube-channels/DeleteVideosConfirmModal';
 import { YoutubeChannelDetailHeader, YoutubeChannelDetailHeaderSkeleton } from '../components/youtube-channels/YoutubeChannelDetailHeader';
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
 import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
@@ -21,6 +23,10 @@ const VIDEO_LIMIT = 20;
 function canOpenGpmProfile(linkedEmail: string): boolean {
   const normalized = linkedEmail.trim().toLowerCase();
   return normalized.length > 0 && normalized !== 'default';
+}
+
+function isDeletableVideoStatus(status: YoutubeChannelVideo['status']): boolean {
+  return status != null && status !== 'Published';
 }
 
 export function YoutubeChannelDetailPage() {
@@ -40,8 +46,12 @@ export function YoutubeChannelDetailPage() {
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
   const [contentVideo, setContentVideo] = useState<YoutubeChannelVideo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [videoCountAction, setVideoCountAction] = useState<'create' | 'prepare' | null>(null);
   const [statusFilter, setStatusFilter] = useState<YoutubeChannelVideoStatusFilter>('all');
   const [openingProfile, setOpeningProfile] = useState(false);
+  const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(() => new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingVideos, setDeletingVideos] = useState(false);
 
   const filteredVideos = useMemo(() => filterYoutubeChannelVideosByStatus(allVideos, statusFilter), [allVideos, statusFilter]);
 
@@ -51,6 +61,13 @@ export function YoutubeChannelDetailPage() {
   });
 
   const videosEmptyMessage = statusFilter !== 'all' ? 'Không có video nào khớp với trạng thái đã chọn.' : 'Không tìm thấy video nào.';
+
+  const selectedVideos = useMemo(
+    () => allVideos.filter(video => selectedVideoIds.has(video.id)),
+    [allVideos, selectedVideoIds],
+  );
+  const canDeleteVideos =
+    selectedVideos.length > 0 && selectedVideos.every(video => isDeletableVideoStatus(video.status));
 
   useAbortableEffect(
     async signal => {
@@ -98,17 +115,23 @@ export function YoutubeChannelDetailPage() {
     { enabled: Boolean(id) },
   );
 
-  function handleCreateVideo() {
+  function handleVideoCountConfirm(count: number) {
     if (!id || !channel || !isStoredReupChannelType(channel.type)) return;
 
+    const isPrepare = videoCountAction === 'prepare';
+    setVideoCountAction(null);
     void enqueueTask({
       type: 'create_video',
-      title: `Đang tạo video: ${channel.name}`,
-      subtitle: channel.handle,
+      title: isPrepare
+        ? `Đang chuẩn bị video: ${channel.name}`
+        : `Đang tạo video: ${channel.name}`,
+      subtitle: `${channel.handle} · ${count} video`,
       payload: {
         channelId: id,
         channelName: channel.name,
         channelHandle: channel.handle,
+        videoCount: count,
+        ...(isPrepare ? { prepareOnly: true } : {}),
       },
     });
   }
@@ -156,6 +179,47 @@ export function YoutubeChannelDetailPage() {
     }
   }
 
+  function handleToggleVideoRow(videoId: string) {
+    setSelectedVideoIds(prev => {
+      const next = new Set(prev);
+      if (next.has(videoId)) next.delete(videoId);
+      else next.add(videoId);
+      return next;
+    });
+  }
+
+  function handleToggleAllVideos() {
+    const pageIds = videos.pageItems.map(video => video.id);
+    const allPageSelected = pageIds.length > 0 && pageIds.every(videoId => selectedVideoIds.has(videoId));
+    setSelectedVideoIds(prev => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        for (const videoId of pageIds) next.delete(videoId);
+      } else {
+        for (const videoId of pageIds) next.add(videoId);
+      }
+      return next;
+    });
+  }
+
+  async function handleConfirmDeleteVideos() {
+    if (!id || !canDeleteVideos || deletingVideos) return;
+
+    setDeletingVideos(true);
+    try {
+      const { deleted } = await deleteYoutubeChannelVideos(id, Array.from(selectedVideoIds));
+      const deletedSet = new Set(deleted);
+      setAllVideos(current => current.filter(video => !deletedSet.has(video.id)));
+      setSelectedVideoIds(new Set());
+      setShowDeleteConfirm(false);
+      toast.success(deleted.length === 1 ? 'Đã xóa 1 video' : `Đã xóa ${deleted.length} video`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa video');
+    } finally {
+      setDeletingVideos(false);
+    }
+  }
+
   if (!id || notFound) {
     return (
       <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
@@ -183,9 +247,13 @@ export function YoutubeChannelDetailPage() {
               videosFetchedAt={videosFetchedAt}
               canCreateVideo={isStoredReupChannelType(channel.type)}
               openingProfile={openingProfile}
+              canDeleteVideos={canDeleteVideos}
+              deletingVideos={deletingVideos}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}
-              onCreateVideo={handleCreateVideo}
+              onCreateVideo={() => setVideoCountAction('create')}
+              onPrepareVideo={() => setVideoCountAction('prepare')}
+              onDeleteVideos={() => setShowDeleteConfirm(true)}
               onOpenProfile={handleOpenProfile}
             />
           )}
@@ -206,11 +274,32 @@ export function YoutubeChannelDetailPage() {
             />
           ) : null}
 
+          <CreateVideoCountModal
+            open={videoCountAction !== null}
+            onClose={() => setVideoCountAction(null)}
+            onConfirm={handleVideoCountConfirm}
+            title={
+              videoCountAction === 'prepare'
+                ? 'Số lượng video cần chuẩn bị'
+                : 'Số lượng video cần tạo'
+            }
+            description={
+              channel
+                ? videoCountAction === 'prepare'
+                  ? `Chuẩn bị video cho kênh ${channel.name}`
+                  : `Tạo video cho kênh ${channel.name}`
+                : undefined
+            }
+          />
+
           <div className='mt-4 flex flex-wrap items-end justify-between gap-3'>
             {/* <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} /> */}
             <YoutubeChannelVideosToolbar
               statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
+              onStatusFilterChange={next => {
+                setStatusFilter(next);
+                setSelectedVideoIds(new Set());
+              }}
               nextUploadAt={channel?.nextUploadAt}
             />
           </div>
@@ -221,6 +310,10 @@ export function YoutubeChannelDetailPage() {
               loading={videosLoading}
               error={videosError}
               emptyMessage={videosEmptyMessage}
+              enableRowSelection
+              selectedIds={selectedVideoIds}
+              onToggleRow={handleToggleVideoRow}
+              onToggleAll={handleToggleAllVideos}
               onCommentClick={setSelectedVideo}
               onTitleClick={setContentVideo}
             />
@@ -235,6 +328,16 @@ export function YoutubeChannelDetailPage() {
           </div>
         </div>
       </div>
+
+      <DeleteVideosConfirmModal
+        open={showDeleteConfirm}
+        count={selectedVideos.length}
+        deleting={deletingVideos}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          void handleConfirmDeleteVideos();
+        }}
+      />
 
       {selectedVideo ? (
         <div className='fixed inset-y-0 right-0 z-50 flex lg:static lg:z-auto'>

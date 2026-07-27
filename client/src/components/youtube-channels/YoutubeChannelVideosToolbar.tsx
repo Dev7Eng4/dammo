@@ -22,9 +22,9 @@ export function YoutubeChannelVideosToolbar({
   nextUploadAt,
 }: YoutubeChannelVideosToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-3">
-      <p className="text-sm text-neutral-400">
-        Schedule tiếp theo: <span className="text-neutral-200">{formatNextUploadAt(nextUploadAt)}</span>
+    <div className='flex flex-wrap items-center justify-end gap-3'>
+      <p className='text-sm text-neutral-400'>
+        Schedule tiếp theo: <span className='text-neutral-200'>{formatNextUploadAt(nextUploadAt)}</span>
       </p>
       <DropdownSelect
         options={YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS}

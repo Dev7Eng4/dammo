@@ -144,8 +144,11 @@ const defaultValues: AddYoutubeChannelFormValues = {
   reupAudioVisualStyleId: '',
   reupAudioBackgroundImage: '',
   showAudioBar: false,
+  showSubscribe: false,
+  showSmallVideo: false,
   showDisclaimer: false,
   disclaimerText: '',
+  descriptionDisclaimerText: '',
   uploadFrequency: '',
   publishTimes: [],
 };
@@ -174,8 +177,11 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
     reupAudioBackgroundImage: channel.reupAudioBackgroundImage ?? '',
     showAudioBar: channel.showAudioBar === true,
+    showSubscribe: channel.showSubscribe === true,
+    showSmallVideo: channel.showSmallVideo === true,
     showDisclaimer: channel.showDisclaimer === true,
     disclaimerText: channel.disclaimerText ?? '',
+    descriptionDisclaimerText: channel.descriptionDisclaimerText ?? '',
     uploadFrequency: frequency,
     publishTimes: savedTimes.length === slotCount ? savedTimes : createEmptyPublishTimes(slotCount),
   };
@@ -445,8 +451,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' ? { showAudioBar: values.showAudioBar } : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
+        showSubscribe: values.showSubscribe,
+        showSmallVideo: values.showSmallVideo,
         showDisclaimer: values.showDisclaimer,
         disclaimerText: values.disclaimerText,
+        descriptionDisclaimerText: values.descriptionDisclaimerText,
       };
 
       if (isEditModalProps(props)) {
@@ -762,6 +771,48 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           />
         </FormField>
 
+        <FormField label='' htmlFor='show-subscribe' className='min-w-0'>
+          <Controller
+            name='showSubscribe'
+            control={control}
+            render={({ field }) => (
+              <label htmlFor='show-subscribe' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                <input
+                  id='show-subscribe'
+                  type='checkbox'
+                  checked={!!field.value}
+                  onChange={e => field.onChange(e.target.checked)}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting}
+                  className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                />
+                Hiển thị subscribe
+              </label>
+            )}
+          />
+        </FormField>
+
+        <FormField label='' htmlFor='show-small-video' className='min-w-0'>
+          <Controller
+            name='showSmallVideo'
+            control={control}
+            render={({ field }) => (
+              <label htmlFor='show-small-video' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                <input
+                  id='show-small-video'
+                  type='checkbox'
+                  checked={!!field.value}
+                  onChange={e => field.onChange(e.target.checked)}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting}
+                  className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                />
+                Hiển thị video nhỏ
+              </label>
+            )}
+          />
+        </FormField>
+
         <FormField label='Kiểu phụ đề' htmlFor='caption-style' optional error={errors.captionStyleKey?.message} className='min-w-0'>
           <Controller
             name='captionStyleKey'
@@ -903,22 +954,44 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         </FormField>
 
         <FormField
-          label='Nội dung miễn trừ trách nhiệm'
+          label='Nội dung miễn trừ trách nhiệm trong video'
           htmlFor='disclaimer-text'
           optional
           error={errors.disclaimerText?.message}
-          className='min-w-0 lg:col-span-2'
+          className='min-w-0 sm:col-span-2 lg:col-span-3'
         >
           <Textarea
             id='disclaimer-text'
             rows={4}
             maxLength={2000}
-            placeholder='Nhập nội dung miễn trừ trách nhiệm...'
+            placeholder='Nhập nội dung miễn trừ trách nhiệm trong video...'
             disabled={isSubmitting || !showDisclaimer}
             {...register('disclaimerText', {
               maxLength: {
                 value: 2000,
-                message: 'Nội dung miễn trừ trách nhiệm tối đa 2000 ký tự',
+                message: 'Nội dung miễn trừ trách nhiệm trong video tối đa 2000 ký tự',
+              },
+            })}
+          />
+        </FormField>
+
+        <FormField
+          label='Nội dung miễn trừ trách nhiệm trong mô tả'
+          htmlFor='description-disclaimer-text'
+          optional
+          error={errors.descriptionDisclaimerText?.message}
+          className='min-w-0 sm:col-span-2 lg:col-span-3'
+        >
+          <Textarea
+            id='description-disclaimer-text'
+            rows={4}
+            maxLength={2000}
+            placeholder='Nhập nội dung miễn trừ trách nhiệm trong mô tả...'
+            disabled={isSubmitting || !showDisclaimer}
+            {...register('descriptionDisclaimerText', {
+              maxLength: {
+                value: 2000,
+                message: 'Nội dung miễn trừ trách nhiệm trong mô tả tối đa 2000 ký tự',
               },
             })}
           />

@@ -49,6 +49,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
       ? {
           reupAudioBackgroundImage: resolveSiBackgroundImage(channel),
           showAudioBar: channel.showAudioBar === true,
+          showSmallVideo: channel.showSmallVideo === true,
         }
       : {}),
     ...(channel.reupAudioVisualStyleId?.trim()
@@ -79,6 +80,7 @@ export async function createYoutubeProductionDestination(
     captionStyleKey: channel.captionStyleKey,
     showDisclaimer: channel.showDisclaimer === true,
     disclaimerText: channel.disclaimerText,
+    descriptionDisclaimerText: channel.descriptionDisclaimerText,
     ...reupAudioConfig,
 
     getVideoOutputDir(mediaId: string) {

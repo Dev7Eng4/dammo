@@ -17,18 +17,14 @@ export interface SiAudioBarClip {
   filename: string;
 }
 
-/** Scale, chroma-key green background, then force remaining pixels to white. */
+/** Scale and chroma-key black background, keeping original bar colors. */
 export function appendSiAudioBarScaleFilters(
   filterParts: string[],
   inputLabel: string,
   outputLabel = 'audio_bar_scaled',
 ): void {
-  const keyedLabel = `${outputLabel}_keyed`;
   filterParts.push(
-    `[${inputLabel}]fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1,format=rgba,colorkey=${SI_AUDIO_BAR_COLORKEY}:${SI_AUDIO_BAR_COLORKEY_SIMILARITY}:${SI_AUDIO_BAR_COLORKEY_BLEND}[${keyedLabel}]`,
-  );
-  filterParts.push(
-    `[${keyedLabel}]geq=r='255':g='255':b='255':a='alpha(X,Y)'[${outputLabel}]`,
+    `[${inputLabel}]fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1,format=rgba,colorkey=${SI_AUDIO_BAR_COLORKEY}:${SI_AUDIO_BAR_COLORKEY_SIMILARITY}:${SI_AUDIO_BAR_COLORKEY_BLEND}[${outputLabel}]`,
   );
 }
 

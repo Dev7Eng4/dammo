@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ToastProvider } from './components/ui';
 import { TaskQueueProvider } from './contexts/TaskQueueContext';
 import { AppLayout } from './layouts/AppLayout';
+import { AssetsPage } from './pages/AssetsPage';
 import { ChromeProfilesPage } from './pages/ChromeProfilesPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { GpmManagerPage } from './pages/GpmManagerPage';
@@ -42,7 +43,7 @@ export default function App() {
               <Route path="content-projects" element={<PlaceholderPage />} />
               <Route path="scripts" element={<PlaceholderPage />} />
               <Route path="datasets" element={<PlaceholderPage />} />
-              <Route path="assets" element={<PlaceholderPage />} />
+              <Route path="assets" element={<AssetsPage />} />
               <Route path="video-factory" element={<VideoFactoryPage />} />
               <Route path="video-factory/templates" element={<PlaceholderPage />} />
               <Route path="render-queue" element={<RenderQueuePage />} />

@@ -33,29 +33,40 @@ async function processAddSource(job: TaskJob): Promise<unknown> {
 
 async function processCreateVideo(job: TaskJob): Promise<unknown> {
   const payload = job.payload as CreateVideoTaskPayload;
+  const options = {
+    taskJobId: job.id,
+    ...(payload.videoCount != null ? { maxVideosPerChannel: payload.videoCount } : {}),
+  };
+  const prepareOnly = payload.prepareOnly === true;
 
   if (payload.allReupChannels) {
-    updateProgress(job.id, 15, 'Processing all reup channels');
-    const result = await videoProductionService.createVideosForAllReupChannels({
-      taskJobId: job.id,
-    });
+    updateProgress(job.id, 15, prepareOnly ? 'Preparing all reup channels' : 'Processing all reup channels');
+    const result = prepareOnly
+      ? await videoProductionService.prepareVideosForAllReupChannels(options)
+      : await videoProductionService.createVideosForAllReupChannels(options);
     updateProgress(job.id, 90, 'Finishing');
     return result;
   }
 
   if (payload.channelIds?.length) {
-    updateProgress(job.id, 15, `Processing ${payload.channelIds.length} channel(s)`);
-    const result = await videoProductionService.createVideosForChannels(payload.channelIds, {
-      taskJobId: job.id,
-    });
+    updateProgress(
+      job.id,
+      15,
+      prepareOnly
+        ? `Preparing ${payload.channelIds.length} channel(s)`
+        : `Processing ${payload.channelIds.length} channel(s)`,
+    );
+    const result = prepareOnly
+      ? await videoProductionService.prepareVideosForChannels(payload.channelIds, options)
+      : await videoProductionService.createVideosForChannels(payload.channelIds, options);
     updateProgress(job.id, 90, 'Finishing');
     return result;
   }
 
-  updateProgress(job.id, 15, 'Downloading assets');
-  const result = await videoProductionService.createVideosForYoutubeChannel(payload.channelId!, {
-    taskJobId: job.id,
-  });
+  updateProgress(job.id, 15, prepareOnly ? 'Preparing assets' : 'Downloading assets');
+  const result = prepareOnly
+    ? await videoProductionService.prepareVideosForYoutubeChannel(payload.channelId!, options)
+    : await videoProductionService.createVideosForYoutubeChannel(payload.channelId!, options);
   updateProgress(job.id, 90, 'Finishing');
   return result;
 }

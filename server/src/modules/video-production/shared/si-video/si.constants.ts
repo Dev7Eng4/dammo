@@ -25,6 +25,16 @@ export const SI_CENTER_IMAGE_OPACITY = 0.7;
 export const SI_CENTER_IMAGE_MARGIN_TOP_PX = 15;
 /** Dịch center image sang phải khi bật Audio Bar (px, cộng vào vị trí căn giữa). */
 export const SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX = 100;
+
+/** Folder ảnh nguồn cho SI `multi_image` (dưới workDir / videoId). */
+export const SI_MULTI_IMAGE_DIRNAME = 'images';
+/** Thời lượng mỗi ảnh trong slideshow center (giây). */
+export const SI_MULTI_IMAGE_DURATION_SEC = 30;
+/** Basename video slideshow tạm (không kèm extension). */
+export const SI_MULTI_IMAGE_SLIDESHOW_BASENAME = 'center_slideshow';
+/** Kích thước render slideshow = đúng khung center image (ratio 0.65, 16:9, chẵn). */
+export const SI_CENTER_VIDEO_W = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+export const SI_CENTER_VIDEO_H = Math.round((SI_CENTER_VIDEO_W * 9) / 16);
 export const SI_STOCK_DIM_FACTOR = 0.8;
 export const SI_NOISE_ALPHA = 0.6;
 
@@ -56,11 +66,17 @@ export const SI_DISCLAIMER_TEXT =
 export const SI_AUDIO_SPEED_MIN = 0.95;
 export const SI_AUDIO_SPEED_MAX = 0.98;
 
-export const SI_AUDIO_BAR_WIDTH_PX = 200;
-export const SI_AUDIO_BAR_MARGIN_LEFT_PX = 10;
-export const SI_AUDIO_BAR_COLORKEY = '0x00FF00';
-export const SI_AUDIO_BAR_COLORKEY_SIMILARITY = 0.2;
+export const SI_AUDIO_BAR_WIDTH_PX = 250;
+export const SI_AUDIO_BAR_MARGIN_LEFT_PX = 25;
+export const SI_AUDIO_BAR_OFFSET_Y_PX = 60;
+export const SI_AUDIO_BAR_COLORKEY = '0x000000';
+export const SI_AUDIO_BAR_COLORKEY_SIMILARITY = 0.1;
 export const SI_AUDIO_BAR_COLORKEY_BLEND = 0.1;
+
+export const SI_SMALL_VIDEO_W = 250;
+export const SI_SMALL_VIDEO_H = 150;
+export const SI_SMALL_VIDEO_OVERLAY_X = 25;
+export const SI_SMALL_VIDEO_OVERLAY_Y = 25;
 
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 
@@ -80,9 +96,9 @@ export function resolveRandomSiAudioSpeed(): number {
   return SI_AUDIO_SPEED_MIN + Math.random() * (SI_AUDIO_SPEED_MAX - SI_AUDIO_SPEED_MIN);
 }
 
-export function resolveSiCenterImageOverlayX(showAudioBar: boolean): string {
+export function resolveSiCenterImageOverlayX(shiftRight: boolean): string {
   const centerX = '(main_w-overlay_w)/2';
-  if (!showAudioBar) return centerX;
+  if (!shiftRight) return centerX;
   return `${centerX}+${SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX}`;
 }
 

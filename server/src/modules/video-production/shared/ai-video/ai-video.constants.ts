@@ -1,5 +1,5 @@
 /** Subdirectory under workDir for AI slideshow source images. */
-export const AI_SLIDES_DIRNAME = 'ai-slides';
+export const AI_SLIDES_DIRNAME = 'images';
 
 export const AI_VIDEO_MIN_SLIDES = 5;
 export const AI_VIDEO_MAX_SLIDES = 12;

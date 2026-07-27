@@ -18,7 +18,7 @@ export interface AiVideoScenePrompt {
   prompt: string;
   startTime: string;
   endTime: string;
-  /** Relative path under workDir when image exists, e.g. ai-slides/scene-001.jpg */
+  /** Relative path under workDir when image exists, e.g. images/scene-001.jpg */
   path?: string;
 }
 

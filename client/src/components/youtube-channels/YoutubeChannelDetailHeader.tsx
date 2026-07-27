@@ -13,9 +13,13 @@ interface YoutubeChannelDetailHeaderProps {
   creatingVideo?: boolean;
   canCreateVideo?: boolean;
   openingProfile?: boolean;
+  canDeleteVideos?: boolean;
+  deletingVideos?: boolean;
   onSync?: () => void;
   onEdit?: () => void;
   onCreateVideo?: () => void;
+  onPrepareVideo?: () => void;
+  onDeleteVideos?: () => void;
   onOpenProfile?: () => void;
 }
 
@@ -38,9 +42,13 @@ export function YoutubeChannelDetailHeader({
   creatingVideo,
   canCreateVideo,
   openingProfile,
+  canDeleteVideos,
+  deletingVideos,
   onSync,
   onEdit,
   onCreateVideo,
+  onPrepareVideo,
+  onDeleteVideos,
   onOpenProfile,
 }: YoutubeChannelDetailHeaderProps) {
   const initial = channel.name.charAt(0).toUpperCase();
@@ -86,9 +94,30 @@ export function YoutubeChannelDetailHeader({
               {openingProfile ? 'Đang mở…' : 'Mở Profile'}
             </Button>
           ) : null}
+          {onPrepareVideo ? (
+            <Button
+              variant='outlined'
+              className='rounded-lg'
+              disabled={!canCreateVideo || creatingVideo}
+              onClick={onPrepareVideo}
+            >
+              Chuẩn bị video
+            </Button>
+          ) : null}
           {onCreateVideo ? (
             <Button variant='outlined' className='rounded-lg' disabled={!canCreateVideo || creatingVideo} onClick={onCreateVideo}>
               {creatingVideo ? 'Đang tạo…' : 'Tạo video'}
+            </Button>
+          ) : null}
+          {onDeleteVideos ? (
+            <Button
+              variant='outlined'
+              className='rounded-lg'
+              disabled={!canDeleteVideos || deletingVideos}
+              title={!canDeleteVideos ? 'Chọn video không phải Đã xuất bản để xóa' : undefined}
+              onClick={onDeleteVideos}
+            >
+              {deletingVideos ? 'Đang xóa…' : 'Xóa video'}
             </Button>
           ) : null}
           {onSync ? (

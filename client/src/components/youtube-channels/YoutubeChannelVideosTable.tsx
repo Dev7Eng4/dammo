@@ -8,6 +8,10 @@ interface YoutubeChannelVideosTableProps {
   loading?: boolean;
   error?: string | null;
   emptyMessage?: string;
+  selectedIds?: Set<string>;
+  onToggleRow?: (id: string) => void;
+  onToggleAll?: () => void;
+  enableRowSelection?: boolean;
   onCommentClick?: (video: YoutubeChannelVideo) => void;
   onTitleClick?: (video: YoutubeChannelVideo) => void;
 }
@@ -68,6 +72,10 @@ export function YoutubeChannelVideosTable({
   loading,
   error,
   emptyMessage = 'Không tìm thấy video nào.',
+  selectedIds,
+  onToggleRow,
+  onToggleAll,
+  enableRowSelection = false,
   onCommentClick,
   onTitleClick,
 }: YoutubeChannelVideosTableProps) {
@@ -142,6 +150,10 @@ export function YoutubeChannelVideosTable({
       loading={loading}
       error={error}
       emptyMessage={emptyMessage}
+      enableRowSelection={enableRowSelection}
+      selectedIds={selectedIds}
+      onToggleRow={onToggleRow}
+      onToggleAll={onToggleAll}
     />
   );
 }

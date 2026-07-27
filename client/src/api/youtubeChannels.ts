@@ -133,6 +133,17 @@ export function markYoutubeVideoUploaded(channelId: string, videoId: string) {
   );
 }
 
+export function deleteYoutubeChannelVideos(channelId: string, videoIds: string[]) {
+  return fetchJson<{ deleted: string[] }>(
+    `${API_V1}/youtube-channels/${channelId}/videos`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoIds }),
+    },
+  );
+}
+
 export function createYoutubeChannelVideos(id: string) {
   return fetchJson<CreateReupVideosResponse>(
     `${API_V1}/youtube-channels/${id}/create-videos`,

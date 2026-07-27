@@ -11,6 +11,8 @@ import {
 import { AI_SLIDES_DIRNAME } from '../modules/video-production/shared/ai-video/ai-video.constants.js';
 import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../modules/video-production/shared/ai-video/ai-video.types.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
+import { listSiMultiImagePaths } from '../modules/video-production/shared/si-video/si-multi-image.js';
+import { SI_MULTI_IMAGE_DIRNAME } from '../modules/video-production/shared/si-video/si.constants.js';
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import type { StoredYoutubeChannelType, YoutubeChannel } from '../modules/youtube-channels/youtube-channels.types.js';
@@ -180,11 +182,19 @@ async function main() {
       if (!subtitlePath) missingFiles.push(SUBTITLE_FILES.join(' or '));
 
       if (videoType === 'si') {
-        const centerImagePath = path.join(workDir, CENTER_IMAGE_FILE);
-        try {
-          await fs.access(centerImagePath);
-        } catch {
-          missingFiles.push(CENTER_IMAGE_FILE);
+        const siBackgroundImage = channel.reupAudioBackgroundImage ?? 'one_image';
+        if (siBackgroundImage === 'one_image') {
+          const centerImagePath = path.join(workDir, CENTER_IMAGE_FILE);
+          try {
+            await fs.access(centerImagePath);
+          } catch {
+            missingFiles.push(CENTER_IMAGE_FILE);
+          }
+        } else if (siBackgroundImage === 'multi_image') {
+          const multiImagePaths = await listSiMultiImagePaths(workDir);
+          if (multiImagePaths.length === 0) {
+            missingFiles.push(`${SI_MULTI_IMAGE_DIRNAME}/*`);
+          }
         }
       }
 
@@ -223,16 +233,24 @@ async function main() {
             onLog: msg => console.log(`      ${msg}`),
           });
         } else {
+          const siBackgroundImage = channel.reupAudioBackgroundImage ?? 'one_image';
+          const multiImagePaths =
+            siBackgroundImage === 'multi_image' ? await listSiMultiImagePaths(workDir) : [];
+
           outputPath = await assembleReupSiVideo({
             workDir,
             audioPath,
             subtitlePath: subtitlePath!,
-            centerImagePath: path.join(workDir, CENTER_IMAGE_FILE),
+            ...(siBackgroundImage === 'one_image'
+              ? { centerImagePath: path.join(workDir, CENTER_IMAGE_FILE) }
+              : {}),
+            ...(siBackgroundImage === 'multi_image' ? { centerImagePaths: multiImagePaths } : {}),
             backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
             backgroundFootageSourceIds: channel.backgroundFootageSources,
             language: channel.language,
             captionStyleKey: channel.captionStyleKey,
             showAudioBar: channel.showAudioBar === true,
+            showSmallVideo: channel.showSmallVideo === true,
             showDisclaim,
             disclaimerText,
             onLog: msg => console.log(`      ${msg}`),

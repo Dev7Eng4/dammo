@@ -6,6 +6,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import {
   createVideosBatchSchema,
   createYoutubeChannelSchema,
+  deleteYoutubeVideosSchema,
   listYoutubeChannelsQuerySchema,
   updateYoutubeVideoContentSchema,
   updateYoutubeChannelSchema,
@@ -184,6 +185,12 @@ export function createYoutubeChannelsRoutes() {
 
   app.get('/:id/videos', async (c) => {
     const result = await youtubeChannelsService.getVideos(c.req.param('id'));
+    return c.json(result);
+  });
+
+  app.delete('/:id/videos', zValidator('json', deleteYoutubeVideosSchema), (c) => {
+    const body = c.req.valid('json');
+    const result = youtubeChannelsService.deleteVideos(c.req.param('id'), body.videoIds);
     return c.json(result);
   });
 

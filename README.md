@@ -50,3 +50,5 @@ xem xét khi hết quote đổi profile -> nêu đổi hết profile thì đổi
 
 flow -> khi vào url có thể là New Project có thể là create with flow -> cần xử lý
 meta -> hiện tại đang mở 1 profile 3 tabs, 1 profile 2 tabs -> mong muốn 2 profile đều 5 tabs
+
+- upload luồng upload youtube -> phải check edit draft -> youtube vừa update

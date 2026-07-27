@@ -24,6 +24,7 @@ import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumb
 import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
+import { listSiMultiImagePaths } from '../../shared/si-video/si-multi-image.js';
 import { assembleReupAiSlideshowVideo, generateAiVideoImages, generateAiSceneSlideImages } from '../../shared/ai-video/index.js';
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
@@ -349,6 +350,10 @@ export class ReupAudioPipeline {
                 () =>
                   runMetadata(task.sourceTitle, jaSrtPath, destination.language, downloaded.youtubeVideoId, {
                     outputDir: jaWorkDir,
+                    descriptionDisclaimer:
+                      destination.showDisclaimer === true && destination.descriptionDisclaimerText?.trim()
+                        ? destination.descriptionDisclaimerText.trim()
+                        : undefined,
                     onProgress: taskJobId
                       ? progress => {
                           const profileLabel = progress.profileName;
@@ -743,11 +748,22 @@ export class ReupAudioPipeline {
             if (videoType === 'si') {
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
               const needsCenterImage = siBackgroundImage === 'one_image';
+              const needsMultiImage = siBackgroundImage === 'multi_image';
+              const multiImagePaths = needsMultiImage ? await listSiMultiImagePaths(workDir) : [];
 
               if (needsCenterImage && !heroImagePath) {
                 console.warn(`[reup-video] SI video assembly skipped: hero image not generated`);
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped: hero image missing');
+                }
+              } else if (needsMultiImage && multiImagePaths.length === 0) {
+                console.warn(`[reup-video] SI video assembly skipped: no images in videoId/images`);
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'SI video assembly skipped: multi_image requires at least one image in images/',
+                  );
                 }
               } else if (destination.backgroundFootageMode !== 'local' && !destination.backgroundFootageSources?.length) {
                 console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
@@ -761,25 +777,26 @@ export class ReupAudioPipeline {
               } else {
                 if (taskJobId) {
                   taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    needsCenterImage
+                  const assembleLabel = needsMultiImage
+                    ? `Assembling SI video (stock + multi-image slideshow ${multiImagePaths.length} images + subtitles)...`
+                    : needsCenterImage
                       ? 'Assembling SI video (stock + overlay + subtitles)...'
-                      : `Assembling SI video (stock + subtitles, backgroundImage=${siBackgroundImage})...`,
-                  );
+                      : `Assembling SI video (stock + subtitles, backgroundImage=${siBackgroundImage})...`;
+                  taskQueueRepository.appendLogMessage(taskJobId, 'info', assembleLabel);
                 }
 
                 reupVideoPath = await assembleReupSiVideo({
                   workDir,
                   audioPath: downloaded.audioPath,
                   subtitlePath: subtitleForAssembly,
-                  ...(heroImagePath ? { centerImagePath: heroImagePath } : {}),
+                  ...(needsCenterImage && heroImagePath ? { centerImagePath: heroImagePath } : {}),
+                  ...(needsMultiImage ? { centerImagePaths: multiImagePaths } : {}),
                   backgroundFootageMode: destination.backgroundFootageMode ?? 'source',
                   backgroundFootageSourceIds: destination.backgroundFootageSources,
                   language: destination.language,
                   captionStyleKey: destination.captionStyleKey,
                   showAudioBar: destination.showAudioBar,
+                  showSmallVideo: destination.showSmallVideo,
                   showDisclaim,
                   disclaimerText,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,

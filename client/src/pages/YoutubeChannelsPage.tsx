@@ -6,6 +6,7 @@ import { fetchSourceChannels } from '../api/sourceChannels';
 import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
+import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
@@ -37,6 +38,8 @@ export function YoutubeChannelsPage() {
   const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [videoCountAction, setVideoCountAction] = useState<'create' | 'prepare' | null>(null);
+  const [showUploadCountModal, setShowUploadCountModal] = useState(false);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
@@ -198,13 +201,22 @@ export function YoutubeChannelsPage() {
       .catch(() => setStats(null));
   }
 
-  function handleCreateVideo() {
+  function handleVideoCountConfirm(count: number) {
+    const isPrepare = videoCountAction === 'prepare';
+    setVideoCountAction(null);
+
     if (selectedIds.size === 0) {
       void enqueueTask({
         type: 'create_video',
-        title: 'Đang tạo video cho tất cả kênh reup',
-        subtitle: 'Tác vụ reup hàng loạt',
-        payload: { allReupChannels: true },
+        title: isPrepare
+          ? 'Đang chuẩn bị video cho tất cả kênh reup'
+          : 'Đang tạo video cho tất cả kênh reup',
+        subtitle: `Tác vụ reup hàng loạt · ${count} video/kênh`,
+        payload: {
+          allReupChannels: true,
+          videoCount: count,
+          ...(isPrepare ? { prepareOnly: true } : {}),
+        },
       });
       return;
     }
@@ -214,9 +226,15 @@ export function YoutubeChannelsPage() {
 
       void enqueueTask({
         type: 'create_video',
-        title: `Đang tạo video cho ${selectedIds.size} kênh`,
-        subtitle: `${selectedIds.size} kênh đã chọn`,
-        payload: { channelIds: Array.from(selectedIds) },
+        title: isPrepare
+          ? `Đang chuẩn bị video cho ${selectedIds.size} kênh`
+          : `Đang tạo video cho ${selectedIds.size} kênh`,
+        subtitle: `${selectedIds.size} kênh đã chọn · ${count} video/kênh`,
+        payload: {
+          channelIds: Array.from(selectedIds),
+          videoCount: count,
+          ...(isPrepare ? { prepareOnly: true } : {}),
+        },
       });
       return;
     }
@@ -226,23 +244,29 @@ export function YoutubeChannelsPage() {
 
     void enqueueTask({
       type: 'create_video',
-      title: `Đang tạo video: ${selectedChannel.name}`,
-      subtitle: selectedChannel.handle,
+      title: isPrepare
+        ? `Đang chuẩn bị video: ${selectedChannel.name}`
+        : `Đang tạo video: ${selectedChannel.name}`,
+      subtitle: `${selectedChannel.handle} · ${count} video`,
       payload: {
         channelId: selectedChannel.id,
         channelName: selectedChannel.name,
         channelHandle: selectedChannel.handle,
+        videoCount: count,
+        ...(isPrepare ? { prepareOnly: true } : {}),
       },
     });
   }
 
-  function handleUpload() {
+  function handleUpload(count: number) {
+    setShowUploadCountModal(false);
+
     if (selectedIds.size === 0) {
       void enqueueTask({
         type: 'upload_video',
         title: 'Đang tải video lên cho tất cả kênh reup',
-        subtitle: 'Tác vụ tải lên hàng loạt',
-        payload: { allReupChannels: true },
+        subtitle: `Tác vụ tải lên hàng loạt · tối đa ${count} video/kênh`,
+        payload: { allReupChannels: true, maxUploads: count },
       });
       return;
     }
@@ -253,8 +277,8 @@ export function YoutubeChannelsPage() {
       void enqueueTask({
         type: 'upload_video',
         title: `Đang tải video lên cho ${selectedIds.size} kênh`,
-        subtitle: `${selectedIds.size} kênh đã chọn`,
-        payload: { channelIds: Array.from(selectedIds) },
+        subtitle: `${selectedIds.size} kênh đã chọn · tối đa ${count} video/kênh`,
+        payload: { channelIds: Array.from(selectedIds), maxUploads: count },
       });
       return;
     }
@@ -265,8 +289,8 @@ export function YoutubeChannelsPage() {
     void enqueueTask({
       type: 'upload_video',
       title: `Đang tải lên: ${selectedChannel.name}`,
-      subtitle: selectedChannel.handle,
-      payload: { channelId: selectedChannel.id },
+      subtitle: `${selectedChannel.handle} · tối đa ${count} video`,
+      payload: { channelId: selectedChannel.id, maxUploads: count },
     });
   }
 
@@ -312,10 +336,11 @@ export function YoutubeChannelsPage() {
               onMonetizationFilterChange={handleMonetizationFilterChange}
               onSearchChange={handleSearchChange}
               onAddChannel={() => setShowAddModal(true)}
-              onCreateVideo={handleCreateVideo}
+              onCreateVideo={() => setVideoCountAction('create')}
+              onPrepareVideo={() => setVideoCountAction('prepare')}
               canUpload={canUpload}
               uploadDisabledReason={uploadDisabledReason}
-              onUpload={handleUpload}
+              onUpload={() => setShowUploadCountModal(true)}
               canEdit={canEdit}
               editDisabledReason={editDisabledReason}
               onEdit={() => setShowEditModal(true)}
@@ -348,6 +373,46 @@ export function YoutubeChannelsPage() {
       </div>
 
       <AddYoutubeChannelModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />
+
+      <CreateVideoCountModal
+        open={videoCountAction !== null}
+        onClose={() => setVideoCountAction(null)}
+        onConfirm={handleVideoCountConfirm}
+        title={
+          videoCountAction === 'prepare' ? 'Số lượng video cần chuẩn bị' : 'Số lượng video cần tạo'
+        }
+        description={
+          isBulkCreate
+            ? videoCountAction === 'prepare'
+              ? 'Chuẩn bị video cho tất cả kênh reup'
+              : 'Tạo video cho tất cả kênh reup'
+            : selectedIds.size > 1
+              ? videoCountAction === 'prepare'
+                ? `Chuẩn bị video cho ${selectedIds.size} kênh đã chọn`
+                : `Tạo video cho ${selectedIds.size} kênh đã chọn`
+              : selectedChannel
+                ? videoCountAction === 'prepare'
+                  ? `Chuẩn bị video cho kênh ${selectedChannel.name}`
+                  : `Tạo video cho kênh ${selectedChannel.name}`
+                : undefined
+        }
+      />
+
+      <CreateVideoCountModal
+        open={showUploadCountModal}
+        onClose={() => setShowUploadCountModal(false)}
+        onConfirm={handleUpload}
+        title='Số lượng video cần tải lên'
+        description={
+          isBulkCreate
+            ? 'Tải lên video Created cho tất cả kênh reup'
+            : selectedIds.size > 1
+              ? `Tải lên video Created cho ${selectedIds.size} kênh đã chọn`
+              : selectedChannel
+                ? `Tải lên video Created cho kênh ${selectedChannel.name}`
+                : undefined
+        }
+      />
 
       {selectedChannel ? (
         <AddYoutubeChannelModal

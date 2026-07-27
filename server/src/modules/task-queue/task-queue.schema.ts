@@ -20,6 +20,8 @@ const createVideoPayloadSchema = z
     allReupChannels: z.boolean().optional(),
     channelName: z.string().optional(),
     channelHandle: z.string().optional(),
+    videoCount: z.number().int().min(1).max(50).optional(),
+    prepareOnly: z.boolean().optional(),
   })
   .refine(
     (data) => {

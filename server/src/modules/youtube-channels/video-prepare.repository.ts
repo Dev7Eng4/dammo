@@ -87,6 +87,32 @@ export class VideoPrepareRepository {
   markUploaded(channelId: string, videoId: string): VideoPrepareItem | null {
     return this.updateStatus(channelId, videoId, 'Uploaded');
   }
+
+  removeByVideoIds(channelId: string, videoIds: string[]): string[] {
+    const toRemove = new Set(
+      videoIds.map(id => normalizeVideoId(id)).filter(Boolean),
+    );
+    if (toRemove.size === 0) return [];
+
+    const items = this.read(channelId);
+    const remaining: VideoPrepareItem[] = [];
+    const deleted: string[] = [];
+
+    for (const item of items) {
+      const videoId = normalizeVideoId(item.videoId);
+      if (videoId && toRemove.has(videoId)) {
+        deleted.push(videoId);
+        continue;
+      }
+      remaining.push(item);
+    }
+
+    if (deleted.length > 0) {
+      writeJson(youtubeChannelVideoPrepareFile(channelId), remaining);
+    }
+
+    return deleted;
+  }
 }
 
 export const videoPrepareRepository = new VideoPrepareRepository();
