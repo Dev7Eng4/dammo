@@ -153,7 +153,7 @@ export async function fillVideoDetails(
   }
 
   try {
-    await page.keyboard.press('Escape');
+    // await page.keyboard.press('Escape');
     await delay(200);
   } catch {
     /* ignore */
@@ -174,14 +174,34 @@ export async function fillVideoDetails(
 
   const resolvedThumbnailPath = thumbnailPath ?? findThumbnailPath(videoFolderPath);
   if (resolvedThumbnailPath && fs.existsSync(resolvedThumbnailPath)) {
-    const [fileChooser] = await Promise.all([
-      page.waitForEvent('filechooser'),
-      clickElement(page, YOUTUBE_SELECTOR.btnSelectThumbnail),
-    ]);
+    const [fileChooser] = await Promise.all([page.waitForEvent('filechooser'), clickElement(page, YOUTUBE_SELECTOR.btnSelectThumbnail)]);
     await delay(1000);
     await fileChooser.setFiles(resolvedThumbnailPath);
   } else {
     onError?.(`Missing thumbnail (thumbnail.*): ${videoFolderPath}`);
+  }
+
+  try {
+    await delay(200, 300);
+
+    const playlistBox = await page.locator(YOUTUBE_SELECTOR.boxPlaylist).boundingBox();
+    if (playlistBox) {
+      await page.mouse.move(
+        playlistBox.x + playlistBox.width / 2 + (Math.random() * 20 - 10),
+        playlistBox.y + playlistBox.height / 2 + (Math.random() * 20 - 10),
+      );
+    }
+
+    await clickElement(page, YOUTUBE_SELECTOR.boxPlaylist);
+
+    await delay(200, 300);
+
+    await delay(200, 300);
+    await clickElement(page, YOUTUBE_SELECTOR.playlistFirstItem);
+    await delay(200, 300);
+    await clickElement(page, YOUTUBE_SELECTOR.playlistClose);
+  } catch {
+    /* ignore */
   }
 
   await delay(200);
@@ -212,11 +232,7 @@ export async function fillVideoDetails(
   await clickElement(page, YOUTUBE_SELECTOR.btnNextToRelatedStep);
 }
 
-export async function addRelatedVideo(
-  page: Page,
-  mp4Path?: string,
-  onError?: (message: string) => void,
-): Promise<void> {
+export async function addRelatedVideo(page: Page, mp4Path?: string, onError?: (message: string) => void): Promise<void> {
   await delay(300, 300);
   await clickElement(page, YOUTUBE_SELECTOR.btnAddVideoRelated);
   await delay(2000);
@@ -290,10 +306,7 @@ export interface PublishScheduleSlot {
   iso?: string;
 }
 
-export async function chooseVisibility(
-  page: Page,
-  ctx: { slot?: PublishScheduleSlot | null },
-): Promise<void> {
+export async function chooseVisibility(page: Page, ctx: { slot?: PublishScheduleSlot | null }): Promise<void> {
   const slot = ctx?.slot;
 
   const boxUpload = await page.locator(YOUTUBE_SELECTOR.boxUpload).boundingBox();
@@ -317,8 +330,9 @@ export async function chooseVisibility(
     await page.keyboard.insertText(slot.date);
     await delay(300, 500);
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Escape');
+    // await page.keyboard.press('Escape');
 
+    await delay(300, 500);
     await clickElement(page, YOUTUBE_SELECTOR.inputTime);
     await clearContent(page);
     await delay(200, 500);
