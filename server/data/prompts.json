@@ -1,156 +1,221 @@
 {
-  "prompts": [
+  "promptSets": [
     {
-      "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
-      "key": "change_background_channel",
+      "id": "all:image_scenes_with_references",
+      "baseKey": "image_scenes_with_references",
+      "language": "all",
+      "name": "Ảnh Theo Cảnh Có Tham Chiếu Nhân Vật",
+      "category": "image",
+      "createdAt": "2026-07-27T08:44:32.880Z",
+      "updatedAt": "2026-07-28T08:33:36.091Z",
+      "steps": [
+        {
+          "id": "595e4082-7af6-4091-9a0b-9f5295a8bfb8",
+          "key": "image_scenes_with_references_step_1",
+          "step": 1,
+          "outputType": "text",
+          "useReferenceImage": true
+        },
+        {
+          "id": "d1983313-bba7-47ff-9aa5-cd83af46a5a1",
+          "key": "image_scenes_with_references_step_2",
+          "step": 2,
+          "outputType": "text",
+          "useReferenceImage": true
+        }
+      ]
+    },
+    {
+      "id": "all:image_scenes",
+      "baseKey": "image_scenes",
+      "language": "all",
+      "name": "Ảnh Theo Cảnh",
+      "category": "image",
+      "isSystem": false,
+      "createdAt": "2026-07-10T02:36:45.950Z",
+      "updatedAt": "2026-07-28T08:33:22.767Z",
+      "steps": [
+        {
+          "id": "8050ea1f-30d7-4889-ae82-dc5b16b8bc0c",
+          "key": "image_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:general",
+      "baseKey": "general",
+      "language": "ja",
+      "name": "Ảnh Chung Cho Video",
+      "category": "image",
+      "isSystem": false,
+      "createdAt": "2026-07-05T16:27:13.427Z",
+      "updatedAt": "2026-07-28T07:58:38.510Z",
+      "steps": [
+        {
+          "id": "b672e1d0-7d69-46c0-b81d-d11856c38b32",
+          "key": "general",
+          "step": 1,
+          "outputType": "image",
+          "useReferenceImage": true
+        }
+      ]
+    },
+    {
+      "id": "ja:change_background_channel",
+      "baseKey": "change_background_channel",
       "language": "ja",
       "name": "Change Background Channel",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
       "createdAt": "2026-07-27T16:24:41.606Z",
       "updatedAt": "2026-07-27T16:38:45.864Z",
-      "useChannelBackgroundImage": true
+      "steps": [
+        {
+          "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
+          "key": "change_background_channel",
+          "step": 1,
+          "outputType": "image",
+          "useReferenceImage": true,
+          "useChannelBackgroundImage": true
+        }
+      ]
     },
     {
-      "id": "d1983313-bba7-47ff-9aa5-cd83af46a5a1",
-      "key": "video_image_with_reference",
-      "language": "ja",
-      "name": "Video Image With Reference",
-      "category": "image",
-      "outputType": "text",
-      "useReferenceImage": true,
-      "createdAt": "2026-07-27T08:44:32.880Z",
-      "updatedAt": "2026-07-27T08:44:32.880Z"
-    },
-    {
-      "id": "595e4082-7af6-4091-9a0b-9f5295a8bfb8",
-      "key": "create_characters_design",
-      "language": "ja",
-      "name": "Create Characters Design",
-      "category": "image",
-      "outputType": "text",
-      "createdAt": "2026-07-27T08:22:56.051Z",
-      "updatedAt": "2026-07-27T08:47:18.496Z",
-      "useReferenceImage": true
-    },
-    {
-      "id": "71e34378-0029-40dc-94ee-9aa4a38f477b",
-      "key": "remove_logo",
+      "id": "ja:remove_logo",
+      "baseKey": "remove_logo",
       "language": "ja",
       "name": "Remove Logo",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
       "createdAt": "2026-07-18T09:05:10.245Z",
-      "updatedAt": "2026-07-18T09:05:10.245Z"
+      "updatedAt": "2026-07-18T09:05:10.245Z",
+      "steps": [
+        {
+          "id": "71e34378-0029-40dc-94ee-9aa4a38f477b",
+          "key": "remove_logo",
+          "step": 1,
+          "outputType": "image",
+          "useReferenceImage": true
+        }
+      ]
     },
     {
-      "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
-      "key": "remove_logo_and_change_background",
+      "id": "ja:remove_logo_and_change_background",
+      "baseKey": "remove_logo_and_change_background",
       "language": "ja",
       "name": "Remove Logo & Change Background",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
       "createdAt": "2026-07-18T06:38:33.017Z",
-      "updatedAt": "2026-07-18T09:03:49.519Z"
+      "updatedAt": "2026-07-18T09:03:49.519Z",
+      "steps": [
+        {
+          "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
+          "key": "remove_logo_and_change_background",
+          "step": 1,
+          "outputType": "image",
+          "useReferenceImage": true
+        }
+      ]
     },
     {
-      "id": "8050ea1f-30d7-4889-ae82-dc5b16b8bc0c",
-      "key": "video_image",
-      "language": "ja",
-      "name": "Video Image",
-      "category": "image",
-      "outputType": "text",
-      "createdAt": "2026-07-10T02:36:45.950Z",
-      "updatedAt": "2026-07-10T03:44:17.821Z",
-      "isSystem": true
-    },
-    {
-      "id": "b672e1d0-7d69-46c0-b81d-d11856c38b32",
-      "key": "general",
-      "language": "ja",
-      "name": "General",
-      "category": "image",
-      "outputType": "image",
-      "createdAt": "2026-07-05T16:27:13.427Z",
-      "updatedAt": "2026-07-07T10:24:22.668Z",
-      "useReferenceImage": true,
-      "isSystem": true
-    },
-    {
-      "id": "a55b6634-4968-4940-8acb-233c98880d1e",
-      "key": "recreate",
+      "id": "ja:recreate",
+      "baseKey": "recreate",
       "language": "ja",
       "name": "Recreate",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
+      "isSystem": true,
       "createdAt": "2026-07-05T15:08:56.521Z",
       "updatedAt": "2026-07-05T15:11:58.798Z",
-      "isSystem": true
+      "steps": [
+        {
+          "id": "a55b6634-4968-4940-8acb-233c98880d1e",
+          "key": "recreate",
+          "step": 1,
+          "outputType": "image",
+          "useReferenceImage": true
+        }
+      ]
     },
     {
-      "id": "a3f8c2e1-9b4d-4a7f-8e6c-1d2b3c4e5f60",
-      "key": "metadata",
+      "id": "ja:metadata",
+      "baseKey": "metadata",
       "language": "ja",
       "name": "Create Metadata",
       "category": "meta",
-      "outputType": "text",
+      "isSystem": true,
       "createdAt": "2026-07-05T14:32:00.000Z",
       "updatedAt": "2026-07-05T14:32:00.000Z",
-      "isSystem": true
+      "steps": [
+        {
+          "id": "a3f8c2e1-9b4d-4a7f-8e6c-1d2b3c4e5f60",
+          "key": "metadata",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
     },
     {
-      "id": "7fb1c27b-0e96-403c-997c-9cf20bd69174",
-      "key": "love_story",
+      "id": "ja:love_story",
+      "baseKey": "love_story",
       "language": "ja",
       "name": "Love Story",
       "category": "thumbnail",
-      "outputType": "image",
       "createdAt": "2026-06-21T17:49:09.082Z",
-      "updatedAt": "2026-06-21T17:49:09.082Z"
+      "updatedAt": "2026-06-21T17:49:09.082Z",
+      "steps": [
+        {
+          "id": "7fb1c27b-0e96-403c-997c-9cf20bd69174",
+          "key": "love_story",
+          "step": 1,
+          "outputType": "image"
+        }
+      ]
     },
     {
-      "id": "c8da6af4-f803-496f-8741-61eb66e6b576",
-      "key": "ja_thumbnail_horizontal_step_3",
+      "id": "ja:ja_thumbnail_horizontal",
+      "baseKey": "ja_thumbnail_horizontal",
       "language": "ja",
       "name": "Horizontal",
       "category": "thumbnail",
-      "outputType": "text",
       "createdAt": "2026-06-21T04:19:21.397Z",
-      "updatedAt": "2026-06-21T04:24:53.550Z"
+      "updatedAt": "2026-06-21T04:24:53.550Z",
+      "steps": [
+        {
+          "id": "74641628-437b-4879-81b6-192251253b70",
+          "key": "ja_thumbnail_horizontal_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "85102221-2ccf-4f76-8961-34094b75634e",
+          "key": "ja_thumbnail_horizontal_step_2",
+          "step": 2,
+          "outputType": "text"
+        },
+        {
+          "id": "c8da6af4-f803-496f-8741-61eb66e6b576",
+          "key": "ja_thumbnail_horizontal_step_3",
+          "step": 3,
+          "outputType": "text"
+        }
+      ]
     },
     {
-      "id": "85102221-2ccf-4f76-8961-34094b75634e",
-      "key": "ja_thumbnail_horizontal_step_2",
-      "language": "ja",
-      "name": "Horizontal",
-      "category": "thumbnail",
-      "outputType": "text",
-      "createdAt": "2026-06-21T04:18:49.990Z",
-      "updatedAt": "2026-06-21T04:18:49.990Z"
-    },
-    {
-      "id": "74641628-437b-4879-81b6-192251253b70",
-      "key": "ja_thumbnail_horizontal_step_1",
-      "language": "ja",
-      "name": "Horizontal",
-      "category": "thumbnail",
-      "outputType": "text",
-      "createdAt": "2026-06-21T04:18:34.473Z",
-      "updatedAt": "2026-06-21T04:18:34.473Z"
-    },
-    {
-      "id": "4b097367-b5d7-4376-bb65-f742b6bf791a",
-      "key": "update_transcript",
+      "id": "ja:update_transcript",
+      "baseKey": "update_transcript",
       "language": "ja",
       "name": "Update Transcript Japan",
       "category": "transcript",
-      "outputType": "text",
       "createdAt": "2026-06-18T10:29:36.758Z",
-      "updatedAt": "2026-07-28T02:15:33.684Z"
+      "updatedAt": "2026-07-28T02:15:33.684Z",
+      "steps": [
+        {
+          "id": "4b097367-b5d7-4376-bb65-f742b6bf791a",
+          "key": "update_transcript",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
     }
   ]
 }

@@ -2,16 +2,17 @@ import { z } from 'zod';
 
 const promptCategorySchema = z.enum(['thumbnail', 'transcript', 'meta', 'image']);
 const promptOutputTypeSchema = z.enum(['text', 'image', 'video']);
-const promptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
-const createPromptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es', 'all']);
+const specificPromptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
+const promptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es', 'all']);
 
 export const createPromptSchema = z.object({
-  language: createPromptLanguageSchema,
+  language: promptLanguageSchema,
   name: z.string().min(1).max(120),
   template: z.string().min(1),
   category: promptCategorySchema.default('meta'),
   outputType: promptOutputTypeSchema.default('text'),
   description: z.string().max(500).optional(),
+  key: z.string().min(1).max(100).optional(),
   useReferenceImage: z.boolean().optional(),
   useChannelBackgroundImage: z.boolean().optional(),
 });
@@ -44,5 +45,5 @@ export const promptKeyQuerySchema = z.object({
 });
 
 export const thumbnailStylesQuerySchema = z.object({
-  language: promptLanguageSchema,
+  language: specificPromptLanguageSchema,
 });

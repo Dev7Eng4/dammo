@@ -2,10 +2,9 @@ export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image';
 
 export type PromptOutputType = 'text' | 'image' | 'video';
 
-export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
-
-/** Create-only: replicate prompt for every language. */
-export type CreatePromptLanguage = PromptLanguage | 'all';
+export type SpecificPromptLanguage = 'en' | 'ko' | 'ja' | 'es';
+export type PromptLanguage = SpecificPromptLanguage | 'all';
+export type CreatePromptLanguage = PromptLanguage;
 
 export interface Prompt {
   id: string;
@@ -22,8 +21,30 @@ export interface Prompt {
   updatedAt: string;
 }
 
+export interface PromptStep {
+  id: string;
+  key: string;
+  step: number;
+  outputType?: PromptOutputType;
+  description?: string;
+  useReferenceImage?: boolean;
+  useChannelBackgroundImage?: boolean;
+}
+
+export interface PromptSet {
+  id: string;
+  baseKey: string;
+  language: PromptLanguage;
+  name: string;
+  category: PromptCategory;
+  isSystem?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  steps: PromptStep[];
+}
+
 export interface PromptsStore {
-  prompts: Prompt[];
+  promptSets: PromptSet[];
 }
 
 export interface CreatePromptInput {

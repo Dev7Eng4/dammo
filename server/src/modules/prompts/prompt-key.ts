@@ -1,7 +1,7 @@
-import type { PromptLanguage } from './prompts.types.js';
+import type { PromptLanguage, SpecificPromptLanguage } from './prompts.types.js';
 import { promptsRepository } from './prompts.repository.js';
 
-export const PROMPT_LANGUAGES: PromptLanguage[] = ['en', 'ko', 'ja', 'es'];
+export const PROMPT_LANGUAGES: SpecificPromptLanguage[] = ['en', 'ko', 'ja', 'es'];
 
 export function derivePromptKeyFromName(name: string): string {
   const base = name
@@ -34,20 +34,3 @@ export function resolveUniquePromptKey(
   }
 }
 
-/** Key free for every language (used when creating with language=all). */
-export function resolveUniquePromptKeyAcrossLanguages(name: string): string {
-  const base = derivePromptKeyFromName(name);
-  let candidate = base;
-  let index = 2;
-
-  while (true) {
-    const taken = PROMPT_LANGUAGES.some(
-      language => promptsRepository.findByKeyAndLanguage(candidate, language) != null,
-    );
-    if (!taken) {
-      return candidate;
-    }
-    candidate = `${base}_${index}`;
-    index += 1;
-  }
-}

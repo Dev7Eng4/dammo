@@ -18,7 +18,7 @@ export function buildThumbnailReferenceImagePaths(
   const promptKey = input.promptKey.trim();
   if (!promptKey) return [];
 
-  const prompt = promptsRepository.findByKeyAndLanguage(promptKey, input.language);
+  const prompt = promptsRepository.findByKeyWithFallback(promptKey, input.language);
   const refs: string[] = [];
 
   if (prompt?.useReferenceImage) {

@@ -81,13 +81,30 @@ function extractExportExpression(content: string): string {
   throw new AppError('Invalid prompt template file format', 500, 'PROMPT_EXPORT_INVALID');
 }
 
-export async function readPromptSource(language: PromptLanguage, key: string): Promise<string> {
-  const filePath = promptTemplateFile(language, key);
+async function resolveExistingPromptFilePath(language: PromptLanguage, key: string): Promise<string> {
+  const candidates = language === 'all'
+    ? [promptTemplateFile('all', key)]
+    : [promptTemplateFile(language, key), promptTemplateFile('all', key)];
 
+  for (const filePath of candidates) {
+    try {
+      await fs.access(filePath);
+      return filePath;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  throw new AppError('Prompt template file not found', 404, 'PROMPT_FILE_NOT_FOUND');
+}
+
+export async function readPromptSource(language: PromptLanguage, key: string): Promise<string> {
+  const filePath = await resolveExistingPromptFilePath(language, key);
   let content: string;
   try {
     content = await fs.readFile(filePath, 'utf8');
-  } catch {
+  } catch (err) {
+    if (err instanceof AppError) throw err;
     throw new AppError('Prompt template file not found', 404, 'PROMPT_FILE_NOT_FOUND');
   }
 
@@ -103,13 +120,7 @@ export async function executePromptTemplate(
   key: string,
   args: unknown[] = [],
 ): Promise<string> {
-  const filePath = promptTemplateFile(language, key);
-
-  try {
-    await fs.access(filePath);
-  } catch {
-    throw new AppError('Prompt template file not found', 404, 'PROMPT_FILE_NOT_FOUND');
-  }
+  const filePath = await resolveExistingPromptFilePath(language, key);
 
   try {
     const module = await import(`${pathToFileURL(filePath).href}?t=${Date.now()}`);
@@ -141,6 +152,22 @@ export async function writePromptFile(
   return filePath;
 }
 
+async function removeEmptyPromptDir(filePath: string): Promise<void> {
+  // Only for …/prompts/{lang}/{base}/step-*.js — never remove …/prompts/{lang}
+  const promptDir = path.dirname(filePath);
+  const langDir = path.dirname(promptDir);
+  if (path.dirname(langDir) !== paths.promptsDir) return;
+
+  try {
+    const entries = await fs.readdir(promptDir);
+    if (entries.length === 0) {
+      await fs.rmdir(promptDir);
+    }
+  } catch {
+    // ignore missing / non-empty
+  }
+}
+
 export async function deletePromptFile(language: PromptLanguage, key: string): Promise<void> {
   const filePath = promptTemplateFile(language, key);
   try {
@@ -148,6 +175,7 @@ export async function deletePromptFile(language: PromptLanguage, key: string): P
   } catch {
     // ignore missing file
   }
+  await removeEmptyPromptDir(filePath);
 }
 
 export async function movePromptFile(
@@ -177,6 +205,7 @@ export async function movePromptFile(
     await fs.access(fromPath);
     await fs.mkdir(path.dirname(toPath), { recursive: true });
     await fs.rename(fromPath, toPath);
+    await removeEmptyPromptDir(fromPath);
   } catch {
     throw new AppError('Prompt template file not found', 404, 'PROMPT_FILE_NOT_FOUND');
   }

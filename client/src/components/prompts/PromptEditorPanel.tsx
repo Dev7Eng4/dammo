@@ -1,18 +1,12 @@
-import { useState } from 'react';
-import { Button, DropdownSelect, Input, Textarea } from '../ui';
+import { Button, DropdownSelect, Input } from '../ui';
 import {
   PROMPT_CATEGORY_OPTIONS,
   PROMPT_FORM_LANGUAGE_OPTIONS,
-  PROMPT_LANGUAGE_OPTIONS,
-  PROMPT_OUTPUT_TYPE_OPTIONS,
 } from '../../constants/promptForm';
-import {
-  estimateTokens,
-  derivePromptKeyFromName,
-  isUserFunctionTemplate,
-  normalizeVariableName,
-} from '../../utils/promptVariables';
-import type { PromptFormDraft } from '../../types/prompt';
+import { derivePromptKeyFromName } from '../../utils/promptVariables';
+import { planStepKeys, resolveDraftBaseKey } from '../../utils/promptSets';
+import type { PromptFormDraft, PromptStepDraft } from '../../types/prompt';
+import { PromptStepEditor } from './PromptStepEditor';
 
 export interface PromptEditorPanelProps {
   draft: PromptFormDraft | null;
@@ -22,6 +16,9 @@ export interface PromptEditorPanelProps {
   readOnly?: boolean;
   saveError?: string | null;
   onChange: (patch: Partial<PromptFormDraft>) => void;
+  onStepChange: (index: number, patch: Partial<PromptStepDraft>) => void;
+  onAddStep: () => void;
+  onRemoveStep: (index: number) => void;
   onSave: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -44,26 +41,13 @@ export function PromptEditorPanel({
   readOnly = false,
   saveError,
   onChange,
+  onStepChange,
+  onAddStep,
+  onRemoveStep,
   onSave,
   onDuplicate,
   onDelete,
 }: PromptEditorPanelProps) {
-  const [insertVarName, setInsertVarName] = useState('');
-
-  function handleInsertVariable() {
-    if (!draft || readOnly) return;
-    const name = normalizeVariableName(insertVarName);
-    if (!name || draft.templateParams.includes(name)) return;
-
-    onChange({ templateParams: [...draft.templateParams, name] });
-    setInsertVarName('');
-  }
-
-  function handleRemoveVariable(name: string) {
-    if (!draft || readOnly) return;
-    onChange({ templateParams: draft.templateParams.filter((param) => param !== name) });
-  }
-
   if (!draft && !loading) {
     return (
       <section className="flex min-w-0 flex-1 flex-col items-center justify-center bg-background p-8 text-center">
@@ -96,15 +80,12 @@ export function PromptEditorPanel({
     );
   }
 
-  const isNew = !draft.id;
-  const tokenEstimate = estimateTokens(draft.template);
-  const userFunctionTemplate = isUserFunctionTemplate(draft.template);
-  const displayKey = draft.id ? draft.key : derivePromptKeyFromName(draft.name);
-  const showReferenceImageOption = draft.category === 'thumbnail' || draft.category === 'image';
-  const exportDefaultPreview =
-    draft.templateParams.length > 0
-      ? `export default (${draft.templateParams.join(', ')}) => \`...\``
-      : 'export default () => `...`';
+  const isNew = !draft.steps.some((step) => step.id);
+  const baseKey = isNew ? derivePromptKeyFromName(draft.name) : resolveDraftBaseKey(draft);
+  const plannedKeys = planStepKeys(baseKey, draft.steps.length);
+  const displayKey =
+    draft.steps.length > 1 ? `${baseKey}_step_1…${draft.steps.length}` : plannedKeys[0] ?? baseKey;
+  const hasSavedStep = draft.steps.some((step) => step.id);
   const headerTitle = isNew ? 'Prompt mới' : draft.name || 'Prompt chưa đặt tên';
 
   return (
@@ -122,15 +103,25 @@ export function PromptEditorPanel({
                 {displayKey}
               </span>
             )}
+            {draft.steps.length > 1 ? (
+              <span className="inline-flex rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] text-neutral-400">
+                {draft.steps.length} step
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {!readOnly ? (
+            <Button variant="outlined" size="sm" onClick={onAddStep} disabled={saving}>
+              Thêm step
+            </Button>
+          ) : null}
           <Button variant="outlined" size="sm" onClick={onDuplicate} disabled={saving}>
             Nhân bản
           </Button>
           {!readOnly ? (
             <>
-              <Button variant="danger" size="sm" onClick={onDelete} disabled={saving || !draft.id}>
+              <Button variant="danger" size="sm" onClick={onDelete} disabled={saving || !hasSavedStep}>
                 Xóa
               </Button>
               <Button size="sm" onClick={onSave} disabled={saving || !dirty || !draft.name.trim()}>
@@ -171,13 +162,13 @@ export function PromptEditorPanel({
             ) : null}
           </label>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block space-y-1.5">
               <FieldLabel>Ngôn ngữ</FieldLabel>
               <DropdownSelect
                 value={draft.language}
                 onChange={(language) => onChange({ language })}
-                options={isNew ? PROMPT_FORM_LANGUAGE_OPTIONS : PROMPT_LANGUAGE_OPTIONS}
+                options={PROMPT_FORM_LANGUAGE_OPTIONS}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
@@ -194,148 +185,21 @@ export function PromptEditorPanel({
                 triggerClassName="h-10 w-full rounded-lg"
               />
             </label>
-            <label className="block space-y-1.5">
-              <FieldLabel>Loại</FieldLabel>
-              <DropdownSelect
-                value={draft.outputType}
-                onChange={(outputType) => onChange({ outputType })}
-                options={PROMPT_OUTPUT_TYPE_OPTIONS}
-                disabled={readOnly}
-                className="w-full"
-                triggerClassName="h-10 w-full rounded-lg"
-              />
-            </label>
           </div>
-          <p className="text-[10px] text-neutral-500">
-            Văn bản → LLM · Hình ảnh → Flow/Meta · Video → Meta AI
-          </p>
-
-          {showReferenceImageOption ? (
-            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
-              <div>
-                <p className="text-xs font-medium text-neutral-300">Dùng ảnh tham chiếu</p>
-                <p className="text-[10px] text-neutral-500">Đính kèm ảnh tham chiếu khi tạo</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={draft.useReferenceImage}
-                onChange={(e) => onChange({ useReferenceImage: e.target.checked })}
-                disabled={readOnly}
-                className="size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          ) : null}
-
-          {draft.category === 'thumbnail' ? (
-            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
-              <div>
-                <p className="text-xs font-medium text-neutral-300">Dùng ảnh nền của kênh</p>
-                <p className="text-[10px] text-neutral-500">Dùng ảnh nền kênh YouTube khi tạo thumbnail</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={draft.useChannelBackgroundImage}
-                onChange={(e) => onChange({ useChannelBackgroundImage: e.target.checked })}
-                disabled={readOnly}
-                className="size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          ) : null}
-
-          <label className="block space-y-1.5">
-            <FieldLabel optional>Mô tả</FieldLabel>
-            <Input
-              value={draft.description}
-              onChange={(e) => onChange({ description: e.target.value })}
-              placeholder="Mô tả ngắn"
-              className="h-10 rounded-lg"
-              readOnly={readOnly}
-              disabled={readOnly}
-            />
-          </label>
         </div>
 
-        <div className="card-surface space-y-3 rounded-xl p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-medium text-neutral-100">Mẫu User Prompt</h2>
-              <p className="mt-0.5 text-xs text-neutral-500">
-                {userFunctionTemplate ? (
-                  <>Mẫu function — không dùng biến</>
-                ) : (
-                  <>
-                    Lưu dạng <code className="text-neutral-400">{exportDefaultPreview}</code> · dùng{' '}
-                    <code className="text-neutral-400">${'{param}'}</code> trong nội dung
-                  </>
-                )}
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] text-neutral-500">
-              ~{tokenEstimate} tokens
-            </span>
-          </div>
-          <Textarea
-            value={draft.template}
-            onChange={(e) => onChange({ template: e.target.value })}
-            rows={12}
-            className="min-h-[240px] font-mono text-xs leading-relaxed"
-            placeholder="Viết nội dung mẫu prompt..."
+        {draft.steps.map((step, index) => (
+          <PromptStepEditor
+            key={step.localId}
+            step={step}
+            index={index}
+            category={draft.category}
             readOnly={readOnly}
-            disabled={readOnly}
+            canRemove={draft.steps.length > 1}
+            onChange={(patch) => onStepChange(index, patch)}
+            onRemove={() => onRemoveStep(index)}
           />
-          {!userFunctionTemplate && !readOnly ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  value={insertVarName}
-                  onChange={(e) => setInsertVarName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleInsertVariable();
-                    }
-                  }}
-                  placeholder="variable_name"
-                  className="h-9 min-w-0 flex-1 rounded-lg font-mono text-xs"
-                />
-                <Button variant="secondary" size="sm" className="shrink-0" onClick={handleInsertVariable}>
-                  Thêm biến
-                </Button>
-              </div>
-              {draft.templateParams.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {draft.templateParams.map((name) => (
-                    <span
-                      key={name}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-elevated px-2.5 py-1 font-mono text-xs text-neutral-200"
-                    >
-                      {name}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVariable(name)}
-                        className="rounded-full px-1 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-                        aria-label={`Xóa ${name}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : !userFunctionTemplate && readOnly && draft.templateParams.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {draft.templateParams.map((name) => (
-                <span
-                  key={name}
-                  className="inline-flex items-center rounded-full border border-border bg-surface-elevated px-2.5 py-1 font-mono text-xs text-neutral-200"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        ))}
       </div>
     </section>
   );

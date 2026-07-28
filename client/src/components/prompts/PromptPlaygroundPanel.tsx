@@ -17,6 +17,9 @@ export interface PromptPlaygroundPanelProps {
   template: string;
   templateParams: string[];
   outputType: PromptOutputType;
+  stepCount: number;
+  activeStepIndex: number;
+  onActiveStepChange: (index: number) => void;
   provider: PlaygroundProvider;
   imageProvider: ImageBrowserProvider;
   videoProvider: VideoBrowserProvider;
@@ -41,6 +44,9 @@ export function PromptPlaygroundPanel({
   template,
   templateParams,
   outputType,
+  stepCount,
+  activeStepIndex,
+  onActiveStepChange,
   provider,
   imageProvider,
   videoProvider,
@@ -65,6 +71,10 @@ export function PromptPlaygroundPanel({
   const isImagePrompt = outputType === 'image';
   const isVideoPrompt = outputType === 'video';
   const isTextPrompt = outputType === 'text';
+  const stepOptions = Array.from({ length: Math.max(stepCount, 1) }, (_, index) => ({
+    value: String(index),
+    label: `Bước ${index + 1}`,
+  }));
 
   let formattedContent = result?.content ?? '';
   if (result?.kind === 'text' && result.content) {
@@ -93,6 +103,19 @@ export function PromptPlaygroundPanel({
       </div>
 
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-4">
+        {stepCount > 1 ? (
+          <label className="block space-y-1.5">
+            <span className="text-xs font-medium text-neutral-400">Step</span>
+            <DropdownSelect
+              value={String(activeStepIndex)}
+              onChange={(value) => onActiveStepChange(Number(value))}
+              options={stepOptions}
+              className="w-full"
+              triggerClassName="h-9 w-full rounded-lg text-sm"
+            />
+          </label>
+        ) : null}
+
         <label className="block space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-neutral-400">Nhà cung cấp LLM mặc định</span>

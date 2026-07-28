@@ -30,7 +30,7 @@ export function listThumbnailStyleOptions(language: ChannelLanguage | PromptLang
   const lang = toPromptLanguage(language);
   const thumbnailPrompts = promptsRepository
     .findAll()
-    .filter(prompt => prompt.category === 'thumbnail' && prompt.language === lang);
+    .filter(prompt => prompt.category === 'thumbnail' && (prompt.language === lang || prompt.language === 'all'));
 
   const groups = new Map<string, { keys: string[]; useChannelBackgroundImage: boolean }>();
   for (const prompt of thumbnailPrompts) {
@@ -86,11 +86,10 @@ export function isHorizontalMultiStepStyle(
   if (!base) return false;
 
   const stepKeys = [1, 2, 3].map(step => `${base}_step_${step}`);
-  return stepKeys.every(stepKey =>
-    promptsRepository
-      .findAll()
-      .some(prompt => prompt.category === 'thumbnail' && prompt.language === lang && prompt.key === stepKey),
-  );
+  return stepKeys.every((stepKey) => {
+    const prompt = promptsRepository.findByKeyWithFallback(stepKey, lang);
+    return prompt?.category === 'thumbnail';
+  });
 }
 
 export function assertValidThumbnailStyleKey(

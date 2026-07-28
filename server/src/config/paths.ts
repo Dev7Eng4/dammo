@@ -33,6 +33,7 @@ export const paths = {
   siLocalStockDir: path.join(env.dataDir, 'assets', 'si-local-stock'),
   siAudioBarDir: path.join(env.dataDir, 'assets', 'audioBar'),
   siSmallVideoDir: path.join(env.dataDir, 'assets', 'small-video'),
+  siSubscribeDir: path.join(env.dataDir, 'assets', 'subscribe'),
   siTempStockDir: path.join(env.dataDir, 'assets', 'temp_stock'),
 };
 
@@ -75,7 +76,13 @@ export function mediaDownloadDir(platform: string, mediaId: string): string {
 }
 
 export function promptTemplateFile(language: string, key: string): string {
-  return path.join(paths.promptsDir, language, `${key}.js`);
+  const stepMatch = key.match(/^(.+)_step_(\d+)$/);
+  if (stepMatch) {
+    const base = stepMatch[1]!;
+    const step = stepMatch[2]!;
+    return path.join(paths.promptsDir, language, base, `step-${step}.js`);
+  }
+  return path.join(paths.promptsDir, language, key, 'step-1.js');
 }
 
 export function chromeProfileDir(profileId: string): string {
@@ -252,6 +259,7 @@ export function ensureDataDirs(): void {
     paths.siLocalStockDir,
     paths.siAudioBarDir,
     paths.siSmallVideoDir,
+    paths.siSubscribeDir,
     paths.siTempStockDir,
   ];
   for (const dir of dirs) {

@@ -25,11 +25,9 @@ export interface GeneralImageResult {
 }
 
 function resolveGeneralPromptKey(language: PromptLanguage): string {
-  const prompt = promptsRepository
-    .findAll()
-    .find(item => item.category === 'image' && item.language === language && item.key === GENERAL_PROMPT_KEY);
+  const prompt = promptsRepository.findByKeyWithFallback(GENERAL_PROMPT_KEY, language);
 
-  if (!prompt) {
+  if (!prompt || prompt.category !== 'image') {
     throw new AppError(`General image prompt not found for language "${language}"`, 404, 'PROMPT_NOT_FOUND');
   }
 

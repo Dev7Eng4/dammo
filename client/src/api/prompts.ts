@@ -9,6 +9,7 @@ import type {
   PromptResolved,
   PromptCategory,
   PromptLanguage,
+  SpecificPromptLanguage,
   UpdatePromptPayload,
   PromptsSettings,
   ThumbnailStyleOption,
@@ -87,7 +88,7 @@ export function fetchPromptSettings(options?: FetchOptions) {
   );
 }
 
-export function fetchThumbnailStyles(language: PromptLanguage, options?: FetchOptions) {
+export function fetchThumbnailStyles(language: SpecificPromptLanguage, options?: FetchOptions) {
   const params = new URLSearchParams({ language });
   return fetchJson<{ items: ThumbnailStyleOption[] }>(
     `${API_V1}/prompts/thumbnail-styles?${params}`,

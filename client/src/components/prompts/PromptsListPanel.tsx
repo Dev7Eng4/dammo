@@ -1,9 +1,16 @@
-import { SearchInput } from '../ui';
-import { DropdownSelect } from '../ui';
-import { Button } from '../ui';
-import { PROMPT_CATEGORY_OPTIONS, PROMPT_CATEGORY_LABELS, PROMPT_LANGUAGE_LABELS, PROMPT_LANGUAGE_OPTIONS } from '../../constants/promptForm';
+import { useMemo } from 'react';
+import { SearchInput, DropdownSelect, Button } from '../ui';
+import {
+  PROMPT_CATEGORY_OPTIONS,
+  PROMPT_CATEGORY_LABELS,
+  PROMPT_LANGUAGE_LABELS,
+  PROMPT_LANGUAGE_OPTIONS,
+} from '../../constants/promptForm';
 import { cn } from '../../lib/cn';
+import { groupPromptSets } from '../../utils/promptSets';
 import type { Prompt, PromptCategory, PromptLanguage } from '../../types/prompt';
+
+export type PromptListLanguageFilter = 'any' | PromptLanguage;
 
 export interface PromptsListPanelProps {
   prompts: Prompt[];
@@ -11,10 +18,10 @@ export interface PromptsListPanelProps {
   selectedId: string | null;
   search: string;
   categoryFilter: PromptCategory | 'all';
-  languageFilter: PromptLanguage | 'all';
+  languageFilter: PromptListLanguageFilter;
   onSearchChange: (value: string) => void;
   onCategoryFilterChange: (value: PromptCategory | 'all') => void;
-  onLanguageFilterChange: (value: PromptLanguage | 'all') => void;
+  onLanguageFilterChange: (value: PromptListLanguageFilter) => void;
   onSelect: (id: string) => void;
   onNew: () => void;
 }
@@ -25,7 +32,8 @@ const categoryFilterOptions = [
 ];
 
 const languageFilterOptions = [
-  { value: 'all' as const, label: 'Tất cả ngôn ngữ' },
+  { value: 'any' as const, label: 'Tất cả ngôn ngữ' },
+  { value: 'all' as const, label: 'Namespace ALL' },
   ...PROMPT_LANGUAGE_OPTIONS,
 ];
 
@@ -55,6 +63,8 @@ export function PromptsListPanel({
   onSelect,
   onNew,
 }: PromptsListPanelProps) {
+  const sets = useMemo(() => groupPromptSets(prompts), [prompts]);
+
   return (
     <aside className="flex w-[300px] shrink-0 flex-col border-r border-border bg-surface">
       <div className="space-y-3 border-b border-border p-4">
@@ -95,17 +105,17 @@ export function PromptsListPanel({
               <div key={i} className="h-16 animate-pulse rounded-lg bg-surface-elevated" />
             ))}
           </div>
-        ) : prompts.length === 0 ? (
+        ) : sets.length === 0 ? (
           <p className="px-2 py-6 text-center text-sm text-neutral-500">Không tìm thấy prompt</p>
         ) : (
           <ul className="space-y-1">
-            {prompts.map((prompt) => {
-              const isSelected = prompt.id === selectedId;
+            {sets.map((set) => {
+              const isSelected = selectedId !== null && set.memberIds.includes(selectedId);
               return (
-                <li key={prompt.id}>
+                <li key={`${set.language}:${set.name}:${set.id}`}>
                   <button
                     type="button"
-                    onClick={() => onSelect(prompt.id)}
+                    onClick={() => onSelect(set.id)}
                     className={cn(
                       'w-full rounded-lg px-3 py-2.5 text-left transition-colors',
                       isSelected
@@ -113,26 +123,31 @@ export function PromptsListPanel({
                         : 'hover:bg-surface-elevated',
                     )}
                   >
-                    <p className="truncate text-sm font-medium text-neutral-100">{prompt.name}</p>
+                    <p className="truncate text-sm font-medium text-neutral-100">{set.name}</p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <span
                         className={cn(
                           'inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                          categoryBadgeClass(prompt.category),
+                          categoryBadgeClass(set.category),
                         )}
                       >
-                        {PROMPT_CATEGORY_LABELS[prompt.category]}
+                        {PROMPT_CATEGORY_LABELS[set.category]}
                       </span>
                       <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-400">
-                        {PROMPT_LANGUAGE_LABELS[prompt.language]}
+                        {PROMPT_LANGUAGE_LABELS[set.language]}
                       </span>
-                      {prompt.isSystem ? (
+                      {set.stepCount > 1 ? (
+                        <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-300">
+                          {set.stepCount} step
+                        </span>
+                      ) : null}
+                      {set.isSystem ? (
                         <span className="inline-flex rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
                           Hệ thống
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 truncate font-mono text-[10px] text-neutral-500">{prompt.key}</p>
+                    <p className="mt-1 truncate font-mono text-[10px] text-neutral-500">{set.key}</p>
                   </button>
                 </li>
               );

@@ -1,4 +1,12 @@
-import type { PlaygroundProvider, PromptCategory, PromptLanguage, PromptOutputType, ImageBrowserProvider, VideoBrowserProvider } from '../types/prompt';
+import type {
+  PlaygroundProvider,
+  PromptCategory,
+  PromptLanguage,
+  PromptOutputType,
+  ImageBrowserProvider,
+  VideoBrowserProvider,
+  SpecificPromptLanguage,
+} from '../types/prompt';
 
 export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[] = [
   { value: 'thumbnail', label: 'Ảnh thumbnail' },
@@ -7,15 +15,15 @@ export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[]
   { value: 'image', label: 'Hình ảnh' },
 ];
 
-export const PROMPT_LANGUAGE_OPTIONS: { value: PromptLanguage; label: string }[] = [
+export const PROMPT_LANGUAGE_OPTIONS: { value: SpecificPromptLanguage; label: string }[] = [
   { value: 'en', label: 'Tiếng Anh' },
   { value: 'ko', label: 'Tiếng Hàn' },
   { value: 'ja', label: 'Tiếng Nhật' },
   { value: 'es', label: 'Tiếng Tây Ban Nha' },
 ];
 
-/** Language options for create/edit form, including "all languages". */
-export const PROMPT_FORM_LANGUAGE_OPTIONS: { value: PromptLanguage | 'all'; label: string }[] = [
+/** Language options for create/edit form, including the shared `all` namespace. */
+export const PROMPT_FORM_LANGUAGE_OPTIONS: { value: PromptLanguage; label: string }[] = [
   { value: 'all', label: 'Tất cả' },
   ...PROMPT_LANGUAGE_OPTIONS,
 ];
@@ -48,6 +56,7 @@ export const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
 };
 
 export const PROMPT_LANGUAGE_LABELS: Record<PromptLanguage, string> = {
+  all: 'ALL',
   en: 'EN',
   ko: 'KO',
   ja: 'JA',

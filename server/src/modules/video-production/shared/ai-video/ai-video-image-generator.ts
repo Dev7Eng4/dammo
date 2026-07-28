@@ -206,7 +206,7 @@ export async function generateAiVideoImagesWithReference(
     input.onLog?.(msg);
   };
 
-  log('[ai-video] useReferenceImage=true → character design + video_image_with_reference');
+  log('[ai-video] useReferenceImage=true → image_scenes_with_references_step_1 + step_2');
 
   const characterResult = await generateCharacterReferences({
     workDir: input.workDir,

@@ -1,4 +1,4 @@
-export type AssetKind = 'audioBar' | 'fonts' | 'smallVideo' | 'siLocalStock';
+export type AssetKind = 'audioBar' | 'fonts' | 'smallVideo' | 'siLocalStock' | 'subscribe';
 
 export interface AssetFileItem {
   name: string;

@@ -71,22 +71,22 @@ export function YoutubeChannelsPage() {
     selectedIds.size > 1 && !allSelectedAreReup
       ? 'Tất cả kênh đã chọn phải thuộc loại Reup âm thanh hoặc Reup video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-      ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tạo video'
-      : isBulkCreate
-      ? 'Tạo video cho tất cả kênh reup'
-      : selectedIds.size > 1
-      ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
-      : undefined;
+        ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tạo video'
+        : isBulkCreate
+          ? 'Tạo video cho tất cả kênh reup'
+          : selectedIds.size > 1
+            ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
+            : undefined;
   const uploadDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
       ? 'Tất cả kênh đã chọn phải thuộc loại Reup âm thanh hoặc Reup video'
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-      ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tải video lên'
-      : isBulkCreate
-      ? 'Tải video lên cho tất cả kênh reup'
-      : selectedIds.size > 1
-      ? `Tải video lên cho ${selectedIds.size} kênh đã chọn`
-      : undefined;
+        ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tải video lên'
+        : isBulkCreate
+          ? 'Tải video lên cho tất cả kênh reup'
+          : selectedIds.size > 1
+            ? `Tải video lên cho ${selectedIds.size} kênh đã chọn`
+            : undefined;
   const canEdit = selectedIds.size === 1;
   const editDisabledReason =
     selectedIds.size === 0 ? 'Chọn một kênh để chỉnh sửa' : selectedIds.size > 1 ? 'Chỉ chọn một kênh để chỉnh sửa' : undefined;

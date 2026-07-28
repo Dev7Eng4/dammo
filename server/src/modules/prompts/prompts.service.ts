@@ -7,7 +7,7 @@ import {
   readPromptSource,
   writePromptFile,
 } from './prompts.file-store.js';
-import { resolveUniquePromptKey, resolveUniquePromptKeyAcrossLanguages, PROMPT_LANGUAGES } from './prompt-key.js';
+import { resolveUniquePromptKey } from './prompt-key.js';
 import { promptsRepository } from './prompts.repository.js';
 import type {
   CreatePromptInput,
@@ -113,7 +113,7 @@ export class PromptsService {
   }
 
   getByKey(key: string, language: PromptLanguage): Prompt {
-    const prompt = promptsRepository.findByKeyAndLanguage(normalizeKey(key), language);
+    const prompt = promptsRepository.findByKeyWithFallback(normalizeKey(key), language);
     if (!prompt) {
       throw new AppError('Prompt not found', 404, 'NOT_FOUND');
     }
@@ -127,33 +127,7 @@ export class PromptsService {
   }
 
   async create(input: CreatePromptInput): Promise<Prompt> {
-    if (input.language === 'all') {
-      const items = await this.createForAllLanguages(input);
-      return items[0];
-    }
-
     return this.createForLanguage(input, input.language);
-  }
-
-  async createForAllLanguages(input: CreatePromptInput): Promise<Prompt[]> {
-    const name = input.name.trim();
-    const key = input.key ? normalizeKey(input.key) : resolveUniquePromptKeyAcrossLanguages(name);
-    const items: Prompt[] = [];
-
-    for (const language of PROMPT_LANGUAGES) {
-      items.push(
-        await this.createForLanguage(
-          {
-            ...input,
-            language,
-            key,
-          },
-          language,
-        ),
-      );
-    }
-
-    return items;
   }
 
   private async createForLanguage(

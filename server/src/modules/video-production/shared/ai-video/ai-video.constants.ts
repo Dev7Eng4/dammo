@@ -65,9 +65,9 @@ export const AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC = 20 * 60;
 /** Character design transcript window when useReferenceImage (25 minutes). */
 export const AI_VIDEO_CHARACTER_DESIGN_MAX_TRANSCRIPT_SEC = 25 * 60;
 
-export const VIDEO_IMAGE_PROMPT_KEY = 'video_image';
-export const VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY = 'video_image_with_reference';
-export const CREATE_CHARACTERS_DESIGN_PROMPT_KEY = 'create_characters_design';
+export const VIDEO_IMAGE_PROMPT_KEY = 'image_scenes';
+export const VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY = 'image_scenes_with_references_step_2';
+export const CREATE_CHARACTERS_DESIGN_PROMPT_KEY = 'image_scenes_with_references_step_1';
 
 export const AI_SCENE_PROMPTS_FILENAME = 'ai-scene-prompts.json';
 export const CHARACTER_REFERENCES_FILENAME = 'character-references.json';

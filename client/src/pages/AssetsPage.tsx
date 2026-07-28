@@ -8,6 +8,7 @@ import { cn } from '../lib/cn';
 
 const TABS: { kind: AssetKind; label: string; accept: string }[] = [
   { kind: 'audioBar', label: 'Phổ âm thanh', accept: '.mp4,.mov,video/mp4,video/quicktime' },
+  { kind: 'subscribe', label: 'Subscribe', accept: '.mp4,.mov,video/mp4,video/quicktime' },
   { kind: 'fonts', label: 'Phông chữ', accept: '.ttf,.otf,.woff,.woff2' },
   { kind: 'smallVideo', label: 'Video stock nhỏ', accept: '.mp4,.mov,video/mp4,video/quicktime' },
   {

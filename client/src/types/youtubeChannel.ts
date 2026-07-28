@@ -121,6 +121,7 @@ export interface YoutubeChannel {
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  subscribeFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -173,13 +174,13 @@ export const YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS: {
   value: YoutubeChannelVideoStatusFilter;
   label: string;
 }[] = [
-  { value: 'all', label: 'Tất cả trạng thái' },
-  { value: 'Published', label: 'Đã xuất bản' },
-  { value: 'Prepared', label: 'Đã chuẩn bị' },
-  { value: 'Created', label: 'Đã tạo' },
-  { value: 'Draft', label: 'Bản nháp' },
-  { value: 'Error', label: 'Lỗi' },
-];
+    { value: 'all', label: 'Tất cả trạng thái' },
+    { value: 'Published', label: 'Đã xuất bản' },
+    { value: 'Prepared', label: 'Đã chuẩn bị' },
+    { value: 'Created', label: 'Đã tạo' },
+    { value: 'Draft', label: 'Bản nháp' },
+    { value: 'Error', label: 'Lỗi' },
+  ];
 
 export interface YoutubeChannelVideo {
   id: string;
@@ -468,6 +469,7 @@ export interface CreateYoutubeChannelPayload {
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  subscribeFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -500,6 +502,7 @@ export interface AddYoutubeChannelFormValues {
   audioBarFile: string;
   showChannelAvatar: boolean;
   showSubscribe: boolean;
+  subscribeFile: string;
   smallVideoFile: string;
   showDisclaimer: boolean;
   disclaimerText: string;

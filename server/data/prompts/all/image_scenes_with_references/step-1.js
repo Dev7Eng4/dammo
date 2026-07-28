@@ -1,4 +1,5 @@
-export default (transcript, visualStyle) => `# VAI TRÒ
+export default (transcript, visualStyle) => `
+# VAI TRÒ
 
 Bạn là một Character Designer chuyên thiết kế nhân vật cho AI Image Generation.
 

@@ -69,6 +69,7 @@ export interface YoutubeChannel {
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  subscribeFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -133,6 +134,7 @@ export interface CreateYoutubeChannelInput {
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  subscribeFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -162,6 +164,7 @@ export interface UpdateYoutubeChannelInput {
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  subscribeFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;

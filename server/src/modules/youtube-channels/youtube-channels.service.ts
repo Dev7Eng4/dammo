@@ -128,6 +128,7 @@ type ChannelConfigInput = Pick<
   | 'showSubscribe'
   | 'showSmallVideo'
   | 'smallVideoFile'
+  | 'subscribeFile'
   | 'showDisclaimer'
   | 'disclaimerText'
   | 'descriptionDisclaimerText'
@@ -166,6 +167,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  subscribeFile?: string;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;
@@ -222,12 +224,13 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let audioBarFile: string | undefined;
   let showSmallVideo: boolean | undefined;
   let smallVideoFile: string | undefined;
+  let showSubscribe: boolean | undefined;
+  let subscribeFile: string | undefined;
   let captionStyleKey: CaptionStyleKey | undefined;
   const disclaimerText = input.disclaimerText?.trim();
   const descriptionDisclaimerText = input.descriptionDisclaimerText?.trim();
   const showDisclaimer = input.showDisclaimer === true;
   const showChannelAvatar = input.showChannelAvatar === true;
-  const showSubscribe = input.showSubscribe === true;
 
   if (isReupAudioChannelType(input.type)) {
     if (!input.reupAudioVideoType) {
@@ -272,6 +275,15 @@ function validateChannelConfig(input: ChannelConfigInput): {
         showSmallVideo = true;
       } else {
         showSmallVideo = input.showSmallVideo === true;
+      }
+
+      const selectedSubscribe = input.subscribeFile?.trim();
+      if (selectedSubscribe) {
+        assetsService.getAsset('subscribe', selectedSubscribe);
+        subscribeFile = selectedSubscribe;
+        showSubscribe = true;
+      } else {
+        showSubscribe = false;
       }
 
       const needsVisualStyle =
@@ -336,6 +348,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(showSubscribe ? { showSubscribe: true } : {}),
     ...(showSmallVideo ? { showSmallVideo: true } : {}),
     ...(smallVideoFile ? { smallVideoFile } : {}),
+    ...(subscribeFile ? { subscribeFile } : {}),
     ...(showDisclaimer ? { showDisclaimer: true } : {}),
     ...(disclaimerText ? { disclaimerText } : {}),
     ...(descriptionDisclaimerText ? { descriptionDisclaimerText } : {}),
@@ -680,6 +693,7 @@ export class YoutubeChannelsService {
       ...(config.showSubscribe ? { showSubscribe: true } : {}),
       ...(config.showSmallVideo ? { showSmallVideo: true } : {}),
       ...(config.smallVideoFile ? { smallVideoFile: config.smallVideoFile } : {}),
+      ...(config.subscribeFile ? { subscribeFile: config.subscribeFile } : {}),
       ...(config.showDisclaimer ? { showDisclaimer: true } : {}),
       ...(config.disclaimerText ? { disclaimerText: config.disclaimerText } : {}),
       ...(config.descriptionDisclaimerText
@@ -825,6 +839,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.smallVideoFile;
         }
+        if (config.reupAudioVideoType === 'si' && config.subscribeFile) {
+          next.subscribeFile = config.subscribeFile;
+        } else {
+          delete next.subscribeFile;
+        }
         if (config.captionStyleKey) {
           next.captionStyleKey = config.captionStyleKey;
         } else {
@@ -840,6 +859,7 @@ export class YoutubeChannelsService {
         delete next.audioBarFile;
         delete next.showSmallVideo;
         delete next.smallVideoFile;
+        delete next.subscribeFile;
         delete next.captionStyleKey;
       }
 

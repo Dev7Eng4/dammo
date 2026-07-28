@@ -23,7 +23,7 @@ export interface AiVideoScenePrompt {
   prompt: string;
   startTime: string;
   endTime: string;
-  /** Character ids from video_image_with_reference output. */
+  /** Character ids from image_scenes_with_references_step_2 (scene-with-reference) output. */
   references?: string[];
   /** Relative path under workDir when image exists, e.g. images/scene-001.jpg */
   path?: string;
@@ -68,7 +68,7 @@ export interface GenerateAiVideoImagesInput {
   maxTranscriptSec?: number;
   /** Per-density max scene duration override (defaults 8 / 30 / 60). */
   densityMaxSceneSec?: AiSceneDensityMaxSec;
-  /** Use create_characters_design + video_image_with_reference; pause before scene images. */
+  /** Use image_scenes_with_references_step_1 + step_2; pause before scene images. */
   useReferenceImage?: boolean;
   onLog?: (msg: string) => void;
   onProgress?: (progress: {

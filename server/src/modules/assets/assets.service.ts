@@ -18,6 +18,8 @@ function resolveKindDir(kind: AssetKind): string {
       return paths.siSmallVideoDir;
     case 'siLocalStock':
       return paths.siLocalStockDir;
+    case 'subscribe':
+      return paths.siSubscribeDir;
   }
 }
 

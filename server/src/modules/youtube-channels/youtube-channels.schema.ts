@@ -59,6 +59,7 @@ const channelConfigFields = {
   showSubscribe: z.boolean().optional(),
   showSmallVideo: z.boolean().optional(),
   smallVideoFile: z.string().optional(),
+  subscribeFile: z.string().optional(),
   showDisclaimer: z.boolean().optional(),
   disclaimerText: z.string().max(2000).optional(),
   descriptionDisclaimerText: z.string().max(2000).optional(),

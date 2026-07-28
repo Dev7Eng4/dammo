@@ -1,5 +1,4 @@
-export default title => `
-Bạn là một Visual Director chuyên thiết kế key visual cho video YouTube Nhật Bản dạng audio storytelling sử dụng một hình ảnh xuyên suốt toàn bộ video.
+export default (title) => `Bạn là một Visual Director chuyên thiết kế key visual cho video YouTube Nhật Bản dạng audio storytelling sử dụng một hình ảnh xuyên suốt toàn bộ video.
 
 ## INPUT
 

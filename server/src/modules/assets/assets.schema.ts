@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const assetKindSchema = z.enum(['audioBar', 'fonts', 'smallVideo', 'siLocalStock']);
+export const assetKindSchema = z.enum(['audioBar', 'fonts', 'smallVideo', 'siLocalStock', 'subscribe']);
 
 export const listAssetsQuerySchema = z.object({
   kind: assetKindSchema,
