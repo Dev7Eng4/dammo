@@ -4,6 +4,9 @@ export type PromptOutputType = 'text' | 'image' | 'video';
 
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
+/** Create-only: replicate prompt for every language. */
+export type CreatePromptLanguage = PromptLanguage | 'all';
+
 export interface Prompt {
   id: string;
   key: string;
@@ -24,7 +27,7 @@ export interface PromptsStore {
 }
 
 export interface CreatePromptInput {
-  language: PromptLanguage;
+  language: CreatePromptLanguage;
   name: string;
   template: string;
   category?: PromptCategory;

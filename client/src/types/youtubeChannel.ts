@@ -15,6 +15,19 @@ export type CaptionStyleKey = 'default' | 'bizudp_gothic' | 'zen_kaku' | 'noto_s
 
 export type BackgroundFootageMode = 'source' | 'local';
 
+/** Max scene duration (seconds) per density level for AI / SI multi_image prompts. */
+export interface AiSceneDensityMaxSec {
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export const DEFAULT_AI_SCENE_DENSITY_MAX_SEC: AiSceneDensityMaxSec = {
+  high: 8,
+  medium: 30,
+  low: 60,
+};
+
 export const BACKGROUND_FOOTAGE_LOCAL_SENTINEL = '__local__';
 
 export function isReupYoutubeChannelType(type: YoutubeChannelType | ''): type is ReupYoutubeChannelType {
@@ -100,6 +113,7 @@ export interface YoutubeChannel {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;
@@ -446,6 +460,7 @@ export interface CreateYoutubeChannelPayload {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;
@@ -480,6 +495,7 @@ export interface AddYoutubeChannelFormValues {
   reupAudioVideoType: ReupAudioVideoType | '';
   reupAudioVisualStyleId: string;
   reupAudioBackgroundImage: ReupAudioBackgroundImage | '';
+  aiSceneDensityMaxSec: AiSceneDensityMaxSec;
   useReferenceImage: boolean;
   audioBarFile: string;
   showChannelAvatar: boolean;

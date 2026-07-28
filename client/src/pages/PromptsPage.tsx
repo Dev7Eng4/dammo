@@ -367,6 +367,10 @@ export function PromptsPage() {
     setSaveError(null);
     try {
       if (draft.id) {
+        if (draft.language === 'all') {
+          setSaveError('Không thể đặt ngôn ngữ "Tất cả" khi sửa prompt đã có');
+          return;
+        }
         const { item } = await updatePrompt(draft.id, {
           language: draft.language,
           name: draft.name.trim(),

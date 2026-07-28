@@ -4,6 +4,11 @@ export type PromptOutputType = 'text' | 'image' | 'video';
 
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
+/** Create form / API: replicate prompt for every language. */
+export type CreatePromptLanguage = PromptLanguage | 'all';
+
+export const PROMPT_LANGUAGES: PromptLanguage[] = ['en', 'ko', 'ja', 'es'];
+
 
 
 export type PlaygroundProvider = 'gpt' | 'gemini';
@@ -69,7 +74,7 @@ export interface PromptResolved extends Prompt {
 
 export interface CreatePromptPayload {
 
-  language: PromptLanguage;
+  language: CreatePromptLanguage;
 
   name: string;
 
@@ -175,7 +180,7 @@ export interface PromptFormDraft {
 
   key: string;
 
-  language: PromptLanguage;
+  language: CreatePromptLanguage;
 
   name: string;
 

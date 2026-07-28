@@ -7,9 +7,10 @@ import { generateCharacterReferences } from './ai-video-character-references.js'
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
-  AI_VIDEO_DENSITY_MAX_SCENE_SEC,
+  resolveAiSceneDensityMaxSec,
   VIDEO_IMAGE_PROMPT_KEY,
   VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
+  type AiSceneDensityMaxSec,
   type AiVideoDensityLevel,
 } from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
@@ -32,11 +33,15 @@ interface DensityChunkJob {
   transcriptChunk: TranscriptCue[];
 }
 
-function buildDensityChunkJobs(chunks: {
-  high: TranscriptCue[][];
-  medium: TranscriptCue[][];
-  low: TranscriptCue[][];
-}): DensityChunkJob[] {
+function buildDensityChunkJobs(
+  chunks: {
+    high: TranscriptCue[][];
+    medium: TranscriptCue[][];
+    low: TranscriptCue[][];
+  },
+  densityMaxSceneSec?: AiSceneDensityMaxSec,
+): DensityChunkJob[] {
+  const maxByDensity = resolveAiSceneDensityMaxSec(densityMaxSceneSec);
   const jobs: DensityChunkJob[] = [];
   const densities: AiVideoDensityLevel[] = ['high', 'medium', 'low'];
 
@@ -47,7 +52,7 @@ function buildDensityChunkJobs(chunks: {
         density,
         chunkIndex,
         totalChunks: densityChunks.length,
-        maxDurationSec: AI_VIDEO_DENSITY_MAX_SCENE_SEC[density],
+        maxDurationSec: maxByDensity[density],
         transcriptChunk,
       });
     });
@@ -170,7 +175,7 @@ export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): 
   const prepared = await prepareTranscriptDensityChunks(input.subtitlePath, input.audioPath, {
     maxTranscriptSec: input.maxTranscriptSec,
   });
-  const jobs = buildDensityChunkJobs(prepared.chunks);
+  const jobs = buildDensityChunkJobs(prepared.chunks, input.densityMaxSceneSec);
 
   if (jobs.length === 0) {
     throw new AppError('No transcript chunks available for AI scene prompt generation', 400, 'INVALID_INPUT');
@@ -215,7 +220,7 @@ export async function generateAiVideoImagesWithReference(
   const prepared = await prepareTranscriptDensityChunks(input.subtitlePath, input.audioPath, {
     maxTranscriptSec: input.maxTranscriptSec,
   });
-  const jobs = buildDensityChunkJobs(prepared.chunks);
+  const jobs = buildDensityChunkJobs(prepared.chunks, input.densityMaxSceneSec);
 
   if (jobs.length === 0) {
     throw new AppError('No transcript chunks available for AI scene prompt generation', 400, 'INVALID_INPUT');

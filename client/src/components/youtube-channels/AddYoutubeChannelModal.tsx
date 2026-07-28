@@ -25,8 +25,9 @@ import type {
   YoutubeChannel,
   YoutubeChannelLanguage,
 } from '../../types/youtubeChannel';
-import { BACKGROUND_FOOTAGE_LOCAL_SENTINEL } from '../../types/youtubeChannel';
 import {
+  BACKGROUND_FOOTAGE_LOCAL_SENTINEL,
+  DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
   isReupAudioChannelType,
   isReupYoutubeChannelType,
   parseStoredChannelLanguage,
@@ -147,6 +148,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   reupAudioVideoType: '',
   reupAudioVisualStyleId: '',
   reupAudioBackgroundImage: '',
+  aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC },
   useReferenceImage: false,
   audioBarFile: '',
   showChannelAvatar: false,
@@ -183,6 +185,11 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     reupAudioVideoType: channel.reupAudioVideoType ?? '',
     reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
     reupAudioBackgroundImage: channel.reupAudioBackgroundImage ?? '',
+    aiSceneDensityMaxSec: {
+      high: channel.aiSceneDensityMaxSec?.high ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
+      medium: channel.aiSceneDensityMaxSec?.medium ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
+      low: channel.aiSceneDensityMaxSec?.low ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
+    },
     useReferenceImage: channel.useReferenceImage === true,
     audioBarFile: channel.audioBarFile ?? '',
     showChannelAvatar: channel.showChannelAvatar === true,
@@ -270,6 +277,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const reupAudioVideoType = watch('reupAudioVideoType');
   const reupAudioBackgroundImage = watch('reupAudioBackgroundImage');
   const useReferenceImage = watch('useReferenceImage');
+  const canEditSceneDensity =
+    isReupAudio && (reupAudioVideoType === 'ai' || reupAudioBackgroundImage === 'multi_image');
   const showDisclaimer = watch('showDisclaimer');
   const uploadFrequency = watch('uploadFrequency');
   const backgroundFootageMode = watch('backgroundFootageMode');
@@ -383,6 +392,12 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     }
   }, [formReady, isReupAudio, reupAudioVideoType, setValue]);
 
+  useEffect(() => {
+    if (!formReady) return;
+    if (canEditSceneDensity) return;
+    setValue('aiSceneDensityMaxSec', { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC });
+  }, [formReady, canEditSceneDensity, setValue]);
+
   useAbortableEffect(
     async signal => {
       if (!open || !formReady || !isReupAudio || !reupAudioVideoType) {
@@ -485,6 +500,17 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' && values.reupAudioBackgroundImage
           ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
+          : {}),
+        ...(values.type === 'reup_audio' &&
+        (values.reupAudioVideoType === 'ai' || values.reupAudioBackgroundImage === 'multi_image')
+          ? {
+              aiSceneDensityMaxSec: {
+                high: Number(values.aiSceneDensityMaxSec.high) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
+                medium:
+                  Number(values.aiSceneDensityMaxSec.medium) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
+                low: Number(values.aiSceneDensityMaxSec.low) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
+              },
+            }
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
           ? {
@@ -800,6 +826,77 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 )}
               />
             </FormField>
+
+            <div className='min-w-0 sm:col-span-2'>
+              <p className='mb-2 text-xs font-medium text-neutral-400'>
+                Thời lượng tối đa mỗi cảnh (giây)
+              </p>
+              <div className='grid grid-cols-3 gap-3'>
+                <FormField
+                  label='High'
+                  htmlFor='ai-scene-density-high'
+                  error={errors.aiSceneDensityMaxSec?.high?.message}
+                  className='min-w-0'
+                >
+                  <Input
+                    id='ai-scene-density-high'
+                    type='number'
+                    min={1}
+                    max={300}
+                    className='h-10 rounded-lg'
+                    disabled={isSubmitting || !canEditSceneDensity}
+                    {...register('aiSceneDensityMaxSec.high', {
+                      valueAsNumber: true,
+                      required: canEditSceneDensity ? 'Bắt buộc' : false,
+                      min: canEditSceneDensity ? { value: 1, message: 'Tối thiểu 1' } : undefined,
+                      max: canEditSceneDensity ? { value: 300, message: 'Tối đa 300' } : undefined,
+                    })}
+                  />
+                </FormField>
+                <FormField
+                  label='Medium'
+                  htmlFor='ai-scene-density-medium'
+                  error={errors.aiSceneDensityMaxSec?.medium?.message}
+                  className='min-w-0'
+                >
+                  <Input
+                    id='ai-scene-density-medium'
+                    type='number'
+                    min={1}
+                    max={300}
+                    className='h-10 rounded-lg'
+                    disabled={isSubmitting || !canEditSceneDensity}
+                    {...register('aiSceneDensityMaxSec.medium', {
+                      valueAsNumber: true,
+                      required: canEditSceneDensity ? 'Bắt buộc' : false,
+                      min: canEditSceneDensity ? { value: 1, message: 'Tối thiểu 1' } : undefined,
+                      max: canEditSceneDensity ? { value: 300, message: 'Tối đa 300' } : undefined,
+                    })}
+                  />
+                </FormField>
+                <FormField
+                  label='Low'
+                  htmlFor='ai-scene-density-low'
+                  error={errors.aiSceneDensityMaxSec?.low?.message}
+                  className='min-w-0'
+                >
+                  <Input
+                    id='ai-scene-density-low'
+                    type='number'
+                    min={1}
+                    max={300}
+                    className='h-10 rounded-lg'
+                    disabled={isSubmitting || !canEditSceneDensity}
+                    {...register('aiSceneDensityMaxSec.low', {
+                      valueAsNumber: true,
+                      required: canEditSceneDensity ? 'Bắt buộc' : false,
+                      min: canEditSceneDensity ? { value: 1, message: 'Tối thiểu 1' } : undefined,
+                      max: canEditSceneDensity ? { value: 300, message: 'Tối đa 300' } : undefined,
+                    })}
+                  />
+                </FormField>
+              </div>
+            </div>
 
             <FormField label='' htmlFor='reup-audio-use-reference-image' className='min-w-0'>
               <Controller

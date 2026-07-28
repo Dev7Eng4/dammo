@@ -3,9 +3,10 @@ import { z } from 'zod';
 const promptCategorySchema = z.enum(['thumbnail', 'transcript', 'meta', 'image']);
 const promptOutputTypeSchema = z.enum(['text', 'image', 'video']);
 const promptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
+const createPromptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es', 'all']);
 
 export const createPromptSchema = z.object({
-  language: promptLanguageSchema,
+  language: createPromptLanguageSchema,
   name: z.string().min(1).max(120),
   template: z.string().min(1),
   category: promptCategorySchema.default('meta'),

@@ -702,6 +702,7 @@ export class ReupAudioPipeline {
                   audioPath: downloaded.audioPath,
                   language: destination.language,
                   maxTranscriptSec: options.maxTranscriptSec,
+                  densityMaxSceneSec: destination.aiSceneDensityMaxSec,
                   useReferenceImage,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                   onProgress: taskJobId

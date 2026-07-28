@@ -1,7 +1,7 @@
+import type { AiSceneDensityMaxSec, AiVideoDensityLevel } from './ai-video.constants.js';
 import type { MetaConcurrencyMode } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import type { CaptionStyleKey } from '../si-video/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
-import type { AiVideoDensityLevel } from './ai-video.constants.js';
 
 export type { MetaConcurrencyMode };
 
@@ -66,6 +66,8 @@ export interface GenerateAiVideoImagesInput {
   language: PromptLanguage;
   /** When set, only the first N seconds of transcript are used for scene prompts. */
   maxTranscriptSec?: number;
+  /** Per-density max scene duration override (defaults 8 / 30 / 60). */
+  densityMaxSceneSec?: AiSceneDensityMaxSec;
   /** Use create_characters_design + video_image_with_reference; pause before scene images. */
   useReferenceImage?: boolean;
   onLog?: (msg: string) => void;

@@ -4,6 +4,7 @@ import type {
   CaptionStyleKey,
   ReupAudioBackgroundImage,
   ReupAudioVideoType,
+  AiSceneDensityMaxSec,
 } from '../../youtube-channels/youtube-channels.types.js';
 import type { VideoPrepareItem } from '../../youtube-channels/video-prepare.types.js';
 
@@ -31,6 +32,7 @@ export interface ProductionDestination {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;

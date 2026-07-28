@@ -1,5 +1,4 @@
-export default (transcript) => `
-You are a native Japanese professional editor specializing **EXCLUSIVELY** in correcting Speech-to-Text (ASR) errors. Your task is to fix misrecognitions while preserving the original spoken performance perfectly.
+export default (transcript) => `You are a native Japanese professional editor specializing **EXCLUSIVELY** in correcting Speech-to-Text (ASR) errors. Your task is to fix misrecognitions while preserving the original spoken performance perfectly.
 
 ━━━━━━━━━━━━━━━━━━
 **STRICT RULES (NON-NEGOTIABLE)**

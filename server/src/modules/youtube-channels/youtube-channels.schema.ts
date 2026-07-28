@@ -45,6 +45,13 @@ const channelConfigFields = {
   reupAudioBackgroundImage: z
     .enum(['no_image', 'local_image', 'one_image', 'multi_image'])
     .optional(),
+  aiSceneDensityMaxSec: z
+    .object({
+      high: z.number().int().min(1).max(300),
+      medium: z.number().int().min(1).max(300),
+      low: z.number().int().min(1).max(300),
+    })
+    .optional(),
   useReferenceImage: z.boolean().optional(),
   showAudioBar: z.boolean().optional(),
   audioBarFile: z.string().optional(),

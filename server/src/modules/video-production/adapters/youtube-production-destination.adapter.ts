@@ -64,6 +64,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     ...(channel.reupAudioVisualStyleId?.trim()
       ? { reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim() }
       : {}),
+    ...(channel.aiSceneDensityMaxSec ? { aiSceneDensityMaxSec: channel.aiSceneDensityMaxSec } : {}),
     ...(channel.useReferenceImage === true ? { useReferenceImage: true } : {}),
     ...(visualStyle ? { visualStyle } : {}),
   };

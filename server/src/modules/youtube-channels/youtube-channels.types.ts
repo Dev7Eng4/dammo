@@ -29,6 +29,13 @@ export type { CaptionStyleKey } from '../video-production/shared/si-video/captio
 
 export type BackgroundFootageMode = 'source' | 'local';
 
+/** Max scene duration (seconds) per density level for AI / SI multi_image prompts. */
+export interface AiSceneDensityMaxSec {
+  high: number;
+  medium: number;
+  low: number;
+}
+
 export interface YoutubeChannel {
   id: string;
   name: string;
@@ -54,6 +61,7 @@ export interface YoutubeChannel {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;
@@ -117,6 +125,7 @@ export interface CreateYoutubeChannelInput {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;
@@ -145,6 +154,7 @@ export interface UpdateYoutubeChannelInput {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;

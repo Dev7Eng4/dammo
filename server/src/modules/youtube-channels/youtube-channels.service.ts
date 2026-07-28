@@ -24,6 +24,7 @@ import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
 import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
+import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
@@ -31,6 +32,7 @@ import fs from 'node:fs';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
 import type {
+  AiSceneDensityMaxSec,
   CaptionStyleKey,
   CreateYoutubeChannelInput,
   BackgroundFootageMode,
@@ -118,6 +120,7 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
+  | 'aiSceneDensityMaxSec'
   | 'useReferenceImage'
   | 'showAudioBar'
   | 'audioBarFile'
@@ -155,6 +158,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
   audioBarFile?: string;
@@ -212,6 +216,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioVideoType: ReupAudioVideoType | undefined;
   let reupAudioVisualStyleId: string | undefined;
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
+  let aiSceneDensityMaxSec: AiSceneDensityMaxSec | undefined;
   let useReferenceImage: boolean | undefined;
   let showAudioBar: boolean | undefined;
   let audioBarFile: string | undefined;
@@ -241,6 +246,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
         input.language,
       );
       reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
+      aiSceneDensityMaxSec = resolveAiSceneDensityMaxSec(input.aiSceneDensityMaxSec);
     } else if (input.reupAudioVideoType === 'si') {
       if (!input.reupAudioBackgroundImage) {
         throw new AppError(
@@ -292,6 +298,10 @@ function validateChannelConfig(input: ChannelConfigInput): {
         );
         reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
       }
+
+      if (input.reupAudioBackgroundImage === 'multi_image') {
+        aiSceneDensityMaxSec = resolveAiSceneDensityMaxSec(input.aiSceneDensityMaxSec);
+      }
     }
 
     if (useReferenceImage && !reupAudioVisualStyleId) {
@@ -318,6 +328,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
+    ...(aiSceneDensityMaxSec ? { aiSceneDensityMaxSec } : {}),
     ...(useReferenceImage ? { useReferenceImage: true } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
     ...(audioBarFile ? { audioBarFile } : {}),
@@ -661,6 +672,7 @@ export class YoutubeChannelsService {
       ...(config.reupAudioBackgroundImage
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
+      ...(config.aiSceneDensityMaxSec ? { aiSceneDensityMaxSec: config.aiSceneDensityMaxSec } : {}),
       ...(config.useReferenceImage ? { useReferenceImage: true } : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
       ...(config.audioBarFile ? { audioBarFile: config.audioBarFile } : {}),
@@ -783,6 +795,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.reupAudioBackgroundImage;
         }
+        if (config.aiSceneDensityMaxSec) {
+          next.aiSceneDensityMaxSec = config.aiSceneDensityMaxSec;
+        } else {
+          delete next.aiSceneDensityMaxSec;
+        }
         if (config.useReferenceImage) {
           next.useReferenceImage = true;
         } else {
@@ -817,6 +834,7 @@ export class YoutubeChannelsService {
         delete next.reupAudioVideoType;
         delete next.reupAudioVisualStyleId;
         delete next.reupAudioBackgroundImage;
+        delete next.aiSceneDensityMaxSec;
         delete next.useReferenceImage;
         delete next.showAudioBar;
         delete next.audioBarFile;

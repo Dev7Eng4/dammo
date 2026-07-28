@@ -14,6 +14,12 @@ export const PROMPT_LANGUAGE_OPTIONS: { value: PromptLanguage; label: string }[]
   { value: 'es', label: 'Tiếng Tây Ban Nha' },
 ];
 
+/** Language options for create/edit form, including "all languages". */
+export const PROMPT_FORM_LANGUAGE_OPTIONS: { value: PromptLanguage | 'all'; label: string }[] = [
+  { value: 'all', label: 'Tất cả' },
+  ...PROMPT_LANGUAGE_OPTIONS,
+];
+
 export const PROMPT_OUTPUT_TYPE_OPTIONS: { value: PromptOutputType; label: string }[] = [
   { value: 'text', label: 'Văn bản' },
   { value: 'image', label: 'Hình ảnh' },

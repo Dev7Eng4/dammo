@@ -32,6 +32,30 @@ export const AI_VIDEO_DENSITY_MAX_SCENE_SEC = {
 
 export type AiVideoDensityLevel = keyof typeof AI_VIDEO_DENSITY_MAX_SCENE_SEC;
 
+export type AiSceneDensityMaxSec = {
+  high: number;
+  medium: number;
+  low: number;
+};
+
+/** Merge channel override with defaults (8 / 30 / 60). Invalid values fall back per key. */
+export function resolveAiSceneDensityMaxSec(
+  override?: Partial<AiSceneDensityMaxSec> | null,
+): AiSceneDensityMaxSec {
+  const clamp = (value: number | undefined, fallback: number): number => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+    const rounded = Math.round(value);
+    if (rounded < 1 || rounded > 300) return fallback;
+    return rounded;
+  };
+
+  return {
+    high: clamp(override?.high, AI_VIDEO_DENSITY_MAX_SCENE_SEC.high),
+    medium: clamp(override?.medium, AI_VIDEO_DENSITY_MAX_SCENE_SEC.medium),
+    low: clamp(override?.low, AI_VIDEO_DENSITY_MAX_SCENE_SEC.low),
+  };
+}
+
 /** Max span per LLM transcript chunk (5 minutes). */
 export const AI_VIDEO_TRANSCRIPT_CHUNK_MAX_SEC = 300;
 

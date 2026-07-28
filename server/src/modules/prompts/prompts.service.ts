@@ -7,7 +7,7 @@ import {
   readPromptSource,
   writePromptFile,
 } from './prompts.file-store.js';
-import { resolveUniquePromptKey } from './prompt-key.js';
+import { resolveUniquePromptKey, resolveUniquePromptKeyAcrossLanguages, PROMPT_LANGUAGES } from './prompt-key.js';
 import { promptsRepository } from './prompts.repository.js';
 import type {
   CreatePromptInput,
@@ -127,13 +127,46 @@ export class PromptsService {
   }
 
   async create(input: CreatePromptInput): Promise<Prompt> {
+    if (input.language === 'all') {
+      const items = await this.createForAllLanguages(input);
+      return items[0];
+    }
+
+    return this.createForLanguage(input, input.language);
+  }
+
+  async createForAllLanguages(input: CreatePromptInput): Promise<Prompt[]> {
+    const name = input.name.trim();
+    const key = input.key ? normalizeKey(input.key) : resolveUniquePromptKeyAcrossLanguages(name);
+    const items: Prompt[] = [];
+
+    for (const language of PROMPT_LANGUAGES) {
+      items.push(
+        await this.createForLanguage(
+          {
+            ...input,
+            language,
+            key,
+          },
+          language,
+        ),
+      );
+    }
+
+    return items;
+  }
+
+  private async createForLanguage(
+    input: CreatePromptInput,
+    language: PromptLanguage,
+  ): Promise<Prompt> {
     const name = input.name.trim();
     const key = input.key
       ? normalizeKey(input.key)
-      : resolveUniquePromptKey(name, input.language);
-    assertUniqueKeyLanguage(key, input.language);
+      : resolveUniquePromptKey(name, language);
+    assertUniqueKeyLanguage(key, language);
 
-    await writePromptFile(input.language, key, input.template);
+    await writePromptFile(language, key, input.template);
 
     const category = input.category ?? 'meta';
     const now = new Date().toISOString();
@@ -145,7 +178,7 @@ export class PromptsService {
     const prompt: Prompt = {
       id: generateId(),
       key,
-      language: input.language,
+      language,
       name: name,
       category,
       outputType: input.outputType ?? 'text',

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, DropdownSelect, Input, Textarea } from '../ui';
 import {
   PROMPT_CATEGORY_OPTIONS,
+  PROMPT_FORM_LANGUAGE_OPTIONS,
   PROMPT_LANGUAGE_OPTIONS,
   PROMPT_OUTPUT_TYPE_OPTIONS,
 } from '../../constants/promptForm';
@@ -176,7 +177,7 @@ export function PromptEditorPanel({
               <DropdownSelect
                 value={draft.language}
                 onChange={(language) => onChange({ language })}
-                options={PROMPT_LANGUAGE_OPTIONS}
+                options={isNew ? PROMPT_FORM_LANGUAGE_OPTIONS : PROMPT_LANGUAGE_OPTIONS}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
