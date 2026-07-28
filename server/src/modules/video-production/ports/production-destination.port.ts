@@ -2,6 +2,7 @@ import type { ChannelLanguage } from '../../youtube-channels/channel-language.js
 import type {
   BackgroundFootageMode,
   CaptionStyleKey,
+  ChannelPromptSetIds,
   ReupAudioBackgroundImage,
   ReupAudioVideoType,
   AiSceneDensityMaxSec,
@@ -26,6 +27,7 @@ export interface ProductionDestination {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  promptSetIds?: ChannelPromptSetIds;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
   /** Set for reup_audio channels only */

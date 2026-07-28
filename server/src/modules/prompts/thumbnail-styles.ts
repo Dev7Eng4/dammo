@@ -9,45 +9,19 @@ export interface ThumbnailStyleOption {
   useChannelBackgroundImage: boolean;
 }
 
-const STEP_SUFFIX_PATTERN = /_step_\d+$/;
-
 function toPromptLanguage(language: ChannelLanguage | PromptLanguage): PromptLanguage {
   return language;
 }
 
-function resolveCanonicalKey(keys: string[]): string {
-  if (keys.length === 1) return keys[0]!;
-
-  const stepKey = keys.find(key => STEP_SUFFIX_PATTERN.test(key));
-  if (stepKey) {
-    return stepKey.replace(STEP_SUFFIX_PATTERN, '');
-  }
-
-  return keys.sort()[0]!;
-}
-
 export function listThumbnailStyleOptions(language: ChannelLanguage | PromptLanguage): ThumbnailStyleOption[] {
   const lang = toPromptLanguage(language);
-  const thumbnailPrompts = promptsRepository
+  return promptsRepository
     .findAll()
-    .filter(prompt => prompt.category === 'thumbnail' && prompt.language === lang);
-
-  const groups = new Map<string, { keys: string[]; useChannelBackgroundImage: boolean }>();
-  for (const prompt of thumbnailPrompts) {
-    const name = prompt.name.trim();
-    const existing = groups.get(name) ?? { keys: [], useChannelBackgroundImage: false };
-    existing.keys.push(prompt.key);
-    if (prompt.useChannelBackgroundImage) {
-      existing.useChannelBackgroundImage = true;
-    }
-    groups.set(name, existing);
-  }
-
-  return [...groups.entries()]
-    .map(([name, group]) => ({
-      key: resolveCanonicalKey(group.keys),
-      name,
-      useChannelBackgroundImage: group.useChannelBackgroundImage,
+    .filter(set => set.category === 'thumbnail' && set.language === lang)
+    .map(set => ({
+      key: set.key,
+      name: set.name,
+      useChannelBackgroundImage: set.steps.some(step => step.useChannelBackgroundImage === true),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -59,6 +33,10 @@ export function validateThumbnailStyleKey(key: string, language: ChannelLanguage
 }
 
 export function resolveDefaultThumbnailStyleKey(language: ChannelLanguage | PromptLanguage): string | undefined {
+  const lang = toPromptLanguage(language);
+  const defaultSet = promptsRepository.findDefault(lang, 'thumbnail');
+  if (defaultSet) return defaultSet.key;
+
   const options = listThumbnailStyleOptions(language);
   if (options.length === 0) return undefined;
 
@@ -82,15 +60,9 @@ export function isHorizontalMultiStepStyle(
   language: ChannelLanguage | PromptLanguage,
 ): boolean {
   const lang = toPromptLanguage(language);
-  const base = styleKey.trim();
-  if (!base) return false;
-
-  const stepKeys = [1, 2, 3].map(step => `${base}_step_${step}`);
-  return stepKeys.every(stepKey =>
-    promptsRepository
-      .findAll()
-      .some(prompt => prompt.category === 'thumbnail' && prompt.language === lang && prompt.key === stepKey),
-  );
+  const set = promptsRepository.findByKeyAndLanguage(styleKey.trim(), lang);
+  if (!set || set.category !== 'thumbnail') return false;
+  return set.steps.length >= 3;
 }
 
 export function assertValidThumbnailStyleKey(

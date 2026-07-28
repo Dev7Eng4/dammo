@@ -17,6 +17,8 @@ const OLD_THUMBNAIL_FILENAME = 'old-thumbnail.jpg';
 export interface RunGeneralImageOptions extends FlowProfileOptions {
   referenceImagePaths?: string[];
   onProgress?: (progress: HeroImageProgress) => void;
+  /** PromptSet.key override (from resolvePromptSet) */
+  promptKey?: string;
 }
 
 export interface GeneralImageResult {
@@ -24,7 +26,15 @@ export interface GeneralImageResult {
   promptUsed: string;
 }
 
-function resolveGeneralPromptKey(language: PromptLanguage): string {
+function resolveGeneralPromptKey(language: PromptLanguage, overrideKey?: string): string {
+  const trimmed = overrideKey?.trim();
+  if (trimmed) {
+    const byKey = promptsRepository.findByKeyAndLanguage(trimmed, language);
+    if (byKey && byKey.category === 'image') {
+      return byKey.key;
+    }
+  }
+
   const prompt = promptsRepository
     .findAll()
     .find(item => item.category === 'image' && item.language === language && item.key === GENERAL_PROMPT_KEY);
@@ -63,7 +73,7 @@ export async function runGeneralImage(
 
   await assertReferenceImagesExist(referenceImagePaths);
 
-  const promptKey = resolveGeneralPromptKey(language);
+  const promptKey = resolveGeneralPromptKey(language, options?.promptKey);
   const promptUsed = await executePromptTemplate(language, promptKey, [title]);
   if (!promptUsed.trim()) {
     throw new AppError(`Empty prompt for general image style ${promptKey}`, 500, 'PROMPT_EMPTY');

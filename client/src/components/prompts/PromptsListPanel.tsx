@@ -3,10 +3,10 @@ import { DropdownSelect } from '../ui';
 import { Button } from '../ui';
 import { PROMPT_CATEGORY_OPTIONS, PROMPT_CATEGORY_LABELS, PROMPT_LANGUAGE_LABELS, PROMPT_LANGUAGE_OPTIONS } from '../../constants/promptForm';
 import { cn } from '../../lib/cn';
-import type { Prompt, PromptCategory, PromptLanguage } from '../../types/prompt';
+import type { PromptSet, PromptCategory, PromptLanguage } from '../../types/prompt';
 
 export interface PromptsListPanelProps {
-  prompts: Prompt[];
+  prompts: PromptSet[];
   loading: boolean;
   selectedId: string | null;
   search: string;
@@ -59,7 +59,7 @@ export function PromptsListPanel({
     <aside className="flex w-[300px] shrink-0 flex-col border-r border-border bg-surface">
       <div className="space-y-3 border-b border-border p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-neutral-100">Prompts</h2>
+          <h2 className="text-sm font-semibold text-neutral-100">Bộ prompts</h2>
           <Button size="sm" onClick={onNew}>
             + Mới
           </Button>
@@ -126,6 +126,14 @@ export function PromptsListPanel({
                       <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-400">
                         {PROMPT_LANGUAGE_LABELS[prompt.language]}
                       </span>
+                      <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-400">
+                        {prompt.steps?.length ?? 0} step
+                      </span>
+                      {prompt.isDefault ? (
+                        <span className="inline-flex rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                          Default
+                        </span>
+                      ) : null}
                       {prompt.isSystem ? (
                         <span className="inline-flex rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
                           Hệ thống

@@ -1,72 +1,98 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
-import type { Prompt, PromptLanguage, PromptsStore } from './prompts.types.js';
+import {
+  backupPromptsJson,
+  isLegacyPromptsStore,
+  migrateLegacyPromptsToSets,
+} from './prompts-migrate.js';
+import type { PromptCategory, PromptLanguage, PromptSet, PromptsStore } from './prompts.types.js';
 
-const EMPTY_STORE: PromptsStore = { prompts: [] };
+const EMPTY_STORE: PromptsStore = { promptSets: [] };
 
-type StoredPrompt = Prompt & { content?: string };
-
-function sanitizePrompt(prompt: StoredPrompt): Prompt {
-  const { content: _content, ...rest } = prompt;
-  return rest;
-}
-
-function sanitizeStore(store: { prompts: StoredPrompt[] }): PromptsStore {
-  return { prompts: store.prompts.map(sanitizePrompt) };
-}
-
-function loadStore(): PromptsStore {
-  const raw = readJson<{ prompts: StoredPrompt[] }>(paths.prompts);
-  return raw ? sanitizeStore(raw) : EMPTY_STORE;
-}
+let migratedThisProcess = false;
 
 function normalizeKey(key: string): string {
   return key.trim().toLowerCase();
 }
 
+function loadStore(): PromptsStore {
+  const raw = readJson<unknown>(paths.prompts);
+
+  if (!raw) return EMPTY_STORE;
+
+  if (isLegacyPromptsStore(raw)) {
+    if (!migratedThisProcess) {
+      migratedThisProcess = true;
+      void backupPromptsJson().catch(() => undefined);
+      const promptSets = migrateLegacyPromptsToSets(raw.prompts);
+      const next: PromptsStore = { promptSets };
+      writeJson(paths.prompts, next);
+      return next;
+    }
+  }
+
+  const store = raw as PromptsStore;
+  if (!Array.isArray(store.promptSets)) {
+    return EMPTY_STORE;
+  }
+  return { promptSets: store.promptSets };
+}
+
 export class PromptsRepository {
-  findAll(): Prompt[] {
-    return loadStore().prompts;
+  findAll(): PromptSet[] {
+    return loadStore().promptSets;
   }
 
-  findById(id: string): Prompt | null {
-    return loadStore().prompts.find((prompt) => prompt.id === id) ?? null;
+  findById(id: string): PromptSet | null {
+    return loadStore().promptSets.find(set => set.id === id) ?? null;
   }
 
-  findByKeyAndLanguage(key: string, language: PromptLanguage): Prompt | null {
+  findByKeyAndLanguage(key: string, language: PromptLanguage): PromptSet | null {
     const normalized = normalizeKey(key);
     return (
-      loadStore().prompts.find(
-        (prompt) => prompt.key === normalized && prompt.language === language,
+      loadStore().promptSets.find(set => set.key === normalized && set.language === language) ?? null
+    );
+  }
+
+  findDefault(language: PromptLanguage, category: PromptCategory): PromptSet | null {
+    return (
+      loadStore().promptSets.find(
+        set => set.language === language && set.category === category && set.isDefault === true,
       ) ?? null
     );
   }
 
-  prepend(prompt: Prompt): Prompt {
-    updateJson(
-      paths.prompts,
-      (store) =>
-        sanitizeStore({
-          prompts: [prompt, ...store.prompts],
-        }),
-      loadStore(),
+  findByLanguageAndCategory(language: PromptLanguage, category: PromptCategory): PromptSet[] {
+    return loadStore().promptSets.filter(
+      set => set.language === language && set.category === category,
     );
-    return prompt;
   }
 
-  update(id: string, updater: (prompt: Prompt) => Prompt): Prompt | null {
-    let updated: Prompt | null = null;
+  prepend(set: PromptSet): PromptSet {
+    updateJson(
+      paths.prompts,
+      store => ({
+        promptSets: [set, ...(store.promptSets ?? [])],
+      }),
+      loadStore(),
+    );
+    return set;
+  }
+
+  update(id: string, updater: (set: PromptSet) => PromptSet): PromptSet | null {
+    let updated: PromptSet | null = null;
 
     updateJson(
       paths.prompts,
-      (store) => {
-        const index = store.prompts.findIndex((prompt) => prompt.id === id);
+      store => {
+        const sets = store.promptSets ?? [];
+        const index = sets.findIndex(set => set.id === id);
         if (index === -1) return store;
 
-        updated = updater(sanitizePrompt(store.prompts[index]));
-        const prompts = [...store.prompts];
-        prompts[index] = updated;
-        return sanitizeStore({ prompts });
+        updated = updater(sets[index]);
+        const promptSets = [...sets];
+        promptSets[index] = updated;
+        return { promptSets };
       },
       loadStore(),
     );
@@ -74,15 +100,37 @@ export class PromptsRepository {
     return updated;
   }
 
+  /** Clear isDefault on other sets in the same language+category (except excludeId). */
+  clearDefaultExcept(language: PromptLanguage, category: PromptCategory, excludeId: string): void {
+    updateJson(
+      paths.prompts,
+      store => ({
+        promptSets: (store.promptSets ?? []).map(set => {
+          if (
+            set.id !== excludeId &&
+            set.language === language &&
+            set.category === category &&
+            set.isDefault
+          ) {
+            const { isDefault: _d, ...rest } = set;
+            return rest;
+          }
+          return set;
+        }),
+      }),
+      loadStore(),
+    );
+  }
+
   delete(id: string): boolean {
     let deleted = false;
 
     updateJson(
       paths.prompts,
-      (store) => {
-        const next = store.prompts.filter((prompt) => prompt.id !== id);
-        deleted = next.length !== store.prompts.length;
-        return sanitizeStore({ prompts: next });
+      store => {
+        const next = (store.promptSets ?? []).filter(set => set.id !== id);
+        deleted = next.length !== (store.promptSets ?? []).length;
+        return { promptSets: next };
       },
       loadStore(),
     );
@@ -91,10 +139,13 @@ export class PromptsRepository {
   }
 
   ensureStoreFile(): void {
-    const raw = readJson<PromptsStore>(paths.prompts);
+    const raw = readJson<unknown>(paths.prompts);
     if (!raw) {
       writeJson(paths.prompts, EMPTY_STORE);
+      return;
     }
+    // Trigger migration if needed
+    loadStore();
   }
 }
 

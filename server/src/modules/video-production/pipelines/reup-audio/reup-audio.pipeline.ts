@@ -24,6 +24,7 @@ import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizon
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
 import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
+import { resolvePromptSet } from '../../shared/prompt-sets/index.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
 import { listSiMultiImagePaths } from '../../shared/si-video/si-multi-image.js';
 import {
@@ -290,6 +291,17 @@ export class ReupAudioPipeline {
           let primaryOutputPath = downloaded.audioPath;
           let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
+            const transcriptSet = resolvePromptSet(destination, 'transcript');
+            if (!transcriptSet) {
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(
+                  taskJobId,
+                  'info',
+                  'Skipping transcript update (no prompt set for transcript)',
+                );
+              }
+              console.log('[reup-video] Skipping transcript update (no prompt set)');
+            } else {
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${destination.language})...`);
             }
@@ -298,6 +310,7 @@ export class ReupAudioPipeline {
               'Cập nhật transcript (LLM)',
               () =>
                 updateTranscriptWithLlm(srtPath, destination.language as TranscriptLanguage, {
+                  promptKey: transcriptSet.key,
                   onProgress: taskJobId
                     ? progress => {
                         const label = `${progress.batchIndex}/${progress.totalBatches}`;
@@ -340,13 +353,25 @@ export class ReupAudioPipeline {
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → transcript.srt`);
             }
+            }
 
-            const jaSrtPath = updatedSrtPath;
+            const jaSrtPath = updatedSrtPath ?? srtPath;
             const jaWorkDir = path.dirname(jaSrtPath);
 
-            subtitleForAssembly = updatedSrtPath;
+            subtitleForAssembly = updatedSrtPath ?? srtPath;
 
             if (videoType === 'si' || videoType === 'ai') {
+              const metaSet = resolvePromptSet(destination, 'meta');
+              if (!metaSet) {
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'Skipping metadata (no prompt set for meta)',
+                  );
+                }
+                console.log('[reup-video] Skipping metadata (no prompt set)');
+              } else {
               if (taskJobId) {
                 taskQueueRepository.setLivePhase(taskJobId, 'metadata');
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata...');
@@ -357,6 +382,7 @@ export class ReupAudioPipeline {
                 () =>
                   runMetadata(task.sourceTitle, jaSrtPath, destination.language, downloaded.youtubeVideoId, {
                     outputDir: jaWorkDir,
+                    promptKey: metaSet.key,
                     descriptionDisclaimer:
                       destination.showDisclaimer === true && destination.descriptionDisclaimerText?.trim()
                         ? destination.descriptionDisclaimerText.trim()
@@ -395,18 +421,24 @@ export class ReupAudioPipeline {
                   }`,
                 );
               }
+              }
             }
 
-            if (videoType === 'si' || videoType === 'ai') {
-              if (!videoMetaOutput) {
-                throw new AppError('Metadata is required for thumbnail generation', 400, 'INVALID_INPUT');
-              }
-
+            if ((videoType === 'si' || videoType === 'ai') && videoMetaOutput) {
               const workDir = jaWorkDir;
-              const styleKey = destination.thumbnailStyleKey?.trim();
-              const useHorizontalFlow = styleKey
-                ? isHorizontalMultiStepStyle(styleKey, destination.language)
-                : false;
+              const thumbnailSet = resolvePromptSet(destination, 'thumbnail');
+              if (!thumbnailSet) {
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'Skipping thumbnail (no prompt set for thumbnail)',
+                  );
+                }
+                console.log('[reup-video] Skipping thumbnail (no prompt set)');
+              } else {
+              const styleKey = thumbnailSet.key;
+              const useHorizontalFlow = isHorizontalMultiStepStyle(styleKey, destination.language);
 
               if (styleKey && !useHorizontalFlow) {
                 if (taskJobId) {
@@ -602,18 +634,25 @@ export class ReupAudioPipeline {
                   }
                 }
               }
+              } // thumbnailSet
 
-              if (videoType === 'si') {
-                if (!videoMetaOutput) {
-                throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
-              }
-
+              if (videoType === 'si' && videoMetaOutput) {
+              const imageSet = resolvePromptSet(destination, 'image');
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
               if (siBackgroundImage !== 'one_image') {
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipping general image (backgroundImage=${siBackgroundImage})`);
                 }
                 console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
+              } else if (!imageSet) {
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'Skipping general image (no prompt set for image)',
+                  );
+                }
+                console.log('[reup-video] Skipping general image (no prompt set)');
               } else {
                 const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
                 if (!generalImageTitle) {
@@ -628,6 +667,7 @@ export class ReupAudioPipeline {
                   'General image (Flow + reference)',
                   () =>
                     runGeneralImage(generalImageTitle, destination.language, workDir, {
+                      promptKey: imageSet.key,
                       referenceImagePaths: [downloaded.thumbnailPath],
                       onProgress: taskJobId
                         ? progress => {
@@ -665,11 +705,23 @@ export class ReupAudioPipeline {
 
           const workDir = subtitleForAssembly ? path.dirname(subtitleForAssembly) : path.dirname(srtPath);
           const useReferenceImage = destination.useReferenceImage === true;
+          const imagePromptSet = resolvePromptSet(destination, 'image');
 
           const runSharedScenePromptAndImages = async (options: {
             label: string;
             maxTranscriptSec?: number;
           }) => {
+            if (!imagePromptSet) {
+              if (taskJobId) {
+                taskQueueRepository.appendLogMessage(
+                  taskJobId,
+                  'info',
+                  `Skipping ${options.label} scene prompts (no prompt set for image)`,
+                );
+              }
+              console.log(`[reup-video] Skipping ${options.label} scene prompts (no prompt set)`);
+              return;
+            }
             if (!destination.visualStyle) {
               throw new AppError(
                 `Reup Audio ${options.label} channel is missing visual style`,
@@ -704,6 +756,7 @@ export class ReupAudioPipeline {
                   maxTranscriptSec: options.maxTranscriptSec,
                   densityMaxSceneSec: destination.aiSceneDensityMaxSec,
                   useReferenceImage,
+                  promptKey: imagePromptSet.key,
                   onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                   onProgress: taskJobId
                     ? progress =>

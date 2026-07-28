@@ -44,6 +44,8 @@ export interface TranscriptUpdateProgress {
 
 export interface UpdateTranscriptOptions {
   onProgress?: (progress: TranscriptUpdateProgress) => void;
+  /** PromptSet.key override (from resolvePromptSet) */
+  promptKey?: string;
 }
 
 async function removeIntermediateTranscriptFiles(srtPath: string): Promise<void> {
@@ -171,15 +173,15 @@ export async function updateTranscriptWithLlm(
     throw new AppError('LLM transcript update is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
 
-  const prompt = promptsRepository
-    .findAll()
-    .find(item => item.category === 'transcript' && item.language === language);
+  const promptKey =
+    options?.promptKey?.trim() ||
+    promptsRepository.findAll().find(item => item.category === 'transcript' && item.language === language)?.key;
 
-  if (!prompt) {
+  if (!promptKey) {
     throw new AppError(`Transcript update prompt not found for language "${language}"`, 404, 'PROMPT_NOT_FOUND');
   }
 
-  const promptKey = prompt.key;
+  const resolvedPromptKey = promptKey;
 
   const srtContent = await fs.readFile(srtPath, 'utf8');
   const blocks = parseSrt(srtContent);
@@ -224,7 +226,7 @@ export async function updateTranscriptWithLlm(
           results[batchIndex] = await processBatchWithRetry(
             profile,
             provider,
-            promptKey,
+            resolvedPromptKey,
             language,
             batches[batchIndex],
             batchIndex + 1,

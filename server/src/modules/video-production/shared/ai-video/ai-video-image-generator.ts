@@ -195,7 +195,9 @@ export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): 
     `[ai-video] LLM chunks: high=${prepared.chunks.high.length}, medium=${prepared.chunks.medium.length}, low=${prepared.chunks.low.length}`,
   );
 
-  return generateScenePromptsFromJobs(input, jobs, log);
+  return generateScenePromptsFromJobs(input, jobs, log, {
+    promptKey: input.promptKey?.trim() || VIDEO_IMAGE_PROMPT_KEY,
+  });
 }
 
 export async function generateAiVideoImagesWithReference(
@@ -247,7 +249,7 @@ export async function generateAiVideoImagesWithReference(
   );
 
   const sceneResult = await generateScenePromptsFromJobs(input, jobs, log, {
-    promptKey: VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
+    promptKey: input.promptKey?.trim() || VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
     charactersJson,
     requireReferences: true,
   });

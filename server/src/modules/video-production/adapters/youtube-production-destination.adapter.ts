@@ -88,6 +88,7 @@ export async function createYoutubeProductionDestination(
     backgroundFootageSources: channel.backgroundFootageSources,
     backgroundFootageMode: channel.backgroundFootageMode,
     thumbnailStyleKey: channel.thumbnailStyleKey,
+    ...(channel.promptSetIds ? { promptSetIds: channel.promptSetIds } : {}),
     ...(channel.thumbnailBackgroundFile?.trim()
       ? { thumbnailBackgroundFile: channel.thumbnailBackgroundFile.trim() }
       : {}),

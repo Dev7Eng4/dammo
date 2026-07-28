@@ -21,7 +21,7 @@ export function buildThumbnailReferenceImagePaths(
   const prompt = promptsRepository.findByKeyAndLanguage(promptKey, input.language);
   const refs: string[] = [];
 
-  if (prompt?.useReferenceImage) {
+  if (prompt?.steps.some(step => step.useReferenceImage === true)) {
     const oldThumbnailPath = input.oldThumbnailPath?.trim();
     if (!oldThumbnailPath) {
       throw new AppError(
@@ -33,7 +33,7 @@ export function buildThumbnailReferenceImagePaths(
     refs.push(oldThumbnailPath);
   }
 
-  if (prompt?.useChannelBackgroundImage) {
+  if (prompt?.steps.some(step => step.useChannelBackgroundImage === true)) {
     const backgroundFile = input.thumbnailBackgroundFile?.trim();
     if (!backgroundFile) {
       throw new AppError(

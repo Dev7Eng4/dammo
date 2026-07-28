@@ -78,6 +78,15 @@ export function promptTemplateFile(language: string, key: string): string {
   return path.join(paths.promptsDir, language, `${key}.js`);
 }
 
+/** Prompt-set step template: prompts/{language}/{setKey}/step-{order}.js */
+export function promptSetStepTemplateFile(language: string, setKey: string, stepOrder: number): string {
+  return path.join(paths.promptsDir, language, setKey, `step-${stepOrder}.js`);
+}
+
+export function promptSetDir(language: string, setKey: string): string {
+  return path.join(paths.promptsDir, language, setKey);
+}
+
 export function chromeProfileDir(profileId: string): string {
   return path.join(paths.chromeProfilesDir, profileId);
 }

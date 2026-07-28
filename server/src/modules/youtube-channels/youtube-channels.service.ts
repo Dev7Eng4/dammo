@@ -20,9 +20,11 @@ import {
   resolveSourceChannelNamesOnly,
   resolveSourceNamesForChannel,
 } from './youtube-channel-sources.js';
-import { normalizeChannelLanguage } from './channel-language.js';
+import { normalizeChannelLanguage, type ChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
+import { promptsRepository } from '../prompts/prompts.repository.js';
+import type { ChannelPromptSetIds, PromptCategory } from '../prompts/prompts.types.js';
 import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
@@ -116,6 +118,7 @@ type ChannelConfigInput = Pick<
   | 'backgroundFootageSources'
   | 'backgroundFootageMode'
   | 'thumbnailStyleKey'
+  | 'promptSetIds'
   | 'captionStyleKey'
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
@@ -134,6 +137,49 @@ type ChannelConfigInput = Pick<
   | 'uploadFrequency'
   | 'publishTimes'
 >;
+
+function normalizePromptSetIds(
+  input: ChannelPromptSetIds | undefined,
+  language: ChannelLanguage,
+): { promptSetIds?: ChannelPromptSetIds; thumbnailStyleKeyFromSet?: string } {
+  if (!input) return {};
+
+  const categories = ['transcript', 'meta', 'thumbnail', 'image'] as const satisfies readonly PromptCategory[];
+  const next: ChannelPromptSetIds = {};
+  let thumbnailStyleKeyFromSet: string | undefined;
+
+  for (const category of categories) {
+    const id = input[category]?.trim();
+    if (!id) continue;
+    const set = promptsRepository.findById(id);
+    if (!set) {
+      throw new AppError(`Prompt set not found: ${id}`, 400, 'INVALID_PROMPT_SET');
+    }
+    if (set.language !== language) {
+      throw new AppError(
+        `Prompt set language mismatch for category "${category}"`,
+        400,
+        'INVALID_PROMPT_SET',
+      );
+    }
+    if (set.category !== category) {
+      throw new AppError(
+        `Prompt set category mismatch: expected "${category}"`,
+        400,
+        'INVALID_PROMPT_SET',
+      );
+    }
+    next[category] = set.id;
+    if (category === 'thumbnail') {
+      thumbnailStyleKeyFromSet = set.key;
+    }
+  }
+
+  return {
+    ...(Object.keys(next).length > 0 ? { promptSetIds: next } : {}),
+    ...(thumbnailStyleKeyFromSet ? { thumbnailStyleKeyFromSet } : {}),
+  };
+}
 
 function isReupChannelType(type: YoutubeChannelType): boolean {
   return type === 'reup_audio' || type === 'reup_video';
@@ -154,6 +200,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  promptSetIds?: ChannelPromptSetIds;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -207,11 +254,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
 
   const uploadSchedule = normalizeUploadSchedule(input.publishTimes);
 
-  const thumbnailStyleKey = assertValidThumbnailStyleKey(
-    input.thumbnailStyleKey,
-    input.language,
-    false,
-  );
+  const promptSetNormalized = normalizePromptSetIds(input.promptSetIds, input.language);
+
+  const thumbnailStyleKey =
+    promptSetNormalized.thumbnailStyleKeyFromSet ??
+    assertValidThumbnailStyleKey(input.thumbnailStyleKey, input.language, false);
 
   let reupAudioVideoType: ReupAudioVideoType | undefined;
   let reupAudioVisualStyleId: string | undefined;
@@ -324,6 +371,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
         ? { backgroundFootageSources }
         : {}),
     ...(thumbnailStyleKey ? { thumbnailStyleKey } : {}),
+    ...(promptSetNormalized.promptSetIds ? { promptSetIds: promptSetNormalized.promptSetIds } : {}),
     ...(captionStyleKey ? { captionStyleKey } : {}),
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
@@ -664,6 +712,7 @@ export class YoutubeChannelsService {
           ? { backgroundFootageSources: config.backgroundFootageSources }
           : {}),
       ...(config.thumbnailStyleKey ? { thumbnailStyleKey: config.thumbnailStyleKey } : {}),
+      ...(config.promptSetIds ? { promptSetIds: config.promptSetIds } : {}),
       ...(config.captionStyleKey ? { captionStyleKey: config.captionStyleKey } : {}),
       ...(config.reupAudioVideoType ? { reupAudioVideoType: config.reupAudioVideoType } : {}),
       ...(config.reupAudioVisualStyleId
@@ -745,6 +794,12 @@ export class YoutubeChannelsService {
         next.thumbnailStyleKey = config.thumbnailStyleKey;
       } else {
         delete next.thumbnailStyleKey;
+      }
+
+      if (config.promptSetIds) {
+        next.promptSetIds = config.promptSetIds;
+      } else {
+        delete next.promptSetIds;
       }
 
       const selectedBackground = input.thumbnailBackgroundFile?.trim();

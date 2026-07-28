@@ -1,11 +1,18 @@
-import type { Prompt, PromptOutputType } from './prompts.types.js';
+import type { PromptOutputType, PromptSet } from './prompts.types.js';
 
-export function resolvePromptOutputType(prompt: Pick<Prompt, 'outputType' | 'category' | 'key'>): PromptOutputType {
-  if (prompt.outputType === 'text' || prompt.outputType === 'image' || prompt.outputType === 'video') {
-    return prompt.outputType;
+export function resolvePromptOutputType(
+  set: Pick<PromptSet, 'category' | 'key' | 'steps'> & { outputType?: PromptOutputType },
+): PromptOutputType {
+  if (set.outputType === 'text' || set.outputType === 'image' || set.outputType === 'video') {
+    return set.outputType;
   }
 
-  if (prompt.category === 'image' || prompt.key === 'love_story') {
+  const firstStepType = set.steps?.[0]?.outputType;
+  if (firstStepType === 'text' || firstStepType === 'image' || firstStepType === 'video') {
+    return firstStepType;
+  }
+
+  if (set.category === 'image' || set.key === 'love_story') {
     return 'image';
   }
 

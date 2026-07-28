@@ -25,6 +25,14 @@ const channelConfigFields = {
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   backgroundFootageMode: z.enum(['source', 'local']).optional(),
   thumbnailStyleKey: z.string().optional(),
+  promptSetIds: z
+    .object({
+      transcript: z.string().min(1).optional(),
+      meta: z.string().min(1).optional(),
+      thumbnail: z.string().min(1).optional(),
+      image: z.string().min(1).optional(),
+    })
+    .optional(),
   thumbnailBackgroundFile: z.string().optional(),
   captionStyleKey: z
     .enum([
@@ -35,9 +43,6 @@ const channelConfigFields = {
       'cyan',
       'cyan_navy',
       'yellow',
-      'blue_glow',
-      'green',
-      'klee_one',
     ])
     .optional(),
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),

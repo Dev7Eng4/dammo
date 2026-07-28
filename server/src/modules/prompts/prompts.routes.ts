@@ -2,11 +2,12 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import {
-  createPromptSchema,
+  createPromptSetSchema,
   listPromptsQuerySchema,
   promptKeyQuerySchema,
+  promptSetOptionsQuerySchema,
   thumbnailStylesQuerySchema,
-  updatePromptSchema,
+  updatePromptSetSchema,
 } from './prompts.schema.js';
 import { promptsService } from './prompts.service.js';
 import { listThumbnailStyleOptions } from './thumbnail-styles.js';
@@ -21,6 +22,11 @@ export function createPromptsRoutes() {
   app.get('/', zValidator('query', listPromptsQuerySchema), (c) => {
     const { category, language, q, page, limit } = c.req.valid('query');
     return c.json(promptsService.listPaginated(category, language, q, page, limit));
+  });
+
+  app.get('/options', zValidator('query', promptSetOptionsQuerySchema), (c) => {
+    const { language, category } = c.req.valid('query');
+    return c.json({ items: promptsService.listOptions(language, category) });
   });
 
   app.post('/playground/run', zValidator('json', promptPlaygroundRunSchema), async (c) => {
@@ -47,7 +53,7 @@ export function createPromptsRoutes() {
 
   app.get('/key/:key/resolve', zValidator('query', promptKeyQuerySchema), async (c) => {
     const { language } = c.req.valid('query');
-    const item = await promptsService.resolve(c.req.param('key'), language);
+    const item = await promptsService.resolveLegacyKey(c.req.param('key'), language);
     return c.json({ item });
   });
 
@@ -57,18 +63,23 @@ export function createPromptsRoutes() {
     return c.json({ item });
   });
 
+  app.get('/:id/resolve', async (c) => {
+    const item = await promptsService.resolve(c.req.param('id'));
+    return c.json({ item });
+  });
+
   app.get('/:id', (c) => {
     const item = promptsService.getById(c.req.param('id'));
     return c.json({ item });
   });
 
-  app.post('/', zValidator('json', createPromptSchema), async (c) => {
+  app.post('/', zValidator('json', createPromptSetSchema), async (c) => {
     const body = c.req.valid('json');
     const item = await promptsService.create(body);
     return c.json({ item }, 201);
   });
 
-  app.patch('/:id', zValidator('json', updatePromptSchema), async (c) => {
+  app.patch('/:id', zValidator('json', updatePromptSetSchema), async (c) => {
     const body = c.req.valid('json');
     const item = await promptsService.update(c.req.param('id'), body);
     return c.json({ item });

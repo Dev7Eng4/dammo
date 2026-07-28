@@ -28,6 +28,8 @@ export interface RunMetadataOptions {
   outputDir?: string;
   descriptionDisclaimer?: string;
   onProgress?: (progress: MetadataProgress) => void;
+  /** PromptSet.key override (from resolvePromptSet) */
+  promptKey?: string;
 }
 
 function logValidationFailure(attempt: number, reason: string): void {
@@ -39,7 +41,15 @@ function formatLogValue(value: unknown, maxLength = 80): string {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
-function resolveMetadataPromptKey(language: PromptLanguage): string {
+function resolveMetadataPromptKey(language: PromptLanguage, overrideKey?: string): string {
+  const trimmed = overrideKey?.trim();
+  if (trimmed) {
+    const byKey = promptsRepository.findByKeyAndLanguage(trimmed, language);
+    if (byKey && byKey.category === 'meta') {
+      return byKey.key;
+    }
+  }
+
   const prompt = promptsRepository
     .findAll()
     .find(item => item.category === 'meta' && item.language === language && item.key === METADATA_PROMPT_KEY);
@@ -119,7 +129,7 @@ export async function executeMetadata(
     throw new AppError('Metadata generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
 
-  const promptKey = resolveMetadataPromptKey(language);
+  const promptKey = resolveMetadataPromptKey(language, options?.promptKey);
   const transcript = await extractTranscriptForMetadata(srtPath);
   let lastReason = 'unknown error';
 

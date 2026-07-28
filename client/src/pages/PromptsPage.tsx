@@ -5,7 +5,7 @@ import {
   deletePrompt,
   fetchPrompts,
   fetchPromptSettings,
-  resolvePrompt,
+  resolvePromptSet,
   runPromptPlayground,
   updatePrompt,
   updatePromptSettings,
@@ -17,12 +17,13 @@ import { useAbortableEffect, useDebouncedValue } from '../hooks';
 import type {
   ImageBrowserProvider,
   PlaygroundProvider,
-  Prompt,
   PromptCategory,
   PromptFormDraft,
   PromptLanguage,
-  PromptOutputType,
   PromptPlaygroundResult,
+  PromptSet,
+  PromptSetResolved,
+  PromptStepFormValues,
   VideoBrowserProvider,
 } from '../types/prompt';
 import {
@@ -41,43 +42,50 @@ function supportsChannelBackgroundImage(category: PromptCategory): boolean {
   return category === 'thumbnail';
 }
 
+function createEmptyStep(order = 0): PromptStepFormValues {
+  return {
+    id: crypto.randomUUID(),
+    order,
+    name: `Step ${order + 1}`,
+    outputType: 'text',
+    useReferenceImage: false,
+    useChannelBackgroundImage: false,
+    templateParams: [],
+    outputSchemaText: '',
+    template: '',
+  };
+}
+
 const EMPTY_DRAFT: PromptFormDraft = {
   id: null,
   key: '',
   language: 'ja',
   name: '',
   category: 'meta',
-  outputType: 'text',
   description: '',
-  template: '',
-  templateParams: [],
-  useReferenceImage: false,
-  useChannelBackgroundImage: false,
+  isDefault: false,
+  steps: [createEmptyStep(0)],
+  activeStepIndex: 0,
 };
-
-function resolveDraftOutputType(item: {
-  outputType?: PromptOutputType;
-  category: PromptCategory;
-  key: string;
-}): PromptOutputType {
-  if (item.outputType === 'text' || item.outputType === 'image' || item.outputType === 'video') {
-    return item.outputType;
-  }
-  if (item.category === 'image' || item.key === 'love_story') return 'image';
-  return 'text';
-}
 
 function serializeDraft(draft: PromptFormDraft): string {
   return JSON.stringify({
     language: draft.language,
     name: draft.name,
     category: draft.category,
-    outputType: draft.outputType,
     description: draft.description,
-    template: draft.template,
-    templateParams: draft.templateParams,
-    useReferenceImage: draft.useReferenceImage,
-    useChannelBackgroundImage: draft.useChannelBackgroundImage,
+    isDefault: draft.isDefault,
+    steps: draft.steps.map(step => ({
+      id: step.id,
+      order: step.order,
+      name: step.name,
+      outputType: step.outputType,
+      useReferenceImage: step.useReferenceImage,
+      useChannelBackgroundImage: step.useChannelBackgroundImage,
+      templateParams: step.templateParams,
+      outputSchemaText: step.outputSchemaText,
+      template: step.template,
+    })),
   });
 }
 
@@ -87,40 +95,46 @@ function syncVariableValues(
   current: Record<string, string> = {},
 ): Record<string, string> {
   const vars = extractTemplateVariables(body, templateParams);
-  return Object.fromEntries(vars.map((name) => [name, current[name] ?? '']));
+  return Object.fromEntries(vars.map(name => [name, current[name] ?? '']));
 }
 
-function draftFromResolved(item: {
-  id: string;
-  key: string;
-  language: PromptLanguage;
-  name: string;
-  category: PromptCategory;
-  outputType?: PromptOutputType;
-  description?: string;
-  isSystem?: boolean;
-  useReferenceImage?: boolean;
-  useChannelBackgroundImage?: boolean;
-  template: string;
-}): PromptFormDraft {
-  const outputType = resolveDraftOutputType(item);
-  const managed = parseManagedTemplate(item.template);
-  if (managed) {
-    return {
-      id: item.id,
-      key: item.key,
-      language: item.language,
-      name: item.name,
-      category: item.category,
-      outputType,
-      description: item.description ?? '',
-      template: managed.body,
-      templateParams: managed.params,
-      isSystem: item.isSystem,
-      useReferenceImage: item.useReferenceImage ?? false,
-      useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
-    };
+function parseOutputSchemaText(text: string): Record<string, unknown> | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    /* ignore */
   }
+  return undefined;
+}
+
+function stepFromResolved(
+  step: PromptSetResolved['stepsWithTemplates'][number],
+  index: number,
+): PromptStepFormValues {
+  const managed = parseManagedTemplate(step.template);
+  return {
+    id: step.id,
+    order: step.order ?? index,
+    name: step.name ?? `Step ${index + 1}`,
+    outputType: step.outputType ?? 'text',
+    useReferenceImage: step.useReferenceImage ?? false,
+    useChannelBackgroundImage: step.useChannelBackgroundImage ?? false,
+    templateParams: managed?.params ?? step.templateParams ?? [],
+    outputSchemaText: step.outputSchema ? JSON.stringify(step.outputSchema, null, 2) : '',
+    template: managed?.body ?? step.template,
+  };
+}
+
+function draftFromResolved(item: PromptSetResolved): PromptFormDraft {
+  const steps =
+    item.stepsWithTemplates?.length > 0
+      ? item.stepsWithTemplates.map(stepFromResolved)
+      : [createEmptyStep(0)];
 
   return {
     id: item.id,
@@ -128,19 +142,38 @@ function draftFromResolved(item: {
     language: item.language,
     name: item.name,
     category: item.category,
-    outputType,
     description: item.description ?? '',
-    template: item.template,
-    templateParams: [],
+    isDefault: item.isDefault === true,
     isSystem: item.isSystem,
-    useReferenceImage: item.useReferenceImage ?? false,
-    useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
+    steps,
+    activeStepIndex: 0,
   };
 }
 
+function buildStepsPayload(draft: PromptFormDraft) {
+  return draft.steps.map((step, index) => {
+    const templatePayload = isUserFunctionTemplate(step.template)
+      ? step.template
+      : buildManagedTemplateExpression(step.template, step.templateParams);
+
+    return {
+      id: step.id,
+      order: index,
+      name: step.name || undefined,
+      outputType: step.outputType,
+      useReferenceImage: supportsReferenceImage(draft.category) ? step.useReferenceImage : false,
+      useChannelBackgroundImage: supportsChannelBackgroundImage(draft.category)
+        ? step.useChannelBackgroundImage
+        : false,
+      templateParams: step.templateParams,
+      outputSchema: parseOutputSchemaText(step.outputSchemaText),
+      template: templatePayload,
+    };
+  });
+}
+
 export function PromptsPage() {
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
+  const [prompts, setPrompts] = useState<PromptSet[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<PromptCategory | 'all'>('all');
@@ -173,39 +206,39 @@ export function PromptsPage() {
     return serializeDraft(draft) !== baseline;
   }, [draft, baseline]);
 
-  const refreshList = useCallback(async (signal?: AbortSignal) => {
-    setListLoading(true);
-    try {
-      const [filtered, all] = await Promise.all([
-        fetchPrompts(
+  const activeStep = draft?.steps[draft.activeStepIndex] ?? draft?.steps[0] ?? null;
+
+  const refreshList = useCallback(
+    async (signal?: AbortSignal) => {
+      setListLoading(true);
+      try {
+        const filtered = await fetchPrompts(
           categoryFilter === 'all' ? undefined : categoryFilter,
           languageFilter === 'all' ? undefined : languageFilter,
           debouncedSearch,
           1,
           100,
           { signal },
-        ),
-        fetchPrompts(undefined, undefined, '', 1, 100, { signal }),
-      ]);
-      setPrompts(filtered.items);
-      setAllPrompts(all.items);
-    } catch (err) {
-      if (isAbortError(err)) return;
-      setPrompts([]);
-      setAllPrompts([]);
-    } finally {
-      if (!signal?.aborted) setListLoading(false);
-    }
-  }, [categoryFilter, languageFilter, debouncedSearch]);
+        );
+        setPrompts(filtered.items);
+      } catch (err) {
+        if (isAbortError(err)) return;
+        setPrompts([]);
+      } finally {
+        if (!signal?.aborted) setListLoading(false);
+      }
+    },
+    [categoryFilter, languageFilter, debouncedSearch],
+  );
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       await refreshList(signal);
     },
     [refreshList],
   );
 
-  useAbortableEffect(async (signal) => {
+  useAbortableEffect(async signal => {
     try {
       const { item } = await fetchPromptSettings({ signal });
       setProvider(item.defaultLlmProvider);
@@ -221,7 +254,6 @@ export function PromptsPage() {
     setProvider(next);
     setProviderSettingsError(null);
     setProviderSaving(true);
-
     try {
       const { item } = await updatePromptSettings({ defaultLlmProvider: next });
       setProvider(item.defaultLlmProvider);
@@ -238,7 +270,6 @@ export function PromptsPage() {
     setImageProvider(next);
     setImageProviderSettingsError(null);
     setImageProviderSaving(true);
-
     try {
       const { item } = await updatePromptSettings({ defaultImageProvider: next });
       setImageProvider(item.defaultImageProvider);
@@ -255,7 +286,6 @@ export function PromptsPage() {
     setVideoProvider(next);
     setVideoProviderSettingsError(null);
     setVideoProviderSaving(true);
-
     try {
       const { item } = await updatePromptSettings({ defaultVideoProvider: next });
       setVideoProvider(item.defaultVideoProvider);
@@ -268,19 +298,17 @@ export function PromptsPage() {
   }
 
   const loadPrompt = useCallback(async (id: string, signal?: AbortSignal) => {
-    const prompt = prompts.find((item) => item.id === id);
-    if (!prompt) return;
-
     setEditorLoading(true);
+    setSaveError(null);
     setPlaygroundResult(null);
     setPlaygroundError(null);
-
     try {
-      const data = await resolvePrompt(prompt.key, prompt.language, { signal });
+      const data = await resolvePromptSet(id, { signal });
       const nextDraft = draftFromResolved(data.item);
       setDraft(nextDraft);
       setBaseline(serializeDraft(nextDraft));
-      setVariableValues(syncVariableValues(nextDraft.template, nextDraft.templateParams));
+      const step = nextDraft.steps[0];
+      setVariableValues(syncVariableValues(step.template, step.templateParams));
     } catch (err) {
       if (isAbortError(err)) return;
       setDraft(null);
@@ -288,10 +316,10 @@ export function PromptsPage() {
     } finally {
       if (!signal?.aborted) setEditorLoading(false);
     }
-  }, [prompts]);
+  }, []);
 
   useAbortableEffect(
-    async (signal) => {
+    async signal => {
       if (!selectedId) return;
       await loadPrompt(selectedId, signal);
     },
@@ -299,14 +327,19 @@ export function PromptsPage() {
   );
 
   function handleSelect(id: string) {
+    setSaveError(null);
+    setPlaygroundError(null);
+    setPlaygroundResult(null);
     setSelectedId(id);
   }
 
   function handleNew() {
     setSelectedId(null);
-    setDraft({ ...EMPTY_DRAFT });
-    setBaseline(serializeDraft(EMPTY_DRAFT));
+    const empty = { ...EMPTY_DRAFT, steps: [createEmptyStep(0)] };
+    setDraft(empty);
+    setBaseline(serializeDraft(empty));
     setVariableValues({});
+    setSaveError(null);
     setPlaygroundResult(null);
     setPlaygroundError(null);
     setEditorLoading(false);
@@ -316,29 +349,23 @@ export function PromptsPage() {
     if (patch.name !== undefined || patch.language !== undefined) {
       setSaveError(null);
     }
-    setDraft((prev) => {
+    setDraft(prev => {
       if (!prev) return prev;
       const next = { ...prev, ...patch };
 
-      if (patch.category !== undefined && !supportsReferenceImage(patch.category)) {
-        next.useReferenceImage = false;
+      if (patch.steps) {
+        const idx = Math.min(next.activeStepIndex, next.steps.length - 1);
+        next.activeStepIndex = Math.max(0, idx);
+        const step = next.steps[next.activeStepIndex];
+        if (step) {
+          setVariableValues(current => syncVariableValues(step.template, step.templateParams, current));
+        }
       }
 
-      if (patch.category !== undefined && !supportsChannelBackgroundImage(patch.category)) {
-        next.useChannelBackgroundImage = false;
-      }
-
-      if (patch.template !== undefined && isUserFunctionTemplate(next.template)) {
-        next.templateParams = [];
-      }
-
-      if (patch.template !== undefined || patch.templateParams !== undefined) {
-        if (isUserFunctionTemplate(next.template)) {
-          setVariableValues({});
-        } else {
-          setVariableValues((current) =>
-            syncVariableValues(next.template, next.templateParams, current),
-          );
+      if (patch.activeStepIndex !== undefined) {
+        const step = next.steps[patch.activeStepIndex];
+        if (step) {
+          setVariableValues(current => syncVariableValues(step.template, step.templateParams, current));
         }
       }
 
@@ -348,48 +375,61 @@ export function PromptsPage() {
 
   async function handleSave() {
     if (!draft) return;
-    if (draft.isSystem) return;
+    if (!draft.id && draft.isSystem) return;
+
+    // System set: chỉ cập nhật isDefault
+    if (draft.isSystem && draft.id) {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        const { item } = await updatePrompt(draft.id, { isDefault: draft.isDefault });
+        const resolved = await resolvePromptSet(item.id);
+        const nextDraft = draftFromResolved(resolved.item);
+        setDraft(nextDraft);
+        setBaseline(serializeDraft(nextDraft));
+        setSelectedId(item.id);
+        await refreshList();
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : 'Lưu thất bại');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     if (!draft.name.trim()) {
       setSaveError('Tên là bắt buộc');
       return;
     }
-
-    const templatePayload = isUserFunctionTemplate(draft.template)
-      ? draft.template
-      : buildManagedTemplateExpression(draft.template, draft.templateParams);
-
-    const useReferenceImage = supportsReferenceImage(draft.category) ? draft.useReferenceImage : false;
-    const useChannelBackgroundImage = supportsChannelBackgroundImage(draft.category)
-      ? draft.useChannelBackgroundImage
-      : false;
+    if (draft.steps.length === 0) {
+      setSaveError('Cần ít nhất một step');
+      return;
+    }
+    if (draft.steps.some(s => !s.template.trim())) {
+      setSaveError('Mỗi step cần có mẫu prompt');
+      return;
+    }
 
     setSaving(true);
     setSaveError(null);
     try {
+      const stepsPayload = buildStepsPayload(draft);
       if (draft.id) {
         if (draft.language === 'all') {
-          setSaveError('Không thể đặt ngôn ngữ "Tất cả" khi sửa prompt đã có');
+          setSaveError('Không thể đặt ngôn ngữ "Tất cả" khi sửa bộ đã có');
+          setSaving(false);
           return;
         }
         const { item } = await updatePrompt(draft.id, {
           language: draft.language,
           name: draft.name.trim(),
           category: draft.category,
-          outputType: draft.outputType,
           description: draft.description || undefined,
-          template: templatePayload,
-          useReferenceImage,
-          useChannelBackgroundImage,
+          isDefault: draft.isDefault,
+          steps: stepsPayload,
         });
-        const nextDraft = {
-          ...draft,
-          id: item.id,
-          key: item.key,
-          language: item.language,
-          name: item.name,
-          useReferenceImage: item.useReferenceImage ?? false,
-          useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
-        };
+        const resolved = await resolvePromptSet(item.id);
+        const nextDraft = draftFromResolved(resolved.item);
         setDraft(nextDraft);
         setBaseline(serializeDraft(nextDraft));
         setSelectedId(item.id);
@@ -398,29 +438,19 @@ export function PromptsPage() {
           language: draft.language,
           name: draft.name.trim(),
           category: draft.category,
-          outputType: draft.outputType,
           description: draft.description || undefined,
-          template: templatePayload,
-          useReferenceImage,
-          useChannelBackgroundImage,
+          isDefault: draft.isDefault,
+          steps: stepsPayload,
         });
-        const nextDraft = {
-          ...draft,
-          id: item.id,
-          key: item.key,
-          language: item.language,
-          name: item.name,
-          useReferenceImage: item.useReferenceImage ?? false,
-          useChannelBackgroundImage: item.useChannelBackgroundImage ?? false,
-        };
+        const resolved = await resolvePromptSet(item.id);
+        const nextDraft = draftFromResolved(resolved.item);
         setDraft(nextDraft);
         setBaseline(serializeDraft(nextDraft));
         setSelectedId(item.id);
       }
       await refreshList();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Lưu thất bại';
-      setSaveError(message);
+      setSaveError(err instanceof Error ? err.message : 'Lưu thất bại');
     } finally {
       setSaving(false);
     }
@@ -428,13 +458,18 @@ export function PromptsPage() {
 
   function handleDuplicate() {
     if (!draft) return;
-    const copyName = draft.name ? `${draft.name} (bản sao)` : 'Chưa đặt tên (bản sao)';
     const copy: PromptFormDraft = {
       ...draft,
       id: null,
       key: '',
-      name: copyName,
+      name: draft.name ? `${draft.name} (bản sao)` : 'Chưa đặt tên (bản sao)',
       isSystem: false,
+      isDefault: false,
+      steps: draft.steps.map((step, index) => ({
+        ...step,
+        id: crypto.randomUUID(),
+        order: index,
+      })),
     };
     setSelectedId(null);
     setDraft(copy);
@@ -447,8 +482,7 @@ export function PromptsPage() {
   async function handleDelete() {
     if (!draft?.id) return;
     if (draft.isSystem) return;
-    if (!window.confirm('Xóa prompt này?')) return;
-
+    if (!window.confirm('Xóa bộ prompt này?')) return;
     try {
       await deletePrompt(draft.id);
       setSelectedId(null);
@@ -461,22 +495,19 @@ export function PromptsPage() {
   }
 
   async function handleRun() {
-    if (!draft?.template.trim()) return;
-
+    if (!activeStep?.template.trim()) return;
     setRunning(true);
     setPlaygroundError(null);
     setPlaygroundResult(null);
-
-    const userPrompt = interpolateTemplate(draft.template, variableValues);
-
+    const userPrompt = interpolateTemplate(activeStep.template, variableValues);
     try {
       const { item } = await runPromptPlayground({
-        outputType: draft.outputType,
+        outputType: activeStep.outputType,
         provider,
         imageProvider,
         videoProvider,
         userPrompt,
-        promptId: draft.id ?? undefined,
+        promptId: draft?.id ?? undefined,
       });
       setPlaygroundResult(item);
     } catch (err) {
@@ -514,9 +545,9 @@ export function PromptsPage() {
         onDelete={handleDelete}
       />
       <PromptPlaygroundPanel
-        template={draft?.template ?? ''}
-        templateParams={draft?.templateParams ?? []}
-        outputType={draft?.outputType ?? 'text'}
+        template={activeStep?.template ?? ''}
+        templateParams={activeStep?.templateParams ?? []}
+        outputType={activeStep?.outputType ?? 'text'}
         provider={provider}
         imageProvider={imageProvider}
         videoProvider={videoProvider}
@@ -533,9 +564,7 @@ export function PromptsPage() {
         onProviderChange={handleProviderChange}
         onImageProviderChange={handleImageProviderChange}
         onVideoProviderChange={handleVideoProviderChange}
-        onVariableChange={(name, value) =>
-          setVariableValues((prev) => ({ ...prev, [name]: value }))
-        }
+        onVariableChange={(name, value) => setVariableValues(prev => ({ ...prev, [name]: value }))}
         onRun={handleRun}
       />
     </div>

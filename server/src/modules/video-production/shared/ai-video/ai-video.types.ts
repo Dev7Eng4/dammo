@@ -70,6 +70,8 @@ export interface GenerateAiVideoImagesInput {
   densityMaxSceneSec?: AiSceneDensityMaxSec;
   /** Use create_characters_design + video_image_with_reference; pause before scene images. */
   useReferenceImage?: boolean;
+  /** PromptSet.key override for scene prompt templates (from resolvePromptSet image). */
+  promptKey?: string;
   onLog?: (msg: string) => void;
   onProgress?: (progress: {
     density: AiVideoDensityLevel;

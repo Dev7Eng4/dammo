@@ -1,156 +1,277 @@
 {
-  "prompts": [
+  "promptSets": [
+    {
+      "id": "95dfe6ac-a459-4415-b357-2a690ef4a738",
+      "key": "nh_scene_c_tham_chi_u_nh_n_v_t",
+      "name": "Ảnh Scene Có Tham Chiếu Nhân vật",
+      "language": "ja",
+      "category": "image",
+      "steps": [
+        {
+          "id": "aff08901-3bc0-47a4-a9cd-db21cf2fe2c8",
+          "order": 0,
+          "name": "Step 1",
+          "outputType": "text",
+          "templateParams": []
+        },
+        {
+          "id": "6645a84c-0210-440b-943c-17090ef9ce28",
+          "order": 1,
+          "name": "Step 2",
+          "outputType": "text",
+          "templateParams": []
+        }
+      ],
+      "createdAt": "2026-07-28T05:19:00.316Z",
+      "updatedAt": "2026-07-28T05:19:00.316Z"
+    },
     {
       "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
       "key": "change_background_channel",
-      "language": "ja",
       "name": "Change Background Channel",
+      "language": "ja",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
+      "steps": [
+        {
+          "id": "c0abf898-3964-46df-992d-5af6e0159394",
+          "order": 0,
+          "name": "Change Background Channel",
+          "outputType": "image",
+          "templateParams": [],
+          "useReferenceImage": true,
+          "useChannelBackgroundImage": true
+        }
+      ],
       "createdAt": "2026-07-27T16:24:41.606Z",
-      "updatedAt": "2026-07-27T16:38:45.864Z",
-      "useChannelBackgroundImage": true
+      "updatedAt": "2026-07-27T16:38:45.864Z"
     },
     {
       "id": "d1983313-bba7-47ff-9aa5-cd83af46a5a1",
       "key": "video_image_with_reference",
-      "language": "ja",
       "name": "Video Image With Reference",
+      "language": "ja",
       "category": "image",
-      "outputType": "text",
-      "useReferenceImage": true,
+      "steps": [
+        {
+          "id": "d941047e-a0a7-484d-bf6f-a172d7ff34bd",
+          "order": 0,
+          "name": "Video Image With Reference",
+          "outputType": "text",
+          "templateParams": [],
+          "useReferenceImage": true
+        }
+      ],
       "createdAt": "2026-07-27T08:44:32.880Z",
       "updatedAt": "2026-07-27T08:44:32.880Z"
     },
     {
       "id": "595e4082-7af6-4091-9a0b-9f5295a8bfb8",
       "key": "create_characters_design",
-      "language": "ja",
       "name": "Create Characters Design",
+      "language": "ja",
       "category": "image",
-      "outputType": "text",
+      "steps": [
+        {
+          "id": "caea926f-ef81-4e76-a149-687472eb4f57",
+          "order": 0,
+          "name": "Create Characters Design",
+          "outputType": "text",
+          "templateParams": [],
+          "useReferenceImage": true
+        }
+      ],
       "createdAt": "2026-07-27T08:22:56.051Z",
-      "updatedAt": "2026-07-27T08:47:18.496Z",
-      "useReferenceImage": true
+      "updatedAt": "2026-07-27T08:47:18.496Z"
     },
     {
       "id": "71e34378-0029-40dc-94ee-9aa4a38f477b",
       "key": "remove_logo",
-      "language": "ja",
       "name": "Remove Logo",
+      "language": "ja",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
+      "steps": [
+        {
+          "id": "482c1edb-d8b0-4ac5-ac41-59e58cb9308e",
+          "order": 0,
+          "name": "Remove Logo",
+          "outputType": "image",
+          "templateParams": [],
+          "useReferenceImage": true
+        }
+      ],
       "createdAt": "2026-07-18T09:05:10.245Z",
       "updatedAt": "2026-07-18T09:05:10.245Z"
     },
     {
       "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
       "key": "remove_logo_and_change_background",
-      "language": "ja",
       "name": "Remove Logo & Change Background",
+      "language": "ja",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
+      "steps": [
+        {
+          "id": "f04572d2-7e26-479e-a7f1-458894f5aabb",
+          "order": 0,
+          "name": "Remove Logo & Change Background",
+          "outputType": "image",
+          "templateParams": [],
+          "useReferenceImage": true
+        }
+      ],
       "createdAt": "2026-07-18T06:38:33.017Z",
-      "updatedAt": "2026-07-18T09:03:49.519Z"
+      "updatedAt": "2026-07-28T04:59:44.907Z",
+      "isDefault": true
     },
     {
       "id": "8050ea1f-30d7-4889-ae82-dc5b16b8bc0c",
       "key": "video_image",
-      "language": "ja",
       "name": "Video Image",
+      "language": "ja",
       "category": "image",
-      "outputType": "text",
+      "isSystem": true,
+      "isDefault": true,
+      "steps": [
+        {
+          "id": "65751b09-c323-4bb1-9319-0858dce48da7",
+          "order": 0,
+          "name": "Video Image",
+          "outputType": "text",
+          "templateParams": []
+        }
+      ],
       "createdAt": "2026-07-10T02:36:45.950Z",
-      "updatedAt": "2026-07-10T03:44:17.821Z",
-      "isSystem": true
+      "updatedAt": "2026-07-10T03:44:17.821Z"
     },
     {
       "id": "b672e1d0-7d69-46c0-b81d-d11856c38b32",
       "key": "general",
-      "language": "ja",
       "name": "General",
+      "language": "ja",
       "category": "image",
-      "outputType": "image",
+      "isSystem": true,
+      "steps": [
+        {
+          "id": "10ef0821-b907-43e9-841d-50ea5328bb65",
+          "order": 0,
+          "name": "General",
+          "outputType": "image",
+          "templateParams": [],
+          "useReferenceImage": true
+        }
+      ],
       "createdAt": "2026-07-05T16:27:13.427Z",
-      "updatedAt": "2026-07-07T10:24:22.668Z",
-      "useReferenceImage": true,
-      "isSystem": true
+      "updatedAt": "2026-07-07T10:24:22.668Z"
     },
     {
       "id": "a55b6634-4968-4940-8acb-233c98880d1e",
       "key": "recreate",
-      "language": "ja",
       "name": "Recreate",
+      "language": "ja",
       "category": "thumbnail",
-      "outputType": "image",
-      "useReferenceImage": true,
+      "isSystem": true,
+      "steps": [
+        {
+          "id": "c85f966b-6f5e-45e6-9537-ce5594783c04",
+          "order": 0,
+          "name": "Recreate",
+          "outputType": "image",
+          "templateParams": [],
+          "useReferenceImage": true
+        }
+      ],
       "createdAt": "2026-07-05T15:08:56.521Z",
-      "updatedAt": "2026-07-05T15:11:58.798Z",
-      "isSystem": true
+      "updatedAt": "2026-07-05T15:11:58.798Z"
     },
     {
       "id": "a3f8c2e1-9b4d-4a7f-8e6c-1d2b3c4e5f60",
       "key": "metadata",
-      "language": "ja",
       "name": "Create Metadata",
+      "language": "ja",
       "category": "meta",
-      "outputType": "text",
+      "isSystem": true,
+      "isDefault": true,
+      "steps": [
+        {
+          "id": "8347c560-0822-41bd-bd15-a916e46715eb",
+          "order": 0,
+          "name": "Create Metadata",
+          "outputType": "text",
+          "templateParams": []
+        }
+      ],
       "createdAt": "2026-07-05T14:32:00.000Z",
-      "updatedAt": "2026-07-05T14:32:00.000Z",
-      "isSystem": true
+      "updatedAt": "2026-07-05T14:32:00.000Z"
     },
     {
       "id": "7fb1c27b-0e96-403c-997c-9cf20bd69174",
       "key": "love_story",
-      "language": "ja",
       "name": "Love Story",
+      "language": "ja",
       "category": "thumbnail",
-      "outputType": "image",
+      "steps": [
+        {
+          "id": "04e4b18e-5c07-4811-b227-c450d0959258",
+          "order": 0,
+          "name": "Love Story",
+          "outputType": "image",
+          "templateParams": []
+        }
+      ],
       "createdAt": "2026-06-21T17:49:09.082Z",
       "updatedAt": "2026-06-21T17:49:09.082Z"
     },
     {
-      "id": "c8da6af4-f803-496f-8741-61eb66e6b576",
-      "key": "ja_thumbnail_horizontal_step_3",
-      "language": "ja",
-      "name": "Horizontal",
-      "category": "thumbnail",
-      "outputType": "text",
-      "createdAt": "2026-06-21T04:19:21.397Z",
-      "updatedAt": "2026-06-21T04:24:53.550Z"
-    },
-    {
-      "id": "85102221-2ccf-4f76-8961-34094b75634e",
-      "key": "ja_thumbnail_horizontal_step_2",
-      "language": "ja",
-      "name": "Horizontal",
-      "category": "thumbnail",
-      "outputType": "text",
-      "createdAt": "2026-06-21T04:18:49.990Z",
-      "updatedAt": "2026-06-21T04:18:49.990Z"
-    },
-    {
       "id": "74641628-437b-4879-81b6-192251253b70",
-      "key": "ja_thumbnail_horizontal_step_1",
-      "language": "ja",
+      "key": "ja_thumbnail_horizontal",
       "name": "Horizontal",
+      "language": "ja",
       "category": "thumbnail",
-      "outputType": "text",
+      "steps": [
+        {
+          "id": "bb6872d4-6a81-4ab8-8f46-2d6fb8e85a7e",
+          "order": 0,
+          "name": "Horizontal",
+          "outputType": "text",
+          "templateParams": []
+        },
+        {
+          "id": "276191c7-d856-4fa0-b995-5a4c775ceee6",
+          "order": 1,
+          "name": "Horizontal",
+          "outputType": "text",
+          "templateParams": []
+        },
+        {
+          "id": "5687e511-7327-4278-9ecf-94314f2618c6",
+          "order": 2,
+          "name": "Horizontal",
+          "outputType": "text",
+          "templateParams": []
+        }
+      ],
       "createdAt": "2026-06-21T04:18:34.473Z",
       "updatedAt": "2026-06-21T04:18:34.473Z"
     },
     {
       "id": "4b097367-b5d7-4376-bb65-f742b6bf791a",
       "key": "update_transcript",
-      "language": "ja",
       "name": "Update Transcript Japan",
+      "language": "ja",
       "category": "transcript",
-      "outputType": "text",
+      "steps": [
+        {
+          "id": "61b6f47b-0a7d-4058-a9b1-9a6d83512a79",
+          "order": 0,
+          "name": "Update Transcript Japan",
+          "outputType": "text",
+          "templateParams": [
+            "transcript"
+          ]
+        }
+      ],
       "createdAt": "2026-06-18T10:29:36.758Z",
-      "updatedAt": "2026-07-28T02:15:33.684Z"
+      "updatedAt": "2026-07-28T05:09:52.964Z",
+      "isDefault": true
     }
   ]
 }

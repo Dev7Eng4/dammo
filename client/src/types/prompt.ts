@@ -4,12 +4,9 @@ export type PromptOutputType = 'text' | 'image' | 'video';
 
 export type PromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 
-/** Create form / API: replicate prompt for every language. */
 export type CreatePromptLanguage = PromptLanguage | 'all';
 
 export const PROMPT_LANGUAGES: PromptLanguage[] = ['en', 'ko', 'ja', 'es'];
-
-
 
 export type PlaygroundProvider = 'gpt' | 'gemini';
 
@@ -29,32 +26,38 @@ export interface UpdatePromptsSettingsPayload {
   defaultVideoProvider?: VideoBrowserProvider;
 }
 
-export interface Prompt {
+export interface PromptStep {
   id: string;
-
-  key: string;
-
-  language: PromptLanguage;
-
-  name: string;
-
-  category: PromptCategory;
-
-  outputType?: PromptOutputType;
-
-  description?: string;
-
-  isSystem?: boolean;
-
+  order: number;
+  name?: string;
+  outputType: PromptOutputType;
   useReferenceImage?: boolean;
-
   useChannelBackgroundImage?: boolean;
-
-  createdAt: string;
-
-  updatedAt: string;
-
+  templateParams: string[];
+  outputSchema?: Record<string, unknown>;
 }
+
+export interface PromptSet {
+  id: string;
+  key: string;
+  language: PromptLanguage;
+  name: string;
+  category: PromptCategory;
+  description?: string;
+  isDefault?: boolean;
+  isSystem?: boolean;
+  steps: PromptStep[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** @deprecated Use PromptSet */
+export type Prompt = PromptSet & {
+  outputType?: PromptOutputType;
+  useReferenceImage?: boolean;
+  useChannelBackgroundImage?: boolean;
+  template?: string;
+};
 
 export interface ThumbnailStyleOption {
   key: string;
@@ -62,143 +65,116 @@ export interface ThumbnailStyleOption {
   useChannelBackgroundImage: boolean;
 }
 
-
-
-export interface PromptResolved extends Prompt {
-
-  template: string;
-
-}
-
-
-
-export interface CreatePromptPayload {
-
-  language: CreatePromptLanguage;
-
+export interface PromptSetOption {
+  id: string;
   name: string;
-
-  template: string;
-
-  category?: PromptCategory;
-
-  outputType?: PromptOutputType;
-
-  description?: string;
-
-  useReferenceImage?: boolean;
-
+  key: string;
+  isDefault: boolean;
+  stepCount: number;
   useChannelBackgroundImage?: boolean;
-
 }
 
-
-
-export interface UpdatePromptPayload {
-
-  language?: PromptLanguage;
-
-  name?: string;
-
+export interface PromptSetResolved extends PromptSet {
+  stepsWithTemplates: Array<PromptStep & { template: string }>;
+  /** Legacy first-step template for older clients */
   template?: string;
-
-  category?: PromptCategory;
-
-  outputType?: PromptOutputType;
-
-  description?: string;
-
-  useReferenceImage?: boolean;
-
-  useChannelBackgroundImage?: boolean;
-
 }
 
+/** @deprecated */
+export type PromptResolved = PromptSetResolved;
 
+export interface PromptStepFormValues {
+  id: string;
+  order: number;
+  name: string;
+  outputType: PromptOutputType;
+  useReferenceImage: boolean;
+  useChannelBackgroundImage: boolean;
+  templateParams: string[];
+  outputSchemaText: string;
+  template: string;
+}
+
+export interface CreatePromptSetPayload {
+  language: CreatePromptLanguage;
+  name: string;
+  category?: PromptCategory;
+  description?: string;
+  isDefault?: boolean;
+  steps: Array<{
+    id?: string;
+    order?: number;
+    name?: string;
+    outputType?: PromptOutputType;
+    useReferenceImage?: boolean;
+    useChannelBackgroundImage?: boolean;
+    templateParams?: string[];
+    outputSchema?: Record<string, unknown>;
+    template: string;
+  }>;
+}
+
+export interface UpdatePromptSetPayload {
+  language?: PromptLanguage;
+  name?: string;
+  category?: PromptCategory;
+  description?: string;
+  isDefault?: boolean;
+  steps?: CreatePromptSetPayload['steps'];
+}
+
+/** @deprecated */
+export type CreatePromptPayload = CreatePromptSetPayload;
+/** @deprecated */
+export type UpdatePromptPayload = UpdatePromptSetPayload;
 
 export interface PromptPlaygroundRunPayload {
   outputType?: PromptOutputType;
-
   provider?: PlaygroundProvider;
-
   imageProvider?: ImageBrowserProvider;
-
   videoProvider?: VideoBrowserProvider;
-
   userPrompt: string;
-
   promptId?: string;
 }
 
-
-
 export interface PromptPlaygroundUsage {
-
   promptTokens: number;
-
   completionTokens: number;
-
   totalTokens: number;
-
 }
-
-
 
 export interface PromptPlaygroundResult {
-
   kind: PromptOutputType;
-
   content: string;
-
   imageBase64?: string;
-
   imageMimeType?: string;
-
   videoBase64?: string;
-
   videoMimeType?: string;
-
   provider: PlaygroundProvider | ImageBrowserProvider | VideoBrowserProvider;
-
   profileId?: string;
-
   codeBlocks?: string[];
-
   elapsedMs: number;
-
   model?: string;
-
   usage?: PromptPlaygroundUsage;
-
 }
-
-
 
 export interface PromptFormDraft {
-
   id: string | null;
-
   key: string;
-
   language: CreatePromptLanguage;
-
   name: string;
-
   category: PromptCategory;
-
-  outputType: PromptOutputType;
-
   description: string;
-
-  template: string;
-
-  templateParams: string[];
-
+  isDefault: boolean;
   isSystem?: boolean;
-
-  useReferenceImage: boolean;
-
-  useChannelBackgroundImage: boolean;
-
+  steps: PromptStepFormValues[];
+  /** Index of step currently edited / playground */
+  activeStepIndex: number;
 }
 
+export type ChannelPromptSetIds = {
+  transcript?: string;
+  meta?: string;
+  thumbnail?: string;
+  image?: string;
+};

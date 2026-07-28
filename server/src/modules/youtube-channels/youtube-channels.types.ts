@@ -2,6 +2,8 @@ import type { ChannelLanguage } from './channel-language.js';
 export type { ChannelLanguage } from './channel-language.js';
 import type { CaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
+import type { ChannelPromptSetIds } from '../prompts/prompts.types.js';
+export type { ChannelPromptSetIds } from '../prompts/prompts.types.js';
 
 export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
 
@@ -56,6 +58,8 @@ export interface YoutubeChannel {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  /** Override PromptSet.id per category; missing → use default for language+category */
+  promptSetIds?: ChannelPromptSetIds;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
@@ -119,6 +123,7 @@ export interface CreateYoutubeChannelInput {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  promptSetIds?: ChannelPromptSetIds;
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
@@ -149,6 +154,7 @@ export interface UpdateYoutubeChannelInput {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  promptSetIds?: ChannelPromptSetIds;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;

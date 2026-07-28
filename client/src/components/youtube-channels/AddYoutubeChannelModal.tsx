@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchNiches } from '../../api/niches';
-import { fetchThumbnailStyles } from '../../api/prompts';
+import { fetchPromptSetOptions } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { createYoutubeChannel, fetchYoutubeChannels, updateYoutubeChannel } from '../../api/youtubeChannels';
 import {
@@ -61,7 +61,20 @@ function isEditModalProps(props: YoutubeChannelModalProps): props is YoutubeChan
   return props.channel !== undefined;
 }
 
-const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: '', label: 'Mặc định' };
+function formatPromptSetOptionLabel(name: string, isDefault: boolean): string {
+  return isDefault ? `${name} (mặc định)` : name;
+}
+
+function pickDefaultSetId(items: { id: string; isDefault: boolean }[]): string {
+  return items.find(item => item.isDefault)?.id ?? items[0]?.id ?? '';
+}
+
+const EMPTY_PROMPT_SET_OPTIONS = {
+  transcript: [] as { value: string; label: string }[],
+  meta: [] as { value: string; label: string }[],
+  thumbnail: [] as { value: string; label: string }[],
+  image: [] as { value: string; label: string }[],
+};
 
 const CHANNEL_TYPE_OPTIONS = YOUTUBE_CHANNEL_TYPE_OPTIONS.map(option => ({
   ...option,
@@ -143,6 +156,10 @@ const defaultValues: AddYoutubeChannelFormValues = {
   backgroundFootageSources: [],
   backgroundFootageMode: 'source',
   thumbnailStyleKey: '',
+  promptSetTranscriptId: '',
+  promptSetMetaId: '',
+  promptSetThumbnailId: '',
+  promptSetImageId: '',
   thumbnailBackgroundFile: '',
   captionStyleKey: 'default',
   reupAudioVideoType: '',
@@ -180,6 +197,10 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     backgroundFootageSources: channel.backgroundFootageSources ?? [],
     backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
     thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
+    promptSetTranscriptId: channel.promptSetIds?.transcript ?? '',
+    promptSetMetaId: channel.promptSetIds?.meta ?? '',
+    promptSetThumbnailId: channel.promptSetIds?.thumbnail ?? '',
+    promptSetImageId: channel.promptSetIds?.image ?? '',
     thumbnailBackgroundFile: channel.thumbnailBackgroundFile ?? '',
     captionStyleKey: channel.captionStyleKey ?? 'default',
     reupAudioVideoType: channel.reupAudioVideoType ?? '',
@@ -246,9 +267,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [formReady, setFormReady] = useState(false);
-  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([DEFAULT_THUMBNAIL_STYLE_OPTION]);
-  const [thumbnailStyleFlags, setThumbnailStyleFlags] = useState<Record<string, boolean>>({});
-  const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
+  const [promptSetOptions, setPromptSetOptions] = useState(EMPTY_PROMPT_SET_OPTIONS);
+  const [thumbnailBgBySetId, setThumbnailBgBySetId] = useState<Record<string, boolean>>({});
+  const [promptSetsLoading, setPromptSetsLoading] = useState(false);
   const [visualStyleOptions, setVisualStyleOptions] = useState<{ value: string; label: string }[]>([]);
   const [visualStylesLoading, setVisualStylesLoading] = useState(false);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
@@ -282,13 +303,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const showDisclaimer = watch('showDisclaimer');
   const uploadFrequency = watch('uploadFrequency');
   const backgroundFootageMode = watch('backgroundFootageMode');
-  const thumbnailStyleKey = watch('thumbnailStyleKey');
+  const promptSetThumbnailId = watch('promptSetThumbnailId');
   const thumbnailBackgroundFile = watch('thumbnailBackgroundFile');
   const audioBarFile = watch('audioBarFile');
   const smallVideoFile = watch('smallVideoFile');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
   const showThumbnailBackgroundPicker = Boolean(
-    thumbnailStyleKey && thumbnailStyleFlags[thumbnailStyleKey],
+    promptSetThumbnailId && thumbnailBgBySetId[promptSetThumbnailId],
   );
 
   const sourceOptions = useMemo(
@@ -429,35 +450,78 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   useAbortableEffect(
     async signal => {
       if (!open || !formReady || !language) {
-        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
-        setThumbnailStyleFlags({});
+        setPromptSetOptions(EMPTY_PROMPT_SET_OPTIONS);
+        setThumbnailBgBySetId({});
         return;
       }
 
-      setThumbnailStylesLoading(true);
+      setPromptSetsLoading(true);
       try {
-        const { items } = await fetchThumbnailStyles(language, { signal });
-        const options = [DEFAULT_THUMBNAIL_STYLE_OPTION, ...items.map(item => ({ value: item.key, label: item.name }))];
-        const flags: Record<string, boolean> = {};
-        for (const item of items) {
-          flags[item.key] = item.useChannelBackgroundImage === true;
-        }
-        setThumbnailStyleOptions(options);
-        setThumbnailStyleFlags(flags);
+        const [transcript, meta, thumbnail, image] = await Promise.all([
+          fetchPromptSetOptions(language, 'transcript', { signal }),
+          fetchPromptSetOptions(language, 'meta', { signal }),
+          fetchPromptSetOptions(language, 'thumbnail', { signal }),
+          fetchPromptSetOptions(language, 'image', { signal }),
+        ]);
 
-        const current = getValues('thumbnailStyleKey');
-        if (current && !options.some(option => option.value === current)) {
-          setValue('thumbnailStyleKey', '');
-          setValue('thumbnailBackgroundFile', '');
+        const toOptions = (items: typeof transcript.items) =>
+          items.map(item => ({
+            value: item.id,
+            label: formatPromptSetOptionLabel(item.name, item.isDefault),
+          }));
+
+        setPromptSetOptions({
+          transcript: toOptions(transcript.items),
+          meta: toOptions(meta.items),
+          thumbnail: toOptions(thumbnail.items),
+          image: toOptions(image.items),
+        });
+
+        const bgFlags: Record<string, boolean> = {};
+        for (const item of thumbnail.items) {
+          bgFlags[item.id] = item.useChannelBackgroundImage === true;
         }
+        setThumbnailBgBySetId(bgFlags);
+
+        // Legacy: map thumbnailStyleKey → promptSetThumbnailId when override missing
+        const currentThumbId = getValues('promptSetThumbnailId');
+        const legacyKey = getValues('thumbnailStyleKey');
+        if (!currentThumbId && legacyKey) {
+          const matched = thumbnail.items.find(item => item.key === legacyKey);
+          if (matched) {
+            setValue('promptSetThumbnailId', matched.id);
+          }
+        }
+
+        const ensureDefaultOrKeep = (
+          field: 'promptSetTranscriptId' | 'promptSetMetaId' | 'promptSetThumbnailId' | 'promptSetImageId',
+          items: typeof transcript.items,
+        ) => {
+          const current = getValues(field);
+          const valid = current && items.some(item => item.id === current);
+          if (valid) return;
+          const nextId = pickDefaultSetId(items);
+          setValue(field, nextId);
+          if (field === 'promptSetThumbnailId' && (!nextId || !bgFlags[nextId])) {
+            setValue('thumbnailBackgroundFile', '');
+          }
+        };
+
+        ensureDefaultOrKeep('promptSetTranscriptId', transcript.items);
+        ensureDefaultOrKeep('promptSetMetaId', meta.items);
+        ensureDefaultOrKeep('promptSetThumbnailId', thumbnail.items);
+        ensureDefaultOrKeep('promptSetImageId', image.items);
       } catch {
         if (signal.aborted) return;
-        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
-        setThumbnailStyleFlags({});
-        setValue('thumbnailStyleKey', '');
+        setPromptSetOptions(EMPTY_PROMPT_SET_OPTIONS);
+        setThumbnailBgBySetId({});
+        setValue('promptSetTranscriptId', '');
+        setValue('promptSetMetaId', '');
+        setValue('promptSetThumbnailId', '');
+        setValue('promptSetImageId', '');
         setValue('thumbnailBackgroundFile', '');
       } finally {
-        if (!signal.aborted) setThumbnailStylesLoading(false);
+        if (!signal.aborted) setPromptSetsLoading(false);
       }
     },
     [open, formReady, language],
@@ -494,6 +558,15 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             ? { backgroundFootageSources: values.backgroundFootageSources }
             : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
+        ...((() => {
+          const promptSetIds = {
+            ...(values.promptSetTranscriptId ? { transcript: values.promptSetTranscriptId } : {}),
+            ...(values.promptSetMetaId ? { meta: values.promptSetMetaId } : {}),
+            ...(values.promptSetThumbnailId ? { thumbnail: values.promptSetThumbnailId } : {}),
+            ...(values.promptSetImageId ? { image: values.promptSetImageId } : {}),
+          };
+          return Object.keys(promptSetIds).length > 0 ? { promptSetIds } : {};
+        })()),
         thumbnailBackgroundFile: values.thumbnailBackgroundFile || undefined,
         ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
@@ -1017,23 +1090,87 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         </FormField>
 
         <FormField
-          label='Kiểu ảnh thu nhỏ'
-          htmlFor='thumbnail-style'
+          label='Bộ prompt Transcript'
+          htmlFor='prompt-set-transcript'
           optional
-          error={errors.thumbnailStyleKey?.message}
+          error={errors.promptSetTranscriptId?.message}
           className='min-w-0'
         >
           <Controller
-            name='thumbnailStyleKey'
+            name='promptSetTranscriptId'
             control={control}
             render={({ field }) => (
               <Select
-                id='thumbnail-style'
-                options={thumbnailStyleOptions}
+                id='prompt-set-transcript'
+                options={promptSetOptions.transcript}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  !language
+                    ? 'Chọn ngôn ngữ trước'
+                    : promptSetsLoading
+                      ? 'Đang tải bộ prompt...'
+                      : 'Chọn bộ prompt'
+                }
+                disabled={isSubmitting || !language || promptSetsLoading}
+                className='w-full'
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label='Bộ prompt Meta'
+          htmlFor='prompt-set-meta'
+          optional
+          error={errors.promptSetMetaId?.message}
+          className='min-w-0'
+        >
+          <Controller
+            name='promptSetMetaId'
+            control={control}
+            render={({ field }) => (
+              <Select
+                id='prompt-set-meta'
+                options={promptSetOptions.meta}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  !language
+                    ? 'Chọn ngôn ngữ trước'
+                    : promptSetsLoading
+                      ? 'Đang tải bộ prompt...'
+                      : 'Chọn bộ prompt'
+                }
+                disabled={isSubmitting || !language || promptSetsLoading}
+                className='w-full'
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label='Bộ prompt Thumbnail'
+          htmlFor='prompt-set-thumbnail'
+          optional
+          error={errors.promptSetThumbnailId?.message}
+          className='min-w-0'
+        >
+          <Controller
+            name='promptSetThumbnailId'
+            control={control}
+            render={({ field }) => (
+              <Select
+                id='prompt-set-thumbnail'
+                options={promptSetOptions.thumbnail}
                 value={field.value}
                 onChange={next => {
                   field.onChange(next);
-                  if (!next || !thumbnailStyleFlags[next]) {
+                  if (!next || !thumbnailBgBySetId[next]) {
                     setValue('thumbnailBackgroundFile', '');
                   }
                 }}
@@ -1041,13 +1178,43 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 placeholder={
                   !language
                     ? 'Chọn ngôn ngữ trước'
-                    : thumbnailStylesLoading
-                      ? 'Đang tải kiểu ảnh...'
-                      : thumbnailStyleOptions.length === 0
-                        ? 'Không có kiểu ảnh thu nhỏ cho ngôn ngữ này'
-                        : 'Chọn kiểu ảnh thu nhỏ'
+                    : promptSetsLoading
+                      ? 'Đang tải bộ prompt...'
+                      : 'Chọn bộ prompt'
                 }
-                disabled={isSubmitting || !language || thumbnailStylesLoading}
+                disabled={isSubmitting || !language || promptSetsLoading}
+                className='w-full'
+                triggerClassName={selectTriggerClass}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label='Bộ prompt Image'
+          htmlFor='prompt-set-image'
+          optional
+          error={errors.promptSetImageId?.message}
+          className='min-w-0'
+        >
+          <Controller
+            name='promptSetImageId'
+            control={control}
+            render={({ field }) => (
+              <Select
+                id='prompt-set-image'
+                options={promptSetOptions.image}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={
+                  !language
+                    ? 'Chọn ngôn ngữ trước'
+                    : promptSetsLoading
+                      ? 'Đang tải bộ prompt...'
+                      : 'Chọn bộ prompt'
+                }
+                disabled={isSubmitting || !language || promptSetsLoading}
                 className='w-full'
                 triggerClassName={selectTriggerClass}
               />

@@ -1,7 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { promptTemplateFile, paths } from '../../config/paths.js';
+import {
+  paths,
+  promptSetDir,
+  promptSetStepTemplateFile,
+  promptTemplateFile,
+} from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import type { PromptLanguage } from './prompts.types.js';
 
@@ -81,9 +86,7 @@ function extractExportExpression(content: string): string {
   throw new AppError('Invalid prompt template file format', 500, 'PROMPT_EXPORT_INVALID');
 }
 
-export async function readPromptSource(language: PromptLanguage, key: string): Promise<string> {
-  const filePath = promptTemplateFile(language, key);
-
+async function readTemplateFile(filePath: string): Promise<string> {
   let content: string;
   try {
     content = await fs.readFile(filePath, 'utf8');
@@ -94,17 +97,10 @@ export async function readPromptSource(language: PromptLanguage, key: string): P
   const expression = extractExportExpression(content);
   const plainString = unwrapPlainStringWrapper(expression);
   if (plainString !== null) return plainString;
-
   return expression;
 }
 
-export async function executePromptTemplate(
-  language: PromptLanguage,
-  key: string,
-  args: unknown[] = [],
-): Promise<string> {
-  const filePath = promptTemplateFile(language, key);
-
+async function executeTemplateFile(filePath: string, keyHint: string, args: unknown[]): Promise<string> {
   try {
     await fs.access(filePath);
   } catch {
@@ -113,7 +109,7 @@ export async function executePromptTemplate(
 
   try {
     const module = await import(`${pathToFileURL(filePath).href}?t=${Date.now()}`);
-    const factory = module.default ?? module[key];
+    const factory = module.default ?? module[keyHint];
     if (typeof factory !== 'function') {
       throw new AppError('Prompt default export not found in template file', 500, 'PROMPT_EXPORT_INVALID');
     }
@@ -129,27 +125,139 @@ export async function executePromptTemplate(
   }
 }
 
-export async function writePromptFile(
+export async function readPromptSetStepSource(
+  language: PromptLanguage,
+  setKey: string,
+  stepOrder: number,
+): Promise<string> {
+  const stepPath = promptSetStepTemplateFile(language, setKey, stepOrder);
+  try {
+    await fs.access(stepPath);
+    return readTemplateFile(stepPath);
+  } catch {
+    // Legacy flat file fallback (pre-migration)
+    return readTemplateFile(promptTemplateFile(language, setKey));
+  }
+}
+
+/** @deprecated Prefer readPromptSetStepSource */
+export async function readPromptSource(language: PromptLanguage, key: string): Promise<string> {
+  return readPromptSetStepSource(language, key, 0);
+}
+
+export async function executePromptSetStepTemplate(
+  language: PromptLanguage,
+  setKey: string,
+  stepOrder: number,
+  args: unknown[] = [],
+): Promise<string> {
+  const stepPath = promptSetStepTemplateFile(language, setKey, stepOrder);
+  try {
+    await fs.access(stepPath);
+    return executeTemplateFile(stepPath, setKey, args);
+  } catch {
+    return executeTemplateFile(promptTemplateFile(language, setKey), setKey, args);
+  }
+}
+
+/** @deprecated Prefer executePromptSetStepTemplate — runs step 0 of set key */
+export async function executePromptTemplate(
   language: PromptLanguage,
   key: string,
+  args: unknown[] = [],
+): Promise<string> {
+  return executePromptSetStepTemplate(language, key, 0, args);
+}
+
+export async function writePromptSetStepFile(
+  language: PromptLanguage,
+  setKey: string,
+  stepOrder: number,
   template: string,
 ): Promise<string> {
-  const filePath = promptTemplateFile(language, key);
+  const filePath = promptSetStepTemplateFile(language, setKey, stepOrder);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   const parsed = parseTemplateInput(template);
   await fs.writeFile(filePath, buildPromptFileContent(parsed), 'utf8');
   return filePath;
 }
 
-export async function deletePromptFile(language: PromptLanguage, key: string): Promise<void> {
-  const filePath = promptTemplateFile(language, key);
+/** @deprecated */
+export async function writePromptFile(
+  language: PromptLanguage,
+  key: string,
+  template: string,
+): Promise<string> {
+  return writePromptSetStepFile(language, key, 0, template);
+}
+
+export async function deletePromptSetStepFile(
+  language: PromptLanguage,
+  setKey: string,
+  stepOrder: number,
+): Promise<void> {
+  const filePath = promptSetStepTemplateFile(language, setKey, stepOrder);
   try {
     await fs.unlink(filePath);
   } catch {
-    // ignore missing file
+    /* ignore */
   }
 }
 
+export async function deletePromptSetDir(language: PromptLanguage, setKey: string): Promise<void> {
+  const dir = promptSetDir(language, setKey);
+  try {
+    await fs.rm(dir, { recursive: true, force: true });
+  } catch {
+    /* ignore */
+  }
+  // Also remove legacy flat file if present
+  try {
+    await fs.unlink(promptTemplateFile(language, setKey));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @deprecated */
+export async function deletePromptFile(language: PromptLanguage, key: string): Promise<void> {
+  await deletePromptSetDir(language, key);
+}
+
+export async function movePromptSetDir(
+  fromLanguage: PromptLanguage,
+  fromKey: string,
+  toLanguage: PromptLanguage,
+  toKey: string,
+): Promise<void> {
+  const fromDir = promptSetDir(fromLanguage, fromKey);
+  const toDir = promptSetDir(toLanguage, toKey);
+
+  if (fromDir === toDir) return;
+
+  try {
+    await fs.access(fromDir);
+    await fs.mkdir(path.dirname(toDir), { recursive: true });
+    await fs.rename(fromDir, toDir);
+  } catch {
+    // Try legacy flat → step-0
+    const fromFlat = promptTemplateFile(fromLanguage, fromKey);
+    try {
+      await fs.access(fromFlat);
+      await writePromptSetStepFile(
+        toLanguage,
+        toKey,
+        0,
+        await readTemplateFile(fromFlat),
+      );
+      await fs.unlink(fromFlat);
+    } catch {
+      throw new AppError('Prompt template file not found', 404, 'PROMPT_FILE_NOT_FOUND');
+    }
+  }
+}
+
+/** @deprecated */
 export async function movePromptFile(
   fromLanguage: PromptLanguage,
   fromKey: string,
@@ -157,29 +265,14 @@ export async function movePromptFile(
   toKey: string,
   template?: string,
 ): Promise<void> {
-  const fromPath = promptTemplateFile(fromLanguage, fromKey);
-  const toPath = promptTemplateFile(toLanguage, toKey);
-
-  if (fromPath === toPath) {
-    if (template !== undefined) {
-      await writePromptFile(toLanguage, toKey, template);
+  if (template !== undefined) {
+    await writePromptSetStepFile(toLanguage, toKey, 0, template);
+    if (fromLanguage !== toLanguage || fromKey !== toKey) {
+      await deletePromptSetDir(fromLanguage, fromKey);
     }
     return;
   }
-
-  if (template !== undefined) {
-    await writePromptFile(toLanguage, toKey, template);
-    await deletePromptFile(fromLanguage, fromKey);
-    return;
-  }
-
-  try {
-    await fs.access(fromPath);
-    await fs.mkdir(path.dirname(toPath), { recursive: true });
-    await fs.rename(fromPath, toPath);
-  } catch {
-    throw new AppError('Prompt template file not found', 404, 'PROMPT_FILE_NOT_FOUND');
-  }
+  await movePromptSetDir(fromLanguage, fromKey, toLanguage, toKey);
 }
 
 export async function ensurePromptsDir(): Promise<void> {

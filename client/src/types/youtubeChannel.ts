@@ -1,3 +1,6 @@
+import type { ChannelPromptSetIds } from './prompt';
+export type { ChannelPromptSetIds } from './prompt';
+
 export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
 
 /** @deprecated Legacy persisted value; mapped to reup_video in forms */
@@ -108,6 +111,7 @@ export interface YoutubeChannel {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  promptSetIds?: ChannelPromptSetIds;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
@@ -454,6 +458,7 @@ export interface CreateYoutubeChannelPayload {
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
+  promptSetIds?: ChannelPromptSetIds;
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
@@ -489,7 +494,12 @@ export interface AddYoutubeChannelFormValues {
   sourceChannels: string[];
   backgroundFootageSources: string[];
   backgroundFootageMode: BackgroundFootageMode;
+  /** @deprecated Prefer promptSetIds.thumbnail */
   thumbnailStyleKey: string;
+  promptSetTranscriptId: string;
+  promptSetMetaId: string;
+  promptSetThumbnailId: string;
+  promptSetImageId: string;
   thumbnailBackgroundFile: string;
   captionStyleKey: CaptionStyleKey | '';
   reupAudioVideoType: ReupAudioVideoType | '';

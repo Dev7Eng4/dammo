@@ -1,7 +1,7 @@
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
-import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
+import { executePromptSetStepTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
@@ -30,17 +30,20 @@ function resolveHorizontalStepKey(
   language: ChannelLanguage,
   styleBaseKey: string,
   step: ThumbnailHorizontalStep,
-): string {
-  const key = `${styleBaseKey.trim()}_step_${step}`;
-  const prompt = promptsRepository
-    .findAll()
-    .find(item => item.category === 'thumbnail' && item.language === language && item.key === key);
-
-  if (!prompt) {
-    throw new AppError(`Thumbnail horizontal step ${step} prompt not found`, 404, 'PROMPT_NOT_FOUND');
+): { setKey: string; stepOrder: number } {
+  const set = promptsRepository.findByKeyAndLanguage(styleBaseKey.trim(), language);
+  if (set && set.category === 'thumbnail' && set.steps.length >= step) {
+    return { setKey: set.key, stepOrder: step - 1 };
   }
 
-  return prompt.key;
+  // Legacy flat keys *_step_N
+  const key = `${styleBaseKey.trim()}_step_${step}`;
+  const legacy = promptsRepository.findByKeyAndLanguage(key, language);
+  if (legacy) {
+    return { setKey: legacy.key, stepOrder: 0 };
+  }
+
+  throw new AppError(`Thumbnail horizontal step ${step} prompt not found`, 404, 'PROMPT_NOT_FOUND');
 }
 
 async function runStepWithRetry<T>(
@@ -119,37 +122,41 @@ export async function executeThumbnailHorizontal(
     throw new AppError('Metadata step 3 final_summary.overview is empty', 400, 'INVALID_INPUT');
   }
 
+  const step1Ref = resolveHorizontalStepKey(language, styleBaseKey, 1);
   const step1 = await runStepWithRetry(
     session,
     language,
     styleBaseKey,
     1,
-    () => executePromptTemplate(language, resolveHorizontalStepKey(language, styleBaseKey, 1), [title, summary]),
+    () =>
+      executePromptSetStepTemplate(language, step1Ref.setKey, step1Ref.stepOrder, [title, summary]),
     tryParseThumbnailHorizontalStep1Response,
     options,
   );
 
   const step1Json = JSON.stringify(step1, null, 2);
 
+  const step2Ref = resolveHorizontalStepKey(language, styleBaseKey, 2);
   const step2 = await runStepWithRetry(
     session,
     language,
     styleBaseKey,
     2,
-    () => executePromptTemplate(language, resolveHorizontalStepKey(language, styleBaseKey, 2), [step1Json]),
+    () => executePromptSetStepTemplate(language, step2Ref.setKey, step2Ref.stepOrder, [step1Json]),
     tryParseThumbnailHorizontalStep2Response,
     options,
   );
 
   const step2Json = JSON.stringify(step2, null, 2);
 
+  const step3Ref = resolveHorizontalStepKey(language, styleBaseKey, 3);
   const step3 = await runStepWithRetry(
     session,
     language,
     styleBaseKey,
     3,
     () =>
-      executePromptTemplate(language, resolveHorizontalStepKey(language, styleBaseKey, 3), [step1Json, step2Json]),
+      executePromptSetStepTemplate(language, step3Ref.setKey, step3Ref.stepOrder, [step1Json, step2Json]),
     tryParseThumbnailHorizontalStep3Response,
     options,
   );

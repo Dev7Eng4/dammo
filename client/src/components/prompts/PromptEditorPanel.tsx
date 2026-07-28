@@ -7,12 +7,12 @@ import {
   PROMPT_OUTPUT_TYPE_OPTIONS,
 } from '../../constants/promptForm';
 import {
-  estimateTokens,
   derivePromptKeyFromName,
   isUserFunctionTemplate,
   normalizeVariableName,
 } from '../../utils/promptVariables';
-import type { PromptFormDraft } from '../../types/prompt';
+import { cn } from '../../lib/cn';
+import type { PromptFormDraft, PromptStepFormValues } from '../../types/prompt';
 
 export interface PromptEditorPanelProps {
   draft: PromptFormDraft | null;
@@ -36,6 +36,28 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
   );
 }
 
+function createEmptyStep(order: number): PromptStepFormValues {
+  return {
+    id: crypto.randomUUID(),
+    order,
+    name: `Step ${order + 1}`,
+    outputType: 'text',
+    useReferenceImage: false,
+    useChannelBackgroundImage: false,
+    templateParams: [],
+    outputSchemaText: '',
+    template: '',
+  };
+}
+
+function supportsReferenceImage(category: string): boolean {
+  return category === 'thumbnail' || category === 'image';
+}
+
+function supportsChannelBackgroundImage(category: string): boolean {
+  return category === 'thumbnail';
+}
+
 export function PromptEditorPanel({
   draft,
   loading,
@@ -48,40 +70,14 @@ export function PromptEditorPanel({
   onDuplicate,
   onDelete,
 }: PromptEditorPanelProps) {
-  const [insertVarName, setInsertVarName] = useState('');
-
-  function handleInsertVariable() {
-    if (!draft || readOnly) return;
-    const name = normalizeVariableName(insertVarName);
-    if (!name || draft.templateParams.includes(name)) return;
-
-    onChange({ templateParams: [...draft.templateParams, name] });
-    setInsertVarName('');
-  }
-
-  function handleRemoveVariable(name: string) {
-    if (!draft || readOnly) return;
-    onChange({ templateParams: draft.templateParams.filter((param) => param !== name) });
-  }
+  const [insertVarByStepId, setInsertVarByStepId] = useState<Record<string, string>>({});
 
   if (!draft && !loading) {
     return (
       <section className="flex min-w-0 flex-1 flex-col items-center justify-center bg-background p-8 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl border border-border bg-surface-elevated">
-          <svg
-            className="size-6 text-neutral-500"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            aria-hidden
-          >
-            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
-          </svg>
-        </div>
-        <p className="mt-4 text-sm font-medium text-neutral-200">Chọn một prompt từ danh sách</p>
+        <p className="mt-4 text-sm font-medium text-neutral-200">Chọn một bộ prompt từ danh sách</p>
         <p className="mt-1 text-xs text-neutral-500">
-          Hoặc bấm <span className="font-medium text-neutral-400">+ Mới</span> để tạo mới
+          Hoặc bấm <span className="font-medium text-neutral-400">+ Mới</span> để tạo bộ mới
         </p>
       </section>
     );
@@ -97,22 +93,56 @@ export function PromptEditorPanel({
   }
 
   const isNew = !draft.id;
-  const tokenEstimate = estimateTokens(draft.template);
-  const userFunctionTemplate = isUserFunctionTemplate(draft.template);
   const displayKey = draft.id ? draft.key : derivePromptKeyFromName(draft.name);
-  const showReferenceImageOption = draft.category === 'thumbnail' || draft.category === 'image';
-  const exportDefaultPreview =
-    draft.templateParams.length > 0
-      ? `export default (${draft.templateParams.join(', ')}) => \`...\``
-      : 'export default () => `...`';
-  const headerTitle = isNew ? 'Prompt mới' : draft.name || 'Prompt chưa đặt tên';
+  const showReferenceImageOption = supportsReferenceImage(draft.category);
+  const showBackgroundOption = supportsChannelBackgroundImage(draft.category);
+
+  function updateStep(index: number, patch: Partial<PromptStepFormValues>) {
+    const steps = draft!.steps.map((step, i) => (i === index ? { ...step, ...patch } : step));
+    onChange({ steps });
+  }
+
+  function handleAddStep() {
+    const steps = [...draft!.steps, createEmptyStep(draft!.steps.length)];
+    onChange({ steps, activeStepIndex: steps.length - 1 });
+  }
+
+  function handleRemoveStep(index: number) {
+    if (draft!.steps.length <= 1) return;
+    const removedId = draft!.steps[index]?.id;
+    const steps = draft!.steps.filter((_, i) => i !== index).map((step, i) => ({ ...step, order: i }));
+    const activeStepIndex =
+      draft!.activeStepIndex > index
+        ? draft!.activeStepIndex - 1
+        : Math.min(draft!.activeStepIndex, steps.length - 1);
+    onChange({ steps, activeStepIndex });
+    if (removedId) {
+      setInsertVarByStepId(prev => {
+        const next = { ...prev };
+        delete next[removedId];
+        return next;
+      });
+    }
+  }
+
+  function handleInsertVariable(index: number) {
+    if (readOnly) return;
+    const step = draft!.steps[index];
+    if (!step) return;
+    const name = normalizeVariableName(insertVarByStepId[step.id] ?? '');
+    if (!name || step.templateParams.includes(name)) return;
+    updateStep(index, { templateParams: [...step.templateParams, name] });
+    setInsertVarByStepId(prev => ({ ...prev, [step.id]: '' }));
+  }
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-lg font-semibold text-neutral-50">{headerTitle}</h1>
+            <h1 className="truncate text-lg font-semibold text-neutral-50">
+              {isNew ? 'Bộ prompt mới' : draft.name || 'Bộ chưa đặt tên'}
+            </h1>
             {isNew ? (
               <span className="inline-flex rounded-full border border-primary-400/30 bg-primary-400/10 px-2 py-0.5 text-[10px] font-medium text-primary-300">
                 Nháp
@@ -122,53 +152,55 @@ export function PromptEditorPanel({
                 {displayKey}
               </span>
             )}
+            {draft.isDefault ? (
+              <span className="inline-flex rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                Default
+              </span>
+            ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {!readOnly ? (
+            <Button variant="outlined" size="sm" onClick={handleAddStep} disabled={saving}>
+              + Thêm step
+            </Button>
+          ) : null}
           <Button variant="outlined" size="sm" onClick={onDuplicate} disabled={saving}>
             Nhân bản
           </Button>
           {!readOnly ? (
-            <>
-              <Button variant="danger" size="sm" onClick={onDelete} disabled={saving || !draft.id}>
-                Xóa
-              </Button>
-              <Button size="sm" onClick={onSave} disabled={saving || !dirty || !draft.name.trim()}>
-                {saving ? 'Đang lưu...' : 'Lưu'}
-              </Button>
-            </>
+            <Button variant="danger" size="sm" onClick={onDelete} disabled={saving || !draft.id}>
+              Xóa
+            </Button>
           ) : null}
+          <Button size="sm" onClick={onSave} disabled={saving || !dirty || (!readOnly && !draft.name.trim())}>
+            {saving ? 'Đang lưu...' : 'Lưu'}
+          </Button>
         </div>
       </header>
 
       {readOnly ? (
         <div className="border-b border-l-2 border-warning/50 bg-warning/5 px-6 py-2">
-          <p className="text-xs text-warning">Prompt hệ thống — chỉ xem</p>
+          <p className="text-xs text-warning">Bộ hệ thống — chỉ được đổi đặt làm mặc định</p>
         </div>
       ) : null}
 
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-6">
         <div className="card-surface space-y-4 rounded-xl p-4">
-          <h2 className="text-sm font-medium text-neutral-100">Chung</h2>
+          <h2 className="text-sm font-medium text-neutral-100">Chung (bộ prompt)</h2>
 
           <label className="block space-y-1.5">
             <FieldLabel>Tên</FieldLabel>
             <Input
               value={draft.name}
-              onChange={(e) => onChange({ name: e.target.value })}
-              placeholder="Tên prompt"
+              onChange={e => onChange({ name: e.target.value })}
+              placeholder="Tên bộ prompt"
               className="h-10 rounded-lg"
               readOnly={readOnly}
               disabled={readOnly}
               required
             />
-            {saveError ? (
-              <p className="text-xs text-danger">{saveError}</p>
-            ) : isNew ? (
-              <p className="text-xs text-neutral-500">
-                Sẽ lưu với key <span className="font-mono text-neutral-400">{displayKey}</span>
-              </p>
-            ) : null}
+            {saveError ? <p className="text-xs text-danger">{saveError}</p> : null}
           </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -176,7 +208,7 @@ export function PromptEditorPanel({
               <FieldLabel>Ngôn ngữ</FieldLabel>
               <DropdownSelect
                 value={draft.language}
-                onChange={(language) => onChange({ language })}
+                onChange={language => onChange({ language })}
                 options={isNew ? PROMPT_FORM_LANGUAGE_OPTIONS : PROMPT_LANGUAGE_OPTIONS}
                 disabled={readOnly}
                 className="w-full"
@@ -187,154 +219,222 @@ export function PromptEditorPanel({
               <FieldLabel>Danh mục</FieldLabel>
               <DropdownSelect
                 value={draft.category}
-                onChange={(category) => onChange({ category })}
+                onChange={category => onChange({ category })}
                 options={PROMPT_CATEGORY_OPTIONS}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
               />
             </label>
-            <label className="block space-y-1.5">
-              <FieldLabel>Loại</FieldLabel>
-              <DropdownSelect
-                value={draft.outputType}
-                onChange={(outputType) => onChange({ outputType })}
-                options={PROMPT_OUTPUT_TYPE_OPTIONS}
-                disabled={readOnly}
-                className="w-full"
-                triggerClassName="h-10 w-full rounded-lg"
+            <label className="flex items-end gap-2 pb-1">
+              <input
+                type="checkbox"
+                checked={draft.isDefault}
+                onChange={e => onChange({ isDefault: e.target.checked })}
+                className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
               />
+              <span className="text-sm text-neutral-200">Đặt làm mặc định</span>
             </label>
           </div>
-          <p className="text-[10px] text-neutral-500">
-            Văn bản → LLM · Hình ảnh → Flow/Meta · Video → Meta AI
-          </p>
-
-          {showReferenceImageOption ? (
-            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
-              <div>
-                <p className="text-xs font-medium text-neutral-300">Dùng ảnh tham chiếu</p>
-                <p className="text-[10px] text-neutral-500">Đính kèm ảnh tham chiếu khi tạo</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={draft.useReferenceImage}
-                onChange={(e) => onChange({ useReferenceImage: e.target.checked })}
-                disabled={readOnly}
-                className="size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          ) : null}
-
-          {draft.category === 'thumbnail' ? (
-            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
-              <div>
-                <p className="text-xs font-medium text-neutral-300">Dùng ảnh nền của kênh</p>
-                <p className="text-[10px] text-neutral-500">Dùng ảnh nền kênh YouTube khi tạo thumbnail</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={draft.useChannelBackgroundImage}
-                onChange={(e) => onChange({ useChannelBackgroundImage: e.target.checked })}
-                disabled={readOnly}
-                className="size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          ) : null}
 
           <label className="block space-y-1.5">
             <FieldLabel optional>Mô tả</FieldLabel>
-            <Input
+            <Textarea
               value={draft.description}
-              onChange={(e) => onChange({ description: e.target.value })}
-              placeholder="Mô tả ngắn"
-              className="h-10 rounded-lg"
+              onChange={e => onChange({ description: e.target.value })}
+              rows={2}
+              className="text-sm"
               readOnly={readOnly}
               disabled={readOnly}
             />
           </label>
         </div>
 
-        <div className="card-surface space-y-3 rounded-xl p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-medium text-neutral-100">Mẫu User Prompt</h2>
-              <p className="mt-0.5 text-xs text-neutral-500">
-                {userFunctionTemplate ? (
-                  <>Mẫu function — không dùng biến</>
-                ) : (
-                  <>
-                    Lưu dạng <code className="text-neutral-400">{exportDefaultPreview}</code> · dùng{' '}
-                    <code className="text-neutral-400">${'{param}'}</code> trong nội dung
-                  </>
-                )}
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] text-neutral-500">
-              ~{tokenEstimate} tokens
-            </span>
-          </div>
-          <Textarea
-            value={draft.template}
-            onChange={(e) => onChange({ template: e.target.value })}
-            rows={12}
-            className="min-h-[240px] font-mono text-xs leading-relaxed"
-            placeholder="Viết nội dung mẫu prompt..."
-            readOnly={readOnly}
-            disabled={readOnly}
-          />
-          {!userFunctionTemplate && !readOnly ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  value={insertVarName}
-                  onChange={(e) => setInsertVarName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium text-neutral-100">Steps ({draft.steps.length})</h2>
+
+          <div className="space-y-4">
+            {draft.steps.map((step, index) => {
+              const isActive = index === draft.activeStepIndex;
+              const userFunctionTemplate = isUserFunctionTemplate(step.template);
+
+              return (
+                <div
+                  key={step.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onChange({ activeStepIndex: index })}
+                  onFocus={() => onChange({ activeStepIndex: index })}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      handleInsertVariable();
+                      onChange({ activeStepIndex: index });
                     }
                   }}
-                  placeholder="variable_name"
-                  className="h-9 min-w-0 flex-1 rounded-lg font-mono text-xs"
-                />
-                <Button variant="secondary" size="sm" className="shrink-0" onClick={handleInsertVariable}>
-                  Thêm biến
-                </Button>
-              </div>
-              {draft.templateParams.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {draft.templateParams.map((name) => (
-                    <span
-                      key={name}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-elevated px-2.5 py-1 font-mono text-xs text-neutral-200"
-                    >
-                      {name}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveVariable(name)}
-                        className="rounded-full px-1 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-                        aria-label={`Xóa ${name}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : !userFunctionTemplate && readOnly && draft.templateParams.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {draft.templateParams.map((name) => (
-                <span
-                  key={name}
-                  className="inline-flex items-center rounded-full border border-border bg-surface-elevated px-2.5 py-1 font-mono text-xs text-neutral-200"
+                  className={cn(
+                    'card-surface space-y-4 rounded-xl border p-4 outline-none transition-colors',
+                    isActive
+                      ? 'border-primary-400/60 ring-1 ring-primary-400/30'
+                      : 'border-transparent hover:border-border',
+                  )}
                 >
-                  {name}
-                </span>
-              ))}
-            </div>
-          ) : null}
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-neutral-300">
+                      Step {index + 1}
+                      {isActive ? (
+                        <span className="ml-2 text-[10px] font-normal text-primary-300">
+                          (playground)
+                        </span>
+                      ) : null}
+                    </p>
+                    {!readOnly && draft.steps.length > 1 ? (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleRemoveStep(index);
+                        }}
+                      >
+                        Xóa step
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  <label className="block space-y-1.5">
+                    <FieldLabel optional>Tên step</FieldLabel>
+                    <Input
+                      value={step.name}
+                      onChange={e => updateStep(index, { name: e.target.value })}
+                      onClick={e => e.stopPropagation()}
+                      className="h-10 rounded-lg"
+                      disabled={readOnly}
+                    />
+                  </label>
+
+                  <label className="block space-y-1.5">
+                    <FieldLabel>Loại</FieldLabel>
+                    <div onClick={e => e.stopPropagation()}>
+                      <DropdownSelect
+                        value={step.outputType}
+                        onChange={outputType => updateStep(index, { outputType })}
+                        options={PROMPT_OUTPUT_TYPE_OPTIONS}
+                        disabled={readOnly}
+                        className="w-full"
+                        triggerClassName="h-10 w-full rounded-lg"
+                      />
+                    </div>
+                  </label>
+
+                  {showReferenceImageOption ? (
+                    <label
+                      className="flex items-center gap-2 text-sm text-neutral-200"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={step.useReferenceImage}
+                        onChange={e => updateStep(index, { useReferenceImage: e.target.checked })}
+                        disabled={readOnly}
+                        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                      />
+                      Dùng ảnh tham chiếu
+                    </label>
+                  ) : null}
+
+                  {showBackgroundOption ? (
+                    <label
+                      className="flex items-center gap-2 text-sm text-neutral-200"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={step.useChannelBackgroundImage}
+                        onChange={e =>
+                          updateStep(index, { useChannelBackgroundImage: e.target.checked })
+                        }
+                        disabled={readOnly}
+                        className="h-4 w-4 rounded border-neutral-600 bg-neutral-900"
+                      />
+                      Dùng ảnh nền channel
+                    </label>
+                  ) : null}
+
+                  <label className="block space-y-1.5">
+                    <FieldLabel>Mẫu prompt</FieldLabel>
+                    <Textarea
+                      value={step.template}
+                      onChange={e => updateStep(index, { template: e.target.value })}
+                      onClick={e => e.stopPropagation()}
+                      rows={10}
+                      className="font-mono text-sm"
+                      readOnly={readOnly}
+                      disabled={readOnly}
+                    />
+                  </label>
+
+                  {!userFunctionTemplate ? (
+                    <div className="space-y-2" onClick={e => e.stopPropagation()}>
+                      <FieldLabel optional>Biến input</FieldLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {step.templateParams.map(name => (
+                          <button
+                            key={name}
+                            type="button"
+                            disabled={readOnly}
+                            onClick={() =>
+                              updateStep(index, {
+                                templateParams: step.templateParams.filter(p => p !== name),
+                              })
+                            }
+                            className="rounded-full border border-border px-2 py-0.5 text-[11px] text-neutral-300"
+                          >
+                            {name} ×
+                          </button>
+                        ))}
+                      </div>
+                      {!readOnly ? (
+                        <div className="flex gap-2">
+                          <Input
+                            value={insertVarByStepId[step.id] ?? ''}
+                            onChange={e =>
+                              setInsertVarByStepId(prev => ({
+                                ...prev,
+                                [step.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="tên_biến"
+                            className="h-9 rounded-lg"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outlined"
+                            onClick={() => handleInsertVariable(index)}
+                          >
+                            Thêm
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <label className="block space-y-1.5">
+                    <FieldLabel optional>Object output (JSON Schema)</FieldLabel>
+                    <Textarea
+                      value={step.outputSchemaText}
+                      onChange={e => updateStep(index, { outputSchemaText: e.target.value })}
+                      onClick={e => e.stopPropagation()}
+                      rows={4}
+                      placeholder='{"type":"object","properties":{...}}'
+                      className="font-mono text-xs"
+                      readOnly={readOnly}
+                      disabled={readOnly}
+                    />
+                  </label>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
