@@ -51,6 +51,14 @@ const FFMPEG_PROGRESS_RE =
   /frame=\s*(\d+)\s+fps=\s*([\d.]+)\s+q=[\d.-]+\s+size=\s*(\S+)\s+time=(\d+:\d+:\d+\.\d+)\s+bitrate=\s*(\S+)\s+speed=\s*([\d.]+x)/;
 
 const PROGRESS_LOG_INTERVAL_MS = 2000;
+/** Keep a sliding window of stderr — full concat can OOM on long encodes. */
+const STDERR_MAX_CHARS = 256 * 1024;
+
+function appendCappedStderr(current: string, chunk: string, maxChars = STDERR_MAX_CHARS): string {
+  const next = current + chunk;
+  if (next.length <= maxChars) return next;
+  return next.slice(next.length - maxChars);
+}
 
 function parseDurationToSeconds(duration: string): number {
   const parts = duration.split(':').map(Number);
@@ -145,7 +153,7 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
 
     proc.stderr.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
-      stderr += text;
+      stderr = appendCappedStderr(stderr, text);
 
       const durationMatch = text.match(/Duration: (\d+:\d+:\d+\.\d+)/);
       if (durationMatch) {

@@ -11,5 +11,6 @@ export function formatSourceChannelOptionLabel(
 ): string {
   const nicheLabel = resolveNicheLabel(source.niche, niches);
   const usageCount = source.youtubeChannelUsageCount ?? 0;
-  return `${source.name} (${nicheLabel} - ${usageCount})`;
+  const handle = source.url.trim() || source.fullUrl.trim();
+  return `${source.name} - ${handle} (${nicheLabel} - ${usageCount})`;
 }

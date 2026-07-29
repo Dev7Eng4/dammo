@@ -2,6 +2,22 @@ import fs from 'node:fs/promises';
 import { runFfmpeg } from './ffmpeg-runner.js';
 
 /**
+ * Decode any still (JPEG/PNG/WebP/AVIF/…) to a single high-quality JPEG.
+ * Needed before `-f image2 -loop 1` — that demuxer only accepts real image
+ * sequences, and YouTube avatars are often AVIF saved as `.jpg`.
+ */
+export async function materializeStillJpeg(
+  inputPath: string,
+  outputPath: string,
+  onLog?: (msg: string) => void,
+): Promise<void> {
+  await runFfmpeg(
+    ['-y', '-i', inputPath, '-frames:v', '1', '-q:v', '2', outputPath],
+    { onLog, label: 'image-materialize', encoderFallback: false },
+  );
+}
+
+/**
  * Resize an image so it fits within `width`x`height` while keeping its aspect
  * ratio (a 16:9 source becomes exactly `width`x`height`). Uses ffmpeg only, no
  * extra native dependency. Writes a single frame JPEG at high quality.

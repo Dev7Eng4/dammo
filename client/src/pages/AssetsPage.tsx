@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { deleteAssets, fetchAssets, uploadAsset } from '../api/assets';
+import { assetFileUrl, deleteAssets, fetchAssets, uploadAsset } from '../api/assets';
 import { Button, DataTable, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
@@ -17,6 +17,10 @@ const TABS: { kind: AssetKind; label: string; accept: string }[] = [
     accept: '.mp4,.mov,video/mp4,video/quicktime',
   },
 ];
+
+function isVideoKind(kind: AssetKind): boolean {
+  return kind !== 'fonts';
+}
 
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
@@ -43,6 +47,7 @@ export function AssetsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const activeTab = TABS.find(tab => tab.kind === activeKind) ?? TABS[0];
+  const showVideoGrid = isVideoKind(activeKind);
 
   useAbortableEffect(
     async signal => {
@@ -198,19 +203,104 @@ export function AssetsPage() {
         </div>
       </div>
 
-      <div className='card-surface px-5 pt-3 pb-4'>
-        <DataTable
-          data={items}
-          columns={columns}
-          getRowId={item => item.name}
-          loading={loading}
-          emptyMessage='Chưa có file nào trong mục này.'
-          enableRowSelection
-          selectedIds={selectedIds}
-          onToggleRow={handleToggleRow}
-          onToggleAll={handleToggleAll}
-        />
-      </div>
+      {showVideoGrid ? (
+        <div className='card-surface space-y-4 p-5'>
+          {items.length > 0 && !loading ? (
+            <div className='flex items-center justify-between gap-2'>
+              <span className='text-xs text-neutral-500'>
+                {selectedIds.size > 0
+                  ? `Đã chọn ${selectedIds.size}/${items.length}`
+                  : 'Chọn video để xóa'}
+              </span>
+              <Button
+                variant='outlined'
+                size='sm'
+                className='rounded-lg'
+                disabled={loading || items.length === 0}
+                onClick={handleToggleAll}
+              >
+                {selectedIds.size === items.length ? 'Bỏ chọn' : 'Chọn tất cả'}
+              </Button>
+            </div>
+          ) : null}
+
+          {loading ? (
+            <p className='py-10 text-center text-sm text-neutral-500'>Đang tải danh sách…</p>
+          ) : items.length === 0 ? (
+            <p className='py-10 text-center text-sm text-neutral-500'>Chưa có file nào trong mục này.</p>
+          ) : (
+            <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+              {items.map(item => {
+                const selected = selectedIds.has(item.name);
+                const src = assetFileUrl(activeKind, item.name);
+                return (
+                  <div
+                    key={item.name}
+                    className={cn(
+                      'group overflow-hidden rounded-xl border-2 transition',
+                      selected
+                        ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
+                        : 'border-neutral-800 hover:border-neutral-600',
+                    )}
+                  >
+                    <button
+                      type='button'
+                      onClick={() => handleToggleRow(item.name)}
+                      className='relative block aspect-square w-full cursor-pointer bg-neutral-950'
+                      aria-pressed={selected}
+                      aria-label={selected ? `Bỏ chọn ${item.name}` : `Chọn ${item.name}`}
+                    >
+                      <video
+                        src={src}
+                        muted
+                        playsInline
+                        preload='metadata'
+                        className='pointer-events-none h-full w-full object-contain'
+                        tabIndex={-1}
+                      />
+                      <span className='pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/35' />
+                      {selected ? (
+                        <span className='absolute right-2 top-2 rounded-full bg-emerald-500 p-1 text-white shadow'>
+                          <svg className='size-3' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                            <path d='M20 6 9 17l-5-5' />
+                          </svg>
+                        </span>
+                      ) : null}
+                    </button>
+                    <div className='flex items-start gap-2 border-t border-neutral-800 bg-surface px-2 py-2'>
+                      <input
+                        type='checkbox'
+                        checked={selected}
+                        onChange={() => handleToggleRow(item.name)}
+                        className='mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-600 bg-neutral-900'
+                        aria-label={`Chọn ${item.name}`}
+                      />
+                      <div className='min-w-0 flex-1'>
+                        <p className='truncate text-[11px] font-medium text-neutral-200'>{item.name}</p>
+                        <p className='text-[10px] text-neutral-500'>{formatBytes(item.size)}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className='card-surface px-5 pt-3 pb-4'>
+          <DataTable
+            data={items}
+            columns={columns}
+            getRowId={item => item.name}
+            loading={loading}
+            emptyMessage='Chưa có file nào trong mục này.'
+            enableRowSelection
+            selectedIds={selectedIds}
+            onToggleRow={handleToggleRow}
+            onToggleAll={handleToggleAll}
+          />
+        </div>
+      )}
 
       <Modal
         open={showDeleteConfirm}

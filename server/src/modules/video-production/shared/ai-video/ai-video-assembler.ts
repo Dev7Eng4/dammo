@@ -6,6 +6,7 @@ import {
   isHardwareEncoder,
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { materializeStillJpeg } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import {
@@ -165,6 +166,13 @@ export async function assembleReupAiSlideshowVideo(
   const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
   const filterScriptPath = path.join(workDir, 'ai_video_filter.txt');
   const tempAssPath = path.join(workDir, 'ai_temp_sub.ass');
+  const loopableAvatarPath = path.join(workDir, 'channel_avatar_loop.jpg');
+  let preparedAvatarPath: string | null = null;
+
+  if (channelAvatarPath) {
+    await materializeStillJpeg(channelAvatarPath, loopableAvatarPath, onLog);
+    preparedAvatarPath = loopableAvatarPath;
+  }
 
   const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
   const resolvedCaptionStyleKey = resolveCaptionStyleKey(captionStyleKey);
@@ -213,7 +221,9 @@ export async function assembleReupAiSlideshowVideo(
     slideshowRawPath,
     '-i',
     audioPath,
-    ...(channelAvatarPath ? ['-loop', '1', '-i', channelAvatarPath] : []),
+    ...(preparedAvatarPath
+      ? ['-f', 'image2', '-loop', '1', '-framerate', String(SI_FPS), '-i', preparedAvatarPath]
+      : []),
     '-filter_complex_script',
     filterScriptPath,
     '-map',
@@ -239,6 +249,7 @@ export async function assembleReupAiSlideshowVideo(
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
+  await fs.unlink(loopableAvatarPath).catch(() => undefined);
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }

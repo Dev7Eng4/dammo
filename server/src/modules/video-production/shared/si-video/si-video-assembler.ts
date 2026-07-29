@@ -7,7 +7,7 @@ import {
   isHardwareEncoder,
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
-import { resizeImageToFit } from '../../../../infrastructure/ffmpeg/image-resize.js';
+import { materializeStillJpeg, resizeImageToFit } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from './si-assets.js';
@@ -191,7 +191,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const filterScriptPath = path.join(workDir, 'filter_complex.txt');
   const tempAssPath = path.join(workDir, 'temp_sub.ass');
   const resizedCenterImagePath = path.join(workDir, 'center_720.jpg');
+  const loopableAvatarPath = path.join(workDir, 'channel_avatar_loop.jpg');
   let mergeArgs: string[] = [];
+  let preparedAvatarPath: string | null = null;
 
   try {
   if (useMultiImage) {
@@ -227,6 +229,11 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
       }
 
+      if (channelAvatarPath) {
+        await materializeStillJpeg(channelAvatarPath, loopableAvatarPath, onLog);
+        preparedAvatarPath = loopableAvatarPath;
+      }
+
       // TODO: re-enable SI noise
       // if (!isLocalStock) {
       //   prebakedSiNoise = await getPrebakedNoiseMov(
@@ -254,7 +261,16 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         mergeArgs.push('-stream_loop', '-1', '-i', centerSlideshowPath);
       } else if (centerImagePath) {
         centerImgIndex = inputIdx++;
-        mergeArgs.push('-loop', '1', '-i', resizedCenterImagePath);
+        mergeArgs.push(
+          '-f',
+          'image2',
+          '-loop',
+          '1',
+          '-framerate',
+          String(SI_FPS),
+          '-i',
+          resizedCenterImagePath,
+        );
       }
 
       let audioBarIndex: number | null = null;
@@ -270,9 +286,18 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       }
 
       let channelAvatarIndex: number | null = null;
-      if (channelAvatarPath) {
+      if (preparedAvatarPath) {
         channelAvatarIndex = inputIdx++;
-        mergeArgs.push('-loop', '1', '-i', channelAvatarPath);
+        mergeArgs.push(
+          '-f',
+          'image2',
+          '-loop',
+          '1',
+          '-framerate',
+          String(SI_FPS),
+          '-i',
+          preparedAvatarPath,
+        );
       }
 
       // TODO: re-enable SI noise
@@ -415,6 +440,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   } finally {
     await fs.unlink(filterScriptPath).catch(() => undefined);
     await fs.unlink(tempAssPath).catch(() => undefined);
+    await fs.unlink(loopableAvatarPath).catch(() => undefined);
     if (centerImagePath) {
       await fs.unlink(resizedCenterImagePath).catch(() => undefined);
     }

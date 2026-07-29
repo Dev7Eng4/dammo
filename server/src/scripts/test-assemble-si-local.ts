@@ -118,11 +118,19 @@ async function main() {
     options.subtitlePath ??
     (await discoverFile(workDir, entries, ['transcript.srt', `transcript.${options.language}.srt`, 'transcript-updated.srt'], ['.srt']));
   const centerImagePaths = await listSiMultiImagePaths(workDir);
+  const channelAvatarPath =
+    (await discoverFile(
+      workDir,
+      entries,
+      ['avatar.jpg', 'avatar.png', 'avatar.webp', 'avatar.avif'],
+      ['.jpg', '.jpeg', '.png', '.webp', '.avif'],
+    )) ?? undefined;
 
   const missing: string[] = [];
   if (!audioPath) missing.push('audio (.mp3)');
   if (!subtitlePath) missing.push('subtitle (.srt)');
   if (centerImagePaths.length === 0) missing.push(`multi-image folder (${SI_MULTI_IMAGE_DIRNAME}/*.jpg)`);
+  if (!channelAvatarPath) missing.push('channel avatar (avatar.jpg)');
 
   if (missing.length > 0) {
     console.error(`Missing required input(s): ${missing.join(', ')}`);
@@ -143,6 +151,8 @@ async function main() {
   }
   console.log(`Language: ${options.language}`);
   console.log('Caption style: default');
+  console.log('Show channel avatar: true');
+  console.log(`Channel avatar: ${channelAvatarPath}`);
   console.log(`Local stock dir: ${paths.siLocalStockDir} (cần ít nhất 1 file .mp4)`);
   console.log(`Output: ${path.join(workDir, 'video.mp4')}`);
   console.log('\nAssembling SI multi_image video...\n');
@@ -157,6 +167,7 @@ async function main() {
     captionStyleKey: 'default',
     showAudioBar: false,
     showSmallVideo: false,
+    channelAvatarPath,
     onLog: msg => console.log(msg),
     onFfmpegProgress: p => logFfmpegProgress('merge', p),
   });

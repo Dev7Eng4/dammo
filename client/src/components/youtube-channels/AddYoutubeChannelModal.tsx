@@ -38,6 +38,7 @@ import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea } from '../ui';
 import { AudioBarPickerModal } from './AudioBarPickerModal';
 import { SmallVideoPickerModal } from './SmallVideoPickerModal';
+import { SubscribePickerModal } from './SubscribePickerModal';
 import { ThumbnailBackgroundPickerModal } from './ThumbnailBackgroundPickerModal';
 
 interface YoutubeChannelModalCommonProps {
@@ -87,7 +88,7 @@ const AUDIO_VIDEO_TYPE_OPTIONS = REUP_AUDIO_VIDEO_TYPE_OPTIONS.map(option => ({
   ...option,
   label: {
     si: 'Video cảnh nền + hình ảnh',
-    ai: 'Hình ảnh chuyển động',
+    ai: 'Nhiều hình ảnh chuyển động',
   }[option.value],
 }));
 
@@ -257,6 +258,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [tempBackgroundSessionId, setTempBackgroundSessionId] = useState(() => crypto.randomUUID());
   const [audioBarPickerOpen, setAudioBarPickerOpen] = useState(false);
   const [smallVideoPickerOpen, setSmallVideoPickerOpen] = useState(false);
+  const [subscribePickerOpen, setSubscribePickerOpen] = useState(false);
 
   const {
     register,
@@ -287,6 +289,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const thumbnailBackgroundFile = watch('thumbnailBackgroundFile');
   const audioBarFile = watch('audioBarFile');
   const smallVideoFile = watch('smallVideoFile');
+  const subscribeFile = watch('subscribeFile');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
   const showThumbnailBackgroundPicker = Boolean(thumbnailStyleKey && thumbnailStyleFlags[thumbnailStyleKey]);
 
@@ -375,6 +378,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setValue('useReferenceImage', false);
     setValue('audioBarFile', '');
     setValue('smallVideoFile', '');
+    setValue('subscribeFile', '');
     setValue('showChannelAvatar', false);
     setValue('captionStyleKey', '');
   }, [isReupAudio, formReady, setValue]);
@@ -385,6 +389,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setValue('reupAudioBackgroundImage', '');
       setValue('audioBarFile', '');
       setValue('smallVideoFile', '');
+      setValue('subscribeFile', '');
     }
   }, [formReady, isReupAudio, reupAudioVideoType, setValue]);
 
@@ -467,6 +472,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setBackgroundPickerOpen(false);
     setAudioBarPickerOpen(false);
     setSmallVideoPickerOpen(false);
+    setSubscribePickerOpen(false);
     setTempBackgroundSessionId(crypto.randomUUID());
     onClose();
   }
@@ -499,23 +505,22 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           : {}),
         ...(values.type === 'reup_audio' && (values.reupAudioVideoType === 'ai' || values.reupAudioBackgroundImage === 'multi_image')
           ? {
-            aiSceneDensityMaxSec: {
-              high: Number(values.aiSceneDensityMaxSec.high) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
-              medium: Number(values.aiSceneDensityMaxSec.medium) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
-              low: Number(values.aiSceneDensityMaxSec.low) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
-            },
-          }
+              aiSceneDensityMaxSec: {
+                high: Number(values.aiSceneDensityMaxSec.high) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
+                medium: Number(values.aiSceneDensityMaxSec.medium) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
+                low: Number(values.aiSceneDensityMaxSec.low) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
+              },
+            }
           : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
           ? {
-            ...(values.audioBarFile ? { audioBarFile: values.audioBarFile, showAudioBar: true } : { showAudioBar: false }),
-            ...(values.smallVideoFile ? { smallVideoFile: values.smallVideoFile, showSmallVideo: true } : { showSmallVideo: false }),
-            ...(values.subscribeFile ? { subscribeFile: values.subscribeFile } : {}),
-          }
+              ...(values.audioBarFile ? { audioBarFile: values.audioBarFile, showAudioBar: true } : { showAudioBar: false }),
+              ...(values.smallVideoFile ? { smallVideoFile: values.smallVideoFile, showSmallVideo: true } : { showSmallVideo: false }),
+              ...(values.subscribeFile ? { subscribeFile: values.subscribeFile, showSubscribe: true } : { showSubscribe: false }),
+            }
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
         showChannelAvatar: values.showChannelAvatar,
-        showSubscribe: values.showSubscribe,
         showDisclaimer: values.showDisclaimer,
         disclaimerText: values.disclaimerText,
         descriptionDisclaimerText: values.descriptionDisclaimerText,
@@ -673,6 +678,37 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             />
           </FormField>
 
+          <FormField
+            label='Kênh nguồn'
+            htmlFor='source-channel'
+            optional={!isReupType}
+            error={errors.sourceChannels?.message}
+            className='min-w-0 sm:col-start-1 sm:col-span-2 lg:col-span-3'
+          >
+            <Controller
+              name='sourceChannels'
+              control={control}
+              rules={{
+                validate: value => !isReupType || value.length > 0 || 'Kênh nguồn là bắt buộc',
+              }}
+              render={({ field }) => (
+                <MultiSelect
+                  id='source-channel'
+                  options={sourceOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn kênh nguồn'}
+                  searchPlaceholder='Tìm kiếm kênh nguồn...'
+                  searchable
+                  disabled={isSubmitting || optionsLoading}
+                  className='w-full'
+                  triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
+                />
+              )}
+            />
+          </FormField>
+
           <FormField label='Loại kênh' htmlFor='channel-type' error={errors.type?.message} className='min-w-0 sm:col-start-1'>
             <Controller
               name='type'
@@ -696,12 +732,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
           {isReupAudio ? (
             <>
-              <FormField
-                label='Loại hình ảnh video'
-                htmlFor='reup-audio-video-type'
-                error={errors.reupAudioVideoType?.message}
-                className='min-w-0'
-              >
+              <FormField label='Loại video' htmlFor='reup-audio-video-type' error={errors.reupAudioVideoType?.message} className='min-w-0'>
                 <Controller
                   name='reupAudioVideoType'
                   control={control}
@@ -756,10 +787,44 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               ) : null}
 
               <FormField
+                label='Video cảnh nền'
+                htmlFor='background-footage'
+                optional
+                className='min-w-0 sm:col-start-1 sm:col-span-2 lg:col-span-3'
+              >
+                <Controller
+                  name='backgroundFootageSources'
+                  control={control}
+                  render={({ field }) => (
+                    <MultiSelect
+                      id='background-footage'
+                      options={backgroundFootageOptions}
+                      value={buildBackgroundFootageSelectValue(backgroundFootageMode, field.value)}
+                      onChange={next => {
+                        const resolved = handleBackgroundFootageSelectChange(
+                          buildBackgroundFootageSelectValue(backgroundFootageMode, field.value),
+                          next,
+                        );
+                        setValue('backgroundFootageMode', resolved.mode);
+                        field.onChange(resolved.sourceIds);
+                      }}
+                      onBlur={field.onBlur}
+                      placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn video cảnh nền'}
+                      searchPlaceholder='Tìm kiếm video cảnh nền...'
+                      searchable
+                      disabled={isSubmitting || optionsLoading}
+                      className='w-full'
+                      triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
+                    />
+                  )}
+                />
+              </FormField>
+
+              <FormField
                 label='Phong cách hình ảnh'
                 htmlFor='reup-audio-visual-style'
                 error={errors.reupAudioVisualStyleId?.message}
-                className='min-w-0 sm:col-start-1'
+                className='min-w-0 sm:col-start-1 sm:col-span-2'
               >
                 <Controller
                   name='reupAudioVisualStyleId'
@@ -883,7 +948,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             </>
           ) : null}
 
-          {isReupAudio && reupAudioVideoType === 'si' ? (
+          {isReupAudio ? (
             <FormField label='Phổ âm thanh' className='min-w-0 sm:col-start-1'>
               <Button
                 type='button'
@@ -898,7 +963,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             </FormField>
           ) : null}
 
-          {isReupAudio && reupAudioVideoType === 'si' ? (
+          {isReupAudio ? (
             <FormField label='Video nhỏ' className='min-w-0'>
               <Button
                 type='button'
@@ -913,47 +978,20 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             </FormField>
           ) : null}
 
-          <FormField label='' htmlFor='show-channel-avatar' className='min-w-0'>
-            <Controller
-              name='showChannelAvatar'
-              control={control}
-              render={({ field }) => (
-                <label htmlFor='show-channel-avatar' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
-                  <input
-                    id='show-channel-avatar'
-                    type='checkbox'
-                    checked={!!field.value}
-                    onChange={e => field.onChange(e.target.checked)}
-                    onBlur={field.onBlur}
-                    disabled={isSubmitting}
-                    className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
-                  />
-                  Hiển thị avatar kênh
-                </label>
-              )}
-            />
-          </FormField>
-
-          <FormField label='' htmlFor='show-subscribe' className='min-w-0'>
-            <Controller
-              name='showSubscribe'
-              control={control}
-              render={({ field }) => (
-                <label htmlFor='show-subscribe' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
-                  <input
-                    id='show-subscribe'
-                    type='checkbox'
-                    checked={!!field.value}
-                    onChange={e => field.onChange(e.target.checked)}
-                    onBlur={field.onBlur}
-                    disabled={isSubmitting}
-                    className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
-                  />
-                  Hiển thị subscribe
-                </label>
-              )}
-            />
-          </FormField>
+          {isReupAudio ? (
+            <FormField label='Subscribe' className='min-w-0'>
+              <Button
+                type='button'
+                variant='outlined'
+                size='sm'
+                className='h-10 w-full justify-start rounded-lg px-3 text-left font-normal'
+                disabled={isSubmitting}
+                onClick={() => setSubscribePickerOpen(true)}
+              >
+                {subscribeFile ? `Đã chọn: ${subscribeFile}` : 'Chọn subscribe'}
+              </Button>
+            </FormField>
+          ) : null}
 
           <FormField label='Kiểu phụ đề' htmlFor='caption-style' optional error={errors.captionStyleKey?.message} className='min-w-0'>
             <Controller
@@ -975,12 +1013,33 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             />
           </FormField>
 
+          <FormField label='' htmlFor='show-channel-avatar' className='min-w-0 flex items-center'>
+            <Controller
+              name='showChannelAvatar'
+              control={control}
+              render={({ field }) => (
+                <label htmlFor='show-channel-avatar' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                  <input
+                    id='show-channel-avatar'
+                    type='checkbox'
+                    checked={!!field.value}
+                    onChange={e => field.onChange(e.target.checked)}
+                    onBlur={field.onBlur}
+                    disabled={isSubmitting}
+                    className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                  />
+                  Hiển thị avatar kênh
+                </label>
+              )}
+            />
+          </FormField>
+
           <FormField
             label='Kiểu ảnh thu nhỏ'
             htmlFor='thumbnail-style'
-            optional
+            // optional
             error={errors.thumbnailStyleKey?.message}
-            className='min-w-0'
+            className='min-w-0 sm:col-start-1'
           >
             <Controller
               name='thumbnailStyleKey'
@@ -1030,71 +1089,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               </div>
             </FormField>
           ) : null}
-
-          <FormField
-            label='Video cảnh nền'
-            htmlFor='background-footage'
-            optional
-            className='min-w-0 sm:col-start-1 sm:col-span-2 lg:col-span-3'
-          >
-            <Controller
-              name='backgroundFootageSources'
-              control={control}
-              render={({ field }) => (
-                <MultiSelect
-                  id='background-footage'
-                  options={backgroundFootageOptions}
-                  value={buildBackgroundFootageSelectValue(backgroundFootageMode, field.value)}
-                  onChange={next => {
-                    const resolved = handleBackgroundFootageSelectChange(
-                      buildBackgroundFootageSelectValue(backgroundFootageMode, field.value),
-                      next,
-                    );
-                    setValue('backgroundFootageMode', resolved.mode);
-                    field.onChange(resolved.sourceIds);
-                  }}
-                  onBlur={field.onBlur}
-                  placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn video cảnh nền'}
-                  searchPlaceholder='Tìm kiếm video cảnh nền...'
-                  searchable
-                  disabled={isSubmitting || optionsLoading}
-                  className='w-full'
-                  triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
-                />
-              )}
-            />
-          </FormField>
-
-          <FormField
-            label='Kênh nguồn'
-            htmlFor='source-channel'
-            optional={!isReupType}
-            error={errors.sourceChannels?.message}
-            className='min-w-0 sm:col-start-1 sm:col-span-2 lg:col-span-3'
-          >
-            <Controller
-              name='sourceChannels'
-              control={control}
-              rules={{
-                validate: value => !isReupType || value.length > 0 || 'Kênh nguồn là bắt buộc',
-              }}
-              render={({ field }) => (
-                <MultiSelect
-                  id='source-channel'
-                  options={sourceOptions}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn kênh nguồn'}
-                  searchPlaceholder='Tìm kiếm kênh nguồn...'
-                  searchable
-                  disabled={isSubmitting || optionsLoading}
-                  className='w-full'
-                  triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
-                />
-              )}
-            />
-          </FormField>
 
           <FormField label='' htmlFor='show-disclaimer' className='min-w-0 sm:col-start-1'>
             <Controller
@@ -1184,24 +1178,24 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
           {publishTimeSlotCount > 0
             ? Array.from({ length: publishTimeSlotCount }).map((_, index) => (
-              <FormField
-                key={index}
-                label={publishTimeSlotCount === 1 ? 'Giờ đăng' : `Giờ đăng ${index + 1}`}
-                htmlFor={`publish-time-${index}`}
-                error={errors.publishTimes?.[index]?.message}
-                className='min-w-0'
-              >
-                <Input
-                  id={`publish-time-${index}`}
-                  type='time'
-                  className='h-10 rounded-lg text-sm'
-                  disabled={isSubmitting}
-                  {...register(`publishTimes.${index}` as const, {
-                    required: 'Giờ đăng là bắt buộc',
-                  })}
-                />
-              </FormField>
-            ))
+                <FormField
+                  key={index}
+                  label={publishTimeSlotCount === 1 ? 'Giờ đăng' : `Giờ đăng ${index + 1}`}
+                  htmlFor={`publish-time-${index}`}
+                  error={errors.publishTimes?.[index]?.message}
+                  className='min-w-0'
+                >
+                  <Input
+                    id={`publish-time-${index}`}
+                    type='time'
+                    className='h-10 rounded-lg text-sm'
+                    disabled={isSubmitting}
+                    {...register(`publishTimes.${index}` as const, {
+                      required: 'Giờ đăng là bắt buộc',
+                    })}
+                  />
+                </FormField>
+              ))
             : null}
 
           {apiError ? <p className='text-xs text-danger sm:col-span-2 lg:col-span-3'>{apiError}</p> : null}
@@ -1237,6 +1231,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         selectedFile={smallVideoFile}
         onSelect={filename => {
           setValue('smallVideoFile', filename);
+        }}
+      />
+      <SubscribePickerModal
+        open={subscribePickerOpen}
+        onClose={() => setSubscribePickerOpen(false)}
+        selectedFile={subscribeFile}
+        onSelect={filename => {
+          setValue('subscribeFile', filename);
         }}
       />
     </>

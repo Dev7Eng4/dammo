@@ -102,7 +102,7 @@ export async function loadReupAudioVideoStyleOptions(
   }
 
   const { items } = await fetchVisualStyles(options);
-  return items.map((item) => ({ value: item.id, label: item.name }));
+  return items.map((item) => ({ value: item.id, label: `${item.name} (${item.niche})` }));
 }
 
 export function getReupAudioVideoStylePlaceholder(
