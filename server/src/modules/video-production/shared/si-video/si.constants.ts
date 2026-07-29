@@ -9,11 +9,17 @@ export const SI_STOCK_SLOWMO_FACTOR = 2;
 export const SI_STOCK_ZOOM_FACTOR = 1.4;
 export const SI_STOCK_RENDER_EXTRA_SEC = 2;
 
+/** Crop pan fraction range around center (0.5 = exact center). */
+export const SI_STOCK_CROP_PAN_MIN = 0.35;
+export const SI_STOCK_CROP_PAN_MAX = 0.65;
+
 /** Local stock prepare (`prepare:si-local-stock`): cut / zoom / slowmo trên video thô. */
 export const SI_LOCAL_STOCK_SKIP_START_SEC = 0;
 export const SI_LOCAL_STOCK_SKIP_END_SEC = 0;
 export const SI_LOCAL_STOCK_SLOWMO_FACTOR = 1.5;
 export const SI_LOCAL_STOCK_ZOOM_FACTOR = 1.2;
+/** Extra zoom at local assemble so each video can micro-pan baked clips. */
+export const SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR = 1.08;
 
 export { YOUTUBE_VIDEO_DOWNLOAD_FORMATS as SI_STOCK_DOWNLOAD_FORMATS } from '../../../../infrastructure/youtube/youtube-download.constants.js';
 

@@ -22,6 +22,7 @@ import {
   SI_CENTER_IMAGE_WIDTH_RATIO,
   SI_FPS,
   // SI_NOISE_ALPHA, // TODO: re-enable SI noise
+  SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR,
   SI_OUTPUT_VIDEO_BASENAME,
   SI_SMALL_VIDEO_OVERLAY_X,
   SI_SMALL_VIDEO_OVERLAY_Y,
@@ -43,6 +44,11 @@ import {
 } from './si-multi-image.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
 import { cleanupSiStockTempDir, prepareSiStockBackground } from './si-stock-background.js';
+import {
+  buildSiStockCropFilter,
+  formatSiStockCropPanLog,
+  randomSiStockCropPan,
+} from './si-stock-prepare.js';
 import type { CaptionStyleKey } from './caption-styles.js';
 import { getCaptionStylePreset, resolveCaptionStyleKey } from './caption-styles.js';
 import {
@@ -62,10 +68,23 @@ function stockNormalizeFilterInner(slowmoFactor: number, isFlip = false): string
   return `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p${flipFilter}${slowmo},fps=${f},setsar=1`;
 }
 
-function localStockNormalizeFilterChain(inputLabel: string, outLabel: string): string {
+function localStockNormalizeFilterChain(
+  inputLabel: string,
+  outLabel: string,
+  onLog?: (msg: string) => void,
+): string {
   const hwEncoder = resolveFfmpegHwEncoder();
   const pixFmt = isHardwareEncoder(hwEncoder) ? 'nv12' : 'yuv420p';
-  return `[${inputLabel}]fps=${SI_FPS},setsar=1,format=${pixFmt}[${outLabel}]`;
+  const cropW = Math.floor(SI_CANVAS_W / SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR / 2) * 2;
+  const cropH = Math.floor(SI_CANVAS_H / SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR / 2) * 2;
+  const pan = randomSiStockCropPan();
+  onLog?.(`[reup-si] Local assemble ${formatSiStockCropPanLog(pan)}`);
+  return (
+    `[${inputLabel}]fps=${SI_FPS},` +
+    `${buildSiStockCropFilter(cropW, cropH, pan)},` +
+    `scale=${SI_CANVAS_W}:${SI_CANVAS_H},` +
+    `setsar=1,format=${pixFmt}[${outLabel}]`
+  );
 }
 
 function stockNormalizeFilterChain(inputLabel: string, outLabel: string, slowmoFactor: number, isFlip = false): string {
@@ -312,7 +331,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
       const vBgLabel = 'vout_bg';
       if (isLocalStock) {
-        filterParts.push(localStockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel));
+        filterParts.push(localStockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, log));
       } else {
         filterParts.push(stockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, 1.0, false));
       }
