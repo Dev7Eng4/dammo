@@ -6,6 +6,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import { assetKindSchema, deleteAssetsSchema, listAssetsQuerySchema } from './assets.schema.js';
 import { assetsService } from './assets.service.js';
 import type { AssetKind } from './assets.types.js';
+import { prepareColorAsset, type PrepareColorKind } from '../video-production/shared/si-video/si-prepare-color-cache.js';
 
 const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
@@ -54,9 +55,10 @@ function streamAssetFile(
 export function createAssetsRoutes() {
   const app = new Hono();
 
-  app.get('/', zValidator('query', listAssetsQuerySchema), (c) => {
+  app.get('/', zValidator('query', listAssetsQuerySchema), async (c) => {
     const { kind } = c.req.valid('query');
-    return c.json({ items: assetsService.list(kind) });
+    const items = await assetsService.list(kind);
+    return c.json({ items });
   });
 
   app.get('/:kind/:filename', (c) => {
@@ -96,6 +98,23 @@ export function createAssetsRoutes() {
     const body = c.req.valid('json');
     const result = assetsService.delete(kindParsed.data, body.names);
     return c.json(result);
+  });
+
+  app.post('/:kind/:filename/prepare-color', async (c) => {
+    const kindParsed = assetKindSchema.safeParse(c.req.param('kind'));
+    if (!kindParsed.success) {
+      return c.json({ error: 'Invalid asset kind' }, 400);
+    }
+    const kind = kindParsed.data as AssetKind;
+    if (kind !== 'audioBar' && kind !== 'subscribe') {
+      return c.json({ error: 'Prepare color is only supported for audioBar and subscribe' }, 400);
+    }
+    const filename = c.req.param('filename');
+    if (!filename?.trim()) {
+      return c.json({ error: 'Filename is required' }, 400);
+    }
+    const result = await prepareColorAsset(kind as PrepareColorKind, filename);
+    return c.json({ prepared: true, cached: result.cached });
   });
 
   app.onError((err, c) => {

@@ -37,6 +37,44 @@ export async function resizeImageToFit(
 }
 
 /**
+ * Resize to target width and bake global opacity into a PNG with alpha.
+ * Merge can overlay this still without runtime colorchannelmixer.
+ */
+export async function bakeStillWithOpacity(
+  inputPath: string,
+  outputPath: string,
+  width: number,
+  opacity: number,
+  onLog?: (msg: string) => void,
+): Promise<void> {
+  const vf = `scale=${width}:-1,format=rgba,colorchannelmixer=aa=${opacity}`;
+  const tempPath = `${outputPath}.tmp.png`;
+  await runFfmpeg(
+    ['-y', '-i', inputPath, '-vf', vf, '-frames:v', '1', tempPath],
+    { onLog, label: 'image-bake-opacity', encoderFallback: false },
+  );
+  await fs.rename(tempPath, outputPath);
+}
+
+/**
+ * Bake global opacity into a video with alpha (qtrle/ARGB) for cheap overlay at merge.
+ */
+export async function bakeVideoWithOpacity(
+  inputPath: string,
+  outputPath: string,
+  opacity: number,
+  onLog?: (msg: string) => void,
+): Promise<void> {
+  const vf = `format=rgba,colorchannelmixer=aa=${opacity}`;
+  const tempPath = `${outputPath}.tmp.mov`;
+  await runFfmpeg(
+    ['-y', '-i', inputPath, '-vf', vf, '-an', '-c:v', 'qtrle', '-pix_fmt', 'argb', tempPath],
+    { onLog, label: 'video-bake-opacity', encodeOpts: { preset: 'fast' } },
+  );
+  await fs.rename(tempPath, outputPath);
+}
+
+/**
  * Resize an image in place (overwrites the original). Writes to a temp file
  * first, then atomically renames over the source so a failed run never leaves a
  * corrupt image behind. Only safe for images dedicated to a single video.

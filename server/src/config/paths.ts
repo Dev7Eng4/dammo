@@ -137,6 +137,10 @@ export function youtubeChannelThumbnailBackgroundsTempDir(sessionId: string): st
   return path.join(paths.youtubeChannelsDir, '_temp', sessionId, 'thumbnail-backgrounds');
 }
 
+export function youtubeChannelAvatarTempDir(sessionId: string): string {
+  return path.join(paths.youtubeChannelsDir, '_temp', sessionId, 'avatar');
+}
+
 function isDirectory(dirPath: string): boolean {
   try {
     return fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory();

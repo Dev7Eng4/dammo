@@ -122,6 +122,7 @@ export interface CreateYoutubeChannelInput {
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
+  avatarTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -144,6 +145,8 @@ export interface CreateYoutubeChannelInput {
 
 export interface UpdateYoutubeChannelInput {
   mailAccountId: string;
+  /** When the channel currently uses default linked email, may update YouTube identity. */
+  channelUrl?: string;
   type: YoutubeChannelType;
   language: ChannelLanguage;
   niche: string;

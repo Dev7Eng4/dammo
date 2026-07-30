@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { assetFileUrl, deleteAssets, fetchAssets, uploadAsset } from '../api/assets';
+import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset } from '../api/assets';
 import { Button, DataTable, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
@@ -34,6 +34,39 @@ function formatUpdatedAt(value: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
 }
 
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+      <path d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z' />
+      <circle cx='12' cy='12' r='3' />
+    </svg>
+  );
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+      <path d='M3 6h18' />
+      <path d='M8 6V4h8v2' />
+      <path d='M19 6l-1 14H6L5 6' />
+      <path d='M10 11v6' />
+      <path d='M14 11v6' />
+    </svg>
+  );
+}
+
+function PaletteIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+      <circle cx='12' cy='12' r='10' />
+      <circle cx='8' cy='10' r='1.5' fill='currentColor' stroke='none' />
+      <circle cx='12' cy='7' r='1.5' fill='currentColor' stroke='none' />
+      <circle cx='16' cy='10' r='1.5' fill='currentColor' stroke='none' />
+      <circle cx='9' cy='14' r='1.5' fill='currentColor' stroke='none' />
+    </svg>
+  );
+}
+
 export function AssetsPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +78,28 @@ export function AssetsPage() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [itemPendingDelete, setItemPendingDelete] = useState<string | null>(null);
+  const [preparingItems, setPreparingItems] = useState<Set<string>>(() => new Set());
+
+  const showPrepareColor = activeKind === 'audioBar' || activeKind === 'subscribe';
+
+  async function handlePrepareColor(name: string) {
+    setPreparingItems(prev => new Set(prev).add(name));
+    try {
+      const result = await prepareAssetColor(activeKind, name);
+      toast.success(result.cached ? `${name} đã được xử lý trước đó` : `Đã xử lý màu: ${name}`);
+      setItems(prev => prev.map(it => it.name === name ? { ...it, prepared: true } : it));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể xử lý màu');
+    } finally {
+      setPreparingItems(prev => {
+        const next = new Set(prev);
+        next.delete(name);
+        return next;
+      });
+    }
+  }
 
   const activeTab = TABS.find(tab => tab.kind === activeKind) ?? TABS[0];
   const showVideoGrid = isVideoKind(activeKind);
@@ -126,6 +181,23 @@ export function AssetsPage() {
   }
 
   async function handleConfirmDelete() {
+    if (showVideoGrid) {
+      if (!itemPendingDelete) return;
+      setDeleting(true);
+      try {
+        await deleteAssets(activeKind, [itemPendingDelete]);
+        setShowDeleteConfirm(false);
+        setItemPendingDelete(null);
+        setRefreshKey(key => key + 1);
+        toast.success('Đã xóa 1 file');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Không thể xóa file');
+      } finally {
+        setDeleting(false);
+      }
+      return;
+    }
+
     if (selectedIds.size === 0) return;
     setDeleting(true);
     try {
@@ -191,39 +263,22 @@ export function AssetsPage() {
           >
             {uploading ? 'Đang tải lên…' : 'Thêm mới'}
           </Button>
-          <Button
-            variant='outlined'
-            size='sm'
-            className='rounded-lg'
-            disabled={selectedIds.size === 0 || uploading || deleting}
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            Xóa
-          </Button>
+          {!showVideoGrid ? (
+            <Button
+              variant='outlined'
+              size='sm'
+              className='rounded-lg'
+              disabled={selectedIds.size === 0 || uploading || deleting}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Xóa
+            </Button>
+          ) : null}
         </div>
       </div>
 
       {showVideoGrid ? (
         <div className='card-surface space-y-4 p-5'>
-          {items.length > 0 && !loading ? (
-            <div className='flex items-center justify-between gap-2'>
-              <span className='text-xs text-neutral-500'>
-                {selectedIds.size > 0
-                  ? `Đã chọn ${selectedIds.size}/${items.length}`
-                  : 'Chọn video để xóa'}
-              </span>
-              <Button
-                variant='outlined'
-                size='sm'
-                className='rounded-lg'
-                disabled={loading || items.length === 0}
-                onClick={handleToggleAll}
-              >
-                {selectedIds.size === items.length ? 'Bỏ chọn' : 'Chọn tất cả'}
-              </Button>
-            </div>
-          ) : null}
-
           {loading ? (
             <p className='py-10 text-center text-sm text-neutral-500'>Đang tải danh sách…</p>
           ) : items.length === 0 ? (
@@ -231,25 +286,10 @@ export function AssetsPage() {
           ) : (
             <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
               {items.map(item => {
-                const selected = selectedIds.has(item.name);
                 const src = assetFileUrl(activeKind, item.name);
                 return (
-                  <div
-                    key={item.name}
-                    className={cn(
-                      'group overflow-hidden rounded-xl border-2 transition',
-                      selected
-                        ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
-                        : 'border-neutral-800 hover:border-neutral-600',
-                    )}
-                  >
-                    <button
-                      type='button'
-                      onClick={() => handleToggleRow(item.name)}
-                      className='relative block aspect-square w-full cursor-pointer bg-neutral-950'
-                      aria-pressed={selected}
-                      aria-label={selected ? `Bỏ chọn ${item.name}` : `Chọn ${item.name}`}
-                    >
+                  <div key={item.name} className='group overflow-hidden rounded-xl border-2 border-neutral-800 transition hover:border-neutral-600'>
+                    <div className='relative aspect-square w-full bg-neutral-950'>
                       <video
                         src={src}
                         muted
@@ -258,27 +298,46 @@ export function AssetsPage() {
                         className='pointer-events-none h-full w-full object-contain'
                         tabIndex={-1}
                       />
-                      <span className='pointer-events-none absolute inset-0 bg-black/0 transition group-hover:bg-black/35' />
-                      {selected ? (
-                        <span className='absolute right-2 top-2 rounded-full bg-emerald-500 p-1 text-white shadow'>
-                          <svg className='size-3' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                            <path d='M20 6 9 17l-5-5' />
-                          </svg>
-                        </span>
-                      ) : null}
-                    </button>
-                    <div className='flex items-start gap-2 border-t border-neutral-800 bg-surface px-2 py-2'>
-                      <input
-                        type='checkbox'
-                        checked={selected}
-                        onChange={() => handleToggleRow(item.name)}
-                        className='mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-600 bg-neutral-900'
-                        aria-label={`Chọn ${item.name}`}
-                      />
-                      <div className='min-w-0 flex-1'>
-                        <p className='truncate text-[11px] font-medium text-neutral-200'>{item.name}</p>
-                        <p className='text-[10px] text-neutral-500'>{formatBytes(item.size)}</p>
+                      <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
+                        <button
+                          type='button'
+                          title='Xem'
+                          className='rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800'
+                          onClick={() => setPreviewUrl(src)}
+                        >
+                          <EyeIcon className='size-4' />
+                        </button>
+                        {showPrepareColor && !item.prepared && (
+                          <button
+                            type='button'
+                            title='Xử lý màu'
+                            className='rounded-full bg-emerald-600/90 p-2 text-white hover:bg-emerald-500 disabled:opacity-50'
+                            disabled={preparingItems.has(item.name)}
+                            onClick={() => void handlePrepareColor(item.name)}
+                          >
+                            {preparingItems.has(item.name) ? (
+                              <span className='block size-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
+                            ) : (
+                              <PaletteIcon className='size-4' />
+                            )}
+                          </button>
+                        )}
+                        <button
+                          type='button'
+                          title='Xóa'
+                          className='rounded-full bg-rose-600/90 p-2 text-white hover:bg-rose-500'
+                          onClick={() => {
+                            setItemPendingDelete(item.name);
+                            setShowDeleteConfirm(true);
+                          }}
+                        >
+                          <TrashIcon className='size-4' />
+                        </button>
                       </div>
+                    </div>
+                    <div className='min-w-0 border-t border-neutral-800 bg-surface px-2 py-2'>
+                      <p className='truncate text-[11px] font-medium text-neutral-200'>{item.name}</p>
+                      <p className='text-[10px] text-neutral-500'>{formatBytes(item.size)}</p>
                     </div>
                   </div>
                 );
@@ -304,7 +363,14 @@ export function AssetsPage() {
 
       <Modal
         open={showDeleteConfirm}
-        onClose={deleting ? () => undefined : () => setShowDeleteConfirm(false)}
+        onClose={
+          deleting
+            ? () => undefined
+            : () => {
+                setShowDeleteConfirm(false);
+                if (showVideoGrid) setItemPendingDelete(null);
+              }
+        }
         title='Xóa file?'
         footer={
           <>
@@ -312,7 +378,10 @@ export function AssetsPage() {
               variant='outlined'
               size='sm'
               className='rounded-lg'
-              onClick={() => setShowDeleteConfirm(false)}
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                if (showVideoGrid) setItemPendingDelete(null);
+              }}
               disabled={deleting}
             >
               Hủy
@@ -324,9 +393,38 @@ export function AssetsPage() {
         }
       >
         <p className='text-sm text-neutral-300'>
-          Bạn có chắc muốn xóa {selectedIds.size} file đã chọn trong mục {activeTab.label}?
+          {showVideoGrid
+            ? `Bạn có chắc muốn xóa file ${itemPendingDelete ?? ''} trong mục ${activeTab.label}?`
+            : `Bạn có chắc muốn xóa ${selectedIds.size} file đã chọn trong mục ${activeTab.label}?`}
         </p>
       </Modal>
+
+      {previewUrl ? (
+        <div className='fixed inset-0 z-60 flex items-center justify-center p-4'>
+          <button
+            type='button'
+            aria-label='Đóng xem video'
+            className='absolute inset-0 bg-black/80'
+            onClick={() => setPreviewUrl(null)}
+          />
+          <div className='relative z-10 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface shadow-xl'>
+            <video
+              src={previewUrl}
+              controls
+              autoPlay
+              playsInline
+              className='max-h-[85vh] w-full bg-black object-contain'
+            />
+            <button
+              type='button'
+              className='absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black'
+              onClick={() => setPreviewUrl(null)}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

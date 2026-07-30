@@ -257,6 +257,8 @@ async function main() {
             captionStyleKey: channel.captionStyleKey,
             showAudioBar: channel.showAudioBar === true,
             showSmallVideo: channel.showSmallVideo === true,
+            showSubscribe: channel.showSubscribe === true,
+            subscribeFile: channel.subscribeFile,
             showDisclaim,
             disclaimerText,
             ...(channelAvatarPath ? { channelAvatarPath } : {}),

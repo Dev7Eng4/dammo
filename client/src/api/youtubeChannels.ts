@@ -18,6 +18,7 @@ import type {
   YoutubeVideoContent,
   MarkYoutubeVideoUploadedResponse,
   ThumbnailBackgroundItem,
+  ChannelAvatarItem,
 } from '../types/youtubeChannel';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
@@ -230,4 +231,28 @@ export function deleteThumbnailBackground(scope: ThumbnailBackgroundScope, filen
   return fetchJson<{ deleted: string }>(thumbnailBackgroundFileUrl(scope, filename), {
     method: 'DELETE',
   });
+}
+
+export function uploadYoutubeChannelAvatar(channelId: string, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return fetchJson<{ item: ChannelAvatarItem }>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/avatar`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+}
+
+export function uploadYoutubeChannelAvatarTemp(sessionId: string, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return fetchJson<{ item: ChannelAvatarItem }>(
+    `${API_V1}/youtube-channels/avatars/temp/${encodeURIComponent(sessionId)}`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
 }

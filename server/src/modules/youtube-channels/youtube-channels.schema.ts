@@ -152,11 +152,15 @@ export const createYoutubeChannelSchema = z
     ...channelConfigFields,
     channelUrl: z.string().optional(),
     thumbnailBackgroundTempSessionId: z.string().min(8).max(64).optional(),
+    avatarTempSessionId: z.string().min(8).max(64).optional(),
   })
   .superRefine(applyChannelConfigRefine);
 
 export const updateYoutubeChannelSchema = z
-  .object(channelConfigFields)
+  .object({
+    ...channelConfigFields,
+    channelUrl: z.string().optional(),
+  })
   .superRefine(applyChannelConfigRefine);
 
 export const listYoutubeChannelsQuerySchema = z.object({

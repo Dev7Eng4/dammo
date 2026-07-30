@@ -25,6 +25,11 @@ import {
   type ThumbnailBackgroundContentType,
   type ThumbnailBackgroundUpload,
 } from './thumbnail-backgrounds.service.js';
+import {
+  channelAvatarsService,
+  type ChannelAvatarContentType,
+  type ChannelAvatarUpload,
+} from './channel-avatars.service.js';
 
 const THUMBNAIL_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const THUMBNAIL_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -102,6 +107,29 @@ async function parseThumbnailBackgroundUpload(body: Record<string, unknown>): Pr
   };
 }
 
+async function parseChannelAvatarUpload(body: Record<string, unknown>): Promise<
+  | { ok: true; upload: ChannelAvatarUpload }
+  | { ok: false; error: string; status: 400 }
+> {
+  const file = body.file;
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: 'File is required', status: 400 };
+  }
+  if (!THUMBNAIL_CONTENT_TYPES.has(file.type)) {
+    return { ok: false, error: 'Image must be a JPEG, PNG, or WebP', status: 400 };
+  }
+  if (file.size > THUMBNAIL_MAX_SIZE_BYTES) {
+    return { ok: false, error: 'Image must not exceed 10 MB', status: 400 };
+  }
+  return {
+    ok: true,
+    upload: {
+      buffer: Buffer.from(await file.arrayBuffer()),
+      contentType: file.type as ChannelAvatarContentType,
+    },
+  };
+}
+
 export function createYoutubeChannelsRoutes() {
   const app = new Hono();
 
@@ -113,9 +141,9 @@ export function createYoutubeChannelsRoutes() {
     return c.json({ item }, 201);
   });
 
-  app.patch('/:id', zValidator('json', updateYoutubeChannelSchema), (c) => {
+  app.patch('/:id', zValidator('json', updateYoutubeChannelSchema), async (c) => {
     const body = c.req.valid('json');
-    const item = youtubeChannelsService.update(c.req.param('id'), body);
+    const item = await youtubeChannelsService.update(c.req.param('id'), body);
     return c.json({ item });
   });
 
@@ -158,6 +186,23 @@ export function createYoutubeChannelsRoutes() {
     return c.json({ deleted: name });
   });
 
+  app.post('/avatars/temp/:sessionId', async (c) => {
+    const sessionId = c.req.param('sessionId');
+    const body = await c.req.parseBody();
+    const parsed = await parseChannelAvatarUpload(body);
+    if (!parsed.ok) {
+      return c.json({ error: parsed.error }, parsed.status);
+    }
+    const urlPrefix = `/api/v1/youtube-channels/avatars/temp/${encodeURIComponent(sessionId)}`;
+    const item = await channelAvatarsService.uploadTemp(sessionId, parsed.upload, urlPrefix);
+    return c.json({ item }, 201);
+  });
+
+  app.get('/avatars/temp/:sessionId/:filename', (c) => {
+    const asset = channelAvatarsService.getTempAsset(c.req.param('sessionId'), c.req.param('filename'));
+    return streamFileAsset(c.req.raw, asset);
+  });
+
   app.get('/:id/thumbnail-backgrounds', (c) => {
     const id = c.req.param('id');
     youtubeChannelsService.getById(id);
@@ -176,6 +221,26 @@ export function createYoutubeChannelsRoutes() {
     const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/thumbnail-backgrounds`;
     const item = await thumbnailBackgroundsService.uploadForChannel(id, parsed.upload, urlPrefix);
     return c.json({ item }, 201);
+  });
+
+  app.post('/:id/avatar', async (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const body = await c.req.parseBody();
+    const parsed = await parseChannelAvatarUpload(body);
+    if (!parsed.ok) {
+      return c.json({ error: parsed.error }, parsed.status);
+    }
+    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/avatar`;
+    const item = await channelAvatarsService.uploadForChannel(id, parsed.upload, urlPrefix);
+    return c.json({ item }, 201);
+  });
+
+  app.get('/:id/avatar/:filename', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const asset = channelAvatarsService.getChannelAsset(id, c.req.param('filename'));
+    return streamFileAsset(c.req.raw, asset);
   });
 
   app.get('/:id/thumbnail-backgrounds/:filename', (c) => {

@@ -31,6 +31,7 @@ import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import fs from 'node:fs';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
+import { channelAvatarsService } from './channel-avatars.service.js';
 import type {
   AiSceneDensityMaxSec,
   CaptionStyleKey,
@@ -707,6 +708,9 @@ export class YoutubeChannelsService {
         channel.id,
       );
     }
+    if (input.avatarTempSessionId?.trim()) {
+      channelAvatarsService.moveTempToChannel(input.avatarTempSessionId.trim(), channel.id);
+    }
 
     const selectedBackground = input.thumbnailBackgroundFile?.trim();
     if (selectedBackground) {
@@ -719,8 +723,8 @@ export class YoutubeChannelsService {
     return youtubeChannelsRepository.prepend(channel);
   }
 
-  update(id: string, input: UpdateYoutubeChannelInput): YoutubeChannel {
-    this.getById(id);
+  async update(id: string, input: UpdateYoutubeChannelInput): Promise<YoutubeChannel> {
+    const current = this.getById(id);
     const config = validateChannelConfig(input);
     assertEmailAvailableForChannel(config.linkedEmail, id);
 
@@ -731,9 +735,63 @@ export class YoutubeChannelsService {
       throw new AppError('Niche not found', 400, 'INVALID_NICHE');
     }
 
-    const updated = youtubeChannelsRepository.update(id, (current) => {
+    const channelUrl = input.channelUrl?.trim() ?? '';
+    if (channelUrl && !isDefaultLinkedEmail(current.linkedEmail)) {
+      throw new AppError(
+        'Channel URL can only be updated when linked email is default',
+        400,
+        'CHANNEL_URL_LOCKED',
+      );
+    }
+
+    let identityUpdate:
+      | { name: string; handle: string; youtubeUrl: string; channelId: string }
+      | undefined;
+
+    if (channelUrl && isDefaultLinkedEmail(current.linkedEmail)) {
+      const { platform, fullUrl } = parseSourceUrl(channelUrl);
+      if (platform !== 'youtube') {
+        throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
+      }
+
+      const canonicalUrl = canonicalizeSourceUrl(fullUrl);
+      const exists = youtubeChannelsRepository
+        .findAll()
+        .some((c) => c.id !== id && canonicalizeSourceUrl(c.youtubeUrl) === canonicalUrl);
+      if (exists) {
+        throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
+      }
+
+      try {
+        const metadata = await fetchYoutubeChannelMetadata(fullUrl);
+        const duplicateById = youtubeChannelsRepository
+          .findAll()
+          .some((c) => c.id !== id && c.channelId && c.channelId === metadata.channelId);
+        if (duplicateById) {
+          throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
+        }
+
+        const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+        identityUpdate = {
+          name: metadata.name,
+          handle,
+          youtubeUrl: `https://youtube.com/${handle}`,
+          channelId: metadata.channelId,
+        };
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        throw new AppError(
+          `Failed to fetch YouTube channel metadata: ${detail}`,
+          502,
+          'YOUTUBE_FETCH_FAILED',
+        );
+      }
+    }
+
+    const updated = youtubeChannelsRepository.update(id, (existing) => {
       const next: YoutubeChannel = {
-        ...current,
+        ...existing,
         type: input.type,
         language: input.language,
         niche: input.niche,
@@ -742,6 +800,13 @@ export class YoutubeChannelsService {
         uploadSchedule: config.uploadSchedule,
         uploadFrequency: input.uploadFrequency,
       };
+
+      if (identityUpdate) {
+        next.name = identityUpdate.name;
+        next.handle = identityUpdate.handle;
+        next.youtubeUrl = identityUpdate.youtubeUrl;
+        next.channelId = identityUpdate.channelId;
+      }
 
       if (config.backgroundFootageMode === 'local') {
         next.backgroundFootageMode = 'local';

@@ -4,10 +4,7 @@ import { ensureDataDirs, mediaDownloadDir, paths } from '../config/paths.js';
 import type { FfmpegProgress } from '../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
 import { listSiMultiImagePaths } from '../modules/video-production/shared/si-video/si-multi-image.js';
-import {
-  SI_MULTI_IMAGE_DIRNAME,
-  SI_MULTI_IMAGE_DURATION_SEC,
-} from '../modules/video-production/shared/si-video/si.constants.js';
+import { SI_MULTI_IMAGE_DIRNAME, SI_MULTI_IMAGE_DURATION_SEC } from '../modules/video-production/shared/si-video/si.constants.js';
 
 const DEFAULT_LANGUAGE = 'ja';
 
@@ -30,12 +27,15 @@ interface CliOptions {
   language: string;
   audioPath?: string;
   subtitlePath?: string;
+  showSubscribe: boolean;
+  subscribeFile?: string;
 }
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     workDir: mediaDownloadDir('youtube', 'test'),
     language: DEFAULT_LANGUAGE,
+    showSubscribe: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -68,6 +68,20 @@ function parseArgs(argv: string[]): CliOptions {
       const value = argv[index + 1]?.trim() ?? '';
       if (!value) throw new Error('--subtitle requires a value');
       options.subtitlePath = path.resolve(value);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--show-subscribe') {
+      options.showSubscribe = true;
+      continue;
+    }
+
+    if (arg === '--subscribe-file') {
+      const value = argv[index + 1]?.trim() ?? '';
+      if (!value) throw new Error('--subscribe-file requires a value');
+      options.subscribeFile = value;
+      options.showSubscribe = true;
       index += 1;
       continue;
     }
@@ -145,7 +159,9 @@ async function main() {
   console.log(`Work dir: ${workDir}`);
   console.log(`Audio: ${audioPath}`);
   console.log(`Subtitle: ${subtitlePath}`);
-  console.log(`Images dir: ${path.join(workDir, SI_MULTI_IMAGE_DIRNAME)} (${centerImagePaths.length} images × ${SI_MULTI_IMAGE_DURATION_SEC}s)`);
+  console.log(
+    `Images dir: ${path.join(workDir, SI_MULTI_IMAGE_DIRNAME)} (${centerImagePaths.length} images × ${SI_MULTI_IMAGE_DURATION_SEC}s)`,
+  );
   for (const imagePath of centerImagePaths) {
     console.log(`  - ${path.basename(imagePath)}`);
   }
@@ -153,6 +169,12 @@ async function main() {
   console.log('Caption style: default');
   console.log('Show channel avatar: true');
   console.log(`Channel avatar: ${channelAvatarPath}`);
+  console.log(`Show subscribe: ${options.showSubscribe ? 'true' : 'false'}`);
+  if (options.subscribeFile) {
+    console.log(`Subscribe file: ${options.subscribeFile}`);
+  } else if (options.showSubscribe) {
+    console.log(`Subscribe file: random from ${paths.siSubscribeDir}`);
+  }
   console.log(`Local stock dir: ${paths.siLocalStockDir} (cần ít nhất 1 file .mp4)`);
   console.log(`Output: ${path.join(workDir, 'video.mp4')}`);
   console.log('\nAssembling SI multi_image video...\n');
@@ -165,8 +187,10 @@ async function main() {
     backgroundFootageMode: 'local',
     language: options.language,
     captionStyleKey: 'default',
-    showAudioBar: false,
-    showSmallVideo: false,
+    showAudioBar: true,
+    showSmallVideo: true,
+    showSubscribe: true,
+    subscribeFile: options.subscribeFile,
     channelAvatarPath,
     onLog: msg => console.log(msg),
     onFfmpegProgress: p => logFfmpegProgress('merge', p),

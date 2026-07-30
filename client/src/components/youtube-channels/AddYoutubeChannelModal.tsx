@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
-import { createYoutubeChannel, fetchYoutubeChannels, updateYoutubeChannel } from '../../api/youtubeChannels';
+import {
+  createYoutubeChannel,
+  fetchYoutubeChannels,
+  updateYoutubeChannel,
+  uploadYoutubeChannelAvatar,
+  uploadYoutubeChannelAvatarTemp,
+} from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
   getChannelUploadTimes,
@@ -35,7 +41,7 @@ import {
 import { buildBackgroundFootageSelectValue, handleBackgroundFootageSelectChange } from '../../utils/backgroundFootage';
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
-import { Button, Input, Modal, MultiSelect, Select, Textarea } from '../ui';
+import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
 import { AudioBarPickerModal } from './AudioBarPickerModal';
 import { SmallVideoPickerModal } from './SmallVideoPickerModal';
 import { SubscribePickerModal } from './SubscribePickerModal';
@@ -60,6 +66,22 @@ type YoutubeChannelModalProps = AddYoutubeChannelModalProps | YoutubeChannelModa
 
 function isEditModalProps(props: YoutubeChannelModalProps): props is YoutubeChannelModalEditProps {
   return props.channel !== undefined;
+}
+
+function isDefaultLinkedEmail(email: string): boolean {
+  return email.trim().toLowerCase() === 'default';
+}
+
+function buildAvailableMailOptions(
+  mailAccounts: { id: string; email: string }[],
+  usedEmails: Set<string>,
+): { value: string; label: string }[] {
+  return [
+    ...(!usedEmails.has('default') ? [{ value: 'default', label: 'Mặc định' }] : []),
+    ...mailAccounts
+      .filter(account => !usedEmails.has(account.email.toLowerCase()))
+      .map(account => ({ value: account.id, label: account.email })),
+  ];
 }
 
 const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: '', label: 'Mặc định' };
@@ -243,6 +265,9 @@ function FormField({
 export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const { open, onClose, channel } = props;
   const isEdit = channel !== undefined;
+  const canEditEmailAndChannel = !isEdit || isDefaultLinkedEmail(channel.linkedEmail);
+  const { toast } = useToast();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
@@ -259,6 +284,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [audioBarPickerOpen, setAudioBarPickerOpen] = useState(false);
   const [smallVideoPickerOpen, setSmallVideoPickerOpen] = useState(false);
   const [subscribePickerOpen, setSubscribePickerOpen] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarTempSessionId, setAvatarTempSessionId] = useState(() => crypto.randomUUID());
+  const [hasTempAvatar, setHasTempAvatar] = useState(false);
 
   const {
     register,
@@ -328,18 +356,25 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
         if (channel) {
           const mailAccount = mails.items.find(account => account.email.toLowerCase() === channel.linkedEmail.toLowerCase());
-          const mailAccountId = mailAccount?.id ?? (channel.linkedEmail.toLowerCase() === 'default' ? 'default' : '');
-          setMailOptions([]);
+          const mailAccountId = mailAccount?.id ?? (isDefaultLinkedEmail(channel.linkedEmail) ? 'default' : '');
+
+          if (isDefaultLinkedEmail(channel.linkedEmail)) {
+            const channels = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal });
+            const usedEmails = new Set(
+              channels.items
+                .filter(item => item.id !== channel.id)
+                .map(item => item.linkedEmail.toLowerCase()),
+            );
+            setMailOptions(buildAvailableMailOptions(mails.items, usedEmails));
+          } else {
+            setMailOptions([]);
+          }
+
           reset(getChannelFormValues(channel, mailAccountId));
         } else {
           const channels = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal });
           const usedEmails = new Set(channels.items.map(item => item.linkedEmail.toLowerCase()));
-          const availableMailOptions = [
-            ...(!usedEmails.has('default') ? [{ value: 'default', label: 'Mặc định' }] : []),
-            ...mails.items
-              .filter(account => !usedEmails.has(account.email.toLowerCase()))
-              .map(account => ({ value: account.id, label: account.email })),
-          ];
+          const availableMailOptions = buildAvailableMailOptions(mails.items, usedEmails);
 
           setMailOptions(availableMailOptions);
           reset({
@@ -474,7 +509,29 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setSmallVideoPickerOpen(false);
     setSubscribePickerOpen(false);
     setTempBackgroundSessionId(crypto.randomUUID());
+    setAvatarTempSessionId(crypto.randomUUID());
+    setHasTempAvatar(false);
     onClose();
+  }
+
+  async function handleAvatarUpload(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      if (isEdit && channel) {
+        await uploadYoutubeChannelAvatar(channel.id, file);
+      } else {
+        await uploadYoutubeChannelAvatarTemp(avatarTempSessionId, file);
+        setHasTempAvatar(true);
+      }
+      toast.success('Đã tải ảnh avatar kênh');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể tải ảnh avatar');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
   }
 
   async function onSubmit(values: AddYoutubeChannelFormValues) {
@@ -527,19 +584,31 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       };
 
       if (isEditModalProps(props)) {
-        const { item } = await updateYoutubeChannel(props.channel.id, payload);
+        const trimmedChannelUrl = values.channelUrl.trim();
+        const shouldUpdateChannelUrl =
+          canEditEmailAndChannel &&
+          trimmedChannelUrl.length > 0 &&
+          trimmedChannelUrl !== props.channel.youtubeUrl &&
+          trimmedChannelUrl !== props.channel.handle;
+        const { item } = await updateYoutubeChannel(props.channel.id, {
+          ...payload,
+          ...(shouldUpdateChannelUrl ? { channelUrl: trimmedChannelUrl } : {}),
+        });
         props.onSuccess(item);
       } else {
         await createYoutubeChannel({
           ...payload,
           channelUrl: values.channelUrl.trim(),
           thumbnailBackgroundTempSessionId: tempBackgroundSessionId,
+          ...(hasTempAvatar ? { avatarTempSessionId } : {}),
         });
         props.onSuccess();
       }
       reset(defaultValues);
       setBackgroundPickerOpen(false);
       setTempBackgroundSessionId(crypto.randomUUID());
+      setAvatarTempSessionId(crypto.randomUUID());
+      setHasTempAvatar(false);
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : isEdit ? 'Không thể cập nhật kênh' : 'Không thể thêm kênh');
@@ -564,7 +633,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             <Button
               size='sm'
               className='rounded-lg'
-              disabled={isSubmitting || optionsLoading || !formReady || !mailAccountId || (!isEdit && mailOptions.length === 0)}
+              disabled={
+                isSubmitting ||
+                optionsLoading ||
+                !formReady ||
+                !mailAccountId ||
+                (!isEdit && mailOptions.length === 0) ||
+                (canEditEmailAndChannel && isEdit && mailOptions.length === 0)
+              }
               form='youtube-channel-form'
               type='submit'
             >
@@ -574,20 +650,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         }
       >
         <form id='youtube-channel-form' onSubmit={handleSubmit(onSubmit)} className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-          {channel ? (
-            <>
-              <FormField label='Email liên kết' className='min-w-0'>
-                <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
-                  <span className='truncate'>{channel.linkedEmail}</span>
-                </div>
-              </FormField>
-              <FormField label='Kênh' className='min-w-0'>
-                <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
-                  <span className='truncate'>{channel.name}</span>
-                </div>
-              </FormField>
-            </>
-          ) : (
+          {canEditEmailAndChannel ? (
             <>
               <FormField label='Email liên kết' htmlFor='mail-account' error={errors.mailAccountId?.message} className='min-w-0'>
                 <Controller
@@ -626,6 +689,19 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   disabled={isSubmitting}
                   {...register('channelUrl')}
                 />
+              </FormField>
+            </>
+          ) : (
+            <>
+              <FormField label='Email liên kết' className='min-w-0'>
+                <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
+                  <span className='truncate'>{channel!.linkedEmail}</span>
+                </div>
+              </FormField>
+              <FormField label='Kênh' className='min-w-0'>
+                <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
+                  <span className='truncate'>{channel!.name}</span>
+                </div>
               </FormField>
             </>
           )}
@@ -1018,18 +1094,39 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               name='showChannelAvatar'
               control={control}
               render={({ field }) => (
-                <label htmlFor='show-channel-avatar' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                <div className='flex items-center gap-2'>
+                  <label htmlFor='show-channel-avatar' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                    <input
+                      id='show-channel-avatar'
+                      type='checkbox'
+                      checked={!!field.value}
+                      onChange={e => field.onChange(e.target.checked)}
+                      onBlur={field.onBlur}
+                      disabled={isSubmitting || avatarUploading}
+                      className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                    />
+                    Hiển thị avatar kênh
+                  </label>
                   <input
-                    id='show-channel-avatar'
-                    type='checkbox'
-                    checked={!!field.value}
-                    onChange={e => field.onChange(e.target.checked)}
-                    onBlur={field.onBlur}
-                    disabled={isSubmitting}
-                    className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                    ref={avatarInputRef}
+                    type='file'
+                    accept='image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+                    className='hidden'
+                    onChange={e => {
+                      void handleAvatarUpload(e.target.files);
+                    }}
                   />
-                  Hiển thị avatar kênh
-                </label>
+                  <Button
+                    type='button'
+                    variant='outlined'
+                    size='sm'
+                    className='h-8 rounded-md px-2 text-xs'
+                    disabled={isSubmitting || avatarUploading}
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {avatarUploading ? 'Đang tải...' : 'Tải ảnh'}
+                  </Button>
+                </div>
               )}
             />
           </FormField>

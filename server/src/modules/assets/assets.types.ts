@@ -4,4 +4,5 @@ export interface AssetFileItem {
   name: string;
   size: number;
   updatedAt: string;
+  prepared?: boolean;
 }

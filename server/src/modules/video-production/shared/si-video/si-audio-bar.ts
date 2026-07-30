@@ -9,23 +9,42 @@ import {
   SI_AUDIO_BAR_WIDTH_PX,
   SI_FPS,
 } from './si.constants.js';
+import { getPreparedColorAssetPath, prepareColorAsset } from './si-prepare-color-cache.js';
 
 const AUDIO_BAR_EXTENSIONS = new Set(['.mp4', '.mov']);
 
 export interface SiAudioBarClip {
   path: string;
   filename: string;
+  /** True when using a pre-keyed cached file (no runtime colorkey needed). */
+  preKeyed: boolean;
 }
 
-/** Scale and chroma-key black background, keeping original bar colors. */
+/** Scale audio bar; optionally chroma-key green background when not pre-keyed. */
 export function appendSiAudioBarScaleFilters(
   filterParts: string[],
   inputLabel: string,
   outputLabel = 'audio_bar_scaled',
+  options?: { preKeyed?: boolean },
 ): void {
+  if (options?.preKeyed) {
+    // Cache is already sized + keyed — keep alpha for overlay.
+    filterParts.push(`[${inputLabel}]format=rgba[${outputLabel}]`);
+    return;
+  }
+  const scale = `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1`;
   filterParts.push(
-    `[${inputLabel}]fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1,format=rgba,colorkey=${SI_AUDIO_BAR_COLORKEY}:${SI_AUDIO_BAR_COLORKEY_SIMILARITY}:${SI_AUDIO_BAR_COLORKEY_BLEND}[${outputLabel}]`,
+    `[${inputLabel}]${scale},format=rgba,colorkey=${SI_AUDIO_BAR_COLORKEY}:${SI_AUDIO_BAR_COLORKEY_SIMILARITY}:${SI_AUDIO_BAR_COLORKEY_BLEND}[${outputLabel}]`,
   );
+}
+
+async function resolvePreparedAudioBar(filename: string): Promise<SiAudioBarClip> {
+  const prepared = await prepareColorAsset('audioBar', filename);
+  return {
+    path: prepared.preparedPath,
+    filename,
+    preKeyed: true,
+  };
 }
 
 export async function selectRandomSiAudioBarClip(): Promise<SiAudioBarClip> {
@@ -45,10 +64,7 @@ export async function selectRandomSiAudioBarClip(): Promise<SiAudioBarClip> {
   }
 
   const filename = clips[Math.floor(Math.random() * clips.length)]!;
-  return {
-    path: path.join(paths.siAudioBarDir, filename),
-    filename,
-  };
+  return resolvePreparedAudioBar(filename);
 }
 
 export async function resolveSiAudioBarClip(filename?: string): Promise<SiAudioBarClip> {
@@ -69,5 +85,10 @@ export async function resolveSiAudioBarClip(filename?: string): Promise<SiAudioB
     throw new AppError(`Audio bar asset not found: ${safeName}`, 400, 'SI_AUDIO_BAR_MISSING');
   }
 
-  return { path: filePath, filename: safeName };
+  // Fast path when already prepared
+  const cached = await getPreparedColorAssetPath('audioBar', safeName);
+  if (cached.prepared) {
+    return { path: cached.path, filename: safeName, preKeyed: true };
+  }
+  return resolvePreparedAudioBar(safeName);
 }

@@ -7,14 +7,14 @@ import {
   isHardwareEncoder,
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
-import { materializeStillJpeg, resizeImageToFit } from '../../../../infrastructure/ffmpeg/image-resize.js';
+import { bakeStillWithOpacity, bakeVideoWithOpacity } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from './si-assets.js';
 import {
-  SI_AUDIO_BAR_MARGIN_LEFT_PX,
-  SI_AUDIO_BAR_OFFSET_Y_PX,
-  SI_AUDIO_BAR_WIDTH_PX,
+  SI_AUDIO_BAR_COLORKEY,
+  SI_AUDIO_BAR_COLORKEY_BLEND,
+  SI_AUDIO_BAR_COLORKEY_SIMILARITY,
   SI_CANVAS_H,
   SI_CANVAS_W,
   SI_CENTER_IMAGE_MARGIN_TOP_PX,
@@ -24,8 +24,9 @@ import {
   // SI_NOISE_ALPHA, // TODO: re-enable SI noise
   SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR,
   SI_OUTPUT_VIDEO_BASENAME,
-  SI_SMALL_VIDEO_OVERLAY_X,
-  SI_SMALL_VIDEO_OVERLAY_Y,
+  SI_SUBSCRIBE_COLORKEY,
+  SI_SUBSCRIBE_COLORKEY_BLEND,
+  SI_SUBSCRIBE_COLORKEY_SIMILARITY,
   SI_STOCK_DIM_FACTOR,
   SI_STOCK_RENDER_EXTRA_SEC,
   SI_SUBTITLE_BOX_OPACITY,
@@ -37,7 +38,15 @@ import {
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 import { resolveSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
 import { resolveSiSmallVideoClip, appendSiSmallVideoScaleFilters } from './si-small-video.js';
-import { appendChannelAvatarOverlayFilters } from './channel-avatar-overlay.js';
+import { resolveSiSubscribeClip } from './si-subscribe-video.js';
+import {
+  appendChannelAvatarOverlayFilters,
+  ensurePrebakedChannelAvatar,
+} from './channel-avatar-overlay.js';
+import {
+  assignSiOverlayLayout,
+  type SiMovableOverlayKind,
+} from './si-overlay-layout.js';
 import {
   buildSiCenterSlideshow,
   cleanupSiMultiImageArtifacts,
@@ -103,6 +112,8 @@ export interface AssembleReupSiVideoInput {
   audioBarFile?: string;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  showSubscribe?: boolean;
+  subscribeFile?: string;
   channelAvatarPath?: string;
   backgroundFootageMode?: SiBackgroundFootageMode;
   backgroundFootageSourceIds?: string[];
@@ -126,6 +137,8 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     audioBarFile,
     showSmallVideo = false,
     smallVideoFile,
+    showSubscribe = false,
+    subscribeFile,
     channelAvatarPath,
     backgroundFootageMode = 'source',
     backgroundFootageSourceIds = [],
@@ -181,10 +194,35 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   }
 
   let audioBarPath: string | undefined;
+  let audioBarPreKeyed = false;
   if (showAudioBar || audioBarFile?.trim()) {
     const audioBarClip = await resolveSiAudioBarClip(audioBarFile);
     audioBarPath = audioBarClip.path;
+    audioBarPreKeyed = audioBarClip.preKeyed;
     log(`[reup-si] Audio bar clip: ${audioBarClip.filename}`);
+    if (audioBarPreKeyed) {
+      log(`[reup-si] Audio bar using pre-keyed cache (no runtime colorkey)`);
+    } else {
+      log(
+        `[reup-si] Audio bar runtime green-key: ${SI_AUDIO_BAR_COLORKEY} (similarity=${SI_AUDIO_BAR_COLORKEY_SIMILARITY}, blend=${SI_AUDIO_BAR_COLORKEY_BLEND})`,
+      );
+    }
+  }
+
+  let subscribePath: string | undefined;
+  let subscribePreKeyed = false;
+  if (showSubscribe || subscribeFile?.trim()) {
+    const subscribeClip = await resolveSiSubscribeClip(subscribeFile);
+    subscribePath = subscribeClip.path;
+    subscribePreKeyed = subscribeClip.preKeyed;
+    log(`[reup-si] Subscribe clip: ${subscribeClip.filename}`);
+    if (subscribePreKeyed) {
+      log(`[reup-si] Subscribe using pre-keyed cache (no runtime colorkey)`);
+    } else {
+      log(
+        `[reup-si] Subscribe runtime green-key: ${SI_SUBSCRIBE_COLORKEY} (similarity=${SI_SUBSCRIBE_COLORKEY_SIMILARITY}, blend=${SI_SUBSCRIBE_COLORKEY_BLEND})`,
+      );
+    }
   }
 
   let smallVideoPath: string | undefined;
@@ -198,6 +236,25 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     log(`[reup-si] Channel avatar overlay: ${path.basename(channelAvatarPath)}`);
   }
 
+  const movableKinds: SiMovableOverlayKind[] = [];
+  if (audioBarPath) movableKinds.push('audioBar');
+  if (subscribePath) movableKinds.push('subscribe');
+  if (smallVideoPath) movableKinds.push('smallVideo');
+  const overlayLayout = assignSiOverlayLayout({
+    hasAvatar: Boolean(channelAvatarPath),
+    movable: movableKinds,
+  });
+  for (const kind of movableKinds) {
+    const pos = overlayLayout.positions[kind];
+    if (pos) {
+      log(
+        `[reup-si] Overlay layout ${kind} → ${pos.slot} x=${pos.x} y=${pos.y} ` +
+          `(marginX=${pos.edgeMarginX} marginY=${pos.edgeMarginY})`,
+      );
+    }
+  }
+  log(`[reup-si] Center image shift: ${overlayLayout.centerImageShift}`);
+
   let centerSlideshowPath: string | undefined;
   const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
   const stepOpts = { prefix: '[reup-si]', onLog };
@@ -209,14 +266,20 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
   const filterScriptPath = path.join(workDir, 'filter_complex.txt');
   const tempAssPath = path.join(workDir, 'temp_sub.ass');
-  const resizedCenterImagePath = path.join(workDir, 'center_720.jpg');
-  const loopableAvatarPath = path.join(workDir, 'channel_avatar_loop.jpg');
+  const resizedCenterImagePath = path.join(workDir, 'center_opacity.png');
+  const centerSlideshowOpacityPath = path.join(workDir, 'center_slideshow_opacity.mov');
   let mergeArgs: string[] = [];
   let preparedAvatarPath: string | null = null;
+  let avatarPrebaked = false;
+  let centerOpacityBaked = false;
 
   try {
   if (useMultiImage) {
-    centerSlideshowPath = await buildSiCenterSlideshow(workDir, multiImagePaths, onLog);
+    const rawSlideshow = await buildSiCenterSlideshow(workDir, multiImagePaths, onLog);
+    log('[reup-si] Baking center slideshow opacity into alpha video');
+    await bakeVideoWithOpacity(rawSlideshow, centerSlideshowOpacityPath, SI_CENTER_IMAGE_OPACITY, onLog);
+    centerSlideshowPath = centerSlideshowOpacityPath;
+    centerOpacityBaked = true;
   }
 
   const stockPrepared = await prepareSiStockBackground(
@@ -245,12 +308,21 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       }
 
       if (centerImagePath) {
-        await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
+        const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+        log(`[reup-si] Baking center still opacity (${targetW}px, aa=${SI_CENTER_IMAGE_OPACITY})`);
+        await bakeStillWithOpacity(
+          centerImagePath,
+          resizedCenterImagePath,
+          targetW,
+          SI_CENTER_IMAGE_OPACITY,
+          onLog,
+        );
+        centerOpacityBaked = true;
       }
 
       if (channelAvatarPath) {
-        await materializeStillJpeg(channelAvatarPath, loopableAvatarPath, onLog);
-        preparedAvatarPath = loopableAvatarPath;
+        preparedAvatarPath = await ensurePrebakedChannelAvatar(channelAvatarPath, onLog);
+        avatarPrebaked = true;
       }
 
       // TODO: re-enable SI noise
@@ -296,6 +368,12 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       if (audioBarPath) {
         audioBarIndex = inputIdx++;
         mergeArgs.push('-stream_loop', '-1', '-i', audioBarPath);
+      }
+
+      let subscribeIndex: number | null = null;
+      if (subscribePath) {
+        subscribeIndex = inputIdx++;
+        mergeArgs.push('-stream_loop', '-1', '-i', subscribePath);
       }
 
       let smallVideoIndex: number | null = null;
@@ -344,29 +422,58 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       }
 
       if (centerImgIndex !== null) {
-        const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
-        const centerImageOverlayX = resolveSiCenterImageOverlayX(showAudioBar || showSmallVideo);
-        filterParts.push(
-          `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
-        );
+        const centerImageOverlayX = resolveSiCenterImageOverlayX(overlayLayout.centerImageShift);
+        if (centerOpacityBaked) {
+          // Opacity already baked into PNG/MOV alpha — cheap overlay only.
+          filterParts.push(`[${centerImgIndex}:v]format=rgba[center_img]`);
+        } else {
+          const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+          filterParts.push(
+            `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
+          );
+        }
         filterParts.push(
           `[${currentVLabel}][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:shortest=1[v_centered_img]`,
         );
         currentVLabel = 'v_centered_img';
       }
 
-      if (smallVideoIndex !== null) {
-        appendSiSmallVideoScaleFilters(filterParts, `${smallVideoIndex}:v`);
+      if (subscribeIndex !== null && overlayLayout.positions.subscribe) {
+        const pos = overlayLayout.positions.subscribe;
+        if (subscribePreKeyed) {
+          // Cache is already sized + keyed
+          filterParts.push(`[${subscribeIndex}:v]format=rgba[subscribe_scaled]`);
+          filterParts.push(
+            `[${currentVLabel}][subscribe_scaled]overlay=${pos.x}:${pos.y}:shortest=1[v_subscribe]`,
+          );
+        } else {
+          appendSiSmallVideoScaleFilters(filterParts, `${subscribeIndex}:v`, 'subscribe_scaled');
+          filterParts.push(
+            `[subscribe_scaled]colorkey=${SI_SUBSCRIBE_COLORKEY}:${SI_SUBSCRIBE_COLORKEY_SIMILARITY}:${SI_SUBSCRIBE_COLORKEY_BLEND}[subscribe_keyed]`,
+          );
+          filterParts.push(
+            `[${currentVLabel}][subscribe_keyed]overlay=${pos.x}:${pos.y}:shortest=1[v_subscribe]`,
+          );
+        }
+        currentVLabel = 'v_subscribe';
+      }
+
+      if (smallVideoIndex !== null && overlayLayout.positions.smallVideo) {
+        const pos = overlayLayout.positions.smallVideo;
+        appendSiSmallVideoScaleFilters(filterParts, `${smallVideoIndex}:v`, 'small_video_scaled');
         filterParts.push(
-          `[${currentVLabel}][small_video_scaled]overlay=${SI_SMALL_VIDEO_OVERLAY_X}:${SI_SMALL_VIDEO_OVERLAY_Y}:shortest=1[v_small]`,
+          `[${currentVLabel}][small_video_scaled]overlay=${pos.x}:${pos.y}:shortest=1[v_small]`,
         );
         currentVLabel = 'v_small';
       }
 
-      if (audioBarIndex !== null) {
-        appendSiAudioBarScaleFilters(filterParts, `${audioBarIndex}:v`);
+      if (audioBarIndex !== null && overlayLayout.positions.audioBar) {
+        const pos = overlayLayout.positions.audioBar;
+        appendSiAudioBarScaleFilters(filterParts, `${audioBarIndex}:v`, 'audio_bar_scaled', {
+          preKeyed: audioBarPreKeyed,
+        });
         filterParts.push(
-          `[${currentVLabel}][audio_bar_scaled]overlay=${SI_AUDIO_BAR_MARGIN_LEFT_PX}:(main_h-overlay_h)/2+${SI_AUDIO_BAR_OFFSET_Y_PX}:shortest=1[v_audio_bar]`,
+          `[${currentVLabel}][audio_bar_scaled]overlay=${pos.x}:${pos.y}:shortest=1[v_audio_bar]`,
         );
         currentVLabel = 'v_audio_bar';
       }
@@ -377,6 +484,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           currentVLabel,
           `${channelAvatarIndex}:v`,
           'v_channel_avatar',
+          { prebaked: avatarPrebaked },
         );
         currentVLabel = 'v_channel_avatar';
       }
@@ -459,15 +567,15 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   } finally {
     await fs.unlink(filterScriptPath).catch(() => undefined);
     await fs.unlink(tempAssPath).catch(() => undefined);
-    await fs.unlink(loopableAvatarPath).catch(() => undefined);
     if (centerImagePath) {
       await fs.unlink(resizedCenterImagePath).catch(() => undefined);
     }
+    if (useMultiImage) {
+      await fs.unlink(centerSlideshowOpacityPath).catch(() => undefined);
+      await cleanupSiMultiImageArtifacts(workDir);
+    }
     if (scaledSrtPath) {
       await fs.unlink(scaledSrtPath).catch(() => undefined);
-    }
-    if (useMultiImage) {
-      await cleanupSiMultiImageArtifacts(workDir);
     }
     if (stockTempDir) {
       await cleanupSiStockTempDir(stockTempDir);

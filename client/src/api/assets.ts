@@ -29,3 +29,10 @@ export function deleteAssets(kind: AssetKind, names: string[]) {
     body: JSON.stringify({ names }),
   });
 }
+
+export function prepareAssetColor(kind: AssetKind, filename: string) {
+  return fetchJson<{ prepared: boolean; cached: boolean }>(
+    `${API_V1}/assets/${encodeURIComponent(kind)}/${encodeURIComponent(filename)}/prepare-color`,
+    { method: 'POST' },
+  );
+}

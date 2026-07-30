@@ -457,6 +457,7 @@ export interface CreateYoutubeChannelPayload {
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
+  avatarTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
@@ -479,8 +480,11 @@ export interface CreateYoutubeChannelPayload {
 
 export type UpdateYoutubeChannelPayload = Omit<
   CreateYoutubeChannelPayload,
-  'channelUrl' | 'thumbnailBackgroundTempSessionId'
->;
+  'channelUrl' | 'thumbnailBackgroundTempSessionId' | 'avatarTempSessionId'
+> & {
+  /** Allowed when the channel currently uses the default linked email. */
+  channelUrl?: string;
+};
 
 export interface AddYoutubeChannelFormValues {
   mailAccountId: string;
@@ -512,6 +516,11 @@ export interface AddYoutubeChannelFormValues {
 }
 
 export interface ThumbnailBackgroundItem {
+  name: string;
+  url: string;
+}
+
+export interface ChannelAvatarItem {
   name: string;
   url: string;
 }

@@ -871,6 +871,8 @@ export class ReupAudioPipeline {
                   audioBarFile: destination.audioBarFile,
                   showSmallVideo: destination.showSmallVideo,
                   smallVideoFile: destination.smallVideoFile,
+                  showSubscribe: destination.showSubscribe,
+                  subscribeFile: destination.subscribeFile,
                   showDisclaim,
                   disclaimerText,
                   ...(channelAvatarPath ? { channelAvatarPath } : {}),

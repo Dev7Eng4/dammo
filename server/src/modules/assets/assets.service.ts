@@ -3,6 +3,7 @@ import path from 'node:path';
 import { paths } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import type { AssetFileItem, AssetKind } from './assets.types.js';
+import { getPreparedColorAssetPath, type PrepareColorKind } from '../video-production/shared/si-video/si-prepare-color-cache.js';
 
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
 const FONT_EXTENSIONS = new Set(['.ttf', '.otf', '.woff', '.woff2']);
@@ -70,7 +71,7 @@ function uniqueFilePath(dir: string, fileName: string): string {
 }
 
 export class AssetsService {
-  list(kind: AssetKind): AssetFileItem[] {
+  async list(kind: AssetKind): Promise<AssetFileItem[]> {
     const dir = resolveKindDir(kind);
     ensureDir(dir);
 
@@ -93,7 +94,22 @@ export class AssetsService {
       });
     }
 
-    return items.sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = items.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (kind === 'audioBar' || kind === 'subscribe') {
+      await Promise.all(
+        sorted.map(async (item) => {
+          try {
+            const result = await getPreparedColorAssetPath(kind as PrepareColorKind, item.name);
+            item.prepared = result.prepared;
+          } catch {
+            item.prepared = false;
+          }
+        }),
+      );
+    }
+
+    return sorted;
   }
 
   async upload(kind: AssetKind, file: File): Promise<AssetFileItem> {

@@ -38,6 +38,8 @@ export interface ProductionDestination {
   audioBarFile?: string;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
+  showSubscribe?: boolean;
+  subscribeFile?: string;
   showChannelAvatar?: boolean;
   showDisclaimer?: boolean;
   disclaimerText?: string;

@@ -75,19 +75,29 @@ export const SI_AUDIO_SPEED_MAX = 0.98;
 export const SI_AUDIO_BAR_WIDTH_PX = 250;
 export const SI_AUDIO_BAR_MARGIN_LEFT_PX = 25;
 export const SI_AUDIO_BAR_OFFSET_Y_PX = 60;
-export const SI_AUDIO_BAR_COLORKEY = '0x000000';
-export const SI_AUDIO_BAR_COLORKEY_SIMILARITY = 0.1;
-export const SI_AUDIO_BAR_COLORKEY_BLEND = 0.1;
+export const SI_AUDIO_BAR_COLORKEY = '0x00FF00';
+export const SI_AUDIO_BAR_COLORKEY_SIMILARITY = 0.18;
+export const SI_AUDIO_BAR_COLORKEY_BLEND = 0.08;
 
 export const SI_SMALL_VIDEO_W = 250;
 export const SI_SMALL_VIDEO_H = 150;
 export const SI_SMALL_VIDEO_OVERLAY_X = 25;
 export const SI_SMALL_VIDEO_OVERLAY_Y = 25;
+export const SI_SUBSCRIBE_COLORKEY = '0x00FF00';
+export const SI_SUBSCRIBE_COLORKEY_SIMILARITY = 0.18;
+export const SI_SUBSCRIBE_COLORKEY_BLEND = 0.08;
 
-export const CHANNEL_AVATAR_SIZE_PX = 75;
+export const CHANNEL_AVATAR_SIZE_PX = 100;
 export const CHANNEL_AVATAR_MARGIN_TOP_PX = 30;
 export const CHANNEL_AVATAR_MARGIN_RIGHT_PX = 30;
 export const CHANNEL_AVATAR_BASENAME = 'avatar';
+
+/** Random edge inset for movable overlays (subscribe / audioBar / smallVideo). */
+export const SI_OVERLAY_EDGE_MARGIN_MIN_PX = 15;
+export const SI_OVERLAY_EDGE_MARGIN_MAX_PX = 55;
+/** Mid-slot vertical offset from vertical center (replaces fixed +60). */
+export const SI_OVERLAY_MID_Y_JITTER_MIN_PX = 20;
+export const SI_OVERLAY_MID_Y_JITTER_MAX_PX = 100;
 
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 
@@ -107,10 +117,12 @@ export function resolveRandomSiAudioSpeed(): number {
   return SI_AUDIO_SPEED_MIN + Math.random() * (SI_AUDIO_SPEED_MAX - SI_AUDIO_SPEED_MIN);
 }
 
-export function resolveSiCenterImageOverlayX(shiftRight: boolean): string {
+export function resolveSiCenterImageOverlayX(shift: boolean | 'none' | 'left' | 'right' = 'none'): string {
   const centerX = '(main_w-overlay_w)/2';
-  if (!shiftRight) return centerX;
-  return `${centerX}+${SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX}`;
+  const normalized = typeof shift === 'boolean' ? (shift ? 'right' : 'none') : shift;
+  if (normalized === 'right') return `${centerX}+${SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX}`;
+  if (normalized === 'left') return `${centerX}-${SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX}`;
+  return centerX;
 }
 
 export function getSiEffectiveStockDuration(durationSec: number | undefined): number {
