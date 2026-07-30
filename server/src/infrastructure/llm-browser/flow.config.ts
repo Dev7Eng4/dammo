@@ -108,6 +108,8 @@ export interface FlowDomSelectors {
   downloadButton: string;
   newProjectButton: string;
   createWithGoogleFlowButton: string;
+  /** Post-create / onboarding dialog (`role=dialog`). */
+  dialog: string;
   btnConfig: string;
   /** Open config popover container — option selectors below must be scoped here, not page-wide. */
   configPopover: string;
@@ -157,7 +159,7 @@ export const FLOW_CONFIG: FlowConfig = {
     btnOptionImageTrigger: '/html/body/div[3]/div/div[1]/div/button[1]',
     btnOptionImageFallback: '/html/body/div[4]/div/div[1]/div/button[1]',
     btnOptionRatio: '16:9',
-    btnOptionQuantity: '1x',
+    btnOptionQuantity: 'x1',
     btnOptionModel: 'button[aria-haspopup="menu"]',
     btnOptionModelFallback: '/html/body/div[3]/div/button',
     btnOptionModelPro: 'Nano Banana Pro',
