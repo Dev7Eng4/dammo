@@ -8,6 +8,7 @@ import {
   SI_AUDIO_BAR_COLORKEY_SIMILARITY,
   SI_AUDIO_BAR_WIDTH_PX,
   SI_FPS,
+  SI_OVERLAY_AUTO_SENTINEL,
 } from './si.constants.js';
 import { getPreparedColorAssetPath, prepareColorAsset } from './si-prepare-color-cache.js';
 
@@ -69,7 +70,7 @@ export async function selectRandomSiAudioBarClip(): Promise<SiAudioBarClip> {
 
 export async function resolveSiAudioBarClip(filename?: string): Promise<SiAudioBarClip> {
   const selected = filename?.trim();
-  if (!selected) {
+  if (!selected || selected === SI_OVERLAY_AUTO_SENTINEL) {
     return selectRandomSiAudioBarClip();
   }
 

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import { SI_FPS, SI_SMALL_VIDEO_H, SI_SMALL_VIDEO_W } from './si.constants.js';
+import { SI_FPS, SI_OVERLAY_AUTO_SENTINEL, SI_SMALL_VIDEO_H, SI_SMALL_VIDEO_W } from './si.constants.js';
 
 const SMALL_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
 
@@ -47,7 +47,7 @@ export async function selectRandomSiSmallVideoClip(): Promise<SiSmallVideoClip> 
 
 export async function resolveSiSmallVideoClip(filename?: string): Promise<SiSmallVideoClip> {
   const selected = filename?.trim();
-  if (!selected) {
+  if (!selected || selected === SI_OVERLAY_AUTO_SENTINEL) {
     return selectRandomSiSmallVideoClip();
   }
 

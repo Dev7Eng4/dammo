@@ -4,6 +4,7 @@ import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { SiSmallVideoClip } from './si-small-video.js';
 import { getPreparedColorAssetPath, prepareColorAsset } from './si-prepare-color-cache.js';
+import { SI_OVERLAY_AUTO_SENTINEL } from './si.constants.js';
 
 const SUBSCRIBE_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
 
@@ -43,7 +44,7 @@ export async function selectRandomSiSubscribeClip(): Promise<SiSubscribeClipReso
 
 export async function resolveSiSubscribeClip(filename?: string): Promise<SiSubscribeClipResolved> {
   const selected = filename?.trim();
-  if (!selected) {
+  if (!selected || selected === SI_OVERLAY_AUTO_SENTINEL) {
     return selectRandomSiSubscribeClip();
   }
 

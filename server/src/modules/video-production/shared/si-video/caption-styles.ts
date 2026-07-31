@@ -1,15 +1,21 @@
 import { AppError } from '../../../../shared/http/errors.js';
 
-export const CAPTION_STYLE_KEYS = ['default', 'bizudp_gothic', 'zen_kaku', 'noto_serif', 'cyan', 'cyan_navy', 'yellow'] as const;
+export const CAPTION_STYLE_KEYS = [
+  'default',
+  'noto_sans_red_white',
+  'bizudp_gothic',
+  'zen_kaku',
+  'noto_serif',
+  'noto_sans_yellow',
+  'noto_sans_cyan_white',
+  'zen_kaku_blue_white',
+  'noto_sans_blue_white',
+  'serif_white_purple',
+  'serif_red_white',
+  'bizudp_gothic_red_white',
+] as const;
 
 export type CaptionStyleKey = (typeof CAPTION_STYLE_KEYS)[number];
-
-/** Legacy keys persisted before rename/removal. */
-const LEGACY_CAPTION_STYLE_ALIASES: Record<string, CaptionStyleKey> = {
-  green: 'cyan',
-  klee_one: 'default',
-  blue_glow: 'cyan_navy',
-};
 
 export type CaptionAssLayout = 'single' | 'glow_dual';
 
@@ -40,37 +46,112 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'Default',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 70,
+    fontSize: 60,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
     outlinePx: 5.5,
     shadowPx: 0.3,
+  },
+  noto_sans_red_white: {
+    key: 'noto_sans_red_white',
+    label: 'Noto Sans Red text + White stroke',
+    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
+    fontAssName: 'Noto Sans JP Black',
+    fontSize: 60,
+    primaryColor: '&H00250BB8',
+    outlineColor: '&H00FFFFFF',
+    showBackgroundBox: false,
+    outlinePx: 3.6,
+    shadowPx: 1.5,
+  },
+  noto_sans_blue_white: {
+    key: 'noto_sans_blue_white',
+    label: 'Noto Sans Blue text + White stroke',
+    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
+    fontAssName: 'Noto Sans JP Black',
+    fontSize: 60,
+    primaryColor: '&H00F0A843',
+    outlineColor: '&H00FFFFFF',
+    showBackgroundBox: true,
+    outlinePx: 2.4,
+    shadowPx: 1.5,
+    charSpacing: 2,
+  },
+  noto_sans_yellow: {
+    key: 'noto_sans_yellow',
+    label: 'Noto Sans Yellow text',
+    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
+    fontAssName: 'Noto Sans JP Black',
+    fontSize: 60,
+    primaryColor: '&H0000FFFF',
+    showBackgroundBox: false,
+    outlinePx: 3.6,
+    shadowPx: 1.5,
+  },
+  noto_sans_cyan_white: {
+    key: 'noto_sans_cyan_white',
+    label: 'Noto Sans Cyan text + White stroke',
+    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
+    fontAssName: 'Noto Sans JP Black',
+    fontSize: 60,
+    primaryColor: '&H00FFFF00',
+    outlineColor: '&H00FFFFFF',
+    showBackgroundBox: false,
+    outlinePx: 3.6,
+    shadowPx: 1.5,
   },
   bizudp_gothic: {
     key: 'bizudp_gothic',
     label: 'BIZ UDPGothic',
     fontRelPath: 'fonts/BIZUDPGothic-Regular.ttf',
     fontAssName: 'BIZ UDPGothic',
-    fontSize: 70,
+    fontSize: 55,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
     outlinePx: 5.5,
     shadowPx: 0.3,
+    charSpacing: 4,
+  },
+  bizudp_gothic_red_white: {
+    key: 'bizudp_gothic_red_white',
+    label: 'BIZ UDPGothic Red text + White stroke',
+    fontRelPath: 'fonts/BIZUDPGothic-Regular.ttf',
+    fontAssName: 'BIZ UDPGothic',
+    fontSize: 55,
+    primaryColor: '&H00250BB8',
+    outlineColor: '&H00FFFFFF',
+    showBackgroundBox: true,
+    outlinePx: 5.5,
+    shadowPx: 0.3,
+    charSpacing: 4,
   },
   zen_kaku: {
     key: 'zen_kaku',
-    label: 'Zen Kaku Gothic New',
+    label: 'Zen Kaku',
     fontRelPath: 'fonts/ZenKakuGothicNew-Regular.ttf',
     fontAssName: 'Zen Kaku Gothic New',
-    fontSize: 70,
+    fontSize: 60,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
     outlinePx: 5.5,
     shadowPx: 0.3,
   },
+  zen_kaku_blue_white: {
+    key: 'zen_kaku_blue_white',
+    label: 'Zen Kaku Blue text + White stroke',
+    fontRelPath: 'fonts/ZenKakuGothicNew-Regular.ttf',
+    fontAssName: 'Zen Kaku Gothic New',
+    fontSize: 60,
+    primaryColor: '&H00F0A843',
+    outlineColor: '&H00FFFFFF',
+    showBackgroundBox: true,
+    outlinePx: 2.4,
+    shadowPx: 1.5,
+    charSpacing: 2,
+  },
   noto_serif: {
     key: 'noto_serif',
-    label: 'Noto Serif JP',
+    label: 'Noto Serif',
     fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
     fontAssName: 'Noto Serif JP',
     fontSize: 55,
@@ -80,43 +161,31 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     shadowPx: 0.3,
     charSpacing: 4,
   },
-  cyan: {
-    key: 'cyan',
-    label: 'Cyan text',
-    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
-    fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
-    primaryColor: '&H0000FFFF',
-    showBackgroundBox: false,
-    outlinePx: 3.6,
-    shadowPx: 1.5,
+  serif_white_purple: {
+    key: 'serif_white_purple',
+    label: 'Noto Serif White text + Purple stroke',
+    fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
+    fontAssName: 'Noto Serif JP',
+    fontSize: 55,
+    primaryColor: '&H00FFFFFF',
+    outlineColor: '&H00F0435A',
+    showBackgroundBox: true,
+    outlinePx: 4.0,
+    shadowPx: 0.3,
+    charSpacing: 4,
   },
-  cyan_navy: {
-    key: 'cyan_navy',
-    label: 'Cyan + Navy stroke',
-    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
-    fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
-    // #00FFFF → ASS &HAABBGGRR
-    primaryColor: '&H00FFFF00',
-    // #000080 → ASS &HAABBGGRR
-    outlineColor: '&H00800000',
-    showBackgroundBox: false,
-    outlinePx: 3.6,
-    shadowPx: 1.5,
-  },
-  yellow: {
-    key: 'yellow',
-    label: 'Yellow text',
-    fontRelPath: 'fonts/NotoSansJP-Black.ttf',
-    fontAssName: 'Noto Sans JP Black',
-    fontSize: 50,
-    // #FFFF00 → ASS &HAABBGGRR
-    primaryColor: '&H0000FFFF',
-    showBackgroundBox: false,
-    outlinePx: 2.4,
-    shadowPx: 1.5,
-    charSpacing: 2,
+  serif_red_white: {
+    key: 'serif_red_white',
+    label: 'Noto Serif Red text + White stroke',
+    fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
+    fontAssName: 'Noto Serif JP',
+    fontSize: 55,
+    primaryColor: '&H00250BB8',
+    outlineColor: '&H00FFFFFF',
+    showBackgroundBox: true,
+    outlinePx: 4.0,
+    shadowPx: 0.3,
+    charSpacing: 4,
   },
 };
 
@@ -128,15 +197,10 @@ export function isCaptionStyleKey(value: string): value is CaptionStyleKey {
   return (CAPTION_STYLE_KEYS as readonly string[]).includes(value);
 }
 
-function normalizeCaptionStyleKey(value: string): CaptionStyleKey | undefined {
-  if (isCaptionStyleKey(value)) return value;
-  return LEGACY_CAPTION_STYLE_ALIASES[value];
-}
-
 export function resolveCaptionStyleKey(key?: string | null): CaptionStyleKey {
   const trimmed = key?.trim();
   if (!trimmed) return 'default';
-  return normalizeCaptionStyleKey(trimmed) ?? 'default';
+  return isCaptionStyleKey(trimmed) ? trimmed : 'default';
 }
 
 export function assertValidCaptionStyleKey(key: string | undefined, required = false): CaptionStyleKey | undefined {
@@ -148,12 +212,11 @@ export function assertValidCaptionStyleKey(key: string | undefined, required = f
     return undefined;
   }
 
-  const resolved = normalizeCaptionStyleKey(trimmed);
-  if (!resolved) {
+  if (!isCaptionStyleKey(trimmed)) {
     throw new AppError(`Invalid caption style: ${trimmed}`, 400, 'VALIDATION_ERROR');
   }
 
-  return resolved;
+  return trimmed;
 }
 
 export function getCaptionStylePreset(key?: string | null): CaptionStylePreset {

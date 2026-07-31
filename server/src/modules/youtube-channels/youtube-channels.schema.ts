@@ -35,9 +35,6 @@ const channelConfigFields = {
       'cyan',
       'cyan_navy',
       'yellow',
-      'blue_glow',
-      'green',
-      'klee_one',
     ])
     .optional(),
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),

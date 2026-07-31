@@ -107,6 +107,9 @@ export const SI_LOCAL_CYCLE_TARGET_SEC = 120;
 /** UI sentinel value for the Local background footage option. */
 export const SI_LOCAL_STOCK_SENTINEL = '__local__';
 
+/** Channel overlay file value: pick a random asset at assemble time. */
+export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
+
 export type SiBackgroundFootageMode = 'source' | 'local';
 
 export function resolveSiSubtitleMarginBottomPx(showBackgroundBox: boolean): number {

@@ -32,6 +32,7 @@ import fs from 'node:fs';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
 import { channelAvatarsService } from './channel-avatars.service.js';
+import { SI_OVERLAY_AUTO_SENTINEL } from '../video-production/shared/si-video/si.constants.js';
 import type {
   AiSceneDensityMaxSec,
   CaptionStyleKey,
@@ -261,7 +262,10 @@ function validateChannelConfig(input: ChannelConfigInput): {
       }
       reupAudioBackgroundImage = input.reupAudioBackgroundImage;
       const selectedAudioBar = input.audioBarFile?.trim();
-      if (selectedAudioBar) {
+      if (selectedAudioBar === SI_OVERLAY_AUTO_SENTINEL) {
+        audioBarFile = SI_OVERLAY_AUTO_SENTINEL;
+        showAudioBar = true;
+      } else if (selectedAudioBar) {
         assetsService.getAsset('audioBar', selectedAudioBar);
         audioBarFile = selectedAudioBar;
         showAudioBar = true;
@@ -270,7 +274,10 @@ function validateChannelConfig(input: ChannelConfigInput): {
       }
 
       const selectedSmallVideo = input.smallVideoFile?.trim();
-      if (selectedSmallVideo) {
+      if (selectedSmallVideo === SI_OVERLAY_AUTO_SENTINEL) {
+        smallVideoFile = SI_OVERLAY_AUTO_SENTINEL;
+        showSmallVideo = true;
+      } else if (selectedSmallVideo) {
         assetsService.getAsset('smallVideo', selectedSmallVideo);
         smallVideoFile = selectedSmallVideo;
         showSmallVideo = true;
@@ -279,7 +286,10 @@ function validateChannelConfig(input: ChannelConfigInput): {
       }
 
       const selectedSubscribe = input.subscribeFile?.trim();
-      if (selectedSubscribe) {
+      if (selectedSubscribe === SI_OVERLAY_AUTO_SENTINEL) {
+        subscribeFile = SI_OVERLAY_AUTO_SENTINEL;
+        showSubscribe = true;
+      } else if (selectedSubscribe) {
         assetsService.getAsset('subscribe', selectedSubscribe);
         subscribeFile = selectedSubscribe;
         showSubscribe = true;

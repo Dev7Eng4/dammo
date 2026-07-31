@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { assetFileUrl, fetchAssets } from '../../api/assets';
 import type { AssetFileItem } from '../../types/asset';
+import { SI_OVERLAY_AUTO_SENTINEL } from '../../types/youtubeChannel';
 import { Button, Modal } from '../ui';
 
 interface SmallVideoPickerModalProps {
@@ -32,6 +33,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const autoSelected = selectedFile === SI_OVERLAY_AUTO_SENTINEL;
 
   useEffect(() => {
     if (!open) {
@@ -90,10 +92,26 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
 
           {loading ? (
             <p className='text-center text-xs text-neutral-500'>Đang tải danh sách video...</p>
-          ) : items.length === 0 ? (
-            <p className='text-center text-xs text-neutral-500'>Chưa có video nhỏ trong assets</p>
           ) : (
             <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
+              <button
+                type='button'
+                onClick={() => handleToggleSelect(SI_OVERLAY_AUTO_SENTINEL)}
+                className={`relative flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 bg-neutral-950 px-3 text-center transition ${
+                  autoSelected
+                    ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
+                    : 'border-neutral-800 hover:border-neutral-600'
+                }`}
+              >
+                {autoSelected ? (
+                  <span className='absolute right-2 top-2 rounded-full bg-emerald-500 p-1 text-white shadow'>
+                    <CheckIcon className='size-3' />
+                  </span>
+                ) : null}
+                <span className='text-sm font-medium text-neutral-100'>Tự động</span>
+                <span className='text-[10px] text-neutral-500'>Random khi tạo video</span>
+              </button>
+
               {items.map(item => {
                 const selected = selectedFile === item.name;
                 const src = assetFileUrl('smallVideo', item.name);
@@ -149,6 +167,10 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
               })}
             </div>
           )}
+
+          {!loading && items.length === 0 ? (
+            <p className='text-center text-xs text-neutral-500'>Chưa có video nhỏ trong assets</p>
+          ) : null}
         </div>
       </Modal>
 

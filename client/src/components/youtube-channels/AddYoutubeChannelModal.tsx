@@ -37,6 +37,7 @@ import {
   isReupAudioChannelType,
   isReupYoutubeChannelType,
   parseStoredChannelLanguage,
+  SI_OVERLAY_AUTO_SENTINEL,
 } from '../../types/youtubeChannel';
 import { buildBackgroundFootageSelectValue, handleBackgroundFootageSelectChange } from '../../utils/backgroundFootage';
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
@@ -1034,7 +1035,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 disabled={isSubmitting}
                 onClick={() => setAudioBarPickerOpen(true)}
               >
-                {audioBarFile ? `Đã chọn: ${audioBarFile}` : 'Chọn phổ âm thanh'}
+                {audioBarFile === SI_OVERLAY_AUTO_SENTINEL
+                  ? 'Đã chọn: Tự động'
+                  : audioBarFile
+                    ? `Đã chọn: ${audioBarFile}`
+                    : 'Chọn phổ âm thanh'}
               </Button>
             </FormField>
           ) : null}
@@ -1049,7 +1054,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 disabled={isSubmitting}
                 onClick={() => setSmallVideoPickerOpen(true)}
               >
-                {smallVideoFile ? `Đã chọn: ${smallVideoFile}` : 'Chọn video nhỏ'}
+                {smallVideoFile === SI_OVERLAY_AUTO_SENTINEL
+                  ? 'Đã chọn: Tự động'
+                  : smallVideoFile
+                    ? `Đã chọn: ${smallVideoFile}`
+                    : 'Chọn video nhỏ'}
               </Button>
             </FormField>
           ) : null}
@@ -1064,7 +1073,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 disabled={isSubmitting}
                 onClick={() => setSubscribePickerOpen(true)}
               >
-                {subscribeFile ? `Đã chọn: ${subscribeFile}` : 'Chọn subscribe'}
+                {subscribeFile === SI_OVERLAY_AUTO_SENTINEL
+                  ? 'Đã chọn: Tự động'
+                  : subscribeFile
+                    ? `Đã chọn: ${subscribeFile}`
+                    : 'Chọn subscribe'}
               </Button>
             </FormField>
           ) : null}

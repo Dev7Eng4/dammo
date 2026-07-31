@@ -30,6 +30,9 @@ export const DEFAULT_AI_SCENE_DENSITY_MAX_SEC: AiSceneDensityMaxSec = {
 
 export const BACKGROUND_FOOTAGE_LOCAL_SENTINEL = '__local__';
 
+/** SI overlay picker: random asset at video assemble time. */
+export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
+
 export function isReupYoutubeChannelType(type: YoutubeChannelType | ''): type is ReupYoutubeChannelType {
   return type === 'reup_audio' || type === 'reup_video';
 }
