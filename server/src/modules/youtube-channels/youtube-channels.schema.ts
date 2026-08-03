@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CAPTION_STYLE_KEYS } from '../video-production/shared/si-video/caption-styles.js';
 import { getPublishTimeSlotCount } from './upload-schedule.js';
 
 const uploadFrequencySchema = z.enum([
@@ -22,21 +23,12 @@ const channelConfigFields = {
   language: channelLanguageSchema,
   niche: z.string().min(1),
   sourceChannels: z.array(z.string().min(1)).optional(),
+  videoCreationOrder: z.enum(['oldest_first', 'newest_first']).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   backgroundFootageMode: z.enum(['source', 'local']).optional(),
   thumbnailStyleKey: z.string().optional(),
   thumbnailBackgroundFile: z.string().optional(),
-  captionStyleKey: z
-    .enum([
-      'default',
-      'bizudp_gothic',
-      'zen_kaku',
-      'noto_serif',
-      'cyan',
-      'cyan_navy',
-      'yellow',
-    ])
-    .optional(),
+  captionStyleKey: z.enum(CAPTION_STYLE_KEYS).optional(),
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),
   reupAudioBackgroundImage: z

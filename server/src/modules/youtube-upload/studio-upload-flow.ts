@@ -181,28 +181,32 @@ export async function fillVideoDetails(
     onError?.(`Missing thumbnail (thumbnail.*): ${videoFolderPath}`);
   }
 
-  // try {
-  //   await delay(200, 300);
+  try {
+    await delay(200, 300);
 
-  //   const playlistBox = await page.locator(YOUTUBE_SELECTOR.boxPlaylist).boundingBox();
-  //   if (playlistBox) {
-  //     await page.mouse.move(
-  //       playlistBox.x + playlistBox.width / 2 + (Math.random() * 20 - 10),
-  //       playlistBox.y + playlistBox.height / 2 + (Math.random() * 20 - 10),
-  //     );
-  //   }
+    const playlistBox = await page.locator(YOUTUBE_SELECTOR.boxPlaylist).boundingBox();
+    if (playlistBox) {
+      await page.mouse.move(
+        playlistBox.x + playlistBox.width / 2 + (Math.random() * 20 - 10),
+        playlistBox.y + playlistBox.height / 2 + (Math.random() * 20 - 10),
+      );
+    }
 
-  //   await clickElement(page, YOUTUBE_SELECTOR.boxPlaylist);
+    await clickElement(page, YOUTUBE_SELECTOR.boxPlaylist);
 
-  //   await delay(200, 300);
+    await delay(200, 300);
 
-  //   await delay(200, 300);
-  //   await clickElement(page, YOUTUBE_SELECTOR.playlistFirstItem);
-  //   await delay(200, 300);
-  //   await clickElement(page, YOUTUBE_SELECTOR.playlistClose);
-  // } catch {
-  //   /* ignore */
-  // }
+    await delay(200, 300);
+    try {
+      await clickElement(page, YOUTUBE_SELECTOR.playlistFirstItem);
+    } catch {
+      /* playlist may be empty */
+    }
+    await delay(200, 300);
+    await clickElement(page, YOUTUBE_SELECTOR.playlistClose);
+  } catch {
+    /* ignore */
+  }
 
   await delay(200);
 

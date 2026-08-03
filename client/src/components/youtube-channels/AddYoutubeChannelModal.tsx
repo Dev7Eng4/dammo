@@ -19,6 +19,7 @@ import {
   REUP_AUDIO_VIDEO_TYPE_OPTIONS,
   CAPTION_STYLE_OPTIONS,
   UPLOAD_FREQUENCY_OPTIONS,
+  VIDEO_CREATION_ORDER_OPTIONS,
   YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
 } from '../../constants/youtubeChannelForm';
@@ -125,19 +126,6 @@ const AUDIO_BACKGROUND_IMAGE_OPTIONS = REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS.map(o
   }[option.value],
 }));
 
-const VI_CAPTION_STYLE_OPTIONS = CAPTION_STYLE_OPTIONS.map(option => ({
-  ...option,
-  label: {
-    default: 'Mặc định (Noto Sans, trắng)',
-    bizudp_gothic: 'BIZ UDPGothic',
-    zen_kaku: 'Zen Kaku Gothic New',
-    noto_serif: 'Noto Serif JP',
-    cyan: 'Chữ màu lục lam',
-    cyan_navy: 'Chữ lục lam + viền xanh navy',
-    yellow: 'Chữ màu vàng',
-  }[option.value],
-}));
-
 const VI_UPLOAD_FREQUENCY_OPTIONS = UPLOAD_FREQUENCY_OPTIONS.map(option => ({
   ...option,
   label: {
@@ -164,6 +152,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   language: '',
   niche: '',
   sourceChannels: [],
+  videoCreationOrder: 'oldest_first',
   backgroundFootageSources: [],
   backgroundFootageMode: 'source',
   thumbnailStyleKey: '',
@@ -202,6 +191,7 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     language: parseStoredChannelLanguage(channel.language),
     niche: channel.niche ?? '',
     sourceChannels: channel.sourceChannels ?? [],
+    videoCreationOrder: channel.videoCreationOrder ?? 'oldest_first',
     backgroundFootageSources: channel.backgroundFootageSources ?? [],
     backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
     thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
@@ -361,11 +351,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
           if (isDefaultLinkedEmail(channel.linkedEmail)) {
             const channels = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal });
-            const usedEmails = new Set(
-              channels.items
-                .filter(item => item.id !== channel.id)
-                .map(item => item.linkedEmail.toLowerCase()),
-            );
+            const usedEmails = new Set(channels.items.filter(item => item.id !== channel.id).map(item => item.linkedEmail.toLowerCase()));
             setMailOptions(buildAvailableMailOptions(mails.items, usedEmails));
           } else {
             setMailOptions([]);
@@ -547,6 +533,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         niche: values.niche,
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
+        ...(isReupYoutubeChannelType(values.type) ? { videoCreationOrder: values.videoCreationOrder } : {}),
         ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
         ...(values.backgroundFootageMode === 'local'
           ? { backgroundFootageMode: 'local' as const }
@@ -754,6 +741,34 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               )}
             />
           </FormField>
+
+          {isReupType ? (
+            <FormField
+              label='Thứ tự tạo video'
+              htmlFor='video-creation-order'
+              error={errors.videoCreationOrder?.message}
+              className='min-w-0'
+            >
+              <Controller
+                name='videoCreationOrder'
+                control={control}
+                rules={{ required: isReupType ? 'Thứ tự tạo video là bắt buộc' : false }}
+                render={({ field }) => (
+                  <Select
+                    id='video-creation-order'
+                    options={VIDEO_CREATION_ORDER_OPTIONS}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder='Chọn thứ tự tạo video'
+                    disabled={isSubmitting}
+                    className='w-full'
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+          ) : null}
 
           <FormField
             label='Kênh nguồn'
@@ -1089,7 +1104,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               render={({ field }) => (
                 <Select
                   id='caption-style'
-                  options={VI_CAPTION_STYLE_OPTIONS}
+                  options={CAPTION_STYLE_OPTIONS}
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}

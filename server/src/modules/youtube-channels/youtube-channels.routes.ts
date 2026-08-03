@@ -369,6 +369,11 @@ export function createYoutubeChannelsRoutes() {
     return c.json(result);
   });
 
+  app.delete('/uploaded-videos', (c) => {
+    const result = youtubeChannelsService.deleteAllUploadedVideoFolders();
+    return c.json(result);
+  });
+
   app.post('/create-videos', async (c) => {
     const contentType = c.req.header('content-type') ?? '';
     let channelIds: string[] | undefined;

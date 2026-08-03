@@ -38,6 +38,7 @@ export async function buildSiCenterSlideshow(
   workDir: string,
   imagePaths: string[],
   onLog?: (msg: string) => void,
+  size?: { width: number; height: number },
 ): Promise<string> {
   if (imagePaths.length === 0) {
     throw new AppError(
@@ -47,6 +48,9 @@ export async function buildSiCenterSlideshow(
     );
   }
 
+  const width = size?.width ?? SI_CENTER_VIDEO_W;
+  const height = size?.height ?? SI_CENTER_VIDEO_H;
+
   const slides = pickAutoEffects(imagePaths, {
     durationSec: SI_MULTI_IMAGE_DURATION_SEC,
     transitionDurationSec: SS_DEFAULT_TRANSITION_DURATION,
@@ -54,7 +58,7 @@ export async function buildSiCenterSlideshow(
 
   const outputPath = resolveSiMultiImageSlideshowPath(workDir);
   onLog?.(
-    `[reup-si] Building center slideshow: ${slides.length} images × ${SI_MULTI_IMAGE_DURATION_SEC}s → ${SI_CENTER_VIDEO_W}x${SI_CENTER_VIDEO_H}`,
+    `[reup-si] Building center slideshow: ${slides.length} images × ${SI_MULTI_IMAGE_DURATION_SEC}s → ${width}x${height}`,
   );
 
   await assembleSlideshow({
@@ -62,7 +66,7 @@ export async function buildSiCenterSlideshow(
     workDir,
     outputPath,
     onLog,
-    output: { width: SI_CENTER_VIDEO_W, height: SI_CENTER_VIDEO_H, fps: SI_FPS },
+    output: { width, height, fps: SI_FPS },
   });
 
   return outputPath;

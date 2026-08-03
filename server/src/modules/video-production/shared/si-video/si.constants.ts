@@ -26,6 +26,9 @@ export { YOUTUBE_VIDEO_DOWNLOAD_FORMATS as SI_STOCK_DOWNLOAD_FORMATS } from '../
 export const SI_STOCK_MAX_SELECT_ATTEMPTS = 3;
 
 export const SI_CENTER_IMAGE_WIDTH_RATIO = 0.65;
+/** Random width ratio range around SI_CENTER_IMAGE_WIDTH_RATIO (±0.05). */
+export const SI_CENTER_IMAGE_WIDTH_RATIO_MIN = 0.6;
+export const SI_CENTER_IMAGE_WIDTH_RATIO_MAX = 0.7;
 export const SI_CENTER_IMAGE_OPACITY = 0.7;
 /** Khoảng cách từ mép trên canvas tới mép trên center image (px). */
 export const SI_CENTER_IMAGE_MARGIN_TOP_PX = 15;
@@ -118,6 +121,16 @@ export function resolveSiSubtitleMarginBottomPx(showBackgroundBox: boolean): num
 
 export function resolveRandomSiAudioSpeed(): number {
   return SI_AUDIO_SPEED_MIN + Math.random() * (SI_AUDIO_SPEED_MAX - SI_AUDIO_SPEED_MIN);
+}
+
+/** Even px width/height for center image overlay (ratio jittered per assemble). */
+export function resolveRandomSiCenterImageSize(): { width: number; height: number } {
+  const ratio =
+    SI_CENTER_IMAGE_WIDTH_RATIO_MIN +
+    Math.random() * (SI_CENTER_IMAGE_WIDTH_RATIO_MAX - SI_CENTER_IMAGE_WIDTH_RATIO_MIN);
+  const width = Math.round((SI_CANVAS_W * ratio) / 2) * 2;
+  const height = Math.round(((width * 9) / 16) / 2) * 2;
+  return { width, height };
 }
 
 export function resolveSiCenterImageOverlayX(shift: boolean | 'none' | 'left' | 'right' = 'none'): string {

@@ -19,7 +19,6 @@ import {
   SI_CANVAS_W,
   SI_CENTER_IMAGE_MARGIN_TOP_PX,
   SI_CENTER_IMAGE_OPACITY,
-  SI_CENTER_IMAGE_WIDTH_RATIO,
   SI_FPS,
   // SI_NOISE_ALPHA, // TODO: re-enable SI noise
   SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR,
@@ -33,6 +32,7 @@ import {
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
   type SiBackgroundFootageMode,
   resolveRandomSiAudioSpeed,
+  resolveRandomSiCenterImageSize,
   resolveSiCenterImageOverlayX,
 } from './si.constants.js';
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
@@ -181,6 +181,14 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   const assets = assertRequiredSiAssets(captionStyleKey);
   const speed = resolveRandomSiAudioSpeed();
+  const centerImageSize =
+    useMultiImage || centerImagePath ? resolveRandomSiCenterImageSize() : null;
+  if (centerImageSize) {
+    log(
+      `[reup-si] Center image size: ${centerImageSize.width}x${centerImageSize.height} ` +
+        `(ratio ${(centerImageSize.width / SI_CANVAS_W).toFixed(3)})`,
+    );
+  }
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
 
@@ -275,7 +283,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   try {
   if (useMultiImage) {
-    const rawSlideshow = await buildSiCenterSlideshow(workDir, multiImagePaths, onLog);
+    const rawSlideshow = await buildSiCenterSlideshow(workDir, multiImagePaths, onLog, centerImageSize!);
     log('[reup-si] Baking center slideshow opacity into alpha video');
     await bakeVideoWithOpacity(rawSlideshow, centerSlideshowOpacityPath, SI_CENTER_IMAGE_OPACITY, onLog);
     centerSlideshowPath = centerSlideshowOpacityPath;
@@ -308,7 +316,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       }
 
       if (centerImagePath) {
-        const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+        const targetW = centerImageSize!.width;
         log(`[reup-si] Baking center still opacity (${targetW}px, aa=${SI_CENTER_IMAGE_OPACITY})`);
         await bakeStillWithOpacity(
           centerImagePath,
@@ -427,7 +435,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           // Opacity already baked into PNG/MOV alpha — cheap overlay only.
           filterParts.push(`[${centerImgIndex}:v]format=rgba[center_img]`);
         } else {
-          const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+          const targetW = centerImageSize!.width;
           filterParts.push(
             `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
           );

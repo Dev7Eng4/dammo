@@ -17,6 +17,7 @@ export type UploadFrequency =
   | 'daily_1'
   | 'daily_2'
   | 'daily_3';
+export type VideoCreationOrder = 'oldest_first' | 'newest_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
@@ -50,6 +51,8 @@ export interface YoutubeChannel {
   linkedEmail: string;
   uploadSchedule: string[];
   sourceChannels: string[];
+  /** Oldest unprocessed first vs newest first when creating/preparing videos */
+  videoCreationOrder?: VideoCreationOrder;
   contentProjectId: string;
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
@@ -117,6 +120,7 @@ export interface CreateYoutubeChannelInput {
   language: ChannelLanguage;
   niche: string;
   sourceChannels?: string[];
+  videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
@@ -151,6 +155,7 @@ export interface UpdateYoutubeChannelInput {
   language: ChannelLanguage;
   niche: string;
   sourceChannels?: string[];
+  videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;

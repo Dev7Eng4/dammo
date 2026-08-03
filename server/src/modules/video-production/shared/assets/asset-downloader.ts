@@ -3,6 +3,7 @@ import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
 import { downloadYoutubeAudio } from '../../../../infrastructure/youtube/youtube-audio-downloader.js';
 import { downloadYoutubeThumbnail } from '../../../../infrastructure/youtube/youtube-thumbnail-downloader.js';
 import { downloadYoutubeTranscript, type TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
+import { withYoutubeDownloadRetries } from '../../../../infrastructure/youtube/youtube-download-retry.js';
 import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
 import { requireYoutubeVideoId } from '../../../../infrastructure/youtube/youtube-url.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
@@ -40,17 +41,20 @@ export async function downloadSourceAudioAssets(
   language: TranscriptLanguage,
 ): Promise<ReupAudioDownloadResult> {
   const youtubeVideoId = requireYoutubeVideoId(url);
-  const thumbnailPath = await downloadYoutubeThumbnail(url, outputDir, { outputBasename: 'old-thumbnail' });
-  const audioPath = await downloadYoutubeAudio(url, outputDir);
-  const transcriptPath = await downloadYoutubeTranscript(url, outputDir, language);
 
-  return {
-    youtubeVideoId,
-    outputDir,
-    thumbnailPath,
-    audioPath,
-    transcriptPath,
-  };
+  return withYoutubeDownloadRetries(async () => {
+    const thumbnailPath = await downloadYoutubeThumbnail(url, outputDir, { outputBasename: 'old-thumbnail' });
+    const audioPath = await downloadYoutubeAudio(url, outputDir);
+    const transcriptPath = await downloadYoutubeTranscript(url, outputDir, language);
+
+    return {
+      youtubeVideoId,
+      outputDir,
+      thumbnailPath,
+      audioPath,
+      transcriptPath,
+    };
+  });
 }
 
 export async function downloadReupAudioAssets(url: string, language: ChannelLanguage): Promise<ReupAudioDownloadResult> {

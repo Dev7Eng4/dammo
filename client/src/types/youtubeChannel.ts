@@ -11,7 +11,33 @@ export type ReupAudioVideoType = 'si' | 'ai';
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image';
 
-export type CaptionStyleKey = 'default' | 'bizudp_gothic' | 'zen_kaku' | 'noto_serif' | 'cyan' | 'cyan_navy' | 'yellow';
+export type CaptionStyleKey =
+  | 'default'
+  | 'noto_sans_red_white'
+  | 'noto_sans_red_white_box'
+  | 'noto_sans_blue_white'
+  | 'noto_sans_blue_white_box'
+  | 'noto_sans_yellow'
+  | 'noto_sans_yellow_box'
+  | 'noto_sans_cyan_white'
+  | 'noto_sans_cyan_white_box'
+  | 'noto_sans_white_purple'
+  | 'noto_sans_white_purple_box'
+  | 'bizudp_gothic'
+  | 'bizudp_gothic_red_white'
+  | 'bizudp_gothic_red_white_box'
+  | 'zen_kaku'
+  | 'zen_kaku_blue_white'
+  | 'zen_kaku_blue_white_box'
+  | 'noto_serif'
+  | 'serif_white_purple'
+  | 'serif_white_purple_box'
+  | 'serif_yellow'
+  | 'serif_yellow_box'
+  | 'serif_cyan_white'
+  | 'serif_cyan_white_box'
+  | 'serif_red_white'
+  | 'serif_red_white_box';
 
 export type BackgroundFootageMode = 'source' | 'local';
 
@@ -87,6 +113,7 @@ export function formatTargetAudienceLabel(value: string): string {
   return formatChannelLanguageLabel(value);
 }
 export type UploadFrequency = 'every_5_days' | 'every_3_days' | 'every_2_days' | 'daily_1' | 'daily_2' | 'daily_3';
+export type VideoCreationOrder = 'oldest_first' | 'newest_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
@@ -105,6 +132,8 @@ export interface YoutubeChannel {
   linkedEmail: string;
   uploadSchedule: string[];
   sourceChannels: string[];
+  /** Oldest unprocessed first vs newest first when creating/preparing videos */
+  videoCreationOrder?: VideoCreationOrder;
   contentProjectId: string;
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
@@ -455,6 +484,7 @@ export interface CreateYoutubeChannelPayload {
   language: YoutubeChannelLanguage;
   niche: string;
   sourceChannels?: string[];
+  videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
@@ -496,6 +526,7 @@ export interface AddYoutubeChannelFormValues {
   language: YoutubeChannelLanguage | '';
   niche: string;
   sourceChannels: string[];
+  videoCreationOrder: VideoCreationOrder;
   backgroundFootageSources: string[];
   backgroundFootageMode: BackgroundFootageMode;
   thumbnailStyleKey: string;

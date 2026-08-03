@@ -1,5 +1,6 @@
 import type {
   UploadFrequency,
+  VideoCreationOrder,
   YoutubeChannelLanguage,
   YoutubeChannelType,
   ReupAudioVideoType,
@@ -39,13 +40,32 @@ export const REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS: {
 ];
 
 export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] = [
-  { value: 'default', label: 'Mặc định (Noto Sans, trắng)' },
+  { value: 'default', label: 'Default' },
+  { value: 'noto_sans_red_white', label: 'Noto Sans Red text + White stroke' },
+  { value: 'noto_sans_red_white_box', label: 'Noto Sans Red text + White stroke + Box' },
+  { value: 'noto_sans_blue_white', label: 'Noto Sans Blue text + White stroke' },
+  { value: 'noto_sans_blue_white_box', label: 'Noto Sans Blue text + White stroke + Box' },
+  { value: 'noto_sans_yellow', label: 'Noto Sans Yellow text' },
+  { value: 'noto_sans_yellow_box', label: 'Noto Sans Yellow text + Box' },
+  { value: 'noto_sans_cyan_white', label: 'Noto Sans Cyan text + White stroke' },
+  { value: 'noto_sans_cyan_white_box', label: 'Noto Sans Cyan text + White stroke + Box' },
+  { value: 'noto_sans_white_purple', label: 'Noto Sans White text + Purple stroke' },
+  { value: 'noto_sans_white_purple_box', label: 'Noto Sans White text + Purple stroke + Box' },
   { value: 'bizudp_gothic', label: 'BIZ UDPGothic' },
-  { value: 'zen_kaku', label: 'Zen Kaku Gothic New' },
-  { value: 'noto_serif', label: 'Noto Serif JP' },
-  { value: 'cyan', label: 'Chữ xanh lơ' },
-  { value: 'cyan_navy', label: 'Chữ xanh lơ + viền xanh đậm' },
-  { value: 'yellow', label: 'Chữ vàng' },
+  { value: 'bizudp_gothic_red_white', label: 'BIZ UDPGothic Red text + White stroke' },
+  { value: 'bizudp_gothic_red_white_box', label: 'BIZ UDPGothic Red text + White stroke + Box' },
+  { value: 'zen_kaku', label: 'Zen Kaku' },
+  { value: 'zen_kaku_blue_white', label: 'Zen Kaku Blue text + White stroke' },
+  { value: 'zen_kaku_blue_white_box', label: 'Zen Kaku Blue text + White stroke + Box' },
+  { value: 'noto_serif', label: 'Noto Serif' },
+  { value: 'serif_white_purple', label: 'Noto Serif White text + Purple stroke' },
+  { value: 'serif_white_purple_box', label: 'Noto Serif White text + Purple stroke + Box' },
+  { value: 'serif_yellow', label: 'Noto Serif Yellow text' },
+  { value: 'serif_yellow_box', label: 'Noto Serif Yellow text + Box' },
+  { value: 'serif_cyan_white', label: 'Noto Serif Cyan text + White stroke' },
+  { value: 'serif_cyan_white_box', label: 'Noto Serif Cyan text + White stroke + Box' },
+  { value: 'serif_red_white', label: 'Noto Serif Red text + White stroke' },
+  { value: 'serif_red_white_box', label: 'Noto Serif Red text + White stroke + Box' },
 ];
 
 export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }[] = [
@@ -55,6 +75,11 @@ export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }
   { value: 'daily_1', label: '1 video mỗi ngày' },
   { value: 'daily_2', label: '2 video mỗi ngày' },
   { value: 'daily_3', label: '3 video mỗi ngày' },
+];
+
+export const VIDEO_CREATION_ORDER_OPTIONS: { value: VideoCreationOrder; label: string }[] = [
+  { value: 'oldest_first', label: 'Từ cũ đến mới' },
+  { value: 'newest_first', label: 'Từ mới đến cũ' },
 ];
 
 export function getPublishTimeSlotCount(frequency: UploadFrequency | ''): number {

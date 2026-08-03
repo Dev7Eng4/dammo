@@ -87,6 +87,7 @@ export async function createYoutubeProductionDestination(
     pipelineType: channel.type,
     language: channel.language,
     sourceChannels: channel.sourceChannels ?? [],
+    ...(channel.videoCreationOrder ? { videoCreationOrder: channel.videoCreationOrder } : {}),
     backgroundFootageSources: channel.backgroundFootageSources,
     backgroundFootageMode: channel.backgroundFootageMode,
     thumbnailStyleKey: channel.thumbnailStyleKey,

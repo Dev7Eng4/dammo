@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { resolveSourceChannelVideoDir } from '../../../../config/paths.js';
 import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../../../shared/http/errors.js';
@@ -148,15 +149,32 @@ async function prepareSiRemoteStockBackground(
 
     let stockRawPath: string;
     try {
-      stockRawPath = await timedStep(
-        'Download stock video',
-        () =>
-          downloadYoutubeVideo(chosen.video.url, stockTempDir, {
-            outputBasename: 'stock_raw',
-            onLog: msg => onLog?.(`[reup-si] ${msg}`),
-          }),
-        stepOpts,
-      );
+      const sourceVideoDir = resolveSourceChannelVideoDir(chosen.sourceId, chosen.video.id);
+      const localVideoPath = sourceVideoDir ? path.join(sourceVideoDir, 'video.mp4') : null;
+      const hasLocalVideo = localVideoPath
+        ? await fs.access(localVideoPath).then(() => true).catch(() => false)
+        : false;
+
+      if (hasLocalVideo && localVideoPath) {
+        stockRawPath = await timedStep(
+          'Use pre-downloaded stock video',
+          async () => {
+            log(`[reup-si] Using pre-downloaded stock video: ${localVideoPath}`);
+            return localVideoPath;
+          },
+          stepOpts,
+        );
+      } else {
+        stockRawPath = await timedStep(
+          'Download stock video',
+          () =>
+            downloadYoutubeVideo(chosen.video.url, stockTempDir, {
+              outputBasename: 'stock_raw',
+              onLog: msg => onLog?.(`[reup-si] ${msg}`),
+            }),
+          stepOpts,
+        );
+      }
     } catch {
       failedKeys.add(stockVideoKey(chosen.sourceId, chosen.video.id));
       log(

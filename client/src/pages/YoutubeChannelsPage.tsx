@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
-import { fetchYoutubeChannels, fetchYoutubeChannelStats } from '../api/youtubeChannels';
+import { fetchYoutubeChannels, fetchYoutubeChannelStats, deleteAllUploadedVideos } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
+import { DeleteUploadedVideosConfirmModal } from '../components/youtube-channels/DeleteUploadedVideosConfirmModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
@@ -40,6 +41,8 @@ export function YoutubeChannelsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [videoCountAction, setVideoCountAction] = useState<'create' | 'prepare' | null>(null);
   const [showUploadCountModal, setShowUploadCountModal] = useState(false);
+  const [showDeleteUploadedModal, setShowDeleteUploadedModal] = useState(false);
+  const [deletingUploadedVideos, setDeletingUploadedVideos] = useState(false);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
@@ -294,6 +297,23 @@ export function YoutubeChannelsPage() {
     });
   }
 
+  async function handleDeleteUploadedVideos() {
+    setDeletingUploadedVideos(true);
+    try {
+      const result = await deleteAllUploadedVideos();
+      setShowDeleteUploadedModal(false);
+      toast.success(
+        result.deletedFolders === 0
+          ? 'Không có folder uploads nào để xóa'
+          : `Đã xóa ${result.deletedFolders} folder video trên ${result.channelsProcessed} kênh`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa folder uploads');
+    } finally {
+      setDeletingUploadedVideos(false);
+    }
+  }
+
   async function handleOpenProfile(channel: YoutubeChannel) {
     if (!canOpenGpmProfile(channel.linkedEmail)) return;
     if (openingProfileIds.has(channel.id)) return;
@@ -341,6 +361,8 @@ export function YoutubeChannelsPage() {
               canUpload={canUpload}
               uploadDisabledReason={uploadDisabledReason}
               onUpload={() => setShowUploadCountModal(true)}
+              deletingUploadedVideos={deletingUploadedVideos}
+              onDeleteUploadedVideos={() => setShowDeleteUploadedModal(true)}
               canEdit={canEdit}
               editDisabledReason={editDisabledReason}
               onEdit={() => setShowEditModal(true)}
@@ -412,6 +434,13 @@ export function YoutubeChannelsPage() {
                 ? `Tải lên video Created cho kênh ${selectedChannel.name}`
                 : undefined
         }
+      />
+
+      <DeleteUploadedVideosConfirmModal
+        open={showDeleteUploadedModal}
+        deleting={deletingUploadedVideos}
+        onClose={() => setShowDeleteUploadedModal(false)}
+        onConfirm={() => void handleDeleteUploadedVideos()}
       />
 
       {selectedChannel ? (

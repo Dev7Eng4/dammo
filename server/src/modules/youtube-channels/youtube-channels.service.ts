@@ -27,8 +27,9 @@ import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/
 import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
-import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
+import { resolveYoutubeChannelVideoDir, youtubeChannelUploadsDir } from '../../config/paths.js';
 import fs from 'node:fs';
+import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
 import { channelAvatarsService } from './channel-avatars.service.js';
@@ -42,6 +43,7 @@ import type {
   ReupAudioBackgroundImage,
   ReupAudioVideoType,
   UpdateYoutubeChannelInput,
+  VideoCreationOrder,
   YoutubeChannel,
   YoutubeChannelStats,
   YoutubeChannelType,
@@ -115,6 +117,7 @@ type ChannelConfigInput = Pick<
   | 'type'
   | 'language'
   | 'sourceChannels'
+  | 'videoCreationOrder'
   | 'backgroundFootageSources'
   | 'backgroundFootageMode'
   | 'thumbnailStyleKey'
@@ -154,6 +157,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   linkedEmail: string;
   sourceChannels: string[];
   uploadSchedule: string[];
+  videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
@@ -341,6 +345,9 @@ function validateChannelConfig(input: ChannelConfigInput): {
     linkedEmail,
     sourceChannels,
     uploadSchedule,
+    ...(isReupChannelType(input.type)
+      ? { videoCreationOrder: input.videoCreationOrder ?? 'oldest_first' }
+      : {}),
     ...(backgroundFootageMode === 'local'
       ? { backgroundFootageMode: 'local' as const }
       : backgroundFootageSources.length > 0
@@ -567,6 +574,31 @@ export class YoutubeChannelsService {
     return { deleted };
   }
 
+  deleteAllUploadedVideoFolders(): { channelsProcessed: number; deletedFolders: number } {
+    const channels = youtubeChannelsRepository.findAll();
+    let deletedFolders = 0;
+
+    for (const channel of channels) {
+      const uploadsDir = youtubeChannelUploadsDir(channel.id);
+      if (!fs.existsSync(uploadsDir)) continue;
+
+      let entries: fs.Dirent[];
+      try {
+        entries = fs.readdirSync(uploadsDir, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        fs.rmSync(path.join(uploadsDir, entry.name), { recursive: true, force: true });
+        deletedFolders += 1;
+      }
+    }
+
+    return { channelsProcessed: channels.length, deletedFolders };
+  }
+
   async syncVideos(
     id: string,
   ): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string }> {
@@ -682,6 +714,7 @@ export class YoutubeChannelsService {
       contentProjectId: buildProjectId(handle),
       createdAt: new Date().toISOString(),
       uploadFrequency: input.uploadFrequency,
+      ...(config.videoCreationOrder ? { videoCreationOrder: config.videoCreationOrder } : {}),
       ...(config.backgroundFootageMode === 'local'
         ? { backgroundFootageMode: 'local' as const }
         : config.backgroundFootageSources?.length
@@ -816,6 +849,12 @@ export class YoutubeChannelsService {
         next.handle = identityUpdate.handle;
         next.youtubeUrl = identityUpdate.youtubeUrl;
         next.channelId = identityUpdate.channelId;
+      }
+
+      if (config.videoCreationOrder) {
+        next.videoCreationOrder = config.videoCreationOrder;
+      } else {
+        delete next.videoCreationOrder;
       }
 
       if (config.backgroundFootageMode === 'local') {

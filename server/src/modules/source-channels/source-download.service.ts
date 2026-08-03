@@ -1,15 +1,18 @@
 import fs from 'node:fs/promises';
 import { sourceChannelVideoDir } from '../../config/paths.js';
+import { downloadYoutubeVideo } from '../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../shared/http/errors.js';
 import { downloadSourceAudioAssets } from '../video-production/shared/assets/asset-downloader.js';
 import { taskQueueRepository } from '../task-queue/task-queue.repository.js';
 import { sourceChannelsRepository } from './source-channels.repository.js';
-import type { SourceVideoRecord } from './source-channels.types.js';
+import type { SourcePurpose, SourceVideoRecord } from './source-channels.types.js';
 import {
   DEFAULT_SOURCE_TRANSCRIPT_LANGUAGE,
   SOURCE_VIDEOS_PER_DOWNLOAD_RUN,
 } from './source-download.constants.js';
 import { sourceVideosRepository } from './source-videos.repository.js';
+
+const DOWNLOADABLE_PURPOSES = new Set<SourcePurpose>(['reup', 'background_footage']);
 
 export interface DownloadSourceVideosOptions {
   maxVideos?: number;
@@ -50,6 +53,14 @@ export class SourceDownloadService {
       throw new AppError('Only YouTube sources can be downloaded', 400, 'UNSUPPORTED_PLATFORM');
     }
 
+    if (!DOWNLOADABLE_PURPOSES.has(source.purpose)) {
+      throw new AppError(
+        'Only reup and background_footage sources can be downloaded',
+        400,
+        'UNSUPPORTED_PURPOSE',
+      );
+    }
+
     const store = sourceVideosRepository.read(sourceId);
     if (!store || store.videos.length === 0) {
       throw new AppError('No source videos available', 400, 'NO_SOURCE_VIDEOS');
@@ -71,10 +82,13 @@ export class SourceDownloadService {
       return result;
     }
 
+    const modeLabel =
+      source.purpose === 'background_footage' ? 'video mp4' : 'audio, thumbnail, transcript';
+
     log(
       options?.taskJobId,
       'info',
-      `Downloading up to ${pending.length} video(s) for ${source.name} (newest first)...`,
+      `Downloading up to ${pending.length} video(s) for ${source.name} (${modeLabel}, newest first)...`,
     );
 
     for (const video of pending) {
@@ -88,20 +102,32 @@ export class SourceDownloadService {
         log(options?.taskJobId, 'info', `Downloading ${video.title} (${video.id})...`);
         await fs.mkdir(outputDir, { recursive: true });
 
-        const downloaded = await downloadSourceAudioAssets(
-          video.url,
-          outputDir,
-          DEFAULT_SOURCE_TRANSCRIPT_LANGUAGE,
-        );
+        if (source.purpose === 'background_footage') {
+          const videoPath = await downloadYoutubeVideo(video.url, outputDir, {
+            outputBasename: 'video',
+            onLog: msg => log(options?.taskJobId, 'info', msg),
+          });
 
-        sourceVideosRepository.markVideoDownloaded(sourceId, video.id);
-        result.downloaded.push(video.id);
+          sourceVideosRepository.markVideoDownloaded(sourceId, video.id);
+          result.downloaded.push(video.id);
 
-        log(
-          options?.taskJobId,
-          'ok',
-          `Downloaded → ${downloaded.outputDir} (audio, thumbnail, transcript)`,
-        );
+          log(options?.taskJobId, 'ok', `Downloaded → ${videoPath}`);
+        } else {
+          const downloaded = await downloadSourceAudioAssets(
+            video.url,
+            outputDir,
+            DEFAULT_SOURCE_TRANSCRIPT_LANGUAGE,
+          );
+
+          sourceVideosRepository.markVideoDownloaded(sourceId, video.id);
+          result.downloaded.push(video.id);
+
+          log(
+            options?.taskJobId,
+            'ok',
+            `Downloaded → ${downloaded.outputDir} (audio, thumbnail, transcript)`,
+          );
+        }
       } catch (err) {
         const reason = err instanceof Error ? err.message : 'Unknown error';
         result.failed.push({ videoId: video.id, reason });
@@ -134,7 +160,9 @@ export class SourceDownloadService {
   ): Promise<DownloadSourceVideosResult[]> {
     const sourceIds = sourceChannelsRepository
       .findAll()
-      .filter(source => source.platform === 'youtube')
+      .filter(
+        source => source.platform === 'youtube' && DOWNLOADABLE_PURPOSES.has(source.purpose),
+      )
       .map(source => source.id);
 
     return this.downloadVideosForSources(sourceIds, options);

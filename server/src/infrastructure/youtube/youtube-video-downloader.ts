@@ -8,6 +8,7 @@ import {
   YOUTUBE_VIDEO_DOWNLOAD_FORMAT_LABELS,
   YOUTUBE_VIDEO_DOWNLOAD_FORMATS,
 } from './youtube-download.constants.js';
+import { withYoutubeDownloadRetries } from './youtube-download-retry.js';
 
 export interface DownloadYoutubeVideoOptions {
   outputBasename?: string;
@@ -15,7 +16,7 @@ export interface DownloadYoutubeVideoOptions {
   onLog?: (msg: string) => void;
 }
 
-export async function downloadYoutubeVideo(
+async function downloadYoutubeVideoOnce(
   url: string,
   outputDir: string,
   options?: DownloadYoutubeVideoOptions,
@@ -50,4 +51,18 @@ export async function downloadYoutubeVideo(
   }
 
   throw new AppError('Failed to download YouTube video', 502, 'YOUTUBE_DOWNLOAD_FAILED');
+}
+
+export async function downloadYoutubeVideo(
+  url: string,
+  outputDir: string,
+  options?: DownloadYoutubeVideoOptions,
+): Promise<string> {
+  return withYoutubeDownloadRetries(() => downloadYoutubeVideoOnce(url, outputDir, options), {
+    onRetry: ({ attempt, maxAttempts, delayMs, reason }) => {
+      options?.onLog?.(
+        `Download failed (attempt ${attempt}/${maxAttempts}), retrying in ${Math.round(delayMs / 1000)}s: ${reason}`,
+      );
+    },
+  });
 }

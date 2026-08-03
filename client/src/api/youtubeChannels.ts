@@ -146,6 +146,13 @@ export function deleteYoutubeChannelVideos(channelId: string, videoIds: string[]
   );
 }
 
+export function deleteAllUploadedVideos() {
+  return fetchJson<{ channelsProcessed: number; deletedFolders: number }>(
+    `${API_V1}/youtube-channels/uploaded-videos`,
+    { method: 'DELETE' },
+  );
+}
+
 export function createYoutubeChannelVideos(id: string) {
   return fetchJson<CreateReupVideosResponse>(
     `${API_V1}/youtube-channels/${id}/create-videos`,

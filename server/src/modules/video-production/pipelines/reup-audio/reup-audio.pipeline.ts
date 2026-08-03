@@ -78,9 +78,16 @@ function collectSourceVideos(sourceCatalog: SourceCatalog, sourceChannels: strin
   return videos;
 }
 
-/** Chọn video theo thứ tự mảng (index 0 trước), bỏ qua video đã prepare. */
-function selectVideosTopDown(videos: SourceVideoWithSource[], preparedVideoIds: Set<string>, limit: number): SourceVideoWithSource[] {
-  return videos.filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id)).slice(0, limit);
+/** Chọn video theo thứ tự tạo (mảng store thường mới → cũ). Bỏ qua video đã prepare. */
+function selectVideosForCreation(
+  videos: SourceVideoWithSource[],
+  preparedVideoIds: Set<string>,
+  limit: number,
+  order: 'oldest_first' | 'newest_first' = 'oldest_first',
+): SourceVideoWithSource[] {
+  const eligible = videos.filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id));
+  const ordered = order === 'oldest_first' ? [...eligible].reverse() : eligible;
+  return ordered.slice(0, limit);
 }
 
 const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);
@@ -201,7 +208,12 @@ async function resolveReupVideoDownload(
 function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[], maxVideos?: number): ReupVideoTask[] {
   const preparedVideoIds = destination.getPreparedVideoIds();
   const limit = maxVideos ?? REUP_VIDEOS_PER_RUN;
-  const selected = selectVideosTopDown(videos, preparedVideoIds, limit);
+  const selected = selectVideosForCreation(
+    videos,
+    preparedVideoIds,
+    limit,
+    destination.videoCreationOrder ?? 'oldest_first',
+  );
 
   return selected.map(video => ({
     link: video.url,

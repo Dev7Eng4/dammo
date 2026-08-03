@@ -1,3 +1,4 @@
+import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
 import { sourceChannelsService } from '../source-channels/source-channels.service.js';
 import type { SourcePurpose } from '../source-channels/source-channels.types.js';
@@ -8,7 +9,8 @@ import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.j
 import { taskQueueRepository } from './task-queue.repository.js';
 import type { AddSourceTaskPayload, CreateVideoTaskPayload, DownloadSourceTaskPayload, TaskJob, UploadVideoTaskPayload } from './task-queue.types.js';
 
-let workerRunning = false;
+let activeCount = 0;
+let filling = false;
 let workerInterval: ReturnType<typeof setInterval> | null = null;
 
 function updateProgress(
@@ -162,17 +164,24 @@ async function processJob(job: TaskJob): Promise<void> {
   }
 }
 
-async function processNextJob(): Promise<void> {
-  if (workerRunning || taskQueueRepository.isPaused()) return;
+function fillSlots(): void {
+  if (filling || taskQueueRepository.isPaused()) return;
 
-  const job = taskQueueRepository.findNextQueued();
-  if (!job) return;
-
-  workerRunning = true;
+  filling = true;
   try {
-    await processJob(job);
+    while (activeCount < env.taskQueueConcurrency) {
+      const job = taskQueueRepository.findNextQueued();
+      if (!job) break;
+
+      activeCount += 1;
+      // processJob sets status to running synchronously before first await,
+      // so the next findNextQueued in this loop will not reclaim the same job.
+      processJob(job).finally(() => {
+        activeCount = Math.max(0, activeCount - 1);
+      });
+    }
   } finally {
-    workerRunning = false;
+    filling = false;
   }
 }
 
@@ -180,14 +189,18 @@ export function startTaskQueueWorker(pollMs = 2000): void {
   if (workerInterval) return;
 
   workerInterval = setInterval(() => {
-    processNextJob().catch(() => {
-      workerRunning = false;
-    });
+    try {
+      fillSlots();
+    } catch {
+      filling = false;
+    }
   }, pollMs);
 
-  processNextJob().catch(() => {
-    workerRunning = false;
-  });
+  try {
+    fillSlots();
+  } catch {
+    filling = false;
+  }
 }
 
 export function stopTaskQueueWorker(): void {

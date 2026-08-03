@@ -6,7 +6,6 @@ import {
   isHardwareEncoder,
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
-import { materializeStillJpeg } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import {
@@ -28,7 +27,10 @@ import {
   resolveRandomSiAudioSpeed,
 } from '../si-video/si.constants.js';
 import { runFfmpegFilterComplex } from '../si-video/si-ffmpeg.js';
-import { appendChannelAvatarOverlayFilters } from '../si-video/channel-avatar-overlay.js';
+import {
+  appendChannelAvatarOverlayFilters,
+  ensurePrebakedChannelAvatar,
+} from '../si-video/channel-avatar-overlay.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
@@ -166,12 +168,10 @@ export async function assembleReupAiSlideshowVideo(
   const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
   const filterScriptPath = path.join(workDir, 'ai_video_filter.txt');
   const tempAssPath = path.join(workDir, 'ai_temp_sub.ass');
-  const loopableAvatarPath = path.join(workDir, 'channel_avatar_loop.jpg');
   let preparedAvatarPath: string | null = null;
 
   if (channelAvatarPath) {
-    await materializeStillJpeg(channelAvatarPath, loopableAvatarPath, onLog);
-    preparedAvatarPath = loopableAvatarPath;
+    preparedAvatarPath = await ensurePrebakedChannelAvatar(channelAvatarPath, onLog);
   }
 
   const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
@@ -203,7 +203,9 @@ export async function assembleReupAiSlideshowVideo(
   let videoInputLabel = '0:v';
 
   if (channelAvatarPath) {
-    appendChannelAvatarOverlayFilters(filterParts, videoInputLabel, '2:v', 'v_with_avatar');
+    appendChannelAvatarOverlayFilters(filterParts, videoInputLabel, '2:v', 'v_with_avatar', {
+      prebaked: true,
+    });
     videoInputLabel = 'v_with_avatar';
   }
 
@@ -249,7 +251,6 @@ export async function assembleReupAiSlideshowVideo(
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
-  await fs.unlink(loopableAvatarPath).catch(() => undefined);
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }

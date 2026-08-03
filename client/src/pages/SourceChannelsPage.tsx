@@ -76,7 +76,21 @@ export function SourceChannelsPage() {
   const selectedSources = list.items.filter(source => selectedIds.has(source.id));
   const selectedSource = selectedSources.length === 1 ? selectedSources[0] : null;
   const canDownload =
-    selectedIds.size > 0 && selectedSources.every(source => source.platform === 'youtube');
+    selectedIds.size > 0 &&
+    selectedSources.every(
+      source =>
+        source.platform === 'youtube' &&
+        (source.purpose === 'reup' || source.purpose === 'background_footage'),
+    );
+
+  const downloadDisabledReason =
+    selectedIds.size === 0
+      ? 'Chọn nguồn để tải xuống'
+      : !canDownload
+        ? selectedSources.some(source => source.platform !== 'youtube')
+          ? 'Chỉ hỗ trợ tải xuống cho nguồn YouTube'
+          : 'Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền'
+        : undefined;
 
   function clearSelection() {
     setSelectedIds(new Set());
@@ -308,13 +322,7 @@ export function SourceChannelsPage() {
             riskFilter={riskFilter}
             search={search}
             canDownload={canDownload}
-            downloadDisabledReason={
-              selectedIds.size === 0
-                ? 'Chọn nguồn để tải xuống'
-                : !canDownload
-                  ? 'Chỉ hỗ trợ tải xuống cho nguồn YouTube'
-                  : undefined
-            }
+            downloadDisabledReason={downloadDisabledReason}
             onPlatformFilterChange={handlePlatformFilterChange}
             onPurposeFilterChange={handlePurposeFilterChange}
             onRiskFilterChange={handleRiskFilterChange}

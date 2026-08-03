@@ -5,6 +5,7 @@ import type {
   ReupAudioBackgroundImage,
   ReupAudioVideoType,
   AiSceneDensityMaxSec,
+  VideoCreationOrder,
 } from '../../youtube-channels/youtube-channels.types.js';
 import type { VideoPrepareItem } from '../../youtube-channels/video-prepare.types.js';
 
@@ -23,6 +24,7 @@ export interface ProductionDestination {
   pipelineType: ProductionPipelineType;
   language: ChannelLanguage;
   sourceChannels: string[];
+  videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
