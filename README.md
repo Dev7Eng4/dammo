@@ -56,3 +56,5 @@ meta -> hiện tại đang mở 1 profile 3 tabs, 1 profile 2 tabs -> mong muố
 https://www.youtube.com/@NamidaShohosen 7327mm
 
 - thêm phần chọn background image cho thumbnail fulltext -> upload ảnh -> thay đổi ảnh -> prompt
+
+- khi tải source -> ví dụ tải đuợc bao nhiêu video phải bảo hoàn thành 1/10 video

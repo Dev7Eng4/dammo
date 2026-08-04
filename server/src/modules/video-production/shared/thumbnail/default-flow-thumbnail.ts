@@ -44,6 +44,30 @@ async function assertReferenceImagesExist(paths: string[]): Promise<void> {
   }
 }
 
+/** Copy refs into workDir as ref-1.ext, ref-2.ext, … so Flow attach avoids long Windows paths. */
+async function copyReferenceImagesToWorkDir(workDir: string, sourcePaths: string[]): Promise<string[]> {
+  await fs.mkdir(workDir, { recursive: true });
+  const copied: string[] = [];
+
+  for (let index = 0; index < sourcePaths.length; index += 1) {
+    const sourcePath = sourcePaths[index]!;
+    const ext = path.extname(sourcePath).toLowerCase() || '.jpg';
+    const destPath = path.join(workDir, `ref-${index + 1}${ext}`);
+    try {
+      await fs.copyFile(sourcePath, destPath);
+    } catch (err) {
+      throw new AppError(
+        `Failed to copy reference image to workDir: ${sourcePath} → ${destPath} (${err instanceof Error ? err.message : String(err)})`,
+        500,
+        'REFERENCE_IMAGE_COPY_FAILED',
+      );
+    }
+    copied.push(destPath);
+  }
+
+  return copied;
+}
+
 export async function runDefaultFlowThumbnail(
   workDir: string,
   language: ChannelLanguage,
@@ -56,6 +80,7 @@ export async function runDefaultFlowThumbnail(
       : [path.join(workDir, OLD_THUMBNAIL_FILENAME)];
 
   await assertReferenceImagesExist(referenceImagePaths);
+  const flowReferenceImagePaths = await copyReferenceImagesToWorkDir(workDir, referenceImagePaths);
 
   const promptUsed = await executePromptTemplate(language, promptKey, []);
   if (!promptUsed.trim()) {
@@ -78,7 +103,7 @@ export async function runDefaultFlowThumbnail(
       generateOptions: {
         outputDir: workDir,
         fileName: THUMBNAIL_FILENAME,
-        referenceImagePaths,
+        referenceImagePaths: flowReferenceImagePaths,
         debugScreenshotPath,
       },
       onProgress: options?.onProgress,

@@ -128,6 +128,8 @@ export interface FlowDomSelectors {
   referenceImageInput: string;
   addToPromptButton: string;
   btnAttach: string;
+  /** Attach button after the first reference image is already in the prompt. */
+  btnAttachSecond: string;
   btnUploadMedia: string;
 }
 
@@ -169,6 +171,7 @@ export const FLOW_CONFIG: FlowConfig = {
     referenceImageInput: 'input[type="file"]',
     addToPromptButton: 'button:has-text("Add to Prompt")',
     btnAttach: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[2]/div[1]/div/button[1]',
+    btnAttachSecond: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[3]/div[1]/div/button[1]',
     btnUploadMedia: 'button:has-text("Upload media")',
   },
 };

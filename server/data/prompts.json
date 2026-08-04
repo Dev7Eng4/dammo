@@ -1,6 +1,25 @@
 {
   "promptSets": [
     {
+      "id": "ja:change_background_channel",
+      "baseKey": "change_background_channel",
+      "language": "ja",
+      "name": "Change Background Channel",
+      "category": "thumbnail",
+      "createdAt": "2026-07-27T16:24:41.606Z",
+      "updatedAt": "2026-08-03T06:54:20.470Z",
+      "steps": [
+        {
+          "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
+          "key": "change_background_channel",
+          "step": 1,
+          "outputType": "image",
+          "useReferenceImage": true,
+          "useChannelBackgroundImage": true
+        }
+      ]
+    },
+    {
       "id": "all:image_scenes_with_references",
       "baseKey": "image_scenes_with_references",
       "language": "all",
@@ -59,25 +78,6 @@
           "step": 1,
           "outputType": "image",
           "useReferenceImage": true
-        }
-      ]
-    },
-    {
-      "id": "ja:change_background_channel",
-      "baseKey": "change_background_channel",
-      "language": "ja",
-      "name": "Change Background Channel",
-      "category": "thumbnail",
-      "createdAt": "2026-07-27T16:24:41.606Z",
-      "updatedAt": "2026-07-27T16:38:45.864Z",
-      "steps": [
-        {
-          "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
-          "key": "change_background_channel",
-          "step": 1,
-          "outputType": "image",
-          "useReferenceImage": true,
-          "useChannelBackgroundImage": true
         }
       ]
     },

@@ -548,8 +548,10 @@ function beginUploadImageWait(page: Page, timeoutMs = 60_000): Promise<Response>
   );
 }
 
-async function attachReferenceFile(page: Page, imagePath: string): Promise<void> {
-  const attachButton = page.locator(`xpath=${FLOW_CONFIG.selectors.btnAttach}`);
+async function attachReferenceFile(page: Page, imagePath: string, index: number): Promise<void> {
+  const attachSelector =
+    index === 0 ? FLOW_CONFIG.selectors.btnAttach : FLOW_CONFIG.selectors.btnAttachSecond;
+  const attachButton = page.locator(`xpath=${attachSelector}`);
   await humanClick(page, attachButton);
   await randomDelay(500, 1_000);
 
@@ -572,12 +574,12 @@ async function attachReferenceFile(page: Page, imagePath: string): Promise<void>
   console.log(`[flow] selected reference image via file input: ${imagePath}`);
 }
 
-async function uploadReferenceImage(page: Page, imagePath: string): Promise<void> {
+async function uploadReferenceImage(page: Page, imagePath: string, index: number): Promise<void> {
   await fs.access(imagePath);
 
   const uploadPromise = beginUploadImageWait(page);
 
-  await attachReferenceFile(page, imagePath);
+  await attachReferenceFile(page, imagePath, index);
 
   try {
     await uploadPromise;
@@ -635,8 +637,8 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
       const referencePaths = resolveReferenceImagePaths(options);
-      for (const imagePath of referencePaths) {
-        await uploadReferenceImage(page, imagePath);
+      for (let i = 0; i < referencePaths.length; i++) {
+        await uploadReferenceImage(page, referencePaths[i], i);
         await randomDelay(400, 900);
       }
 
