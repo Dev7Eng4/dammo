@@ -351,7 +351,11 @@ export function beginFlowToolBatchImagesCollector(
             `[flow-api] batchGenerateImages non-OK ${response.status()} (continuing idle check): ${bodyText.slice(0, 200)}`,
           );
           if (!settled) scheduleIdleCheck();
-        })();
+        })().catch(err => {
+          finish(() =>
+            reject(err instanceof Error ? err : new Error(String(err))),
+          );
+        });
         return;
       }
 

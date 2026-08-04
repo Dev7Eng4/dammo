@@ -179,6 +179,8 @@ export class FlowBrowserService {
           mediaAssets.push(asset);
         },
       });
+      // Prevent unhandledRejection if quota fails during submitMavidEditorPrompt delay
+      void collectorPromise.catch(() => undefined);
 
       const promptPayload = JSON.stringify(
         visuals.map(visual => ({
@@ -236,6 +238,8 @@ export class FlowBrowserService {
 
     try {
       const batchResponsePromise = beginBatchGenerateImagesWait(page, projectId, timeoutMs);
+      // Prevent unhandledRejection if quota fails during sendPrompt delay
+      void batchResponsePromise.catch(() => undefined);
 
       await handler.sendPrompt(page, prompt, {
         pasteStrategy: options?.pasteStrategy ?? 'insertText',

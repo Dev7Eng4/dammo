@@ -10,6 +10,7 @@ import {
   type ChromeProfileRole,
   type CreateChromeProfileInput,
   type ResetSubProfilesResult,
+  type UpdateChromeProfileInput,
 } from './chrome-profiles.types.js';
 
 export class ChromeProfilesService {
@@ -75,6 +76,21 @@ export class ChromeProfilesService {
     };
 
     return position === 'prepend' ? chromeProfilesRepository.prepend(profile) : chromeProfilesRepository.append(profile);
+  }
+
+  update(id: string, input: UpdateChromeProfileInput): ChromeProfile {
+    this.getById(id);
+    const name = input.name.trim();
+    const existing = chromeProfilesRepository.findByName(name);
+    if (existing && existing.id !== id) {
+      throw new AppError('Chrome profile name already exists', 400, 'DUPLICATE_NAME');
+    }
+
+    const profile = chromeProfilesRepository.updateName(id, name);
+    if (!profile) {
+      throw new AppError('Chrome profile not found', 404, 'NOT_FOUND');
+    }
+    return profile;
   }
 
   async open(id: string): Promise<ChromeProfile> {

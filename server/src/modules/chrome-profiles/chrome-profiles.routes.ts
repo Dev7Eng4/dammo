@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
-import { createChromeProfileSchema } from './chrome-profiles.schema.js';
+import { createChromeProfileSchema, updateChromeProfileSchema } from './chrome-profiles.schema.js';
 import { chromeProfilesService } from './chrome-profiles.service.js';
 
 export function createChromeProfilesRoutes() {
@@ -18,6 +18,12 @@ export function createChromeProfilesRoutes() {
   app.post('/reset-sub-profiles', async (c) => {
     const result = await chromeProfilesService.resetSubProfiles();
     return c.json(result);
+  });
+
+  app.patch('/:id', zValidator('json', updateChromeProfileSchema), (c) => {
+    const body = c.req.valid('json');
+    const item = chromeProfilesService.update(c.req.param('id'), body);
+    return c.json({ item });
   });
 
   app.post('/:id/open', async (c) => {

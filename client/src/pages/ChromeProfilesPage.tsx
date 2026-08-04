@@ -3,6 +3,7 @@ import { fetchChromeProfiles, openChromeProfile, resetSubChromeProfiles, setMain
 import { AddChromeProfileModal } from '../components/chrome-profiles/AddChromeProfileModal';
 import { ChromeProfilesTable } from '../components/chrome-profiles/ChromeProfilesTable';
 import { ChromeProfilesToolbar } from '../components/chrome-profiles/ChromeProfilesToolbar';
+import { EditChromeProfileModal } from '../components/chrome-profiles/EditChromeProfileModal';
 import { useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { ChromeProfile, ChromeProfileRole } from '../types/chromeProfile';
@@ -13,6 +14,7 @@ export function ChromeProfilesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
@@ -49,6 +51,11 @@ export function ChromeProfilesPage() {
 
   function handleAddSuccess() {
     toast.success('Đã tạo Chrome profile thành công');
+    handleRefresh();
+  }
+
+  function handleEditSuccess() {
+    toast.success('Đã cập nhật tên Chrome profile');
     handleRefresh();
   }
 
@@ -130,8 +137,10 @@ export function ChromeProfilesPage() {
               settingMain={settingRole}
               resetting={resettingSub}
               canOpen={selectedId !== null}
+              canEdit={selectedId !== null}
               canSetMain={selectedProfile !== null && selectedProfile.role !== 'main'}
               onAddProfile={() => setShowAddModal(true)}
+              onEditProfile={() => setShowEditModal(true)}
               onOpenProfile={handleOpenProfile}
               onSetMainProfile={handleSetMainProfile}
               onResetSubProfiles={handleResetSubProfiles}
@@ -158,6 +167,13 @@ export function ChromeProfilesPage() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      <EditChromeProfileModal
+        open={showEditModal}
+        profile={selectedProfile}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={handleEditSuccess}
       />
     </div>
   );

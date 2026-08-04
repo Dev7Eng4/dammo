@@ -16,7 +16,15 @@ export interface CreateChromeProfilePayload {
   name: string;
 }
 
+export interface UpdateChromeProfilePayload {
+  name: string;
+}
+
 export interface AddChromeProfileFormValues {
+  name: string;
+}
+
+export interface EditChromeProfileFormValues {
   name: string;
 }
 

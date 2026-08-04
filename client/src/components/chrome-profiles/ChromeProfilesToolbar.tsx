@@ -7,8 +7,10 @@ interface ChromeProfilesToolbarProps {
   settingMain?: boolean;
   resetting?: boolean;
   canOpen?: boolean;
+  canEdit?: boolean;
   canSetMain?: boolean;
   onAddProfile: () => void;
+  onEditProfile: () => void;
   onOpenProfile: () => void;
   onSetMainProfile: () => void;
   onResetSubProfiles: () => void;
@@ -22,8 +24,10 @@ export function ChromeProfilesToolbar({
   settingMain,
   resetting,
   canOpen,
+  canEdit,
   canSetMain,
   onAddProfile,
+  onEditProfile,
   onOpenProfile,
   onSetMainProfile,
   onResetSubProfiles,
@@ -46,6 +50,19 @@ export function ChromeProfilesToolbar({
             <path d="M21 3v6h-6" />
           </svg>
           Làm mới
+        </Button>
+        <Button
+          variant="outlined"
+          size="sm"
+          className="rounded-lg"
+          onClick={onEditProfile}
+          disabled={!canEdit || loading || resetting || opening || settingMain}
+        >
+          <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </svg>
+          Sửa tên
         </Button>
         <Button
           variant="outlined"

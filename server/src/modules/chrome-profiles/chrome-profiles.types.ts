@@ -16,6 +16,10 @@ export interface CreateChromeProfileInput {
   name: string;
 }
 
+export interface UpdateChromeProfileInput {
+  name: string;
+}
+
 export interface ResetSubProfilesResult {
   deletedCount: number;
   items: ChromeProfile[];

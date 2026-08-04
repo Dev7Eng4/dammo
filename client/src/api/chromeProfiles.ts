@@ -5,6 +5,7 @@ import type {
   ChromeProfilesResponse,
   CreateChromeProfilePayload,
   ResetSubProfilesResponse,
+  UpdateChromeProfilePayload,
 } from '../types/chromeProfile';
 
 export function fetchChromeProfiles(options?: FetchOptions) {
@@ -17,6 +18,14 @@ export function fetchChromeProfiles(options?: FetchOptions) {
 export function createChromeProfile(payload: CreateChromeProfilePayload) {
   return fetchJson<{ item: ChromeProfile }>(`${API_V1}/chrome-profiles`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateChromeProfile(id: string, payload: UpdateChromeProfilePayload) {
+  return fetchJson<{ item: ChromeProfile }>(`${API_V1}/chrome-profiles/${id}`, {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });

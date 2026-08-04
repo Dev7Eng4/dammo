@@ -14,6 +14,11 @@ export function startServer() {
   void ensurePromptsDir();
   void verifySystemChrome();
 
+  // Keep the process alive on stray rejections; task/HTTP paths still handle errors themselves.
+  process.on('unhandledRejection', reason => {
+    console.error('[unhandledRejection]', reason);
+  });
+
   const app = createApp();
 
   startRenderQueueWorker();

@@ -16,11 +16,9 @@ function normalizeProfile(profile: ChromeProfile): ChromeProfile {
 }
 
 function sortProfiles(profiles: ChromeProfile[]): ChromeProfile[] {
-  return [...profiles].sort((a, b) => {
-    if (a.role === 'main' && b.role !== 'main') return -1;
-    if (a.role !== 'main' && b.role === 'main') return 1;
-    return b.createdAt.localeCompare(a.createdAt);
-  });
+  return [...profiles].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+  );
 }
 
 function loadStore(): ChromeProfilesStore {
@@ -49,7 +47,9 @@ export class ChromeProfilesRepository {
   }
 
   findByRole(role: ChromeProfileRole): ChromeProfile[] {
-    return loadStore().profiles.filter((profile) => normalizeProfile(profile).role === role);
+    return sortProfiles(
+      loadStore().profiles.filter((profile) => normalizeProfile(profile).role === role),
+    );
   }
 
   saveStore(updater: (store: ChromeProfilesStore) => ChromeProfilesStore): ChromeProfilesStore {
@@ -95,6 +95,22 @@ export class ChromeProfilesRepository {
         if (normalized.id !== id) return normalized;
 
         updated = { ...normalized, role };
+        return updated;
+      }),
+    }));
+
+    return updated;
+  }
+
+  updateName(id: string, name: string): ChromeProfile | null {
+    let updated: ChromeProfile | null = null;
+
+    this.saveStore((store) => ({
+      profiles: store.profiles.map((profile) => {
+        const normalized = normalizeProfile(profile);
+        if (normalized.id !== id) return normalized;
+
+        updated = { ...normalized, name };
         return updated;
       }),
     }));
