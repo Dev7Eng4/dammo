@@ -102,6 +102,7 @@ export async function assembleReupAiSlideshowVideo(
     subtitlePath,
     language,
     captionStyleKey,
+    outputBasename = SI_OUTPUT_VIDEO_BASENAME,
     showDisclaim = false,
     disclaimerText,
     channelAvatarPath,
@@ -165,7 +166,7 @@ export async function assembleReupAiSlideshowVideo(
     output: { width: SI_CANVAS_W, height: SI_CANVAS_H, fps: SI_FPS },
   });
 
-  const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
+  const outputPath = path.join(workDir, `${outputBasename}.mp4`);
   const filterScriptPath = path.join(workDir, 'ai_video_filter.txt');
   const tempAssPath = path.join(workDir, 'ai_temp_sub.ass');
   let preparedAvatarPath: string | null = null;
@@ -251,6 +252,7 @@ export async function assembleReupAiSlideshowVideo(
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
+  await fs.unlink(slideshowRawPath).catch(() => undefined);
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }

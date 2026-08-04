@@ -390,7 +390,7 @@ export async function updateGpmProfile(id: string, input: GpmUpdateProfileInput)
   const body: Record<string, unknown> = {};
 
   if (input.name !== undefined) body.profile_name = input.name;
-  if (input.raw_proxy?.trim()) body.raw_proxy = input.raw_proxy.trim();
+  if (input.raw_proxy !== undefined) body.raw_proxy = input.raw_proxy.trim();
   if (input.note?.trim()) body.note = input.note.trim();
   if (input.group_id !== undefined && input.group_id !== null && input.group_id !== '') {
     body.group_id = Number(input.group_id);

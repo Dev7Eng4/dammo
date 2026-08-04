@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  archiveProxy,
   exportProxiesExcel,
   extendProxy,
   fetchProxies,
@@ -29,6 +30,17 @@ function getExpiryEndMs(expiresAt?: string): number | null {
   const end = new Date(`${expiresAt}T23:59:59.999`);
   const ms = end.getTime();
   return Number.isNaN(ms) ? null : ms;
+}
+
+function isProxyExpired(proxy: Proxy, nowMs = Date.now()): boolean {
+  if (proxy.status === 'expired') return true;
+  const expireEndMs = getExpiryEndMs(proxy.expiresAt);
+  return expireEndMs != null && expireEndMs < nowMs;
+}
+
+/** Deletable when unassigned, or already past expiry (even if still bound to profiles). */
+function canDeleteProxy(proxy: Proxy, nowMs = Date.now()): boolean {
+  return proxy.assignedProfileIds.length === 0 || isProxyExpired(proxy, nowMs);
 }
 
 function getExpiryWarningMeta(
@@ -67,9 +79,11 @@ export function ProxiesPage() {
   const [filter, setFilter] = useState<ProxyFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRemoveFailedModal, setShowRemoveFailedModal] = useState(false);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [removingFailed, setRemovingFailed] = useState(false);
+  const [deletingSelected, setDeletingSelected] = useState(false);
   const [pingingIds, setPingingIds] = useState<Set<string>>(new Set());
   const [extendTargetId, setExtendTargetId] = useState<string | null>(null);
   const [extendDays, setExtendDays] = useState('');
@@ -248,6 +262,38 @@ export function ProxiesPage() {
     }
   }
 
+  async function handleDeleteSelected() {
+    const targets = list.items.filter(proxy => selectedIds.has(proxy.id) && canDeleteProxy(proxy));
+    if (targets.length === 0 || deletingSelected) return;
+
+    setDeletingSelected(true);
+    try {
+      let removed = 0;
+      const errors: string[] = [];
+      for (const proxy of targets) {
+        try {
+          await archiveProxy(proxy.id);
+          removed += 1;
+        } catch (err) {
+          errors.push(
+            `${proxy.host}:${proxy.port} — ${err instanceof Error ? err.message : 'Xóa thất bại'}`,
+          );
+        }
+      }
+      setShowDeleteSelectedModal(false);
+      clearSelection();
+      refreshAll();
+      if (removed > 0) {
+        toast.success(`Đã xóa ${removed} proxy`);
+      }
+      if (errors.length > 0) {
+        toast.error(errors[0] ?? 'Một số proxy không xóa được');
+      }
+    } finally {
+      setDeletingSelected(false);
+    }
+  }
+
   async function handlePingRow(id: string) {
     if (pingingIds.has(id)) return;
     setPingingIds(prev => new Set(prev).add(id));
@@ -302,6 +348,9 @@ export function ProxiesPage() {
   }
 
   const extendTarget = list.items.find(proxy => proxy.id === extendTargetId) ?? null;
+  const selectedProxies = list.items.filter(proxy => selectedIds.has(proxy.id));
+  const canDeleteSelected =
+    selectedProxies.length > 0 && selectedProxies.every(proxy => canDeleteProxy(proxy));
 
   function handleTabChange(tab: ProxyTab) {
     setActiveTab(tab);
@@ -324,7 +373,10 @@ export function ProxiesPage() {
                 onAddProxy={() => setShowAddModal(true)}
                 onImportExcel={handleImportExcel}
                 onExportExcel={handleExportExcel}
+                onDeleteSelected={() => setShowDeleteSelectedModal(true)}
                 onRemoveFailed={() => setShowRemoveFailedModal(true)}
+                canDeleteSelected={canDeleteSelected}
+                deletingSelected={deletingSelected}
                 exporting={exporting}
                 importing={importing}
                 removingFailed={removingFailed}
@@ -406,6 +458,33 @@ export function ProxiesPage() {
             </div>
           </div>
         ) : null}
+      </Modal>
+
+      <Modal
+        open={showDeleteSelectedModal}
+        onClose={() => !deletingSelected && setShowDeleteSelectedModal(false)}
+        title='Xóa proxy đã chọn'
+        footer={
+          <>
+            <Button
+              variant='outlined'
+              size='sm'
+              className='rounded-lg'
+              onClick={() => setShowDeleteSelectedModal(false)}
+              disabled={deletingSelected}
+            >
+              Hủy
+            </Button>
+            <Button size='sm' className='rounded-lg' disabled={deletingSelected} onClick={handleDeleteSelected}>
+              {deletingSelected ? 'Đang xóa...' : `Xóa ${selectedProxies.length} proxy`}
+            </Button>
+          </>
+        }
+      >
+        <p className='text-sm text-neutral-300'>
+          Lưu trữ {selectedProxies.length} proxy đã chọn (không gắn profile hoặc đã hết hạn)? Không thể hoàn tác
+          thao tác này từ giao diện.
+        </p>
       </Modal>
 
       <Modal

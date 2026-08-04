@@ -9,7 +9,10 @@ interface ProxiesToolbarProps {
   onAddProxy: () => void;
   onImportExcel: (file: File) => void;
   onExportExcel: () => void;
+  onDeleteSelected: () => void;
   onRemoveFailed: () => void;
+  canDeleteSelected?: boolean;
+  deletingSelected?: boolean;
   exporting?: boolean;
   importing?: boolean;
   removingFailed?: boolean;
@@ -37,7 +40,10 @@ export function ProxiesToolbar({
   onAddProxy,
   onImportExcel,
   onExportExcel,
+  onDeleteSelected,
   onRemoveFailed,
+  canDeleteSelected = false,
+  deletingSelected = false,
   exporting = false,
   importing = false,
   removingFailed = false,
@@ -76,6 +82,15 @@ export function ProxiesToolbar({
         </Button>
         <Button variant='outlined' size='sm' className='rounded-lg' disabled={exporting} onClick={onExportExcel}>
           {exporting ? 'Đang xuất...' : 'Xuất Excel'}
+        </Button>
+        <Button
+          variant='outlined'
+          size='sm'
+          className='rounded-lg text-danger hover:text-danger'
+          disabled={!canDeleteSelected || deletingSelected}
+          onClick={onDeleteSelected}
+        >
+          {deletingSelected ? 'Đang xóa...' : 'Xóa'}
         </Button>
         <Button
           variant='outlined'
