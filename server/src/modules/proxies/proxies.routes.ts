@@ -111,8 +111,8 @@ export function createProxiesRoutes() {
     return c.json({ item });
   });
 
-  app.delete('/:id', (c) => {
-    proxiesService.archive(c.req.param('id'));
+  app.delete('/:id', async (c) => {
+    await proxiesService.archive(c.req.param('id'));
     return c.json({ ok: true });
   });
 

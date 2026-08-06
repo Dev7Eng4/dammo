@@ -94,6 +94,8 @@ export interface AssembleReupAiSlideshowVideoInput {
   subtitlePath: string;
   language: string;
   captionStyleKey?: CaptionStyleKey;
+  /** Final mp4 basename without extension (default: video). */
+  outputBasename?: string;
   /** Temporary: burn top-left disclaimer for the first N seconds. */
   showDisclaim?: boolean;
   disclaimerText?: string;

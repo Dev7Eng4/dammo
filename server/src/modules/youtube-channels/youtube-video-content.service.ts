@@ -10,11 +10,11 @@ import {
   findOldThumbnailPath,
   findThumbnailPath,
 } from '../youtube-upload/upload-assets.js';
+import { findFinalVideoMp4 } from '../video-production/shared/si-video/video-output-file.js';
 import { videoPrepareRepository } from './video-prepare.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 
 const VIDEO_META_FILENAME = 'video-meta.json';
-const VIDEO_FILENAME = 'video.mp4';
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
 export interface YoutubeVideoContent {
@@ -225,7 +225,7 @@ export class YoutubeVideoContentService {
       hasThumbnail: Boolean(thumbnailPath),
       hasOldThumbnail: Boolean(oldThumbnailPath),
       oldThumbnailFolderPath: oldThumbnailPath ? path.dirname(path.resolve(oldThumbnailPath)) : null,
-      hasVideo: fs.existsSync(path.join(folderPath, VIDEO_FILENAME)),
+      hasVideo: Boolean(findFinalVideoMp4(folderPath)),
     };
   }
 
@@ -276,7 +276,7 @@ export class YoutubeVideoContentService {
     const folderPath = requireViewableVideoFolder(channelId, videoId);
     const filePath =
       kind === 'video'
-        ? path.join(folderPath, VIDEO_FILENAME)
+        ? findFinalVideoMp4(folderPath)
         : kind === 'old-thumbnail'
           ? findOldThumbnailPath(folderPath)
           : findThumbnailPath(folderPath);

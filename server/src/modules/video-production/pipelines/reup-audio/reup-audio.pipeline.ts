@@ -35,7 +35,7 @@ import {
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
-import { SI_OUTPUT_VIDEO_BASENAME } from '../../shared/si-video/si.constants.js';
+import { findFinalVideoMp4, sanitizeVideoOutputBasename } from '../../shared/si-video/video-output-file.js';
 import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
 import { resolveChannelAvatarForVideoAssembly } from '../../../youtube-channels/resolve-channel-avatar.js';
 import { moveVideoFolderToDestination, remapOutputItemPaths } from './video-folder-mover.js';
@@ -828,6 +828,10 @@ export class ReupAudioPipeline {
               enabled: destination.showChannelAvatar,
               onLog: assemblyLog,
             });
+            const metaTitle = videoMetaOutput?.metadata?.title;
+            const outputBasename = sanitizeVideoOutputBasename(
+              typeof metaTitle === 'string' ? metaTitle : '',
+            );
 
             if (videoType === 'si') {
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
@@ -873,6 +877,7 @@ export class ReupAudioPipeline {
                   workDir,
                   audioPath: downloaded.audioPath,
                   subtitlePath: subtitleForAssembly,
+                  outputBasename,
                   ...(needsCenterImage && heroImagePath ? { centerImagePath: heroImagePath } : {}),
                   ...(needsMultiImage ? { centerImagePaths: multiImagePaths } : {}),
                   backgroundFootageMode: destination.backgroundFootageMode ?? 'source',
@@ -893,7 +898,7 @@ export class ReupAudioPipeline {
                 primaryOutputPath = reupVideoPath;
 
                 if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'SI video saved → video.mp4');
+                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SI video saved → ${outputBasename}.mp4`);
                 }
               }
             } else if (videoType === 'ai') {
@@ -923,6 +928,7 @@ export class ReupAudioPipeline {
                         subtitlePath: subtitleForAssembly!,
                         language: destination.language,
                         captionStyleKey: destination.captionStyleKey,
+                        outputBasename,
                         showDisclaim,
                         disclaimerText,
                         ...(channelAvatarPath ? { channelAvatarPath } : {}),
@@ -933,7 +939,7 @@ export class ReupAudioPipeline {
                   primaryOutputPath = reupVideoPath;
 
                   if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'AI video saved → video.mp4');
+                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `AI video saved → ${outputBasename}.mp4`);
                   }
                 }
             }
@@ -1013,16 +1019,14 @@ export class ReupAudioPipeline {
           }
 
           if (!options?.skipVideoAssembly) {
-            const finalVideoPath = path.join(destDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
-            try {
-              await fs.access(finalVideoPath);
+            const finalVideoPath = findFinalVideoMp4(destDir);
+            if (finalVideoPath) {
               videoPrepareRepository.markCreated(destination.id, outputItem.youtubeVideoId);
               if (taskJobId) {
                 taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video ready → status Created in video-prepare.json');
               }
-            } catch {
-              /* video.mp4 not ready yet — stays Prepared */
             }
+            /* else: final mp4 not ready yet — stays Prepared */
           } else if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video assets saved → status Prepared in video-prepare.json');
           }

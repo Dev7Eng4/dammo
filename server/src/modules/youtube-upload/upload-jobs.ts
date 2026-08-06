@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
+import { findFinalVideoMp4 } from '../video-production/shared/si-video/video-output-file.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { findThumbnailPath } from './upload-assets.js';
@@ -72,14 +73,12 @@ export function listUploadJobs(channelId: string, options: ListUploadJobsOptions
       continue;
     }
 
-    const files = fs.readdirSync(folderPath);
-    const mp4File = files.find(file => file.toLowerCase().endsWith('.mp4'));
-    if (!mp4File) {
+    const mp4Path = findFinalVideoMp4(folderPath);
+    if (!mp4Path) {
       console.warn(`[youtube-upload] Skip ${videoId} — missing mp4 video file`);
       continue;
     }
 
-    const mp4Path = path.join(folderPath, mp4File);
     const thumbnailPath = findThumbnailPath(folderPath, {
       allowOldThumbnail: options.allowOldThumbnail,
     });

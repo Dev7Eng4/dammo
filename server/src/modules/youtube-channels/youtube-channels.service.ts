@@ -374,6 +374,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
 }
 
 function assertEmailAvailableForChannel(email: string, channelId?: string): void {
+  if (isDefaultLinkedEmail(email)) return;
+
   const normalized = email.toLowerCase();
   const taken = youtubeChannelsRepository
     .findAll()

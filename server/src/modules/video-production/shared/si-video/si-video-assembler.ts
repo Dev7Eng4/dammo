@@ -108,6 +108,8 @@ export interface AssembleReupSiVideoInput {
   centerImagePath?: string;
   /** When set (multi_image), build Ken Burns slideshow and overlay instead of a static center image. */
   centerImagePaths?: string[];
+  /** Final mp4 basename without extension (default: video). */
+  outputBasename?: string;
   showAudioBar?: boolean;
   audioBarFile?: string;
   showSmallVideo?: boolean;
@@ -133,6 +135,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     subtitlePath,
     centerImagePath,
     centerImagePaths,
+    outputBasename = SI_OUTPUT_VIDEO_BASENAME,
     showAudioBar = false,
     audioBarFile,
     showSmallVideo = false,
@@ -271,7 +274,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const isLocalStock = backgroundFootageMode === 'local';
   let activeSubtitlePath = subtitlePath;
   let scaledSrtPath: string | null = null;
-  const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
+  const outputPath = path.join(workDir, `${outputBasename}.mp4`);
   const filterScriptPath = path.join(workDir, 'filter_complex.txt');
   const tempAssPath = path.join(workDir, 'temp_sub.ass');
   const resizedCenterImagePath = path.join(workDir, 'center_opacity.png');

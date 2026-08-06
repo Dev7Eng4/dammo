@@ -79,7 +79,7 @@ function buildAvailableMailOptions(
   usedEmails: Set<string>,
 ): { value: string; label: string }[] {
   return [
-    ...(!usedEmails.has('default') ? [{ value: 'default', label: 'Mặc định' }] : []),
+    { value: 'default', label: 'Mặc định' },
     ...mailAccounts
       .filter(account => !usedEmails.has(account.email.toLowerCase()))
       .map(account => ({ value: account.id, label: account.email })),
