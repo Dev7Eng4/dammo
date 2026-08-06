@@ -1,6 +1,16 @@
 {
   "niches": [
     {
+      "key": "l-i-d-y-ng-i-n-i-ti-ng",
+      "label": "Lời dạy người nổi tiếng",
+      "createdAt": "2026-08-05T02:46:46.630Z"
+    },
+    {
+      "key": "s-ng-th-ng-minh-ng-i-gi",
+      "label": "Sống thông minh người già",
+      "createdAt": "2026-08-05T02:37:05.138Z"
+    },
+    {
       "key": "drama",
       "label": "Drama",
       "createdAt": "2026-07-17T15:59:55.986Z"
