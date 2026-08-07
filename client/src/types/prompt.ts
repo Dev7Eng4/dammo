@@ -33,6 +33,8 @@ export interface Prompt {
   language: PromptLanguage;
   name: string;
   category: PromptCategory;
+  /** Niche key from niches catalog, or `all` for every niche. */
+  niche: string;
   outputType?: PromptOutputType;
   description?: string;
   isSystem?: boolean;
@@ -57,6 +59,7 @@ export interface CreatePromptPayload {
   name: string;
   template: string;
   category?: PromptCategory;
+  niche?: string;
   outputType?: PromptOutputType;
   description?: string;
   key?: string;
@@ -69,6 +72,7 @@ export interface UpdatePromptPayload {
   name?: string;
   template?: string;
   category?: PromptCategory;
+  niche?: string;
   outputType?: PromptOutputType;
   description?: string;
   useReferenceImage?: boolean;
@@ -121,6 +125,7 @@ export interface PromptFormDraft {
   language: CreatePromptLanguage;
   name: string;
   category: PromptCategory;
+  niche: string;
   isSystem?: boolean;
   steps: PromptStepDraft[];
 }
@@ -130,6 +135,7 @@ export interface PromptSetListItem {
   name: string;
   language: PromptLanguage;
   category: PromptCategory;
+  niche: string;
   key: string;
   stepCount: number;
   isSystem?: boolean;

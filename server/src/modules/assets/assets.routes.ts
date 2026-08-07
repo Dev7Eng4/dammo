@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { isAppError } from '../../shared/http/errors.js';
-import { assetKindSchema, deleteAssetsSchema, listAssetsQuerySchema } from './assets.schema.js';
+import { assetKindSchema, deleteAssetsSchema, listAssetsQuerySchema, prepareColorSchema } from './assets.schema.js';
 import { assetsService } from './assets.service.js';
 import type { AssetKind } from './assets.types.js';
 import { prepareColorAsset, type PrepareColorKind } from '../video-production/shared/si-video/si-prepare-color-cache.js';
@@ -100,7 +100,7 @@ export function createAssetsRoutes() {
     return c.json(result);
   });
 
-  app.post('/:kind/:filename/prepare-color', async (c) => {
+  app.post('/:kind/:filename/prepare-color', zValidator('json', prepareColorSchema), async (c) => {
     const kindParsed = assetKindSchema.safeParse(c.req.param('kind'));
     if (!kindParsed.success) {
       return c.json({ error: 'Invalid asset kind' }, 400);
@@ -113,8 +113,9 @@ export function createAssetsRoutes() {
     if (!filename?.trim()) {
       return c.json({ error: 'Filename is required' }, 400);
     }
-    const result = await prepareColorAsset(kind as PrepareColorKind, filename);
-    return c.json({ prepared: true, cached: result.cached });
+    const { keyColor } = c.req.valid('json');
+    const result = await prepareColorAsset(kind as PrepareColorKind, filename, keyColor);
+    return c.json({ prepared: true, cached: result.cached, keyColor: result.keyColor });
   });
 
   app.onError((err, c) => {

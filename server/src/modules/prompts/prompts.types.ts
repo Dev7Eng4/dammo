@@ -12,6 +12,8 @@ export interface Prompt {
   language: PromptLanguage;
   name: string;
   category: PromptCategory;
+  /** Niche key from niches catalog, or `all` for every niche. */
+  niche: string;
   outputType?: PromptOutputType;
   description?: string;
   isSystem?: boolean;
@@ -37,6 +39,7 @@ export interface PromptSet {
   language: PromptLanguage;
   name: string;
   category: PromptCategory;
+  niche: string;
   isSystem?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +55,7 @@ export interface CreatePromptInput {
   name: string;
   template: string;
   category?: PromptCategory;
+  niche?: string;
   outputType?: PromptOutputType;
   description?: string;
   isSystem?: boolean;
@@ -65,6 +69,7 @@ export interface UpdatePromptInput {
   name?: string;
   template?: string;
   category?: PromptCategory;
+  niche?: string;
   outputType?: PromptOutputType;
   description?: string;
   useReferenceImage?: boolean;

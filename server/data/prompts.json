@@ -1,6 +1,24 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_loi_day_nguoi_noi_tieng",
+      "baseKey": "metadata_loi_day_nguoi_noi_tieng",
+      "language": "ja",
+      "name": "MetaData Lời dạy người nổi tiếng",
+      "category": "meta",
+      "niche": "l-i-d-y-ng-i-n-i-ti-ng",
+      "createdAt": "2026-08-06T09:37:41.621Z",
+      "updatedAt": "2026-08-06T09:37:45.350Z",
+      "steps": [
+        {
+          "id": "c91e9c4a-0fd2-4805-9839-03e9c786da07",
+          "key": "metadata_loi_day_nguoi_noi_tieng",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:change_background_channel",
       "baseKey": "change_background_channel",
       "language": "ja",
@@ -17,7 +35,8 @@
           "useReferenceImage": true,
           "useChannelBackgroundImage": true
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "all:image_scenes_with_references",
@@ -42,7 +61,8 @@
           "outputType": "text",
           "useReferenceImage": true
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "all:image_scenes",
@@ -60,7 +80,8 @@
           "step": 1,
           "outputType": "text"
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:general",
@@ -79,7 +100,8 @@
           "outputType": "image",
           "useReferenceImage": true
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:remove_logo",
@@ -97,7 +119,8 @@
           "outputType": "image",
           "useReferenceImage": true
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:remove_logo_and_change_background",
@@ -115,7 +138,8 @@
           "outputType": "image",
           "useReferenceImage": true
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:recreate",
@@ -134,7 +158,8 @@
           "outputType": "image",
           "useReferenceImage": true
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:metadata",
@@ -152,7 +177,8 @@
           "step": 1,
           "outputType": "text"
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:love_story",
@@ -169,7 +195,8 @@
           "step": 1,
           "outputType": "image"
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:ja_thumbnail_horizontal",
@@ -198,7 +225,8 @@
           "step": 3,
           "outputType": "text"
         }
-      ]
+      ],
+      "niche": "all"
     },
     {
       "id": "ja:update_transcript",
@@ -215,7 +243,8 @@
           "step": 1,
           "outputType": "text"
         }
-      ]
+      ],
+      "niche": "all"
     }
   ]
 }

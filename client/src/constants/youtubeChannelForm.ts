@@ -30,14 +30,49 @@ export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType; label: 
 ];
 
 export const REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS: {
-  value: ReupAudioBackgroundImage;
+  value: Exclude<ReupAudioBackgroundImage, 'celebrity' | 'local_image'>;
   label: string;
 }[] = [
   { value: 'no_image', label: 'Không dùng ảnh' },
-  { value: 'local_image', label: 'Ảnh cục bộ' },
   { value: 'one_image', label: 'Một ảnh' },
   { value: 'multi_image', label: 'Nhiều ảnh' },
 ];
+
+export const CELEBRITY_BACKGROUND_VALUE_PREFIX = 'celebrity:';
+export const CELEBRITY_EMPTY_SENTINEL = '__celebrity_empty__';
+
+export function toCelebrityBackgroundValue(celebrityId: string): string {
+  return `${CELEBRITY_BACKGROUND_VALUE_PREFIX}${celebrityId}`;
+}
+
+export function parseSiBackgroundImageValue(value: string): {
+  mode: ReupAudioBackgroundImage | '';
+  celebrityId?: string;
+} {
+  if (!value) return { mode: '' };
+  if (value.startsWith(CELEBRITY_BACKGROUND_VALUE_PREFIX)) {
+    const celebrityId = value.slice(CELEBRITY_BACKGROUND_VALUE_PREFIX.length);
+    return celebrityId ? { mode: 'celebrity', celebrityId } : { mode: '' };
+  }
+  if (
+    value === 'no_image' ||
+    value === 'local_image' ||
+    value === 'one_image' ||
+    value === 'multi_image' ||
+    value === 'celebrity'
+  ) {
+    return { mode: value };
+  }
+  return { mode: '' };
+}
+
+export function toSiBackgroundImageFormValue(
+  mode: ReupAudioBackgroundImage | '' | undefined,
+  celebrityId?: string,
+): string {
+  if (mode === 'celebrity' && celebrityId) return toCelebrityBackgroundValue(celebrityId);
+  return mode ?? '';
+}
 
 export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] = [
   { value: 'default', label: 'Default' },

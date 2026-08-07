@@ -94,6 +94,7 @@ export function groupPromptSets(prompts: Prompt[]): PromptSetListItem[] {
         name: primary.name,
         language: primary.language,
         category: primary.category,
+        niche: primary.niche || 'all',
         key: resolveCanonicalSetKey(sorted),
         stepCount: sorted.length,
         isSystem: sorted.some((item) => item.isSystem),

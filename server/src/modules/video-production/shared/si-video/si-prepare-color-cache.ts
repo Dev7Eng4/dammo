@@ -5,19 +5,23 @@ import { paths } from '../../../../config/paths.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import {
-  SI_AUDIO_BAR_COLORKEY,
-  SI_AUDIO_BAR_COLORKEY_BLEND,
-  SI_AUDIO_BAR_COLORKEY_SIMILARITY,
   SI_AUDIO_BAR_WIDTH_PX,
   SI_FPS,
+  SI_PREPARE_COLORKEY_BLACK,
+  SI_PREPARE_COLORKEY_BLACK_BLEND,
+  SI_PREPARE_COLORKEY_BLACK_SIMILARITY,
+  SI_PREPARE_COLORKEY_GREEN,
+  SI_PREPARE_COLORKEY_GREEN_BLEND,
+  SI_PREPARE_COLORKEY_GREEN_SIMILARITY,
   SI_SMALL_VIDEO_H,
   SI_SMALL_VIDEO_W,
-  SI_SUBSCRIBE_COLORKEY,
-  SI_SUBSCRIBE_COLORKEY_BLEND,
-  SI_SUBSCRIBE_COLORKEY_SIMILARITY,
+  type SiPrepareKeyColor,
 } from './si.constants.js';
 
 export type PrepareColorKind = 'audioBar' | 'subscribe';
+export type { SiPrepareKeyColor };
+
+const PREPARE_KEY_COLORS: SiPrepareKeyColor[] = ['green', 'black'];
 
 interface PrepareParams {
   colorkey: string;
@@ -29,18 +33,18 @@ function resolveKindDir(kind: PrepareColorKind): string {
   return kind === 'audioBar' ? paths.siAudioBarDir : paths.siSubscribeDir;
 }
 
-function resolveKindParams(kind: PrepareColorKind): PrepareParams {
-  if (kind === 'audioBar') {
+function resolveKindParams(_kind: PrepareColorKind, keyColor: SiPrepareKeyColor = 'green'): PrepareParams {
+  if (keyColor === 'black') {
     return {
-      colorkey: SI_AUDIO_BAR_COLORKEY,
-      similarity: SI_AUDIO_BAR_COLORKEY_SIMILARITY,
-      blend: SI_AUDIO_BAR_COLORKEY_BLEND,
+      colorkey: SI_PREPARE_COLORKEY_BLACK,
+      similarity: SI_PREPARE_COLORKEY_BLACK_SIMILARITY,
+      blend: SI_PREPARE_COLORKEY_BLACK_BLEND,
     };
   }
   return {
-    colorkey: SI_SUBSCRIBE_COLORKEY,
-    similarity: SI_SUBSCRIBE_COLORKEY_SIMILARITY,
-    blend: SI_SUBSCRIBE_COLORKEY_BLEND,
+    colorkey: SI_PREPARE_COLORKEY_GREEN,
+    similarity: SI_PREPARE_COLORKEY_GREEN_SIMILARITY,
+    blend: SI_PREPARE_COLORKEY_GREEN_BLEND,
   };
 }
 
@@ -52,9 +56,13 @@ function ensureSafeAssetName(name: string): string {
   return base;
 }
 
-async function buildCacheKey(kind: PrepareColorKind, sourcePath: string): Promise<string> {
+async function buildCacheKey(
+  kind: PrepareColorKind,
+  sourcePath: string,
+  keyColor: SiPrepareKeyColor,
+): Promise<string> {
   const stat = await fs.stat(sourcePath);
-  const params = resolveKindParams(kind);
+  const params = resolveKindParams(kind, keyColor);
   const raw = [
     kind,
     path.basename(sourcePath).toLowerCase(),
@@ -65,7 +73,7 @@ async function buildCacheKey(kind: PrepareColorKind, sourcePath: string): Promis
     params.blend,
     SI_FPS,
     kind === 'audioBar' ? SI_AUDIO_BAR_WIDTH_PX : `${SI_SMALL_VIDEO_W}x${SI_SMALL_VIDEO_H}`,
-    'sized-v1',
+    'sized-v2',
   ].join('|');
   return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16);
 }
@@ -74,8 +82,45 @@ function cacheDirFor(kind: PrepareColorKind): string {
   return path.join(resolveKindDir(kind), '.cache');
 }
 
-async function resolvePreparedOutputPath(kind: PrepareColorKind, sourcePath: string): Promise<string> {
-  const cacheKey = await buildCacheKey(kind, sourcePath);
+function keyColorSidecarPath(kind: PrepareColorKind, sourcePath: string): string {
+  const stem = path.basename(sourcePath, path.extname(sourcePath));
+  return path.join(cacheDirFor(kind), `${stem}.keycolor.json`);
+}
+
+async function writeKeyColorPreference(
+  kind: PrepareColorKind,
+  sourcePath: string,
+  keyColor: SiPrepareKeyColor,
+): Promise<void> {
+  const sidecar = keyColorSidecarPath(kind, sourcePath);
+  await fs.mkdir(path.dirname(sidecar), { recursive: true });
+  await fs.writeFile(sidecar, JSON.stringify({ keyColor }), 'utf8');
+}
+
+export async function getPreferredPrepareKeyColor(
+  kind: PrepareColorKind,
+  filename: string,
+): Promise<SiPrepareKeyColor> {
+  const sourcePath = await sourcePathFor(kind, filename);
+  const sidecar = keyColorSidecarPath(kind, sourcePath);
+  try {
+    const raw = await fs.readFile(sidecar, 'utf8');
+    const parsed = JSON.parse(raw) as { keyColor?: unknown };
+    if (parsed.keyColor === 'green' || parsed.keyColor === 'black') {
+      return parsed.keyColor;
+    }
+  } catch {
+    // no sidecar or invalid
+  }
+  return 'green';
+}
+
+async function resolvePreparedOutputPath(
+  kind: PrepareColorKind,
+  sourcePath: string,
+  keyColor: SiPrepareKeyColor,
+): Promise<string> {
+  const cacheKey = await buildCacheKey(kind, sourcePath, keyColor);
   const stem = path.basename(sourcePath, path.extname(sourcePath));
   return path.join(cacheDirFor(kind), `${stem}.${cacheKey}.alpha.mov`);
 }
@@ -111,18 +156,23 @@ async function sourcePathFor(kind: PrepareColorKind, filename: string): Promise<
   return sourcePath;
 }
 
-async function preprocessToAlphaMov(kind: PrepareColorKind, inputPath: string, outputPath: string): Promise<void> {
-  const params = resolveKindParams(kind);
+async function preprocessToAlphaMov(
+  kind: PrepareColorKind,
+  inputPath: string,
+  outputPath: string,
+  keyColor: SiPrepareKeyColor,
+): Promise<void> {
+  const params = resolveKindParams(kind, keyColor);
   // Bake at final overlay size so merge can skip scale + colorkey.
   const sized =
     kind === 'audioBar'
-      ? `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1`
-      : `fps=${SI_FPS},scale=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase,crop=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}`;
+      ? `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1:flags=lanczos`
+      : `fps=${SI_FPS},scale=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}`;
   const vf = `${sized},format=rgba,colorkey=${params.colorkey}:${params.similarity}:${params.blend}`;
   const tempPath = `${outputPath}.tmp.mov`;
   await runFfmpeg(
     ['-y', '-i', inputPath, '-vf', vf, '-an', '-c:v', 'qtrle', '-pix_fmt', 'argb', tempPath],
-    { label: `prepare-color-${kind}`, encodeOpts: { preset: 'fast' } },
+    { label: `prepare-color-${kind}-${keyColor}`, encodeOpts: { preset: 'fast' } },
   );
   await fs.rename(tempPath, outputPath);
 }
@@ -130,14 +180,25 @@ async function preprocessToAlphaMov(kind: PrepareColorKind, inputPath: string, o
 export async function getPreparedColorAssetPath(
   kind: PrepareColorKind,
   filename: string,
-): Promise<{ path: string; prepared: boolean }> {
+): Promise<{ path: string; prepared: boolean; keyColor?: SiPrepareKeyColor }> {
   const sourcePath = await sourcePathFor(kind, filename);
-  const outputPath = await resolvePreparedOutputPath(kind, sourcePath);
-  try {
-    const stat = await fs.stat(outputPath);
-    if (stat.isFile()) return { path: outputPath, prepared: true };
-  } catch {
-    // no cached file
+  let best: { path: string; keyColor: SiPrepareKeyColor; mtimeMs: number } | null = null;
+
+  for (const keyColor of PREPARE_KEY_COLORS) {
+    const outputPath = await resolvePreparedOutputPath(kind, sourcePath, keyColor);
+    try {
+      const stat = await fs.stat(outputPath);
+      if (!stat.isFile()) continue;
+      if (!best || stat.mtimeMs > best.mtimeMs) {
+        best = { path: outputPath, keyColor, mtimeMs: stat.mtimeMs };
+      }
+    } catch {
+      // try next color
+    }
+  }
+
+  if (best) {
+    return { path: best.path, prepared: true, keyColor: best.keyColor };
   }
   return { path: sourcePath, prepared: false };
 }
@@ -145,15 +206,21 @@ export async function getPreparedColorAssetPath(
 export async function prepareColorAsset(
   kind: PrepareColorKind,
   filename: string,
-): Promise<{ preparedPath: string; cached: boolean }> {
+  keyColor: SiPrepareKeyColor = 'green',
+): Promise<{ preparedPath: string; cached: boolean; keyColor: SiPrepareKeyColor }> {
   const sourcePath = await sourcePathFor(kind, filename);
-  const outputPath = await resolvePreparedOutputPath(kind, sourcePath);
+  const outputPath = await resolvePreparedOutputPath(kind, sourcePath, keyColor);
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
+
+  const finish = async (preparedPath: string, cached: boolean) => {
+    await writeKeyColorPreference(kind, sourcePath, keyColor);
+    return { preparedPath, cached, keyColor };
+  };
 
   try {
     const stat = await fs.stat(outputPath);
     if (stat.isFile()) {
-      return { preparedPath: outputPath, cached: true };
+      return finish(outputPath, true);
     }
   } catch {
     // no cached file
@@ -164,13 +231,13 @@ export async function prepareColorAsset(
     try {
       const stat = await fs.stat(outputPath);
       if (stat.isFile()) {
-        return { preparedPath: outputPath, cached: true };
+        return finish(outputPath, true);
       }
     } catch {
       // still not exist, continue
     }
-    await preprocessToAlphaMov(kind, sourcePath, outputPath);
-    return { preparedPath: outputPath, cached: false };
+    await preprocessToAlphaMov(kind, sourcePath, outputPath, keyColor);
+    return finish(outputPath, false);
   } finally {
     await unlock();
   }

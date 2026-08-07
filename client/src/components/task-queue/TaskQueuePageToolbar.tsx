@@ -64,7 +64,7 @@ export function TaskQueuePageToolbar({
           disabled={clearableCount === 0 || clearing}
           onClick={onClear}
         >
-          {clearing ? 'Clearing...' : 'Clear'}
+          {clearing ? 'Clearing...' : 'Clear finished'}
         </Button>
         <Button size="sm" className="rounded-lg" onClick={onTogglePause}>
           {paused ? 'Resume Queue' : 'Pause All'}

@@ -9,7 +9,7 @@ export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
 
 export type ReupAudioVideoType = 'si' | 'ai';
 
-export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image';
+export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image' | 'celebrity';
 
 export type CaptionStyleKey =
   | 'default'
@@ -145,6 +145,8 @@ export interface YoutubeChannel {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  /** Required when reupAudioBackgroundImage is `celebrity` */
+  celebrityId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -198,7 +200,7 @@ export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType | 'reup', st
 };
 export type YoutubeMonetizationFilter = 'all' | MonetizationStatus;
 
-export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error';
+export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error' | 'Pending';
 
 export type YoutubeChannelVideoStatusFilter = 'all' | YoutubeChannelVideoStatus | 'Draft';
 
@@ -207,11 +209,11 @@ export const YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS: {
   label: string;
 }[] = [
     { value: 'all', label: 'Tất cả trạng thái' },
+    { value: 'Pending', label: 'Chưa xử lý' },
     { value: 'Published', label: 'Đã xuất bản' },
     { value: 'Prepared', label: 'Đã chuẩn bị' },
     { value: 'Created', label: 'Đã tạo' },
     { value: 'Draft', label: 'Bản nháp' },
-    { value: 'Error', label: 'Lỗi' },
   ];
 
 export interface YoutubeChannelVideo {
@@ -495,6 +497,7 @@ export interface CreateYoutubeChannelPayload {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  celebrityId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -534,7 +537,8 @@ export interface AddYoutubeChannelFormValues {
   captionStyleKey: CaptionStyleKey | '';
   reupAudioVideoType: ReupAudioVideoType | '';
   reupAudioVisualStyleId: string;
-  reupAudioBackgroundImage: ReupAudioBackgroundImage | '';
+  /** Mode value (`no_image`/`one_image`/`multi_image`/`local_image`) or `celebrity:<id>`. */
+  reupAudioBackgroundImage: string;
   aiSceneDensityMaxSec: AiSceneDensityMaxSec;
   useReferenceImage: boolean;
   audioBarFile: string;

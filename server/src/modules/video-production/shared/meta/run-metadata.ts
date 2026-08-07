@@ -27,6 +27,8 @@ export interface MetadataProgress {
 export interface RunMetadataOptions {
   outputDir?: string;
   descriptionDisclaimer?: string;
+  /** Channel niche key used to pick a niche-specific meta prompt. */
+  niche?: string;
   onProgress?: (progress: MetadataProgress) => void;
 }
 
@@ -39,16 +41,46 @@ function formatLogValue(value: unknown, maxLength = 80): string {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
-function resolveMetadataPromptKey(language: PromptLanguage): string {
-  const prompt = promptsRepository
-    .findAll()
-    .find(item => item.category === 'meta' && item.language === language && item.key === METADATA_PROMPT_KEY);
+function pickPreferredMetadataPrompt<T extends { key: string }>(prompts: T[]): T | undefined {
+  if (prompts.length === 0) return undefined;
+  return prompts.find((item) => item.key === METADATA_PROMPT_KEY) ?? prompts[0];
+}
 
-  if (!prompt) {
-    throw new AppError(`Metadata prompt not found for language "${language}"`, 404, 'PROMPT_NOT_FOUND');
+function resolveMetadataPrompt(
+  language: PromptLanguage,
+  channelNiche?: string,
+): { key: string; niche: string } {
+  const niche = channelNiche?.trim() || 'all';
+  const metaPrompts = promptsRepository
+    .findAll()
+    .filter((item) => item.category === 'meta' && item.language === language);
+
+  if (niche !== 'all') {
+    const nicheMatches = metaPrompts.filter((item) => (item.niche || 'all') === niche);
+    const nichePrompt = pickPreferredMetadataPrompt(nicheMatches);
+    if (nichePrompt) {
+      console.log(
+        `[run-metadata] using niche prompt key="${nichePrompt.key}" niche="${nichePrompt.niche || niche}" language="${language}"`,
+      );
+      return { key: nichePrompt.key, niche: nichePrompt.niche || niche };
+    }
   }
 
-  return prompt.key;
+  const allMatches = metaPrompts.filter((item) => (item.niche || 'all') === 'all');
+  const fallbackPrompt = pickPreferredMetadataPrompt(allMatches);
+  if (!fallbackPrompt) {
+    throw new AppError(
+      `Metadata prompt not found for language "${language}"${niche !== 'all' ? ` (niche "${niche}" or all)` : ''}`,
+      404,
+      'PROMPT_NOT_FOUND',
+    );
+  }
+
+  console.log(
+    `[run-metadata] using fallback prompt key="${fallbackPrompt.key}" niche="all" language="${language}"` +
+      (niche !== 'all' ? ` (no prompt for channel niche "${niche}")` : ''),
+  );
+  return { key: fallbackPrompt.key, niche: 'all' };
 }
 
 async function persistMetadataOutput(
@@ -119,7 +151,7 @@ export async function executeMetadata(
     throw new AppError('Metadata generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
 
-  const promptKey = resolveMetadataPromptKey(language);
+  const promptKey = resolveMetadataPrompt(language, options?.niche).key;
   const transcript = await extractTranscriptForMetadata(srtPath);
   let lastReason = 'unknown error';
 

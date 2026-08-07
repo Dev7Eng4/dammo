@@ -15,6 +15,14 @@ export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[]
   { value: 'image', label: 'Hình ảnh' },
 ];
 
+/** Sentinel for prompts that apply to every niche. */
+export const PROMPT_NICHE_ALL = 'all';
+
+export const PROMPT_NICHE_ALL_OPTION = {
+  value: PROMPT_NICHE_ALL,
+  label: 'Tất cả',
+} as const;
+
 export const PROMPT_LANGUAGE_OPTIONS: { value: SpecificPromptLanguage; label: string }[] = [
   { value: 'en', label: 'Tiếng Anh' },
   { value: 'ko', label: 'Tiếng Hàn' },

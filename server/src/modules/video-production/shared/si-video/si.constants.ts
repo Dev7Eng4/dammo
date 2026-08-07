@@ -41,6 +41,23 @@ export const SI_MULTI_IMAGE_DIRNAME = 'images';
 export const SI_MULTI_IMAGE_DURATION_SEC = 30;
 /** Basename video slideshow tạm (không kèm extension). */
 export const SI_MULTI_IMAGE_SLIDESHOW_BASENAME = 'center_slideshow';
+
+/** Max celebrity images used for SI center slideshow. */
+export const SI_CELEBRITY_MAX_IMAGES = 5;
+/** Duration per celebrity image in the center frame (seconds). */
+export const SI_CELEBRITY_IMAGE_DURATION_SEC = 60;
+/** Fade duration between celebrity slides (seconds). */
+export const SI_CELEBRITY_TRANSITION_DURATION_SEC = 1;
+/** Mild zoom range for celebrity center motion (legacy Ken Burns; pan path uses fit scale). */
+export const SI_CELEBRITY_ZOOM_MIN = 1.05;
+export const SI_CELEBRITY_ZOOM_MAX = 1.12;
+/** Focal jitter away from center (0–0.5); keep small so motion stays gentle. */
+export const SI_CELEBRITY_FOCAL_JITTER = 0.12;
+/** Extra shrink so cutout can pan inside the box (1 = flush to box edge). */
+export const SI_CELEBRITY_FIT_SCALE_MIN = 0.88;
+/** Basename for alpha-preserving celebrity center slideshow (qtrle .mov). */
+export const SI_CELEBRITY_SLIDESHOW_BASENAME = 'center_slideshow_celebrity';
+
 /** Kích thước render slideshow = đúng khung center image (ratio 0.65, 16:9, chẵn). */
 export const SI_CENTER_VIDEO_W = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
 export const SI_CENTER_VIDEO_H = Math.round((SI_CENTER_VIDEO_W * 9) / 16);
@@ -75,20 +92,31 @@ export const SI_DISCLAIMER_TEXT =
 export const SI_AUDIO_SPEED_MIN = 0.95;
 export const SI_AUDIO_SPEED_MAX = 0.98;
 
-export const SI_AUDIO_BAR_WIDTH_PX = 250;
+export const SI_AUDIO_BAR_WIDTH_PX = 360;
 export const SI_AUDIO_BAR_MARGIN_LEFT_PX = 25;
 export const SI_AUDIO_BAR_OFFSET_Y_PX = 60;
-export const SI_AUDIO_BAR_COLORKEY = '0x00FF00';
-export const SI_AUDIO_BAR_COLORKEY_SIMILARITY = 0.18;
-export const SI_AUDIO_BAR_COLORKEY_BLEND = 0.08;
 
-export const SI_SMALL_VIDEO_W = 250;
-export const SI_SMALL_VIDEO_H = 150;
+/** Chroma-key color choice when preparing audioBar / subscribe assets. */
+export type SiPrepareKeyColor = 'green' | 'black';
+export const SI_PREPARE_COLORKEY_GREEN = '0x00FF00';
+export const SI_PREPARE_COLORKEY_BLACK = '0x000000';
+export const SI_PREPARE_COLORKEY_GREEN_SIMILARITY = 0.18;
+export const SI_PREPARE_COLORKEY_GREEN_BLEND = 0.08;
+export const SI_PREPARE_COLORKEY_BLACK_SIMILARITY = 0.12;
+export const SI_PREPARE_COLORKEY_BLACK_BLEND = 0.08;
+
+/** Runtime fallback colorkey (green) when asset is not pre-keyed. */
+export const SI_AUDIO_BAR_COLORKEY = SI_PREPARE_COLORKEY_GREEN;
+export const SI_AUDIO_BAR_COLORKEY_SIMILARITY = SI_PREPARE_COLORKEY_GREEN_SIMILARITY;
+export const SI_AUDIO_BAR_COLORKEY_BLEND = SI_PREPARE_COLORKEY_GREEN_BLEND;
+
+export const SI_SMALL_VIDEO_W = 360;
+export const SI_SMALL_VIDEO_H = 216;
 export const SI_SMALL_VIDEO_OVERLAY_X = 25;
 export const SI_SMALL_VIDEO_OVERLAY_Y = 25;
-export const SI_SUBSCRIBE_COLORKEY = '0x00FF00';
-export const SI_SUBSCRIBE_COLORKEY_SIMILARITY = 0.18;
-export const SI_SUBSCRIBE_COLORKEY_BLEND = 0.08;
+export const SI_SUBSCRIBE_COLORKEY = SI_PREPARE_COLORKEY_GREEN;
+export const SI_SUBSCRIBE_COLORKEY_SIMILARITY = SI_PREPARE_COLORKEY_GREEN_SIMILARITY;
+export const SI_SUBSCRIBE_COLORKEY_BLEND = SI_PREPARE_COLORKEY_GREEN_BLEND;
 
 export const CHANNEL_AVATAR_SIZE_PX = 100;
 export const CHANNEL_AVATAR_MARGIN_TOP_PX = 30;
@@ -101,6 +129,8 @@ export const SI_OVERLAY_EDGE_MARGIN_MAX_PX = 55;
 /** Mid-slot vertical offset from vertical center (replaces fixed +60). */
 export const SI_OVERLAY_MID_Y_JITTER_MIN_PX = 20;
 export const SI_OVERLAY_MID_Y_JITTER_MAX_PX = 100;
+/** Extra upward shift for mid-slot overlays (audioBar / subscribe / smallVideo). */
+export const SI_OVERLAY_MID_UPWARD_SHIFT_PX = 100;
 
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 

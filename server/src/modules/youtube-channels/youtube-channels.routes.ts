@@ -6,6 +6,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import {
   createVideosBatchSchema,
   createYoutubeChannelSchema,
+  deleteUploadedVideosSchema,
   deleteYoutubeVideosSchema,
   listYoutubeChannelsQuerySchema,
   updateYoutubeVideoContentSchema,
@@ -263,6 +264,11 @@ export function createYoutubeChannelsRoutes() {
     return c.json({ deleted: name });
   });
 
+  app.get('/:id/videos/pending', (c) => {
+    const result = youtubeChannelsService.getPendingSourceVideos(c.req.param('id'));
+    return c.json(result);
+  });
+
   app.get('/:id/videos/:videoId/comments', async (c) => {
     const result = await youtubeChannelsService.getVideoComments(
       c.req.param('id'),
@@ -369,8 +375,11 @@ export function createYoutubeChannelsRoutes() {
     return c.json(result);
   });
 
-  app.delete('/uploaded-videos', (c) => {
-    const result = youtubeChannelsService.deleteAllUploadedVideoFolders();
+  app.delete('/uploaded-videos', zValidator('json', deleteUploadedVideosSchema), (c) => {
+    const body = c.req.valid('json');
+    const result = youtubeChannelsService.deleteAllUploadedVideoFolders({
+      deletePreparedVideos: body.deletePreparedVideos,
+    });
     return c.json(result);
   });
 

@@ -96,8 +96,17 @@ export function normalizePromptKey(key: string): string {
   return key.trim().toLowerCase();
 }
 
+/** Strip Vietnamese (and other) diacritics so â→a, ă→a, ư→u, đ→d, etc. */
+function removeDiacritics(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
 export function derivePromptKeyFromName(name: string): string {
-  const base = name
+  const base = removeDiacritics(name)
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')

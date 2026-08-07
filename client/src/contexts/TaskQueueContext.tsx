@@ -99,6 +99,8 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
 
   const handlersRef = useRef<Map<string, TaskCompletionHandler>>(new Map());
   const notifiedRef = useRef<Set<string>>(new Set());
+  const startedNotifiedRef = useRef<Set<string>>(new Set());
+  const initialSyncDoneRef = useRef(false);
   const jobDetailsRef = useRef<Map<string, TaskJob>>(new Map());
   const logOffsetsRef = useRef<Map<string, number>>(new Map());
   const sseConnectedRef = useRef(false);
@@ -126,6 +128,21 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const notifyJobStarted = useCallback((job: TaskJobListItem) => {
+    if (job.status !== 'running') return;
+    if (startedNotifiedRef.current.has(job.id)) return;
+    startedNotifiedRef.current.add(job.id);
+    toastRef.current.success(`Started: ${job.title}`);
+  }, []);
+
+  const seedInitialJobs = useCallback((items: TaskJobListItem[]) => {
+    for (const job of items) {
+      if (job.status === 'running') startedNotifiedRef.current.add(job.id);
+      if (isTerminalTaskStatus(job.status)) notifiedRef.current.add(job.id);
+    }
+    initialSyncDoneRef.current = true;
+  }, []);
+
   const handleTerminalJob = useCallback((job: TaskJobListItem) => {
     if (!isTerminalTaskStatus(job.status)) return;
     if (notifiedRef.current.has(job.id)) return;
@@ -135,44 +152,37 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     const merged = mergeTaskJob(job, jobDetailsRef.current.get(job.id) ?? null);
 
     if (job.status === 'completed') {
-      if (job.type === 'add_source') {
-        toastRef.current.success(`Source "${job.title.replace(/^Importing:\s*/, '')}" added successfully`);
-      } else if (job.type === 'create_video') {
-        toastRef.current.success(job.videoId ? `Created video from ${job.videoId}` : 'Video created successfully');
-      } else if (job.type === 'upload_video') {
-        toastRef.current.success('YouTube upload completed');
-      } else if (job.type === 'download_source') {
-        toastRef.current.success('Source videos downloaded');
-      }
       handlers?.onComplete?.(merged);
     } else if (job.status === 'failed') {
-      if (handlers?.onFail) {
-        handlers.onFail(merged);
-      } else {
-        toastRef.current.error(job.error ?? 'Task failed');
-      }
+      handlers?.onFail?.(merged);
     }
     handlersRef.current.delete(job.id);
   }, []);
 
-  const applyListItem = useCallback((item: TaskJobListItem) => {
-    setJobs(current => sortJobs(current.map(job => (job.id === item.id ? item : job))));
-  }, []);
+  const applyListItem = useCallback(
+    (item: TaskJobListItem) => {
+      setJobs(current => sortJobs(current.map(job => (job.id === item.id ? item : job))));
+      if (initialSyncDoneRef.current) notifyJobStarted(item);
+    },
+    [notifyJobStarted],
+  );
 
   const applyFullJob = useCallback(
     (job: TaskJob) => {
+      const item = listItemFromJob(job);
       jobDetailsRef.current.set(job.id, job);
       logOffsetsRef.current.set(job.id, job.logs?.length ?? 0);
       setJobs(current =>
         sortJobs(
           current.some(entry => entry.id === job.id)
-            ? current.map(entry => (entry.id === job.id ? listItemFromJob(job) : entry))
-            : [listItemFromJob(job), ...current],
+            ? current.map(entry => (entry.id === job.id ? item : entry))
+            : [item, ...current],
         ),
       );
+      if (initialSyncDoneRef.current) notifyJobStarted(item);
       bumpDetail();
     },
-    [bumpDetail],
+    [bumpDetail, notifyJobStarted],
   );
 
   const appendLogEntry = useCallback(
@@ -204,6 +214,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
         logOffsetsRef.current.delete(id);
         handlersRef.current.delete(id);
         notifiedRef.current.delete(id);
+        startedNotifiedRef.current.delete(id);
       }
       setLiveJobId(current => (current && idSet.has(current) ? null : current));
       bumpDetail();
@@ -211,14 +222,28 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     [bumpDetail],
   );
 
+  const applyJobList = useCallback(
+    (items: TaskJobListItem[], pausedState: boolean) => {
+      setJobs(sortJobs(items));
+      setPaused(pausedState);
+
+      if (!initialSyncDoneRef.current) {
+        seedInitialJobs(items);
+        return;
+      }
+
+      for (const job of items) {
+        notifyJobStarted(job);
+        handleTerminalJob(job);
+      }
+    },
+    [handleTerminalJob, notifyJobStarted, seedInitialJobs],
+  );
+
   const pollList = useCallback(async () => {
     const data = await fetchTaskQueue({ view: 'summary' });
-    setJobs(sortJobs(data.items));
-    setPaused(data.paused);
-    for (const job of data.items) {
-      handleTerminalJob(job);
-    }
-  }, [handleTerminalJob]);
+    applyJobList(data.items, data.paused);
+  }, [applyJobList]);
 
   const refresh = useCallback(async () => {
     await pollList();
@@ -236,11 +261,13 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
 
   const handleTerminalJobRef = useRef(handleTerminalJob);
   const applyListItemRef = useRef(applyListItem);
+  const applyJobListRef = useRef(applyJobList);
   const appendLogEntryRef = useRef(appendLogEntry);
   const refreshJobRef = useRef(refreshJob);
   const removeJobsByIdsRef = useRef(removeJobsByIds);
   handleTerminalJobRef.current = handleTerminalJob;
   applyListItemRef.current = applyListItem;
+  applyJobListRef.current = applyJobList;
   appendLogEntryRef.current = appendLogEntry;
   refreshJobRef.current = refreshJob;
   removeJobsByIdsRef.current = removeJobsByIds;
@@ -344,9 +371,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       try {
         const data = JSON.parse(event.data) as { items: TaskJobListItem[]; paused: boolean };
         sseConnectedRef.current = true;
-        setJobs(sortJobs(data.items));
-        setPaused(data.paused);
-        for (const job of data.items) handleTerminalJobRef.current(job);
+        applyJobListRef.current(data.items, data.paused);
       } catch {
         /* ignore malformed snapshot */
       }

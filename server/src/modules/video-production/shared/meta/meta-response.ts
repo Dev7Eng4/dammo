@@ -171,7 +171,7 @@ const STEP2_REQUIRED_KEYS = [
 
 export function tryParseMetaStep2Response(
   response: LlmBrowserResponse,
-  batchChunkDigests: MetaStep1ChunkDigest[]
+  batchChunkDigests: MetaStep1ChunkDigest[],
 ): MetaStep2StoryBlock | null {
   if (batchChunkDigests.length === 0) return null;
 
@@ -250,14 +250,13 @@ export function tryParseMetadataResponse(response: LlmBrowserResponse): Metadata
   }
 
   if (!isRecord(parsed)) return null;
-  if (!hasRequiredKeys(parsed, ['detected_niche', 'metadata'])) return null;
-  if (typeof parsed.detected_niche !== 'string' || !parsed.detected_niche.trim()) return null;
+  if (!hasRequiredKeys(parsed, ['metadata'])) return null;
   if (!validateMetadataFields(parsed.metadata)) return null;
 
   const metadata = parsed.metadata as Record<string, unknown>;
 
   return {
-    detected_niche: parsed.detected_niche.trim(),
+    detected_niche: '',
     metadata: {
       title: String(metadata.title).trim(),
       description: String(metadata.description).trim(),

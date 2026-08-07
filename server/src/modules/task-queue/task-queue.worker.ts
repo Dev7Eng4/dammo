@@ -38,6 +38,7 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
   const options = {
     taskJobId: job.id,
     ...(payload.videoCount != null ? { maxVideosPerChannel: payload.videoCount } : {}),
+    ...(payload.videoIds?.length ? { videoIds: payload.videoIds } : {}),
   };
   const prepareOnly = payload.prepareOnly === true;
 

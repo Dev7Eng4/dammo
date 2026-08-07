@@ -66,7 +66,7 @@ export function YoutubeChannelsToolbar({
   return (
     <div className='flex flex-wrap items-center justify-between gap-3'>
       <div className='flex flex-wrap items-center gap-2'>
-        <DropdownSelect options={typeOptions} value={typeFilter} onChange={onTypeFilterChange} />
+        {/* <DropdownSelect options={typeOptions} value={typeFilter} onChange={onTypeFilterChange} /> */}
         {/* <DropdownSelect
           options={monetizationOptions}
           value={monetizationFilter}
@@ -88,7 +88,7 @@ export function YoutubeChannelsToolbar({
             value={typeof search === 'string' ? search : ''}
             onChange={e => onSearchChange(e.currentTarget.value)}
             placeholder='Lọc kênh...'
-            className='h-8 w-48 rounded-lg border border-border bg-surface-elevated pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 lg:w-56'
+            className='h-10 w-48 rounded-lg border border-border bg-surface-elevated pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 lg:w-56'
           />
         </div>
       </div>
@@ -97,7 +97,6 @@ export function YoutubeChannelsToolbar({
         {onPrepareVideo ? (
           <Button
             variant='outlined'
-            size='sm'
             className='rounded-lg'
             onClick={onPrepareVideo}
             disabled={creatingVideo || !canCreateVideo}
@@ -115,7 +114,6 @@ export function YoutubeChannelsToolbar({
         {onCreateVideo ? (
           <Button
             variant='outlined'
-            size='sm'
             className='rounded-lg'
             onClick={onCreateVideo}
             disabled={creatingVideo || !canCreateVideo}
@@ -131,7 +129,6 @@ export function YoutubeChannelsToolbar({
         {onUpload ? (
           <Button
             variant='outlined'
-            size='sm'
             className='rounded-lg'
             onClick={onUpload}
             disabled={uploading || !canUpload}
@@ -146,13 +143,7 @@ export function YoutubeChannelsToolbar({
           </Button>
         ) : null}
         {onDeleteUploadedVideos ? (
-          <Button
-            variant='danger'
-            size='sm'
-            className='rounded-lg'
-            onClick={onDeleteUploadedVideos}
-            disabled={deletingUploadedVideos}
-          >
+          <Button variant='danger' className='rounded-lg' onClick={onDeleteUploadedVideos} disabled={deletingUploadedVideos}>
             <svg className='size-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
               <polyline points='3 6 5 6 21 6' />
               <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
@@ -163,7 +154,6 @@ export function YoutubeChannelsToolbar({
         {onEdit ? (
           <Button
             variant='outlined'
-            size='sm'
             className='rounded-lg'
             onClick={onEdit}
             disabled={!canEdit}
@@ -172,7 +162,7 @@ export function YoutubeChannelsToolbar({
             Chỉnh sửa
           </Button>
         ) : null}
-        <button type='button' className='inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200'>
+        <button type='button' className='inline-flex items-center gap-1.5 text-md text-neutral-400 hover:text-neutral-200'>
           <svg className='size-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
             <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
             <polyline points='7 10 12 15 17 10' />
@@ -180,7 +170,7 @@ export function YoutubeChannelsToolbar({
           </svg>
           Nhập/Xuất
         </button>
-        <Button size='sm' className='rounded-lg' onClick={onAddChannel}>
+        <Button className='rounded-lg' onClick={onAddChannel}>
           <svg className='size-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
             <path d='M5 12h14' />
             <path d='M12 5v14' />

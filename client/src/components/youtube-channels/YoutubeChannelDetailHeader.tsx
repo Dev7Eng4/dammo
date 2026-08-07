@@ -12,6 +12,7 @@ interface YoutubeChannelDetailHeaderProps {
   videosFetchedAt?: string | null;
   creatingVideo?: boolean;
   canCreateVideo?: boolean;
+  canCreateFromSelection?: boolean;
   openingProfile?: boolean;
   canDeleteVideos?: boolean;
   deletingVideos?: boolean;
@@ -41,6 +42,7 @@ export function YoutubeChannelDetailHeader({
   videosFetchedAt,
   creatingVideo,
   canCreateVideo,
+  canCreateFromSelection,
   openingProfile,
   canDeleteVideos,
   deletingVideos,
@@ -53,6 +55,7 @@ export function YoutubeChannelDetailHeader({
 }: YoutubeChannelDetailHeaderProps) {
   const initial = channel.name.charAt(0).toUpperCase();
   const canOpenProfile = canOpenGpmProfile(channel.linkedEmail);
+  const canRunCreateActions = canCreateFromSelection ?? canCreateVideo;
 
   return (
     <div className='space-y-4'>
@@ -95,17 +98,12 @@ export function YoutubeChannelDetailHeader({
             </Button>
           ) : null}
           {onPrepareVideo ? (
-            <Button
-              variant='outlined'
-              className='rounded-lg'
-              disabled={!canCreateVideo || creatingVideo}
-              onClick={onPrepareVideo}
-            >
+            <Button variant='outlined' className='rounded-lg' disabled={!canRunCreateActions || creatingVideo} onClick={onPrepareVideo}>
               Chuẩn bị video
             </Button>
           ) : null}
           {onCreateVideo ? (
-            <Button variant='outlined' className='rounded-lg' disabled={!canCreateVideo || creatingVideo} onClick={onCreateVideo}>
+            <Button variant='outlined' className='rounded-lg' disabled={!canRunCreateActions || creatingVideo} onClick={onCreateVideo}>
               {creatingVideo ? 'Đang tạo…' : 'Tạo video'}
             </Button>
           ) : null}

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { SiSmallVideoClip } from './si-small-video.js';
-import { getPreparedColorAssetPath, prepareColorAsset } from './si-prepare-color-cache.js';
+import { getPreparedColorAssetPath, getPreferredPrepareKeyColor, prepareColorAsset } from './si-prepare-color-cache.js';
 import { SI_OVERLAY_AUTO_SENTINEL } from './si.constants.js';
 
 const SUBSCRIBE_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
@@ -14,7 +14,12 @@ export interface SiSubscribeClipResolved extends SiSmallVideoClip {
 }
 
 async function resolvePreparedSubscribe(filename: string): Promise<SiSubscribeClipResolved> {
-  const prepared = await prepareColorAsset('subscribe', filename);
+  const cached = await getPreparedColorAssetPath('subscribe', filename);
+  if (cached.prepared) {
+    return { path: cached.path, filename, preKeyed: true };
+  }
+  const keyColor = await getPreferredPrepareKeyColor('subscribe', filename);
+  const prepared = await prepareColorAsset('subscribe', filename, keyColor);
   return {
     path: prepared.preparedPath,
     filename,

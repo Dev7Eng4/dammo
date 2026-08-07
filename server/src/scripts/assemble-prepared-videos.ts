@@ -11,7 +11,7 @@ import {
 import { AI_SLIDES_DIRNAME } from '../modules/video-production/shared/ai-video/ai-video.constants.js';
 import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../modules/video-production/shared/ai-video/ai-video.types.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
-import { listSiMultiImagePaths } from '../modules/video-production/shared/si-video/si-multi-image.js';
+import { listSiMultiImagePaths, copyCelebrityImagesToWorkDir } from '../modules/video-production/shared/si-video/si-multi-image.js';
 import { SI_MULTI_IMAGE_DIRNAME } from '../modules/video-production/shared/si-video/si.constants.js';
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
@@ -191,7 +191,19 @@ async function main() {
           } catch {
             missingFiles.push(CENTER_IMAGE_FILE);
           }
-        } else if (siBackgroundImage === 'multi_image') {
+        } else if (siBackgroundImage === 'multi_image' || siBackgroundImage === 'celebrity') {
+          if (siBackgroundImage === 'celebrity') {
+            const celebrityId = channel.celebrityId?.trim();
+            if (!celebrityId) {
+              missingFiles.push('celebrityId');
+            } else {
+              try {
+                await copyCelebrityImagesToWorkDir(celebrityId, workDir, msg => console.log(`      ${msg}`));
+              } catch (err) {
+                missingFiles.push(err instanceof Error ? err.message : 'celebrity images');
+              }
+            }
+          }
           const multiImagePaths = await listSiMultiImagePaths(workDir);
           if (multiImagePaths.length === 0) {
             missingFiles.push(`${SI_MULTI_IMAGE_DIRNAME}/*`);
@@ -240,8 +252,9 @@ async function main() {
           });
         } else {
           const siBackgroundImage = channel.reupAudioBackgroundImage ?? 'one_image';
-          const multiImagePaths =
-            siBackgroundImage === 'multi_image' ? await listSiMultiImagePaths(workDir) : [];
+          const needsMultiImage =
+            siBackgroundImage === 'multi_image' || siBackgroundImage === 'celebrity';
+          const multiImagePaths = needsMultiImage ? await listSiMultiImagePaths(workDir) : [];
 
           outputPath = await assembleReupSiVideo({
             workDir,
@@ -250,7 +263,13 @@ async function main() {
             ...(siBackgroundImage === 'one_image'
               ? { centerImagePath: path.join(workDir, CENTER_IMAGE_FILE) }
               : {}),
-            ...(siBackgroundImage === 'multi_image' ? { centerImagePaths: multiImagePaths } : {}),
+            ...(needsMultiImage
+              ? {
+                  centerImagePaths: multiImagePaths,
+                  centerSlideshowVariant:
+                    siBackgroundImage === 'celebrity' ? ('celebrity' as const) : ('multi' as const),
+                }
+              : {}),
             backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
             backgroundFootageSourceIds: channel.backgroundFootageSources,
             language: channel.language,

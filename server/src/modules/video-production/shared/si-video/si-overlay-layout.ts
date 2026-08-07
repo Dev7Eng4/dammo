@@ -1,6 +1,7 @@
 import {
   SI_OVERLAY_EDGE_MARGIN_MAX_PX,
   SI_OVERLAY_EDGE_MARGIN_MIN_PX,
+  SI_OVERLAY_MID_UPWARD_SHIFT_PX,
   SI_OVERLAY_MID_Y_JITTER_MAX_PX,
   SI_OVERLAY_MID_Y_JITTER_MIN_PX,
 } from './si.constants.js';
@@ -44,9 +45,15 @@ export function resolveSiOverlaySlotPosition(
     case 'topRight':
       return { x: `W-w-${edgeMarginX}`, y: String(edgeMarginY) };
     case 'midLeft':
-      return { x: String(edgeMarginX), y: `(main_h-overlay_h)/2+${edgeMarginY}` };
+      return {
+        x: String(edgeMarginX),
+        y: `(main_h-overlay_h)/2+${edgeMarginY}-${SI_OVERLAY_MID_UPWARD_SHIFT_PX}`,
+      };
     case 'midRight':
-      return { x: `W-w-${edgeMarginX}`, y: `(main_h-overlay_h)/2+${edgeMarginY}` };
+      return {
+        x: `W-w-${edgeMarginX}`,
+        y: `(main_h-overlay_h)/2+${edgeMarginY}-${SI_OVERLAY_MID_UPWARD_SHIFT_PX}`,
+      };
   }
 }
 

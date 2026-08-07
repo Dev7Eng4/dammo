@@ -10,7 +10,7 @@ import {
   SI_FPS,
   SI_OVERLAY_AUTO_SENTINEL,
 } from './si.constants.js';
-import { getPreparedColorAssetPath, prepareColorAsset } from './si-prepare-color-cache.js';
+import { getPreparedColorAssetPath, getPreferredPrepareKeyColor, prepareColorAsset } from './si-prepare-color-cache.js';
 
 const AUDIO_BAR_EXTENSIONS = new Set(['.mp4', '.mov']);
 
@@ -33,14 +33,19 @@ export function appendSiAudioBarScaleFilters(
     filterParts.push(`[${inputLabel}]format=rgba[${outputLabel}]`);
     return;
   }
-  const scale = `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1`;
+  const scale = `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1:flags=lanczos`;
   filterParts.push(
     `[${inputLabel}]${scale},format=rgba,colorkey=${SI_AUDIO_BAR_COLORKEY}:${SI_AUDIO_BAR_COLORKEY_SIMILARITY}:${SI_AUDIO_BAR_COLORKEY_BLEND}[${outputLabel}]`,
   );
 }
 
 async function resolvePreparedAudioBar(filename: string): Promise<SiAudioBarClip> {
-  const prepared = await prepareColorAsset('audioBar', filename);
+  const cached = await getPreparedColorAssetPath('audioBar', filename);
+  if (cached.prepared) {
+    return { path: cached.path, filename, preKeyed: true };
+  }
+  const keyColor = await getPreferredPrepareKeyColor('audioBar', filename);
+  const prepared = await prepareColorAsset('audioBar', filename, keyColor);
   return {
     path: prepared.preparedPath,
     filename,

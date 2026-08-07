@@ -297,16 +297,21 @@ export function YoutubeChannelsPage() {
     });
   }
 
-  async function handleDeleteUploadedVideos() {
+  async function handleDeleteUploadedVideos(options: { deletePreparedVideos: boolean }) {
     setDeletingUploadedVideos(true);
     try {
-      const result = await deleteAllUploadedVideos();
+      const result = await deleteAllUploadedVideos(options);
       setShowDeleteUploadedModal(false);
-      toast.success(
+
+      const uploadsMessage =
         result.deletedFolders === 0
           ? 'Không có folder uploads nào để xóa'
-          : `Đã xóa ${result.deletedFolders} folder video trên ${result.channelsProcessed} kênh`,
-      );
+          : `Đã xóa ${result.deletedFolders} folder video trên ${result.channelsProcessed} kênh`;
+      const preparedMessage =
+        options.deletePreparedVideos && result.deletedPreparedVideos > 0
+          ? `; đã xóa ${result.deletedPreparedVideos} video đã tạo trong videos/`
+          : '';
+      toast.success(`${uploadsMessage}${preparedMessage}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Không thể xóa folder uploads');
     } finally {
@@ -440,7 +445,7 @@ export function YoutubeChannelsPage() {
         open={showDeleteUploadedModal}
         deleting={deletingUploadedVideos}
         onClose={() => setShowDeleteUploadedModal(false)}
-        onConfirm={() => void handleDeleteUploadedVideos()}
+        onConfirm={options => void handleDeleteUploadedVideos(options)}
       />
 
       {selectedChannel ? (

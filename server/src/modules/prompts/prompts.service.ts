@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
 import { paginate } from '../../shared/types/pagination.js';
+import { nichesService } from '../niches/niches.service.js';
 import {
   deletePromptFile,
   movePromptFile,
@@ -20,6 +21,15 @@ import type {
 
 function normalizeKey(key: string): string {
   return key.trim().toLowerCase();
+}
+
+function normalizePromptNiche(niche: string | undefined): string {
+  const trimmed = niche?.trim() || 'all';
+  if (trimmed === 'all') return 'all';
+  if (!nichesService.exists(trimmed)) {
+    throw new AppError('Niche not found', 400, 'INVALID_NICHE');
+  }
+  return trimmed;
 }
 
 function filterPrompts(
@@ -143,6 +153,7 @@ export class PromptsService {
     await writePromptFile(language, key, input.template);
 
     const category = input.category ?? 'meta';
+    const niche = normalizePromptNiche(input.niche);
     const now = new Date().toISOString();
     const useReferenceImage = resolveUseReferenceImage(category, input.useReferenceImage);
     const useChannelBackgroundImage = resolveUseChannelBackgroundImage(
@@ -155,6 +166,7 @@ export class PromptsService {
       language,
       name: name,
       category,
+      niche,
       outputType: input.outputType ?? 'text',
       ...(input.isSystem ? { isSystem: true } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
@@ -199,6 +211,7 @@ export class PromptsService {
 
       if (input.name !== undefined) next.name = input.name.trim();
       if (input.category !== undefined) next.category = input.category;
+      if (input.niche !== undefined) next.niche = normalizePromptNiche(input.niche);
       if (input.outputType !== undefined) next.outputType = input.outputType;
 
       const nextCategory = next.category;

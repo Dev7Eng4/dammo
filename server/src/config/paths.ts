@@ -27,6 +27,8 @@ export const paths = {
   promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
   visualStyles: path.join(env.dataDir, 'visual-styles.json'),
   niches: path.join(env.dataDir, 'niches.json'),
+  celebrities: path.join(env.dataDir, 'celebrities.json'),
+  celebritiesDir: path.join(env.dataDir, 'celebrities'),
   promptsDir: path.join(env.dataDir, 'prompts'),
   playgroundDir: path.join(env.dataDir, 'playground'),
   reupSiAssetsDir: path.join(env.dataDir, 'assets'),
@@ -36,6 +38,10 @@ export const paths = {
   siSubscribeDir: path.join(env.dataDir, 'assets', 'subscribe'),
   siTempStockDir: path.join(env.dataDir, 'assets', 'temp_stock'),
 };
+
+export function celebrityDir(celebrityId: string): string {
+  return path.join(paths.celebritiesDir, celebrityId);
+}
 
 export function siLocalStockUsageFile(): string {
   return path.join(paths.siLocalStockDir, 'usage.json');
@@ -265,6 +271,7 @@ export function ensureDataDirs(): void {
     paths.siSmallVideoDir,
     paths.siSubscribeDir,
     paths.siTempStockDir,
+    paths.celebritiesDir,
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) {

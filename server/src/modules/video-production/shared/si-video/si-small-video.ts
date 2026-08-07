@@ -11,14 +11,14 @@ export interface SiSmallVideoClip {
   filename: string;
 }
 
-/** Scale to fill 200×150 then center-crop so the PiP box is exact. */
+/** Scale to fill SI_SMALL_VIDEO box then center-crop so the PiP box is exact. */
 export function appendSiSmallVideoScaleFilters(
   filterParts: string[],
   inputLabel: string,
   outputLabel = 'small_video_scaled',
 ): void {
   filterParts.push(
-    `[${inputLabel}]fps=${SI_FPS},scale=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase,crop=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}[${outputLabel}]`,
+    `[${inputLabel}]fps=${SI_FPS},scale=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}[${outputLabel}]`,
   );
 }
 

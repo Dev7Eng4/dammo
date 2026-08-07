@@ -78,6 +78,13 @@ export function fetchYoutubeChannelVideos(id: string, options?: FetchOptions) {
   );
 }
 
+export function fetchYoutubeChannelPendingVideos(id: string, options?: FetchOptions) {
+  return fetchJson<YoutubeChannelVideosResponse>(
+    `${API_V1}/youtube-channels/${id}/videos/pending`,
+    withSignal(undefined, options),
+  );
+}
+
 export function syncYoutubeChannelVideos(id: string) {
   return fetchJson<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string }>(
     `${API_V1}/youtube-channels/${id}/sync-videos`,
@@ -146,11 +153,16 @@ export function deleteYoutubeChannelVideos(channelId: string, videoIds: string[]
   );
 }
 
-export function deleteAllUploadedVideos() {
-  return fetchJson<{ channelsProcessed: number; deletedFolders: number }>(
-    `${API_V1}/youtube-channels/uploaded-videos`,
-    { method: 'DELETE' },
-  );
+export function deleteAllUploadedVideos(options?: { deletePreparedVideos?: boolean }) {
+  return fetchJson<{
+    channelsProcessed: number;
+    deletedFolders: number;
+    deletedPreparedVideos: number;
+  }>(`${API_V1}/youtube-channels/uploaded-videos`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deletePreparedVideos: options?.deletePreparedVideos ?? false }),
+  });
 }
 
 export function createYoutubeChannelVideos(id: string) {

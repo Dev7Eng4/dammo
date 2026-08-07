@@ -18,6 +18,8 @@ interface CreateVideosOptions {
   skipVideoAssembly?: boolean;
   /** Số video tối đa xử lý trên mỗi channel trong một lần chạy */
   maxVideosPerChannel?: number;
+  /** Danh sách source video ID cụ thể cần xử lý (bỏ qua auto-pick) */
+  videoIds?: string[];
 }
 
 const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);

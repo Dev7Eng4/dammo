@@ -37,11 +37,11 @@ export interface NavSection {
 }
 
 export const navSections: NavSection[] = [
-  {
-    id: 'main',
-    label: 'CHÍNH',
-    items: [{ id: 'dashboard', label: 'Tổng quan', path: '/', icon: 'dashboard' }],
-  },
+  // {
+  //   id: 'main',
+  //   label: 'CHÍNH',
+  //   items: [{ id: 'dashboard', label: 'Tổng quan', path: '/', icon: 'dashboard' }],
+  // },
   {
     id: 'accounts',
     label: 'TÀI KHOẢN',
@@ -59,7 +59,7 @@ export const navSections: NavSection[] = [
       { id: 'chrome-profiles', label: 'Hồ sơ Chrome', path: '/chrome-profiles', icon: 'browser' },
       { id: 'gpm-manager', label: 'Quản lý GPM', path: '/gpm-manager', icon: 'gpm' },
       { id: 'proxies', label: 'Proxy', path: '/proxies', icon: 'proxies' },
-      { id: 'launch-logs', label: 'Nhật ký khởi chạy', path: '/launch-logs', icon: 'launch-logs' },
+      // { id: 'launch-logs', label: 'Nhật ký khởi chạy', path: '/launch-logs', icon: 'launch-logs' },
     ],
   },
   {
@@ -80,8 +80,8 @@ export const navSections: NavSection[] = [
     id: 'video-factory',
     label: 'NHÀ MÁY VIDEO',
     items: [
-      { id: 'templates', label: 'Mẫu', path: '/video-factory/templates', icon: 'templates' },
-      { id: 'factory', label: 'Nhà máy video', path: '/video-factory', icon: 'factory' },
+      // { id: 'templates', label: 'Mẫu', path: '/video-factory/templates', icon: 'templates' },
+      // { id: 'factory', label: 'Nhà máy video', path: '/video-factory', icon: 'factory' },
       { id: 'task-queue', label: 'Công việc đang chạy', path: '/task-queue', icon: 'task-queue' },
       { id: 'queue', label: 'Hàng đợi render', path: '/render-queue', icon: 'queue' },
     ],

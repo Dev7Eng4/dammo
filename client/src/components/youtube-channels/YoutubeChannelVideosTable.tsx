@@ -16,10 +16,7 @@ interface YoutubeChannelVideosTableProps {
   onTitleClick?: (video: YoutubeChannelVideo) => void;
 }
 
-const statusConfig: Record<
-  YoutubeChannelVideoStatus,
-  { label: string; text: string; bg: string }
-> = {
+const statusConfig: Record<YoutubeChannelVideoStatus, { label: string; text: string; bg: string }> = {
   Published: {
     label: 'Đã xuất bản',
     text: 'text-success',
@@ -40,6 +37,11 @@ const statusConfig: Record<
     text: 'text-secondary-300',
     bg: 'bg-secondary-400/10 border-secondary-400/30',
   },
+  Pending: {
+    label: 'Chưa xử lý',
+    text: 'text-neutral-300',
+    bg: 'bg-neutral-700/40 border-neutral-600/50',
+  },
   Error: {
     label: 'Lỗi',
     text: 'text-danger',
@@ -50,13 +52,7 @@ const statusConfig: Record<
 function VideoStatusBadge({ status }: { status: YoutubeChannelVideoStatus }) {
   const config = statusConfig[status];
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
-        config.bg,
-        config.text,
-      )}
-    >
+    <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', config.bg, config.text)}>
       {config.label}
     </span>
   );
@@ -85,21 +81,21 @@ export function YoutubeChannelVideosTable({
       header: 'TIÊU ĐỀ',
       cell: ({ row, getValue }) => {
         const title = getValue<string>();
-        if (
-          (row.original.status === 'Prepared' || row.original.status === 'Created') &&
-          onTitleClick
-        ) {
+        if ((row.original.status === 'Prepared' || row.original.status === 'Created') && onTitleClick) {
           return (
             <button
-              type="button"
-              onClick={() => onTitleClick(row.original)}
-              className="cursor-pointer text-left font-medium text-secondary-400 hover:text-secondary-300 hover:underline"
+              type='button'
+              onClick={e => {
+                e.stopPropagation();
+                onTitleClick(row.original);
+              }}
+              className='cursor-pointer text-left font-medium text-secondary-400 hover:text-secondary-300 hover:underline'
             >
               {title}
             </button>
           );
         }
-        return <span className="font-medium text-neutral-100">{title}</span>;
+        return <span className='font-medium text-neutral-100'>{title}</span>;
       },
     },
     {
@@ -110,16 +106,12 @@ export function YoutubeChannelVideosTable({
     {
       accessorKey: 'viewCount',
       header: 'LƯỢT XEM',
-      cell: ({ getValue }) => (
-        <span className="text-neutral-300">{formatCount(getValue<number | null | undefined>())}</span>
-      ),
+      cell: ({ getValue }) => <span className='text-neutral-300'>{formatCount(getValue<number | null | undefined>())}</span>,
     },
     {
       accessorKey: 'likeCount',
       header: 'LƯỢT THÍCH',
-      cell: ({ getValue }) => (
-        <span className="text-neutral-300">{formatCount(getValue<number | null | undefined>())}</span>
-      ),
+      cell: ({ getValue }) => <span className='text-neutral-300'>{formatCount(getValue<number | null | undefined>())}</span>,
     },
     {
       accessorKey: 'commentCount',
@@ -129,15 +121,15 @@ export function YoutubeChannelVideosTable({
         if (count != null && count > 0 && onCommentClick) {
           return (
             <button
-              type="button"
+              type='button'
               onClick={() => onCommentClick(row.original)}
-              className="cursor-pointer text-secondary-400 hover:text-secondary-300 hover:underline"
+              className='cursor-pointer text-secondary-400 hover:text-secondary-300 hover:underline'
             >
               {formatCount(count)}
             </button>
           );
         }
-        return <span className="text-neutral-300">{formatCount(count)}</span>;
+        return <span className='text-neutral-300'>{formatCount(count)}</span>;
       },
     },
   ];
@@ -154,6 +146,7 @@ export function YoutubeChannelVideosTable({
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
+      onRowClick={video => onToggleRow(video.id)}
     />
   );
 }

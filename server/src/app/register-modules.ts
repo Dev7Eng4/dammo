@@ -18,6 +18,7 @@ import { createNichesRoutes } from '../modules/niches/niches.routes.js';
 import { createVisualStylesRoutes } from '../modules/visual-styles/visual-styles.routes.js';
 import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube-channels.routes.js';
 import { createAssetsRoutes } from '../modules/assets/assets.routes.js';
+import { createCelebritiesRoutes } from '../modules/celebrities/celebrities.routes.js';
 
 function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/dashboard`, createDashboardRoutes());
@@ -36,6 +37,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/niches`, createNichesRoutes());
   app.route(`${prefix}/gpm`, createGpmManagerRoutes());
   app.route(`${prefix}/assets`, createAssetsRoutes());
+  app.route(`${prefix}/celebrities`, createCelebritiesRoutes());
 }
 
 export function registerModules(app: Hono) {

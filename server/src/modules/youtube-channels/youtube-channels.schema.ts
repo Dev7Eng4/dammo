@@ -32,8 +32,9 @@ const channelConfigFields = {
   reupAudioVideoType: z.enum(['si', 'ai']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),
   reupAudioBackgroundImage: z
-    .enum(['no_image', 'local_image', 'one_image', 'multi_image'])
+    .enum(['no_image', 'local_image', 'one_image', 'multi_image', 'celebrity'])
     .optional(),
+  celebrityId: z.string().uuid().optional(),
   aiSceneDensityMaxSec: z
     .object({
       high: z.number().int().min(1).max(300),
@@ -68,6 +69,7 @@ function applyChannelConfigRefine(
     reupAudioVideoType?: z.infer<typeof channelConfigFields.reupAudioVideoType>;
     reupAudioVisualStyleId?: string;
     reupAudioBackgroundImage?: z.infer<typeof channelConfigFields.reupAudioBackgroundImage>;
+    celebrityId?: string;
     useReferenceImage?: boolean;
     uploadFrequency: z.infer<typeof uploadFrequencySchema>;
     publishTimes: string[];
@@ -104,6 +106,17 @@ function applyChannelConfigRefine(
         code: 'custom',
         message: 'Background image is required for Stock Video + Image',
         path: ['reupAudioBackgroundImage'],
+      });
+    }
+    if (
+      data.reupAudioVideoType === 'si' &&
+      data.reupAudioBackgroundImage === 'celebrity' &&
+      !data.celebrityId
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Celebrity is required when background image mode is celebrity',
+        path: ['celebrityId'],
       });
     }
     if (
@@ -172,4 +185,8 @@ export const updateYoutubeVideoContentSchema = z.object({
 
 export const deleteYoutubeVideosSchema = z.object({
   videoIds: z.array(z.string().min(1)).min(1),
+});
+
+export const deleteUploadedVideosSchema = z.object({
+  deletePreparedVideos: z.boolean().optional().default(false),
 });

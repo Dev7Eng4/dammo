@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset } from '../api/assets';
+import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset, type PrepareKeyColor } from '../api/assets';
+import { CelebritiesPanel } from '../components/celebrities/CelebritiesPanel';
 import { Button, DataTable, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
@@ -18,6 +19,8 @@ const TABS: { kind: AssetKind; label: string; accept: string }[] = [
   },
 ];
 
+type AssetsPageTab = AssetKind | 'celebrities';
+
 function isVideoKind(kind: AssetKind): boolean {
   return kind !== 'fonts';
 }
@@ -32,6 +35,10 @@ function formatBytes(size: number): string {
 function formatUpdatedAt(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
+}
+
+function keyColorLabel(keyColor: PrepareKeyColor): string {
+  return keyColor === 'black' ? 'màu đen' : 'màu xanh';
 }
 
 function EyeIcon({ className }: { className?: string }) {
@@ -70,7 +77,7 @@ function PaletteIcon({ className }: { className?: string }) {
 export function AssetsPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeKind, setActiveKind] = useState<AssetKind>('audioBar');
+  const [activeTabId, setActiveTabId] = useState<AssetsPageTab>('audioBar');
   const [items, setItems] = useState<AssetFileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -81,15 +88,25 @@ export function AssetsPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [itemPendingDelete, setItemPendingDelete] = useState<string | null>(null);
   const [preparingItems, setPreparingItems] = useState<Set<string>>(() => new Set());
+  const [prepareColorTarget, setPrepareColorTarget] = useState<string | null>(null);
+  const [prepareKeyColor, setPrepareKeyColor] = useState<PrepareKeyColor>('green');
 
-  const showPrepareColor = activeKind === 'audioBar' || activeKind === 'subscribe';
+  const isCelebritiesTab = activeTabId === 'celebrities';
+  const activeKind: AssetKind = isCelebritiesTab ? 'audioBar' : activeTabId;
+  const showPrepareColor = !isCelebritiesTab && (activeKind === 'audioBar' || activeKind === 'subscribe');
 
-  async function handlePrepareColor(name: string) {
+  async function handlePrepareColor(name: string, keyColor: PrepareKeyColor) {
+    setPrepareColorTarget(null);
     setPreparingItems(prev => new Set(prev).add(name));
     try {
-      const result = await prepareAssetColor(activeKind, name);
-      toast.success(result.cached ? `${name} đã được xử lý trước đó` : `Đã xử lý màu: ${name}`);
-      setItems(prev => prev.map(it => it.name === name ? { ...it, prepared: true } : it));
+      const result = await prepareAssetColor(activeKind, name, keyColor);
+      const colorLabel = keyColorLabel(result.keyColor);
+      toast.success(
+        result.cached
+          ? `${name} đã được xử lý ${colorLabel} trước đó`
+          : `Đã xử lý ${colorLabel}: ${name}`,
+      );
+      setItems(prev => prev.map(it => (it.name === name ? { ...it, prepared: true } : it)));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Không thể xử lý màu');
     } finally {
@@ -102,10 +119,15 @@ export function AssetsPage() {
   }
 
   const activeTab = TABS.find(tab => tab.kind === activeKind) ?? TABS[0];
-  const showVideoGrid = isVideoKind(activeKind);
+  const showVideoGrid = !isCelebritiesTab && isVideoKind(activeKind);
 
   useAbortableEffect(
     async signal => {
+      if (isCelebritiesTab) {
+        setLoading(false);
+        setItems([]);
+        return;
+      }
       setLoading(true);
       try {
         const data = await fetchAssets(activeKind, { signal });
@@ -118,7 +140,7 @@ export function AssetsPage() {
         if (!signal.aborted) setLoading(false);
       }
     },
-    [activeKind, refreshKey],
+    [activeKind, refreshKey, isCelebritiesTab],
   );
 
   const columns = useMemo<ColumnDef<AssetFileItem, unknown>[]>(
@@ -218,7 +240,7 @@ export function AssetsPage() {
       <div>
         <h1 className='text-xl font-semibold text-neutral-100'>Assets</h1>
         <p className='mt-1 text-sm text-neutral-400'>
-          Quản lý file phổ âm thanh, phông chữ, video stock nhỏ và background footage.
+          Quản lý file phổ âm thanh, phông chữ, video stock, background footage và người nổi tiếng.
         </p>
       </div>
 
@@ -227,10 +249,10 @@ export function AssetsPage() {
           <button
             key={tab.kind}
             type='button'
-            onClick={() => setActiveKind(tab.kind)}
+            onClick={() => setActiveTabId(tab.kind)}
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm transition-colors',
-              activeKind === tab.kind
+              activeTabId === tab.kind
                 ? 'bg-primary-500/15 text-primary-300'
                 : 'text-neutral-400 hover:bg-surface-elevated hover:text-neutral-200',
             )}
@@ -238,8 +260,24 @@ export function AssetsPage() {
             {tab.label}
           </button>
         ))}
+        <button
+          type='button'
+          onClick={() => setActiveTabId('celebrities')}
+          className={cn(
+            'rounded-lg px-3 py-1.5 text-sm transition-colors',
+            isCelebritiesTab
+              ? 'bg-primary-500/15 text-primary-300'
+              : 'text-neutral-400 hover:bg-surface-elevated hover:text-neutral-200',
+          )}
+        >
+          Người nổi tiếng
+        </button>
       </div>
 
+      {isCelebritiesTab ? (
+        <CelebritiesPanel />
+      ) : (
+        <>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <span className='text-sm text-neutral-400'>
           {items.length.toLocaleString('vi-VN')} file · {activeTab.label}
@@ -313,7 +351,10 @@ export function AssetsPage() {
                             title='Xử lý màu'
                             className='rounded-full bg-emerald-600/90 p-2 text-white hover:bg-emerald-500 disabled:opacity-50'
                             disabled={preparingItems.has(item.name)}
-                            onClick={() => void handlePrepareColor(item.name)}
+                            onClick={() => {
+                              setPrepareKeyColor('green');
+                              setPrepareColorTarget(item.name);
+                            }}
                           >
                             {preparingItems.has(item.name) ? (
                               <span className='block size-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
@@ -360,6 +401,67 @@ export function AssetsPage() {
           />
         </div>
       )}
+
+      <Modal
+        open={prepareColorTarget != null}
+        onClose={() => setPrepareColorTarget(null)}
+        title='Xử lý màu'
+        footer={
+          <>
+            <Button
+              variant='outlined'
+              size='sm'
+              className='rounded-lg'
+              onClick={() => setPrepareColorTarget(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              size='sm'
+              className='rounded-lg'
+              disabled={!prepareColorTarget}
+              onClick={() => {
+                if (!prepareColorTarget) return;
+                void handlePrepareColor(prepareColorTarget, prepareKeyColor);
+              }}
+            >
+              Xử lý
+            </Button>
+          </>
+        }
+      >
+        <p className='mb-3 text-sm text-neutral-300'>
+          Chọn màu nền cần loại bỏ cho <span className='font-medium text-neutral-100'>{prepareColorTarget}</span>
+        </p>
+        <div className='flex flex-col gap-2'>
+          <label className='flex cursor-pointer items-center gap-3 rounded-lg border border-neutral-700 px-3 py-2.5 hover:border-neutral-500 has-checked:border-emerald-500'>
+            <input
+              type='radio'
+              name='prepare-key-color'
+              checked={prepareKeyColor === 'green'}
+              onChange={() => setPrepareKeyColor('green')}
+              className='size-4 accent-emerald-500'
+            />
+            <span className='flex items-center gap-2 text-sm text-neutral-200'>
+              <span className='size-3.5 rounded-sm bg-[#00FF00]' aria-hidden />
+              Màu xanh
+            </span>
+          </label>
+          <label className='flex cursor-pointer items-center gap-3 rounded-lg border border-neutral-700 px-3 py-2.5 hover:border-neutral-500 has-checked:border-neutral-400'>
+            <input
+              type='radio'
+              name='prepare-key-color'
+              checked={prepareKeyColor === 'black'}
+              onChange={() => setPrepareKeyColor('black')}
+              className='size-4 accent-neutral-300'
+            />
+            <span className='flex items-center gap-2 text-sm text-neutral-200'>
+              <span className='size-3.5 rounded-sm border border-neutral-600 bg-black' aria-hidden />
+              Màu đen
+            </span>
+          </label>
+        </div>
+      </Modal>
 
       <Modal
         open={showDeleteConfirm}
@@ -425,6 +527,8 @@ export function AssetsPage() {
           </div>
         </div>
       ) : null}
+        </>
+      )}
     </div>
   );
 }

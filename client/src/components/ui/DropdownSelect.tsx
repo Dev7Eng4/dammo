@@ -7,6 +7,8 @@ export interface DropdownSelectOption<T extends string = string> {
   value: T;
   label: string;
   disabled?: boolean;
+  /** When set, options with the same group are shown under a non-clickable header. */
+  group?: string;
 }
 
 export interface DropdownSelectProps<T extends string = string> {
@@ -151,23 +153,32 @@ export function DropdownSelect<T extends string>({
       ) : null}
       <div className={cn(searchable ? 'scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain py-1' : null)}>
         {filteredOptions.length > 0 ? (
-          filteredOptions.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              disabled={opt.disabled}
-              onClick={() => {
-                onChange(opt.value);
-                closeMenu();
-              }}
-              className={cn(
-                'w-full px-3 py-2 text-left text-sm hover:bg-neutral-800 disabled:opacity-50',
-                value === opt.value ? 'text-secondary-400' : 'text-neutral-200',
-              )}
-            >
-              {optionLabel(opt.label)}
-            </button>
-          ))
+          filteredOptions.map((opt, index) => {
+            const prevGroup = filteredOptions[index - 1]?.group;
+            const showGroupHeader = Boolean(opt.group) && opt.group !== prevGroup;
+            return (
+              <div key={opt.value}>
+                {showGroupHeader ? (
+                  <div className="px-3 py-1.5 text-xs font-medium text-neutral-500">{opt.group}</div>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={opt.disabled}
+                  onClick={() => {
+                    if (opt.disabled) return;
+                    onChange(opt.value);
+                    closeMenu();
+                  }}
+                  className={cn(
+                    'w-full px-3 py-2 text-left text-sm hover:bg-neutral-800 disabled:opacity-50',
+                    value === opt.value ? 'text-secondary-400' : 'text-neutral-200',
+                  )}
+                >
+                  {optionLabel(opt.label)}
+                </button>
+              </div>
+            );
+          })
         ) : (
           <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
         )}

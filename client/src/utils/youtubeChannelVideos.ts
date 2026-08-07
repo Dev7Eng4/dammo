@@ -10,6 +10,9 @@ export function filterYoutubeChannelVideosByStatus(
 ): YoutubeChannelVideo[] {
   if (filter === 'all') return videos;
 
+  // Pending videos are loaded separately from source catalogs, not from the merged list.
+  if (filter === 'Pending') return [];
+
   if (filter === 'Draft') {
     return videos.filter((video) => resolveVideoStatus(video) !== 'Published');
   }

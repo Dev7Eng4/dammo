@@ -1,10 +1,16 @@
+import { useMemo, useState } from 'react';
+import { fetchNiches } from '../../api/niches';
 import { Button, DropdownSelect, Input } from '../ui';
 import {
   PROMPT_CATEGORY_OPTIONS,
   PROMPT_FORM_LANGUAGE_OPTIONS,
+  PROMPT_NICHE_ALL,
+  PROMPT_NICHE_ALL_OPTION,
 } from '../../constants/promptForm';
+import { useAbortableEffect } from '../../hooks';
 import { derivePromptKeyFromName } from '../../utils/promptVariables';
 import { planStepKeys, resolveDraftBaseKey } from '../../utils/promptSets';
+import type { Niche } from '../../types/niche';
 import type { PromptFormDraft, PromptStepDraft } from '../../types/prompt';
 import { PromptStepEditor } from './PromptStepEditor';
 
@@ -48,6 +54,26 @@ export function PromptEditorPanel({
   onDuplicate,
   onDelete,
 }: PromptEditorPanelProps) {
+  const [niches, setNiches] = useState<Niche[]>([]);
+
+  useAbortableEffect(async (signal) => {
+    try {
+      const data = await fetchNiches({ signal });
+      setNiches(data.items);
+    } catch {
+      if (signal.aborted) return;
+      setNiches([]);
+    }
+  }, []);
+
+  const nicheOptions = useMemo(
+    () => [
+      PROMPT_NICHE_ALL_OPTION,
+      ...niches.map((item) => ({ value: item.key, label: item.label })),
+    ],
+    [niches],
+  );
+
   if (!draft && !loading) {
     return (
       <section className="flex min-w-0 flex-1 flex-col items-center justify-center bg-background p-8 text-center">
@@ -87,6 +113,7 @@ export function PromptEditorPanel({
     draft.steps.length > 1 ? `${baseKey}_step_1…${draft.steps.length}` : plannedKeys[0] ?? baseKey;
   const hasSavedStep = draft.steps.some((step) => step.id);
   const headerTitle = isNew ? 'Prompt mới' : draft.name || 'Prompt chưa đặt tên';
+  const nicheValue = draft.niche || PROMPT_NICHE_ALL;
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
@@ -162,7 +189,7 @@ export function PromptEditorPanel({
             ) : null}
           </label>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <label className="block space-y-1.5">
               <FieldLabel>Ngôn ngữ</FieldLabel>
               <DropdownSelect
@@ -180,6 +207,17 @@ export function PromptEditorPanel({
                 value={draft.category}
                 onChange={(category) => onChange({ category })}
                 options={PROMPT_CATEGORY_OPTIONS}
+                disabled={readOnly}
+                className="w-full"
+                triggerClassName="h-10 w-full rounded-lg"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <FieldLabel>Ngách</FieldLabel>
+              <DropdownSelect
+                value={nicheValue}
+                onChange={(niche) => onChange({ niche })}
+                options={nicheOptions}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"

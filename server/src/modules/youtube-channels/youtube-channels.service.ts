@@ -18,8 +18,10 @@ import { videoPrepareRepository } from './video-prepare.repository.js';
 import {
   resolveBackgroundFootageNamesOnly,
   resolveSourceChannelNamesOnly,
+  resolveSourceChannelsByIds,
   resolveSourceNamesForChannel,
 } from './youtube-channel-sources.js';
+import { sourceCatalogAdapter } from '../video-production/adapters/source-catalog.adapter.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
@@ -34,6 +36,7 @@ import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js'
 import { assetsService } from '../assets/assets.service.js';
 import { channelAvatarsService } from './channel-avatars.service.js';
 import { SI_OVERLAY_AUTO_SENTINEL } from '../video-production/shared/si-video/si.constants.js';
+import { celebritiesService } from '../celebrities/celebrities.service.js';
 import type {
   AiSceneDensityMaxSec,
   CaptionStyleKey,
@@ -125,6 +128,7 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVideoType'
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
+  | 'celebrityId'
   | 'aiSceneDensityMaxSec'
   | 'useReferenceImage'
   | 'showAudioBar'
@@ -165,6 +169,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  celebrityId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -224,6 +229,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioVideoType: ReupAudioVideoType | undefined;
   let reupAudioVisualStyleId: string | undefined;
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
+  let celebrityId: string | undefined;
   let aiSceneDensityMaxSec: AiSceneDensityMaxSec | undefined;
   let useReferenceImage: boolean | undefined;
   let showAudioBar: boolean | undefined;
@@ -265,6 +271,28 @@ function validateChannelConfig(input: ChannelConfigInput): {
         );
       }
       reupAudioBackgroundImage = input.reupAudioBackgroundImage;
+
+      if (input.reupAudioBackgroundImage === 'celebrity') {
+        const selectedCelebrityId = input.celebrityId?.trim();
+        if (!selectedCelebrityId) {
+          throw new AppError(
+            'Celebrity is required when background image mode is celebrity',
+            400,
+            'VALIDATION_ERROR',
+          );
+        }
+        celebritiesService.getById(selectedCelebrityId);
+        const media = celebritiesService.listMedia(selectedCelebrityId);
+        if (media.length === 0) {
+          throw new AppError(
+            'Selected celebrity has no images or videos',
+            400,
+            'CELEBRITY_MEDIA_EMPTY',
+          );
+        }
+        celebrityId = selectedCelebrityId;
+      }
+
       const selectedAudioBar = input.audioBarFile?.trim();
       if (selectedAudioBar === SI_OVERLAY_AUTO_SENTINEL) {
         audioBarFile = SI_OVERLAY_AUTO_SENTINEL;
@@ -358,6 +386,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVideoType ? { reupAudioVideoType } : {}),
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
+    ...(celebrityId ? { celebrityId } : {}),
     ...(aiSceneDensityMaxSec ? { aiSceneDensityMaxSec } : {}),
     ...(useReferenceImage ? { useReferenceImage: true } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
@@ -547,6 +576,33 @@ export class YoutubeChannelsService {
     return { items: this.mergeVideosWithPrepare(id, videos), fetchedAt };
   }
 
+  /** Source videos linked to the channel that are not yet in video-prepare.json. */
+  getPendingSourceVideos(id: string): { items: YoutubeChannelVideo[] } {
+    const channel = this.getById(id);
+    const preparedIds = videoPrepareRepository.getPreparedVideoIds(id);
+    const sources = resolveSourceChannelsByIds(channel.sourceChannels ?? []);
+
+    const items: YoutubeChannelVideo[] = [];
+    const seen = new Set<string>();
+
+    for (const source of sources) {
+      for (const video of sourceCatalogAdapter.listVideos(source.id)) {
+        if (!video.url || preparedIds.has(video.id) || seen.has(video.id)) continue;
+        seen.add(video.id);
+        items.push({
+          id: video.id,
+          title: video.title,
+          url: video.url,
+          viewCount: video.viewCount,
+          duration: video.duration,
+          status: 'Pending',
+        });
+      }
+    }
+
+    return { items };
+  }
+
   deleteVideos(id: string, videoIds: string[]): { deleted: string[] } {
     this.getById(id);
 
@@ -576,29 +632,56 @@ export class YoutubeChannelsService {
     return { deleted };
   }
 
-  deleteAllUploadedVideoFolders(): { channelsProcessed: number; deletedFolders: number } {
+  deleteAllUploadedVideoFolders(options?: {
+    deletePreparedVideos?: boolean;
+  }): { channelsProcessed: number; deletedFolders: number; deletedPreparedVideos: number } {
     const channels = youtubeChannelsRepository.findAll();
     let deletedFolders = 0;
+    let deletedPreparedVideos = 0;
+    const deletePreparedVideos = options?.deletePreparedVideos === true;
 
     for (const channel of channels) {
       const uploadsDir = youtubeChannelUploadsDir(channel.id);
-      if (!fs.existsSync(uploadsDir)) continue;
+      if (fs.existsSync(uploadsDir)) {
+        let entries: fs.Dirent[];
+        try {
+          entries = fs.readdirSync(uploadsDir, { withFileTypes: true });
+        } catch {
+          entries = [];
+        }
 
-      let entries: fs.Dirent[];
-      try {
-        entries = fs.readdirSync(uploadsDir, { withFileTypes: true });
-      } catch {
-        continue;
+        for (const entry of entries) {
+          if (!entry.isDirectory()) continue;
+          fs.rmSync(path.join(uploadsDir, entry.name), { recursive: true, force: true });
+          deletedFolders += 1;
+        }
       }
 
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-        fs.rmSync(path.join(uploadsDir, entry.name), { recursive: true, force: true });
-        deletedFolders += 1;
+      if (!deletePreparedVideos) continue;
+
+      const nonUploadedIds = videoPrepareRepository
+        .read(channel.id)
+        .filter(item => item.status !== 'Uploaded')
+        .map(item => item.videoId.trim())
+        .filter(Boolean);
+
+      if (nonUploadedIds.length === 0) continue;
+
+      for (const videoId of nonUploadedIds) {
+        const folder = resolveYoutubeChannelVideoDir(channel.id, videoId);
+        if (folder) {
+          fs.rmSync(folder, { recursive: true, force: true });
+        }
       }
+
+      deletedPreparedVideos += videoPrepareRepository.removeByVideoIds(channel.id, nonUploadedIds).length;
     }
 
-    return { channelsProcessed: channels.length, deletedFolders };
+    return {
+      channelsProcessed: channels.length,
+      deletedFolders,
+      deletedPreparedVideos,
+    };
   }
 
   async syncVideos(
@@ -731,6 +814,7 @@ export class YoutubeChannelsService {
       ...(config.reupAudioBackgroundImage
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
+      ...(config.celebrityId ? { celebrityId: config.celebrityId } : {}),
       ...(config.aiSceneDensityMaxSec ? { aiSceneDensityMaxSec: config.aiSceneDensityMaxSec } : {}),
       ...(config.useReferenceImage ? { useReferenceImage: true } : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
@@ -925,6 +1009,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.reupAudioBackgroundImage;
         }
+        if (config.celebrityId) {
+          next.celebrityId = config.celebrityId;
+        } else {
+          delete next.celebrityId;
+        }
         if (config.aiSceneDensityMaxSec) {
           next.aiSceneDensityMaxSec = config.aiSceneDensityMaxSec;
         } else {
@@ -969,6 +1058,7 @@ export class YoutubeChannelsService {
         delete next.reupAudioVideoType;
         delete next.reupAudioVisualStyleId;
         delete next.reupAudioBackgroundImage;
+        delete next.celebrityId;
         delete next.aiSceneDensityMaxSec;
         delete next.useReferenceImage;
         delete next.showAudioBar;

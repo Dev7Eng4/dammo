@@ -30,9 +30,15 @@ export function deleteAssets(kind: AssetKind, names: string[]) {
   });
 }
 
-export function prepareAssetColor(kind: AssetKind, filename: string) {
-  return fetchJson<{ prepared: boolean; cached: boolean }>(
+export type PrepareKeyColor = 'green' | 'black';
+
+export function prepareAssetColor(kind: AssetKind, filename: string, keyColor: PrepareKeyColor = 'green') {
+  return fetchJson<{ prepared: boolean; cached: boolean; keyColor: PrepareKeyColor }>(
     `${API_V1}/assets/${encodeURIComponent(kind)}/${encodeURIComponent(filename)}/prepare-color`,
-    { method: 'POST' },
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyColor }),
+    },
   );
 }

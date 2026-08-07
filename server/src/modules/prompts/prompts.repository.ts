@@ -35,6 +35,7 @@ function flattenPromptSet(set: PromptSet): Prompt[] {
       language: set.language,
       name: set.name,
       category: set.category,
+      niche: set.niche || 'all',
       outputType: step.outputType,
       description: step.description,
       isSystem: set.isSystem,
@@ -77,6 +78,7 @@ function migrateLegacyPrompts(prompts: StoredPrompt[]): PromptsStore {
         language: prompt.language,
         name: prompt.name,
         category: prompt.category,
+        niche: prompt.niche || 'all',
         isSystem: prompt.isSystem,
         createdAt: prompt.createdAt,
         updatedAt: prompt.updatedAt,
@@ -87,6 +89,7 @@ function migrateLegacyPrompts(prompts: StoredPrompt[]): PromptsStore {
 
     existing.name = prompt.name;
     existing.category = prompt.category;
+    existing.niche = prompt.niche || existing.niche || 'all';
     existing.isSystem = prompt.isSystem ?? existing.isSystem;
     existing.updatedAt = nextUpdatedAt;
     existing.steps.push(stepRecord);
@@ -107,6 +110,7 @@ function sanitizeStore(raw: PromptsStore | LegacyStore | null): PromptsStore {
       promptSets: raw.promptSets.map((set) => ({
         ...set,
         baseKey: normalizeKey(set.baseKey),
+        niche: set.niche || 'all',
         steps: [...set.steps]
           .map((step) => ({
             id: step.id,
@@ -199,6 +203,7 @@ export class PromptsRepository {
             language: prompt.language,
             name: prompt.name,
             category: prompt.category,
+            niche: prompt.niche || 'all',
             isSystem: prompt.isSystem,
             createdAt: prompt.createdAt,
             updatedAt: prompt.updatedAt,
@@ -210,6 +215,7 @@ export class PromptsRepository {
         const set = store.promptSets[setIndex]!;
         set.name = prompt.name;
         set.category = prompt.category;
+        set.niche = prompt.niche || 'all';
         set.isSystem = prompt.isSystem ?? set.isSystem;
         set.createdAt = set.createdAt || prompt.createdAt;
         set.updatedAt = prompt.updatedAt;
@@ -276,6 +282,7 @@ export class PromptsRepository {
             language: updated.language,
             name: updated.name,
             category: updated.category,
+            niche: updated.niche || 'all',
             isSystem: updated.isSystem,
             createdAt: updated.createdAt,
             updatedAt: updated.updatedAt,
@@ -287,6 +294,7 @@ export class PromptsRepository {
         const targetSet = store.promptSets[targetSetIndex]!;
         targetSet.name = updated.name;
         targetSet.category = updated.category;
+        targetSet.niche = updated.niche || 'all';
         targetSet.isSystem = updated.isSystem ?? targetSet.isSystem;
         targetSet.updatedAt = updated.updatedAt;
         targetSet.steps = [nextStep, ...targetSet.steps.filter((stepItem) => stepItem.id !== updated!.id)].sort(

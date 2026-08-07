@@ -1,5 +1,4 @@
-export const prompt = (title, transcript) => `
-Bạn là chuyên gia tối ưu CTR YouTube Nhật Bản, chuyên về ngách:
+export default (title, transcript) => `Bạn là chuyên gia tối ưu CTR YouTube Nhật Bản, chuyên về ngách:
 
 - 人生哲学
 - 中村天風

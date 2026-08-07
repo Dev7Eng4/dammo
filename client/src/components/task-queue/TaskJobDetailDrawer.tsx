@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/cn';
 import { getTaskDetailLine } from '../../utils/taskQueue';
 import type { TaskJob, TaskLogEntry } from '../../types/taskQueue';
+import { Drawer } from '../ui';
 
-interface TaskJobLiveOutputPanelProps {
-  job: TaskJob;
+interface TaskJobDetailDrawerProps {
+  open: boolean;
+  job: TaskJob | null;
   onClose: () => void;
 }
 
@@ -75,46 +77,34 @@ function getEmptyPanelMessage(job: TaskJob): string {
   return 'No output available';
 }
 
-export function TaskJobLiveOutputPanel({ job, onClose }: TaskJobLiveOutputPanelProps) {
+export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerProps) {
   const consoleRef = useRef<HTMLDivElement>(null);
-  const logs = job.logs ?? [];
-  const panelTitle = job.status === 'running' ? 'Live Output' : 'Job Detail';
-  const emptyMessage = getEmptyPanelMessage(job);
+  const logs = job?.logs ?? [];
+  const panelTitle = job?.status === 'running' ? 'Live Output' : 'Job Detail';
+  const subtitle = [panelTitle, job?.livePhase].filter(Boolean).join(' · ');
 
   useEffect(() => {
     const el = consoleRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [logs.length, job.updatedAt]);
+    const scrollParent = el.parentElement;
+    if (scrollParent) scrollParent.scrollTop = scrollParent.scrollHeight;
+  }, [logs.length, job?.updatedAt]);
+
+  if (!job) return null;
 
   return (
-    <aside className="flex h-full w-full flex-col border-l border-border bg-surface lg:w-96 xl:w-[28rem]">
-      <div className="flex items-start justify-between gap-2 border-b border-border p-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">{panelTitle}</p>
-          <h2 className="mt-1 truncate text-sm font-semibold text-neutral-100">{job.title}</h2>
-          {job.livePhase ? (
-            <p className="mt-0.5 text-xs capitalize text-neutral-500">{job.livePhase}</p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {logs.length > 0 ? <CopyButton value={formatLogText(logs)} /> : null}
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 text-neutral-500 hover:text-neutral-300"
-            aria-label="Close panel"
-          >
-            <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={job.title}
+      subtitle={subtitle}
+      placement="overlay"
+      widthClassName="w-full max-w-sm lg:w-96 xl:w-[28rem]"
+      headerActions={logs.length > 0 ? <CopyButton value={formatLogText(logs)} /> : null}
+    >
       <div
         ref={consoleRef}
-        className="flex-1 overflow-y-auto bg-neutral-900 p-4 font-mono text-[11px] leading-relaxed"
+        className="min-h-full bg-neutral-900 p-4 font-mono text-[11px] leading-relaxed"
       >
         {logs.length === 0 ? (
           <p
@@ -123,7 +113,7 @@ export function TaskJobLiveOutputPanel({ job, onClose }: TaskJobLiveOutputPanelP
               job.status === 'failed' ? 'text-danger' : 'text-neutral-500',
             )}
           >
-            {emptyMessage}
+            {getEmptyPanelMessage(job)}
           </p>
         ) : (
           <div className="space-y-0.5">
@@ -136,6 +126,6 @@ export function TaskJobLiveOutputPanel({ job, onClose }: TaskJobLiveOutputPanelP
           </div>
         )}
       </div>
-    </aside>
+    </Drawer>
   );
 }

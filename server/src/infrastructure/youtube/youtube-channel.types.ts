@@ -10,7 +10,7 @@ export interface YoutubeChannelMetadata {
   categories?: string[];
 }
 
-export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error';
+export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error' | 'Pending';
 
 export interface YoutubeChannelVideo {
   id: string;

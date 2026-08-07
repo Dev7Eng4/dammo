@@ -25,7 +25,7 @@ import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumb
 import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
-import { listSiMultiImagePaths } from '../../shared/si-video/si-multi-image.js';
+import { listSiMultiImagePaths, copyCelebrityImagesToWorkDir } from '../../shared/si-video/si-multi-image.js';
 import {
   AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC,
   assembleReupAiSlideshowVideo,
@@ -56,6 +56,8 @@ interface CreateVideosOptions {
   skipVideoAssembly?: boolean;
   /** Số video tối đa xử lý trên mỗi channel trong một lần chạy */
   maxVideosPerChannel?: number;
+  /** Danh sách source video ID cụ thể cần xử lý (bỏ qua auto-pick) */
+  videoIds?: string[];
 }
 
 function isReupAudioPipeline(pipelineType: ProductionDestination['pipelineType']): boolean {
@@ -205,15 +207,32 @@ async function resolveReupVideoDownload(
   return downloadReupAssets(task.link, pipelineType, language);
 }
 
-function buildTasks(destination: ProductionDestination, videos: SourceVideoWithSource[], maxVideos?: number): ReupVideoTask[] {
+function buildTasks(
+  destination: ProductionDestination,
+  videos: SourceVideoWithSource[],
+  options?: Pick<CreateVideosOptions, 'maxVideosPerChannel' | 'videoIds'>,
+): ReupVideoTask[] {
   const preparedVideoIds = destination.getPreparedVideoIds();
-  const limit = maxVideos ?? REUP_VIDEOS_PER_RUN;
-  const selected = selectVideosForCreation(
-    videos,
-    preparedVideoIds,
-    limit,
-    destination.videoCreationOrder ?? 'oldest_first',
-  );
+
+  let selected: SourceVideoWithSource[];
+
+  if (options?.videoIds?.length) {
+    const byId = new Map(videos.map(video => [video.id, video]));
+    selected = options.videoIds
+      .map(id => byId.get(id))
+      .filter((video): video is SourceVideoWithSource => {
+        if (!video?.url) return false;
+        return !preparedVideoIds.has(video.id);
+      });
+  } else {
+    const limit = options?.maxVideosPerChannel ?? REUP_VIDEOS_PER_RUN;
+    selected = selectVideosForCreation(
+      videos,
+      preparedVideoIds,
+      limit,
+      destination.videoCreationOrder ?? 'oldest_first',
+    );
+  }
 
   return selected.map(video => ({
     link: video.url,
@@ -248,7 +267,10 @@ export class ReupAudioPipeline {
       throw new AppError('No source videos available for mapped sources', 400, 'NO_SOURCE_VIDEOS');
     }
 
-    const tasks = buildTasks(destination, allVideos, options?.maxVideosPerChannel);
+    const tasks = buildTasks(destination, allVideos, {
+      maxVideosPerChannel: options?.maxVideosPerChannel,
+      videoIds: options?.videoIds,
+    });
     if (tasks.length === 0) {
       throw new AppError('No unprocessed source videos available', 400, 'NO_UNPROCESSED_VIDEOS');
     }
@@ -369,6 +391,7 @@ export class ReupAudioPipeline {
                 () =>
                   runMetadata(task.sourceTitle, jaSrtPath, destination.language, downloaded.youtubeVideoId, {
                     outputDir: jaWorkDir,
+                    niche: destination.niche,
                     descriptionDisclaimer:
                       destination.showDisclaimer === true && destination.descriptionDisclaimerText?.trim()
                         ? destination.descriptionDisclaimerText.trim()
@@ -836,7 +859,41 @@ export class ReupAudioPipeline {
             if (videoType === 'si') {
               const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
               const needsCenterImage = siBackgroundImage === 'one_image';
-              const needsMultiImage = siBackgroundImage === 'multi_image';
+              const needsMultiImage =
+                siBackgroundImage === 'multi_image' || siBackgroundImage === 'celebrity';
+
+              if (siBackgroundImage === 'celebrity') {
+                const celebrityId = destination.celebrityId?.trim();
+                if (!celebrityId) {
+                  throw new AppError(
+                    'Channel is missing celebrityId for celebrity background image mode',
+                    400,
+                    'VALIDATION_ERROR',
+                  );
+                }
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    `Copying celebrity images (${celebrityId}) into images/...`,
+                  );
+                }
+                const copied = await copyCelebrityImagesToWorkDir(
+                  celebrityId,
+                  workDir,
+                  taskJobId
+                    ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg)
+                    : undefined,
+                );
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'ok',
+                    `Copied ${copied.length} celebrity image(s) → images/`,
+                  );
+                }
+              }
+
               const multiImagePaths = needsMultiImage ? await listSiMultiImagePaths(workDir) : [];
 
               if (needsCenterImage && !heroImagePath) {
@@ -850,7 +907,9 @@ export class ReupAudioPipeline {
                   taskQueueRepository.appendLogMessage(
                     taskJobId,
                     'info',
-                    'SI video assembly skipped: multi_image requires at least one image in images/',
+                    siBackgroundImage === 'celebrity'
+                      ? 'SI video assembly skipped: celebrity has no images in images/'
+                      : 'SI video assembly skipped: multi_image requires at least one image in images/',
                   );
                 }
               } else if (destination.backgroundFootageMode !== 'local' && !destination.backgroundFootageSources?.length) {
@@ -866,7 +925,7 @@ export class ReupAudioPipeline {
                 if (taskJobId) {
                   taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
                   const assembleLabel = needsMultiImage
-                    ? `Assembling SI video (stock + multi-image slideshow ${multiImagePaths.length} images + subtitles)...`
+                    ? `Assembling SI video (stock + ${siBackgroundImage === 'celebrity' ? 'celebrity' : 'multi-image'} slideshow ${multiImagePaths.length} images + subtitles)...`
                     : needsCenterImage
                       ? 'Assembling SI video (stock + overlay + subtitles)...'
                       : `Assembling SI video (stock + subtitles, backgroundImage=${siBackgroundImage})...`;
@@ -879,7 +938,13 @@ export class ReupAudioPipeline {
                   subtitlePath: subtitleForAssembly,
                   outputBasename,
                   ...(needsCenterImage && heroImagePath ? { centerImagePath: heroImagePath } : {}),
-                  ...(needsMultiImage ? { centerImagePaths: multiImagePaths } : {}),
+                  ...(needsMultiImage
+                    ? {
+                        centerImagePaths: multiImagePaths,
+                        centerSlideshowVariant:
+                          siBackgroundImage === 'celebrity' ? ('celebrity' as const) : ('multi' as const),
+                      }
+                    : {}),
                   backgroundFootageMode: destination.backgroundFootageMode ?? 'source',
                   backgroundFootageSourceIds: destination.backgroundFootageSources,
                   language: destination.language,

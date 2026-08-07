@@ -22,6 +22,7 @@ const createVideoPayloadSchema = z
     channelHandle: z.string().optional(),
     videoCount: z.number().int().min(1).max(50).optional(),
     prepareOnly: z.boolean().optional(),
+    videoIds: z.array(z.string().min(1)).min(1).optional(),
   })
   .refine(
     (data) => {

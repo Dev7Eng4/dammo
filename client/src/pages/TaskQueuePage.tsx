@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TaskJobCard } from '../components/task-queue/TaskJobCard';
-import { TaskJobLiveOutputPanel } from '../components/task-queue/TaskJobLiveOutputPanel';
+import { TaskJobDetailDrawer } from '../components/task-queue/TaskJobDetailDrawer';
 import { TaskQueuePageToolbar } from '../components/task-queue/TaskQueuePageToolbar';
 import { useToast } from '../components/ui';
 import { useDebouncedValue, useTaskQueue } from '../hooks';
@@ -74,7 +74,7 @@ export function TaskQueuePage() {
   }
 
   function handleSelectJob(job: TaskJobListItem) {
-    setSelectedJobId((current) => (current === job.id ? null : job.id));
+    setSelectedJobId(job.id);
   }
 
   function handleClosePanel() {
@@ -100,7 +100,7 @@ export function TaskQueuePage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row">
+    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <TaskQueuePageToolbar
@@ -140,19 +140,11 @@ export function TaskQueuePage() {
         </div>
       </div>
 
-      {selectedJob ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close job detail panel"
-            onClick={handleClosePanel}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm lg:static lg:z-auto lg:max-w-none">
-            <TaskJobLiveOutputPanel job={selectedJob} onClose={handleClosePanel} />
-          </div>
-        </>
-      ) : null}
+      <TaskJobDetailDrawer
+        open={Boolean(selectedJobId && selectedJob)}
+        job={selectedJob}
+        onClose={handleClosePanel}
+      />
     </div>
   );
 }

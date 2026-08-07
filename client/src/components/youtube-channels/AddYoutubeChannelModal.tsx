@@ -4,6 +4,7 @@ import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
+import { fetchCelebrities } from '../../api/celebrities';
 import {
   createYoutubeChannel,
   fetchYoutubeChannels,
@@ -22,8 +23,12 @@ import {
   VIDEO_CREATION_ORDER_OPTIONS,
   YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
+  CELEBRITY_EMPTY_SENTINEL,
+  parseSiBackgroundImageValue,
+  toSiBackgroundImageFormValue,
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
+import type { CelebrityListItem } from '../../types/celebrity';
 import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type {
@@ -44,6 +49,7 @@ import { buildBackgroundFootageSelectValue, handleBackgroundFootageSelectChange 
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
+import type { SelectOption } from '../ui';
 import { AudioBarPickerModal } from './AudioBarPickerModal';
 import { SmallVideoPickerModal } from './SmallVideoPickerModal';
 import { SubscribePickerModal } from './SubscribePickerModal';
@@ -116,15 +122,21 @@ const AUDIO_VIDEO_TYPE_OPTIONS = REUP_AUDIO_VIDEO_TYPE_OPTIONS.map(option => ({
   }[option.value],
 }));
 
-const AUDIO_BACKGROUND_IMAGE_OPTIONS = REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS.map(option => ({
-  ...option,
+const AUDIO_BACKGROUND_IMAGE_OPTIONS: SelectOption[] = REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS.map(option => ({
+  value: option.value,
   label: {
     no_image: 'Không dùng hình ảnh',
-    local_image: 'Hình ảnh trên máy',
     one_image: 'Một hình ảnh',
     multi_image: 'Nhiều hình ảnh',
   }[option.value],
+  group: 'Hình ảnh',
 }));
+
+const LOCAL_IMAGE_LEGACY_OPTION: SelectOption = {
+  value: 'local_image',
+  label: 'Hình ảnh trên máy',
+  group: 'Hình ảnh',
+};
 
 const VI_UPLOAD_FREQUENCY_OPTIONS = UPLOAD_FREQUENCY_OPTIONS.map(option => ({
   ...option,
@@ -199,7 +211,10 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     captionStyleKey: channel.captionStyleKey ?? 'default',
     reupAudioVideoType: channel.reupAudioVideoType ?? '',
     reupAudioVisualStyleId: channel.reupAudioVisualStyleId ?? '',
-    reupAudioBackgroundImage: channel.reupAudioBackgroundImage ?? '',
+    reupAudioBackgroundImage: toSiBackgroundImageFormValue(
+      channel.reupAudioBackgroundImage,
+      channel.celebrityId,
+    ),
     aiSceneDensityMaxSec: {
       high: channel.aiSceneDensityMaxSec?.high ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
       medium: channel.aiSceneDensityMaxSec?.medium ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
@@ -270,6 +285,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
   const [visualStyleOptions, setVisualStyleOptions] = useState<{ value: string; label: string }[]>([]);
   const [visualStylesLoading, setVisualStylesLoading] = useState(false);
+  const [celebritiesWithMedia, setCelebritiesWithMedia] = useState<CelebrityListItem[]>([]);
+  const [celebritiesLoading, setCelebritiesLoading] = useState(false);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
   const [tempBackgroundSessionId, setTempBackgroundSessionId] = useState(() => crypto.randomUUID());
   const [audioBarPickerOpen, setAudioBarPickerOpen] = useState(false);
@@ -299,8 +316,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const language = watch('language') as YoutubeChannelLanguage | '';
   const reupAudioVideoType = watch('reupAudioVideoType');
   const reupAudioBackgroundImage = watch('reupAudioBackgroundImage');
+  const parsedBackgroundImage = useMemo(
+    () => parseSiBackgroundImageValue(reupAudioBackgroundImage),
+    [reupAudioBackgroundImage],
+  );
   const useReferenceImage = watch('useReferenceImage');
-  const canEditSceneDensity = isReupAudio && (reupAudioVideoType === 'ai' || reupAudioBackgroundImage === 'multi_image');
+  const canEditSceneDensity =
+    isReupAudio && (reupAudioVideoType === 'ai' || parsedBackgroundImage.mode === 'multi_image');
   const showDisclaimer = watch('showDisclaimer');
   const uploadFrequency = watch('uploadFrequency');
   const backgroundFootageMode = watch('backgroundFootageMode');
@@ -324,6 +346,30 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     [sources, niches],
   );
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
+
+  const siBackgroundImageOptions = useMemo(() => {
+    const options: SelectOption[] = [...AUDIO_BACKGROUND_IMAGE_OPTIONS];
+    if (parsedBackgroundImage.mode === 'local_image') {
+      options.push(LOCAL_IMAGE_LEGACY_OPTION);
+    }
+    if (celebritiesWithMedia.length > 0) {
+      for (const celebrity of celebritiesWithMedia) {
+        options.push({
+          value: toSiBackgroundImageFormValue('celebrity', celebrity.id),
+          label: celebrity.name,
+          group: 'Người nổi tiếng',
+        });
+      }
+    } else {
+      options.push({
+        value: CELEBRITY_EMPTY_SENTINEL,
+        label: 'Chưa có người nổi tiếng nào có ảnh/video',
+        group: 'Người nổi tiếng',
+        disabled: true,
+      });
+    }
+    return options;
+  }, [celebritiesWithMedia, parsedBackgroundImage.mode]);
 
   useAbortableEffect(
     async signal => {
@@ -420,6 +466,41 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     if (canEditSceneDensity) return;
     setValue('aiSceneDensityMaxSec', { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC });
   }, [formReady, canEditSceneDensity, setValue]);
+
+  useAbortableEffect(
+    async signal => {
+      if (!open || !formReady || !isReupAudio || reupAudioVideoType !== 'si') {
+        setCelebritiesWithMedia([]);
+        return;
+      }
+
+      setCelebritiesLoading(true);
+      try {
+        const { items } = await fetchCelebrities({ signal });
+        const withMedia = items
+          .filter(item => item.mediaCount > 0)
+          .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        setCelebritiesWithMedia(withMedia);
+
+        const current = getValues('reupAudioBackgroundImage');
+        const parsed = parseSiBackgroundImageValue(current);
+        if (
+          parsed.mode === 'celebrity' &&
+          parsed.celebrityId &&
+          !withMedia.some(item => item.id === parsed.celebrityId)
+        ) {
+          setValue('reupAudioBackgroundImage', '');
+        }
+      } catch {
+        if (signal.aborted) return;
+        setCelebritiesWithMedia([]);
+      } finally {
+        if (!signal.aborted) setCelebritiesLoading(false);
+      }
+    },
+    [open, formReady, isReupAudio, reupAudioVideoType],
+    { enabled: open && formReady && isReupAudio && reupAudioVideoType === 'si' },
+  );
 
   useAbortableEffect(
     async signal => {
@@ -546,9 +627,20 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
         ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' && values.reupAudioBackgroundImage
-          ? { reupAudioBackgroundImage: values.reupAudioBackgroundImage }
+          ? (() => {
+              const parsed = parseSiBackgroundImageValue(values.reupAudioBackgroundImage);
+              if (!parsed.mode || (parsed.mode === 'celebrity' && !parsed.celebrityId)) return {};
+              return {
+                reupAudioBackgroundImage: parsed.mode,
+                ...(parsed.mode === 'celebrity' && parsed.celebrityId
+                  ? { celebrityId: parsed.celebrityId }
+                  : {}),
+              };
+            })()
           : {}),
-        ...(values.type === 'reup_audio' && (values.reupAudioVideoType === 'ai' || values.reupAudioBackgroundImage === 'multi_image')
+        ...(values.type === 'reup_audio' &&
+        (values.reupAudioVideoType === 'ai' ||
+          parseSiBackgroundImageValue(values.reupAudioBackgroundImage).mode === 'multi_image')
           ? {
               aiSceneDensityMaxSec: {
                 high: Number(values.aiSceneDensityMaxSec.high) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
@@ -859,16 +951,26 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       rules={{
                         required:
                           isReupAudio && reupAudioVideoType === 'si' ? 'Hình ảnh là bắt buộc đối với Video tư liệu + hình ảnh' : false,
+                        validate: value => {
+                          if (!value || value === CELEBRITY_EMPTY_SENTINEL) {
+                            return isReupAudio && reupAudioVideoType === 'si'
+                              ? 'Hình ảnh là bắt buộc đối với Video tư liệu + hình ảnh'
+                              : true;
+                          }
+                          return true;
+                        },
                       }}
                       render={({ field }) => (
                         <Select
                           id='reup-audio-background-image'
-                          options={AUDIO_BACKGROUND_IMAGE_OPTIONS}
+                          options={siBackgroundImageOptions}
                           value={field.value}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
-                          placeholder='Chọn hình ảnh'
-                          disabled={isSubmitting}
+                          placeholder={celebritiesLoading ? 'Đang tải người nổi tiếng...' : 'Chọn hình ảnh'}
+                          searchable
+                          searchPlaceholder='Tìm hình ảnh hoặc người nổi tiếng...'
+                          disabled={isSubmitting || celebritiesLoading}
                           className='w-full'
                           triggerClassName={selectTriggerClass}
                         />
@@ -923,7 +1025,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   control={control}
                   rules={{
                     required:
-                      isReupAudio && (reupAudioVideoType === 'ai' || reupAudioBackgroundImage === 'multi_image' || useReferenceImage)
+                      isReupAudio &&
+                      (reupAudioVideoType === 'ai' ||
+                        parsedBackgroundImage.mode === 'multi_image' ||
+                        useReferenceImage)
                         ? 'Phong cách hình ảnh là bắt buộc'
                         : false,
                   }}

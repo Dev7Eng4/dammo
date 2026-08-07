@@ -9,3 +9,7 @@ export const listAssetsQuerySchema = z.object({
 export const deleteAssetsSchema = z.object({
   names: z.array(z.string().min(1)).min(1),
 });
+
+export const prepareColorSchema = z.object({
+  keyColor: z.enum(['green', 'black']).default('green'),
+});

@@ -174,10 +174,175 @@ export async function fillVideoDetails(
 
   const resolvedThumbnailPath = thumbnailPath ?? findThumbnailPath(videoFolderPath);
   if (resolvedThumbnailPath && fs.existsSync(resolvedThumbnailPath)) {
-    const [fileChooser] = await Promise.all([page.waitForEvent('filechooser'), clickElement(page, YOUTUBE_SELECTOR.btnSelectThumbnail)]);
-    await delay(1000);
-    await fileChooser.setFiles(resolvedThumbnailPath);
+    // #region agent log
+    const thumbBtn = page.locator(YOUTUBE_SELECTOR.btnSelectThumbnail);
+    const thumbBox = page.locator(YOUTUBE_SELECTOR.thumbnailBox);
+    const thumbProbe = await page
+      .evaluate(
+        ({ btnSel, boxSel }) => {
+          const btn = document.querySelector(btnSel);
+          const box = document.querySelector(boxSel);
+          const fileInputs = Array.from(document.querySelectorAll('ytcp-thumbnail-uploader input[type="file"], ytcp-video-thumbnail-editor input[type="file"]')).map(
+            el => {
+              const input = el as HTMLInputElement;
+              return {
+                accept: input.accept || '',
+                disabled: input.disabled,
+                hidden: input.hidden || input.style.display === 'none',
+                className: input.className || '',
+              };
+            },
+          );
+          const btnRect = btn?.getBoundingClientRect();
+          const style = btn ? window.getComputedStyle(btn) : null;
+          const topEl =
+            btnRect != null
+              ? document.elementFromPoint(btnRect.left + btnRect.width / 2, btnRect.top + btnRect.height / 2)
+              : null;
+          return {
+            btnCount: document.querySelectorAll(btnSel).length,
+            boxPresent: !!box,
+            btnPresent: !!btn,
+            btnTag: btn?.tagName ?? null,
+            btnAriaDisabled: btn?.getAttribute('aria-disabled'),
+            btnDisabled: (btn as HTMLButtonElement | null)?.disabled ?? null,
+            btnDisplay: style?.display ?? null,
+            btnVisibility: style?.visibility ?? null,
+            btnPointerEvents: style?.pointerEvents ?? null,
+            btnRect: btnRect
+              ? { x: btnRect.x, y: btnRect.y, w: btnRect.width, h: btnRect.height }
+              : null,
+            topElementAtBtn: topEl
+              ? { tag: topEl.tagName, id: topEl.id || '', className: String(topEl.className || '').slice(0, 120) }
+              : null,
+            fileInputs,
+            dialogStep: document.querySelector('ytcp-uploads-dialog')?.getAttribute('workflow-step') ?? null,
+            url: location.href.slice(0, 120),
+          };
+        },
+        { btnSel: YOUTUBE_SELECTOR.btnSelectThumbnail, boxSel: YOUTUBE_SELECTOR.thumbnailBox },
+      )
+      .catch((err: unknown) => ({ evaluateError: err instanceof Error ? err.message : String(err) }));
+    const btnVisible = await thumbBtn.isVisible().catch(() => false);
+    const btnEnabled = await thumbBtn.isEnabled().catch(() => false);
+    const btnCount = await thumbBtn.count().catch(() => -1);
+    const boxVisible = await thumbBox.isVisible().catch(() => false);
+    fetch('http://127.0.0.1:7767/ingest/7125b6a5-2d4f-460d-8c40-028f09f57374', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '566952' },
+      body: JSON.stringify({
+        sessionId: '566952',
+        runId: 'pre-fix',
+        hypothesisId: 'A,B,D,E',
+        location: 'studio-upload-flow.ts:fillVideoDetails:pre-thumb',
+        message: 'Thumbnail button probe before filechooser',
+        data: {
+          thumbExists: true,
+          thumbExt: path.extname(resolvedThumbnailPath),
+          btnVisible,
+          btnEnabled,
+          btnCount,
+          boxVisible,
+          probe: thumbProbe,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    try {
+      // #region agent log
+      fetch('http://127.0.0.1:7767/ingest/7125b6a5-2d4f-460d-8c40-028f09f57374', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '566952' },
+        body: JSON.stringify({
+          sessionId: '566952',
+          runId: 'pre-fix',
+          hypothesisId: 'C',
+          location: 'studio-upload-flow.ts:fillVideoDetails:before-wait',
+          message: 'Starting filechooser wait + thumbnail click',
+          data: { selector: YOUTUBE_SELECTOR.btnSelectThumbnail },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser', { timeout: 30_000 }),
+        clickElement(page, YOUTUBE_SELECTOR.btnSelectThumbnail),
+      ]);
+      // #region agent log
+      fetch('http://127.0.0.1:7767/ingest/7125b6a5-2d4f-460d-8c40-028f09f57374', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '566952' },
+        body: JSON.stringify({
+          sessionId: '566952',
+          runId: 'pre-fix',
+          hypothesisId: 'C',
+          location: 'studio-upload-flow.ts:fillVideoDetails:filechooser-ok',
+          message: 'filechooser event received',
+          data: { hasChooser: !!fileChooser },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      await delay(1000);
+      await fileChooser.setFiles(resolvedThumbnailPath);
+    } catch (thumbErr) {
+      // #region agent log
+      const postFailProbe = await page
+        .evaluate(btnSel => {
+          const btn = document.querySelector(btnSel);
+          const btnRect = btn?.getBoundingClientRect();
+          const topEl =
+            btnRect != null
+              ? document.elementFromPoint(btnRect.left + btnRect.width / 2, btnRect.top + btnRect.height / 2)
+              : null;
+          return {
+            btnPresent: !!btn,
+            topElementAtBtn: topEl
+              ? { tag: topEl.tagName, id: topEl.id || '', className: String(topEl.className || '').slice(0, 120) }
+              : null,
+            fileInputCount: document.querySelectorAll(
+              'ytcp-thumbnail-uploader input[type="file"], ytcp-video-thumbnail-editor input[type="file"]',
+            ).length,
+            bodyTextSnippet: (document.body?.innerText || '').slice(0, 200),
+          };
+        }, YOUTUBE_SELECTOR.btnSelectThumbnail)
+        .catch((err: unknown) => ({ evaluateError: err instanceof Error ? err.message : String(err) }));
+      fetch('http://127.0.0.1:7767/ingest/7125b6a5-2d4f-460d-8c40-028f09f57374', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '566952' },
+        body: JSON.stringify({
+          sessionId: '566952',
+          runId: 'pre-fix',
+          hypothesisId: 'A,B,C,D',
+          location: 'studio-upload-flow.ts:fillVideoDetails:filechooser-fail',
+          message: 'filechooser wait/click failed',
+          data: {
+            error: thumbErr instanceof Error ? thumbErr.message : String(thumbErr),
+            postFailProbe,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      throw thumbErr;
+    }
   } else {
+    // #region agent log
+    fetch('http://127.0.0.1:7767/ingest/7125b6a5-2d4f-460d-8c40-028f09f57374', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '566952' },
+      body: JSON.stringify({
+        sessionId: '566952',
+        runId: 'pre-fix',
+        hypothesisId: 'F',
+        location: 'studio-upload-flow.ts:fillVideoDetails:missing-thumb',
+        message: 'Thumbnail path missing',
+        data: { resolvedThumbnailPath: resolvedThumbnailPath ?? null, folder: videoFolderPath },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     onError?.(`Missing thumbnail (thumbnail.*): ${videoFolderPath}`);
   }
 

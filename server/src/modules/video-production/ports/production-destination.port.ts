@@ -23,6 +23,8 @@ export interface ProductionDestination {
   name: string;
   pipelineType: ProductionPipelineType;
   language: ChannelLanguage;
+  /** Channel niche key, or `all` when unset. */
+  niche: string;
   sourceChannels: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
@@ -34,6 +36,7 @@ export interface ProductionDestination {
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
+  celebrityId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;

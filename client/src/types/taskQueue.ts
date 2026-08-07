@@ -26,6 +26,7 @@ export interface CreateVideoTaskPayload {
   channelHandle?: string;
   videoCount?: number;
   prepareOnly?: boolean;
+  videoIds?: string[];
 }
 
 export interface UploadVideoTaskPayload {

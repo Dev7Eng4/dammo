@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { isAbortError } from '../api/http';
-import { fetchYoutubeChannel, fetchYoutubeChannelVideos, syncYoutubeChannelVideos, deleteYoutubeChannelVideos } from '../api/youtubeChannels';
+import { fetchYoutubeChannel, fetchYoutubeChannelVideos, fetchYoutubeChannelPendingVideos, syncYoutubeChannelVideos, deleteYoutubeChannelVideos } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
-import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
 import { DeleteVideosConfirmModal } from '../components/youtube-channels/DeleteVideosConfirmModal';
 import { YoutubeChannelDetailHeader, YoutubeChannelDetailHeaderSkeleton } from '../components/youtube-channels/YoutubeChannelDetailHeader';
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
@@ -26,7 +25,7 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
 }
 
 function isDeletableVideoStatus(status: YoutubeChannelVideo['status']): boolean {
-  return status != null && status !== 'Published';
+  return status != null && status !== 'Published' && status !== 'Pending';
 }
 
 export function YoutubeChannelDetailPage() {
@@ -46,28 +45,45 @@ export function YoutubeChannelDetailPage() {
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
   const [contentVideo, setContentVideo] = useState<YoutubeChannelVideo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [videoCountAction, setVideoCountAction] = useState<'create' | 'prepare' | null>(null);
   const [statusFilter, setStatusFilter] = useState<YoutubeChannelVideoStatusFilter>('all');
   const [openingProfile, setOpeningProfile] = useState(false);
   const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(() => new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingVideos, setDeletingVideos] = useState(false);
+  const [pendingVideos, setPendingVideos] = useState<YoutubeChannelVideo[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [pendingError, setPendingError] = useState<string | null>(null);
+  const [pendingResetKey, setPendingResetKey] = useState(0);
 
-  const filteredVideos = useMemo(() => filterYoutubeChannelVideosByStatus(allVideos, statusFilter), [allVideos, statusFilter]);
+  const isPendingFilter = statusFilter === 'Pending';
+
+  const filteredVideos = useMemo(() => {
+    if (isPendingFilter) return pendingVideos;
+    return filterYoutubeChannelVideosByStatus(allVideos, statusFilter);
+  }, [allVideos, statusFilter, isPendingFilter, pendingVideos]);
 
   const videos = useClientPaginatedList(filteredVideos, {
     limit: VIDEO_LIMIT,
-    resetKey: `${videoResetKey}:${statusFilter}`,
+    resetKey: `${isPendingFilter ? pendingResetKey : videoResetKey}:${statusFilter}`,
   });
 
   const videosEmptyMessage = statusFilter !== 'all' ? 'Không có video nào khớp với trạng thái đã chọn.' : 'Không tìm thấy video nào.';
+  const tableLoading = isPendingFilter ? pendingLoading : videosLoading;
+  const tableError = isPendingFilter ? pendingError : videosError;
 
   const selectedVideos = useMemo(
-    () => allVideos.filter(video => selectedVideoIds.has(video.id)),
-    [allVideos, selectedVideoIds],
+    () => filteredVideos.filter(video => selectedVideoIds.has(video.id)),
+    [filteredVideos, selectedVideoIds],
   );
+  const canCreateFromSelection =
+    isPendingFilter &&
+    selectedVideoIds.size > 0 &&
+    channel != null &&
+    isStoredReupChannelType(channel.type);
   const canDeleteVideos =
-    selectedVideos.length > 0 && selectedVideos.every(video => isDeletableVideoStatus(video.status));
+    !isPendingFilter &&
+    selectedVideos.length > 0 &&
+    selectedVideos.every(video => isDeletableVideoStatus(video.status));
 
   useAbortableEffect(
     async signal => {
@@ -115,25 +131,48 @@ export function YoutubeChannelDetailPage() {
     { enabled: Boolean(id) },
   );
 
-  function handleVideoCountConfirm(count: number) {
-    if (!id || !channel || !isStoredReupChannelType(channel.type)) return;
+  useAbortableEffect(
+    async signal => {
+      if (!id) return;
 
-    const isPrepare = videoCountAction === 'prepare';
-    setVideoCountAction(null);
+      setPendingLoading(true);
+      setPendingError(null);
+
+      try {
+        const data = await fetchYoutubeChannelPendingVideos(id, { signal });
+        setPendingVideos(data.items);
+        setPendingResetKey(key => key + 1);
+      } catch (err) {
+        if (isAbortError(err)) return;
+        setPendingVideos([]);
+        setPendingError(err instanceof Error ? err.message : 'Không thể tải video chưa xử lý');
+      } finally {
+        if (!signal.aborted) setPendingLoading(false);
+      }
+    },
+    [id, statusFilter],
+    { enabled: Boolean(id) && isPendingFilter },
+  );
+
+  function enqueueSelectedVideos(prepareOnly: boolean) {
+    if (!id || !channel || !canCreateFromSelection) return;
+
+    const videoIds = Array.from(selectedVideoIds);
     void enqueueTask({
       type: 'create_video',
-      title: isPrepare
+      title: prepareOnly
         ? `Đang chuẩn bị video: ${channel.name}`
         : `Đang tạo video: ${channel.name}`,
-      subtitle: `${channel.handle} · ${count} video`,
+      subtitle: `${channel.handle} · ${videoIds.length} video đã chọn`,
       payload: {
         channelId: id,
         channelName: channel.name,
         channelHandle: channel.handle,
-        videoCount: count,
-        ...(isPrepare ? { prepareOnly: true } : {}),
+        videoIds,
+        ...(prepareOnly ? { prepareOnly: true } : {}),
       },
     });
+    setSelectedVideoIds(new Set());
   }
 
   async function handleSyncVideos() {
@@ -245,14 +284,14 @@ export function YoutubeChannelDetailPage() {
               syncing={syncing}
               syncError={syncError}
               videosFetchedAt={videosFetchedAt}
-              canCreateVideo={isStoredReupChannelType(channel.type)}
+              canCreateFromSelection={canCreateFromSelection}
               openingProfile={openingProfile}
               canDeleteVideos={canDeleteVideos}
               deletingVideos={deletingVideos}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}
-              onCreateVideo={() => setVideoCountAction('create')}
-              onPrepareVideo={() => setVideoCountAction('prepare')}
+              onCreateVideo={() => enqueueSelectedVideos(false)}
+              onPrepareVideo={() => enqueueSelectedVideos(true)}
               onDeleteVideos={() => setShowDeleteConfirm(true)}
               onOpenProfile={handleOpenProfile}
             />
@@ -274,24 +313,6 @@ export function YoutubeChannelDetailPage() {
             />
           ) : null}
 
-          <CreateVideoCountModal
-            open={videoCountAction !== null}
-            onClose={() => setVideoCountAction(null)}
-            onConfirm={handleVideoCountConfirm}
-            title={
-              videoCountAction === 'prepare'
-                ? 'Số lượng video cần chuẩn bị'
-                : 'Số lượng video cần tạo'
-            }
-            description={
-              channel
-                ? videoCountAction === 'prepare'
-                  ? `Chuẩn bị video cho kênh ${channel.name}`
-                  : `Tạo video cho kênh ${channel.name}`
-                : undefined
-            }
-          />
-
           <div className='mt-4 flex flex-wrap items-end justify-between gap-3'>
             {/* <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} /> */}
             <YoutubeChannelVideosToolbar
@@ -307,15 +328,15 @@ export function YoutubeChannelDetailPage() {
           <div className='mt-3 card-surface px-5 pt-3 pb-4'>
             <YoutubeChannelVideosTable
               videos={videos.pageItems}
-              loading={videosLoading}
-              error={videosError}
+              loading={tableLoading}
+              error={tableError}
               emptyMessage={videosEmptyMessage}
               enableRowSelection
               selectedIds={selectedVideoIds}
               onToggleRow={handleToggleVideoRow}
               onToggleAll={handleToggleAllVideos}
-              onCommentClick={setSelectedVideo}
-              onTitleClick={setContentVideo}
+              onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
+              onTitleClick={isPendingFilter ? undefined : setContentVideo}
             />
             <MailAccountsPagination
               page={videos.page}

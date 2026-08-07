@@ -49,6 +49,7 @@ import {
 } from './si-overlay-layout.js';
 import {
   buildSiCenterSlideshow,
+  buildSiCelebrityCenterSlideshow,
   cleanupSiMultiImageArtifacts,
 } from './si-multi-image.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
@@ -106,8 +107,10 @@ export interface AssembleReupSiVideoInput {
   subtitlePath: string;
   /** When omitted, assemble stock + subtitles without center image overlay. */
   centerImagePath?: string;
-  /** When set (multi_image), build Ken Burns slideshow and overlay instead of a static center image. */
+  /** When set (multi_image / celebrity), build Ken Burns slideshow and overlay instead of a static center image. */
   centerImagePaths?: string[];
+  /** Slideshow builder: multi_image (default) vs celebrity gentle 60s slides. */
+  centerSlideshowVariant?: 'multi' | 'celebrity';
   /** Final mp4 basename without extension (default: video). */
   outputBasename?: string;
   showAudioBar?: boolean;
@@ -135,6 +138,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     subtitlePath,
     centerImagePath,
     centerImagePaths,
+    centerSlideshowVariant = 'multi',
     outputBasename = SI_OUTPUT_VIDEO_BASENAME,
     showAudioBar = false,
     audioBarFile,
@@ -265,6 +269,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     }
   }
   log(`[reup-si] Center image shift: ${overlayLayout.centerImageShift}`);
+  if (centerSlideshowVariant === 'celebrity') {
+    log('[reup-si] Celebrity center: forcing horizontal shift none (fixed center)');
+  }
 
   let centerSlideshowPath: string | undefined;
   const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
@@ -286,7 +293,10 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   try {
   if (useMultiImage) {
-    const rawSlideshow = await buildSiCenterSlideshow(workDir, multiImagePaths, onLog, centerImageSize!);
+    const rawSlideshow =
+      centerSlideshowVariant === 'celebrity'
+        ? await buildSiCelebrityCenterSlideshow(workDir, multiImagePaths, onLog, centerImageSize!)
+        : await buildSiCenterSlideshow(workDir, multiImagePaths, onLog, centerImageSize!);
     log('[reup-si] Baking center slideshow opacity into alpha video');
     await bakeVideoWithOpacity(rawSlideshow, centerSlideshowOpacityPath, SI_CENTER_IMAGE_OPACITY, onLog);
     centerSlideshowPath = centerSlideshowOpacityPath;
@@ -433,7 +443,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       }
 
       if (centerImgIndex !== null) {
-        const centerImageOverlayX = resolveSiCenterImageOverlayX(overlayLayout.centerImageShift);
+        const centerImageOverlayX = resolveSiCenterImageOverlayX(
+          centerSlideshowVariant === 'celebrity' ? 'none' : overlayLayout.centerImageShift,
+        );
         if (centerOpacityBaked) {
           // Opacity already baked into PNG/MOV alpha — cheap overlay only.
           filterParts.push(`[${centerImgIndex}:v]format=rgba[center_img]`);
@@ -444,7 +456,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           );
         }
         filterParts.push(
-          `[${currentVLabel}][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:shortest=1[v_centered_img]`,
+          `[${currentVLabel}][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:format=auto:shortest=1[v_centered_img]`,
         );
         currentVLabel = 'v_centered_img';
       }
@@ -455,7 +467,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           // Cache is already sized + keyed
           filterParts.push(`[${subscribeIndex}:v]format=rgba[subscribe_scaled]`);
           filterParts.push(
-            `[${currentVLabel}][subscribe_scaled]overlay=${pos.x}:${pos.y}:shortest=1[v_subscribe]`,
+            `[${currentVLabel}][subscribe_scaled]overlay=${pos.x}:${pos.y}:shortest=1:format=auto[v_subscribe]`,
           );
         } else {
           appendSiSmallVideoScaleFilters(filterParts, `${subscribeIndex}:v`, 'subscribe_scaled');
@@ -463,7 +475,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
             `[subscribe_scaled]colorkey=${SI_SUBSCRIBE_COLORKEY}:${SI_SUBSCRIBE_COLORKEY_SIMILARITY}:${SI_SUBSCRIBE_COLORKEY_BLEND}[subscribe_keyed]`,
           );
           filterParts.push(
-            `[${currentVLabel}][subscribe_keyed]overlay=${pos.x}:${pos.y}:shortest=1[v_subscribe]`,
+            `[${currentVLabel}][subscribe_keyed]overlay=${pos.x}:${pos.y}:shortest=1:format=auto[v_subscribe]`,
           );
         }
         currentVLabel = 'v_subscribe';
@@ -484,7 +496,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           preKeyed: audioBarPreKeyed,
         });
         filterParts.push(
-          `[${currentVLabel}][audio_bar_scaled]overlay=${pos.x}:${pos.y}:shortest=1[v_audio_bar]`,
+          `[${currentVLabel}][audio_bar_scaled]overlay=${pos.x}:${pos.y}:shortest=1:format=auto[v_audio_bar]`,
         );
         currentVLabel = 'v_audio_bar';
       }
