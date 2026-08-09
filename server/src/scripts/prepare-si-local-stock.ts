@@ -5,13 +5,11 @@ import { assertRequiredSiAssets } from '../modules/video-production/shared/si-vi
 import {
   prepareBakedLocalStockClip,
   resolveLocalStockOutputPath,
-} from '../modules/video-production/shared/si-video/si-stock-prepare.js';
-import {
-  SI_LOCAL_STOCK_SKIP_END_SEC,
-  SI_LOCAL_STOCK_SKIP_START_SEC,
-  SI_LOCAL_STOCK_SLOWMO_FACTOR,
-  SI_LOCAL_STOCK_ZOOM_FACTOR,
-} from '../modules/video-production/shared/si-video/si.constants.js';
+  LOCAL_STOCK_SKIP_END_SEC,
+  LOCAL_STOCK_SKIP_START_SEC,
+  LOCAL_STOCK_SLOWMO_FACTOR,
+  LOCAL_STOCK_ZOOM_FACTOR,
+} from '../modules/video-production/shared/stock-background/index.js';
 
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mkv', '.mov']);
 
@@ -106,9 +104,9 @@ async function main() {
   console.log(`Output dir: ${options.outputDir}`);
   console.log(`Dry run: ${options.dryRun ? 'yes' : 'no'}`);
   console.log(
-    `Prepare settings: cut skip-start=${SI_LOCAL_STOCK_SKIP_START_SEC}s skip-end=${SI_LOCAL_STOCK_SKIP_END_SEC}s | zoom=${SI_LOCAL_STOCK_ZOOM_FACTOR}x | slowmo=${SI_LOCAL_STOCK_SLOWMO_FACTOR}x`,
+    `Prepare settings: cut skip-start=${LOCAL_STOCK_SKIP_START_SEC}s skip-end=${LOCAL_STOCK_SKIP_END_SEC}s | zoom=${LOCAL_STOCK_ZOOM_FACTOR}x | slowmo=${LOCAL_STOCK_SLOWMO_FACTOR}x`,
   );
-  console.log('(Chỉnh trong si.constants.ts → SI_LOCAL_STOCK_*)');
+  console.log('(Chỉnh trong stock-background.constants.ts → LOCAL_STOCK_*)');
 
   if (inputFiles.length === 0) {
     console.log('\nNo video files found in input dir.');

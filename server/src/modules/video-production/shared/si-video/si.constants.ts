@@ -1,29 +1,30 @@
-/** Canvas + stock pipeline (ported from oldversion STOCK_VIDEO). */
+/** Canvas + SI assemble pipeline. */
 export const SI_CANVAS_W = 1280;
 export const SI_CANVAS_H = 720;
 export const SI_FPS = 30;
 
-export const SI_STOCK_SKIP_START_SEC = 120;
-export const SI_STOCK_SKIP_END_SEC = 120;
-export const SI_STOCK_SLOWMO_FACTOR = 2;
-export const SI_STOCK_ZOOM_FACTOR = 1.4;
-export const SI_STOCK_RENDER_EXTRA_SEC = 2;
-
-/** Crop pan fraction range around center (0.5 = exact center). */
-export const SI_STOCK_CROP_PAN_MIN = 0.35;
-export const SI_STOCK_CROP_PAN_MAX = 0.65;
-
-/** Local stock prepare (`prepare:si-local-stock`): cut / zoom / slowmo trên video thô. */
-export const SI_LOCAL_STOCK_SKIP_START_SEC = 0;
-export const SI_LOCAL_STOCK_SKIP_END_SEC = 0;
-export const SI_LOCAL_STOCK_SLOWMO_FACTOR = 1.5;
-export const SI_LOCAL_STOCK_ZOOM_FACTOR = 1.2;
-/** Extra zoom at local assemble so each video can micro-pan baked clips. */
-export const SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR = 1.08;
-
-export { YOUTUBE_VIDEO_DOWNLOAD_FORMATS as SI_STOCK_DOWNLOAD_FORMATS } from '../../../../infrastructure/youtube/youtube-download.constants.js';
-
-export const SI_STOCK_MAX_SELECT_ATTEMPTS = 3;
+/** @deprecated Import from `../stock-background` instead. */
+export {
+  STOCK_SKIP_START_SEC as SI_STOCK_SKIP_START_SEC,
+  STOCK_SKIP_END_SEC as SI_STOCK_SKIP_END_SEC,
+  STOCK_SLOWMO_FACTOR as SI_STOCK_SLOWMO_FACTOR,
+  STOCK_ZOOM_FACTOR as SI_STOCK_ZOOM_FACTOR,
+  STOCK_RENDER_EXTRA_SEC as SI_STOCK_RENDER_EXTRA_SEC,
+  STOCK_CROP_PAN_MIN as SI_STOCK_CROP_PAN_MIN,
+  STOCK_CROP_PAN_MAX as SI_STOCK_CROP_PAN_MAX,
+  LOCAL_STOCK_SKIP_START_SEC as SI_LOCAL_STOCK_SKIP_START_SEC,
+  LOCAL_STOCK_SKIP_END_SEC as SI_LOCAL_STOCK_SKIP_END_SEC,
+  LOCAL_STOCK_SLOWMO_FACTOR as SI_LOCAL_STOCK_SLOWMO_FACTOR,
+  LOCAL_STOCK_ZOOM_FACTOR as SI_LOCAL_STOCK_ZOOM_FACTOR,
+  LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR as SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR,
+  STOCK_DOWNLOAD_FORMATS as SI_STOCK_DOWNLOAD_FORMATS,
+  STOCK_MAX_SELECT_ATTEMPTS as SI_STOCK_MAX_SELECT_ATTEMPTS,
+  STOCK_DIM_FACTOR as SI_STOCK_DIM_FACTOR,
+  LOCAL_CYCLE_TARGET_SEC as SI_LOCAL_CYCLE_TARGET_SEC,
+  LOCAL_STOCK_SENTINEL as SI_LOCAL_STOCK_SENTINEL,
+  getEffectiveStockDuration as getSiEffectiveStockDuration,
+  type StockBackgroundMode as SiBackgroundFootageMode,
+} from '../stock-background/index.js';
 
 export const SI_CENTER_IMAGE_WIDTH_RATIO = 0.65;
 /** Random width ratio range around SI_CENTER_IMAGE_WIDTH_RATIO (±0.05). */
@@ -61,7 +62,6 @@ export const SI_CELEBRITY_SLIDESHOW_BASENAME = 'center_slideshow_celebrity';
 /** Kích thước render slideshow = đúng khung center image (ratio 0.65, 16:9, chẵn). */
 export const SI_CENTER_VIDEO_W = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
 export const SI_CENTER_VIDEO_H = Math.round((SI_CENTER_VIDEO_W * 9) / 16);
-export const SI_STOCK_DIM_FACTOR = 0.8;
 export const SI_NOISE_ALPHA = 0.6;
 
 export const SI_STOCK_OVERLAY_PTS_MULT = 3;
@@ -134,16 +134,8 @@ export const SI_OVERLAY_MID_UPWARD_SHIFT_PX = 100;
 
 export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 
-/** Minimum target duration for one local-stock concat cycle before stream_loop in merge. */
-export const SI_LOCAL_CYCLE_TARGET_SEC = 120;
-
-/** UI sentinel value for the Local background footage option. */
-export const SI_LOCAL_STOCK_SENTINEL = '__local__';
-
 /** Channel overlay file value: pick a random asset at assemble time. */
 export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
-
-export type SiBackgroundFootageMode = 'source' | 'local';
 
 export function resolveSiSubtitleMarginBottomPx(showBackgroundBox: boolean): number {
   return showBackgroundBox ? SI_SUBTITLE_MARGIN_BOTTOM_PX : SI_SUBTITLE_NO_BACKGROUND_MARGIN_BOTTOM_PX;
@@ -169,11 +161,4 @@ export function resolveSiCenterImageOverlayX(shift: boolean | 'none' | 'left' | 
   if (normalized === 'right') return `${centerX}+${SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX}`;
   if (normalized === 'left') return `${centerX}-${SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX}`;
   return centerX;
-}
-
-export function getSiEffectiveStockDuration(durationSec: number | undefined): number {
-  const n = Number(durationSec);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  const usable = Math.max(0, n - SI_STOCK_SKIP_START_SEC - SI_STOCK_SKIP_END_SEC);
-  return usable * SI_STOCK_SLOWMO_FACTOR;
 }

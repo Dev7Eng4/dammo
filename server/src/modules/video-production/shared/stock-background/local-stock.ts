@@ -6,13 +6,13 @@ import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
-import { SI_LOCAL_CYCLE_TARGET_SEC } from './si.constants.js';
+import { LOCAL_CYCLE_TARGET_SEC } from './stock-background.constants.js';
 import {
-  ensureSiLocalStockDirExists,
-  getSiLocalClipUsedCount,
-  incrementSiLocalClipUsed,
-} from './si-local-stock-usage.js';
-import type { PrepareSiStockBackgroundResult } from './si-stock-background.js';
+  ensureLocalStockDirExists,
+  getLocalClipUsedCount,
+  incrementLocalClipUsed,
+} from './local-stock-usage.js';
+import type { PrepareStockBackgroundResult } from './stock-background.types.js';
 
 export interface LocalStockClip {
   filename: string;
@@ -26,7 +26,7 @@ function escapeConcatListPath(filePath: string): string {
 }
 
 async function scanLocalStockClips(): Promise<LocalStockClip[]> {
-  ensureSiLocalStockDirExists();
+  ensureLocalStockDirExists();
 
   let entries: string[];
   try {
@@ -51,7 +51,7 @@ async function scanLocalStockClips(): Promise<LocalStockClip[]> {
       filename: entry,
       absolutePath,
       durationSec,
-      used: getSiLocalClipUsedCount(entry),
+      used: getLocalClipUsedCount(entry),
     });
   }
 
@@ -64,7 +64,7 @@ export function selectLocalClipsForCycle(
 ): LocalStockClip[] {
   if (clips.length === 0) return [];
 
-  const cycleTargetSec = Math.min(targetDurationSec, SI_LOCAL_CYCLE_TARGET_SEC);
+  const cycleTargetSec = Math.min(targetDurationSec, LOCAL_CYCLE_TARGET_SEC);
   const ranked = [...clips].sort((a, b) => {
     if (a.used !== b.used) return a.used - b.used;
     return a.filename.localeCompare(b.filename);
@@ -119,12 +119,12 @@ async function concatLocalClips(
   return outputPath;
 }
 
-export async function prepareSiLocalStockBackground(
+export async function prepareLocalStockBackground(
   targetDurationSec: number,
   workDir: string,
   onLog?: (msg: string) => void,
   onFfmpegProgress?: (progress: FfmpegProgress) => void,
-): Promise<PrepareSiStockBackgroundResult> {
+): Promise<PrepareStockBackgroundResult> {
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
@@ -161,7 +161,7 @@ export async function prepareSiLocalStockBackground(
   );
 
   for (const clip of selected) {
-    const nextUsed = incrementSiLocalClipUsed(clip.filename);
+    const nextUsed = incrementLocalClipUsed(clip.filename);
     log(`[reup-si] Local clip ${clip.filename} marked used=${nextUsed}`);
   }
 

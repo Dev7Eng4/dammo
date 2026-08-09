@@ -20,13 +20,13 @@ import {
   SI_CENTER_IMAGE_WIDTH_RATIO,
   SI_FPS,
   SI_OUTPUT_VIDEO_BASENAME,
-  SI_STOCK_DIM_FACTOR,
   SI_SUBTITLE_BOX_OPACITY,
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
   resolveRandomSiAudioSpeed,
   resolveSiCenterImageOverlayX,
   SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX,
 } from '../../modules/video-production/shared/si-video/si.constants.js';
+import { STOCK_DIM_FACTOR } from '../../modules/video-production/shared/stock-background/index.js';
 import { runFfmpegFilterComplex } from '../../modules/video-production/shared/si-video/si-ffmpeg.js';
 import { selectRandomSiAudioBarClip, appendSiAudioBarScaleFilters } from '../../modules/video-production/shared/si-video/si-audio-bar.js';
 import { getCaptionStylePreset, resolveCaptionStyleKey } from '../../modules/video-production/shared/si-video/caption-styles.js';
@@ -177,7 +177,7 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
       const vBgLabel = 'vout_bg';
       filterParts.push(`[${stockIndex}:v]${stockNormalizeFilterInner()}[${vBgLabel}]`);
 
-      filterParts.push(`[${vBgLabel}]lutyuv=y='val*${SI_STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
+      filterParts.push(`[${vBgLabel}]lutyuv=y='val*${STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
 
       const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
       const centerImageOverlayX = resolveSiCenterImageOverlayX(showAudioBar);

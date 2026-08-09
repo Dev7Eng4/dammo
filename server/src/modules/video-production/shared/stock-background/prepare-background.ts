@@ -8,14 +8,16 @@ import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { sourceVideosRepository } from '../../../source-channels/source-videos.repository.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
 import {
-  SI_STOCK_MAX_SELECT_ATTEMPTS,
-  SI_STOCK_SKIP_START_SEC,
-  SI_STOCK_SLOWMO_FACTOR,
-  type SiBackgroundFootageMode,
-  getSiEffectiveStockDuration,
-} from './si.constants.js';
-import { prepareSiLocalStockBackground } from './si-local-stock.js';
-import { prepareRawStockVideoClip } from './si-stock-prepare.js';
+  STOCK_MAX_SELECT_ATTEMPTS,
+  STOCK_SKIP_START_SEC,
+  STOCK_SLOWMO_FACTOR,
+  getEffectiveStockDuration,
+} from './stock-background.constants.js';
+import type { PrepareStockBackgroundOptions, PrepareStockBackgroundResult } from './stock-background.types.js';
+import { prepareLocalStockBackground } from './local-stock.js';
+import { prepareRawStockVideoClip } from './stock-prepare.js';
+
+export type { PrepareStockBackgroundOptions, PrepareStockBackgroundResult } from './stock-background.types.js';
 
 type PooledStockVideo = { sourceId: string; video: SourceVideoRecord };
 
@@ -31,7 +33,7 @@ export function selectEligibleStockVideo(
   const eligible = items.filter(item => {
     if (!item.video.url?.trim()) return false;
     if (excludeKeys?.has(stockVideoKey(item.sourceId, item.video.id))) return false;
-    return getSiEffectiveStockDuration(item.video.duration) >= targetDurationSec;
+    return getEffectiveStockDuration(item.video.duration) >= targetDurationSec;
   });
 
   if (eligible.length === 0) return null;
@@ -41,8 +43,8 @@ export function selectEligibleStockVideo(
     const usedB = b.video.used ?? 0;
     if (usedA !== usedB) return usedA - usedB;
 
-    const gapA = Math.abs(getSiEffectiveStockDuration(a.video.duration) - targetDurationSec);
-    const gapB = Math.abs(getSiEffectiveStockDuration(b.video.duration) - targetDurationSec);
+    const gapA = Math.abs(getEffectiveStockDuration(a.video.duration) - targetDurationSec);
+    const gapB = Math.abs(getEffectiveStockDuration(b.video.duration) - targetDurationSec);
     if (gapA !== gapB) return gapA - gapB;
 
     return a.video.id.localeCompare(b.video.id);
@@ -58,51 +60,36 @@ async function prepareStockClip(
   onLog?: (msg: string) => void,
 ): Promise<string> {
   const clipPath = path.join(outputDir, 'stock_processed.mp4');
-  const sourceDuration = targetDuration / SI_STOCK_SLOWMO_FACTOR;
+  const sourceDuration = targetDuration / STOCK_SLOWMO_FACTOR;
 
   return prepareRawStockVideoClip(rawVideoPath, clipPath, {
-    skipStartSec: SI_STOCK_SKIP_START_SEC,
+    skipStartSec: STOCK_SKIP_START_SEC,
     durationSec: sourceDuration,
     onLog,
     label: 'si-stock-clip',
   });
 }
 
-export interface PrepareSiStockBackgroundResult {
-  stockClipPath: string;
-  stockTempDir: string;
-}
-
-export interface PrepareSiStockBackgroundOptions {
-  mode: SiBackgroundFootageMode;
-  backgroundFootageSourceIds?: string[];
-}
-
-export async function prepareSiStockBackground(
-  options: PrepareSiStockBackgroundOptions,
+export async function prepareStockBackground(
+  options: PrepareStockBackgroundOptions,
   targetDurationSec: number,
   workDir: string,
   onLog?: (msg: string) => void,
   onFfmpegProgress?: (progress: FfmpegProgress) => void,
-): Promise<PrepareSiStockBackgroundResult> {
+): Promise<PrepareStockBackgroundResult> {
   if (options.mode === 'local') {
-    return prepareSiLocalStockBackground(targetDurationSec, workDir, onLog, onFfmpegProgress);
+    return prepareLocalStockBackground(targetDurationSec, workDir, onLog, onFfmpegProgress);
   }
 
-  return prepareSiRemoteStockBackground(
-    options.backgroundFootageSourceIds ?? [],
-    targetDurationSec,
-    workDir,
-    onLog,
-  );
+  return prepareRemoteStockBackground(options.backgroundFootageSourceIds ?? [], targetDurationSec, workDir, onLog);
 }
 
-async function prepareSiRemoteStockBackground(
+async function prepareRemoteStockBackground(
   backgroundFootageSourceIds: string[],
   targetDurationSec: number,
   workDir: string,
   onLog?: (msg: string) => void,
-): Promise<PrepareSiStockBackgroundResult> {
+): Promise<PrepareStockBackgroundResult> {
   const log = (msg: string) => {
     console.log(msg);
     onLog?.(msg);
@@ -124,11 +111,7 @@ async function prepareSiRemoteStockBackground(
   }
 
   if (pooledVideos.length === 0) {
-    throw new AppError(
-      `No background footage videos found for sources: ${ids.join(', ')}`,
-      400,
-      'SI_STOCK_SOURCE_EMPTY',
-    );
+    throw new AppError(`No background footage videos found for sources: ${ids.join(', ')}`, 400, 'SI_STOCK_SOURCE_EMPTY');
   }
 
   const stockTempDir = path.join(workDir, '_stock_tmp');
@@ -137,22 +120,23 @@ async function prepareSiRemoteStockBackground(
   const failedKeys = new Set<string>();
   const stepOpts = { prefix: '[reup-si]', onLog };
 
-  for (let attempt = 1; attempt <= SI_STOCK_MAX_SELECT_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= STOCK_MAX_SELECT_ATTEMPTS; attempt++) {
     const chosen = selectEligibleStockVideo(pooledVideos, targetDurationSec, failedKeys);
     if (!chosen?.video.url) {
       break;
     }
 
-    log(
-      `[reup-si] Selected stock video (attempt ${attempt}/${SI_STOCK_MAX_SELECT_ATTEMPTS}): ${chosen.video.url}`,
-    );
+    log(`[reup-si] Selected stock video (attempt ${attempt}/${STOCK_MAX_SELECT_ATTEMPTS}): ${chosen.video.url}`);
 
     let stockRawPath: string;
     try {
       const sourceVideoDir = resolveSourceChannelVideoDir(chosen.sourceId, chosen.video.id);
       const localVideoPath = sourceVideoDir ? path.join(sourceVideoDir, 'video.mp4') : null;
       const hasLocalVideo = localVideoPath
-        ? await fs.access(localVideoPath).then(() => true).catch(() => false)
+        ? await fs
+            .access(localVideoPath)
+            .then(() => true)
+            .catch(() => false)
         : false;
 
       if (hasLocalVideo && localVideoPath) {
@@ -177,9 +161,7 @@ async function prepareSiRemoteStockBackground(
       }
     } catch {
       failedKeys.add(stockVideoKey(chosen.sourceId, chosen.video.id));
-      log(
-        `[reup-si] Stock download failed for ${chosen.video.url}, selecting another video...`,
-      );
+      log(`[reup-si] Stock download failed for ${chosen.video.url}, selecting another video...`);
       continue;
     }
 
@@ -204,12 +186,12 @@ async function prepareSiRemoteStockBackground(
   }
 
   throw new AppError(
-    `Failed to download stock background video after ${SI_STOCK_MAX_SELECT_ATTEMPTS} attempt(s), ${failedKeys.size} video(s) excluded`,
+    `Failed to download stock background video after ${STOCK_MAX_SELECT_ATTEMPTS} attempt(s), ${failedKeys.size} video(s) excluded`,
     502,
     'SI_STOCK_DOWNLOAD_FAILED',
   );
 }
 
-export async function cleanupSiStockTempDir(stockTempDir: string): Promise<void> {
+export async function cleanupStockTempDir(stockTempDir: string): Promise<void> {
   await fs.rm(stockTempDir, { recursive: true, force: true }).catch(() => undefined);
 }

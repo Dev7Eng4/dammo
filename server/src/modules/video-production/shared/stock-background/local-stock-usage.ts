@@ -2,23 +2,23 @@ import fs from 'node:fs';
 import { paths, siLocalStockUsageFile } from '../../../../config/paths.js';
 import { readJson, updateJson } from '../../../../infrastructure/storage/json-store.js';
 
-export interface SiLocalStockUsageStore {
+export interface LocalStockUsageStore {
   clips: Record<string, { used: number }>;
 }
 
-const EMPTY_STORE: SiLocalStockUsageStore = { clips: {} };
+const EMPTY_STORE: LocalStockUsageStore = { clips: {} };
 
-export function readSiLocalStockUsage(): SiLocalStockUsageStore {
-  return readJson<SiLocalStockUsageStore>(siLocalStockUsageFile()) ?? EMPTY_STORE;
+export function readLocalStockUsage(): LocalStockUsageStore {
+  return readJson<LocalStockUsageStore>(siLocalStockUsageFile()) ?? EMPTY_STORE;
 }
 
-export function getSiLocalClipUsedCount(filename: string): number {
-  const store = readSiLocalStockUsage();
+export function getLocalClipUsedCount(filename: string): number {
+  const store = readLocalStockUsage();
   return store.clips[filename]?.used ?? 0;
 }
 
-export function incrementSiLocalClipUsed(filename: string): number {
-  return updateJson<SiLocalStockUsageStore>(
+export function incrementLocalClipUsed(filename: string): number {
+  return updateJson<LocalStockUsageStore>(
     siLocalStockUsageFile(),
     current => {
       const clips = { ...current.clips };
@@ -30,7 +30,7 @@ export function incrementSiLocalClipUsed(filename: string): number {
   ).clips[filename]!.used;
 }
 
-export function ensureSiLocalStockDirExists(): void {
+export function ensureLocalStockDirExists(): void {
   if (!fs.existsSync(paths.siLocalStockDir)) {
     fs.mkdirSync(paths.siLocalStockDir, { recursive: true });
   }

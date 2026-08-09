@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, youtubeChannelVideoDir } from '../config/paths.js';
+import type { StockBackgroundMode } from '../modules/video-production/shared/stock-background/index.js';
 import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
-import type { SiBackgroundFootageMode } from '../modules/video-production/shared/si-video/si.constants.js';
 
 const DEFAULT_CHANNEL_ID = '85184f4f-6c28-4c3e-a6a4-985689b51840';
 const DEFAULT_YOUTUBE_VIDEO_ID = '9paQm2UbaLc';
@@ -17,7 +17,7 @@ interface CliOptions {
   channelId: string;
   videoId: string;
   workDir?: string;
-  backgroundFootageMode: SiBackgroundFootageMode;
+  backgroundFootageMode: StockBackgroundMode;
   backgroundFootageSourceIds: string[];
   language: string;
 }

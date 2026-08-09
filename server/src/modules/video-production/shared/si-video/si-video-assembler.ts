@@ -21,20 +21,25 @@ import {
   SI_CENTER_IMAGE_OPACITY,
   SI_FPS,
   // SI_NOISE_ALPHA, // TODO: re-enable SI noise
-  SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR,
   SI_OUTPUT_VIDEO_BASENAME,
   SI_SUBSCRIBE_COLORKEY,
   SI_SUBSCRIBE_COLORKEY_BLEND,
   SI_SUBSCRIBE_COLORKEY_SIMILARITY,
-  SI_STOCK_DIM_FACTOR,
-  SI_STOCK_RENDER_EXTRA_SEC,
   SI_SUBTITLE_BOX_OPACITY,
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
-  type SiBackgroundFootageMode,
   resolveRandomSiAudioSpeed,
   resolveRandomSiCenterImageSize,
   resolveSiCenterImageOverlayX,
 } from './si.constants.js';
+import {
+  STOCK_DIM_FACTOR,
+  STOCK_RENDER_EXTRA_SEC,
+  cleanupStockTempDir,
+  localStockNormalizeFilterChain,
+  prepareStockBackground,
+  stockNormalizeFilterChain,
+  type StockBackgroundMode,
+} from '../stock-background/index.js';
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 import { resolveSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
 import { resolveSiSmallVideoClip, appendSiSmallVideoScaleFilters } from './si-small-video.js';
@@ -53,12 +58,6 @@ import {
   cleanupSiMultiImageArtifacts,
 } from './si-multi-image.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
-import { cleanupSiStockTempDir, prepareSiStockBackground } from './si-stock-background.js';
-import {
-  buildSiStockCropFilter,
-  formatSiStockCropPanLog,
-  randomSiStockCropPan,
-} from './si-stock-prepare.js';
 import type { CaptionStyleKey } from './caption-styles.js';
 import { getCaptionStylePreset, resolveCaptionStyleKey } from './caption-styles.js';
 import {
@@ -67,39 +66,6 @@ import {
   resolveJapaneseSubtitleStyle,
   scaleSrtTimestamps,
 } from './si-subtitle.js';
-
-function stockNormalizeFilterInner(slowmoFactor: number, isFlip = false): string {
-  const w = SI_CANVAS_W;
-  const h = SI_CANVAS_H;
-  const f = SI_FPS;
-  const factor = slowmoFactor;
-  const slowmo = factor !== 1.0 ? `,setpts=${factor.toFixed(4)}*PTS` : '';
-  const flipFilter = isFlip ? ',hflip' : '';
-  return `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p${flipFilter}${slowmo},fps=${f},setsar=1`;
-}
-
-function localStockNormalizeFilterChain(
-  inputLabel: string,
-  outLabel: string,
-  onLog?: (msg: string) => void,
-): string {
-  const hwEncoder = resolveFfmpegHwEncoder();
-  const pixFmt = isHardwareEncoder(hwEncoder) ? 'nv12' : 'yuv420p';
-  const cropW = Math.floor(SI_CANVAS_W / SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR / 2) * 2;
-  const cropH = Math.floor(SI_CANVAS_H / SI_LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR / 2) * 2;
-  const pan = randomSiStockCropPan();
-  onLog?.(`[reup-si] Local assemble ${formatSiStockCropPanLog(pan)}`);
-  return (
-    `[${inputLabel}]fps=${SI_FPS},` +
-    `${buildSiStockCropFilter(cropW, cropH, pan)},` +
-    `scale=${SI_CANVAS_W}:${SI_CANVAS_H},` +
-    `setsar=1,format=${pixFmt}[${outLabel}]`
-  );
-}
-
-function stockNormalizeFilterChain(inputLabel: string, outLabel: string, slowmoFactor: number, isFlip = false): string {
-  return `[${inputLabel}]${stockNormalizeFilterInner(slowmoFactor, isFlip)}[${outLabel}]`;
-}
 
 export interface AssembleReupSiVideoInput {
   workDir: string;
@@ -120,7 +86,7 @@ export interface AssembleReupSiVideoInput {
   showSubscribe?: boolean;
   subscribeFile?: string;
   channelAvatarPath?: string;
-  backgroundFootageMode?: SiBackgroundFootageMode;
+  backgroundFootageMode?: StockBackgroundMode;
   backgroundFootageSourceIds?: string[];
   language: string;
   captionStyleKey?: CaptionStyleKey;
@@ -274,7 +240,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   }
 
   let centerSlideshowPath: string | undefined;
-  const stockRenderTarget = audioDurationAfterTempo + SI_STOCK_RENDER_EXTRA_SEC;
+  const stockRenderTarget = audioDurationAfterTempo + STOCK_RENDER_EXTRA_SEC;
   const stepOpts = { prefix: '[reup-si]', onLog };
   let stockTempDir: string | undefined;
 
@@ -303,7 +269,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     centerOpacityBaked = true;
   }
 
-  const stockPrepared = await prepareSiStockBackground(
+  const stockPrepared = await prepareStockBackground(
     {
       mode: backgroundFootageMode,
       backgroundFootageSourceIds,
@@ -438,7 +404,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       let currentVLabel = vBgLabel;
 
       if (!isLocalStock) {
-        filterParts.push(`[${currentVLabel}]lutyuv=y='val*${SI_STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
+        filterParts.push(`[${currentVLabel}]lutyuv=y='val*${STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
         currentVLabel = 'v_dimmed';
       }
 
@@ -601,7 +567,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       await fs.unlink(scaledSrtPath).catch(() => undefined);
     }
     if (stockTempDir) {
-      await cleanupSiStockTempDir(stockTempDir);
+      await cleanupStockTempDir(stockTempDir);
     }
   }
 
