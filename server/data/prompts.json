@@ -1,6 +1,24 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_drama",
+      "baseKey": "metadata_drama",
+      "language": "ja",
+      "name": "MetaData Drama",
+      "category": "meta",
+      "niche": "drama",
+      "createdAt": "2026-08-10T17:52:32.900Z",
+      "updatedAt": "2026-08-10T17:52:39.409Z",
+      "steps": [
+        {
+          "id": "ddbb873b-0a0e-45b7-9861-8ce95d21c711",
+          "key": "metadata_drama",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_loi_day_nguoi_noi_tieng",
       "baseKey": "metadata_loi_day_nguoi_noi_tieng",
       "language": "ja",
@@ -8,7 +26,7 @@
       "category": "meta",
       "niche": "l-i-d-y-ng-i-n-i-ti-ng",
       "createdAt": "2026-08-06T09:37:41.621Z",
-      "updatedAt": "2026-08-06T09:37:45.350Z",
+      "updatedAt": "2026-08-10T17:03:07.520Z",
       "steps": [
         {
           "id": "c91e9c4a-0fd2-4805-9839-03e9c786da07",
