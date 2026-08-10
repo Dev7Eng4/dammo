@@ -60,3 +60,6 @@ https://www.youtube.com/@NamidaShohosen 7327mm
 - khi tải source -> ví dụ tải đuợc bao nhiêu video phải bảo hoàn thành 1/10 video
 
 - phải note ddc kênh dễ đánh bản quền
+
+- xử lý stock background -> với kênh nguồn có video dài nên download trước -> có option sử dụng download local hay download mạng, download video 10h -> 13p
+- 2 slow -> 1p ; 1.3 slow -> 4p13s ; 1.5 slow -> 2m27s

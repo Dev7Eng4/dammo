@@ -62,6 +62,7 @@ const downloadSourcePayloadSchema = z
     sourceIds: z.array(z.string().min(1)).min(1).optional(),
     allSources: z.boolean().optional(),
     sourceName: z.string().optional(),
+    videoIds: z.array(z.string().min(1)).min(1).optional(),
   })
   .refine(
     (data) => {
@@ -73,6 +74,10 @@ const downloadSourcePayloadSchema = z
       return modes === 1;
     },
     { message: 'Provide exactly one of sourceId, sourceIds, or allSources' },
+  )
+  .refine(
+    (data) => !data.videoIds?.length || Boolean(data.sourceId),
+    { message: 'videoIds requires sourceId' },
   );
 
 export const enqueueTaskSchema = z.discriminatedUnion('type', [

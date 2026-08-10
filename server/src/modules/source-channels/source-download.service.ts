@@ -16,6 +16,7 @@ const DOWNLOADABLE_PURPOSES = new Set<SourcePurpose>(['reup', 'background_footag
 
 export interface DownloadSourceVideosOptions {
   maxVideos?: number;
+  videoIds?: string[];
   taskJobId?: string;
 }
 
@@ -66,8 +67,17 @@ export class SourceDownloadService {
       throw new AppError('No source videos available', 400, 'NO_SOURCE_VIDEOS');
     }
 
-    const limit = options?.maxVideos ?? SOURCE_VIDEOS_PER_DOWNLOAD_RUN;
-    const pending = store.videos.filter(video => Boolean(video.url) && isNotDownloaded(video)).slice(0, limit);
+    const selectedIds = options?.videoIds?.length
+      ? new Set(options.videoIds.map(id => id.trim()).filter(Boolean))
+      : null;
+
+    const candidates = selectedIds
+      ? store.videos.filter(video => selectedIds.has(video.id) && Boolean(video.url))
+      : store.videos.filter(video => Boolean(video.url) && isNotDownloaded(video));
+
+    const pending = selectedIds
+      ? candidates.filter(isNotDownloaded)
+      : candidates.slice(0, options?.maxVideos ?? SOURCE_VIDEOS_PER_DOWNLOAD_RUN);
 
     const result: DownloadSourceVideosResult = {
       sourceId,

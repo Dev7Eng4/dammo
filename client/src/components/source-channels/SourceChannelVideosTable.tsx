@@ -6,6 +6,9 @@ interface SourceChannelVideosTableProps {
   videos: SourceChannelVideo[];
   loading?: boolean;
   error?: string | null;
+  selectedIds: Set<string>;
+  onToggleRow: (id: string) => void;
+  onToggleAll: () => void;
 }
 
 function formatDuration(seconds?: number): string {
@@ -30,7 +33,14 @@ function truncateLink(url: string, max = 32) {
   return display.slice(0, max) + '...';
 }
 
-export function SourceChannelVideosTable({ videos, loading, error }: SourceChannelVideosTableProps) {
+export function SourceChannelVideosTable({
+  videos,
+  loading,
+  error,
+  selectedIds,
+  onToggleRow,
+  onToggleAll,
+}: SourceChannelVideosTableProps) {
   const columns: ColumnDef<SourceChannelVideo, unknown>[] = [
     {
       accessorKey: 'title',
@@ -81,6 +91,11 @@ export function SourceChannelVideosTable({ videos, loading, error }: SourceChann
       getRowId={video => video.id}
       loading={loading}
       error={error}
+      enableRowSelection
+      selectedIds={selectedIds}
+      onToggleRow={onToggleRow}
+      onToggleAll={onToggleAll}
+      onRowClick={video => onToggleRow(video.id)}
       emptyMessage="Không tìm thấy video."
     />
   );

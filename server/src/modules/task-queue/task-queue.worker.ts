@@ -128,7 +128,10 @@ async function processDownloadSource(job: TaskJob): Promise<unknown> {
   }
 
   updateProgress(job.id, 15, 'Downloading source videos');
-  const result = await sourceDownloadService.downloadVideosForSource(payload.sourceId!, { taskJobId: job.id });
+  const result = await sourceDownloadService.downloadVideosForSource(payload.sourceId!, {
+    taskJobId: job.id,
+    ...(payload.videoIds?.length ? { videoIds: payload.videoIds } : {}),
+  });
   updateProgress(job.id, 90, 'Finishing');
   return result;
 }

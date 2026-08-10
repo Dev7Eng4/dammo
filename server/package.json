@@ -21,6 +21,8 @@
     "test:assemble-si-local": "tsx src/scripts/test-assemble-si-local.ts",
     "test:si-one-image": "tsx src/test/si-one-image/create-video.ts",
     "test:ai-video": "tsx src/test/ai-video/create-video.ts",
+    "test:stock-background": "tsx src/test/stock-background/prepare-from-url.ts",
+
     "test:ai-reference-images": "tsx src/scripts/test-ai-reference-images.ts",
     "prepare:si-local-stock": "tsx src/scripts/prepare-si-local-stock.ts",
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",

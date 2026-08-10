@@ -5,7 +5,7 @@ export const STOCK_FPS = 30;
 
 export const STOCK_SKIP_START_SEC = 120;
 export const STOCK_SKIP_END_SEC = 120;
-export const STOCK_SLOWMO_FACTOR = 2;
+export const STOCK_SLOWMO_FACTOR = 1.5;
 export const STOCK_ZOOM_FACTOR = 1.4;
 export const STOCK_RENDER_EXTRA_SEC = 2;
 

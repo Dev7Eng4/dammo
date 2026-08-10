@@ -42,6 +42,7 @@ export interface DownloadSourceTaskPayload {
   sourceIds?: string[];
   allSources?: boolean;
   sourceName?: string;
+  videoIds?: string[];
 }
 
 export type TaskPayload = AddSourceTaskPayload | CreateVideoTaskPayload | UploadVideoTaskPayload | DownloadSourceTaskPayload;

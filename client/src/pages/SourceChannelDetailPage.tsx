@@ -14,6 +14,7 @@ import {
 import { SourceChannelVideosTable } from '../components/source-channels/SourceChannelVideosTable';
 import { SourceChannelVideosToolbar } from '../components/source-channels/SourceChannelVideosToolbar';
 import { useAbortableEffect, usePaginatedList } from '../hooks';
+import { useTaskQueue } from '../hooks/useTaskQueue';
 import type { Niche } from '../types/niche';
 import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceChannel';
 
@@ -21,9 +22,11 @@ const VIDEO_LIMIT = 20;
 
 export function SourceChannelDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { enqueueTask } = useTaskQueue();
   const [source, setSource] = useState<SourceChannel | null>(null);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [durationFilter, setDurationFilter] = useState<SourceVideoDurationFilter>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(!id);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,6 +72,27 @@ export function SourceChannelDetailPage() {
     { enabled: Boolean(id) },
   );
 
+  const canDownload =
+    selectedIds.size > 0 &&
+    source != null &&
+    source.platform === 'youtube' &&
+    (source.purpose === 'reup' || source.purpose === 'background_footage');
+
+  const downloadDisabledReason =
+    selectedIds.size === 0
+      ? 'Chọn video để tải xuống'
+      : source == null
+        ? undefined
+        : source.platform !== 'youtube'
+          ? 'Chỉ hỗ trợ tải xuống cho nguồn YouTube'
+          : source.purpose !== 'reup' && source.purpose !== 'background_footage'
+            ? 'Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền'
+            : undefined;
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
   async function handleRefreshSource() {
     if (!id) return;
 
@@ -81,6 +105,7 @@ export function SourceChannelDetailPage() {
       videos.markLoading();
       videos.resetPage();
       videos.refresh();
+      clearSelection();
     } catch (err) {
       setRefreshError(err instanceof Error ? err.message : 'Không thể cập nhật nguồn');
     } finally {
@@ -92,6 +117,39 @@ export function SourceChannelDetailPage() {
     videos.markLoading();
     setDurationFilter(next);
     videos.resetPage();
+    clearSelection();
+  }
+
+  function handleToggleRow(videoId: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(videoId)) next.delete(videoId);
+      else next.add(videoId);
+      return next;
+    });
+  }
+
+  function handleToggleAll() {
+    if (selectedIds.size === videos.items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(videos.items.map(video => video.id)));
+    }
+  }
+
+  function handleDownload() {
+    if (!source || selectedIds.size === 0 || !canDownload) return;
+
+    void enqueueTask({
+      type: 'download_source',
+      title: `Đang tải: ${source.name}`,
+      subtitle: `${selectedIds.size} video đã chọn`,
+      payload: {
+        sourceId: source.id,
+        sourceName: source.name,
+        videoIds: Array.from(selectedIds),
+      },
+    });
   }
 
   if (!id || notFound) {
@@ -128,11 +186,17 @@ export function SourceChannelDetailPage() {
               <SourceChannelVideosToolbar
                 durationFilter={durationFilter}
                 onDurationFilterChange={handleDurationFilterChange}
+                canDownload={canDownload}
+                downloadDisabledReason={downloadDisabledReason}
+                onDownload={handleDownload}
               />
               <SourceChannelVideosTable
                 videos={videos.items}
                 loading={videos.loading}
                 error={videos.error}
+                selectedIds={selectedIds}
+                onToggleRow={handleToggleRow}
+                onToggleAll={handleToggleAll}
               />
               <MailAccountsPagination
                 page={videos.page}
@@ -142,6 +206,7 @@ export function SourceChannelDetailPage() {
                 onPageChange={(nextPage) => {
                   videos.markLoading();
                   videos.setPage(nextPage);
+                  clearSelection();
                 }}
               />
             </>
