@@ -25,7 +25,6 @@ const channelConfigFields = {
   sourceChannels: z.array(z.string().min(1)).optional(),
   videoCreationOrder: z.enum(['oldest_first', 'newest_first']).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
-  backgroundFootageMode: z.enum(['source', 'local']).optional(),
   thumbnailStyleKey: z.string().optional(),
   thumbnailBackgroundFile: z.string().optional(),
   captionStyleKey: z.enum(CAPTION_STYLE_KEYS).optional(),

@@ -39,8 +39,6 @@ export type CaptionStyleKey =
   | 'serif_red_white'
   | 'serif_red_white_box';
 
-export type BackgroundFootageMode = 'source' | 'local';
-
 /** Max scene duration (seconds) per density level for AI / SI multi_image prompts. */
 export interface AiSceneDensityMaxSec {
   high: number;
@@ -53,8 +51,6 @@ export const DEFAULT_AI_SCENE_DENSITY_MAX_SEC: AiSceneDensityMaxSec = {
   medium: 30,
   low: 60,
 };
-
-export const BACKGROUND_FOOTAGE_LOCAL_SENTINEL = '__local__';
 
 /** SI overlay picker: random asset at video assemble time. */
 export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
@@ -138,7 +134,6 @@ export interface YoutubeChannel {
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSources?: string[];
-  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
@@ -488,7 +483,6 @@ export interface CreateYoutubeChannelPayload {
   sourceChannels?: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
-  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
@@ -531,7 +525,6 @@ export interface AddYoutubeChannelFormValues {
   sourceChannels: string[];
   videoCreationOrder: VideoCreationOrder;
   backgroundFootageSources: string[];
-  backgroundFootageMode: BackgroundFootageMode;
   thumbnailStyleKey: string;
   thumbnailBackgroundFile: string;
   captionStyleKey: CaptionStyleKey | '';

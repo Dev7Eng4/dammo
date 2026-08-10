@@ -87,10 +87,6 @@ export function resolveSourceChannelNamesOnly(channel: YoutubeChannel): string[]
 }
 
 export function resolveBackgroundFootageNamesOnly(channel: YoutubeChannel): string[] {
-  if (channel.backgroundFootageMode === 'local') {
-    return ['Local'];
-  }
-
   return resolveSourceChannelsByIds(channel.backgroundFootageSources ?? []).map(source => source.name);
 }
 

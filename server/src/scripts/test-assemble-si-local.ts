@@ -7,6 +7,7 @@ import { listSiMultiImagePaths } from '../modules/video-production/shared/si-vid
 import { SI_MULTI_IMAGE_DIRNAME, SI_MULTI_IMAGE_DURATION_SEC } from '../modules/video-production/shared/si-video/si.constants.js';
 
 const DEFAULT_LANGUAGE = 'ja';
+const DEFAULT_BACKGROUND_FOOTAGE_SOURCE_ID = 'ebd3f9fb-e859-4d13-b79e-de88edf697e9';
 
 function logFfmpegProgress(label: string, p: FfmpegProgress): void {
   const parts = [
@@ -29,6 +30,7 @@ interface CliOptions {
   subtitlePath?: string;
   showSubscribe: boolean;
   subscribeFile?: string;
+  backgroundFootageSourceIds: string[];
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -36,6 +38,7 @@ function parseArgs(argv: string[]): CliOptions {
     workDir: mediaDownloadDir('youtube', 'test'),
     language: DEFAULT_LANGUAGE,
     showSubscribe: false,
+    backgroundFootageSourceIds: [DEFAULT_BACKGROUND_FOOTAGE_SOURCE_ID],
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -82,6 +85,14 @@ function parseArgs(argv: string[]): CliOptions {
       if (!value) throw new Error('--subscribe-file requires a value');
       options.subscribeFile = value;
       options.showSubscribe = true;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--background-footage-source-id' || arg === '--background-footage-source-ids') {
+      const raw = argv[index + 1]?.trim() ?? '';
+      if (!raw) throw new Error(`${arg} requires a value`);
+      options.backgroundFootageSourceIds = raw.split(',').map(id => id.trim()).filter(Boolean);
       index += 1;
       continue;
     }
@@ -175,7 +186,7 @@ async function main() {
   } else if (options.showSubscribe) {
     console.log(`Subscribe file: random from ${paths.siSubscribeDir}`);
   }
-  console.log(`Local stock dir: ${paths.siLocalStockDir} (cần ít nhất 1 file .mp4)`);
+  console.log(`Background footage sources: ${options.backgroundFootageSourceIds.join(', ')}`);
   console.log(`Output: ${path.join(workDir, 'video.mp4')}`);
   console.log('\nAssembling SI multi_image video...\n');
 
@@ -184,7 +195,7 @@ async function main() {
     audioPath: audioPath!,
     subtitlePath: subtitlePath!,
     centerImagePaths,
-    backgroundFootageMode: 'local',
+    backgroundFootageSourceIds: options.backgroundFootageSourceIds,
     language: options.language,
     captionStyleKey: 'serif_white_purple',
     showAudioBar: false,

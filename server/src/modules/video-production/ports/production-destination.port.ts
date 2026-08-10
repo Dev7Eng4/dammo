@@ -1,6 +1,5 @@
 import type { ChannelLanguage } from '../../youtube-channels/channel-language.js';
 import type {
-  BackgroundFootageMode,
   CaptionStyleKey,
   ReupAudioBackgroundImage,
   ReupAudioVideoType,
@@ -28,7 +27,6 @@ export interface ProductionDestination {
   sourceChannels: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
-  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;

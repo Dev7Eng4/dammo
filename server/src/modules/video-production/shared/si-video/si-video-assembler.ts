@@ -35,10 +35,8 @@ import {
   STOCK_DIM_FACTOR,
   STOCK_RENDER_EXTRA_SEC,
   cleanupStockTempDir,
-  localStockNormalizeFilterChain,
   prepareStockBackground,
   stockNormalizeFilterChain,
-  type StockBackgroundMode,
 } from '../stock-background/index.js';
 import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 import { resolveSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
@@ -86,7 +84,6 @@ export interface AssembleReupSiVideoInput {
   showSubscribe?: boolean;
   subscribeFile?: string;
   channelAvatarPath?: string;
-  backgroundFootageMode?: StockBackgroundMode;
   backgroundFootageSourceIds?: string[];
   language: string;
   captionStyleKey?: CaptionStyleKey;
@@ -113,7 +110,6 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     showSubscribe = false,
     subscribeFile,
     channelAvatarPath,
-    backgroundFootageMode = 'source',
     backgroundFootageSourceIds = [],
     language,
     captionStyleKey,
@@ -244,7 +240,6 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   const stepOpts = { prefix: '[reup-si]', onLog };
   let stockTempDir: string | undefined;
 
-  const isLocalStock = backgroundFootageMode === 'local';
   let activeSubtitlePath = subtitlePath;
   let scaledSrtPath: string | null = null;
   const outputPath = path.join(workDir, `${outputBasename}.mp4`);
@@ -271,7 +266,6 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   const stockPrepared = await prepareStockBackground(
     {
-      mode: backgroundFootageMode,
       backgroundFootageSourceIds,
     },
     stockRenderTarget,
@@ -395,18 +389,12 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       filterParts.push(`[${audioIndex}:a]atempo=${speed}[aout]`);
 
       const vBgLabel = 'vout_bg';
-      if (isLocalStock) {
-        filterParts.push(localStockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, log));
-      } else {
-        filterParts.push(stockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, 1.0, false));
-      }
+      filterParts.push(stockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, 1.0, false));
 
       let currentVLabel = vBgLabel;
 
-      if (!isLocalStock) {
-        filterParts.push(`[${currentVLabel}]lutyuv=y='val*${STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
-        currentVLabel = 'v_dimmed';
-      }
+      filterParts.push(`[${currentVLabel}]lutyuv=y='val*${STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
+      currentVLabel = 'v_dimmed';
 
       if (centerImgIndex !== null) {
         const centerImageOverlayX = resolveSiCenterImageOverlayX(

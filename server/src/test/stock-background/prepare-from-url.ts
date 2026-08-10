@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { downloadYoutubeVideo } from '../../infrastructure/youtube/youtube-video-downloader.js';
 import { timedStep } from '../../shared/timing/step-timer.js';
 import {
   STOCK_SKIP_START_SEC,
@@ -10,36 +9,39 @@ import {
 } from '../../modules/video-production/shared/stock-background/index.js';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const OUTPUT_DIR = path.resolve(TEST_DIR, '../../../../output');
 
-/** Edit this URL then run: npm run test:stock-background */
-const STOCK_URL = 'https://www.youtube.com/watch?v=kxUChNUqakA';
+/** Edit then run: npm run test:stock-background */
+const STOCK_VIDEO_PATH = 'D:/dammo/server/data/sources/0056ce7a-d147-4e71-b2d0-06a4a96f52bd/videos/00v5IZOo-8Y/video.mp4';
 const TARGET_DURATION_SEC = 5400;
 
-export interface PrepareStockBackgroundFromUrlInput {
-  url: string;
+export interface PrepareStockBackgroundFromLocalInput {
+  /** Absolute path to an already-downloaded stock `video.mp4`. */
+  videoPath: string;
   /** Output duration after slowmo. Source cut = target / STOCK_SLOWMO_FACTOR. */
   targetDurationSec?: number;
   workDir?: string;
   onLog?: (msg: string) => void;
 }
 
-export interface PrepareStockBackgroundFromUrlResult {
+export interface PrepareStockBackgroundFromLocalResult {
   rawVideoPath: string;
   stockClipPath: string;
   workDir: string;
 }
 
 /**
- * Download a YouTube URL then run the remote stock-background prepare pipeline
- * (skip start → cut → fps/slowmo/crop/scale → H264).
+ * Use a pre-downloaded local stock video then run the remote prepare pipeline
+ * (skip start → cut → fps/slowmo/crop/scale → H264) — same path as
+ * `prepareRemoteStockBackground` when `video.mp4` already exists.
  */
-export async function prepareStockBackgroundFromUrl(
-  input: PrepareStockBackgroundFromUrlInput,
-): Promise<PrepareStockBackgroundFromUrlResult> {
-  const { url, targetDurationSec = TARGET_DURATION_SEC, workDir = TEST_DIR, onLog } = input;
+export async function prepareStockBackgroundFromLocal(
+  input: PrepareStockBackgroundFromLocalInput,
+): Promise<PrepareStockBackgroundFromLocalResult> {
+  const { videoPath, targetDurationSec = TARGET_DURATION_SEC, workDir = OUTPUT_DIR, onLog } = input;
 
-  if (!url?.trim()) {
-    throw new Error('url is required');
+  if (!videoPath?.trim()) {
+    throw new Error('videoPath is required');
   }
   if (!Number.isFinite(targetDurationSec) || targetDurationSec <= 0) {
     throw new Error(`targetDurationSec must be > 0, got ${targetDurationSec}`);
@@ -50,26 +52,18 @@ export async function prepareStockBackgroundFromUrl(
     onLog?.(msg);
   };
 
+  const rawVideoPath = path.resolve(videoPath.trim());
+  await fs.access(rawVideoPath);
+
   await fs.mkdir(workDir, { recursive: true });
   const stepOpts = { prefix: '[test-stock]', onLog };
 
   const sourceDurationSec = targetDurationSec / STOCK_SLOWMO_FACTOR;
-  log(`[test-stock] URL: ${url}`);
+  log(`[test-stock] Using pre-downloaded stock video: ${rawVideoPath}`);
   log(
     `[test-stock] Target ${targetDurationSec}s after ${STOCK_SLOWMO_FACTOR}x slowmo → cut ${sourceDurationSec}s from t=${STOCK_SKIP_START_SEC}s`,
   );
   log(`[test-stock] Work dir: ${workDir}`);
-
-  const rawVideoPath = await timedStep(
-    'Download stock video',
-    () =>
-      downloadYoutubeVideo(url.trim(), workDir, {
-        outputBasename: 'stock_raw',
-        onLog: msg => onLog?.(`[test-stock] ${msg}`),
-      }),
-    stepOpts,
-  );
-  log(`[test-stock] Raw video → ${rawVideoPath}`);
 
   const stockClipPath = path.join(workDir, 'stock_processed.mp4');
   await timedStep(
@@ -89,20 +83,16 @@ export async function prepareStockBackgroundFromUrl(
 }
 
 async function main() {
-  if (!STOCK_URL || STOCK_URL.includes('REPLACE_ME')) {
-    throw new Error('Set STOCK_URL at the top of prepare-from-url.ts before running');
-  }
-
-  console.log('Stock background prepare-from-url test');
-  console.log(`URL: ${STOCK_URL}`);
+  console.log('Stock background prepare-from-local test (pre-downloaded video)');
+  console.log(`Video: ${STOCK_VIDEO_PATH}`);
   console.log(`Target duration: ${TARGET_DURATION_SEC}s`);
-  console.log(`Work dir: ${TEST_DIR}`);
+  console.log(`Output dir: ${OUTPUT_DIR}`);
   console.log('\nRunning...\n');
 
-  const result = await prepareStockBackgroundFromUrl({
-    url: STOCK_URL,
+  const result = await prepareStockBackgroundFromLocal({
+    videoPath: STOCK_VIDEO_PATH,
     targetDurationSec: TARGET_DURATION_SEC,
-    workDir: TEST_DIR,
+    workDir: OUTPUT_DIR,
     onLog: msg => console.log(msg),
   });
 

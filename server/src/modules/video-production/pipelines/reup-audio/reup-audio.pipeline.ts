@@ -912,7 +912,7 @@ export class ReupAudioPipeline {
                       : 'SI video assembly skipped: multi_image requires at least one image in images/',
                   );
                 }
-              } else if (destination.backgroundFootageMode !== 'local' && !destination.backgroundFootageSources?.length) {
+              } else if (!destination.backgroundFootageSources?.length) {
                 console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(
@@ -945,7 +945,6 @@ export class ReupAudioPipeline {
                           siBackgroundImage === 'celebrity' ? ('celebrity' as const) : ('multi' as const),
                       }
                     : {}),
-                  backgroundFootageMode: destination.backgroundFootageMode ?? 'source',
                   backgroundFootageSourceIds: destination.backgroundFootageSources,
                   language: destination.language,
                   captionStyleKey: destination.captionStyleKey,

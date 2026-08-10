@@ -14,7 +14,6 @@ import {
   getEffectiveStockDuration,
 } from './stock-background.constants.js';
 import type { PrepareStockBackgroundOptions, PrepareStockBackgroundResult } from './stock-background.types.js';
-import { prepareLocalStockBackground } from './local-stock.js';
 import { prepareRawStockVideoClip } from './stock-prepare.js';
 
 export type { PrepareStockBackgroundOptions, PrepareStockBackgroundResult } from './stock-background.types.js';
@@ -75,12 +74,8 @@ export async function prepareStockBackground(
   targetDurationSec: number,
   workDir: string,
   onLog?: (msg: string) => void,
-  onFfmpegProgress?: (progress: FfmpegProgress) => void,
+  _onFfmpegProgress?: (progress: FfmpegProgress) => void,
 ): Promise<PrepareStockBackgroundResult> {
-  if (options.mode === 'local') {
-    return prepareLocalStockBackground(targetDurationSec, workDir, onLog, onFfmpegProgress);
-  }
-
   return prepareRemoteStockBackground(options.backgroundFootageSourceIds ?? [], targetDurationSec, workDir, onLog);
 }
 
@@ -114,6 +109,17 @@ async function prepareRemoteStockBackground(
     throw new AppError(`No background footage videos found for sources: ${ids.join(', ')}`, 400, 'SI_STOCK_SOURCE_EMPTY');
   }
 
+  const downloadedVideos = pooledVideos.filter(item => item.video.status === 'Downloaded');
+  const selectionPool = downloadedVideos.length > 0 ? downloadedVideos : pooledVideos;
+  if (downloadedVideos.length > 0) {
+    log(
+      `[reup-si] Preferring ${downloadedVideos.length} pre-downloaded stock video(s) ` +
+        `(of ${pooledVideos.length} in pool)`,
+    );
+  } else {
+    log(`[reup-si] No pre-downloaded stock videos; selecting from full pool (${pooledVideos.length})`);
+  }
+
   const stockTempDir = path.join(workDir, '_stock_tmp');
   await fs.mkdir(stockTempDir, { recursive: true });
 
@@ -121,7 +127,7 @@ async function prepareRemoteStockBackground(
   const stepOpts = { prefix: '[reup-si]', onLog };
 
   for (let attempt = 1; attempt <= STOCK_MAX_SELECT_ATTEMPTS; attempt++) {
-    const chosen = selectEligibleStockVideo(pooledVideos, targetDurationSec, failedKeys);
+    const chosen = selectEligibleStockVideo(selectionPool, targetDurationSec, failedKeys);
     if (!chosen?.video.url) {
       break;
     }

@@ -28,8 +28,6 @@ export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' 
 
 export type { CaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
 
-export type BackgroundFootageMode = 'source' | 'local';
-
 /** Max scene duration (seconds) per density level for AI / SI multi_image prompts. */
 export interface AiSceneDensityMaxSec {
   high: number;
@@ -57,7 +55,6 @@ export interface YoutubeChannel {
   reupVideoSourceId?: string;
   reupAudioSourceId?: string;
   backgroundFootageSources?: string[];
-  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
@@ -124,7 +121,6 @@ export interface CreateYoutubeChannelInput {
   sourceChannels?: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
-  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
@@ -160,7 +156,6 @@ export interface UpdateYoutubeChannelInput {
   sourceChannels?: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
-  backgroundFootageMode?: BackgroundFootageMode;
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;

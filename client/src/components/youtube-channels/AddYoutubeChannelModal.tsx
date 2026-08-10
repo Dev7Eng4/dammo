@@ -38,14 +38,13 @@ import type {
   YoutubeChannelLanguage,
 } from '../../types/youtubeChannel';
 import {
-  BACKGROUND_FOOTAGE_LOCAL_SENTINEL,
   DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
   isReupAudioChannelType,
   isReupYoutubeChannelType,
   parseStoredChannelLanguage,
   SI_OVERLAY_AUTO_SENTINEL,
 } from '../../types/youtubeChannel';
-import { buildBackgroundFootageSelectValue, handleBackgroundFootageSelectChange } from '../../utils/backgroundFootage';
+import { normalizeBackgroundFootageSourceIds } from '../../utils/backgroundFootage';
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
@@ -166,7 +165,6 @@ const defaultValues: AddYoutubeChannelFormValues = {
   sourceChannels: [],
   videoCreationOrder: 'oldest_first',
   backgroundFootageSources: [],
-  backgroundFootageMode: 'source',
   thumbnailStyleKey: '',
   thumbnailBackgroundFile: '',
   captionStyleKey: 'default',
@@ -205,7 +203,6 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
     sourceChannels: channel.sourceChannels ?? [],
     videoCreationOrder: channel.videoCreationOrder ?? 'oldest_first',
     backgroundFootageSources: channel.backgroundFootageSources ?? [],
-    backgroundFootageMode: channel.backgroundFootageMode ?? 'source',
     thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
     thumbnailBackgroundFile: channel.thumbnailBackgroundFile ?? '',
     captionStyleKey: channel.captionStyleKey ?? 'default',
@@ -325,7 +322,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     isReupAudio && (reupAudioVideoType === 'ai' || parsedBackgroundImage.mode === 'multi_image');
   const showDisclaimer = watch('showDisclaimer');
   const uploadFrequency = watch('uploadFrequency');
-  const backgroundFootageMode = watch('backgroundFootageMode');
   const thumbnailStyleKey = watch('thumbnailStyleKey');
   const thumbnailBackgroundFile = watch('thumbnailBackgroundFile');
   const audioBarFile = watch('audioBarFile');
@@ -339,10 +335,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     [sources, niches],
   );
   const backgroundFootageOptions = useMemo(
-    () => [
-      { value: BACKGROUND_FOOTAGE_LOCAL_SENTINEL, label: 'Trên máy' },
-      ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
-    ],
+    () => sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
     [sources, niches],
   );
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
@@ -616,11 +609,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         publishTimes: values.publishTimes,
         ...(isReupYoutubeChannelType(values.type) ? { videoCreationOrder: values.videoCreationOrder } : {}),
         ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
-        ...(values.backgroundFootageMode === 'local'
-          ? { backgroundFootageMode: 'local' as const }
-          : values.backgroundFootageSources.length > 0
-            ? { backgroundFootageSources: values.backgroundFootageSources }
-            : {}),
+        ...(values.backgroundFootageSources.length > 0
+          ? { backgroundFootageSources: values.backgroundFootageSources }
+          : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
         thumbnailBackgroundFile: values.thumbnailBackgroundFile || undefined,
         ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
@@ -993,14 +984,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                     <MultiSelect
                       id='background-footage'
                       options={backgroundFootageOptions}
-                      value={buildBackgroundFootageSelectValue(backgroundFootageMode, field.value)}
+                      value={field.value}
                       onChange={next => {
-                        const resolved = handleBackgroundFootageSelectChange(
-                          buildBackgroundFootageSelectValue(backgroundFootageMode, field.value),
-                          next,
-                        );
-                        setValue('backgroundFootageMode', resolved.mode);
-                        field.onChange(resolved.sourceIds);
+                        field.onChange(normalizeBackgroundFootageSourceIds(next));
                       }}
                       onBlur={field.onBlur}
                       placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn video cảnh nền'}
