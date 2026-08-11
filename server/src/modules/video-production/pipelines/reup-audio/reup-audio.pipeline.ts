@@ -19,6 +19,7 @@ import { runMetadata } from '../../shared/meta/run-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
 import { runThumbnailVisualGeneration } from '../../shared/thumbnail/hero-image.js';
 import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
+import { runCelebrityWisdomThumbnail } from '../../shared/thumbnail/run-celebrity-wisdom-thumbnail.js';
 import { buildThumbnailReferenceImagePaths } from '../../shared/thumbnail/thumbnail-reference-images.js';
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
@@ -33,7 +34,12 @@ import {
   generateAiSceneSlideImages,
 } from '../../shared/ai-video/index.js';
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
-import { hasLegacyVisualMeta, type MetaStep3Output, type VideoMetaOutput } from '../../shared/meta/metadata.types.js';
+import {
+  hasLegacyVisualMeta,
+  isCelebrityWisdomNiche,
+  type MetaStep3Output,
+  type VideoMetaOutput,
+} from '../../shared/meta/metadata.types.js';
 import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
 import { findFinalVideoMp4, sanitizeVideoOutputBasename } from '../../shared/si-video/video-output-file.js';
 import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
@@ -438,6 +444,86 @@ export class ReupAudioPipeline {
               }
 
               const workDir = jaWorkDir;
+              const useCelebrityWisdomFlow = isCelebrityWisdomNiche(destination.niche);
+
+              if (useCelebrityWisdomFlow) {
+                const imageGenerationPrompt = videoMetaOutput.image_generation_prompt?.trim() ?? '';
+                if (!imageGenerationPrompt) {
+                  throw new AppError(
+                    'image_generation_prompt is required for celebrity wisdom thumbnail',
+                    400,
+                    'INVALID_INPUT',
+                  );
+                }
+
+                const celebrityId = destination.celebrityId?.trim() ?? '';
+                if (!celebrityId) {
+                  throw new AppError(
+                    'celebrityId is required for celebrity wisdom thumbnail',
+                    400,
+                    'INVALID_INPUT',
+                  );
+                }
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'Creating celebrity wisdom thumbnail via Flow (celebrity reference)...',
+                  );
+                }
+
+                try {
+                  const wisdomThumb = await timedStep(
+                    'Celebrity wisdom thumbnail (Flow)',
+                    () =>
+                      runCelebrityWisdomThumbnail(workDir, celebrityId, imageGenerationPrompt, {
+                        onProgress: taskJobId
+                          ? progress => {
+                              const profileLabel = progress.profileName;
+                              if (progress.status === 'retry') {
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Wisdom thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                );
+                                return;
+                              }
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `Wisdom thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                              );
+                            }
+                          : undefined,
+                      }),
+                    stepTimer,
+                  );
+                  reupThumbnailPath = wisdomThumb.thumbnailPath;
+
+                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                  await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'ok',
+                      `Wisdom thumbnail saved → thumbnail.jpg (ref: ${path.basename(wisdomThumb.referenceImagePath)})`,
+                    );
+                  }
+                } catch (err) {
+                  const message =
+                    err instanceof AppError
+                      ? err.message
+                      : err instanceof Error
+                        ? err.message
+                        : 'Celebrity wisdom thumbnail generation failed';
+                  console.warn(`[reup-video] celebrity wisdom thumbnail skipped (non-fatal): ${message}`);
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Wisdom thumbnail skipped: ${message}`);
+                  }
+                }
+              } else {
               const styleKey = destination.thumbnailStyleKey?.trim();
               const useHorizontalFlow = styleKey
                 ? isHorizontalMultiStepStyle(styleKey, destination.language)
@@ -693,6 +779,7 @@ export class ReupAudioPipeline {
                 if (taskJobId) {
                   taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
                 }
+              }
               }
               }
             }

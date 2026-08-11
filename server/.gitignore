@@ -1,3 +1,4 @@
+node_modules
 data/*
 !data/assets/
 data/assets/*
@@ -8,3 +9,6 @@ data/assets/*
 !data/prompts.json
 !data/visual-styles.json
 !data/niches.json
+!data/celebrities/
+!data/celebrities/**
+!data/celebrities.json

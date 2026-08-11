@@ -11,3 +11,7 @@ export interface NichesStore {
 export interface CreateNicheInput {
   label: string;
 }
+
+export interface UpdateNicheInput {
+  label: string;
+}

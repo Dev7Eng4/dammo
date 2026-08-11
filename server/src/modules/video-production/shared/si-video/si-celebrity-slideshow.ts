@@ -35,8 +35,8 @@ function imageCacheTag(imagePath: string): string {
 }
 
 /**
- * Render one cutout image onto a transparent WxH canvas with contain fit,
- * centered and static. Output is qtrle ARGB so alpha is preserved.
+ * Render one cutout image onto a transparent WxH canvas with cover fit
+ * (scale up + center crop). Output is qtrle ARGB so alpha is preserved.
  */
 async function renderCelebritySlideClip(options: {
   imagePath: string;
@@ -58,8 +58,8 @@ async function renderCelebritySlideClip(options: {
     height,
     fps,
     durationSec,
-    // static center; no pan / fitScale shrink
-    variant: 'celebrity-static-v1',
+    // cover fill; scale increase + center crop
+    variant: 'celebrity-cover-v1',
   });
   const key = crypto.createHash('sha1').update(payload).digest('hex').slice(0, 16);
   const clipPath = path.join(cacheDir, `celeb_clip_${key}.mov`);
@@ -77,12 +77,13 @@ async function renderCelebritySlideClip(options: {
   const filter =
     `[1:v]format=rgba[bg];` +
     `[0:v]format=rgba,` +
-    `scale=${width}:${height}:force_original_aspect_ratio=decrease[img];` +
+    `scale=${width}:${height}:force_original_aspect_ratio=increase:flags=lanczos,` +
+    `crop=${width}:${height}[img];` +
     `[bg][img]overlay=(W-w)/2:(H-h)/2:format=auto:shortest=1[vout]`;
 
   const tempPath = `${clipPath}.tmp.mov`;
   onLog?.(
-    `[celebrity-slideshow] render ${path.basename(imagePath)} centered static ${width}x${height} ${durationSec}s`,
+    `[celebrity-slideshow] render ${path.basename(imagePath)} cover ${width}x${height} ${durationSec}s`,
   );
 
   await runFfmpeg(
@@ -207,7 +208,7 @@ async function composeCelebrityClips(options: {
 
 /**
  * Build an alpha-preserving celebrity center slideshow:
- * contain-fit cutouts centered and static on a transparent canvas, fade between slides.
+ * cover-fit cutouts (fill the box) on a transparent canvas, fade between slides.
  */
 export async function assembleSiCelebrityCenterSlideshow(options: {
   workDir: string;

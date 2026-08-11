@@ -32,6 +32,30 @@ export class NichesRepository {
     }));
     return niche;
   }
+
+  update(key: string, updater: (niche: Niche) => Niche): Niche | null {
+    let updated: Niche | null = null;
+    this.saveStore((store) => ({
+      niches: store.niches.map((item) => {
+        if (item.key !== key) return item;
+        updated = updater(item);
+        return updated;
+      }),
+    }));
+    return updated;
+  }
+
+  remove(key: string): boolean {
+    let removed = false;
+    this.saveStore((store) => ({
+      niches: store.niches.filter((item) => {
+        if (item.key !== key) return true;
+        removed = true;
+        return false;
+      }),
+    }));
+    return removed;
+  }
 }
 
 export const nichesRepository = new NichesRepository();

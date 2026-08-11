@@ -112,10 +112,7 @@ async function prepareRemoteStockBackground(
   const downloadedVideos = pooledVideos.filter(item => item.video.status === 'Downloaded');
   const selectionPool = downloadedVideos.length > 0 ? downloadedVideos : pooledVideos;
   if (downloadedVideos.length > 0) {
-    log(
-      `[reup-si] Preferring ${downloadedVideos.length} pre-downloaded stock video(s) ` +
-        `(of ${pooledVideos.length} in pool)`,
-    );
+    log(`[reup-si] Preferring ${downloadedVideos.length} pre-downloaded stock video(s) ` + `(of ${pooledVideos.length} in pool)`);
   } else {
     log(`[reup-si] No pre-downloaded stock videos; selecting from full pool (${pooledVideos.length})`);
   }

@@ -142,8 +142,8 @@ export async function buildSiCenterSlideshow(
 }
 
 /**
- * Celebrity center slideshow: ≤5 cutout images × 60s, contain-fit on transparent
- * canvas with gentle in-box pan (alpha-preserving qtrle path).
+ * Celebrity center slideshow: ≤5 cutout images × 60s, cover-fit on transparent
+ * canvas (alpha-preserving qtrle path).
  */
 export async function buildSiCelebrityCenterSlideshow(
   workDir: string,
@@ -156,7 +156,7 @@ export async function buildSiCelebrityCenterSlideshow(
   const paths = imagePaths.slice(0, SI_CELEBRITY_MAX_IMAGES);
 
   onLog?.(
-    `[reup-si] Building celebrity center slideshow: ${paths.length} images × ${SI_CELEBRITY_IMAGE_DURATION_SEC}s → ${width}x${height} (transparent contain)`,
+    `[reup-si] Building celebrity center slideshow: ${paths.length} images × ${SI_CELEBRITY_IMAGE_DURATION_SEC}s → ${width}x${height} (transparent cover)`,
   );
 
   return assembleSiCelebrityCenterSlideshow({

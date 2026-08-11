@@ -3,11 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FfmpegProgress } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { formatClockDuration, getAudioDurationSeconds } from '../../infrastructure/ffmpeg/ffmpeg-probe.js';
-import {
-  buildH264VideoEncoderArgs,
-  isHardwareEncoder,
-  resolveFfmpegHwEncoder,
-} from '../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { buildH264VideoEncoderArgs, isHardwareEncoder, resolveFfmpegHwEncoder } from '../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { resizeImageToFit } from '../../infrastructure/ffmpeg/image-resize.js';
 import { timedStep } from '../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from '../../modules/video-production/shared/si-video/si-assets.js';
@@ -19,14 +15,19 @@ import {
   SI_CENTER_IMAGE_OPACITY,
   SI_CENTER_IMAGE_WIDTH_RATIO,
   SI_FPS,
-  SI_OUTPUT_VIDEO_BASENAME,
   SI_SUBTITLE_BOX_OPACITY,
   SI_SUBTITLE_MARGIN_BOTTOM_PX,
   resolveRandomSiAudioSpeed,
   resolveSiCenterImageOverlayX,
   SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX,
 } from '../../modules/video-production/shared/si-video/si.constants.js';
-import { STOCK_DIM_FACTOR } from '../../modules/video-production/shared/stock-background/index.js';
+import {
+  STOCK_DIM_FACTOR,
+  STOCK_SKIP_START_SEC,
+  STOCK_SLOWMO_FACTOR,
+  prepareRawStockVideoClip,
+  stockNormalizeFilterChain,
+} from '../../modules/video-production/shared/stock-background/index.js';
 import { runFfmpegFilterComplex } from '../../modules/video-production/shared/si-video/si-ffmpeg.js';
 import { selectRandomSiAudioBarClip, appendSiAudioBarScaleFilters } from '../../modules/video-production/shared/si-video/si-audio-bar.js';
 import { getCaptionStylePreset, resolveCaptionStyleKey } from '../../modules/video-production/shared/si-video/caption-styles.js';
@@ -39,17 +40,22 @@ import {
 } from '../../modules/video-production/shared/si-video/si-subtitle.js';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const OUTPUT_DIR = path.resolve(TEST_DIR, '../../../../output');
 
-const STOCK_FILE = 'stock.mp4';
+const STOCK_FILE = 'video.mp4';
+const STOCK_PROCESSED_FILE = 'stock_processed.mp4';
 const AUDIO_FILE = 'audio.mp3';
 const SUBTITLE_FILE = 'transcript.srt';
 const CENTER_IMAGE_FILE = 'background.jpg';
+const OUTPUT_FILE = 'assembled.mp4';
 
 const DEFAULT_LANGUAGE = 'ja';
-const DEFAULT_CAPTION_STYLE: CaptionStyleKey = 'yellow';
+const DEFAULT_CAPTION_STYLE: CaptionStyleKey = 'bizudp_gothic_red_white_box';
 
 export interface CreateSiOneImageVideoInput {
   workDir?: string;
+  /** Final assembled video directory (defaults to repo `output/`). */
+  outputDir?: string;
   language?: string;
   captionStyleKey?: CaptionStyleKey;
   showAudioBar?: boolean;
@@ -57,13 +63,6 @@ export interface CreateSiOneImageVideoInput {
   durationLimitSec?: number;
   onLog?: (msg: string) => void;
   onFfmpegProgress?: (progress: FfmpegProgress) => void;
-}
-
-function stockNormalizeFilterInner(): string {
-  const w = SI_CANVAS_W;
-  const h = SI_CANVAS_H;
-  const f = SI_FPS;
-  return `scale=${w}:${h}:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,fps=${f},setsar=1`;
 }
 
 async function assertFileExists(filePath: string, label: string): Promise<void> {
@@ -76,11 +75,12 @@ async function assertFileExists(filePath: string, label: string): Promise<void> 
 
 /**
  * Assemble an SI one_image video from local test assets:
- * stock.mp4 + audio.mp3 + transcript.srt + background.jpg → video.mp4
+ * video.mp4 → stock_processed.mp4, then + audio/srt/center → output/assembled.mp4
  */
 export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = {}): Promise<string> {
   const {
     workDir = TEST_DIR,
+    outputDir = OUTPUT_DIR,
     language = DEFAULT_LANGUAGE,
     captionStyleKey = DEFAULT_CAPTION_STYLE,
     showAudioBar = true,
@@ -94,12 +94,12 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
     onLog?.(msg);
   };
 
-  const stockPath = path.join(workDir, STOCK_FILE);
+  const rawStockPath = path.join(workDir, STOCK_FILE);
   const audioPath = path.join(workDir, AUDIO_FILE);
   const subtitlePath = path.join(workDir, SUBTITLE_FILE);
   const centerImagePath = path.join(workDir, CENTER_IMAGE_FILE);
 
-  await assertFileExists(stockPath, 'stock video');
+  await assertFileExists(rawStockPath, 'stock video');
   await assertFileExists(audioPath, 'audio');
   await assertFileExists(subtitlePath, 'subtitle');
   await assertFileExists(centerImagePath, 'center image');
@@ -108,14 +108,13 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
   const speed = resolveRandomSiAudioSpeed();
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
-  const outputDurationSec = durationLimitSec
-    ? Math.min(audioDurationAfterTempo, durationLimitSec)
-    : audioDurationAfterTempo;
+  const outputDurationSec = durationLimitSec ? Math.min(audioDurationAfterTempo, durationLimitSec) : audioDurationAfterTempo;
+  const sourceDurationSec = outputDurationSec / STOCK_SLOWMO_FACTOR;
 
   log(
     `[si-one-image] Audio ${originalAudioDuration.toFixed(1)}s → ${formatClockDuration(audioDurationAfterTempo)} after atempo ${speed.toFixed(3)}`,
   );
-  log(`[si-one-image] Stock: ${stockPath}`);
+  log(`[si-one-image] Raw stock: ${rawStockPath}`);
   log(`[si-one-image] Center image margin-top: ${SI_CENTER_IMAGE_MARGIN_TOP_PX}px`);
   if (showAudioBar) {
     log('[si-one-image] Audio bar overlay: enabled');
@@ -132,7 +131,8 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
     log(`[si-one-image] Audio bar clip: ${audioBarClip.filename}`);
   }
 
-  const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
+  const outputPath = path.join(outputDir, OUTPUT_FILE);
+  const stockClipPath = path.join(outputDir, STOCK_PROCESSED_FILE);
   const filterScriptPath = path.join(workDir, 'filter_complex.txt');
   const tempAssPath = path.join(workDir, 'temp_sub.ass');
   const resizedCenterImagePath = path.join(workDir, 'center_720.jpg');
@@ -141,6 +141,24 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
   let mergeArgs: string[] = [];
 
   const stepOpts = { prefix: '[si-one-image]', onLog };
+
+  await fs.mkdir(outputDir, { recursive: true });
+
+  log(
+    `[si-one-image] Prepare stock: target ${outputDurationSec.toFixed(1)}s after ${STOCK_SLOWMO_FACTOR}x slowmo → cut ${sourceDurationSec.toFixed(1)}s from t=${STOCK_SKIP_START_SEC}s`,
+  );
+  await timedStep(
+    'Prepare stock clip (ffmpeg)',
+    () =>
+      prepareRawStockVideoClip(rawStockPath, stockClipPath, {
+        skipStartSec: STOCK_SKIP_START_SEC,
+        durationSec: sourceDurationSec,
+        onLog,
+        label: 'si-one-image-stock',
+      }),
+    stepOpts,
+  );
+  log(`[si-one-image] Processed stock → ${stockClipPath}`);
 
   await timedStep(
     'Chuẩn bị inputs',
@@ -156,7 +174,7 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
       mergeArgs = ['-y'];
       let inputIdx = 0;
 
-      mergeArgs.push('-stream_loop', '-1', '-i', stockPath);
+      mergeArgs.push('-stream_loop', '-1', '-i', stockClipPath);
       const stockIndex = inputIdx++;
 
       const audioIndex = inputIdx++;
@@ -175,7 +193,7 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
       filterParts.push(`[${audioIndex}:a]atempo=${speed}[aout]`);
 
       const vBgLabel = 'vout_bg';
-      filterParts.push(`[${stockIndex}:v]${stockNormalizeFilterInner()}[${vBgLabel}]`);
+      filterParts.push(stockNormalizeFilterChain(`${stockIndex}:v`, vBgLabel, 1.0, false));
 
       filterParts.push(`[${vBgLabel}]lutyuv=y='val*${STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
 
@@ -184,9 +202,7 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
       filterParts.push(
         `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
       );
-      filterParts.push(
-        `[v_dimmed][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:shortest=1[v_centered_img]`,
-      );
+      filterParts.push(`[v_dimmed][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:shortest=1[v_centered_img]`);
 
       let currentVLabel = 'v_centered_img';
 
@@ -291,6 +307,7 @@ async function main() {
   console.log('SI one_image test assemble');
   console.log(`Work dir: ${TEST_DIR}`);
   console.log(`Stock: ${path.join(TEST_DIR, STOCK_FILE)}`);
+  console.log(`Processed stock: ${path.join(OUTPUT_DIR, STOCK_PROCESSED_FILE)}`);
   console.log(`Audio: ${path.join(TEST_DIR, AUDIO_FILE)}`);
   console.log(`Subtitle: ${path.join(TEST_DIR, SUBTITLE_FILE)}`);
   console.log(`Center image: ${path.join(TEST_DIR, CENTER_IMAGE_FILE)}`);
@@ -298,7 +315,7 @@ async function main() {
   if (durationLimitSec) {
     console.log(`Duration limit: ${durationLimitSec}s`);
   }
-  console.log(`Output: ${path.join(TEST_DIR, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`)}`);
+  console.log(`Output: ${path.join(OUTPUT_DIR, OUTPUT_FILE)}`);
   console.log('\nAssembling...\n');
 
   const outputPath = await createSiOneImageVideo({

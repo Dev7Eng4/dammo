@@ -195,6 +195,30 @@ export interface MetaStep3Output {
   hero_image_prompt: MetaStep3HeroImagePrompt;
 }
 
+/** Niche UUID for "Lời dạy người nổi tiếng" (niches.json + metadata_loi_day prompt). */
+export const CELEBRITY_WISDOM_NICHE_ID = 'a073ce74-07d7-4386-b59a-cb15a4fb2d99';
+
+export function isCelebrityWisdomNiche(niche?: string): boolean {
+  return (niche?.trim() || '') === CELEBRITY_WISDOM_NICHE_ID;
+}
+
+export interface CelebrityWisdomThumbnailLine {
+  text: string;
+  color: string;
+}
+
+export interface CelebrityWisdomThumbnailSpec {
+  text: string;
+  lines: CelebrityWisdomThumbnailLine[];
+  font_style: string;
+  font_characteristics: string;
+  text_effect: string;
+  background: string;
+  character_position: string;
+  text_position: string;
+  visual_strategy: string;
+}
+
 export interface MetadataLlmOutput {
   detected_niche: string;
   metadata: {
@@ -203,6 +227,14 @@ export interface MetadataLlmOutput {
     tags: string[];
   };
   alternative_titles: string[];
+  /** Celebrity-wisdom niche fields (optional on other niches). */
+  detected_topic?: string;
+  detected_name?: string;
+  framing?: string;
+  core_promise?: string;
+  recommended_title_index?: number;
+  thumbnail?: CelebrityWisdomThumbnailSpec;
+  image_generation_prompt?: string;
 }
 
 export interface MetadataPersistedOutput extends MetadataLlmOutput {
@@ -219,6 +251,13 @@ export interface VideoMetaOutput {
   alternative_titles?: string[];
   final_summary?: MetaStep3FinalSummary;
   hero_image_prompt?: MetaStep3HeroImagePrompt;
+  detected_topic?: string;
+  detected_name?: string;
+  framing?: string;
+  core_promise?: string;
+  recommended_title_index?: number;
+  thumbnail?: CelebrityWisdomThumbnailSpec;
+  image_generation_prompt?: string;
 }
 
 export function hasLegacyVisualMeta(meta: VideoMetaOutput): meta is MetaStep3Output {
@@ -238,12 +277,41 @@ export interface LegacyMetaStep3PersistedOutput {
   result?: MetaStep3Output;
 }
 
+function pickOptionalString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function pickWisdomMetaFields(record: Record<string, unknown>): Partial<VideoMetaOutput> {
+  const fields: Partial<VideoMetaOutput> = {};
+  const detectedTopic = pickOptionalString(record, 'detected_topic');
+  const detectedName = pickOptionalString(record, 'detected_name');
+  const framing = pickOptionalString(record, 'framing');
+  const corePromise = pickOptionalString(record, 'core_promise');
+  const imagePrompt = pickOptionalString(record, 'image_generation_prompt');
+  if (detectedTopic !== undefined) fields.detected_topic = detectedTopic;
+  if (detectedName !== undefined) fields.detected_name = detectedName;
+  if (framing !== undefined) fields.framing = framing;
+  if (corePromise !== undefined) fields.core_promise = corePromise;
+  if (imagePrompt !== undefined) fields.image_generation_prompt = imagePrompt;
+  if (typeof record.recommended_title_index === 'number' && Number.isFinite(record.recommended_title_index)) {
+    fields.recommended_title_index = record.recommended_title_index;
+  }
+  if (record.thumbnail && typeof record.thumbnail === 'object') {
+    fields.thumbnail = record.thumbnail as CelebrityWisdomThumbnailSpec;
+  }
+  if (Array.isArray(record.alternative_titles)) {
+    fields.alternative_titles = record.alternative_titles as string[];
+  }
+  return fields;
+}
+
 export function parseVideoMetaContent(raw: unknown): VideoMetaOutput {
   if (!raw || typeof raw !== 'object') {
     throw new Error('Invalid video-meta.json: expected object');
   }
 
-  const record = raw as LegacyMetaStep3PersistedOutput & MetadataPersistedOutput;
+  const record = raw as LegacyMetaStep3PersistedOutput & MetadataPersistedOutput & Record<string, unknown>;
 
   if (record.result && typeof record.result === 'object') {
     const result = record.result;
@@ -266,14 +334,17 @@ export function parseVideoMetaContent(raw: unknown): VideoMetaOutput {
     };
   }
 
-  if ('detected_niche' in record && 'metadata' in record && 'alternative_titles' in record) {
+  if ('metadata' in record && record.metadata) {
     return {
       ...(typeof record.source_title === 'string' && record.source_title.trim()
         ? { source_title: record.source_title.trim() }
         : {}),
-      detected_niche: record.detected_niche,
+      ...(typeof record.detected_niche === 'string' ? { detected_niche: record.detected_niche } : {}),
       metadata: record.metadata as MetaStep3Metadata,
-      alternative_titles: record.alternative_titles,
+      ...pickWisdomMetaFields(record),
+      ...(Array.isArray(record.alternative_titles)
+        ? { alternative_titles: record.alternative_titles }
+        : {}),
     };
   }
 

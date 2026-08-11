@@ -10,7 +10,12 @@ import { promptsSettingsService } from '../../../prompts/prompts-settings.servic
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from './meta-session.js';
 import { tryParseMetadataResponse } from './meta-response.js';
-import type { MetadataLlmOutput, MetadataPersistedOutput, VideoMetaOutput } from './metadata.types.js';
+import {
+  isCelebrityWisdomNiche,
+  type MetadataLlmOutput,
+  type MetadataPersistedOutput,
+  type VideoMetaOutput,
+} from './metadata.types.js';
 
 const METADATA_PROMPT_KEY = 'metadata';
 const MAX_RETRIES = 3;
@@ -83,6 +88,22 @@ function resolveMetadataPrompt(
   return { key: fallbackPrompt.key, niche: 'all' };
 }
 
+function pickWisdomPersistFields(parsed: MetadataLlmOutput): Partial<MetadataLlmOutput> {
+  const fields: Partial<MetadataLlmOutput> = {};
+  if (parsed.detected_topic !== undefined) fields.detected_topic = parsed.detected_topic;
+  if (parsed.detected_name !== undefined) fields.detected_name = parsed.detected_name;
+  if (parsed.framing !== undefined) fields.framing = parsed.framing;
+  if (parsed.core_promise !== undefined) fields.core_promise = parsed.core_promise;
+  if (parsed.recommended_title_index !== undefined) {
+    fields.recommended_title_index = parsed.recommended_title_index;
+  }
+  if (parsed.thumbnail !== undefined) fields.thumbnail = parsed.thumbnail;
+  if (parsed.image_generation_prompt !== undefined) {
+    fields.image_generation_prompt = parsed.image_generation_prompt;
+  }
+  return fields;
+}
+
 async function persistMetadataOutput(
   parsed: MetadataLlmOutput,
   sourceTitle: string,
@@ -109,6 +130,7 @@ async function persistMetadataOutput(
       description,
     },
     alternative_titles: parsed.alternative_titles,
+    ...pickWisdomPersistFields(parsed),
   };
   await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf8');
   console.log(
@@ -136,6 +158,7 @@ function toVideoMetaOutput(
       description,
     },
     alternative_titles: parsed.alternative_titles,
+    ...pickWisdomPersistFields(parsed),
   };
 }
 
@@ -151,7 +174,9 @@ export async function executeMetadata(
     throw new AppError('Metadata generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
   }
 
-  const promptKey = resolveMetadataPrompt(language, options?.niche).key;
+  const resolved = resolveMetadataPrompt(language, options?.niche);
+  const promptKey = resolved.key;
+  const parseNiche = isCelebrityWisdomNiche(options?.niche) ? options?.niche : resolved.niche;
   const transcript = await extractTranscriptForMetadata(srtPath);
   let lastReason = 'unknown error';
 
@@ -170,7 +195,7 @@ export async function executeMetadata(
         pasteStrategy: 'direct',
       });
 
-      const parsed = tryParseMetadataResponse(response);
+      const parsed = tryParseMetadataResponse(response, { niche: parseNiche });
       if (parsed) {
         await persistMetadataOutput(
           parsed,
@@ -183,7 +208,9 @@ export async function executeMetadata(
         return toVideoMetaOutput(parsed, sourceTitle, options?.descriptionDisclaimer);
       }
 
-      lastReason = 'invalid JSON or schema mismatch';
+      lastReason = isCelebrityWisdomNiche(parseNiche)
+        ? 'invalid JSON or missing metadata/image_generation_prompt'
+        : 'invalid JSON or schema mismatch';
       logValidationFailure(attempt, lastReason);
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';

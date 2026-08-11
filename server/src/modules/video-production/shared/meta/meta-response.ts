@@ -1,12 +1,14 @@
 import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import type { SrtBlock } from '../../../../infrastructure/subtitle/srt-utils.js';
-import type {
-  MetaStep1BeatRole,
-  MetaStep1ChunkDigest,
-  MetaStep2StoryBlock,
-  MetaStep3HeroImagePrompt,
-  MetaStep3Output,
-  MetadataLlmOutput,
+import {
+  isCelebrityWisdomNiche,
+  type CelebrityWisdomThumbnailSpec,
+  type MetaStep1BeatRole,
+  type MetaStep1ChunkDigest,
+  type MetaStep2StoryBlock,
+  type MetaStep3HeroImagePrompt,
+  type MetaStep3Output,
+  type MetadataLlmOutput,
 } from './metadata.types.js';
 
 function stripMarkdownFences(text: string): string {
@@ -238,13 +240,69 @@ function validateMetadataFields(value: unknown): boolean {
   return true;
 }
 
-export function tryParseMetadataResponse(response: LlmBrowserResponse): MetadataLlmOutput | null {
+function pickOptionalTrimmedString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  return value;
+}
+
+function pickOptionalAlternativeTitles(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map(title => title.trim())
+    .filter(title => title.length > 0);
+}
+
+function pickOptionalThumbnail(value: unknown): CelebrityWisdomThumbnailSpec | undefined {
+  if (!isRecord(value)) return undefined;
+  return value as unknown as CelebrityWisdomThumbnailSpec;
+}
+
+function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOutput {
+  const metadata = parsed.metadata as Record<string, unknown>;
+
+  const output: MetadataLlmOutput = {
+    detected_niche:
+      typeof parsed.detected_niche === 'string' ? parsed.detected_niche.trim() : '',
+    metadata: {
+      title: String(metadata.title).trim(),
+      description: String(metadata.description).trim(),
+      tags: (metadata.tags as string[]).map(tag => tag.trim()),
+    },
+    alternative_titles: pickOptionalAlternativeTitles(parsed.alternative_titles),
+  };
+
+  const detectedTopic = pickOptionalTrimmedString(parsed.detected_topic);
+  const detectedName = pickOptionalTrimmedString(parsed.detected_name);
+  const framing = pickOptionalTrimmedString(parsed.framing);
+  const corePromise = pickOptionalTrimmedString(parsed.core_promise);
+  if (detectedTopic !== undefined) output.detected_topic = detectedTopic;
+  if (detectedName !== undefined) output.detected_name = detectedName;
+  if (framing !== undefined) output.framing = framing;
+  if (corePromise !== undefined) output.core_promise = corePromise;
+
+  if (typeof parsed.recommended_title_index === 'number' && Number.isFinite(parsed.recommended_title_index)) {
+    output.recommended_title_index = parsed.recommended_title_index;
+  }
+
+  const thumbnail = pickOptionalThumbnail(parsed.thumbnail);
+  if (thumbnail) output.thumbnail = thumbnail;
+
+  const imagePrompt = pickOptionalTrimmedString(parsed.image_generation_prompt);
+  if (imagePrompt !== undefined) output.image_generation_prompt = imagePrompt;
+
+  return output;
+}
+
+export function tryParseMetadataResponse(
+  response: LlmBrowserResponse,
+  options?: { niche?: string },
+): MetadataLlmOutput | null {
   const jsonText = extractJsonText(response);
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
-    console.log('🚀 ~ tryParseMetadataResponse ~ parsed:', parsed);
   } catch {
     return null;
   }
@@ -253,15 +311,13 @@ export function tryParseMetadataResponse(response: LlmBrowserResponse): Metadata
   if (!hasRequiredKeys(parsed, ['metadata'])) return null;
   if (!validateMetadataFields(parsed.metadata)) return null;
 
-  const metadata = parsed.metadata as Record<string, unknown>;
+  if (isCelebrityWisdomNiche(options?.niche)) {
+    const imagePrompt = pickOptionalTrimmedString(parsed.image_generation_prompt)?.trim() ?? '';
+    if (!imagePrompt) return null;
+    const output = buildBaseMetadataOutput(parsed);
+    output.image_generation_prompt = imagePrompt;
+    return output;
+  }
 
-  return {
-    detected_niche: '',
-    metadata: {
-      title: String(metadata.title).trim(),
-      description: String(metadata.description).trim(),
-      tags: (metadata.tags as string[]).map(tag => tag.trim()),
-    },
-    alternative_titles: (parsed.alternative_titles as string[]).map(title => title.trim()),
-  };
+  return buildBaseMetadataOutput(parsed);
 }

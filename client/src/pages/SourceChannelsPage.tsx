@@ -372,9 +372,11 @@ export function SourceChannelsPage() {
       <AddNicheModal
         open={showAddNicheModal}
         onClose={() => setShowAddNicheModal(false)}
-        onSuccess={() => {
+        onSuccess={(action) => {
           void refreshNiches();
-          toast.success('Đã thêm niche');
+          if (action === 'create') toast.success('Đã thêm niche');
+          else if (action === 'update') toast.success('Đã cập nhật niche');
+          else toast.success('Đã xóa niche');
         }}
       />
 

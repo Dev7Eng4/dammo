@@ -16,3 +16,6 @@ server/data/assets/*
 !server/data/prompts.json
 !server/data/visual-styles.json
 !server/data/niches.json
+!server/data/celebrities/
+!server/data/celebrities/**
+!server/data/celebrities.json

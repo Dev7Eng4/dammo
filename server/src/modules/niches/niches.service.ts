@@ -1,27 +1,8 @@
 import { AppError } from '../../shared/http/errors.js';
+import { generateId } from '../../shared/id.js';
+import { getNicheUsage, type NicheUsage } from './niche-usage.js';
 import { nichesRepository } from './niches.repository.js';
-import type { CreateNicheInput, Niche } from './niches.types.js';
-
-export function slugifyNicheLabel(label: string): string {
-  const slug = label
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-
-  return slug || 'niche';
-}
-
-function uniqueNicheKey(base: string, existingKeys: Set<string>): string {
-  if (!existingKeys.has(base)) return base;
-
-  let suffix = 2;
-  while (existingKeys.has(`${base}-${suffix}`)) {
-    suffix += 1;
-  }
-  return `${base}-${suffix}`;
-}
+import type { CreateNicheInput, Niche, UpdateNicheInput } from './niches.types.js';
 
 export class NichesService {
   list(): Niche[] {
@@ -40,22 +21,63 @@ export class NichesService {
     return nichesRepository.findByKey(key) !== null;
   }
 
+  getUsage(key: string): NicheUsage {
+    this.getByKey(key);
+    return getNicheUsage(key);
+  }
+
   create(input: CreateNicheInput): Niche {
     const label = input.label.trim();
     if (!label) {
       throw new AppError('Label is required', 400, 'INVALID_LABEL');
     }
 
-    const existingKeys = new Set(nichesRepository.findAll().map((item) => item.key));
-    const key = uniqueNicheKey(slugifyNicheLabel(label), existingKeys);
-
     const niche: Niche = {
-      key,
+      key: generateId(),
       label,
       createdAt: new Date().toISOString(),
     };
 
     return nichesRepository.prepend(niche);
+  }
+
+  update(key: string, input: UpdateNicheInput): Niche {
+    this.getByKey(key);
+
+    const label = input.label.trim();
+    if (!label) {
+      throw new AppError('Label is required', 400, 'INVALID_LABEL');
+    }
+
+    const updated = nichesRepository.update(key, (niche) => ({
+      ...niche,
+      label,
+    }));
+
+    if (!updated) {
+      throw new AppError('Niche not found', 404, 'NOT_FOUND');
+    }
+
+    return updated;
+  }
+
+  delete(key: string): void {
+    this.getByKey(key);
+    const usage = getNicheUsage(key);
+
+    if (usage.inUse) {
+      const names = [
+        ...usage.prompts.map((item) => item.name),
+        ...usage.sourceChannels.map((item) => item.name),
+        ...usage.youtubeChannels.map((item) => item.name),
+      ].join(', ');
+      throw new AppError(`Niche is used by: ${names}`, 409, 'NICHE_IN_USE');
+    }
+
+    const removed = nichesRepository.remove(key);
+    if (!removed) {
+      throw new AppError('Niche not found', 404, 'NOT_FOUND');
+    }
   }
 }
 
