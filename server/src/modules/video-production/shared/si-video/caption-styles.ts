@@ -1,5 +1,8 @@
 import { AppError } from '../../../../shared/http/errors.js';
 
+export const CAPTION_FONT_SIZE_WITH_BOX = 60;
+export const CAPTION_FONT_SIZE_WITHOUT_BOX = 55;
+
 export const CAPTION_STYLE_KEYS = [
   'default',
   'noto_sans_red_white',
@@ -72,7 +75,6 @@ type CaptionStyleBase = {
   label: string;
   fontRelPath: string;
   fontAssName: string;
-  fontSize: number;
   primaryColor: string;
   outlineColor?: string;
   outlinePx: number;
@@ -88,12 +90,19 @@ type CaptionStyleBase = {
 function expandBoxPair(base: CaptionStyleBase): [CaptionStylePreset, CaptionStylePreset] {
   const { id, label, ...style } = base;
   return [
-    { ...style, key: id, label, showBackgroundBox: false },
+    {
+      ...style,
+      key: id,
+      label,
+      showBackgroundBox: false,
+      fontSize: CAPTION_FONT_SIZE_WITHOUT_BOX,
+    },
     {
       ...style,
       key: `${id}_box`,
       label: `${label} + Box`,
       showBackgroundBox: true,
+      fontSize: CAPTION_FONT_SIZE_WITH_BOX,
     },
   ];
 }
@@ -108,7 +117,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Sans Red text + White stroke',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
     primaryColor: '&H00250BB8',
     outlineColor: '&H00FFFFFF',
     outlinePx: 3.6,
@@ -119,7 +127,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Sans Blue text + White stroke',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
     primaryColor: '&H00F0A843',
     outlineColor: '&H00FFFFFF',
     outlinePx: 2.4,
@@ -131,7 +138,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Sans Yellow text',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
     primaryColor: '&H0000FFFF',
     outlinePx: 3.6,
     shadowPx: 1.5,
@@ -141,7 +147,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Sans Cyan text + White stroke',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
     primaryColor: '&H00FFFF00',
     outlineColor: '&H00FFFFFF',
     outlinePx: 3.6,
@@ -152,7 +157,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Sans White text + Purple stroke',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 55,
     primaryColor: '&H00FFFFFF',
     outlineColor: '&H00F0435A',
     outlinePx: 4.0,
@@ -164,7 +168,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'BIZ UDPGothic Red text + White stroke',
     fontRelPath: 'fonts/BIZUDPGothic-Regular.ttf',
     fontAssName: 'BIZ UDPGothic',
-    fontSize: 55,
     primaryColor: '&H00250BB8',
     outlineColor: '&H00FFFFFF',
     outlinePx: 5.5,
@@ -176,7 +179,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Zen Kaku Blue text + White stroke',
     fontRelPath: 'fonts/ZenKakuGothicNew-Regular.ttf',
     fontAssName: 'Zen Kaku Gothic New',
-    fontSize: 60,
     primaryColor: '&H00F0A843',
     outlineColor: '&H00FFFFFF',
     outlinePx: 2.4,
@@ -188,7 +190,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Serif White text + Purple stroke',
     fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
     fontAssName: 'Noto Serif JP',
-    fontSize: 55,
     primaryColor: '&H00FFFFFF',
     outlineColor: '&H00F0435A',
     outlinePx: 4.0,
@@ -200,7 +201,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Serif Yellow text',
     fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
     fontAssName: 'Noto Serif JP',
-    fontSize: 55,
     primaryColor: '&H0000FFFF',
     outlinePx: 4.0,
     shadowPx: 0.3,
@@ -211,7 +211,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Serif Cyan text + White stroke',
     fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
     fontAssName: 'Noto Serif JP',
-    fontSize: 55,
     primaryColor: '&H00FFFF00',
     outlineColor: '&H00FFFFFF',
     outlinePx: 3.6,
@@ -223,7 +222,6 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
     label: 'Noto Serif Red text + White stroke',
     fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
     fontAssName: 'Noto Serif JP',
-    fontSize: 55,
     primaryColor: '&H00250BB8',
     outlineColor: '&H00FFFFFF',
     outlinePx: 4.0,
@@ -238,7 +236,7 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'Default',
     fontRelPath: 'fonts/NotoSansJP-Black.ttf',
     fontAssName: 'Noto Sans JP Black',
-    fontSize: 60,
+    fontSize: CAPTION_FONT_SIZE_WITH_BOX,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
     outlinePx: 5.5,
@@ -249,7 +247,7 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'BIZ UDPGothic',
     fontRelPath: 'fonts/BIZUDPGothic-Regular.ttf',
     fontAssName: 'BIZ UDPGothic',
-    fontSize: 55,
+    fontSize: CAPTION_FONT_SIZE_WITH_BOX,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
     outlinePx: 5.5,
@@ -261,7 +259,7 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'Zen Kaku',
     fontRelPath: 'fonts/ZenKakuGothicNew-Regular.ttf',
     fontAssName: 'Zen Kaku Gothic New',
-    fontSize: 60,
+    fontSize: CAPTION_FONT_SIZE_WITH_BOX,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: true,
     outlinePx: 5.5,
@@ -272,7 +270,7 @@ export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> 
     label: 'Noto Serif',
     fontRelPath: 'fonts/NotoSerifJP-SemiBold.ttf',
     fontAssName: 'Noto Serif JP',
-    fontSize: 55,
+    fontSize: CAPTION_FONT_SIZE_WITHOUT_BOX,
     primaryColor: '&H00FFFFFF',
     showBackgroundBox: false,
     outlinePx: 4.0,
