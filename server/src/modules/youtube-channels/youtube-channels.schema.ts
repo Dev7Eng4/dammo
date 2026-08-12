@@ -21,7 +21,7 @@ const channelConfigFields = {
   mailAccountId: z.string().min(1),
   type: youtubeChannelTypeSchema,
   language: channelLanguageSchema,
-  niche: z.string().min(1),
+  niche: z.string().default(''),
   sourceChannels: z.array(z.string().min(1)).optional(),
   videoCreationOrder: z.enum(['oldest_first', 'newest_first']).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),

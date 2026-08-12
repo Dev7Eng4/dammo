@@ -4,7 +4,7 @@ import { extractTranscriptForMetadata } from '../../../../infrastructure/subtitl
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
-import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
+import { executePromptTemplate, getPromptTemplateArity } from '../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
@@ -34,6 +34,8 @@ export interface RunMetadataOptions {
   descriptionDisclaimer?: string;
   /** Channel niche key used to pick a niche-specific meta prompt. */
   niche?: string;
+  /** Visual style rule from channel "Phong cách hình ảnh"; required when meta prompt arity >= 3. */
+  imageStyle?: string;
   onProgress?: (progress: MetadataProgress) => void;
 }
 
@@ -51,7 +53,19 @@ function pickPreferredMetadataPrompt<T extends { key: string }>(prompts: T[]): T
   return prompts.find((item) => item.key === METADATA_PROMPT_KEY) ?? prompts[0];
 }
 
-function resolveMetadataPrompt(
+/** True when a dedicated meta prompt exists for this channel niche (not the `all` fallback). */
+export function hasNicheMetadataPrompt(language: PromptLanguage, channelNiche?: string): boolean {
+  const niche = channelNiche?.trim() || 'all';
+  if (niche === 'all') return false;
+  return promptsRepository
+    .findAll()
+    .some(
+      (item) =>
+        item.category === 'meta' && item.language === language && (item.niche || 'all') === niche,
+    );
+}
+
+export function resolveMetadataPrompt(
   language: PromptLanguage,
   channelNiche?: string,
 ): { key: string; niche: string } {
@@ -100,6 +114,9 @@ function pickWisdomPersistFields(parsed: MetadataLlmOutput): Partial<MetadataLlm
   if (parsed.thumbnail !== undefined) fields.thumbnail = parsed.thumbnail;
   if (parsed.image_generation_prompt !== undefined) {
     fields.image_generation_prompt = parsed.image_generation_prompt;
+  }
+  if (parsed.video_visual_prompt !== undefined) {
+    fields.video_visual_prompt = parsed.video_visual_prompt;
   }
   return fields;
 }
@@ -178,6 +195,19 @@ export async function executeMetadata(
   const promptKey = resolved.key;
   const parseNiche = isCelebrityWisdomNiche(options?.niche) ? options?.niche : resolved.niche;
   const transcript = await extractTranscriptForMetadata(srtPath);
+  const promptArity = await getPromptTemplateArity(language, promptKey);
+  const imageStyle = options?.imageStyle?.trim() ?? '';
+  const templateArgs: unknown[] =
+    promptArity >= 3 ? [sourceTitle, transcript, imageStyle] : [sourceTitle, transcript];
+
+  if (promptArity >= 3 && !imageStyle) {
+    throw new AppError(
+      'Phong cách hình ảnh (visual style) is required for this metadata prompt (image_style)',
+      400,
+      'MISSING_IMAGE_STYLE',
+    );
+  }
+
   let lastReason = 'unknown error';
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
@@ -189,7 +219,7 @@ export async function executeMetadata(
     });
 
     try {
-      const userPrompt = await executePromptTemplate(language, promptKey, [sourceTitle, transcript]);
+      const userPrompt = await executePromptTemplate(language, promptKey, templateArgs);
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
         pasteStrategy: 'direct',
@@ -208,9 +238,10 @@ export async function executeMetadata(
         return toVideoMetaOutput(parsed, sourceTitle, options?.descriptionDisclaimer);
       }
 
-      lastReason = isCelebrityWisdomNiche(parseNiche)
-        ? 'invalid JSON or missing metadata/image_generation_prompt'
-        : 'invalid JSON or schema mismatch';
+      lastReason =
+        parseNiche && parseNiche !== 'all'
+          ? 'invalid JSON or missing metadata/image_generation_prompt'
+          : 'invalid JSON or schema mismatch';
       logValidationFailure(attempt, lastReason);
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';

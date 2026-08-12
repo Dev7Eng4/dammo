@@ -235,6 +235,8 @@ export interface MetadataLlmOutput {
   recommended_title_index?: number;
   thumbnail?: CelebrityWisdomThumbnailSpec;
   image_generation_prompt?: string;
+  /** Drama / niche meta: prompt for SI one_image background (no typography). */
+  video_visual_prompt?: string;
 }
 
 export interface MetadataPersistedOutput extends MetadataLlmOutput {
@@ -258,6 +260,7 @@ export interface VideoMetaOutput {
   recommended_title_index?: number;
   thumbnail?: CelebrityWisdomThumbnailSpec;
   image_generation_prompt?: string;
+  video_visual_prompt?: string;
 }
 
 export function hasLegacyVisualMeta(meta: VideoMetaOutput): meta is MetaStep3Output {
@@ -289,11 +292,13 @@ function pickWisdomMetaFields(record: Record<string, unknown>): Partial<VideoMet
   const framing = pickOptionalString(record, 'framing');
   const corePromise = pickOptionalString(record, 'core_promise');
   const imagePrompt = pickOptionalString(record, 'image_generation_prompt');
+  const videoVisualPrompt = pickOptionalString(record, 'video_visual_prompt');
   if (detectedTopic !== undefined) fields.detected_topic = detectedTopic;
   if (detectedName !== undefined) fields.detected_name = detectedName;
   if (framing !== undefined) fields.framing = framing;
   if (corePromise !== undefined) fields.core_promise = corePromise;
   if (imagePrompt !== undefined) fields.image_generation_prompt = imagePrompt;
+  if (videoVisualPrompt !== undefined) fields.video_visual_prompt = videoVisualPrompt;
   if (typeof record.recommended_title_index === 'number' && Number.isFinite(record.recommended_title_index)) {
     fields.recommended_title_index = record.recommended_title_index;
   }

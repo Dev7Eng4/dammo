@@ -1,7 +1,6 @@
 import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import type { SrtBlock } from '../../../../infrastructure/subtitle/srt-utils.js';
 import {
-  isCelebrityWisdomNiche,
   type CelebrityWisdomThumbnailSpec,
   type MetaStep1BeatRole,
   type MetaStep1ChunkDigest,
@@ -291,6 +290,9 @@ function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOu
   const imagePrompt = pickOptionalTrimmedString(parsed.image_generation_prompt);
   if (imagePrompt !== undefined) output.image_generation_prompt = imagePrompt;
 
+  const videoVisualPrompt = pickOptionalTrimmedString(parsed.video_visual_prompt);
+  if (videoVisualPrompt !== undefined) output.video_visual_prompt = videoVisualPrompt;
+
   return output;
 }
 
@@ -311,7 +313,9 @@ export function tryParseMetadataResponse(
   if (!hasRequiredKeys(parsed, ['metadata'])) return null;
   if (!validateMetadataFields(parsed.metadata)) return null;
 
-  if (isCelebrityWisdomNiche(options?.niche)) {
+  const niche = options?.niche?.trim() || '';
+  // Niche-specific meta prompts (celebrity wisdom, drama, …) must return image_generation_prompt.
+  if (niche && niche !== 'all') {
     const imagePrompt = pickOptionalTrimmedString(parsed.image_generation_prompt)?.trim() ?? '';
     if (!imagePrompt) return null;
     const output = buildBaseMetadataOutput(parsed);

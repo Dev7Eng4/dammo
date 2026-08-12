@@ -710,10 +710,8 @@ export class YoutubeChannelsService {
     const config = validateChannelConfig(input);
     assertEmailAvailableForChannel(config.linkedEmail);
 
-    if (!input.niche.trim()) {
-      throw new AppError('Niche is required');
-    }
-    if (!nichesService.exists(input.niche)) {
+    const niche = input.niche.trim();
+    if (niche && !nichesService.exists(niche)) {
       throw new AppError('Niche not found', 400, 'INVALID_NICHE');
     }
 
@@ -789,7 +787,7 @@ export class YoutubeChannelsService {
       youtubeUrl,
       channelId,
       type: input.type,
-      niche: input.niche,
+      niche,
       language: input.language,
       monetizationStatus: 'in_review',
       healthScore: 'medium',
@@ -856,10 +854,8 @@ export class YoutubeChannelsService {
     const config = validateChannelConfig(input);
     assertEmailAvailableForChannel(config.linkedEmail, id);
 
-    if (!input.niche.trim()) {
-      throw new AppError('Niche is required');
-    }
-    if (!nichesService.exists(input.niche)) {
+    const niche = input.niche.trim();
+    if (niche && !nichesService.exists(niche)) {
       throw new AppError('Niche not found', 400, 'INVALID_NICHE');
     }
 
@@ -927,7 +923,7 @@ export class YoutubeChannelsService {
         ...existing,
         type: input.type,
         language: input.language,
-        niche: input.niche,
+        niche,
         linkedEmail: config.linkedEmail,
         sourceChannels: config.sourceChannels,
         uploadSchedule: config.uploadSchedule,

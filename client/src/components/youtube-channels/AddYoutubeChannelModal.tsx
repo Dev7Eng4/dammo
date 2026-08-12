@@ -91,7 +91,7 @@ function buildAvailableMailOptions(
   ];
 }
 
-const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: '', label: 'Mặc định' };
+const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: '', label: 'Sử dụng lại Thumbnail cũ' };
 
 const CHANNEL_TYPE_OPTIONS = YOUTUBE_CHANNEL_TYPE_OPTIONS.map(option => ({
   ...option,
@@ -596,7 +596,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   }
 
   async function onSubmit(values: AddYoutubeChannelFormValues) {
-    if (!values.mailAccountId || !values.type || !values.uploadFrequency || !values.language || !values.niche) return;
+    if (!values.mailAccountId || !values.type || !values.uploadFrequency || !values.language) return;
 
     setApiError(null);
     try {
@@ -604,7 +604,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         mailAccountId: values.mailAccountId,
         type: values.type,
         language: values.language,
-        niche: values.niche,
+        niche: values.niche.trim(),
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(isReupYoutubeChannelType(values.type) ? { videoCreationOrder: values.videoCreationOrder } : {}),
@@ -787,11 +787,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             />
           </FormField>
 
-          <FormField label='Chủ đề' htmlFor='channel-niche' error={errors.niche?.message} className='min-w-0'>
+          <FormField label='Ngách' htmlFor='channel-niche' optional error={errors.niche?.message} className='min-w-0'>
             <Controller
               name='niche'
               control={control}
-              rules={{ required: 'Chủ đề là bắt buộc' }}
               render={({ field }) => (
                 <Select
                   id='channel-niche'
@@ -799,14 +798,15 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
+                  clearable
                   placeholder={
                     optionsLoading
-                      ? 'Đang tải chủ đề...'
+                      ? 'Đang tải ngách...'
                       : nicheOptions.length === 0
-                        ? 'Chưa có chủ đề — hãy thêm chủ đề trước'
-                        : 'Chọn chủ đề'
+                        ? 'Chưa có ngách — hãy thêm ngách trước'
+                        : 'Chọn ngách'
                   }
-                  disabled={isSubmitting || optionsLoading || nicheOptions.length === 0}
+                  disabled={isSubmitting || optionsLoading}
                   className='w-full'
                   triggerClassName={selectTriggerClass}
                 />

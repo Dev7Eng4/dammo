@@ -11,6 +11,7 @@ export interface SelectProps {
   placeholder?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
+  clearable?: boolean;
   disabled?: boolean;
   id?: string;
   className?: string;
@@ -25,6 +26,7 @@ export function Select({
   placeholder,
   searchable,
   searchPlaceholder,
+  clearable,
   disabled,
   id,
   className,
@@ -40,6 +42,7 @@ export function Select({
       placeholder={placeholder}
       searchable={searchable}
       searchPlaceholder={searchPlaceholder}
+      clearable={clearable}
       disabled={disabled}
       className="w-full"
       triggerClassName={cn('h-10 w-full min-w-0 rounded-lg px-3 py-0', triggerClassName ?? className)}

@@ -115,6 +115,23 @@ export async function readPromptSource(language: PromptLanguage, key: string): P
   return expression;
 }
 
+export async function getPromptTemplateArity(language: PromptLanguage, key: string): Promise<number> {
+  const filePath = await resolveExistingPromptFilePath(language, key);
+
+  try {
+    const module = await import(`${pathToFileURL(filePath).href}?t=${Date.now()}`);
+    const factory = module.default ?? module[key];
+    if (typeof factory !== 'function') {
+      throw new AppError('Prompt default export not found in template file', 500, 'PROMPT_EXPORT_INVALID');
+    }
+    return factory.length;
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    const detail = err instanceof Error ? err.message : 'Unknown error';
+    throw new AppError(`Failed to load prompt template: ${detail}`, 500, 'PROMPT_LOAD_FAILED');
+  }
+}
+
 export async function executePromptTemplate(
   language: PromptLanguage,
   key: string,

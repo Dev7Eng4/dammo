@@ -22,6 +22,8 @@ export interface DropdownSelectProps<T extends string = string> {
   placeholder?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
+  /** When true and a value is selected, show a clear control to reset to empty string. */
+  clearable?: boolean;
   disabled?: boolean;
   id?: string;
   className?: string;
@@ -44,6 +46,22 @@ function ChevronDownIcon({ className }: { className?: string }) {
   );
 }
 
+function ClearIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
 function optionLabel(label: string): string {
   return typeof label === 'string' ? label : '';
 }
@@ -59,6 +77,7 @@ export function DropdownSelect<T extends string>({
   placeholder,
   searchable = false,
   searchPlaceholder = 'Search...',
+  clearable = false,
   disabled = false,
   id,
   className,
@@ -74,6 +93,7 @@ export function DropdownSelect<T extends string>({
   const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef);
   const selected = options.find((o) => o.value === value);
   const activeLabel = selected ? optionLabel(selected.label) : (placeholder ?? optionLabel(options[0]?.label ?? ''));
+  const showClear = clearable && Boolean(value) && !disabled;
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredOptions =
     searchable && normalizedQuery
@@ -222,7 +242,34 @@ export function DropdownSelect<T extends string>({
             activeLabel
           )}
         </span>
-        <ChevronDownIcon className="size-3.5 shrink-0 text-neutral-500" />
+        <span className="inline-flex shrink-0 items-center gap-1">
+          {showClear ? (
+            <span
+              role="button"
+              tabIndex={-1}
+              aria-label="Clear selection"
+              className="rounded p-0.5 text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                onChange('' as T);
+                if (open) closeMenu();
+                else onBlur?.();
+              }}
+              onKeyDown={e => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                onChange('' as T);
+                if (open) closeMenu();
+                else onBlur?.();
+              }}
+            >
+              <ClearIcon className="size-3.5" />
+            </span>
+          ) : null}
+          <ChevronDownIcon className="size-3.5 text-neutral-500" />
+        </span>
       </button>
       {menu ? createPortal(menu, document.body) : null}
     </div>

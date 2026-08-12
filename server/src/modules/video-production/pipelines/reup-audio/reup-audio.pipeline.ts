@@ -15,11 +15,16 @@ import {
   type ReupDownloadResult,
 } from '../../shared/assets/asset-downloader.js';
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
-import { runMetadata } from '../../shared/meta/run-metadata.js';
+import { runMetadata, hasNicheMetadataPrompt } from '../../shared/meta/run-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
-import { runThumbnailVisualGeneration } from '../../shared/thumbnail/hero-image.js';
+import {
+  DEFAULT_HERO_IMAGE_FILENAME,
+  runFlowImageGeneration,
+  runThumbnailVisualGeneration,
+} from '../../shared/thumbnail/hero-image.js';
 import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
 import { runCelebrityWisdomThumbnail } from '../../shared/thumbnail/run-celebrity-wisdom-thumbnail.js';
+import { runNicheImagePromptThumbnail } from '../../shared/thumbnail/run-niche-image-prompt-thumbnail.js';
 import { buildThumbnailReferenceImagePaths } from '../../shared/thumbnail/thumbnail-reference-images.js';
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
@@ -398,6 +403,7 @@ export class ReupAudioPipeline {
                   runMetadata(task.sourceTitle, jaSrtPath, destination.language, downloaded.youtubeVideoId, {
                     outputDir: jaWorkDir,
                     niche: destination.niche,
+                    imageStyle: destination.visualStyle?.rule?.trim() || undefined,
                     descriptionDisclaimer:
                       destination.showDisclaimer === true && destination.descriptionDisclaimerText?.trim()
                         ? destination.descriptionDisclaimerText.trim()
@@ -521,6 +527,74 @@ export class ReupAudioPipeline {
                   console.warn(`[reup-video] celebrity wisdom thumbnail skipped (non-fatal): ${message}`);
                   if (taskJobId) {
                     taskQueueRepository.appendLogMessage(taskJobId, 'info', `Wisdom thumbnail skipped: ${message}`);
+                  }
+                }
+              } else if (hasNicheMetadataPrompt(destination.language, destination.niche)) {
+                const imageGenerationPrompt = videoMetaOutput.image_generation_prompt?.trim() ?? '';
+                if (!imageGenerationPrompt) {
+                  throw new AppError(
+                    'image_generation_prompt is required for niche metadata thumbnail',
+                    400,
+                    'INVALID_INPUT',
+                  );
+                }
+
+                if (taskJobId) {
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    'Creating niche thumbnail via Flow (image_generation_prompt, no reference)...',
+                  );
+                }
+
+                try {
+                  const nicheThumb = await timedStep(
+                    'Niche image_generation_prompt thumbnail (Flow)',
+                    () =>
+                      runNicheImagePromptThumbnail(workDir, imageGenerationPrompt, {
+                        onProgress: taskJobId
+                          ? progress => {
+                              const profileLabel = progress.profileName;
+                              if (progress.status === 'retry') {
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Niche thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                );
+                                return;
+                              }
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `Niche thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                              );
+                            }
+                          : undefined,
+                      }),
+                    stepTimer,
+                  );
+                  reupThumbnailPath = nicheThumb.thumbnailPath;
+
+                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                  await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'ok',
+                      'Niche thumbnail saved → thumbnail.jpg (no reference)',
+                    );
+                  }
+                } catch (err) {
+                  const message =
+                    err instanceof AppError
+                      ? err.message
+                      : err instanceof Error
+                        ? err.message
+                        : 'Niche thumbnail generation failed';
+                  console.warn(`[reup-video] niche image_generation_prompt thumbnail skipped (non-fatal): ${message}`);
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Niche thumbnail skipped: ${message}`);
                   }
                 }
               } else {
@@ -736,48 +810,103 @@ export class ReupAudioPipeline {
                 }
                 console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
               } else {
-                const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
-                if (!generalImageTitle) {
-                  throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
-                }
+                const videoVisualPrompt = videoMetaOutput.video_visual_prompt?.trim() ?? '';
 
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating general image via Flow (general + reference)...');
-                }
+                if (videoVisualPrompt) {
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      'Creating background image via Flow (video_visual_prompt, no reference)...',
+                    );
+                  }
 
-                const heroResult = await timedStep(
-                  'General image (Flow + reference)',
-                  () =>
-                    runGeneralImage(generalImageTitle, destination.language, workDir, {
-                      referenceImagePaths: [downloaded.thumbnailPath],
-                      onProgress: taskJobId
-                        ? progress => {
-                            const profileLabel = progress.profileName;
-                            if (progress.status === 'retry') {
+                  const heroResult = await timedStep(
+                    'Background image (video_visual_prompt)',
+                    () =>
+                      runFlowImageGeneration(videoVisualPrompt, workDir, {
+                        fileName: DEFAULT_HERO_IMAGE_FILENAME,
+                        onProgress: taskJobId
+                          ? progress => {
+                              const profileLabel = progress.profileName;
+                              if (progress.status === 'retry') {
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Background image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                );
+                                return;
+                              }
                               taskQueueRepository.appendLogMessage(
                                 taskJobId,
                                 'info',
-                                `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                `Background image on ${profileLabel} (attempt ${progress.attempt})...`,
                               );
-                              return;
                             }
-                            taskQueueRepository.appendLogMessage(
-                              taskJobId,
-                              'info',
-                              `General image on ${profileLabel} (attempt ${progress.attempt})...`,
-                            );
-                          }
-                        : undefined,
-                    }),
-                  stepTimer,
-                );
-                heroImagePath = heroResult.heroImagePath;
+                          : undefined,
+                      }),
+                    stepTimer,
+                  );
+                  heroImagePath = heroResult.imagePath;
 
-                const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                await fs.unlink(flowDebugPath).catch(() => undefined);
+                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                  await fs.unlink(flowDebugPath).catch(() => undefined);
 
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'ok',
+                      'Background image saved → background.jpg (video_visual_prompt)',
+                    );
+                  }
+                } else {
+                  const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
+                  if (!generalImageTitle) {
+                    throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
+                  }
+
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      'Creating general image via Flow (general + reference)...',
+                    );
+                  }
+
+                  const heroResult = await timedStep(
+                    'General image (Flow + reference)',
+                    () =>
+                      runGeneralImage(generalImageTitle, destination.language, workDir, {
+                        referenceImagePaths: [downloaded.thumbnailPath],
+                        onProgress: taskJobId
+                          ? progress => {
+                              const profileLabel = progress.profileName;
+                              if (progress.status === 'retry') {
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                );
+                                return;
+                              }
+                              taskQueueRepository.appendLogMessage(
+                                taskJobId,
+                                'info',
+                                `General image on ${profileLabel} (attempt ${progress.attempt})...`,
+                              );
+                            }
+                          : undefined,
+                      }),
+                    stepTimer,
+                  );
+                  heroImagePath = heroResult.heroImagePath;
+
+                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                  await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                  if (taskJobId) {
+                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
+                  }
                 }
               }
               }
