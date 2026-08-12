@@ -240,7 +240,7 @@ export async function executeMetadata(
 
       lastReason =
         parseNiche && parseNiche !== 'all'
-          ? 'invalid JSON or missing metadata/image_generation_prompt'
+          ? 'invalid JSON or missing metadata/thumbnail.image_generation_prompt'
           : 'invalid JSON or schema mismatch';
       logValidationFailure(attempt, lastReason);
     } catch (err) {

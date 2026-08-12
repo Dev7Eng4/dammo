@@ -965,9 +965,8 @@ FORMAT:
     "character_position": "LEFT",
     "text_position": "RIGHT",
     "visual_strategy": ""
+    "image_generation_prompt": ""
   },
-
-  "image_generation_prompt": ""
 }
 
 ==================================================
