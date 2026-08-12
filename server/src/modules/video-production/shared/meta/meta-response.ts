@@ -1,6 +1,6 @@
 import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import {
-  isDramaNiche,
+  isCelebrityWisdomNiche,
   type CelebrityWisdomThumbnailSpec,
   type MetadataLlmOutput,
 } from './metadata.types.js';
@@ -79,8 +79,7 @@ function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOu
   const metadata = parsed.metadata as Record<string, unknown>;
 
   const output: MetadataLlmOutput = {
-    detected_niche:
-      typeof parsed.detected_niche === 'string' ? parsed.detected_niche.trim() : '',
+    detected_niche: typeof parsed.detected_niche === 'string' ? parsed.detected_niche.trim() : '',
     metadata: {
       title: String(metadata.title).trim(),
       description: String(metadata.description).trim(),
@@ -114,10 +113,7 @@ function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOu
   return output;
 }
 
-export function tryParseMetadataResponse(
-  response: LlmBrowserResponse,
-  options?: { niche?: string },
-): MetadataLlmOutput | null {
+export function tryParseMetadataResponse(response: LlmBrowserResponse, options?: { niche?: string }): MetadataLlmOutput | null {
   const jsonText = extractJsonText(response);
 
   let parsed: unknown;
@@ -139,8 +135,8 @@ export function tryParseMetadataResponse(
     const output = buildBaseMetadataOutput(parsed);
     output.image_generation_prompt = imagePrompt;
 
-    // Drama meta must also return top-level video_visual_prompt (SI one_image background).
-    if (isDramaNiche(niche) && !output.video_visual_prompt) {
+    // Niche meta (except celebrity wisdom) must return top-level video_visual_prompt (SI one_image background).
+    if (!isCelebrityWisdomNiche(niche) && !output.video_visual_prompt) {
       return null;
     }
 

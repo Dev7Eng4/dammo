@@ -12,7 +12,6 @@ import type { MetaLlmSession } from './meta-session.js';
 import { tryParseMetadataResponse } from './meta-response.js';
 import {
   isCelebrityWisdomNiche,
-  isDramaNiche,
   type MetadataLlmOutput,
   type MetadataPersistedOutput,
   type VideoMetaOutput,
@@ -241,9 +240,9 @@ export async function executeMetadata(
 
       lastReason =
         parseNiche && parseNiche !== 'all'
-          ? isDramaNiche(parseNiche)
-            ? 'invalid JSON or missing metadata/thumbnail.image_generation_prompt/video_visual_prompt'
-            : 'invalid JSON or missing metadata/thumbnail.image_generation_prompt'
+          ? isCelebrityWisdomNiche(parseNiche)
+            ? 'invalid JSON or missing metadata/thumbnail.image_generation_prompt'
+            : 'invalid JSON or missing metadata/thumbnail.image_generation_prompt/video_visual_prompt'
           : 'invalid JSON or schema mismatch';
       logValidationFailure(attempt, lastReason);
     } catch (err) {
