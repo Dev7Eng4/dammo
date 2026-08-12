@@ -1,6 +1,24 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_loi_song_thong_minh",
+      "baseKey": "metadata_loi_song_thong_minh",
+      "language": "ja",
+      "name": "MetaData Lối sống thông minh",
+      "category": "meta",
+      "niche": "ebfbd6d3-32b2-4daa-9935-faccd300c293",
+      "createdAt": "2026-08-12T15:27:55.895Z",
+      "updatedAt": "2026-08-12T15:27:55.895Z",
+      "steps": [
+        {
+          "id": "a8d16d6b-d0f4-42ad-9950-11290c2fafb6",
+          "key": "metadata_loi_song_thong_minh",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_drama",
       "baseKey": "metadata_drama",
       "language": "ja",

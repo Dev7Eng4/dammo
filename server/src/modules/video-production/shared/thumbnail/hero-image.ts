@@ -19,6 +19,20 @@ export interface FlowProfileOptions {
   profileId?: string;
 }
 
+export interface FlowImageJob {
+  prompt: string;
+  fileName: string;
+  referenceImagePaths?: string[];
+  logPrefix?: string;
+  failureCode?: string;
+  buildFailureMessage?: (reason: string, maxRetries: number) => string;
+}
+
+export interface RunFlowImageGenerationsOptions extends FlowProfileOptions {
+  onProgress?: (progress: HeroImageProgress) => void;
+  onJobProgress?: (jobIndex: number, progress: HeroImageProgress) => void;
+}
+
 export interface RunFlowImageGenerationOptions extends FlowProfileOptions {
   fileName?: string;
   referenceImagePaths?: string[];
@@ -64,45 +78,95 @@ function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
   return chromeProfilesService.requireMainProfile();
 }
 
+/**
+ * Run one or more Flow single (`generateImage`) jobs in one Chrome session:
+ * open profile once → generate sequentially → close once.
+ */
+export async function runFlowImageGenerations(
+  outputDir: string,
+  jobs: FlowImageJob[],
+  options?: RunFlowImageGenerationsOptions,
+): Promise<FlowImageGenerationResult[]> {
+  if (jobs.length === 0) {
+    throw new AppError('Flow image jobs array is empty', 400, 'INVALID_INPUT');
+  }
+
+  const profile = resolveFlowProfile(options);
+  const debugScreenshotPath = path.join(outputDir, 'flow-debug.png');
+  const results: FlowImageGenerationResult[] = [];
+
+  console.log(
+    `[hero-image] Mở Chrome main profile ${profile.name} cho Google Flow (${jobs.length} job(s))...`,
+  );
+
+  try {
+    for (let jobIndex = 0; jobIndex < jobs.length; jobIndex += 1) {
+      const job = jobs[jobIndex]!;
+      const promptUsed = buildFlowPrompt(job.prompt);
+      const logPrefix = job.logPrefix ?? `[hero-image] job ${jobIndex + 1}/${jobs.length}`;
+      const failureCode = job.failureCode ?? 'FLOW_IMAGE_FAILED';
+
+      const { savedPath, response } = await runWithFlowRetries({
+        profileId: profile.id,
+        profileName: profile.name,
+        prompt: promptUsed,
+        logPrefix,
+        failureCode,
+        buildFailureMessage:
+          job.buildFailureMessage ??
+          (reason => `Flow image generation failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`),
+        generateOptions: {
+          outputDir,
+          fileName: job.fileName,
+          ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
+          debugScreenshotPath,
+        },
+        onProgress: progress => {
+          options?.onProgress?.(progress);
+          options?.onJobProgress?.(jobIndex, progress);
+        },
+        onAttemptFailure: (attempt, reason) => {
+          console.warn(`${logPrefix} attempt ${attempt}: generation failed (${reason})`);
+        },
+      });
+
+      console.log(`${logPrefix} saved: ${savedPath} (${response.elapsedMs}ms)`);
+      results.push({ imagePath: savedPath, promptUsed });
+    }
+
+    return results;
+  } finally {
+    await chromeProfilesService.closeSubProfiles([profile.id]);
+  }
+}
+
 export async function runFlowImageGeneration(
   prompt: string,
   outputDir: string,
   options?: RunFlowImageGenerationOptions,
 ): Promise<FlowImageGenerationResult> {
-  const promptUsed = buildFlowPrompt(prompt);
-  const fileName = options?.fileName ?? DEFAULT_HERO_IMAGE_FILENAME;
-  const debugScreenshotPath = path.join(outputDir, 'flow-debug.png');
-  const profile = resolveFlowProfile(options);
-
-  console.log(`[hero-image] Mở Chrome main profile ${profile.name} cho Google Flow...`);
-
-  try {
-    const { savedPath, response } = await runWithFlowRetries({
-      profileId: profile.id,
-      profileName: profile.name,
-      prompt: promptUsed,
-      logPrefix: '[hero-image]',
-      failureCode: 'FLOW_IMAGE_FAILED',
-      buildFailureMessage: reason => `Flow image generation failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
-      generateOptions: {
-        outputDir,
-        fileName,
+  const [result] = await runFlowImageGenerations(
+    outputDir,
+    [
+      {
+        prompt,
+        fileName: options?.fileName ?? DEFAULT_HERO_IMAGE_FILENAME,
         ...(options?.referenceImagePaths?.length
           ? { referenceImagePaths: options.referenceImagePaths }
           : {}),
-        debugScreenshotPath,
       },
+    ],
+    {
+      profileId: options?.profileId,
       onProgress: options?.onProgress,
-      onAttemptFailure: (attempt, reason) => {
-        console.warn(`[hero-image] attempt ${attempt}: generation failed (${reason})`);
-      },
-    });
+    },
+  );
 
-    console.log(`[hero-image] saved: ${savedPath} (${response.elapsedMs}ms)`);
-    return { imagePath: savedPath, promptUsed };
-  } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+  if (!result) {
+    throw new AppError('Flow image generation returned no result', 502, 'FLOW_IMAGE_FAILED');
   }
+
+  return result;
 }
 
 export async function runThumbnailVisualGeneration(
@@ -110,35 +174,35 @@ export async function runThumbnailVisualGeneration(
   thumbnailVisual: ThumbnailVisualGenerationInput,
   options?: RunThumbnailVisualGenerationOptions,
 ): Promise<ThumbnailVisualGenerationResult> {
-  const thumbnailVisualPromptUsed = buildFlowPrompt(thumbnailVisual.visualPrompt, thumbnailVisual.negativePrompt);
-  const debugScreenshotPath = path.join(outputDir, 'flow-debug.png');
-  const profile = resolveFlowProfile(options);
+  const thumbnailVisualPromptUsed = buildFlowPrompt(
+    thumbnailVisual.visualPrompt,
+    thumbnailVisual.negativePrompt,
+  );
 
-  console.log(`[hero-image] Mở Chrome main profile ${profile.name} cho thumbnail visual...`);
-
-  try {
-    const { savedPath, response } = await runWithFlowRetries({
-      profileId: profile.id,
-      profileName: profile.name,
-      prompt: thumbnailVisualPromptUsed,
-      logPrefix: '[hero-image] thumbnail visual',
-      failureCode: 'THUMBNAIL_VISUAL_FAILED',
-      buildFailureMessage: reason =>
-        `Thumbnail visual generation failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
-      generateOptions: {
-        outputDir,
+  const [result] = await runFlowImageGenerations(
+    outputDir,
+    [
+      {
+        prompt: thumbnailVisualPromptUsed,
         fileName: THUMBNAIL_VISUAL_FILENAME,
-        debugScreenshotPath,
+        logPrefix: '[hero-image] thumbnail visual',
+        failureCode: 'THUMBNAIL_VISUAL_FAILED',
+        buildFailureMessage: reason =>
+          `Thumbnail visual generation failed after ${FLOW_MAX_RETRIES} attempts: ${reason}`,
       },
+    ],
+    {
+      profileId: options?.profileId,
       onProgress: options?.onProgress,
-      onAttemptFailure: (attempt, reason) => {
-        console.warn(`[hero-image] thumbnail visual attempt ${attempt}: generation failed (${reason})`);
-      },
-    });
+    },
+  );
 
-    console.log(`[hero-image] thumbnail visual saved: ${savedPath} (${response.elapsedMs}ms)`);
-    return { thumbnailVisualPath: savedPath, thumbnailVisualPromptUsed };
-  } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+  if (!result) {
+    throw new AppError('Thumbnail visual generation returned no result', 502, 'THUMBNAIL_VISUAL_FAILED');
   }
+
+  return {
+    thumbnailVisualPath: result.imagePath,
+    thumbnailVisualPromptUsed: result.promptUsed,
+  };
 }

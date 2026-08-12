@@ -25,6 +25,7 @@ import {
 import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
 import { runCelebrityWisdomThumbnail } from '../../shared/thumbnail/run-celebrity-wisdom-thumbnail.js';
 import { runNicheImagePromptThumbnail } from '../../shared/thumbnail/run-niche-image-prompt-thumbnail.js';
+import { runSiOneImageFlowBatch } from '../../shared/thumbnail/run-si-one-image-flow-batch.js';
 import { buildThumbnailReferenceImagePaths } from '../../shared/thumbnail/thumbnail-reference-images.js';
 import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
 import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
@@ -539,62 +540,141 @@ export class ReupAudioPipeline {
                   );
                 }
 
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    'Creating niche thumbnail via Flow (image_generation_prompt, no reference)...',
-                  );
-                }
+                const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
+                const useSiOneImageBatch = videoType === 'si' && siBackgroundImage === 'one_image';
 
-                try {
-                  const nicheThumb = await timedStep(
-                    'Niche image_generation_prompt thumbnail (Flow)',
-                    () =>
-                      runNicheImagePromptThumbnail(workDir, imageGenerationPrompt, {
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              if (progress.status === 'retry') {
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Niche thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                );
-                                return;
-                              }
-                              taskQueueRepository.appendLogMessage(
-                                taskJobId,
-                                'info',
-                                `Niche thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
-                              );
-                            }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  reupThumbnailPath = nicheThumb.thumbnailPath;
-
-                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                  await fs.unlink(flowDebugPath).catch(() => undefined);
+                if (useSiOneImageBatch) {
+                  const videoVisualPrompt = videoMetaOutput.video_visual_prompt?.trim() ?? '';
+                  if (!videoVisualPrompt) {
+                    throw new AppError(
+                      'video_visual_prompt is required for SI one_image background',
+                      400,
+                      'INVALID_INPUT',
+                    );
+                  }
 
                   if (taskJobId) {
                     taskQueueRepository.appendLogMessage(
                       taskJobId,
-                      'ok',
-                      'Niche thumbnail saved → thumbnail.jpg (no reference)',
+                      'info',
+                      'Creating thumbnail + background via Flow single (image_generation_prompt + video_visual_prompt)...',
                     );
                   }
-                } catch (err) {
-                  const message =
-                    err instanceof AppError
-                      ? err.message
-                      : err instanceof Error
+
+                  try {
+                    const batchResult = await timedStep(
+                      'SI one_image (thumbnail + background Flow single)',
+                      () =>
+                        runSiOneImageFlowBatch(workDir, imageGenerationPrompt, videoVisualPrompt, {
+                          onJobProgress: taskJobId
+                            ? (jobIndex, progress) => {
+                                const profileLabel = progress.profileName;
+                                const jobLabel = jobIndex === 0 ? 'thumbnail' : 'background';
+                                if (progress.status === 'retry') {
+                                  taskQueueRepository.appendLogMessage(
+                                    taskJobId,
+                                    'info',
+                                    `SI ${jobLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  );
+                                  return;
+                                }
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `SI ${jobLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
+                                );
+                              }
+                            : undefined,
+                        }),
+                      stepTimer,
+                    );
+                    reupThumbnailPath = batchResult.thumbnailPath;
+                    heroImagePath = batchResult.heroImagePath;
+
+                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                    await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'ok',
+                        'SI one_image Flow single saved → thumbnail.jpg, background.jpg',
+                      );
+                    }
+                  } catch (err) {
+                    const message =
+                      err instanceof AppError
                         ? err.message
-                        : 'Niche thumbnail generation failed';
-                  console.warn(`[reup-video] niche image_generation_prompt thumbnail skipped (non-fatal): ${message}`);
+                        : err instanceof Error
+                          ? err.message
+                          : 'SI one_image Flow batch failed';
+                    console.warn(`[reup-video] SI one_image Flow batch skipped (non-fatal): ${message}`);
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        `SI one_image Flow batch skipped: ${message}`,
+                      );
+                    }
+                  }
+                } else {
                   if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Niche thumbnail skipped: ${message}`);
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      'Creating niche thumbnail via Flow (image_generation_prompt, no reference)...',
+                    );
+                  }
+
+                  try {
+                    const nicheThumb = await timedStep(
+                      'Niche image_generation_prompt thumbnail (Flow)',
+                      () =>
+                        runNicheImagePromptThumbnail(workDir, imageGenerationPrompt, {
+                          onProgress: taskJobId
+                            ? progress => {
+                                const profileLabel = progress.profileName;
+                                if (progress.status === 'retry') {
+                                  taskQueueRepository.appendLogMessage(
+                                    taskJobId,
+                                    'info',
+                                    `Niche thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  );
+                                  return;
+                                }
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `Niche thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
+                                );
+                              }
+                            : undefined,
+                        }),
+                      stepTimer,
+                    );
+                    reupThumbnailPath = nicheThumb.thumbnailPath;
+
+                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                    await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'ok',
+                        'Niche thumbnail saved → thumbnail.jpg (no reference)',
+                      );
+                    }
+                  } catch (err) {
+                    const message =
+                      err instanceof AppError
+                        ? err.message
+                        : err instanceof Error
+                          ? err.message
+                          : 'Niche thumbnail generation failed';
+                    console.warn(`[reup-video] niche image_generation_prompt thumbnail skipped (non-fatal): ${message}`);
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Niche thumbnail skipped: ${message}`);
+                    }
                   }
                 }
               } else {
@@ -816,7 +896,7 @@ export class ReupAudioPipeline {
                     hasNicheMetadataPrompt(destination.language, destination.niche) &&
                     !isCelebrityWisdomNiche(destination.niche);
 
-                  if (requiresVideoVisualPrompt && !videoVisualPrompt) {
+                  if (requiresVideoVisualPrompt && !videoVisualPrompt && !heroImagePath) {
                     throw new AppError(
                       'video_visual_prompt is required for SI one_image background',
                       400,
@@ -824,7 +904,15 @@ export class ReupAudioPipeline {
                     );
                   }
 
-                  if (videoVisualPrompt) {
+                  if (heroImagePath) {
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        'Skipping background image (already created with thumbnail Flow single batch)',
+                      );
+                    }
+                  } else if (videoVisualPrompt) {
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,

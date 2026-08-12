@@ -189,5 +189,8 @@ export async function extractTranscriptForMetadata(
     throw new AppError(`No SRT blocks found within first ${maxMinutes} minutes`, 400, 'INVALID_INPUT');
   }
 
-  return srtBlocksToIndexedText(filtered);
+  return filtered
+    .map(block => block.text.trim())
+    .filter(Boolean)
+    .join('\n');
 }
