@@ -1,6 +1,10 @@
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
-import { parseSourceUrl, canonicalizeSourceUrl } from '../../shared/platform/url-parser.js';
+import {
+  parseSourceUrl,
+  canonicalizeSourceUrl,
+  buildMinimalName,
+} from '../../shared/platform/url-parser.js';
 import { paginate } from '../../shared/types/pagination.js';
 import { fetchYoutubeChannelMetadata } from '../../infrastructure/youtube/youtube-channel-fetcher.js';
 import { fetchAllYoutubeChannelVideos } from '../../infrastructure/youtube/youtube-channel-videos-fetcher.js';
@@ -490,7 +494,7 @@ export class YoutubeChannelsService {
   }
 
   private async refreshChannelMetadata(id: string, channel = this.getById(id)): Promise<YoutubeChannel> {
-    if (!channel.youtubeUrl || !channel.channelId || channel.youtubeUrl.includes('@channel_')) {
+    if (!channel.youtubeUrl || channel.youtubeUrl.includes('@channel_')) {
       return {
         ...channel,
         language: normalizeChannelLanguage(channel.language),
@@ -519,7 +523,7 @@ export class YoutubeChannelsService {
   }
 
   private async fetchVideos(channel: YoutubeChannel): Promise<YoutubeChannelVideo[]> {
-    if (!channel.youtubeUrl || !channel.channelId || channel.youtubeUrl.includes('@channel_')) {
+    if (!channel.youtubeUrl || channel.youtubeUrl.includes('@channel_')) {
       return [];
     }
     try {
@@ -719,7 +723,7 @@ export class YoutubeChannelsService {
     let channelId: string | undefined = undefined;
 
     if (input.channelUrl && input.channelUrl.trim() !== '') {
-      const { platform, fullUrl } = parseSourceUrl(input.channelUrl);
+      const { platform, url, fullUrl } = parseSourceUrl(input.channelUrl);
       if (platform !== 'youtube') {
         throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
       }
@@ -733,29 +737,39 @@ export class YoutubeChannelsService {
         throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
       }
 
-      try {
-        const metadata = await fetchYoutubeChannelMetadata(fullUrl);
+      // Temporarily skip YouTube metadata fetch on create; sync from channel detail instead.
+      // try {
+      //   const metadata = await fetchYoutubeChannelMetadata(fullUrl);
+      //
+      //   const duplicateById = youtubeChannelsRepository
+      //     .findAll()
+      //     .some((c) => c.channelId && c.channelId === metadata.channelId);
+      //   if (duplicateById) {
+      //     throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
+      //   }
+      //
+      //   handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+      //   youtubeUrl = `https://youtube.com/${handle}`;
+      //   name = metadata.name;
+      //   channelId = metadata.channelId;
+      // } catch (err) {
+      //   if (err instanceof AppError) throw err;
+      //   const detail = err instanceof Error ? err.message : 'Unknown error';
+      //   throw new AppError(
+      //     `Failed to fetch YouTube channel metadata: ${detail}`,
+      //     502,
+      //     'YOUTUBE_FETCH_FAILED',
+      //   );
+      // }
 
-        const duplicateById = youtubeChannelsRepository
-          .findAll()
-          .some((c) => c.channelId && c.channelId === metadata.channelId);
-        if (duplicateById) {
-          throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
-        }
-
-        handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
-        youtubeUrl = `https://youtube.com/${handle}`;
-        name = metadata.name;
-        channelId = metadata.channelId;
-      } catch (err) {
-        if (err instanceof AppError) throw err;
-        const detail = err instanceof Error ? err.message : 'Unknown error';
-        throw new AppError(
-          `Failed to fetch YouTube channel metadata: ${detail}`,
-          502,
-          'YOUTUBE_FETCH_FAILED',
-        );
+      youtubeUrl = fullUrl;
+      if (url.startsWith('@')) {
+        handle = url;
+      } else {
+        handle = `@channel_${generateId().slice(0, 8)}`;
       }
+      name = buildMinimalName(url, platform);
+      channelId = undefined;
     } else {
       const id = generateId().slice(0, 8);
       handle = `@channel_${id}`;
@@ -850,20 +864,19 @@ export class YoutubeChannelsService {
     }
 
     const channelUrl = input.channelUrl?.trim() ?? '';
-    if (channelUrl && !isDefaultLinkedEmail(current.linkedEmail)) {
-      throw new AppError(
-        'Channel URL can only be updated when linked email is default',
-        400,
-        'CHANNEL_URL_LOCKED',
-      );
-    }
+    // Temporarily allow channel URL updates for all linked emails (was locked to default only).
+    // if (channelUrl && !isDefaultLinkedEmail(current.linkedEmail)) {
+    //   throw new AppError(
+    //     'Channel URL can only be updated when linked email is default',
+    //     400,
+    //     'CHANNEL_URL_LOCKED',
+    //   );
+    // }
 
-    let identityUpdate:
-      | { name: string; handle: string; youtubeUrl: string; channelId: string }
-      | undefined;
+    let identityUpdate: { handle: string; youtubeUrl: string } | undefined;
 
-    if (channelUrl && isDefaultLinkedEmail(current.linkedEmail)) {
-      const { platform, fullUrl } = parseSourceUrl(channelUrl);
+    if (channelUrl) {
+      const { platform, url, fullUrl } = parseSourceUrl(channelUrl);
       if (platform !== 'youtube') {
         throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
       }
@@ -876,31 +889,37 @@ export class YoutubeChannelsService {
         throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
       }
 
-      try {
-        const metadata = await fetchYoutubeChannelMetadata(fullUrl);
-        const duplicateById = youtubeChannelsRepository
-          .findAll()
-          .some((c) => c.id !== id && c.channelId && c.channelId === metadata.channelId);
-        if (duplicateById) {
-          throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
-        }
+      // Temporarily skip YouTube metadata fetch on URL update; sync from channel detail instead.
+      // try {
+      //   const metadata = await fetchYoutubeChannelMetadata(fullUrl);
+      //   const duplicateById = youtubeChannelsRepository
+      //     .findAll()
+      //     .some((c) => c.id !== id && c.channelId && c.channelId === metadata.channelId);
+      //   if (duplicateById) {
+      //     throw new AppError('YouTube channel already exists', 400, 'DUPLICATE_CHANNEL');
+      //   }
+      //
+      //   const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
+      //   identityUpdate = {
+      //     name: metadata.name,
+      //     handle,
+      //     youtubeUrl: `https://youtube.com/${handle}`,
+      //     channelId: metadata.channelId,
+      //   };
+      // } catch (err) {
+      //   if (err instanceof AppError) throw err;
+      //   const detail = err instanceof Error ? err.message : 'Unknown error';
+      //   throw new AppError(
+      //     `Failed to fetch YouTube channel metadata: ${detail}`,
+      //     502,
+      //     'YOUTUBE_FETCH_FAILED',
+      //   );
+      // }
 
-        const handle = metadata.handle.startsWith('@') ? metadata.handle : `@${metadata.handle}`;
-        identityUpdate = {
-          name: metadata.name,
-          handle,
-          youtubeUrl: `https://youtube.com/${handle}`,
-          channelId: metadata.channelId,
-        };
-      } catch (err) {
-        if (err instanceof AppError) throw err;
-        const detail = err instanceof Error ? err.message : 'Unknown error';
-        throw new AppError(
-          `Failed to fetch YouTube channel metadata: ${detail}`,
-          502,
-          'YOUTUBE_FETCH_FAILED',
-        );
-      }
+      identityUpdate = {
+        handle: url.startsWith('@') ? url : current.handle,
+        youtubeUrl: fullUrl,
+      };
     }
 
     const updated = youtubeChannelsRepository.update(id, (existing) => {
@@ -916,10 +935,9 @@ export class YoutubeChannelsService {
       };
 
       if (identityUpdate) {
-        next.name = identityUpdate.name;
         next.handle = identityUpdate.handle;
         next.youtubeUrl = identityUpdate.youtubeUrl;
-        next.channelId = identityUpdate.channelId;
+        delete next.channelId;
       }
 
       if (config.videoCreationOrder) {

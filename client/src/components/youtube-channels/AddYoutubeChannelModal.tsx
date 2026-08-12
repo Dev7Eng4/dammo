@@ -268,7 +268,7 @@ function FormField({
 export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const { open, onClose, channel } = props;
   const isEdit = channel !== undefined;
-  const canEditEmailAndChannel = !isEdit || isDefaultLinkedEmail(channel.linkedEmail);
+  const canEditEmail = !isEdit || isDefaultLinkedEmail(channel.linkedEmail);
   const { toast } = useToast();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -657,7 +657,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       if (isEditModalProps(props)) {
         const trimmedChannelUrl = values.channelUrl.trim();
         const shouldUpdateChannelUrl =
-          canEditEmailAndChannel &&
           trimmedChannelUrl.length > 0 &&
           trimmedChannelUrl !== props.channel.youtubeUrl &&
           trimmedChannelUrl !== props.channel.handle;
@@ -710,73 +709,63 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 !formReady ||
                 !mailAccountId ||
                 (!isEdit && mailOptions.length === 0) ||
-                (canEditEmailAndChannel && isEdit && mailOptions.length === 0)
+                (canEditEmail && isEdit && mailOptions.length === 0)
               }
               form='youtube-channel-form'
               type='submit'
             >
-              {isSubmitting ? (isEdit ? 'Đang lưu...' : 'Đang lấy thông tin kênh...') : isEdit ? 'Lưu thay đổi' : 'Thêm kênh'}
+              {isSubmitting ? (isEdit ? 'Đang lưu...' : 'Đang thêm...') : isEdit ? 'Lưu thay đổi' : 'Thêm kênh'}
             </Button>
           </>
         }
       >
         <form id='youtube-channel-form' onSubmit={handleSubmit(onSubmit)} className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-          {canEditEmailAndChannel ? (
-            <>
-              <FormField label='Email liên kết' htmlFor='mail-account' error={errors.mailAccountId?.message} className='min-w-0'>
-                <Controller
-                  name='mailAccountId'
-                  control={control}
-                  rules={{ required: 'Email là bắt buộc' }}
-                  render={({ field }) => (
-                    <Select
-                      id='mail-account'
-                      options={mailOptions}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      placeholder={
-                        optionsLoading
-                          ? 'Đang tải email...'
-                          : mailOptions.length === 0
-                            ? 'Không có tài khoản email khả dụng'
-                            : 'Chọn tài khoản email'
-                      }
-                      searchPlaceholder='Tìm kiếm email...'
-                      searchable
-                      disabled={isSubmitting || optionsLoading || mailOptions.length === 0}
-                      className='w-full'
-                      triggerClassName={selectTriggerClass}
-                    />
-                  )}
-                />
-              </FormField>
-
-              <FormField label='URL kênh' htmlFor='channel-url' optional error={errors.channelUrl?.message} className='min-w-0'>
-                <Input
-                  id='channel-url'
-                  placeholder='https://youtube.com/@kenh hoặc @tenkenh'
-                  className='h-10 rounded-lg font-mono text-sm'
-                  disabled={isSubmitting}
-                  {...register('channelUrl')}
-                />
-              </FormField>
-            </>
+          {canEditEmail ? (
+            <FormField label='Email liên kết' htmlFor='mail-account' error={errors.mailAccountId?.message} className='min-w-0'>
+              <Controller
+                name='mailAccountId'
+                control={control}
+                rules={{ required: 'Email là bắt buộc' }}
+                render={({ field }) => (
+                  <Select
+                    id='mail-account'
+                    options={mailOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={
+                      optionsLoading
+                        ? 'Đang tải email...'
+                        : mailOptions.length === 0
+                          ? 'Không có tài khoản email khả dụng'
+                          : 'Chọn tài khoản email'
+                    }
+                    searchPlaceholder='Tìm kiếm email...'
+                    searchable
+                    disabled={isSubmitting || optionsLoading || mailOptions.length === 0}
+                    className='w-full'
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
           ) : (
-            <>
-              <FormField label='Email liên kết' className='min-w-0'>
-                <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
-                  <span className='truncate'>{channel!.linkedEmail}</span>
-                </div>
-              </FormField>
-              <FormField label='Kênh' className='min-w-0'>
-                <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
-                  <span className='truncate'>{channel!.name}</span>
-                </div>
-              </FormField>
-            </>
+            <FormField label='Email liên kết' className='min-w-0'>
+              <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
+                <span className='truncate'>{channel!.linkedEmail}</span>
+              </div>
+            </FormField>
           )}
 
+          <FormField label='URL kênh' htmlFor='channel-url' optional error={errors.channelUrl?.message} className='min-w-0'>
+            <Input
+              id='channel-url'
+              placeholder='https://youtube.com/@kenh hoặc @tenkenh'
+              className='h-10 rounded-lg font-mono text-sm'
+              disabled={isSubmitting}
+              {...register('channelUrl')}
+            />
+          </FormField>
           <FormField label='Ngôn ngữ' htmlFor='channel-language' error={errors.language?.message} className='min-w-0'>
             <Controller
               name='language'
