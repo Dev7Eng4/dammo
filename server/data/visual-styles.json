@@ -1,6 +1,14 @@
 {
   "styles": [
     {
+      "id": "3ecdf27b-bf6e-426b-b235-78cc6054c98c",
+      "name": "Japanese Semi-Realistic Anime Storytelling Illustration",
+      "rule": "Japanese 2D semi-realistic storytelling illustration, clean anime line art, soft pastel colors, expressive characters, detailed everyday Japanese backgrounds, warm natural lighting.",
+      "niche": "người già nhật bản",
+      "createdAt": "2026-08-12T14:54:27.336Z",
+      "updatedAt": "2026-08-12T14:54:27.336Z"
+    },
+    {
       "id": "f233447d-5374-4e26-9072-c6dc5d866fc4",
       "name": "Premium Cinematic Documentary",
       "rule": "Japanese cinematic human drama, photorealistic Japanese documentary photography, authentic everyday Japanese environments, natural skin texture and realistic human expressions, soft directional cinematic lighting, moody and atmospheric, restrained contrast, rich but slightly muted film color grading, natural warm skin tones, shallow depth of field, organic bokeh, subtle anamorphic lens characteristics, large-format ARRI Alexa cinematic look, highly detailed, intimate emotional storytelling, understated and realistic, cinematic composition.",

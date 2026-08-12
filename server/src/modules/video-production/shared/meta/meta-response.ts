@@ -1,5 +1,6 @@
 import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import {
+  isDramaNiche,
   type CelebrityWisdomThumbnailSpec,
   type MetadataLlmOutput,
 } from './metadata.types.js';
@@ -49,7 +50,8 @@ function validateMetadataFields(value: unknown): boolean {
 
 function pickOptionalTrimmedString(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  return value;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function pickOptionalAlternativeTitles(value: unknown): string[] {
@@ -136,6 +138,12 @@ export function tryParseMetadataResponse(
     if (!imagePrompt) return null;
     const output = buildBaseMetadataOutput(parsed);
     output.image_generation_prompt = imagePrompt;
+
+    // Drama meta must also return top-level video_visual_prompt (SI one_image background).
+    if (isDramaNiche(niche) && !output.video_visual_prompt) {
+      return null;
+    }
+
     return output;
   }
 

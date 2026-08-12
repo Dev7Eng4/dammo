@@ -800,115 +800,127 @@ export class ReupAudioPipeline {
 
               if (videoType === 'si') {
                 if (!videoMetaOutput) {
-                throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
-              }
-
-              const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
-              if (siBackgroundImage !== 'one_image') {
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipping general image (backgroundImage=${siBackgroundImage})`);
+                  throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
                 }
-                console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
-              } else {
-                const videoVisualPrompt = videoMetaOutput.video_visual_prompt?.trim() ?? '';
 
-                if (videoVisualPrompt) {
+                const siMeta: VideoMetaOutput = videoMetaOutput;
+                const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
+                if (siBackgroundImage !== 'one_image') {
                   if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      'Creating background image via Flow (video_visual_prompt, no reference)...',
-                    );
+                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipping general image (backgroundImage=${siBackgroundImage})`);
                   }
-
-                  const heroResult = await timedStep(
-                    'Background image (video_visual_prompt)',
-                    () =>
-                      runFlowImageGeneration(videoVisualPrompt, workDir, {
-                        fileName: DEFAULT_HERO_IMAGE_FILENAME,
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              if (progress.status === 'retry') {
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Background image on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                );
-                                return;
-                              }
-                              taskQueueRepository.appendLogMessage(
-                                taskJobId,
-                                'info',
-                                `Background image on ${profileLabel} (attempt ${progress.attempt})...`,
-                              );
-                            }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  heroImagePath = heroResult.imagePath;
-
-                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                  await fs.unlink(flowDebugPath).catch(() => undefined);
-
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'ok',
-                      'Background image saved → background.jpg (video_visual_prompt)',
-                    );
-                  }
+                  console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
                 } else {
-                  const generalImageTitle = String(videoMetaOutput.metadata.title ?? '').trim();
-                  if (!generalImageTitle) {
-                    throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
-                  }
+                  const videoVisualPrompt = siMeta.video_visual_prompt?.trim() ?? '';
+                  const requiresVideoVisualPrompt =
+                    hasNicheMetadataPrompt(destination.language, destination.niche) &&
+                    !isCelebrityWisdomNiche(destination.niche);
 
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      'Creating general image via Flow (general + reference)...',
+                  if (requiresVideoVisualPrompt && !videoVisualPrompt) {
+                    throw new AppError(
+                      'video_visual_prompt is required for SI one_image background',
+                      400,
+                      'INVALID_INPUT',
                     );
                   }
 
-                  const heroResult = await timedStep(
-                    'General image (Flow + reference)',
-                    () =>
-                      runGeneralImage(generalImageTitle, destination.language, workDir, {
-                        referenceImagePaths: [downloaded.thumbnailPath],
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              if (progress.status === 'retry') {
+                  if (videoVisualPrompt) {
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        'Creating background image via Flow (video_visual_prompt, no reference)...',
+                      );
+                    }
+
+                    const heroResult = await timedStep(
+                      'Background image (video_visual_prompt)',
+                      () =>
+                        runFlowImageGeneration(videoVisualPrompt, workDir, {
+                          fileName: DEFAULT_HERO_IMAGE_FILENAME,
+                          onProgress: taskJobId
+                            ? progress => {
+                                const profileLabel = progress.profileName;
+                                if (progress.status === 'retry') {
+                                  taskQueueRepository.appendLogMessage(
+                                    taskJobId,
+                                    'info',
+                                    `Background image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  );
+                                  return;
+                                }
                                 taskQueueRepository.appendLogMessage(
                                   taskJobId,
                                   'info',
-                                  `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  `Background image on ${profileLabel} (attempt ${progress.attempt})...`,
                                 );
-                                return;
                               }
-                              taskQueueRepository.appendLogMessage(
-                                taskJobId,
-                                'info',
-                                `General image on ${profileLabel} (attempt ${progress.attempt})...`,
-                              );
-                            }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  heroImagePath = heroResult.heroImagePath;
+                            : undefined,
+                        }),
+                      stepTimer,
+                    );
+                    heroImagePath = heroResult.imagePath;
 
-                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                  await fs.unlink(flowDebugPath).catch(() => undefined);
+                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                    await fs.unlink(flowDebugPath).catch(() => undefined);
 
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'ok',
+                        'Background image saved → background.jpg (video_visual_prompt)',
+                      );
+                    }
+                  } else {
+                    const generalImageTitle = String(siMeta.metadata.title ?? '').trim();
+                    if (!generalImageTitle) {
+                      throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
+                    }
+
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(
+                        taskJobId,
+                        'info',
+                        'Creating general image via Flow (general + reference)...',
+                      );
+                    }
+
+                    const heroResult = await timedStep(
+                      'General image (Flow + reference)',
+                      () =>
+                        runGeneralImage(generalImageTitle, destination.language, workDir, {
+                          referenceImagePaths: [downloaded.thumbnailPath],
+                          onProgress: taskJobId
+                            ? progress => {
+                                const profileLabel = progress.profileName;
+                                if (progress.status === 'retry') {
+                                  taskQueueRepository.appendLogMessage(
+                                    taskJobId,
+                                    'info',
+                                    `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                                  );
+                                  return;
+                                }
+                                taskQueueRepository.appendLogMessage(
+                                  taskJobId,
+                                  'info',
+                                  `General image on ${profileLabel} (attempt ${progress.attempt})...`,
+                                );
+                              }
+                            : undefined,
+                        }),
+                      stepTimer,
+                    );
+                    heroImagePath = heroResult.heroImagePath;
+
+                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
+                    await fs.unlink(flowDebugPath).catch(() => undefined);
+
+                    if (taskJobId) {
+                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
+                    }
                   }
                 }
-              }
               }
               }
             }

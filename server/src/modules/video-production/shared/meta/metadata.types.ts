@@ -31,8 +31,15 @@ export interface MetaStep3Output {
 /** Niche UUID for "Lời dạy người nổi tiếng" (niches.json + metadata_loi_day prompt). */
 export const CELEBRITY_WISDOM_NICHE_ID = 'a073ce74-07d7-4386-b59a-cb15a4fb2d99';
 
+/** Niche UUID for "Drama" (niches.json + metadata_drama prompt). */
+export const DRAMA_NICHE_ID = '9577910e-042c-423b-9d06-5f2028655434';
+
 export function isCelebrityWisdomNiche(niche?: string): boolean {
   return (niche?.trim() || '') === CELEBRITY_WISDOM_NICHE_ID;
+}
+
+export function isDramaNiche(niche?: string): boolean {
+  return (niche?.trim() || '') === DRAMA_NICHE_ID;
 }
 
 export interface CelebrityWisdomThumbnailLine {
@@ -97,7 +104,12 @@ export interface VideoMetaOutput {
   video_visual_prompt?: string;
 }
 
-export function hasLegacyVisualMeta(meta: VideoMetaOutput): meta is MetaStep3Output {
+export function hasLegacyVisualMeta(
+  meta: VideoMetaOutput,
+): meta is VideoMetaOutput & {
+  final_summary: MetaStep3FinalSummary;
+  hero_image_prompt: MetaStep3HeroImagePrompt;
+} {
   return meta.final_summary != null && meta.hero_image_prompt != null;
 }
 
