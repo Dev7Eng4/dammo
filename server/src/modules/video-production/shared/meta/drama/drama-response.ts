@@ -16,20 +16,21 @@ function parseJsonObject(response: LlmBrowserResponse): Record<string, unknown> 
   }
 }
 
-/** Step 1: segment analysis — require `segment_id`. */
-export function tryParseDramaStep1Response(response: LlmBrowserResponse): Record<string, unknown> | null {
+/** Accept any non-empty top-level JSON object; no nested field validation. */
+function tryParseNonEmptyJsonObject(response: LlmBrowserResponse): Record<string, unknown> | null {
   const parsed = parseJsonObject(response);
-  if (!parsed) return null;
-  if (typeof parsed.segment_id !== 'string' || !parsed.segment_id.trim()) return null;
+  if (!parsed || Object.keys(parsed).length === 0) return null;
   return parsed;
 }
 
-/** Step 2: merged dossier — require `story_dossier`. */
+/** Step 1: segment analysis — shallow outer-object check only. */
+export function tryParseDramaStep1Response(response: LlmBrowserResponse): Record<string, unknown> | null {
+  return tryParseNonEmptyJsonObject(response);
+}
+
+/** Step 2: merged dossier — shallow outer-object check only. */
 export function tryParseDramaStep2Response(response: LlmBrowserResponse): Record<string, unknown> | null {
-  const parsed = parseJsonObject(response);
-  if (!parsed) return null;
-  if (!isRecord(parsed.story_dossier)) return null;
-  return parsed;
+  return tryParseNonEmptyJsonObject(response);
 }
 
 /** Step 3: final YouTube metadata package (same niche schema as other meta prompts). */
