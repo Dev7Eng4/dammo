@@ -144,14 +144,14 @@ async function resolveReupAudioDownload(
     const thumbnailPath = await findSourceThumbnailPath(outputDir);
     const transcriptPath = await findSourceTranscriptPath(outputDir);
 
-    if (!thumbnailPath || !transcriptPath) {
+    if (!transcriptPath) {
       throw new AppError('Pre-downloaded source assets incomplete after copy', 500, 'SOURCE_ASSETS_INCOMPLETE');
     }
 
     return {
       youtubeVideoId: task.videoId,
       outputDir,
-      thumbnailPath,
+      ...(thumbnailPath ? { thumbnailPath } : {}),
       audioPath: path.join(outputDir, 'audio.mp3'),
       transcriptPath,
     };
@@ -161,7 +161,7 @@ async function resolveReupAudioDownload(
     taskQueueRepository.appendLogMessage(
       taskJobId,
       'info',
-      `Downloading thumbnail + audio + transcript (${language}) for source video ${task.videoId}...`,
+      `Downloading audio + transcript (${language}) for source video ${task.videoId}...`,
     );
   }
 
@@ -310,7 +310,9 @@ export class ReupAudioPipeline {
           const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
 
           if (taskJobId) {
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Source thumbnail saved → ${downloaded.thumbnailPath}`);
+            if (downloaded.thumbnailPath) {
+              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Source thumbnail saved → ${downloaded.thumbnailPath}`);
+            }
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Audio saved → ${downloaded.audioPath}`);
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → ${downloaded.transcriptPath}`);
           }
@@ -1011,7 +1013,7 @@ export class ReupAudioPipeline {
                       'General image (Flow + reference)',
                       () =>
                         runGeneralImage(generalImageTitle, destination.language, workDir, {
-                          referenceImagePaths: [downloaded.thumbnailPath],
+                          referenceImagePaths: downloaded.thumbnailPath ? [downloaded.thumbnailPath] : [],
                           onProgress: taskJobId
                             ? progress => {
                                 const profileLabel = progress.profileName;

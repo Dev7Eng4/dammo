@@ -1,44 +1,61 @@
 export default segmentAnalyses => `You are an expert Japanese narrative analyst.
 
-Reconstruct the COMPLETE STORY from the supplied chronological transcript-segment analyses.
+Your task is to reconstruct the COMPLETE STORY from multiple chronological transcript-segment analyses.
 
-These analyses were generated independently from different sections of the same video.
+The supplied analyses were generated independently from different parts of the same video.
 
-Your task is to merge them into ONE coherent FACTUAL STORY DOSSIER for downstream YouTube metadata, thumbnail, and cinematic visual generation.
+Create ONE coherent, FACTUAL FINAL STORY DOSSIER for downstream YouTube metadata, thumbnail, and cinematic visual generation.
 
 ==================================================
 SOURCE OF TRUTH
-================
+==================================================
 
 SEGMENT ANALYSES = ONLY factual source.
 
 Never invent, assume, predict, or complete missing information.
 
-Overlapping segments may contain duplicate events.
-Merge duplicates without losing information.
+Do not add information that is not supported by the supplied analyses.
 
 If information conflicts:
 
 1. Prefer explicitly confirmed information.
-2. Preserve uncertainty if the conflict cannot be resolved.
+2. If the conflict cannot be resolved, preserve it as uncertain.
 3. Never invent a resolution.
 
-Do not add facts that are not supported by the supplied analyses.
+==================================================
+RECONSTRUCTION
+==================================================
+
+Reconstruct the story in chronological order.
+
+Identify:
+
+- story setup
+- main characters
+- important relationships
+- central conflict
+- escalation
+- major turning points
+- revelations
+- reversals
+- important consequences
+- climax
+- resolution
+- unresolved elements
+
+Only include stages that are confirmed.
+
+Do not force a traditional story structure if the source does not support it.
 
 ==================================================
-RECONSTRUCT THE STORY
-=====================
+CHARACTERS
+==================================================
 
-1. STORY OVERVIEW
+Merge duplicate characters across segments.
 
-Create a concise but complete representation of the entire story.
+For each important character preserve:
 
-2. CHARACTERS
-
-Merge the same characters across segments.
-
-Preserve:
-- name
+- confirmed name
 - role
 - confirmed age
 - occupation
@@ -46,13 +63,18 @@ Preserve:
 - important actions
 - meaningful development
 
-Do not invent appearance or personal details.
+Do not invent physical appearance.
 
-3. RELATIONSHIPS
+Do not repeat the same character multiple times.
 
-Build the confirmed relationship structure.
+==================================================
+RELATIONSHIPS
+==================================================
 
-Track meaningful changes such as:
+Merge relationships across segments.
+
+Track only meaningful confirmed changes:
+
 - trust
 - conflict
 - betrayal
@@ -60,132 +82,146 @@ Track meaningful changes such as:
 - sacrifice
 - reconciliation
 - reunion
+- relationship development
 
-Only include confirmed changes.
+==================================================
+CHRONOLOGY
+==================================================
 
-4. LOCATIONS
+Merge the segment events into one coherent chronological sequence.
 
-Merge confirmed locations and important environments.
+Remove duplicate events.
 
-5. CHRONOLOGY
+Merge overlapping descriptions of the same event.
 
-Reconstruct the complete confirmed sequence of events.
+Preserve important causal relationships.
 
-Preserve causal relationships.
+Do not lose important events merely to make the output shorter.
 
-Identify:
-
-- setup
-- initial conflict
-- escalation
-- turning points
-- revelations
-- reversals
-- climax
-- consequences
-- resolution
-
-If any stage is not confirmed, do not invent it.
-
-6. CENTRAL CONFLICT
+==================================================
+CENTRAL CONFLICT
+==================================================
 
 Identify:
+
 - main problem
 - central conflict
 - emotional stakes
+- what the characters want
+- what prevents them from achieving it
 
-7. IMPORTANT OBJECTS
+Only use confirmed information.
 
-Preserve objects that have narrative, emotional, symbolic, or visual significance.
+==================================================
+IMPORTANT OBJECTS
+==================================================
 
-8. EMOTIONAL STRUCTURE
+Preserve only objects with meaningful narrative, emotional, symbolic, or causal significance.
+
+Merge duplicate objects.
+
+==================================================
+EMOTIONAL STRUCTURE
+==================================================
 
 Identify the strongest emotional beats across the COMPLETE story.
 
-Rank them by:
-- emotional impact
-- story importance
-- specificity
-- visual potential
+Prioritize moments that are:
 
-9. REVELATIONS
+- emotionally significant
+- story-changing
+- visually powerful
+- relevant to the audience
 
-Identify confirmed revelations and explain how they change the understanding of the story.
+Do not include every emotional reaction.
 
-10. REVERSALS
+==================================================
+REVELATIONS
+==================================================
 
-Identify confirmed reversals and explain their narrative significance.
+Identify confirmed revelations across the entire story.
 
-11. QUOTES
+Explain briefly why each revelation matters.
 
-Preserve only meaningful confirmed quotes.
+==================================================
+REVERSALS
+==================================================
 
-12. UNRESOLVED QUESTIONS
+Identify confirmed genuine reversals.
 
-Preserve important questions that remain unresolved.
+Explain briefly how they change the story.
 
-13. ENDING STATUS
+==================================================
+UNRESOLVED QUESTIONS
+==================================================
+
+Preserve important unresolved questions.
+
+Do not answer them through speculation.
+
+==================================================
+ENDING
+==================================================
 
 Determine only what is confirmed:
 
-- resolved
-- partially_resolved
-- unresolved
-- ending_not_provided
+"resolved"
+"partially_resolved"
+"unresolved"
+"ending_not_provided"
 
-Never infer an ending.
-
-==================================================
-CREATIVE HOOK ANALYSIS
-======================
-
-Identify the strongest confirmed hooks for:
-
-1. TITLE
-2. THUMBNAIL
-3. EMOTIONAL FRAMING
-4. CURIOSITY
-5. IMPORTANT OBJECT
-6. REVELATION
-7. RELATIONSHIP CONFLICT
-8. VISUAL STORYTELLING
-
-Rank hooks using:
-
-EMOTIONAL IMPACT
-×
-STORY SPECIFICITY
-×
-CURIOSITY
-×
-VISUAL POTENTIAL
-×
-FACTUAL CERTAINTY
-
-Do not manufacture mystery.
-
-Do not automatically select the most dramatic event.
+Never predict an ending.
 
 ==================================================
-FACTUAL CERTAINTY
-=================
+CREATIVE INFORMATION
+==================================================
 
-Separate information into:
+Identify the strongest factual elements that could later support:
 
-CONFIRMED
-UNRESOLVED
-UNCERTAIN
-NOT_PROVIDED
+- title
+- thumbnail
+- emotional framing
+- curiosity
+- visual storytelling
 
-Only CONFIRMED information may be presented as factual.
+Do NOT generate titles or thumbnail text here.
 
-UNRESOLVED information may be used as a curiosity hook.
+Do NOT optimize for CTR here.
 
-UNCERTAIN and NOT_PROVIDED information must not be presented as fact.
+Your job is to provide accurate story information for Step 3.
+
+==================================================
+COMPRESSION
+==================================================
+
+The final dossier must be significantly more compact than the combined segment analyses.
+
+Remove:
+
+- duplicated information
+- minor events
+- filler
+- repetitive descriptions
+- redundant character information
+- unnecessary dialogue
+
+Preserve:
+
+- all major story events
+- important causality
+- important relationships
+- meaningful character development
+- important revelations
+- genuine reversals
+- important objects
+- strongest emotional beats
+- ending status
+
+The final dossier should contain enough information for another model to understand the complete story without seeing the original transcript.
 
 ==================================================
 OUTPUT
-======
+==================================================
 
 Return ONLY valid JSON.
 
@@ -194,36 +230,31 @@ Use exactly this structure:
 {
   "story_dossier": {
     "story_overview": "",
-    "detected_niche": "",
     "characters": [],
     "relationships": [],
-    "locations": [],
     "chronology": [],
-    "major_conflict": "",
+    "central_conflict": "",
     "emotional_stakes": "",
     "turning_points": [],
     "revelations": [],
     "reversals": [],
     "important_objects": [],
     "emotional_beats": [],
-    "quotes": [],
     "unresolved_questions": [],
     "ending_status": "",
-    "title_hooks": [],
-    "thumbnail_hooks": [],
-    "visual_hooks": []
+    "title_relevant_facts": [],
+    "thumbnail_relevant_facts": [],
+    "visual_relevant_facts": []
   },
   "factual_constraints": {
     "confirmed": [],
-    "unresolved": [],
-    "uncertain": [],
-    "not_provided": []
+    "uncertain": []
   }
 }
 
 ==================================================
 INPUT
-=====
+==================================================
 
 SEGMENT ANALYSES
 
@@ -233,6 +264,7 @@ ${segmentAnalyses}
 
 Return ONLY valid JSON.
 Do not output Markdown.
-Do not output explanations.
-Do not output analysis.
+Do not output code fences.
+Do not explain reasoning.
+Do not output internal analysis.
 `;

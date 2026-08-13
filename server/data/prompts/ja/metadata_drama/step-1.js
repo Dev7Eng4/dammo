@@ -1,19 +1,19 @@
 export default (
   transcript,
   segment_id,
-) => `You are an expert Japanese narrative analyst specializing in Japanese Drama, Emotional Storytelling, Heartwarming Human Stories, Family Stories, Relationship Drama, 修羅場, スカッとする話, and Japanese storytelling content.
+) => `You are an expert Japanese narrative analyst specializing in Japanese Drama, Emotional Storytelling, Heartwarming Human Stories, Family Stories, Relationship Drama, 修羅場, スカッとする話, and related Japanese storytelling content.
 
-Analyze the supplied transcript segment and create a FACTUAL STORY ANALYSIS.
+Analyze the supplied transcript and create a COMPACT, FACTUAL STORY ANALYSIS.
 
-This segment may represent either:
+The transcript may be:
 1. the complete transcript of a short video, or
-2. one section of a longer video.
+2. one segment of a longer video.
 
-Your priority is INFORMATION PRESERVATION, not literary summarization.
+Your primary goal is INFORMATION PRESERVATION WITH HIGH COMPRESSION.
 
 ==================================================
 SOURCE OF TRUTH
-================
+==================================================
 
 TRANSCRIPT = ONLY factual source.
 
@@ -26,73 +26,118 @@ If meaning is uncertain, mark it as UNCERTAIN.
 Never infer events outside the supplied transcript.
 
 ==================================================
-ANALYZE AND PRESERVE
-====================
+IMPORTANT COMPRESSION RULE
+==================================================
 
-1. CHARACTERS
+Do NOT summarize every sentence or dialogue.
 
-Identify confirmed:
-- names
-- roles
-- ages
-- occupations
-- relevant characteristics
+Extract only information that is important for reconstructing the story.
+
+Preserve information that:
+
+- changes the story
+- introduces or changes a relationship
+- creates or escalates conflict
+- reveals important information
+- changes character motivation
+- introduces an important object
+- creates a meaningful emotional turning point
+- establishes a cause or consequence
+- represents a genuine reversal
+- represents a genuine revelation
+- affects later events
+
+Merge consecutive minor actions into one event.
+
+Ignore:
+
+- greetings
+- filler dialogue
+- repetitive dialogue
+- ordinary actions
+- redundant descriptions
+- insignificant reactions
+- repeated information
+
+Target a highly information-dense output.
+
+Prefer approximately:
+
+- summary: 80–150 words
+- characters: only story-relevant characters
+- relationships: only meaningful relationships
+- events: approximately 5–12 major events
+- important_objects: only narratively significant objects
+- emotional_beats: only major emotional moments
+- revelations: only confirmed important revelations
+- reversals: only genuine reversals
+- unresolved: only important unresolved questions
+
+Do NOT sacrifice important story information merely to meet these targets.
+
+==================================================
+CHARACTERS
+==================================================
+
+Identify only characters who are relevant to the story.
+
+For each character preserve:
+
+- name if confirmed
+- role
+- age if confirmed
+- occupation if confirmed
+- relevant confirmed characteristics
 - important actions
 
-Do not invent physical appearance or personal details.
+Do not invent physical appearance.
 
-2. RELATIONSHIPS
+If a character is mentioned but irrelevant to the story, omit them.
 
-Identify confirmed:
-- family relationships
-- romantic relationships
-- friendships
-- workplace relationships
-- conflicts
-- betrayals
-- separations
-- reunions
-- meaningful relationship changes
+==================================================
+RELATIONSHIPS
+==================================================
 
-3. LOCATIONS
-
-Identify only confirmed locations and environments that matter to the story.
-
-4. EVENTS
-
-Extract important events in chronological order.
-
-For each event preserve:
-- what happened
-- who was involved
-- cause if confirmed
-- consequence if confirmed
-- emotional significance
-
-Prioritize major events over minor dialogue.
-
-5. STORY PROGRESSION
-
-Identify only events actually present:
-
-- setup
-- conflict
-- escalation
-- turning point
-- revelation
-- reversal
-- consequence
-- climax
-- resolution
-- unresolved situation
-
-Do not assume missing stages.
-
-6. IMPORTANT OBJECTS
-
-Identify objects with narrative, emotional, symbolic, or visual importance.
+Preserve only meaningful confirmed relationships.
 
 Examples:
+
+- family
+- marriage
+- romantic
+- friendship
+- workplace
+- conflict
+- betrayal
+- separation
+- reconciliation
+
+Do not repeat the same relationship unnecessarily.
+
+==================================================
+EVENTS
+==================================================
+
+Extract only MAJOR STORY EVENTS.
+
+For each event include:
+
+- approximate position in the segment
+- what happened
+- why it matters
+
+Preserve chronological order.
+
+Do not include minor actions or ordinary dialogue.
+
+==================================================
+IMPORTANT OBJECTS
+==================================================
+
+Include only objects that have narrative, emotional, symbolic, or causal significance.
+
+Examples:
+
 - letter
 - photograph
 - phone
@@ -104,137 +149,91 @@ Examples:
 - keepsake
 - personal item
 
-For each object explain its confirmed significance.
+Do not list ordinary objects.
 
-7. EMOTIONAL BEATS
+==================================================
+EMOTIONAL BEATS
+==================================================
 
-Identify important emotional moments.
+Include only major emotional moments that affect the story.
 
-For each preserve:
-- event
-- characters involved
-- dominant emotion
-- emotional significance
+Do not describe every emotional reaction.
 
-8. QUOTES
+==================================================
+REVELATIONS
+==================================================
 
-Extract only short, meaningful, transcript-supported quotes.
+Include only confirmed information that changes the viewer's understanding of the story.
 
-Never invent or reconstruct quotes.
+Do not manufacture revelations.
 
-9. REVELATIONS
+==================================================
+REVERSALS
+==================================================
 
-Identify confirmed information that changes the viewer's understanding of the story.
-
-10. REVERSALS
-
-Identify confirmed reversals or changes in the direction of the story.
+Include only genuine confirmed reversals or changes in story direction.
 
 Do not label ordinary events as reversals.
 
-11. UNRESOLVED QUESTIONS
+==================================================
+UNRESOLVED
+==================================================
 
-Identify important questions that remain unanswered within this segment.
+Include only important questions or situations that remain unresolved within this transcript.
 
-12. POTENTIAL HOOKS
-
-Identify factual details that may later be useful for:
-
-- title
-- thumbnail
-- emotional framing
-- curiosity
-- visual storytelling
-
-Do not exaggerate or manufacture mystery.
-
-13. STORY NICHE
-
-Identify the most appropriate Japanese storytelling niche based only on the transcript.
-
-Examples include:
-- Japanese emotional storytelling
-- heartwarming human stories
-- family drama
-- marriage drama
-- relationship drama
-- divorce
-- infidelity
-- revenge
-- 修羅場
-- スカッとする話
-- 馴れ初め
-- workplace drama
-- parent-child stories
-- elderly stories
-- human kindness
-- regret
-- reunion
-- loss
-- life lessons
-- other
-
-Do not force the story into a predefined niche.
+Do not predict the answer.
 
 ==================================================
 CONTINUITY
-==========
+==================================================
 
-The segment may begin or end in the middle of an event.
+The transcript may start or end in the middle of an event.
+
+Set:
+
+"starts_in_middle": true/false
+
+"ends_in_middle": true/false
 
 Do not complete incomplete events using assumptions.
 
-Set continuation_status to one of:
-
-"complete"
-"starts_in_middle"
-"ends_in_middle"
-"both"
-
 ==================================================
 FACTUAL CERTAINTY
-=================
+==================================================
 
-Classify information internally as:
+Separate uncertain information into the "uncertain" field.
 
-CONFIRMED
-UNCERTAIN
-NOT_PROVIDED
-
-Only CONFIRMED information may later be presented as factual.
+Only confirmed information may be used as factual information later.
 
 ==================================================
 OUTPUT
-======
+==================================================
 
 Return ONLY valid JSON.
 
 Use exactly this structure:
 
 {
-  "segment_id": "${segment_id}",
-  "continuation_status": "",
-  "story_overview": "",
-  "detected_niche": "",
+  "id": "${segment_id}",
+  "continuation": {
+    "starts_in_middle": false,
+    "ends_in_middle": false
+  },
+  "summary": "",
   "characters": [],
   "relationships": [],
-  "locations": [],
   "events": [],
-  "story_progression": [],
   "important_objects": [],
   "emotional_beats": [],
-  "quotes": [],
   "revelations": [],
   "reversals": [],
-  "unresolved_questions": [],
-  "potential_hooks": [],
-  "confirmed_facts": [],
-  "uncertain_information": []
+  "unresolved": [],
+  "uncertain": []
 }
 
 ==================================================
 INPUT
-=====
+==================================================
 
 SEGMENT ID
 
@@ -248,6 +247,7 @@ ${transcript}
 
 Return ONLY valid JSON.
 Do not output Markdown.
-Do not output explanations.
-Do not output analysis.
+Do not output code fences.
+Do not explain reasoning.
+Do not output internal analysis.
 `;

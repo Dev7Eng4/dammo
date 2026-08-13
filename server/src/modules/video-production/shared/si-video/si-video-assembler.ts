@@ -19,6 +19,7 @@ import {
   SI_CANVAS_W,
   SI_CENTER_IMAGE_MARGIN_TOP_PX,
   SI_CENTER_IMAGE_OPACITY,
+  SI_CELEBRITY_IMAGE_OPACITY,
   SI_FPS,
   // SI_NOISE_ALPHA, // TODO: re-enable SI noise
   SI_OUTPUT_VIDEO_BASENAME,
@@ -259,7 +260,12 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         ? await buildSiCelebrityCenterSlideshow(workDir, multiImagePaths, onLog, centerImageSize!)
         : await buildSiCenterSlideshow(workDir, multiImagePaths, onLog, centerImageSize!);
     log('[reup-si] Baking center slideshow opacity into alpha video');
-    await bakeVideoWithOpacity(rawSlideshow, centerSlideshowOpacityPath, SI_CENTER_IMAGE_OPACITY, onLog);
+    await bakeVideoWithOpacity(
+      rawSlideshow,
+      centerSlideshowOpacityPath,
+      centerSlideshowVariant === 'celebrity' ? SI_CELEBRITY_IMAGE_OPACITY : SI_CENTER_IMAGE_OPACITY,
+      onLog,
+    );
     centerSlideshowPath = centerSlideshowOpacityPath;
     centerOpacityBaked = true;
   }

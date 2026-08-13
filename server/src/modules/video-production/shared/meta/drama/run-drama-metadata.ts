@@ -31,7 +31,7 @@ export interface RunDramaMetadataOptions extends Omit<RunMetadataOptions, 'onPro
 /**
  * Drama niche metadata:
  * - ≤40 min: step1 (first 30 min transcript) → step3
- * - >40 min: overlapping 28-min segments → parallel step1 (max 7) → step2 → step3
+ * - >40 min: overlapping segments over at most the first 2h → parallel step1 (max 7) → step2 → step3
  */
 export async function runDramaMetadata(
   sourceTitle: string,

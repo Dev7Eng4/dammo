@@ -20,6 +20,7 @@
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
     "test:assemble-si-local": "tsx src/scripts/test-assemble-si-local.ts",
     "test:si-one-image": "tsx src/test/si-one-image/create-video.ts",
+    "test:si-famous": "tsx src/test/si-famous/create-video.ts",
     "test:ai-video": "tsx src/test/ai-video/create-video.ts",
     "test:stock-background": "tsx src/test/stock-background/prepare-from-url.ts",
     "test:convert-transcript": "tsx src/test/convert-transcript/convert-transcript.ts",

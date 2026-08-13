@@ -31,6 +31,8 @@ export const SI_CENTER_IMAGE_WIDTH_RATIO = 0.65;
 export const SI_CENTER_IMAGE_WIDTH_RATIO_MIN = 0.6;
 export const SI_CENTER_IMAGE_WIDTH_RATIO_MAX = 0.7;
 export const SI_CENTER_IMAGE_OPACITY = 0.7;
+/** Opacity for celebrity center slideshow (higher than shared center image). */
+export const SI_CELEBRITY_IMAGE_OPACITY = 0.85;
 /** Khoảng cách từ mép trên canvas tới mép trên center image (px). */
 export const SI_CENTER_IMAGE_MARGIN_TOP_PX = 15;
 /** Dịch center image sang phải khi bật Audio Bar (px, cộng vào vị trí căn giữa). */
@@ -147,11 +149,9 @@ export function resolveRandomSiAudioSpeed(): number {
 
 /** Even px width/height for center image overlay (ratio jittered per assemble). */
 export function resolveRandomSiCenterImageSize(): { width: number; height: number } {
-  const ratio =
-    SI_CENTER_IMAGE_WIDTH_RATIO_MIN +
-    Math.random() * (SI_CENTER_IMAGE_WIDTH_RATIO_MAX - SI_CENTER_IMAGE_WIDTH_RATIO_MIN);
+  const ratio = SI_CENTER_IMAGE_WIDTH_RATIO_MIN + Math.random() * (SI_CENTER_IMAGE_WIDTH_RATIO_MAX - SI_CENTER_IMAGE_WIDTH_RATIO_MIN);
   const width = Math.round((SI_CANVAS_W * ratio) / 2) * 2;
-  const height = Math.round(((width * 9) / 16) / 2) * 2;
+  const height = Math.round((width * 9) / 16 / 2) * 2;
   return { width, height };
 }
 
