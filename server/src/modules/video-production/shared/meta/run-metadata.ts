@@ -121,7 +121,7 @@ function pickWisdomPersistFields(parsed: MetadataLlmOutput): Partial<MetadataLlm
   return fields;
 }
 
-async function persistMetadataOutput(
+export async function persistMetadataOutput(
   parsed: MetadataLlmOutput,
   sourceTitle: string,
   videoId: string,
@@ -157,7 +157,7 @@ async function persistMetadataOutput(
   );
 }
 
-function toVideoMetaOutput(
+export function toVideoMetaOutput(
   parsed: MetadataLlmOutput,
   sourceTitle: string,
   descriptionDisclaimer?: string,

@@ -443,11 +443,31 @@ export function PromptsPage() {
       : derivePromptKeyFromName(name);
     const plannedKeys = planStepKeys(baseKey, currentDraft.steps.length);
     const previousIds = new Set(existingSteps.map((step) => step.id).filter(Boolean) as string[]);
+    // When expanding single-step → multi-step, bare key (e.g. metadata_drama) must be
+    // deleted even if it is missing/mis-indexed in the draft's existingSteps.
     const oldSingleKeyIds =
       currentDraft.steps.length > 1
-        ? existingSteps
-            .filter((step) => step.id && step.key && !/_step_\d+$/.test(step.key) && step.key === baseKey)
-            .map((step) => step.id as string)
+        ? [
+            ...new Set(
+              [
+                ...existingSteps
+                  .filter(
+                    (step) =>
+                      step.id && step.key && !/_step_\d+$/.test(step.key) && step.key === baseKey,
+                  )
+                  .map((step) => step.id as string),
+                ...allPrompts
+                  .filter(
+                    (item) =>
+                      item.language === targetLanguage &&
+                      item.name.trim().toLowerCase() === name.toLowerCase() &&
+                      item.key === baseKey &&
+                      !/_step_\d+$/.test(item.key),
+                  )
+                  .map((item) => item.id),
+              ].filter(Boolean),
+            ),
+          ]
         : [];
 
     const nextSteps: PromptStepDraft[] = [];

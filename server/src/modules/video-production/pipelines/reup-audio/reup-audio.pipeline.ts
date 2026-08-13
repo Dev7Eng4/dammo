@@ -16,6 +16,7 @@ import {
 } from '../../shared/assets/asset-downloader.js';
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
 import { runMetadata, hasNicheMetadataPrompt } from '../../shared/meta/run-metadata.js';
+import { runDramaMetadata } from '../../shared/meta/drama/run-drama-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
 import {
   DEFAULT_HERO_IMAGE_FILENAME,
@@ -43,6 +44,7 @@ import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js
 import {
   hasLegacyVisualMeta,
   isCelebrityWisdomNiche,
+  isDramaNiche,
   type MetaStep3Output,
   type VideoMetaOutput,
 } from '../../shared/meta/metadata.types.js';
@@ -400,8 +402,8 @@ export class ReupAudioPipeline {
 
               videoMetaOutput = await timedStep(
                 'Metadata',
-                () =>
-                  runMetadata(task.sourceTitle, jaSrtPath, destination.language, downloaded.youtubeVideoId, {
+                () => {
+                  const metaOptions = {
                     outputDir: jaWorkDir,
                     niche: destination.niche,
                     imageStyle: destination.visualStyle?.rule?.trim() || undefined,
@@ -410,14 +412,29 @@ export class ReupAudioPipeline {
                         ? destination.descriptionDisclaimerText.trim()
                         : undefined,
                     onProgress: taskJobId
-                      ? progress => {
+                      ? (progress: {
+                          attempt: number;
+                          profileId: string;
+                          profileName: string;
+                          status: string;
+                          step?: number;
+                          segmentIndex?: number;
+                          segmentTotal?: number;
+                        }) => {
                           const profileLabel = progress.profileName;
+                          const stepPart =
+                            progress.step != null
+                              ? `Drama meta step ${progress.step}` +
+                                (progress.segmentIndex != null && progress.segmentTotal != null
+                                  ? ` (seg ${progress.segmentIndex + 1}/${progress.segmentTotal})`
+                                  : '')
+                              : 'Metadata';
 
                           if (progress.status === 'retry') {
                             taskQueueRepository.appendLogMessage(
                               taskJobId,
                               'info',
-                              `Metadata on ${profileLabel} retry (attempt ${progress.attempt})...`,
+                              `${stepPart} on ${profileLabel} retry (attempt ${progress.attempt})...`,
                             );
                             return;
                           }
@@ -425,11 +442,28 @@ export class ReupAudioPipeline {
                           taskQueueRepository.appendLogMessage(
                             taskJobId,
                             'info',
-                            `Metadata on ${profileLabel} (attempt ${progress.attempt})...`,
+                            `${stepPart} on ${profileLabel} (attempt ${progress.attempt})...`,
                           );
                         }
                       : undefined,
-                  }),
+                  };
+
+                  return isDramaNiche(destination.niche)
+                    ? runDramaMetadata(
+                        task.sourceTitle,
+                        jaSrtPath,
+                        destination.language,
+                        downloaded.youtubeVideoId,
+                        metaOptions,
+                      )
+                    : runMetadata(
+                        task.sourceTitle,
+                        jaSrtPath,
+                        destination.language,
+                        downloaded.youtubeVideoId,
+                        metaOptions,
+                      );
+                },
                 stepTimer,
               );
 
