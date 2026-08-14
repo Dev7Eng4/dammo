@@ -17,9 +17,7 @@ export function TaskQueuePage() {
     summary,
     cancelJob,
     retryJob,
-    togglePause,
     clearFinishedJobs,
-    paused,
     refresh,
     refreshJob,
     setLiveJobId,
@@ -67,9 +65,9 @@ export function TaskQueuePage() {
   async function handleCopyPath(path: string) {
     try {
       await navigator.clipboard.writeText(path);
-      toast.success('Output path copied to clipboard');
+      toast.success('Đã sao chép đường dẫn');
     } catch {
-      toast.error('Failed to copy path');
+      toast.error('Không sao chép được đường dẫn');
     }
   }
 
@@ -109,18 +107,16 @@ export function TaskQueuePage() {
             clearableCount={clearableCount}
             clearing={clearing}
             search={search}
-            paused={paused}
             onSearchChange={setSearch}
             onRefresh={() => void refresh()}
             onClear={() => void handleClearFinished()}
-            onTogglePause={() => void togglePause()}
           />
 
           <div className="mt-6 space-y-3">
             {filteredJobs.length === 0 ? (
               <div className="card-surface rounded-2xl px-5 py-12 text-center">
                 <p className="text-sm text-neutral-500">
-                  {jobs.length === 0 ? 'No tasks in queue yet' : 'No jobs match your search'}
+                  {jobs.length === 0 ? 'Chưa có công việc nào' : 'Không có công việc khớp tìm kiếm'}
                 </p>
               </div>
             ) : (

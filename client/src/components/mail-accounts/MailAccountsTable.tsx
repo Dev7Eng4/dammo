@@ -8,6 +8,7 @@ interface MailAccountsTableProps {
   selectedId: string | null;
   selectedIds: Set<string>;
   loading?: boolean;
+  rowNumberStart?: number;
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
@@ -22,24 +23,47 @@ const columns: ColumnDef<MailAccount, unknown>[] = [
     ),
   },
   {
+    accessorKey: 'password',
+    header: 'MẬT KHẨU',
+    cell: ({ getValue }) => (
+      <span className="font-mono text-xs text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+    ),
+  },
+  {
+    accessorKey: 'twoFactorAuth',
+    header: '2FA',
+    cell: ({ getValue }) => (
+      <span className="font-mono text-xs text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+    ),
+  },
+  {
+    accessorKey: 'recoveryEmail',
+    header: 'EMAIL KHÔI PHỤC',
+    cell: ({ getValue }) => (
+      <span className="text-neutral-300">{getValue<string>() || '—'}</span>
+    ),
+  },
+  {
+    accessorKey: 'phone',
+    header: 'SỐ ĐIỆN THOẠI',
+    cell: ({ getValue }) => (
+      <span className="text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+    ),
+  },
+  {
     id: 'youtube',
     header: 'YOUTUBE',
-    cell: ({ row }) => <PlatformLinkCell linked={row.original.platformLinks.youtube} />,
+    cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.youtube} />,
   },
   {
     id: 'tiktok',
     header: 'TIKTOK',
-    cell: ({ row }) => <PlatformLinkCell linked={row.original.platformLinks.tiktok} />,
+    cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.tiktok} />,
   },
   {
     id: 'facebook',
     header: 'FACEBOOK',
-    cell: ({ row }) => <PlatformLinkCell linked={row.original.platformLinks.facebook} />,
-  },
-  {
-    accessorKey: 'purpose',
-    header: 'MỤC ĐÍCH',
-    cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
+    cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.facebook} />,
   },
 ];
 
@@ -48,6 +72,7 @@ export function MailAccountsTable({
   selectedId,
   selectedIds,
   loading,
+  rowNumberStart,
   onSelect: _onSelect,
   onToggleRow,
   onToggleAll,
@@ -58,6 +83,7 @@ export function MailAccountsTable({
       columns={columns}
       getRowId={account => account.id}
       loading={loading}
+      rowNumberStart={rowNumberStart}
       enableRowSelection
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}

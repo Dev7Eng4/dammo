@@ -9,11 +9,12 @@ import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
 import {
-  tryParseDramaStep1Response,
-  tryParseDramaStep2Response,
-  tryParseDramaStep3Response,
+  parseDramaStep1Response,
+  parseDramaStep2Response,
+  parseDramaStep3Response,
 } from './drama-response.js';
 import type { DramaTranscriptSegment } from './drama-segments.js';
+import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
 
 const MAX_RETRIES = 3;
 const MAX_PARALLEL_PROFILES = 7;
@@ -62,13 +63,14 @@ async function runDramaLlmStep<T>(
   language: PromptLanguage,
   step: DramaMetadataStep,
   buildPrompt: () => Promise<string>,
-  parse: (response: Awaited<ReturnType<typeof llmBrowserService.chat>>) => T | null,
+  parse: (response: Awaited<ReturnType<typeof llmBrowserService.chat>>) => LlmParseResult<T>,
   options?: RunDramaStepOptions & {
     segmentIndex?: number;
     segmentTotal?: number;
   },
 ): Promise<T> {
   let lastReason = 'unknown error';
+  let lastDetails: Record<string, unknown> | undefined;
   const stepKey = resolveDramaStepKey(language, step);
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
@@ -94,27 +96,47 @@ async function runDramaLlmStep<T>(
       });
 
       const parsed = parse(response);
-      if (parsed) {
+      if (parsed.ok) {
         const segLabel =
           options?.segmentIndex !== undefined && options?.segmentTotal !== undefined
             ? ` seg ${options.segmentIndex + 1}/${options.segmentTotal}`
             : '';
         console.log(`[drama-metadata] step ${step}${segLabel} done (${stepKey})`);
-        return parsed;
+        return parsed.value;
       }
 
-      lastReason = 'invalid JSON or schema mismatch';
+      lastReason = formatParseFailureReason(parsed);
+      lastDetails = {
+        step,
+        attempt,
+        reason: parsed.reason,
+        ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
+        ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
+        ...(options?.segmentIndex !== undefined && options?.segmentTotal !== undefined
+          ? { context: `seg ${options.segmentIndex + 1}/${options.segmentTotal}` }
+          : {}),
+      };
       logValidationFailure(step, attempt, lastReason);
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';
+      lastDetails =
+        err instanceof AppError && err.details
+          ? { step, attempt, ...err.details }
+          : { step, attempt, reason: lastReason };
       logValidationFailure(step, attempt, lastReason);
     }
   }
 
+  const segSuffix =
+    options?.segmentIndex !== undefined && options?.segmentTotal !== undefined
+      ? ` (seg ${options.segmentIndex + 1}/${options.segmentTotal})`
+      : '';
+
   throw new AppError(
-    `Drama metadata step ${step} failed after ${MAX_RETRIES} attempts: ${lastReason}`,
+    `Drama metadata step ${step} failed after ${MAX_RETRIES} attempts${segSuffix}: ${lastReason}`,
     502,
     'DRAMA_METADATA_FAILED',
+    lastDetails ?? { step, reason: lastReason },
   );
 }
 
@@ -130,7 +152,7 @@ export async function runDramaStep1(
     language,
     1,
     () => executePromptTemplate(language, resolveDramaStepKey(language, 1), [segment.text, segment.id]),
-    tryParseDramaStep1Response,
+    parseDramaStep1Response,
     {
       ...options,
       segmentIndex: segment.index,
@@ -225,7 +247,7 @@ export async function runDramaStep2(
     language,
     2,
     () => executePromptTemplate(language, resolveDramaStepKey(language, 2), [payload]),
-    tryParseDramaStep2Response,
+    parseDramaStep2Response,
     options,
   );
 }
@@ -244,7 +266,7 @@ export async function runDramaStep3(
     3,
     () =>
       executePromptTemplate(language, resolveDramaStepKey(language, 3), [sourceTitle, storyInput, imageStyle]),
-    tryParseDramaStep3Response,
+    parseDramaStep3Response,
     options,
   );
 }

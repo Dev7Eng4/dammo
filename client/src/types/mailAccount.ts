@@ -1,7 +1,9 @@
+export type PlatformLinkStatus = 'none' | 'active' | 'deleted';
+
 export interface PlatformLinks {
-  youtube: boolean;
-  tiktok: boolean;
-  facebook: boolean;
+  youtube: PlatformLinkStatus;
+  tiktok: PlatformLinkStatus;
+  facebook: PlatformLinkStatus;
 }
 
 export interface MailAccount {
@@ -31,6 +33,8 @@ export interface CreateMailAccountPayload {
   recoveryEmail?: string;
   phone?: string;
 }
+
+export type UpdateMailAccountPayload = CreateMailAccountPayload;
 
 export interface AddMailFormValues {
   email: string;

@@ -37,7 +37,16 @@ import {
   resolveJapaneseSubtitleStyle,
   scaleSrtTimestamps,
 } from '../si-video/si-subtitle.js';
-import { AI_SLIDESHOW_RAW_BASENAME } from './ai-video.constants.js';
+import {
+  AI_MAX_LAST_SLIDE_PAD_SEC,
+  AI_SLIDESHOW_FINAL_PRESET,
+  AI_SLIDESHOW_RAW_BASENAME,
+  AI_SLIDESHOW_TEMP_SCALE_FACTOR,
+  AI_SMALL_VIDEO_OVERLAY_X,
+  AI_SMALL_VIDEO_OVERLAY_Y,
+} from './ai-video.constants.js';
+import { ensurePrebakedAiSmallVideo } from './ai-small-video-prepare.js';
+import { resolveSiSmallVideoClip } from '../si-video/si-small-video.js';
 import {
   resolveSceneImageAbsolutePath,
   scaleSceneTimestamps,
@@ -75,7 +84,11 @@ function buildTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]): SlideS
 }
 
 /** xfade shortens total length by sum(transitionDuration); pad the last slide so timeline matches target. */
-function padSlidesToAudioDuration(slides: SlideSpec[], audioDurationSec: number): SlideSpec[] {
+function padSlidesToAudioDuration(
+  slides: SlideSpec[],
+  audioDurationSec: number,
+  log?: (msg: string) => void,
+): SlideSpec[] {
   if (slides.length === 0) return slides;
 
   const transitionSum = slides.slice(0, -1).reduce((sum, slide) => sum + (slide.transitionDurationSec ?? 0), 0);
@@ -83,6 +96,22 @@ function padSlidesToAudioDuration(slides: SlideSpec[], audioDurationSec: number)
   const projected = contentSum - transitionSum;
   const deficit = audioDurationSec - projected;
   if (deficit <= 0.05) return slides;
+
+  // A large deficit on one slide means a single multi-minute zoompan clip, which
+  // renders orders of magnitude slower than the same time spread over slides.
+  if (deficit > AI_MAX_LAST_SLIDE_PAD_SEC && slides.length > 1) {
+    const scale = (audioDurationSec + transitionSum) / contentSum;
+    const stretched = slides.map(slide => ({ ...slide, durationSec: slide.durationSec * scale }));
+    const stretchedSum = stretched.reduce((sum, slide) => sum + slide.durationSec, 0);
+    const residue = audioDurationSec + transitionSum - stretchedSum;
+    const last = stretched[stretched.length - 1]!;
+    last.durationSec = Math.max(0.1, last.durationSec + residue);
+    log?.(
+      `[ai-video] Scene timeline covers ${projected.toFixed(1)}s but audio is ${audioDurationSec.toFixed(1)}s; ` +
+        `stretching ${slides.length} slides by ${scale.toFixed(3)}x instead of padding the last slide by ${deficit.toFixed(1)}s`,
+    );
+    return stretched;
+  }
 
   const padded = slides.map(slide => ({ ...slide }));
   padded[padded.length - 1] = {
@@ -106,6 +135,9 @@ export async function assembleReupAiSlideshowVideo(
     showDisclaim = false,
     disclaimerText,
     channelAvatarPath,
+    showSmallVideo = false,
+    smallVideoFile,
+    smallVideoPath,
     onLog,
   } = input;
   const log = (msg: string) => {
@@ -147,7 +179,7 @@ export async function assembleReupAiSlideshowVideo(
     activeSubtitlePath = scaledSrtPath;
   }
 
-  slides = padSlidesToAudioDuration(slides, audioDurationAfterTempo);
+  slides = padSlidesToAudioDuration(slides, audioDurationAfterTempo, log);
 
   log(
     `[ai-video] ${slides.length} timed slides (Ken Burns, no shuffle) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
@@ -157,13 +189,48 @@ export async function assembleReupAiSlideshowVideo(
     log(`[ai-video] Channel avatar overlay: ${path.basename(channelAvatarPath)}`);
   }
 
+  const showSmallVideoOverlay =
+    showSmallVideo === true || Boolean(smallVideoFile?.trim()) || Boolean(smallVideoPath?.trim());
+  let preparedSmallVideoPath: string | null = null;
+  if (showSmallVideoOverlay) {
+    const absoluteOverride = smallVideoPath?.trim();
+    let sourcePath: string;
+    let label: string;
+    if (absoluteOverride) {
+      try {
+        await fs.access(absoluteOverride);
+      } catch {
+        throw new AppError(`AI slideshow missing small video: ${absoluteOverride}`, 400, 'AI_INPUT_MISSING');
+      }
+      sourcePath = absoluteOverride;
+      label = path.basename(absoluteOverride);
+    } else {
+      const clip = await resolveSiSmallVideoClip(smallVideoFile);
+      sourcePath = clip.path;
+      label = clip.filename;
+    }
+    log(`[ai-video] Small video PiP overlay: ${label}`);
+    const prebaked = await ensurePrebakedAiSmallVideo(sourcePath, onLog);
+    preparedSmallVideoPath = prebaked.path;
+  }
+
   const slideshowRawPath = path.join(workDir, `${AI_SLIDESHOW_RAW_BASENAME}.mp4`);
+  log(
+    `[ai-video] Ken Burns supersample ${AI_SLIDESHOW_TEMP_SCALE_FACTOR}x ` +
+      `(${SI_CANVAS_W * AI_SLIDESHOW_TEMP_SCALE_FACTOR}x${SI_CANVAS_H * AI_SLIDESHOW_TEMP_SCALE_FACTOR} working canvas for smooth pan/zoom)`,
+  );
   await assembleSlideshow({
     slides,
     workDir,
     outputPath: slideshowRawPath,
     onLog,
-    output: { width: SI_CANVAS_W, height: SI_CANVAS_H, fps: SI_FPS },
+    output: {
+      width: SI_CANVAS_W,
+      height: SI_CANVAS_H,
+      fps: SI_FPS,
+      tempScaleFactor: AI_SLIDESHOW_TEMP_SCALE_FACTOR,
+      finalPreset: AI_SLIDESHOW_FINAL_PRESET,
+    },
   });
 
   const outputPath = path.join(workDir, `${outputBasename}.mp4`);
@@ -202,9 +269,32 @@ export async function assembleReupAiSlideshowVideo(
 
   const filterParts: string[] = [];
   let videoInputLabel = '0:v';
+  let nextInputIndex = 2;
+  let smallVideoInputLabel: string | null = null;
+  let avatarInputLabel: string | null = null;
+  const extraInputs: string[] = [];
 
-  if (channelAvatarPath) {
-    appendChannelAvatarOverlayFilters(filterParts, videoInputLabel, '2:v', 'v_with_avatar', {
+  if (preparedSmallVideoPath) {
+    extraInputs.push('-stream_loop', '-1', '-i', preparedSmallVideoPath);
+    smallVideoInputLabel = `${nextInputIndex}:v`;
+    nextInputIndex += 1;
+  }
+
+  if (preparedAvatarPath) {
+    extraInputs.push('-f', 'image2', '-loop', '1', '-framerate', String(SI_FPS), '-i', preparedAvatarPath);
+    avatarInputLabel = `${nextInputIndex}:v`;
+    nextInputIndex += 1;
+  }
+
+  if (smallVideoInputLabel) {
+    filterParts.push(
+      `[${videoInputLabel}][${smallVideoInputLabel}]overlay=${AI_SMALL_VIDEO_OVERLAY_X}:${AI_SMALL_VIDEO_OVERLAY_Y}:shortest=1:format=auto[v_with_small]`,
+    );
+    videoInputLabel = 'v_with_small';
+  }
+
+  if (avatarInputLabel) {
+    appendChannelAvatarOverlayFilters(filterParts, videoInputLabel, avatarInputLabel, 'v_with_avatar', {
       prebaked: true,
     });
     videoInputLabel = 'v_with_avatar';
@@ -224,9 +314,7 @@ export async function assembleReupAiSlideshowVideo(
     slideshowRawPath,
     '-i',
     audioPath,
-    ...(preparedAvatarPath
-      ? ['-f', 'image2', '-loop', '1', '-framerate', String(SI_FPS), '-i', preparedAvatarPath]
-      : []),
+    ...extraInputs,
     '-filter_complex_script',
     filterScriptPath,
     '-map',

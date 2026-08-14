@@ -31,11 +31,15 @@ export interface RunFfmpegOptions {
   encodeOpts?: H264EncodeOptions;
   onLog?: (msg: string) => void;
   label?: string;
+  /** Kill ffmpeg after this many ms without stderr output (0 disables). */
+  stallTimeoutMs?: number;
 }
 
 interface FfmpegRunResult {
   code: number | null;
   stderr: string;
+  /** True when the process was killed because it stopped producing output. */
+  stalled?: boolean;
 }
 
 interface ParsedFfmpegProgressLine {
@@ -51,6 +55,11 @@ const FFMPEG_PROGRESS_RE =
   /frame=\s*(\d+)\s+fps=\s*([\d.]+)\s+q=[\d.-]+\s+size=\s*(\S+)\s+time=(\d+:\d+:\d+\.\d+)\s+bitrate=\s*(\S+)\s+speed=\s*([\d.]+x)/;
 
 const PROGRESS_LOG_INTERVAL_MS = 2000;
+/**
+ * Hardware encoders (notably AMF) can finish writing output and then never exit,
+ * which would block the caller forever since we only resolve on `close`.
+ */
+const FFMPEG_STALL_TIMEOUT_MS = 120_000;
 /** Keep a sliding window of stderr — full concat can OOM on long encodes. */
 const STDERR_MAX_CHARS = 256 * 1024;
 
@@ -149,9 +158,35 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
     const proc = spawn(env.ffmpegPath, args);
     let durationSec = 0;
     let stderr = '';
+    let stalled = false;
     const logState = { lastLoggedProgress: -1, lastLoggedAt: 0 };
 
+    const stallTimeoutMs = options?.stallTimeoutMs ?? FFMPEG_STALL_TIMEOUT_MS;
+    let stallTimer: NodeJS.Timeout | undefined;
+
+    const clearStallTimer = () => {
+      if (stallTimer) clearTimeout(stallTimer);
+      stallTimer = undefined;
+    };
+
+    const armStallTimer = () => {
+      if (stallTimeoutMs <= 0) return;
+      clearStallTimer();
+      stallTimer = setTimeout(() => {
+        stalled = true;
+        const msg =
+          `[ffmpeg]${options?.label ? ` ${options.label}` : ''} no output for ` +
+          `${Math.round(stallTimeoutMs / 1000)}s, killing stalled process`;
+        console.warn(msg);
+        options?.onLog?.(msg);
+        proc.kill('SIGKILL');
+      }, stallTimeoutMs);
+    };
+
+    armStallTimer();
+
     proc.stderr.on('data', (chunk: Buffer) => {
+      armStallTimer();
       const text = chunk.toString();
       stderr = appendCappedStderr(stderr, text);
 
@@ -173,10 +208,16 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
     });
 
     proc.on('close', code => {
-      resolve({ code, stderr });
+      clearStallTimer();
+      resolve({
+        code,
+        stderr: stalled ? `${stderr}\nffmpeg stalled with no output and was killed` : stderr,
+        stalled,
+      });
     });
 
     proc.on('error', err => {
+      clearStallTimer();
       reject(new Error(`FFmpeg not available: ${err.message}`));
     });
   });
@@ -216,13 +257,14 @@ async function runFfmpegWithEncoderFallback(
   const canFallback =
     encoderFallback &&
     isHardwareEncoder(encoder) &&
-    isGpuEncoderFailure(first.stderr);
+    (first.stalled === true || isGpuEncoderFailure(first.stderr));
 
   if (!canFallback) {
     throw new Error(`FFmpeg exited with code ${first.code}: ${first.stderr.slice(-800)}`);
   }
 
-  const fallbackMsg = `[ffmpeg] GPU encode failed (${encoder}), fallback CPU: ${first.stderr.slice(-200).replace(/\s+/g, ' ').trim()}`;
+  const reason = first.stalled ? 'stalled' : 'failed';
+  const fallbackMsg = `[ffmpeg] GPU encode ${reason} (${encoder}), fallback CPU: ${first.stderr.slice(-200).replace(/\s+/g, ' ').trim()}`;
   console.warn(fallbackMsg);
   options?.onLog?.(fallbackMsg);
 

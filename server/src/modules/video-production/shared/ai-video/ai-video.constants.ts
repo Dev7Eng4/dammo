@@ -10,6 +10,31 @@ export const AI_VIDEO_DEFAULT_SLIDES = 8;
 
 export const AI_SLIDESHOW_RAW_BASENAME = 'slideshow_raw';
 
+/** AI PiP overlay: top-left small video (distinct from SI 360×216 random slot). */
+export const AI_SMALL_VIDEO_W = 100;
+export const AI_SMALL_VIDEO_H = 130;
+export const AI_SMALL_VIDEO_OPACITY = 0.8;
+export const AI_SMALL_VIDEO_SLOW = 1.5;
+export const AI_SMALL_VIDEO_OVERLAY_X = 0;
+export const AI_SMALL_VIDEO_OVERLAY_Y = 0;
+
+/**
+ * Ken Burns internal upscale for AI slideshow. Must stay at 4 (same as
+ * SS_TEMP_SCALE_FACTOR): zoompan rounds crop to integer pixels, and lower
+ * values produce visible hold-and-jump motion on slow pans/zooms.
+ */
+export const AI_SLIDESHOW_TEMP_SCALE_FACTOR = 4;
+
+/**
+ * Max seconds the final slide may absorb when the scene timeline is shorter
+ * than the audio. Above this the deficit is spread across all slides, since one
+ * very long zoompan clip renders far slower than many shorter ones.
+ */
+export const AI_MAX_LAST_SLIDE_PAD_SEC = 15;
+
+/** Slideshow compose preset for AI path (library default is medium). */
+export const AI_SLIDESHOW_FINAL_PRESET = 'fast' as const;
+
 export interface AiVideoDensityTier {
   maxDurationSec?: number;
   highDensity: number;

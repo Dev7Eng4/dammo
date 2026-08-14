@@ -14,7 +14,6 @@ interface ChromeProfilesToolbarProps {
   onOpenProfile: () => void;
   onSetMainProfile: () => void;
   onResetSubProfiles: () => void;
-  onRefresh: () => void;
 }
 
 export function ChromeProfilesToolbar({
@@ -31,26 +30,12 @@ export function ChromeProfilesToolbar({
   onOpenProfile,
   onSetMainProfile,
   onResetSubProfiles,
-  onRefresh,
 }: ChromeProfilesToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <span className="text-sm text-neutral-400">{count.toLocaleString()} profile</span>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="outlined"
-          size="sm"
-          className="rounded-lg"
-          onClick={onRefresh}
-          disabled={loading}
-        >
-          <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-            <path d="M21 3v6h-6" />
-          </svg>
-          Làm mới
-        </Button>
         <Button
           variant="outlined"
           size="sm"

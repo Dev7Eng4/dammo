@@ -7,7 +7,7 @@ interface TaskQueueSummaryProps {
 export function TaskQueueSummary({ running, queued, failed }: TaskQueueSummaryProps) {
   return (
     <p className="text-xs text-neutral-500">
-      {running} Running · {queued} Queued · {failed} Failed
+      {running} Đang chạy · {queued} Đang chờ · {failed} Thất bại
     </p>
   );
 }

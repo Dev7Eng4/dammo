@@ -14,29 +14,25 @@ import { DeleteSourceChannelModal } from '../components/source-channels/DeleteSo
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
 import { useToast } from '../components/ui';
-import { useAbortableEffect, useDebouncedValue, usePaginatedList } from '../hooks';
+import { useAbortableEffect, usePaginatedList } from '../hooks';
 import { useTaskQueue } from '../hooks/useTaskQueue';
 import type { Niche } from '../types/niche';
 import type {
   CreateSourceChannelPayload,
   SourceChannel,
   SourceChannelUsage,
+  SourceLanguageFilter,
   SourcePlatformFilter,
   SourcePurposeFilter,
-  SourceRiskFilter,
 } from '../types/sourceChannel';
-
-const LIMIT = 20;
-const SEARCH_DEBOUNCE_MS = 300;
 
 export function SourceChannelsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
   const [platformFilter, setPlatformFilter] = useState<SourcePlatformFilter>('all');
-  const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('all');
-  const [riskFilter, setRiskFilter] = useState<SourceRiskFilter>('all');
-  const [search, setSearch] = useState('');
+  const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('reup');
+  const [languageFilter, setLanguageFilter] = useState<SourceLanguageFilter>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddNicheModal, setShowAddNicheModal] = useState(false);
@@ -48,19 +44,17 @@ export function SourceChannelsPage() {
   const [deleteModalUsages, setDeleteModalUsages] = useState<SourceChannelUsage[]>([]);
   const [confirmDeleting, setConfirmDeleting] = useState(false);
   const [checkingDelete, setCheckingDelete] = useState(false);
-
-  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+  const [limit, setLimit] = useState(20);
 
   const list = usePaginatedList({
-    fetcher: ({ platform, purpose, risk, query, page, limit, signal }) =>
-      fetchSourceChannels(platform, purpose, risk, query, page, limit, { signal }),
+    fetcher: ({ platform, purpose, language, page, limit: pageLimit, signal }) =>
+      fetchSourceChannels(platform, purpose, language, page, pageLimit, { signal }),
     query: {
       platform: platformFilter,
       purpose: purposeFilter,
-      risk: riskFilter,
-      query: debouncedSearch,
+      language: languageFilter,
     },
-    limit: LIMIT,
+    limit,
   });
 
   useAbortableEffect(async (signal) => {
@@ -110,16 +104,9 @@ export function SourceChannelsPage() {
     clearSelection();
   }
 
-  function handleRiskFilterChange(next: SourceRiskFilter) {
+  function handleLanguageFilterChange(next: SourceLanguageFilter) {
     list.markLoading();
-    setRiskFilter(next);
-    list.resetPage();
-    clearSelection();
-  }
-
-  function handleSearchChange(value: string) {
-    list.markLoading();
-    setSearch(typeof value === 'string' ? value : '');
+    setLanguageFilter(next);
     list.resetPage();
     clearSelection();
   }
@@ -127,6 +114,13 @@ export function SourceChannelsPage() {
   function handlePageChange(nextPage: number) {
     list.markLoading();
     list.setPage(nextPage);
+    clearSelection();
+  }
+
+  function handleLimitChange(nextLimit: number) {
+    list.markLoading();
+    setLimit(nextLimit);
+    list.setPage(1);
     clearSelection();
   }
 
@@ -188,6 +182,7 @@ export function SourceChannelsPage() {
           payload: {
             url: payload.url,
             purpose: payload.purpose,
+            language: payload.language,
             ...(payload.niche ? { niche: payload.niche } : {}),
           },
         },
@@ -319,14 +314,12 @@ export function SourceChannelsPage() {
           <SourceChannelsToolbar
             platformFilter={platformFilter}
             purposeFilter={purposeFilter}
-            riskFilter={riskFilter}
-            search={search}
+            languageFilter={languageFilter}
             canDownload={canDownload}
             downloadDisabledReason={downloadDisabledReason}
             onPlatformFilterChange={handlePlatformFilterChange}
             onPurposeFilterChange={handlePurposeFilterChange}
-            onRiskFilterChange={handleRiskFilterChange}
-            onSearchChange={handleSearchChange}
+            onLanguageFilterChange={handleLanguageFilterChange}
             onAddSource={() => setShowAddModal(true)}
             onAddNiche={() => setShowAddNicheModal(true)}
             onDownload={handleDownload}
@@ -341,6 +334,7 @@ export function SourceChannelsPage() {
               sources={list.items}
               niches={niches}
               loading={list.loading}
+              rowNumberStart={(list.page - 1) * list.limit + 1}
               selectedIds={selectedIds}
               bumpingRiskId={bumpingRiskId}
               savingNotesId={savingNotesId}
@@ -358,6 +352,8 @@ export function SourceChannelsPage() {
               total={list.total}
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              locale="vi"
             />
           </div>
         </div>

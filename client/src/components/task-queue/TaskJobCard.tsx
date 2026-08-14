@@ -11,6 +11,7 @@ import type { TaskJobListItem } from '../../types/taskQueue';
 import { Button, Progress } from '../ui';
 import { TaskJobStatusBadge } from './TaskJobStatusBadge';
 import { TaskJobTypeBadge } from './TaskJobTypeBadge';
+import { TaskStageChecklist } from './TaskStageChecklist';
 
 interface TaskJobCardProps {
   job: TaskJobListItem;
@@ -86,6 +87,8 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
   const isFailed = job.status === 'failed';
   const showProgress = job.status === 'running' || job.status === 'completed' || job.status === 'failed';
   const isSelectable = Boolean(onSelect);
+  const stages = job.stages ?? [];
+  const hasStages = stages.length > 0;
 
   function handleCardClick() {
     if (isSelectable) onSelect?.(job);
@@ -133,33 +136,41 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
           </p>
 
           {showProgress ? (
-            <div className="mt-3">
-              <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-500">
-                <span className="truncate">
-                  {job.status === 'failed'
-                    ? `Step: ${job.progressLabel ?? 'Processing'}`
-                    : job.progressLabel ?? (job.status === 'completed' ? 'Done' : 'Processing')}
-                </span>
-                <span className="shrink-0">{progress}%</span>
+            hasStages ? (
+              <TaskStageChecklist
+                stages={stages}
+                compact={job.status === 'running'}
+                showFailedDetails={isFailed}
+              />
+            ) : (
+              <div className="mt-3">
+                <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-500">
+                  <span className="truncate">
+                    {job.status === 'failed'
+                    ? `Bước: ${job.progressLabel ?? 'Đang xử lý'}`
+                    : job.progressLabel ?? (job.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý')}
+                  </span>
+                  <span className="shrink-0">{progress}%</span>
+                </div>
+                {job.status === 'failed' ? (
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-300', progressBarClass(job.status))}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                ) : job.status === 'completed' ? (
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+                    <div
+                      className="h-full rounded-full bg-success transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                ) : (
+                  <Progress value={progress} tone="primary" />
+                )}
               </div>
-              {job.status === 'failed' ? (
-                <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-                  <div
-                    className={cn('h-full rounded-full transition-all duration-300', progressBarClass(job.status))}
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              ) : job.status === 'completed' ? (
-                <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-                  <div
-                    className="h-full rounded-full bg-success transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              ) : (
-                <Progress value={progress} tone="primary" />
-              )}
-            </div>
+            )
           ) : null}
         </div>
 
@@ -176,7 +187,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                   onCancel(job.id);
                 }}
                 className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
-                aria-label="Cancel job"
+                aria-label="Hủy công việc"
               >
                 <svg viewBox="0 0 20 20" className="size-4" fill="currentColor">
                   <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
@@ -201,7 +212,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                     clipRule="evenodd"
                   />
                 </svg>
-                Retry
+                Thử lại
               </Button>
             ) : null}
 
@@ -218,7 +229,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                 <svg viewBox="0 0 20 20" className="mr-1 size-3.5" fill="currentColor" aria-hidden>
                   <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                 </svg>
-                Path
+                Đường dẫn
               </Button>
             ) : null}
 
@@ -228,7 +239,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                 onClick={(event) => event.stopPropagation()}
                 className="inline-flex h-8 items-center rounded-lg border border-border px-2.5 text-xs font-medium text-neutral-300 hover:bg-surface-elevated"
               >
-                View
+                Xem
               </Link>
             ) : null}
           </div>

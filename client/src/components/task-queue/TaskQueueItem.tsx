@@ -1,5 +1,6 @@
 import { Button, Progress } from '../ui';
 import type { TaskJobListItem } from '../../types/taskQueue';
+import { TaskStageChecklist } from './TaskStageChecklist';
 
 interface TaskQueueItemProps {
   job: TaskJobListItem;
@@ -82,6 +83,9 @@ export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
   const isFailed = job.status === 'failed';
   const isRunning = job.status === 'running';
   const isQueued = job.status === 'queued';
+  const stages = job.stages ?? [];
+  const hasStages = stages.length > 0;
+  const failedStage = stages.find((stage) => stage.status === 'failed');
 
   return (
     <div className="border-b border-border px-4 py-3 last:border-b-0">
@@ -95,10 +99,12 @@ export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
               </p>
               {job.subtitle ? (
                 <p className={`truncate text-xs ${isFailed ? 'text-danger/80' : 'text-neutral-500'}`}>
-                  {isFailed && job.error ? job.error : job.subtitle}
+                  {isFailed && (failedStage?.error || job.error)
+                    ? failedStage?.error || job.error
+                    : job.subtitle}
                 </p>
-              ) : isFailed && job.error ? (
-                <p className="truncate text-xs text-danger/80">{job.error}</p>
+              ) : isFailed && (failedStage?.error || job.error) ? (
+                <p className="truncate text-xs text-danger/80">{failedStage?.error || job.error}</p>
               ) : null}
             </div>
             {isQueued ? (
@@ -119,18 +125,22 @@ export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
                 className="h-7 shrink-0 rounded-md px-2 text-xs"
                 onClick={() => onCancel(job.id)}
               >
-                Cancel
+                Hủy
               </Button>
             ) : null}
           </div>
-          {isRunning ? (
-            <div className="mt-2">
-              <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-500">
-                <span className="truncate">{job.progressLabel ?? 'Processing'}</span>
-                <span className="shrink-0">{job.progress}%</span>
+          {isRunning || (isFailed && hasStages) ? (
+            hasStages ? (
+              <TaskStageChecklist stages={stages} compact showFailedDetails={isFailed} />
+            ) : isRunning ? (
+              <div className="mt-2">
+                <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-500">
+                  <span className="truncate">{job.progressLabel ?? 'Processing'}</span>
+                  <span className="shrink-0">{job.progress}%</span>
+                </div>
+                <Progress value={job.progress} tone="primary" />
               </div>
-              <Progress value={job.progress} tone="primary" />
-            </div>
+            ) : null
           ) : null}
         </div>
       </div>

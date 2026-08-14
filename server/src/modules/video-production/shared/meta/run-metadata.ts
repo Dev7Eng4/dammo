@@ -9,7 +9,8 @@ import { promptsRepository } from '../../../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from './meta-session.js';
-import { tryParseMetadataResponse } from './meta-response.js';
+import { parseMetadataResponse } from './meta-response.js';
+import { formatParseFailureReason } from './llm-parse-result.js';
 import {
   isCelebrityWisdomNiche,
   type MetadataLlmOutput,
@@ -209,6 +210,7 @@ export async function executeMetadata(
   }
 
   let lastReason = 'unknown error';
+  let lastDetails: Record<string, unknown> | undefined;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     options?.onProgress?.({
@@ -225,8 +227,9 @@ export async function executeMetadata(
         pasteStrategy: 'direct',
       });
 
-      const parsed = tryParseMetadataResponse(response, { niche: parseNiche });
-      if (parsed) {
+      const parseResult = parseMetadataResponse(response, { niche: parseNiche });
+      if (parseResult.ok) {
+        const parsed = parseResult.value;
         await persistMetadataOutput(
           parsed,
           sourceTitle,
@@ -238,20 +241,30 @@ export async function executeMetadata(
         return toVideoMetaOutput(parsed, sourceTitle, options?.descriptionDisclaimer);
       }
 
-      lastReason =
-        parseNiche && parseNiche !== 'all'
-          ? isCelebrityWisdomNiche(parseNiche)
-            ? 'invalid JSON or missing metadata/thumbnail.image_generation_prompt'
-            : 'invalid JSON or missing metadata/thumbnail.image_generation_prompt/video_visual_prompt'
-          : 'invalid JSON or schema mismatch';
+      lastReason = formatParseFailureReason(parseResult);
+      lastDetails = {
+        attempt,
+        reason: parseResult.reason,
+        ...(parseResult.missingFields?.length ? { missingFields: parseResult.missingFields } : {}),
+        ...(parseResult.snippet ? { snippet: parseResult.snippet } : {}),
+      };
       logValidationFailure(attempt, lastReason);
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';
+      lastDetails =
+        err instanceof AppError && err.details
+          ? { attempt, ...err.details }
+          : { attempt, reason: lastReason };
       logValidationFailure(attempt, lastReason);
     }
   }
 
-  throw new AppError(`Metadata generation failed after ${MAX_RETRIES} attempts: ${lastReason}`, 502, 'METADATA_FAILED');
+  throw new AppError(
+    `Metadata generation failed after ${MAX_RETRIES} attempts: ${lastReason}`,
+    502,
+    'METADATA_FAILED',
+    lastDetails ?? { reason: lastReason },
+  );
 }
 
 export async function runMetadata(

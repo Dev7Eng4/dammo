@@ -80,6 +80,10 @@ export interface SlideshowOutputConfig {
   fps: number;
   /** Internal upscale multiplier for smooth Ken Burns. */
   tempScaleFactor: number;
+  /** Override final compose encoder preset (default: medium). */
+  finalPreset?: string;
+  /** Override final compose CRF (default: 20). */
+  finalCrf?: number;
 }
 
 /** Full slideshow specification handed to the assembler. */

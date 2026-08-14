@@ -6,6 +6,26 @@ export type TaskLogLevel = 'info' | 'exec' | 'ok' | 'err';
 
 export type TaskLivePhase = 'downloading' | 'ffmpeg' | 'metadata' | 'done';
 
+export type TaskStageStatus = 'pending' | 'doing' | 'done' | 'failed' | 'skipped';
+
+export interface TaskErrorDetails {
+  code?: string;
+  step?: string | number;
+  attempt?: number;
+  reason?: string;
+  missingFields?: string[];
+  snippet?: string;
+  context?: string;
+}
+
+export interface TaskStage {
+  id: string;
+  label: string;
+  status: TaskStageStatus;
+  error?: string;
+  errorDetails?: TaskErrorDetails;
+}
+
 export interface TaskLogEntry {
   at: string;
   level: TaskLogLevel;
@@ -15,6 +35,7 @@ export interface TaskLogEntry {
 export interface AddSourceTaskPayload {
   url: string;
   purpose: string;
+  language: string;
   niche?: string;
 }
 
@@ -56,7 +77,9 @@ export interface TaskJobListItem {
   progress: number;
   progressLabel?: string;
   error?: string;
+  errorDetails?: TaskErrorDetails;
   livePhase?: TaskLivePhase;
+  stages?: TaskStage[];
   logCount?: number;
   payload: TaskPayload;
   outputPath?: string;
@@ -124,7 +147,15 @@ export function mergeTaskJob(item: TaskJobListItem, detail?: TaskJob | null): Ta
   return {
     ...item,
     ...detail,
+    ...item,
     logs: detail.logs,
     result: detail.result,
+    stages: item.stages ?? detail.stages,
+    errorDetails: item.errorDetails ?? detail.errorDetails,
+    error: item.error ?? detail.error,
+    progressLabel: item.progressLabel ?? detail.progressLabel,
+    livePhase: item.livePhase ?? detail.livePhase,
+    status: item.status,
+    updatedAt: item.updatedAt,
   };
 }

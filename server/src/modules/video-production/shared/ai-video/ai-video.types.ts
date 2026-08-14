@@ -100,6 +100,11 @@ export interface AssembleReupAiSlideshowVideoInput {
   showDisclaim?: boolean;
   disclaimerText?: string;
   channelAvatarPath?: string;
+  showSmallVideo?: boolean;
+  /** Filename under assets/small-video (or `__auto__`). Ignored when `smallVideoPath` is set. */
+  smallVideoFile?: string;
+  /** Absolute path to a small-video clip (test / local override). */
+  smallVideoPath?: string;
   onLog?: (msg: string) => void;
 }
 

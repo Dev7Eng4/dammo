@@ -1,13 +1,14 @@
 import { API_V1 } from './config';
-import { fetchJson, withSignal, type FetchOptions } from './http';import type {
+import { fetchJson, withSignal, type FetchOptions } from './http';
+import type {
   CreateSourceChannelPayload,
   SourceChannel,
   SourceChannelsResponse,
   SourceChannelVideosResponse,
   SourceChannelVideo,
+  SourceLanguageFilter,
   SourcePlatformFilter,
   SourcePurposeFilter,
-  SourceRiskFilter,
   SourceVideoDurationFilter,
   UpdateSourceChannelPayload,
   SourceChannelUsage,
@@ -16,8 +17,7 @@ import { fetchJson, withSignal, type FetchOptions } from './http';import type {
 export function fetchSourceChannels(
   platform: SourcePlatformFilter = 'all',
   purpose: SourcePurposeFilter = 'all',
-  risk: SourceRiskFilter = 'all',
-  query = '',
+  language: SourceLanguageFilter = 'all',
   page = 1,
   limit = 20,
   options?: FetchOptions,
@@ -25,8 +25,7 @@ export function fetchSourceChannels(
   const params = new URLSearchParams();
   if (platform !== 'all') params.set('platform', platform);
   if (purpose !== 'all') params.set('purpose', purpose);
-  if (risk !== 'all') params.set('risk', risk);
-  if (query.trim()) params.set('q', query.trim());
+  if (language !== 'all') params.set('language', language);
   params.set('page', String(page));
   params.set('limit', String(limit));
   return fetchJson<SourceChannelsResponse>(

@@ -7,12 +7,14 @@ import { emitTaskQueueEvent } from './task-queue.events.js';
 import { toTaskJobSummary } from './task-queue.summary.js';
 import type {
   EnqueueTaskInput,
+  TaskErrorDetails,
   TaskJob,
   TaskJobLogsResponse,
   TaskJobSummary,
   TaskLogEntry,
   TaskLogLevel,
   TaskLivePhase,
+  TaskStage,
   TaskStatus,
 } from './task-queue.types.js';
 
@@ -87,7 +89,12 @@ export class TaskQueueRepository {
   setStatus(
     id: string,
     status: TaskStatus,
-    patch?: Partial<Pick<TaskJob, 'progress' | 'progressLabel' | 'error' | 'result' | 'logs' | 'livePhase'>>,
+    patch?: Partial<
+      Pick<
+        TaskJob,
+        'progress' | 'progressLabel' | 'error' | 'errorDetails' | 'result' | 'logs' | 'livePhase' | 'stages'
+      >
+    >,
   ): TaskJob | null {
     const updated = this.update(id, job => ({
       ...job,
@@ -97,6 +104,108 @@ export class TaskQueueRepository {
     }));
     if (updated) publishJob(updated);
     return updated;
+  }
+
+  initStages(id: string, stages: TaskStage[]): TaskJob | null {
+    const updated = this.update(id, job => ({
+      ...job,
+      stages: stages.map(stage => ({ ...stage })),
+      progressLabel: stages.find(s => s.status === 'doing')?.label ?? job.progressLabel,
+      updatedAt: new Date().toISOString(),
+    }));
+    if (updated) publishJob(updated);
+    return updated;
+  }
+
+  startStage(id: string, stageId: string): TaskJob | null {
+    const updated = this.update(id, job => {
+      const stages = (job.stages ?? []).map(stage => {
+        if (stage.id === stageId) {
+          return { ...stage, status: 'doing' as const, error: undefined, errorDetails: undefined };
+        }
+        if (stage.status === 'doing') {
+          return { ...stage, status: 'done' as const };
+        }
+        return stage;
+      });
+      const current = stages.find(s => s.id === stageId);
+      return {
+        ...job,
+        stages,
+        progressLabel: current?.label ?? job.progressLabel,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    if (updated) publishJob(updated);
+    return updated;
+  }
+
+  completeStage(id: string, stageId: string): TaskJob | null {
+    const updated = this.update(id, job => {
+      const stages = (job.stages ?? []).map(stage =>
+        stage.id === stageId ? { ...stage, status: 'done' as const, error: undefined, errorDetails: undefined } : stage,
+      );
+      return {
+        ...job,
+        stages,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    if (updated) publishJob(updated);
+    return updated;
+  }
+
+  skipStage(id: string, stageId: string): TaskJob | null {
+    const updated = this.update(id, job => {
+      const stages = (job.stages ?? []).map(stage =>
+        stage.id === stageId ? { ...stage, status: 'skipped' as const } : stage,
+      );
+      return {
+        ...job,
+        stages,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    if (updated) publishJob(updated);
+    return updated;
+  }
+
+  failStage(id: string, stageId: string, error: string, errorDetails?: TaskErrorDetails): TaskJob | null {
+    const updated = this.update(id, job => {
+      const stages = (job.stages ?? []).map(stage =>
+        stage.id === stageId
+          ? {
+              ...stage,
+              status: 'failed' as const,
+              error,
+              ...(errorDetails ? { errorDetails } : {}),
+            }
+          : stage,
+      );
+      return {
+        ...job,
+        stages,
+        error,
+        ...(errorDetails ? { errorDetails } : {}),
+        progressLabel: stages.find(s => s.id === stageId)?.label ?? job.progressLabel,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    if (updated) publishJob(updated);
+    return updated;
+  }
+
+  failActiveStage(id: string, error: string, errorDetails?: TaskErrorDetails): TaskJob | null {
+    const job = this.findById(id);
+    if (!job) return null;
+    if (!job.stages?.length) {
+      return this.setStatus(id, 'failed', { error, ...(errorDetails ? { errorDetails } : {}) });
+    }
+    const active = job.stages.find(s => s.status === 'doing') ?? job.stages.find(s => s.status === 'failed');
+    if (!active) {
+      return this.setStatus(id, 'failed', { error, ...(errorDetails ? { errorDetails } : {}) });
+    }
+    return this.failStage(id, active.id, error, errorDetails);
   }
 
   appendLog(id: string, entry: TaskLogEntry): TaskJob | null {

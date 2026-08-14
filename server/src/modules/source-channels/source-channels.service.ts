@@ -21,6 +21,7 @@ import { nichesService } from '../niches/niches.service.js';
 import type {
   CreateSourceChannelInput,
   SourceChannel,
+  SourceChannelLanguage,
   SourcePlatform,
   SourcePurpose,
   SourceRiskLevel,
@@ -28,8 +29,10 @@ import type {
   SourceVideoRecord,
   UpdateSourceChannelInput,
 } from './source-channels.types.js';
+import { normalizeChannelLanguage } from '../youtube-channels/channel-language.js';
 
 const RISK_ORDER: SourceRiskLevel[] = ['low', 'medium', 'high'];
+const DEFAULT_SOURCE_LANGUAGE: SourceChannelLanguage = 'ja';
 
 function nextRiskLevel(current: SourceRiskLevel): SourceRiskLevel | null {
   const index = RISK_ORDER.indexOf(current);
@@ -37,14 +40,24 @@ function nextRiskLevel(current: SourceRiskLevel): SourceRiskLevel | null {
   return RISK_ORDER[index + 1];
 }
 
+function withNormalizedLanguage(source: SourceChannel): SourceChannel {
+  return {
+    ...source,
+    language: source.language
+      ? normalizeChannelLanguage(source.language)
+      : DEFAULT_SOURCE_LANGUAGE,
+  };
+}
+
 function filterSources(
   sources: SourceChannel[],
   platform?: SourcePlatform,
   purpose?: SourcePurpose,
+  language?: SourceChannelLanguage,
   risk?: SourceRiskLevel,
   query?: string,
 ): SourceChannel[] {
-  let results = sources;
+  let results = sources.map(withNormalizedLanguage);
 
   if (platform) {
     results = results.filter((s) => s.platform === platform);
@@ -52,6 +65,10 @@ function filterSources(
 
   if (purpose) {
     results = results.filter((s) => s.purpose === purpose);
+  }
+
+  if (language) {
+    results = results.filter((s) => s.language === language);
   }
 
   if (risk) {
@@ -121,6 +138,7 @@ export class SourceChannelsService {
   listPaginated(
     platform: SourcePlatform | undefined,
     purpose: SourcePurpose | undefined,
+    language: SourceChannelLanguage | undefined,
     risk: SourceRiskLevel | undefined,
     query: string | undefined,
     page: number,
@@ -130,6 +148,7 @@ export class SourceChannelsService {
       sourceChannelsRepository.findAll(),
       platform,
       purpose,
+      language,
       risk,
       query,
     );
@@ -152,7 +171,7 @@ export class SourceChannelsService {
     }
     const usageCounts = buildYoutubeChannelUsageCountMap();
     return {
-      ...source,
+      ...withNormalizedLanguage(source),
       youtubeChannelUsageCount: usageCounts.get(source.id) ?? 0,
     };
   }
@@ -289,6 +308,7 @@ export class SourceChannelsService {
       fullUrl: storedFullUrl,
       niche,
       purpose: input.purpose,
+      language: input.language,
       riskLevel: 'low',
       mappedOwnedChannels: [],
       activeProjects: [],

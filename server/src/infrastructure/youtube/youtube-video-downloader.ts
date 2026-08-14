@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeDl } from './youtube-dl-client.js';
-import { AppError } from '../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
 import { requireYoutubeVideoId } from './youtube-url.js';
 import {
@@ -9,6 +8,7 @@ import {
   YOUTUBE_VIDEO_DOWNLOAD_FORMATS,
 } from './youtube-download.constants.js';
 import { withYoutubeDownloadRetries } from './youtube-download-retry.js';
+import { toYoutubeDlError } from './youtube-dl-error.js';
 
 export interface DownloadYoutubeVideoOptions {
   outputBasename?: string;
@@ -28,6 +28,7 @@ async function downloadYoutubeVideoOnce(
   const formats = options?.formats ?? YOUTUBE_VIDEO_DOWNLOAD_FORMATS;
   const outPath = path.join(outputDir, `${basename}.mp4`);
   const onLog = options?.onLog;
+  let lastError: unknown;
 
   for (let i = 0; i < formats.length; i++) {
     const format = formats[i]!;
@@ -45,12 +46,13 @@ async function downloadYoutubeVideoOnce(
       const formatLabel = YOUTUBE_VIDEO_DOWNLOAD_FORMAT_LABELS[i] ?? format;
       onLog?.(`YouTube video download succeeded with format ${i + 1}/${formats.length} (${formatLabel})`);
       return outPath;
-    } catch {
+    } catch (err) {
+      lastError = err;
       onLog?.(`YouTube video download format ${i + 1}/${formats.length} failed, trying next...`);
     }
   }
 
-  throw new AppError('Failed to download YouTube video', 502, 'YOUTUBE_DOWNLOAD_FAILED');
+  throw toYoutubeDlError(lastError, 'Failed to download YouTube video');
 }
 
 export async function downloadYoutubeVideo(

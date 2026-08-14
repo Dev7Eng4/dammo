@@ -10,6 +10,7 @@ const addSourcePayloadSchema = z.object({
     'reup',
     'background_footage',
   ]),
+  language: z.enum(['en', 'ko', 'ja', 'es']),
   niche: z.string().min(1).optional(),
 });
 

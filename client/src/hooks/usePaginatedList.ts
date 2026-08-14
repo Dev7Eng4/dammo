@@ -42,6 +42,7 @@ export function usePaginatedList<TItem, TQuery extends object>({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [internalRefreshKey, setInternalRefreshKey] = useState(0);
+  const prevLimitRef = useRef(limit);
 
   const fetcherRef = useRef(fetcher);
   const onFetchedRef = useRef(onFetched);
@@ -65,6 +66,13 @@ export function usePaginatedList<TItem, TQuery extends object>({
   const refresh = useCallback(() => {
     setInternalRefreshKey((key) => key + 1);
   }, []);
+
+  useEffect(() => {
+    if (prevLimitRef.current !== limit) {
+      prevLimitRef.current = limit;
+      setPage(1);
+    }
+  }, [limit]);
 
   useEffect(() => {
     if (!enabled) return;

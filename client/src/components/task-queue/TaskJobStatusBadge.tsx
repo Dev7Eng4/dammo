@@ -6,27 +6,27 @@ const statusConfig: Record<
   { label: string; dotClass: string; textClass: string }
 > = {
   running: {
-    label: 'Running',
+    label: 'Đang chạy',
     dotClass: 'bg-primary-400',
     textClass: 'text-primary-300',
   },
   completed: {
-    label: 'Success',
+    label: 'Thành công',
     dotClass: 'bg-success',
     textClass: 'text-success',
   },
   failed: {
-    label: 'Failed',
+    label: 'Thất bại',
     dotClass: 'bg-danger',
     textClass: 'text-danger',
   },
   queued: {
-    label: 'Queued',
+    label: 'Đang chờ',
     dotClass: 'bg-neutral-500',
     textClass: 'text-neutral-400',
   },
   cancelled: {
-    label: 'Cancelled',
+    label: 'Đã hủy',
     dotClass: 'bg-neutral-600',
     textClass: 'text-neutral-500',
   },

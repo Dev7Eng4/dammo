@@ -71,6 +71,18 @@ export function updateYoutubeChannel(id: string, payload: UpdateYoutubeChannelPa
   });
 }
 
+export async function deleteYoutubeChannel(id: string) {
+  const res = await fetch(`${API_V1}/youtube-channels/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const error =
+      body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
+        ? (body as { error: string }).error
+        : `Request failed: ${res.status}`;
+    throw new Error(error);
+  }
+}
+
 export function fetchYoutubeChannelVideos(id: string, options?: FetchOptions) {
   return fetchJson<YoutubeChannelVideosResponse>(
     `${API_V1}/youtube-channels/${id}/videos`,

@@ -60,6 +60,14 @@ import type { ProductionDestination } from '../../ports/production-destination.p
 import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
 import type { SourceCatalog } from '../../ports/source-catalog.port.js';
 import { taskQueueRepository } from '../../../task-queue/task-queue.repository.js';
+import {
+  CREATE_VIDEO_STAGE_IDS,
+  completeCreateVideoStage,
+  failCreateVideoStage,
+  initCreateVideoStages,
+  skipCreateVideoStage,
+  startCreateVideoStage,
+} from '../../../task-queue/task-stage.js';
 import { copySourceAssetsToDir, findSourceThumbnailPath, findSourceTranscriptPath } from '../../../source-channels/source-assets.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 
@@ -302,10 +310,17 @@ export class ReupAudioPipeline {
         let outputItem: ReupVideoOutputItem;
 
         if (isAudioChannel) {
+          let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.download;
           if (taskJobId) {
+            initCreateVideoStages(taskJobId, {
+              copyingAssets: task.sourceStatus === 'Downloaded',
+              includeUpdateTranscript: destination.language === 'ja',
+            });
+            startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
             taskQueueRepository.setLivePhase(taskJobId, 'downloading');
           }
 
+          try {
           const downloaded = await resolveReupAudioDownload(task, destination.language, taskJobId);
           const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
 
@@ -315,9 +330,12 @@ export class ReupAudioPipeline {
             }
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Audio saved → ${downloaded.audioPath}`);
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → ${downloaded.transcriptPath}`);
+            completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
           }
 
+          activeStageId = CREATE_VIDEO_STAGE_IDS.cleanTranscript;
           if (taskJobId) {
+            startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
             taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Cleaning transcript → SRT...');
           }
 
@@ -325,6 +343,7 @@ export class ReupAudioPipeline {
 
           if (taskJobId) {
             taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SRT cleaned → ${srtPath}`);
+            completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
           }
 
           let updatedSrtPath: string | undefined;
@@ -340,7 +359,9 @@ export class ReupAudioPipeline {
           let primaryOutputPath = downloaded.audioPath;
           let subtitleForAssembly: string | undefined = srtPath;
           if (destination.language === 'ja') {
+            activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
             if (taskJobId) {
+              startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
               taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${destination.language})...`);
             }
 
@@ -389,6 +410,7 @@ export class ReupAudioPipeline {
 
             if (taskJobId) {
               taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → transcript.srt`);
+              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
             }
 
             const jaSrtPath = updatedSrtPath;
@@ -397,7 +419,9 @@ export class ReupAudioPipeline {
             subtitleForAssembly = updatedSrtPath;
 
             if (videoType === 'si' || videoType === 'ai') {
+              activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
               if (taskJobId) {
+                startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
                 taskQueueRepository.setLivePhase(taskJobId, 'metadata');
                 taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata...');
               }
@@ -478,12 +502,21 @@ export class ReupAudioPipeline {
                     videoMetaOutput.detected_niche ?? 'n/a'
                   }`,
                 );
+                completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
               }
+            } else if (taskJobId) {
+              skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+              skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
             }
 
             if (videoType === 'si' || videoType === 'ai') {
               if (!videoMetaOutput) {
                 throw new AppError('Metadata is required for thumbnail generation', 400, 'INVALID_INPUT');
+              }
+
+              activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
+              if (taskJobId) {
+                startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
               }
 
               const workDir = jaWorkDir;
@@ -1048,6 +1081,9 @@ export class ReupAudioPipeline {
               }
               }
             }
+          } else if (taskJobId) {
+            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
           }
 
           const workDir = subtitleForAssembly ? path.dirname(subtitleForAssembly) : path.dirname(srtPath);
@@ -1194,6 +1230,17 @@ export class ReupAudioPipeline {
           }
 
           if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
+            if (taskJobId) {
+              const stages = taskQueueRepository.findById(taskJobId)?.stages;
+              const thumb = stages?.find(s => s.id === CREATE_VIDEO_STAGE_IDS.thumbnail);
+              if (thumb?.status === 'doing') {
+                completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+              }
+            }
+            activeStageId = CREATE_VIDEO_STAGE_IDS.assemble;
+            if (taskJobId) {
+              startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+            }
             const disclaimerText = destination.disclaimerText?.trim();
             const showDisclaim = destination.showDisclaimer === true && Boolean(disclaimerText);
             const assemblyLog = taskJobId
@@ -1348,6 +1395,12 @@ export class ReupAudioPipeline {
                         showDisclaim,
                         disclaimerText,
                         ...(channelAvatarPath ? { channelAvatarPath } : {}),
+                        ...(destination.showSmallVideo || destination.smallVideoFile
+                          ? {
+                              showSmallVideo: destination.showSmallVideo,
+                              ...(destination.smallVideoFile ? { smallVideoFile: destination.smallVideoFile } : {}),
+                            }
+                          : {}),
                         onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
                       }),
                     stepTimer,
@@ -1359,8 +1412,24 @@ export class ReupAudioPipeline {
                   }
                 }
             }
+            if (taskJobId) {
+              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+            }
           } else if (options?.skipVideoAssembly && (videoType === 'si' || videoType === 'ai') && taskJobId) {
+            const stages = taskQueueRepository.findById(taskJobId)?.stages;
+            const thumb = stages?.find(s => s.id === CREATE_VIDEO_STAGE_IDS.thumbnail);
+            if (thumb?.status === 'doing') {
+              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+            }
             taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Video assembly skipped (prepare-only mode)');
+            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+          } else if (taskJobId) {
+            const stages = taskQueueRepository.findById(taskJobId)?.stages;
+            const thumb = stages?.find(s => s.id === CREATE_VIDEO_STAGE_IDS.thumbnail);
+            if (thumb?.status === 'doing') {
+              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+            }
+            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
           }
 
           outputItem = {
@@ -1387,6 +1456,12 @@ export class ReupAudioPipeline {
                 }
               : { transcriptPath: downloaded.transcriptPath, srtPath }),
           };
+          } catch (stageErr) {
+            if (taskJobId && activeStageId) {
+              failCreateVideoStage(taskJobId, activeStageId, stageErr);
+            }
+            throw stageErr;
+          }
         } else {
           if (taskJobId) {
             taskQueueRepository.setLivePhase(taskJobId, 'downloading');
@@ -1451,8 +1526,18 @@ export class ReupAudioPipeline {
         items.push(outputItem);
       } catch (err) {
         if (taskJobId) {
-          const message = err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Video processing failed';
-          taskQueueRepository.appendLogMessage(taskJobId, 'err', message);
+          const alreadyLogged = taskQueueRepository
+            .findById(taskJobId)
+            ?.stages?.some(stage => stage.status === 'failed');
+          if (!alreadyLogged) {
+            const message =
+              err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Video processing failed';
+            taskQueueRepository.appendLogMessage(taskJobId, 'err', message);
+            const details = err instanceof AppError ? err.details : undefined;
+            if (details && typeof details.snippet === 'string') {
+              taskQueueRepository.appendLogMessage(taskJobId, 'err', `Response snippet: ${details.snippet}`);
+            }
+          }
         }
         throw err;
       }

@@ -7,6 +7,7 @@ export type SourcePurpose =
   | 'reup'
   | 'background_footage';
 export type SourceRiskLevel = 'low' | 'medium' | 'high';
+export type SourceChannelLanguage = 'en' | 'ko' | 'ja' | 'es';
 
 export interface MappedOwnedChannel {
   id: string;
@@ -41,6 +42,7 @@ export interface SourceChannel {
   fullUrl: string;
   niche: string;
   purpose: SourcePurpose;
+  language: SourceChannelLanguage;
   riskLevel: SourceRiskLevel;
   mappedOwnedChannels: MappedOwnedChannel[];
   activeProjects: SourceActiveProject[];
@@ -83,12 +85,14 @@ export interface SourceChannelsResponse {
 
 export type SourcePlatformFilter = 'all' | SourcePlatform;
 export type SourcePurposeFilter = 'all' | SourcePurpose;
+export type SourceLanguageFilter = 'all' | SourceChannelLanguage;
 export type SourceRiskFilter = 'all' | SourceRiskLevel;
 export type SourceVideoDurationFilter = 'all' | 'under_8m' | '8m_30m' | '30m_60m' | 'over_60m';
 
 export interface CreateSourceChannelPayload {
   url: string;
   purpose: SourcePurpose;
+  language: SourceChannelLanguage;
   niche?: string;
 }
 
@@ -100,5 +104,13 @@ export interface UpdateSourceChannelPayload {
 export interface AddSourceChannelFormValues {
   url: string;
   purpose: SourcePurpose | '';
+  language: SourceChannelLanguage;
   niche: string;
 }
+
+export const SOURCE_CHANNEL_LANGUAGE_LABELS: Record<SourceChannelLanguage, string> = {
+  en: 'Tiếng Anh',
+  ko: 'Tiếng Hàn',
+  ja: 'Tiếng Nhật',
+  es: 'Tiếng Tây Ban Nha',
+};

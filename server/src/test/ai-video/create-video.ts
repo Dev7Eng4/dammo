@@ -15,9 +15,22 @@ const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 const AUDIO_FILE = 'audio.mp3';
 const SUBTITLE_FILE = 'transcript.srt';
+const STOCK_FILE = 'stock.mp4';
 
 const DEFAULT_LANGUAGE = 'ja';
-const DEFAULT_CAPTION_STYLE: CaptionStyleKey = 'yellow';
+const DEFAULT_CAPTION_STYLE: CaptionStyleKey = 'bizudp_gothic_red_white';
+
+export interface AiVideoTestProps {
+  /** Overlay `stock.mp4` as the AI small-video PiP (top-left 100×130). Default: true. */
+  stock?: boolean;
+}
+
+function parseCliProps(argv: string[]): AiVideoTestProps {
+  if (argv.includes('--no-stock') || argv.includes('--stock=false')) {
+    return { stock: false };
+  }
+  return { stock: true };
+}
 
 async function assertFileExists(filePath: string, label: string): Promise<void> {
   try {
@@ -59,23 +72,26 @@ async function loadScenes(workDir: string): Promise<AiVideoScenePrompt[]> {
   }
 
   for (const scene of scenes) {
-    const imagePath = path.isAbsolute(scene.path!)
-      ? scene.path!
-      : path.join(workDir, scene.path!);
+    const imagePath = path.isAbsolute(scene.path!) ? scene.path! : path.join(workDir, scene.path!);
     await assertFileExists(imagePath, `scene image (${scene.path})`);
   }
 
   return scenes;
 }
 
-async function main(): Promise<void> {
+export async function runAiVideoTest(props: AiVideoTestProps = {}): Promise<string> {
+  const useStock = props.stock !== false;
   const workDir = TEST_DIR;
   const audioPath = path.join(workDir, AUDIO_FILE);
   const subtitlePath = path.join(workDir, SUBTITLE_FILE);
+  const stockPath = path.join(workDir, STOCK_FILE);
   const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
 
   await assertFileExists(audioPath, 'audio');
   await assertFileExists(subtitlePath, 'subtitle');
+  if (useStock) {
+    await assertFileExists(stockPath, 'stock video');
+  }
 
   const loadStartedAt = performance.now();
   const scenes = await loadScenes(workDir);
@@ -88,6 +104,7 @@ async function main(): Promise<void> {
   console.log(`Scenes: ${scenes.length}`);
   console.log(`Language: ${DEFAULT_LANGUAGE}`);
   console.log(`Caption style: ${DEFAULT_CAPTION_STYLE}`);
+  console.log(`Stock PiP: ${useStock ? stockPath : 'off'}`);
   console.log(`Output: ${outputPath}`);
   console.log('\nAssembling AI slideshow...\n');
 
@@ -100,17 +117,24 @@ async function main(): Promise<void> {
     language: DEFAULT_LANGUAGE,
     captionStyleKey: DEFAULT_CAPTION_STYLE,
     showDisclaim: true,
+    ...(useStock
+      ? {
+          showSmallVideo: true,
+          smallVideoPath: stockPath,
+        }
+      : {}),
     onLog: msg => console.log(msg),
   });
   const assembleElapsed = formatElapsedMs(performance.now() - assembleStartedAt);
 
   console.log(`\nDone → ${resultPath} (assemble ${assembleElapsed})`);
+  return resultPath;
 }
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isDirectRun) {
-  main().catch(err => {
+  runAiVideoTest(parseCliProps(process.argv.slice(2))).catch(err => {
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);
   });

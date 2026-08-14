@@ -20,7 +20,6 @@ import { Button, Input, Modal, useToast } from '../components/ui';
 import { useAbortableEffect, usePaginatedList } from '../hooks';
 import type { Proxy, ProxyFilter, ProxyStats, ProxyTab } from '../types/proxy';
 
-const LIMIT = 20;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EXPIRY_WARNING_DAYS = 5;
 const EXPIRY_MODAL_MAX_ITEMS = 10;
@@ -92,11 +91,12 @@ export function ProxiesPage() {
 
   const [showExpiryWarning, setShowExpiryWarning] = useState(false);
   const [expiringProxies, setExpiringProxies] = useState<ExpiringProxyItem[]>([]);
+  const [limit, setLimit] = useState(20);
 
   const list = usePaginatedList({
-    fetcher: ({ filter: currentFilter, page, limit, signal }) => fetchProxies(currentFilter, '', page, limit, { signal }),
+    fetcher: ({ filter: currentFilter, page, limit: pageLimit, signal }) => fetchProxies(currentFilter, '', page, pageLimit, { signal }),
     query: { filter },
-    limit: LIMIT,
+    limit,
     refreshKey: listRefreshKey,
     onFetched: () => setSelectedIds(new Set()),
   });
@@ -187,6 +187,13 @@ export function ProxiesPage() {
   function handlePageChange(nextPage: number) {
     list.markLoading();
     list.setPage(nextPage);
+    clearSelection();
+  }
+
+  function handleLimitChange(nextLimit: number) {
+    list.markLoading();
+    setLimit(nextLimit);
+    list.setPage(1);
     clearSelection();
   }
 
@@ -388,6 +395,7 @@ export function ProxiesPage() {
                   selectedId={selectedId}
                   selectedIds={selectedIds}
                   loading={list.loading}
+                  rowNumberStart={(list.page - 1) * list.limit + 1}
                   pingingIds={pingingIds}
                   onSelect={handleSelect}
                   onToggleRow={handleToggleRow}
@@ -401,6 +409,8 @@ export function ProxiesPage() {
                   total={list.total}
                   totalPages={list.totalPages}
                   onPageChange={handlePageChange}
+                  onLimitChange={handleLimitChange}
+                  locale="vi"
                 />
               </div>
             </>

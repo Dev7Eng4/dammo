@@ -1,10 +1,15 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { fetchNiches } from '../../api/niches';
-import { SOURCE_PURPOSE_OPTIONS } from './PurposePill';
+import { SOURCE_PURPOSE_SELECT_OPTIONS } from './PurposePill';
 import { Button, Modal, Select } from '../ui';
 import type { Niche } from '../../types/niche';
-import type { AddSourceChannelFormValues, CreateSourceChannelPayload } from '../../types/sourceChannel';
+import type {
+  AddSourceChannelFormValues,
+  CreateSourceChannelPayload,
+  SourceChannelLanguage,
+} from '../../types/sourceChannel';
+import { SOURCE_CHANNEL_LANGUAGE_LABELS } from '../../types/sourceChannel';
 
 interface AddSourceChannelModalProps {
   open: boolean;
@@ -12,9 +17,14 @@ interface AddSourceChannelModalProps {
   onAdd: (payloads: CreateSourceChannelPayload[]) => void;
 }
 
+const languageOptions = (
+  Object.entries(SOURCE_CHANNEL_LANGUAGE_LABELS) as [SourceChannelLanguage, string][]
+).map(([value, label]) => ({ value, label }));
+
 const defaultValues: AddSourceChannelFormValues = {
   url: '',
-  purpose: '',
+  purpose: 'reup',
+  language: 'ja',
   niche: '',
 };
 
@@ -74,6 +84,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     const payloads: CreateSourceChannelPayload[] = urls.map((url) => ({
       url,
       purpose: values.purpose as CreateSourceChannelPayload['purpose'],
+      language: values.language,
       ...(niche ? { niche } : {}),
     }));
 
@@ -130,7 +141,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
             render={({ field }) => (
               <Select
                 id="source-purpose"
-                options={SOURCE_PURPOSE_OPTIONS}
+                options={SOURCE_PURPOSE_SELECT_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
@@ -141,6 +152,30 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
             )}
           />
           {errors.purpose ? <p className="mt-1 text-xs text-danger">{errors.purpose.message}</p> : null}
+        </div>
+
+        <div>
+          <label htmlFor="source-language" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            Ngôn ngữ
+          </label>
+          <Controller
+            name="language"
+            control={control}
+            rules={{ required: 'Ngôn ngữ là bắt buộc' }}
+            render={({ field }) => (
+              <Select
+                id="source-language"
+                options={languageOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Chọn ngôn ngữ"
+                className="w-full"
+                triggerClassName="h-10 w-full min-w-0 rounded-lg px-3 py-0"
+              />
+            )}
+          />
+          {errors.language ? <p className="mt-1 text-xs text-danger">{errors.language.message}</p> : null}
         </div>
 
         <div>

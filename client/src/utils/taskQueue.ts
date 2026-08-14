@@ -3,27 +3,33 @@ import type { TaskJobListItem, TaskType } from '../types/taskQueue';
 export function getTaskTypeLabel(type: TaskType): string {
   switch (type) {
     case 'add_source':
-      return 'SOURCE IMPORT';
+      return 'NHẬP NGUỒN';
     case 'create_video':
-      return 'REUP VIDEO';
+      return 'TẠO VIDEO';
     case 'upload_video':
-      return 'YOUTUBE UPLOAD';
+      return 'UPLOAD YOUTUBE';
     case 'download_source':
-      return 'SOURCE DOWNLOAD';
+      return 'TẢI NGUỒN';
   }
 }
 
 export function getTaskDetailLine(job: TaskJobListItem): string {
-  if (job.status === 'failed' && job.error) return job.error;
+  if (job.status === 'failed') {
+    const failedStage = job.stages?.find((stage) => stage.status === 'failed');
+    if (failedStage?.error) return `${failedStage.label}: ${failedStage.error}`;
+    if (job.error) return job.error;
+  }
   if (job.status === 'completed') {
     const outputPath = getTaskOutputPath(job);
     if (outputPath) return outputPath;
     const sourceId = getTaskSourceId(job);
-    if (sourceId) return `Source saved · ${sourceId}`;
-    return job.progressLabel ?? 'Completed';
+    if (sourceId) return `Đã lưu nguồn · ${sourceId}`;
+    return job.progressLabel ?? 'Hoàn thành';
   }
-  if (job.status === 'queued') return 'Pending worker availability';
-  return job.progressLabel ?? 'Processing';
+  if (job.status === 'queued') return 'Đang chờ worker';
+  const doing = job.stages?.find((stage) => stage.status === 'doing');
+  if (doing) return `${doing.label} — đang làm`;
+  return job.progressLabel ?? 'Đang xử lý';
 }
 
 export function getTaskOutputPath(job: TaskJobListItem): string | null {

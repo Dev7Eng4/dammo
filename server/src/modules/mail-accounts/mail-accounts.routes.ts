@@ -5,6 +5,7 @@ import {
   createMailAccountSchema,
   exportMailAccountsQuerySchema,
   listMailAccountsQuerySchema,
+  updateMailAccountSchema,
 } from './mail-accounts.schema.js';
 import { buildExportFilename, buildMailAccountsExcel } from './mail-accounts.exporter.js';
 import { mailAccountsService } from './mail-accounts.service.js';
@@ -38,6 +39,17 @@ export function createMailAccountsRoutes() {
     const body = c.req.valid('json');
     const item = mailAccountsService.create(body);
     return c.json({ item }, 201);
+  });
+
+  app.patch('/:id', zValidator('json', updateMailAccountSchema), (c) => {
+    const body = c.req.valid('json');
+    const item = mailAccountsService.update(c.req.param('id'), body);
+    return c.json({ item });
+  });
+
+  app.delete('/:id', (c) => {
+    mailAccountsService.delete(c.req.param('id'));
+    return c.body(null, 204);
   });
 
   app.onError((err, c) => {

@@ -144,7 +144,6 @@ export function ChromeProfilesPage() {
               onOpenProfile={handleOpenProfile}
               onSetMainProfile={handleSetMainProfile}
               onResetSubProfiles={handleResetSubProfiles}
-              onRefresh={handleRefresh}
             />
           </div>
 

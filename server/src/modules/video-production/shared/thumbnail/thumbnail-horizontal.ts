@@ -8,9 +8,9 @@ import type { ChannelLanguage } from '../../../youtube-channels/channel-language
 import type { MetaLlmSession } from '../meta/meta-session.js';
 import type { MetaStep3Output } from '../meta/metadata.types.js';
 import {
-  tryParseThumbnailHorizontalStep1Response,
-  tryParseThumbnailHorizontalStep2Response,
-  tryParseThumbnailHorizontalStep3Response,
+  parseThumbnailHorizontalStep1Response,
+  parseThumbnailHorizontalStep2Response,
+  parseThumbnailHorizontalStep3Response,
 } from './thumbnail-response.js';
 import type {
   RunThumbnailHorizontalOptions,
@@ -19,6 +19,7 @@ import type {
   ThumbnailHorizontalStep,
   ThumbnailHorizontalStep3Output,
 } from './thumbnail.types.js';
+import { formatParseFailureReason, type LlmParseResult } from '../meta/llm-parse-result.js';
 
 const MAX_RETRIES = 3;
 
@@ -49,10 +50,11 @@ async function runStepWithRetry<T>(
   styleBaseKey: string,
   step: ThumbnailHorizontalStep,
   buildPrompt: () => Promise<string>,
-  parse: (response: Awaited<ReturnType<typeof llmBrowserService.chat>>) => T | null,
+  parse: (response: Awaited<ReturnType<typeof llmBrowserService.chat>>) => LlmParseResult<T>,
   options?: RunThumbnailHorizontalOptions,
 ): Promise<T> {
   let lastReason = 'unknown error';
+  let lastDetails: Record<string, unknown> | undefined;
   const stepKey = resolveHorizontalStepKey(language, styleBaseKey, step);
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
@@ -76,20 +78,36 @@ async function runStepWithRetry<T>(
       });
 
       const parsed = parse(response);
-      if (parsed) {
+      if (parsed.ok) {
         console.log(`[thumbnail-horizontal] step ${step} done (${stepKey})`);
-        return parsed;
+        return parsed.value;
       }
 
-      lastReason = 'invalid JSON or schema mismatch';
+      lastReason = formatParseFailureReason(parsed);
+      lastDetails = {
+        step,
+        attempt,
+        reason: parsed.reason,
+        ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
+        ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
+      };
       logValidationFailure(step, attempt, lastReason);
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';
+      lastDetails =
+        err instanceof AppError && err.details
+          ? { step, attempt, ...err.details }
+          : { step, attempt, reason: lastReason };
       logValidationFailure(step, attempt, lastReason);
     }
   }
 
-  throw new AppError(`Thumbnail horizontal step ${step} failed after ${MAX_RETRIES} attempts: ${lastReason}`, 502, 'THUMBNAIL_HORIZONTAL_FAILED');
+  throw new AppError(
+    `Thumbnail horizontal step ${step} failed after ${MAX_RETRIES} attempts: ${lastReason}`,
+    502,
+    'THUMBNAIL_HORIZONTAL_FAILED',
+    lastDetails ?? { step, reason: lastReason },
+  );
 }
 
 function buildThumbnailPlan(step3: ThumbnailHorizontalStep3Output): ThumbnailHorizontalPlan {
@@ -125,7 +143,7 @@ export async function executeThumbnailHorizontal(
     styleBaseKey,
     1,
     () => executePromptTemplate(language, resolveHorizontalStepKey(language, styleBaseKey, 1), [title, summary]),
-    tryParseThumbnailHorizontalStep1Response,
+    parseThumbnailHorizontalStep1Response,
     options,
   );
 
@@ -137,7 +155,7 @@ export async function executeThumbnailHorizontal(
     styleBaseKey,
     2,
     () => executePromptTemplate(language, resolveHorizontalStepKey(language, styleBaseKey, 2), [step1Json]),
-    tryParseThumbnailHorizontalStep2Response,
+    parseThumbnailHorizontalStep2Response,
     options,
   );
 
@@ -150,7 +168,7 @@ export async function executeThumbnailHorizontal(
     3,
     () =>
       executePromptTemplate(language, resolveHorizontalStepKey(language, styleBaseKey, 3), [step1Json, step2Json]),
-    tryParseThumbnailHorizontalStep3Response,
+    parseThumbnailHorizontalStep3Response,
     options,
   );
 

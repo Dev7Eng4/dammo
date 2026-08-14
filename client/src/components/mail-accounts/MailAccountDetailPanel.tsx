@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Input, Textarea } from '../ui';
 import { PlatformLinkCell } from './PlatformLinkCell';
-import type { MailAccount } from '../../types/mailAccount';
+import type { MailAccount, PlatformLinkStatus } from '../../types/mailAccount';
 
 interface MailAccountDetailPanelProps {
   account: MailAccount | null;
@@ -52,11 +52,11 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PlatformRow({ label, linked }: { label: string; linked: boolean }) {
+function PlatformRow({ label, status }: { label: string; status: PlatformLinkStatus }) {
   return (
     <div className="flex items-center justify-between text-sm">
       <span className="text-neutral-400">{label}</span>
-      <PlatformLinkCell linked={linked} />
+      <PlatformLinkCell status={status} />
     </div>
   );
 }
@@ -157,9 +157,9 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           <div>
             <FieldLabel>Nền tảng</FieldLabel>
             <div className="space-y-2 rounded-lg border border-border bg-surface-elevated/50 p-3">
-              <PlatformRow label="Youtube" linked={account.platformLinks.youtube} />
-              <PlatformRow label="TikTok" linked={account.platformLinks.tiktok} />
-              <PlatformRow label="Facebook" linked={account.platformLinks.facebook} />
+              <PlatformRow label="Youtube" status={account.platformLinks.youtube} />
+              <PlatformRow label="TikTok" status={account.platformLinks.tiktok} />
+              <PlatformRow label="Facebook" status={account.platformLinks.facebook} />
             </div>
           </div>
 

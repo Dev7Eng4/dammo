@@ -6,6 +6,7 @@ interface SourceChannelVideosTableProps {
   videos: SourceChannelVideo[];
   loading?: boolean;
   error?: string | null;
+  rowNumberStart?: number;
   selectedIds: Set<string>;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
@@ -37,6 +38,7 @@ export function SourceChannelVideosTable({
   videos,
   loading,
   error,
+  rowNumberStart,
   selectedIds,
   onToggleRow,
   onToggleAll,
@@ -91,6 +93,7 @@ export function SourceChannelVideosTable({
       getRowId={video => video.id}
       loading={loading}
       error={error}
+      rowNumberStart={rowNumberStart}
       enableRowSelection
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}

@@ -63,3 +63,21 @@ https://www.youtube.com/@NamidaShohosen 7327mm
 
 - xử lý stock background -> với kênh nguồn có video dài nên download trước -> có option sử dụng download local hay download mạng, download video 10h -> 13p
 - 2 slow -> 1p ; 1.3 slow -> 4p13s ; 1.5 slow -> 2m27s
+
+2026-05-07T15:00:30-07:00
+2026-05-08T03:00:09-07:00
+2026-05-08T01:00:28-07:00
+2026-05-07T23:00:04-07:00
+2026-05-08T04:01:19-07:00
+2026-05-08T23:00:17-07:00
+2026-05-08T15:00:51-07:00
+2026-05-08T04:01:19-07:00
+
+video ai ->
+thêm stock ở trên nhỏ (như si)
+xem xét ảnh phía sau chỉ cần đứng yên không cần effect
+
+xem xets video dạng lời dạy người nổi tiếng
+video stock ở dưới + hình nhân vật sẽ ở bên phải to + transcrip ở bên trái
+
+dạng video dài hơn 1 tiếng ở phần tạo metadata nên có 1 bước tóm tắt nội dung từ transcript rồi mới tạo -> vì tạo luôn ko hiểu hết nội dung

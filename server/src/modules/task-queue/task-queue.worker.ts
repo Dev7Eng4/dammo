@@ -1,24 +1,54 @@
 import { env } from '../../config/env.js';
-import { AppError } from '../../shared/http/errors.js';
 import { sourceChannelsService } from '../source-channels/source-channels.service.js';
 import type { SourcePurpose } from '../source-channels/source-channels.types.js';
+import type { ChannelLanguage } from '../youtube-channels/channel-language.js';
 import { sourceDownloadService } from '../source-channels/source-download.service.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import { videoProductionService } from '../video-production/video-production.service.js';
 import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.js';
 import { taskQueueRepository } from './task-queue.repository.js';
-import type { AddSourceTaskPayload, CreateVideoTaskPayload, DownloadSourceTaskPayload, TaskJob, UploadVideoTaskPayload } from './task-queue.types.js';
+import { errorMessageFromUnknown, toTaskErrorDetails } from './task-stage.js';
+import type {
+  AddSourceTaskPayload,
+  CreateVideoTaskPayload,
+  DownloadSourceTaskPayload,
+  TaskErrorDetails,
+  TaskJob,
+  UploadVideoTaskPayload,
+} from './task-queue.types.js';
 
 let activeCount = 0;
 let filling = false;
 let workerInterval: ReturnType<typeof setInterval> | null = null;
 
-function updateProgress(
-  id: string,
-  progress: number,
-  progressLabel: string,
-): void {
+const INTERRUPTED_MESSAGE = 'Bị gián đoạn — server dừng khi công việc đang chạy';
+const INTERRUPTED_DETAILS: TaskErrorDetails = {
+  code: 'TASK_INTERRUPTED',
+  reason: INTERRUPTED_MESSAGE,
+};
+
+function updateProgress(id: string, progress: number, progressLabel: string): void {
   taskQueueRepository.setStatus(id, 'running', { progress, progressLabel });
+}
+
+/** Mark any persisted `running` jobs as failed (orphans after crash / Ctrl+C). */
+export function reclaimOrphanRunningJobs(): number {
+  const running = taskQueueRepository.listAll(200).filter(job => job.status === 'running');
+  if (running.length === 0) return 0;
+
+  for (const job of running) {
+    taskQueueRepository.failActiveStage(job.id, INTERRUPTED_MESSAGE, INTERRUPTED_DETAILS);
+    const latest = taskQueueRepository.findById(job.id);
+    taskQueueRepository.setStatus(job.id, 'failed', {
+      error: latest?.error ?? INTERRUPTED_MESSAGE,
+      errorDetails: latest?.errorDetails ?? INTERRUPTED_DETAILS,
+      ...(latest?.stages ? { stages: latest.stages } : {}),
+    });
+    taskQueueRepository.appendLogMessage(job.id, 'err', INTERRUPTED_MESSAGE);
+  }
+
+  console.warn(`[task-queue] Reclaimed ${running.length} orphan running job(s) as failed (TASK_INTERRUPTED)`);
+  return running.length;
 }
 
 async function processAddSource(job: TaskJob): Promise<unknown> {
@@ -27,6 +57,7 @@ async function processAddSource(job: TaskJob): Promise<unknown> {
   const item = await sourceChannelsService.create({
     url: payload.url,
     purpose: payload.purpose as SourcePurpose,
+    language: payload.language as ChannelLanguage,
     ...(payload.niche ? { niche: payload.niche } : {}),
   });
   updateProgress(job.id, 80, 'Saving videos');
@@ -43,34 +74,34 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
   const prepareOnly = payload.prepareOnly === true;
 
   if (payload.allReupChannels) {
-    updateProgress(job.id, 15, prepareOnly ? 'Preparing all reup channels' : 'Processing all reup channels');
+    updateProgress(job.id, 5, prepareOnly ? 'Đang chuẩn bị tất cả kênh reup' : 'Đang tạo video');
     const result = prepareOnly
       ? await videoProductionService.prepareVideosForAllReupChannels(options)
       : await videoProductionService.createVideosForAllReupChannels(options);
-    updateProgress(job.id, 90, 'Finishing');
+    updateProgress(job.id, 100, 'Hoàn thành');
     return result;
   }
 
   if (payload.channelIds?.length) {
     updateProgress(
       job.id,
-      15,
+      5,
       prepareOnly
-        ? `Preparing ${payload.channelIds.length} channel(s)`
-        : `Processing ${payload.channelIds.length} channel(s)`,
+        ? `Đang chuẩn bị ${payload.channelIds.length} kênh`
+        : `Đang tạo video (${payload.channelIds.length} kênh)`,
     );
     const result = prepareOnly
       ? await videoProductionService.prepareVideosForChannels(payload.channelIds, options)
       : await videoProductionService.createVideosForChannels(payload.channelIds, options);
-    updateProgress(job.id, 90, 'Finishing');
+    updateProgress(job.id, 100, 'Hoàn thành');
     return result;
   }
 
-  updateProgress(job.id, 15, prepareOnly ? 'Preparing assets' : 'Downloading assets');
+  updateProgress(job.id, 5, prepareOnly ? 'Đang chuẩn bị video' : 'Đang tạo video');
   const result = prepareOnly
     ? await videoProductionService.prepareVideosForYoutubeChannel(payload.channelId!, options)
     : await videoProductionService.createVideosForYoutubeChannel(payload.channelId!, options);
-  updateProgress(job.id, 90, 'Finishing');
+  updateProgress(job.id, 100, 'Hoàn thành');
   return result;
 }
 
@@ -139,7 +170,7 @@ async function processDownloadSource(job: TaskJob): Promise<unknown> {
 async function processJob(job: TaskJob): Promise<void> {
   taskQueueRepository.setStatus(job.id, 'running', {
     progress: 5,
-    progressLabel: 'Starting',
+    progressLabel: 'Đang bắt đầu',
   });
 
   try {
@@ -154,17 +185,25 @@ async function processJob(job: TaskJob): Promise<void> {
 
     taskQueueRepository.setStatus(job.id, 'completed', {
       progress: 100,
-      progressLabel: 'Done',
+      progressLabel: 'Hoàn thành',
       result,
     });
   } catch (err) {
-    const message =
-      err instanceof AppError
-        ? err.message
-        : err instanceof Error
-          ? err.message
-          : 'Task failed';
-    taskQueueRepository.setStatus(job.id, 'failed', { error: message });
+    const message = errorMessageFromUnknown(err);
+    const errorDetails = toTaskErrorDetails(err);
+    const existing = taskQueueRepository.findById(job.id);
+    const alreadyFailedStage = existing?.stages?.some(s => s.status === 'failed');
+    if (!alreadyFailedStage) {
+      taskQueueRepository.failActiveStage(job.id, message, errorDetails);
+    }
+    const latest = taskQueueRepository.findById(job.id);
+    taskQueueRepository.setStatus(job.id, 'failed', {
+      error: latest?.error ?? message,
+      ...(latest?.errorDetails || errorDetails
+        ? { errorDetails: latest?.errorDetails ?? errorDetails }
+        : {}),
+      ...(latest?.stages ? { stages: latest.stages } : {}),
+    });
   }
 }
 
@@ -191,6 +230,8 @@ function fillSlots(): void {
 
 export function startTaskQueueWorker(pollMs = 2000): void {
   if (workerInterval) return;
+
+  reclaimOrphanRunningJobs();
 
   workerInterval = setInterval(() => {
     try {

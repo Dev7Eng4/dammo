@@ -8,6 +8,7 @@ interface ProxiesTableProps {
   selectedId: string | null;
   selectedIds: Set<string>;
   loading?: boolean;
+  rowNumberStart?: number;
   pingingIds: Set<string>;
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
@@ -33,6 +34,7 @@ export function ProxiesTable({
   selectedId,
   selectedIds,
   loading,
+  rowNumberStart,
   pingingIds,
   onSelect,
   onToggleRow,
@@ -133,6 +135,7 @@ export function ProxiesTable({
       columns={columns}
       getRowId={proxy => proxy.id}
       loading={loading}
+      rowNumberStart={rowNumberStart}
       enableRowSelection
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}

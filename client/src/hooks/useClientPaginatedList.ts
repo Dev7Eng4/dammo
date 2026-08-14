@@ -30,6 +30,10 @@ export function useClientPaginatedList<TItem>(
   }, [resetKey]);
 
   useEffect(() => {
+    setPage(1);
+  }, [limit]);
+
+  useEffect(() => {
     if (page > totalPages) {
       setPage(totalPages);
     }

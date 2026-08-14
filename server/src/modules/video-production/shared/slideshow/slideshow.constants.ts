@@ -1,4 +1,5 @@
 import { env } from '../../../../config/env.js';
+import { isHardwareEncoder, resolveFfmpegHwEncoder } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 
 /**
  * Slideshow effect library constants.
@@ -25,6 +26,11 @@ export const SS_CLIP_RENDER_CONCURRENCY = 4;
 
 const SS_CLIP_RENDER_CONCURRENCY_MIN = 1;
 const SS_CLIP_RENDER_CONCURRENCY_MAX = 8;
+/**
+ * Consumer GPUs allow only a few simultaneous encode sessions; AMF in particular
+ * can deadlock (writes output, never exits) when many run at once.
+ */
+const SS_CLIP_RENDER_CONCURRENCY_HW_MAX = 3;
 
 /** Encoder settings for intermediate per-slide clips (kept high quality). */
 export const SS_CLIP_CRF = 18;
@@ -44,9 +50,9 @@ export const SS_CACHE_DIRNAME = '.slideshow-cache';
 
 export function resolveSlideshowClipConcurrency(): number {
   const raw = env.slideshowClipConcurrency ?? SS_CLIP_RENDER_CONCURRENCY;
-  if (!Number.isFinite(raw)) return SS_CLIP_RENDER_CONCURRENCY;
-  return Math.min(
-    SS_CLIP_RENDER_CONCURRENCY_MAX,
-    Math.max(SS_CLIP_RENDER_CONCURRENCY_MIN, Math.floor(raw)),
-  );
+  const requested = Number.isFinite(raw) ? Math.floor(raw) : SS_CLIP_RENDER_CONCURRENCY;
+  const max = isHardwareEncoder(resolveFfmpegHwEncoder())
+    ? SS_CLIP_RENDER_CONCURRENCY_HW_MAX
+    : SS_CLIP_RENDER_CONCURRENCY_MAX;
+  return Math.min(max, Math.max(SS_CLIP_RENDER_CONCURRENCY_MIN, requested));
 }

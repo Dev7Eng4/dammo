@@ -15,8 +15,10 @@ const COLUMN_WIDTHS = [
   { wch: 20 },
 ];
 
-function platformLabel(linked: boolean): string {
-  return linked ? 'Active' : '';
+function platformLabel(status: MailAccountView['platformLinks']['youtube']): string {
+  if (status === 'active') return 'Active';
+  if (status === 'deleted') return 'Xóa';
+  return '';
 }
 
 function accountToRow(account: MailAccountView) {

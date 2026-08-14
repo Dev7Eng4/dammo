@@ -1,9 +1,11 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { ensureUuid, isUuid } from '../../shared/id.js';
+import { normalizeChannelLanguage } from '../youtube-channels/channel-language.js';
 import type { SourceChannel, SourceChannelsStore } from './source-channels.types.js';
 
 const EMPTY_STORE: SourceChannelsStore = { sources: [] };
+const DEFAULT_SOURCE_LANGUAGE = 'ja' as const;
 
 function isCurrentSchema(source: Partial<SourceChannel>): source is SourceChannel {
   return (
@@ -11,19 +13,23 @@ function isCurrentSchema(source: Partial<SourceChannel>): source is SourceChanne
     typeof source.fullUrl === 'string' &&
     typeof source.purpose === 'string' &&
     typeof source.riskLevel === 'string' &&
+    typeof source.language === 'string' &&
     Array.isArray(source.mappedOwnedChannels) &&
     Array.isArray(source.activeProjects)
   );
 }
 
 function needsLegacyMigration(raw: SourceChannelsStore): boolean {
-  return raw.sources.some((s) => !isUuid(s.id)) || !raw.sources.every(isCurrentSchema);
+  return raw.sources.some((s) => !isUuid(s.id) || !s.language) || !raw.sources.every(isCurrentSchema);
 }
 
 function migrateStore(raw: SourceChannelsStore): SourceChannelsStore {
   const sources = raw.sources.map((source) => ({
     ...source,
     id: ensureUuid(source.id),
+    language: source.language
+      ? normalizeChannelLanguage(source.language)
+      : DEFAULT_SOURCE_LANGUAGE,
   }));
   const store = { sources };
   writeJson(paths.sourceChannels, store);

@@ -132,7 +132,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     if (job.status !== 'running') return;
     if (startedNotifiedRef.current.has(job.id)) return;
     startedNotifiedRef.current.add(job.id);
-    toastRef.current.success(`Started: ${job.title}`);
+    toastRef.current.success(`Đã bắt đầu: ${job.title}`);
   }, []);
 
   const seedInitialJobs = useCallback((items: TaskJobListItem[]) => {
@@ -161,10 +161,20 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
 
   const applyListItem = useCallback(
     (item: TaskJobListItem) => {
+      const existing = jobDetailsRef.current.get(item.id);
+      if (existing) {
+        jobDetailsRef.current.set(item.id, {
+          ...existing,
+          ...item,
+          logs: existing.logs,
+          result: existing.result,
+        });
+        bumpDetail();
+      }
       setJobs(current => sortJobs(current.map(job => (job.id === item.id ? item : job))));
       if (initialSyncDoneRef.current) notifyJobStarted(item);
     },
-    [notifyJobStarted],
+    [bumpDetail, notifyJobStarted],
   );
 
   const applyFullJob = useCallback(
@@ -525,7 +535,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   const togglePause = useCallback(async () => {
     const result = paused ? await resumeTaskQueue() : await pauseTaskQueue();
     setPaused(result.paused);
-    toast.success(result.paused ? 'Task queue paused' : 'Task queue resumed');
+    toast.success(result.paused ? 'Đã tạm dừng hàng đợi' : 'Đã tiếp tục hàng đợi');
     await refresh();
   }, [paused, refresh, toast]);
 
@@ -534,7 +544,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
       const { removed, ids } = await clearFinishedTasks();
       removeJobsByIds(ids);
       if (removed > 0) {
-        toast.success(`Cleared ${removed} finished job${removed === 1 ? '' : 's'}`);
+        toast.success(`Đã xóa ${removed} công việc đã xong`);
       }
       return removed;
     } catch (err) {

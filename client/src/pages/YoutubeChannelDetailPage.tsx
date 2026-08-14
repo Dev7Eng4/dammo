@@ -17,8 +17,6 @@ import type { YoutubeChannel, YoutubeChannelVideo, YoutubeChannelVideoStatusFilt
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 import { filterYoutubeChannelVideosByStatus } from '../utils/youtubeChannelVideos';
 
-const VIDEO_LIMIT = 20;
-
 function canOpenGpmProfile(linkedEmail: string): boolean {
   const normalized = linkedEmail.trim().toLowerCase();
   return normalized.length > 0 && normalized !== 'default';
@@ -54,6 +52,7 @@ export function YoutubeChannelDetailPage() {
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingError, setPendingError] = useState<string | null>(null);
   const [pendingResetKey, setPendingResetKey] = useState(0);
+  const [limit, setLimit] = useState(20);
 
   const isPendingFilter = statusFilter === 'Pending';
 
@@ -63,7 +62,7 @@ export function YoutubeChannelDetailPage() {
   }, [allVideos, statusFilter, isPendingFilter, pendingVideos]);
 
   const videos = useClientPaginatedList(filteredVideos, {
-    limit: VIDEO_LIMIT,
+    limit,
     resetKey: `${isPendingFilter ? pendingResetKey : videoResetKey}:${statusFilter}`,
   });
 
@@ -331,6 +330,7 @@ export function YoutubeChannelDetailPage() {
               loading={tableLoading}
               error={tableError}
               emptyMessage={videosEmptyMessage}
+              rowNumberStart={(videos.page - 1) * videos.limit + 1}
               enableRowSelection
               selectedIds={selectedVideoIds}
               onToggleRow={handleToggleVideoRow}
@@ -344,6 +344,7 @@ export function YoutubeChannelDetailPage() {
               total={videos.total}
               totalPages={videos.totalPages}
               onPageChange={videos.setPage}
+              onLimitChange={setLimit}
               locale='vi'
             />
           </div>

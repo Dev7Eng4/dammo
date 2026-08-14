@@ -28,6 +28,8 @@ function resolveOutputConfig(output?: Partial<SlideshowOutputConfig>): Slideshow
     height: output?.height ?? SS_CANVAS_H,
     fps: output?.fps ?? SS_FPS,
     tempScaleFactor: output?.tempScaleFactor ?? SS_TEMP_SCALE_FACTOR,
+    finalPreset: output?.finalPreset,
+    finalCrf: output?.finalCrf,
   };
 }
 
@@ -79,7 +81,10 @@ export async function assembleSlideshow(spec: SlideshowSpec): Promise<string> {
 
   const chain = buildXfadeChain({ clipCount: clipPaths.length, durations, transitions });
   const pixFmt = resolveOutputPixelFormat();
-  const slideshowEncodeOpts = { preset: SS_FINAL_PRESET, crf: SS_FINAL_CRF };
+  const slideshowEncodeOpts = {
+    preset: cfg.finalPreset ?? SS_FINAL_PRESET,
+    crf: cfg.finalCrf ?? SS_FINAL_CRF,
+  };
 
   const finalFilter =
     `${chain.filter ? `${chain.filter};` : ''}` +

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const sourceChannelLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
+
 export const createSourceChannelSchema = z.object({
   url: z.string().min(1),
   purpose: z.enum([
@@ -10,6 +12,7 @@ export const createSourceChannelSchema = z.object({
     'reup',
     'background_footage',
   ]),
+  language: sourceChannelLanguageSchema,
   niche: z.string().min(1).optional(),
 });
 
@@ -31,6 +34,7 @@ export const listSourceChannelsQuerySchema = z.object({
       'background_footage',
     ])
     .optional(),
+  language: sourceChannelLanguageSchema.optional(),
   risk: z.enum(['low', 'medium', 'high']).optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

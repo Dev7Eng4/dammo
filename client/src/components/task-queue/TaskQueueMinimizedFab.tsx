@@ -27,8 +27,8 @@ export function TaskQueueMinimizedFab({ activeCount, onClick }: TaskQueueMinimiz
       className="fixed bottom-6 right-6 z-50 flex size-12 items-center justify-center rounded-full border border-border bg-surface-elevated text-neutral-100 shadow-lg transition-colors hover:bg-neutral-800"
       aria-label={
         activeCount > 0
-          ? `Open task queue, ${activeCount} active task${activeCount === 1 ? '' : 's'}`
-          : 'Open task queue'
+          ? `Mở hàng đợi công việc, ${activeCount} đang chạy`
+          : 'Mở hàng đợi công việc'
       }
     >
       <TaskQueueStackIcon className="size-5" />

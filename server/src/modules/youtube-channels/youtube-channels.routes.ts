@@ -148,6 +148,11 @@ export function createYoutubeChannelsRoutes() {
     return c.json({ item });
   });
 
+  app.delete('/:id', (c) => {
+    youtubeChannelsService.deleteChannel(c.req.param('id'));
+    return c.body(null, 204);
+  });
+
   app.get('/', zValidator('query', listYoutubeChannelsQuerySchema), (c) => {
     const { type, monetization, q, page, limit } = c.req.valid('query');
     return c.json(youtubeChannelsService.listPaginated(type, monetization, q, page, limit));

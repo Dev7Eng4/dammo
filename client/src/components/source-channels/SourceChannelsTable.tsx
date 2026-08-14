@@ -10,6 +10,7 @@ interface SourceChannelsTableProps {
   sources: SourceChannel[];
   niches?: Niche[];
   loading?: boolean;
+  rowNumberStart?: number;
   selectedIds: Set<string>;
   bumpingRiskId?: string | null;
   savingNotesId?: string | null;
@@ -31,6 +32,7 @@ export function SourceChannelsTable({
   sources,
   niches = [],
   loading,
+  rowNumberStart,
   selectedIds,
   bumpingRiskId: _bumpingRiskId,
   savingNotesId,
@@ -116,6 +118,7 @@ export function SourceChannelsTable({
       columns={columns}
       getRowId={source => source.id}
       loading={loading}
+      rowNumberStart={rowNumberStart}
       enableRowSelection
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}

@@ -4,6 +4,7 @@ import type {
   CreateMailAccountPayload,
   MailAccount,
   MailAccountsResponse,
+  UpdateMailAccountPayload,
 } from '../types/mailAccount';
 
 export function fetchMailAccounts(
@@ -35,6 +36,26 @@ export function createMailAccount(payload: CreateMailAccountPayload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+}
+
+export function updateMailAccount(id: string, payload: UpdateMailAccountPayload) {
+  return fetchJson<{ item: MailAccount }>(`${API_V1}/mail-accounts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteMailAccount(id: string) {
+  const res = await fetch(`${API_V1}/mail-accounts/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const error =
+      body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
+        ? (body as { error: string }).error
+        : `Request failed: ${res.status}`;
+    throw new Error(error);
+  }
 }
 
 export async function exportMailAccountsExcel(

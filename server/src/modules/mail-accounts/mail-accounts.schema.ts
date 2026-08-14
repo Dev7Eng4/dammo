@@ -8,6 +8,8 @@ export const createMailAccountSchema = z.object({
   phone: z.string().optional(),
 });
 
+export const updateMailAccountSchema = createMailAccountSchema;
+
 export const listMailAccountsQuerySchema = z.object({
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

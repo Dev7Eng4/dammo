@@ -8,6 +8,7 @@ import type {
   MailAccount,
   MailAccountView,
   PlatformLinks,
+  UpdateMailAccountInput,
 } from './mail-accounts.types.js';
 
 function normalizeOptionalString(value: string | undefined): string | undefined {
@@ -15,24 +16,30 @@ function normalizeOptionalString(value: string | undefined): string | undefined 
   return trimmed ? trimmed : undefined;
 }
 
-function getPlatformLinks(email: string): PlatformLinks {
-  const normalized = email.toLowerCase();
-  const youtube = youtubeChannelsRepository.findAll().some((channel) => {
+function getPlatformLinks(account: MailAccount): PlatformLinks {
+  const normalized = account.email.toLowerCase();
+  const hasLiveYoutubeChannel = youtubeChannelsRepository.findAll().some((channel) => {
     const linked = channel.linkedEmail?.trim().toLowerCase();
     return linked && linked !== 'default' && linked === normalized;
   });
 
+  const youtube: PlatformLinks['youtube'] = hasLiveYoutubeChannel
+    ? 'active'
+    : account.youtubeDeletedAt
+      ? 'deleted'
+      : 'none';
+
   return {
     youtube,
-    tiktok: false,
-    facebook: false,
+    tiktok: 'none',
+    facebook: 'none',
   };
 }
 
 function toMailAccountView(account: MailAccount): MailAccountView {
   return {
     ...account,
-    platformLinks: getPlatformLinks(account.email),
+    platformLinks: getPlatformLinks(account),
   };
 }
 
@@ -103,6 +110,67 @@ export class MailAccountsService {
 
     const created = mailAccountsRepository.prepend(account);
     return toMailAccountView(created);
+  }
+
+  update(id: string, input: UpdateMailAccountInput): MailAccountView {
+    const current = mailAccountsRepository.findById(id);
+    if (!current) {
+      throw new AppError('Account not found', 404, 'NOT_FOUND');
+    }
+
+    const email = input.email.trim().toLowerCase();
+    const recoveryEmail = (input.recoveryEmail ?? '').trim();
+
+    if (!email) {
+      throw new AppError('Email is required');
+    }
+
+    const duplicate = mailAccountsRepository
+      .findAll()
+      .some((a) => a.id !== id && a.email.toLowerCase() === email);
+    if (duplicate) {
+      throw new AppError('Email already exists', 400, 'DUPLICATE_EMAIL');
+    }
+
+    const updated = mailAccountsRepository.update(id, (account) => ({
+      ...account,
+      email,
+      password: normalizeOptionalString(input.password),
+      twoFactorAuth: normalizeOptionalString(input.twoFactorAuth),
+      recoveryEmail,
+      phone: normalizeOptionalString(input.phone),
+    }));
+
+    if (!updated) {
+      throw new AppError('Account not found', 404, 'NOT_FOUND');
+    }
+
+    return toMailAccountView(updated);
+  }
+
+  delete(id: string): void {
+    const removed = mailAccountsRepository.remove(id);
+    if (!removed) {
+      throw new AppError('Account not found', 404, 'NOT_FOUND');
+    }
+  }
+
+  markYoutubeDeleted(email: string): void {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized || normalized === 'default') return;
+
+    const account = mailAccountsRepository.findByEmail(normalized);
+    if (!account || account.youtubeDeletedAt) return;
+
+    mailAccountsRepository.update(account.id, (current) => ({
+      ...current,
+      youtubeDeletedAt: new Date().toISOString(),
+    }));
+  }
+
+  isYoutubeDeleted(email: string): boolean {
+    const account = mailAccountsRepository.findByEmail(email);
+    return Boolean(account?.youtubeDeletedAt);
   }
 }
 

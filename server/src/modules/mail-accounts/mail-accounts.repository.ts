@@ -30,6 +30,7 @@ function normalizeAccount(account: LegacyMailAccount): MailAccount {
     recoveryEmail: account.recoveryEmail ?? '',
     phone: account.phone ?? recoveryPhone,
     notes: account.notes ?? '',
+    youtubeDeletedAt: account.youtubeDeletedAt,
   };
 }
 
@@ -82,6 +83,11 @@ export class MailAccountsRepository {
     return loadStore().accounts.find((a) => a.id === id) ?? null;
   }
 
+  findByEmail(email: string): MailAccount | null {
+    const normalized = email.trim().toLowerCase();
+    return loadStore().accounts.find((a) => a.email.toLowerCase() === normalized) ?? null;
+  }
+
   saveStore(updater: (store: MailAccountsStore) => MailAccountsStore): MailAccountsStore {
     return updateJson(paths.mailAccounts, updater, loadStore());
   }
@@ -91,6 +97,38 @@ export class MailAccountsRepository {
       accounts: [account, ...store.accounts],
     }));
     return account;
+  }
+
+  update(id: string, updater: (account: MailAccount) => MailAccount): MailAccount | null {
+    let updated: MailAccount | null = null;
+
+    this.saveStore((store) => {
+      const index = store.accounts.findIndex((a) => a.id === id);
+      if (index === -1) return store;
+
+      updated = updater(store.accounts[index]);
+      const accounts = [...store.accounts];
+      accounts[index] = updated;
+      return { accounts };
+    });
+
+    return updated;
+  }
+
+  remove(id: string): boolean {
+    let removed = false;
+
+    this.saveStore((store) => {
+      const index = store.accounts.findIndex((a) => a.id === id);
+      if (index === -1) return store;
+
+      removed = true;
+      const accounts = [...store.accounts];
+      accounts.splice(index, 1);
+      return { accounts };
+    });
+
+    return removed;
   }
 }
 

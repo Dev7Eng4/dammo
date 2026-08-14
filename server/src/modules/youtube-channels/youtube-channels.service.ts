@@ -12,6 +12,7 @@ import { fetchYoutubeVideoComments } from '../../infrastructure/youtube/youtube-
 import type { YoutubeVideoComment } from '../../infrastructure/youtube/youtube-comment.types.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
+import { mailAccountsService } from '../mail-accounts/mail-accounts.service.js';
 import { nichesService } from '../niches/niches.service.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
@@ -33,7 +34,7 @@ import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/
 import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
-import { resolveYoutubeChannelVideoDir, youtubeChannelUploadsDir } from '../../config/paths.js';
+import { resolveYoutubeChannelVideoDir, youtubeChannelDir, youtubeChannelUploadsDir } from '../../config/paths.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
@@ -300,18 +301,6 @@ function validateChannelConfig(input: ChannelConfigInput): {
         showAudioBar = input.showAudioBar === true;
       }
 
-      const selectedSmallVideo = input.smallVideoFile?.trim();
-      if (selectedSmallVideo === SI_OVERLAY_AUTO_SENTINEL) {
-        smallVideoFile = SI_OVERLAY_AUTO_SENTINEL;
-        showSmallVideo = true;
-      } else if (selectedSmallVideo) {
-        assetsService.getAsset('smallVideo', selectedSmallVideo);
-        smallVideoFile = selectedSmallVideo;
-        showSmallVideo = true;
-      } else {
-        showSmallVideo = input.showSmallVideo === true;
-      }
-
       const selectedSubscribe = input.subscribeFile?.trim();
       if (selectedSubscribe === SI_OVERLAY_AUTO_SENTINEL) {
         subscribeFile = SI_OVERLAY_AUTO_SENTINEL;
@@ -352,6 +341,18 @@ function validateChannelConfig(input: ChannelConfigInput): {
       if (input.reupAudioBackgroundImage === 'multi_image') {
         aiSceneDensityMaxSec = resolveAiSceneDensityMaxSec(input.aiSceneDensityMaxSec);
       }
+    }
+
+    const selectedSmallVideo = input.smallVideoFile?.trim();
+    if (selectedSmallVideo === SI_OVERLAY_AUTO_SENTINEL) {
+      smallVideoFile = SI_OVERLAY_AUTO_SENTINEL;
+      showSmallVideo = true;
+    } else if (selectedSmallVideo) {
+      assetsService.getAsset('smallVideo', selectedSmallVideo);
+      smallVideoFile = selectedSmallVideo;
+      showSmallVideo = true;
+    } else {
+      showSmallVideo = input.showSmallVideo === true;
     }
 
     if (useReferenceImage && !reupAudioVisualStyleId) {
@@ -397,6 +398,15 @@ function assertEmailAvailableForChannel(email: string, channelId?: string): void
   if (isDefaultLinkedEmail(email)) return;
 
   const normalized = email.toLowerCase();
+
+  if (mailAccountsService.isYoutubeDeleted(normalized)) {
+    throw new AppError(
+      'Email đã xóa kênh YouTube, không thể tạo lại',
+      400,
+      'EMAIL_YT_DELETED',
+    );
+  }
+
   const taken = youtubeChannelsRepository
     .findAll()
     .some((c) => c.id !== channelId && c.linkedEmail.toLowerCase() === normalized);
@@ -476,6 +486,24 @@ export class YoutubeChannelsService {
       backgroundFootageNames: resolveBackgroundFootageNamesOnly(channel),
       nextUploadAt: getNextYoutubePublishSlot(channel)?.iso ?? null,
     };
+  }
+
+  deleteChannel(id: string): void {
+    const channel = this.getById(id);
+
+    if (!isDefaultLinkedEmail(channel.linkedEmail)) {
+      mailAccountsService.markYoutubeDeleted(channel.linkedEmail);
+    }
+
+    const removed = youtubeChannelsRepository.remove(id);
+    if (!removed) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    const channelDir = youtubeChannelDir(id);
+    if (fs.existsSync(channelDir)) {
+      fs.rmSync(channelDir, { recursive: true, force: true });
+    }
   }
 
   async getLiveById(id: string): Promise<YoutubeChannel> {
@@ -1028,12 +1056,18 @@ export class YoutubeChannelsService {
         } else {
           delete next.audioBarFile;
         }
-        if (config.reupAudioVideoType === 'si' && config.showSmallVideo) {
+        if (
+          (config.reupAudioVideoType === 'si' || config.reupAudioVideoType === 'ai') &&
+          config.showSmallVideo
+        ) {
           next.showSmallVideo = true;
         } else {
           delete next.showSmallVideo;
         }
-        if (config.reupAudioVideoType === 'si' && config.smallVideoFile) {
+        if (
+          (config.reupAudioVideoType === 'si' || config.reupAudioVideoType === 'ai') &&
+          config.smallVideoFile
+        ) {
           next.smallVideoFile = config.smallVideoFile;
         } else {
           delete next.smallVideoFile;

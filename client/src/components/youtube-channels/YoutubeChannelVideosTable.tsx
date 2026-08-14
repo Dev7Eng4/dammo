@@ -8,6 +8,7 @@ interface YoutubeChannelVideosTableProps {
   loading?: boolean;
   error?: string | null;
   emptyMessage?: string;
+  rowNumberStart?: number;
   selectedIds?: Set<string>;
   onToggleRow?: (id: string) => void;
   onToggleAll?: () => void;
@@ -68,6 +69,7 @@ export function YoutubeChannelVideosTable({
   loading,
   error,
   emptyMessage = 'Không tìm thấy video nào.',
+  rowNumberStart,
   selectedIds,
   onToggleRow,
   onToggleAll,
@@ -142,6 +144,7 @@ export function YoutubeChannelVideosTable({
       loading={loading}
       error={error}
       emptyMessage={emptyMessage}
+      rowNumberStart={rowNumberStart}
       enableRowSelection={enableRowSelection}
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}

@@ -7,6 +7,7 @@ export type SourcePurpose =
   | 'reup'
   | 'background_footage';
 export type SourceRiskLevel = 'low' | 'medium' | 'high';
+export type SourceChannelLanguage = 'en' | 'ko' | 'ja' | 'es';
 export type SourceVideoDurationFilter = 'all' | 'under_8m' | '8m_30m' | '30m_60m' | 'over_60m';
 
 export interface MappedOwnedChannel {
@@ -29,6 +30,7 @@ export interface SourceChannel {
   fullUrl: string;
   niche: string;
   purpose: SourcePurpose;
+  language: SourceChannelLanguage;
   riskLevel: SourceRiskLevel;
   mappedOwnedChannels: MappedOwnedChannel[];
   activeProjects: SourceActiveProject[];
@@ -68,6 +70,7 @@ export interface SourceVideosStore {
 export interface CreateSourceChannelInput {
   url: string;
   purpose: SourcePurpose;
+  language: SourceChannelLanguage;
   niche?: string;
 }
 

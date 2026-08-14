@@ -18,8 +18,6 @@ import { useTaskQueue } from '../hooks/useTaskQueue';
 import type { Niche } from '../types/niche';
 import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceChannel';
 
-const VIDEO_LIMIT = 20;
-
 export function SourceChannelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { enqueueTask } = useTaskQueue();
@@ -31,12 +29,13 @@ export function SourceChannelDetailPage() {
   const [notFound, setNotFound] = useState(!id);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [limit, setLimit] = useState(20);
 
   const videos = usePaginatedList({
-    fetcher: ({ page, limit, duration, signal }) =>
-      fetchSourceChannelVideos(id!, page, limit, duration, { signal }),
+    fetcher: ({ page, limit: pageLimit, duration, signal }) =>
+      fetchSourceChannelVideos(id!, page, pageLimit, duration, { signal }),
     query: { duration: durationFilter },
-    limit: VIDEO_LIMIT,
+    limit,
     enabled: Boolean(id),
   });
 
@@ -194,6 +193,7 @@ export function SourceChannelDetailPage() {
                 videos={videos.items}
                 loading={videos.loading}
                 error={videos.error}
+                rowNumberStart={(videos.page - 1) * videos.limit + 1}
                 selectedIds={selectedIds}
                 onToggleRow={handleToggleRow}
                 onToggleAll={handleToggleAll}
@@ -208,6 +208,13 @@ export function SourceChannelDetailPage() {
                   videos.setPage(nextPage);
                   clearSelection();
                 }}
+                onLimitChange={(nextLimit) => {
+                  videos.markLoading();
+                  setLimit(nextLimit);
+                  videos.setPage(1);
+                  clearSelection();
+                }}
+                locale="vi"
               />
             </>
           ) : (

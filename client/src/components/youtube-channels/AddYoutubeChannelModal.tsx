@@ -29,6 +29,7 @@ import {
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { CelebrityListItem } from '../../types/celebrity';
+import type { MailAccount } from '../../types/mailAccount';
 import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type {
@@ -80,14 +81,18 @@ function isDefaultLinkedEmail(email: string): boolean {
 }
 
 function buildAvailableMailOptions(
-  mailAccounts: { id: string; email: string }[],
+  mailAccounts: Pick<MailAccount, 'id' | 'email' | 'platformLinks'>[],
   usedEmails: Set<string>,
 ): { value: string; label: string }[] {
   return [
     { value: 'default', label: 'Mặc định' },
     ...mailAccounts
-      .filter(account => !usedEmails.has(account.email.toLowerCase()))
-      .map(account => ({ value: account.id, label: account.email })),
+      .filter(
+        (account) =>
+          !usedEmails.has(account.email.toLowerCase()) &&
+          account.platformLinks.youtube !== 'deleted',
+      )
+      .map((account) => ({ value: account.id, label: account.email })),
   ];
 }
 
@@ -377,7 +382,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       try {
         const [mails, sourceList, nicheList] = await Promise.all([
           fetchMailAccounts('', 1, 100, { signal }),
-          fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal }),
+          fetchSourceChannels('all', 'all', 'all', 1, 100, { signal }),
           fetchNiches({ signal }),
         ]);
 
@@ -449,7 +454,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     if (reupAudioVideoType === 'ai') {
       setValue('reupAudioBackgroundImage', '');
       setValue('audioBarFile', '');
-      setValue('smallVideoFile', '');
       setValue('subscribeFile', '');
     }
   }, [formReady, isReupAudio, reupAudioVideoType, setValue]);
@@ -643,8 +647,15 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
           ? {
               ...(values.audioBarFile ? { audioBarFile: values.audioBarFile, showAudioBar: true } : { showAudioBar: false }),
-              ...(values.smallVideoFile ? { smallVideoFile: values.smallVideoFile, showSmallVideo: true } : { showSmallVideo: false }),
               ...(values.subscribeFile ? { subscribeFile: values.subscribeFile, showSubscribe: true } : { showSubscribe: false }),
+            }
+          : {}),
+        ...(values.type === 'reup_audio' &&
+        (values.reupAudioVideoType === 'si' || values.reupAudioVideoType === 'ai')
+          ? {
+              ...(values.smallVideoFile
+                ? { smallVideoFile: values.smallVideoFile, showSmallVideo: true }
+                : { showSmallVideo: false }),
             }
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),

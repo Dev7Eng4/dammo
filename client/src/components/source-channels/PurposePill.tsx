@@ -73,3 +73,7 @@ export const SOURCE_PURPOSE_OPTIONS = (Object.keys(config) as SourcePurpose[]).m
   value,
   label: config[value].label,
 }));
+
+export const SOURCE_PURPOSE_SELECT_OPTIONS = SOURCE_PURPOSE_OPTIONS.filter(
+  (option) => option.value === 'reup' || option.value === 'background_footage',
+);

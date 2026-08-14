@@ -29,6 +29,8 @@ export type DataTableProps<TData> = {
   activeRowId?: string | null;
   onRowClick?: (row: TData) => void;
   error?: string | null;
+  showRowNumbers?: boolean;
+  rowNumberStart?: number;
 };
 
 const checkboxClassName = 'size-3.5 rounded border-border bg-surface accent-primary-500';
@@ -41,7 +43,7 @@ function SelectionHeader({
   onToggleAll?: () => void;
 }) {
   return (
-    <th className="w-8 pb-3 pr-4">
+    <th className="min-w-[50px] w-8 pb-3 pr-4">
       <input
         type="checkbox"
         checked={allSelected}
@@ -61,7 +63,7 @@ function SelectionCell({
   onToggle?: () => void;
 }) {
   return (
-    <td className="py-3 pr-4" onClick={e => e.stopPropagation()}>
+    <td className="min-w-[50px] py-3 pr-4" onClick={e => e.stopPropagation()}>
       <input
         type="checkbox"
         checked={checked}
@@ -71,6 +73,14 @@ function SelectionCell({
       />
     </td>
   );
+}
+
+function RowNumberHeader() {
+  return <th className="min-w-[50px] w-10 pb-3 pr-4 font-medium">STT</th>;
+}
+
+function RowNumberCell({ value }: { value: number }) {
+  return <td className="min-w-[50px] py-3 pr-4 tabular-nums text-neutral-500">{value}</td>;
 }
 
 export function DataTable<TData>({
@@ -87,6 +97,8 @@ export function DataTable<TData>({
   activeRowId,
   onRowClick,
   error,
+  showRowNumbers = false,
+  rowNumberStart = 1,
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
@@ -95,18 +107,20 @@ export function DataTable<TData>({
     getRowId: row => getRowId(row),
   });
 
-  const colCount = columns.length + (enableRowSelection ? 1 : 0);
+  const colCount =
+    columns.length + (enableRowSelection ? 1 : 0) + (showRowNumbers ? 1 : 0);
   const allSelected = data.length > 0 && !!selectedIds && selectedIds.size === data.length;
 
   const headerRow = (
     <tr className="border-b border-border text-xs text-neutral-500">
       {enableRowSelection && <SelectionHeader allSelected={allSelected} onToggleAll={onToggleAll} />}
+      {showRowNumbers && <RowNumberHeader />}
       {table.getHeaderGroups().map(headerGroup =>
         headerGroup.headers.map(header => (
           <th
             key={header.id}
             className={cn(
-              'pb-3 font-medium',
+              'min-w-[50px] pb-3 font-medium',
               header.column.getIndex() < columns.length - 1 ? 'pr-4' : undefined,
               header.column.columnDef.meta?.headerClassName,
             )}
@@ -124,12 +138,13 @@ export function DataTable<TData>({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-neutral-500">
-              {enableRowSelection && <th className="w-8 pb-3 pr-4" />}
+              {enableRowSelection && <th className="min-w-[50px] w-8 pb-3 pr-4" />}
+              {showRowNumbers && <th className="min-w-[50px] w-10 pb-3 pr-4 font-medium">STT</th>}
               {columns.map((column, index) => (
                 <th
                   key={column.id ?? ('accessorKey' in column ? String(column.accessorKey) : index)}
                   className={cn(
-                    'pb-3 font-medium',
+                    'min-w-[50px] pb-3 font-medium',
                     index < columns.length - 1 ? 'pr-4' : undefined,
                     column.meta?.headerClassName,
                   )}
@@ -199,11 +214,12 @@ export function DataTable<TData>({
                     onToggle={onToggleRow ? () => onToggleRow(id) : undefined}
                   />
                 )}
+                {showRowNumbers && <RowNumberCell value={rowNumberStart + row.index} />}
                 {row.getVisibleCells().map((cell, index) => (
                   <td
                     key={cell.id}
                     className={cn(
-                      'py-3',
+                      'min-w-[50px] py-3',
                       index < row.getVisibleCells().length - 1 ? 'pr-4' : undefined,
                       cell.column.columnDef.meta?.cellClassName,
                     )}

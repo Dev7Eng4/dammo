@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
-import { fetchYoutubeChannels, fetchYoutubeChannelStats, deleteAllUploadedVideos } from '../api/youtubeChannels';
+import { fetchYoutubeChannels, fetchYoutubeChannelStats, deleteAllUploadedVideos, deleteYoutubeChannel } from '../api/youtubeChannels';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
 import { DeleteUploadedVideosConfirmModal } from '../components/youtube-channels/DeleteUploadedVideosConfirmModal';
+import { DeleteYoutubeChannelConfirmModal } from '../components/youtube-channels/DeleteYoutubeChannelConfirmModal';
 import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
@@ -18,7 +19,6 @@ import type { YoutubeChannel, YoutubeChannelStats, YoutubeChannelTypeFilter, You
 import type { SourceChannel } from '../types/sourceChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 
-const LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
 function canOpenGpmProfile(linkedEmail: string): boolean {
@@ -42,22 +42,25 @@ export function YoutubeChannelsPage() {
   const [videoCountAction, setVideoCountAction] = useState<'create' | 'prepare' | null>(null);
   const [showUploadCountModal, setShowUploadCountModal] = useState(false);
   const [showDeleteUploadedModal, setShowDeleteUploadedModal] = useState(false);
+  const [showDeleteChannelModal, setShowDeleteChannelModal] = useState(false);
   const [deletingUploadedVideos, setDeletingUploadedVideos] = useState(false);
+  const [deletingChannel, setDeletingChannel] = useState(false);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
+  const [limit, setLimit] = useState(20);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
   const list = usePaginatedList({
-    fetcher: ({ type, monetization, query, page, limit, signal }) =>
-      fetchYoutubeChannels(type, monetization, query, page, limit, { signal }),
+    fetcher: ({ type, monetization, query, page, limit: pageLimit, signal }) =>
+      fetchYoutubeChannels(type, monetization, query, page, pageLimit, { signal }),
     query: {
       type: typeFilter,
       monetization: monetizationFilter,
       query: debouncedSearch,
     },
-    limit: LIMIT,
+    limit,
     refreshKey: channelsRefreshKey,
   });
 
@@ -93,6 +96,13 @@ export function YoutubeChannelsPage() {
   const canEdit = selectedIds.size === 1;
   const editDisabledReason =
     selectedIds.size === 0 ? 'Chọn một kênh để chỉnh sửa' : selectedIds.size > 1 ? 'Chỉ chọn một kênh để chỉnh sửa' : undefined;
+  const canDeleteChannel = selectedIds.size === 1;
+  const deleteChannelDisabledReason =
+    selectedIds.size === 0
+      ? 'Chọn một kênh để xóa'
+      : selectedIds.size > 1
+        ? 'Chỉ chọn một kênh để xóa'
+        : undefined;
 
   useAbortableEffect(async signal => {
     setStatsLoading(true);
@@ -111,7 +121,7 @@ export function YoutubeChannelsPage() {
   useAbortableEffect(
     async signal => {
       try {
-        const data = await fetchSourceChannels('all', 'all', 'all', '', 1, 100, { signal });
+        const data = await fetchSourceChannels('all', 'all', 'all', 1, 100, { signal });
         setSources(data.items);
       } catch {
         if (signal.aborted) return;
@@ -159,6 +169,13 @@ export function YoutubeChannelsPage() {
   function handlePageChange(nextPage: number) {
     list.markLoading();
     list.setPage(nextPage);
+    clearSelection();
+  }
+
+  function handleLimitChange(nextLimit: number) {
+    list.markLoading();
+    setLimit(nextLimit);
+    list.setPage(1);
     clearSelection();
   }
 
@@ -319,6 +336,24 @@ export function YoutubeChannelsPage() {
     }
   }
 
+  async function handleConfirmDeleteChannel() {
+    if (!selectedChannel) return;
+
+    setDeletingChannel(true);
+    try {
+      await deleteYoutubeChannel(selectedChannel.id);
+      setShowDeleteChannelModal(false);
+      toast.success(`Đã xóa kênh "${selectedChannel.name}"`);
+      list.markLoading();
+      list.refresh();
+      clearSelection();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa kênh');
+    } finally {
+      setDeletingChannel(false);
+    }
+  }
+
   async function handleOpenProfile(channel: YoutubeChannel) {
     if (!canOpenGpmProfile(channel.linkedEmail)) return;
     if (openingProfileIds.has(channel.id)) return;
@@ -368,6 +403,10 @@ export function YoutubeChannelsPage() {
               onUpload={() => setShowUploadCountModal(true)}
               deletingUploadedVideos={deletingUploadedVideos}
               onDeleteUploadedVideos={() => setShowDeleteUploadedModal(true)}
+              canDeleteChannel={canDeleteChannel}
+              deleteChannelDisabledReason={deleteChannelDisabledReason}
+              deletingChannel={deletingChannel}
+              onDeleteChannel={() => setShowDeleteChannelModal(true)}
               canEdit={canEdit}
               editDisabledReason={editDisabledReason}
               onEdit={() => setShowEditModal(true)}
@@ -381,6 +420,7 @@ export function YoutubeChannelsPage() {
               niches={niches}
               selectedIds={selectedIds}
               loading={list.loading}
+              rowNumberStart={(list.page - 1) * list.limit + 1}
               openingProfileIds={openingProfileIds}
               onSelect={handleSelect}
               onToggleRow={handleToggleRow}
@@ -393,6 +433,7 @@ export function YoutubeChannelsPage() {
               total={list.total}
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
               locale="vi"
             />
           </div>
@@ -446,6 +487,14 @@ export function YoutubeChannelsPage() {
         deleting={deletingUploadedVideos}
         onClose={() => setShowDeleteUploadedModal(false)}
         onConfirm={options => void handleDeleteUploadedVideos(options)}
+      />
+
+      <DeleteYoutubeChannelConfirmModal
+        open={showDeleteChannelModal}
+        channelName={selectedChannel?.name ?? ''}
+        deleting={deletingChannel}
+        onClose={() => setShowDeleteChannelModal(false)}
+        onConfirm={() => void handleConfirmDeleteChannel()}
       />
 
       {selectedChannel ? (

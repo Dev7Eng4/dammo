@@ -1,30 +1,50 @@
 import { useState } from 'react';
-import { exportMailAccountsExcel, fetchMailAccount, fetchMailAccounts } from '../api/mailAccounts';
+import { deleteMailAccount, exportMailAccountsExcel, fetchMailAccount, fetchMailAccounts } from '../api/mailAccounts';
 import { AddMailModal } from '../components/mail-accounts/AddMailModal';
+import { DeleteMailAccountConfirmModal } from '../components/mail-accounts/DeleteMailAccountConfirmModal';
 import { MailAccountDetailPanel } from '../components/mail-accounts/MailAccountDetailPanel';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { MailAccountsTable } from '../components/mail-accounts/MailAccountsTable';
 import { MailAccountsToolbar } from '../components/mail-accounts/MailAccountsToolbar';
-import { useFetchedItem, usePaginatedList } from '../hooks';
+import { useToast } from '../components/ui';
+import { useDebouncedValue, useFetchedItem, usePaginatedList } from '../hooks';
 
-const LIMIT = 20;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function MailAccountsPage() {
+  const { toast } = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [limit, setLimit] = useState(20);
+  const [search, setSearch] = useState('');
+
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
   const list = usePaginatedList({
-    fetcher: ({ page, limit, signal }) =>
-      fetchMailAccounts('', page, limit, { signal }),
-    query: {},
-    limit: LIMIT,
+    fetcher: ({ query, page, limit: pageLimit, signal }) =>
+      fetchMailAccounts(query, page, pageLimit, { signal }),
+    query: { query: debouncedSearch },
+    limit,
     onFetched: () => setSelectedIds(new Set()),
   });
 
   const detail = useFetchedItem((id, signal) => fetchMailAccount(id, { signal }));
+  const selectedAccount =
+    selectedIds.size === 1 ? list.items.find((account) => selectedIds.has(account.id)) ?? null : null;
+  const canEdit = selectedIds.size === 1;
+  const canDelete = selectedIds.size === 1;
+  const selectionDisabledReason =
+    selectedIds.size === 0
+      ? 'Chọn một email'
+      : selectedIds.size > 1
+        ? 'Chỉ chọn một email'
+        : undefined;
 
   function clearSelection() {
     setSelectedId(null);
@@ -37,10 +57,32 @@ export function MailAccountsPage() {
     clearSelection();
   }
 
+  function handleLimitChange(nextLimit: number) {
+    list.markLoading();
+    setLimit(nextLimit);
+    list.setPage(1);
+    clearSelection();
+  }
+
+  function handleSearchChange(value: string) {
+    list.markLoading();
+    setSearch(value);
+    list.resetPage();
+    clearSelection();
+  }
+
   function handleAddSuccess() {
     list.markLoading();
     list.resetPage();
     list.refresh();
+  }
+
+  function handleEditSuccess() {
+    list.markLoading();
+    list.refresh();
+    if (selectedAccount && selectedId === selectedAccount.id) {
+      detail.load(selectedAccount.id);
+    }
   }
 
   function handleSelect(id: string) {
@@ -74,11 +116,30 @@ export function MailAccountsPage() {
     setExportError(null);
     try {
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
-      await exportMailAccountsExcel('', ids);
+      await exportMailAccountsExcel(debouncedSearch, ids);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Xuất file thất bại');
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!selectedAccount) return;
+
+    setDeleting(true);
+    try {
+      await deleteMailAccount(selectedAccount.id);
+      setShowDeleteModal(false);
+      toast.success(`Đã xóa email "${selectedAccount.email}"`);
+      list.markLoading();
+      list.refresh();
+      clearSelection();
+      setSelectedIds(new Set());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa email');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -88,7 +149,16 @@ export function MailAccountsPage() {
         <div className="flex-1 overflow-y-auto p-6">
           <MailAccountsToolbar
             total={list.total}
+            search={search}
+            canEdit={canEdit}
+            editDisabledReason={selectionDisabledReason ? `${selectionDisabledReason} để sửa` : undefined}
+            canDelete={canDelete}
+            deleteDisabledReason={selectionDisabledReason ? `${selectionDisabledReason} để xóa` : undefined}
+            deleting={deleting}
+            onSearchChange={handleSearchChange}
             onAddMail={() => setShowAddModal(true)}
+            onEdit={() => setShowEditModal(true)}
+            onDelete={() => setShowDeleteModal(true)}
             onExportExcel={handleExportExcel}
             exporting={exporting}
           />
@@ -104,6 +174,7 @@ export function MailAccountsPage() {
               selectedId={selectedId}
               selectedIds={selectedIds}
               loading={list.loading}
+              rowNumberStart={(list.page - 1) * list.limit + 1}
               onSelect={handleSelect}
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
@@ -114,6 +185,7 @@ export function MailAccountsPage() {
               total={list.total}
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
               locale="vi"
             />
           </div>
@@ -142,6 +214,23 @@ export function MailAccountsPage() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      {selectedAccount ? (
+        <AddMailModal
+          open={showEditModal}
+          account={selectedAccount}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={handleEditSuccess}
+        />
+      ) : null}
+
+      <DeleteMailAccountConfirmModal
+        open={showDeleteModal}
+        email={selectedAccount?.email ?? ''}
+        deleting={deleting}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => void handleConfirmDelete()}
       />
     </div>
   );

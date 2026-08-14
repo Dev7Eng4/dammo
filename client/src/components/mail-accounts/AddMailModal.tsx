@@ -1,18 +1,34 @@
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
-import { createMailAccount } from '../../api/mailAccounts';
+import { createMailAccount, updateMailAccount } from '../../api/mailAccounts';
 import { Button, Input, Modal } from '../ui';
-import type { AddMailFormValues } from '../../types/mailAccount';
+import type { AddMailFormValues, MailAccount } from '../../types/mailAccount';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface AddMailModalProps {
   open: boolean;
+  account?: MailAccount | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
+function toFormValues(account?: MailAccount | null): AddMailFormValues {
+  if (!account) {
+    return { email: '', password: '', twoFactorAuth: '', recoveryEmail: '', phone: '' };
+  }
+
+  return {
+    email: account.email,
+    password: account.password ?? '',
+    twoFactorAuth: account.twoFactorAuth ?? '',
+    recoveryEmail: account.recoveryEmail ?? '',
+    phone: account.phone ?? '',
+  };
+}
+
+export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMailModalProps) {
+  const isEdit = Boolean(account);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -20,11 +36,17 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<AddMailFormValues>({
-    defaultValues: { email: '', password: '', twoFactorAuth: '', recoveryEmail: '', phone: '' },
+    defaultValues: toFormValues(account),
   });
 
+  useEffect(() => {
+    if (!open) return;
+    reset(toFormValues(account));
+    setApiError(null);
+  }, [open, account, reset]);
+
   function handleClose() {
-    reset();
+    reset(toFormValues());
     setApiError(null);
     onClose();
   }
@@ -32,12 +54,16 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
   async function onSubmit(values: AddMailFormValues) {
     setApiError(null);
     try {
-      await createMailAccount(values);
-      reset();
+      if (isEdit && account) {
+        await updateMailAccount(account.id, values);
+      } else {
+        await createMailAccount(values);
+      }
+      reset(toFormValues());
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể tạo tài khoản');
+      setApiError(err instanceof Error ? err.message : isEdit ? 'Không thể cập nhật tài khoản' : 'Không thể tạo tài khoản');
     }
   }
 
@@ -45,14 +71,14 @@ export function AddMailModal({ open, onClose, onSuccess }: AddMailModalProps) {
     <Modal
       open={open}
       onClose={handleClose}
-      title="Thêm tài khoản email"
+      title={isEdit ? 'Sửa tài khoản email' : 'Thêm tài khoản email'}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
             Hủy
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-mail-form" type="submit">
-            {isSubmitting ? 'Đang lưu...' : 'Thêm email'}
+            {isSubmitting ? 'Đang lưu...' : isEdit ? 'Lưu' : 'Thêm email'}
           </Button>
         </>
       }

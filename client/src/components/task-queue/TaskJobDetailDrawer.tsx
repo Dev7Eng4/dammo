@@ -3,6 +3,7 @@ import { cn } from '../../lib/cn';
 import { getTaskDetailLine } from '../../utils/taskQueue';
 import type { TaskJob, TaskLogEntry } from '../../types/taskQueue';
 import { Drawer } from '../ui';
+import { TaskErrorDetailsBlock, TaskStageChecklist } from './TaskStageChecklist';
 
 interface TaskJobDetailDrawerProps {
   open: boolean;
@@ -24,6 +25,20 @@ function formatLogText(logs: TaskLogEntry[]): string {
   return logs
     .map((entry) => `${entry.at} [${logLevelLabel(entry.level)}] ${entry.message}`)
     .join('\n');
+}
+
+function formatErrorCopyText(job: TaskJob): string {
+  const failedStage = job.stages?.find((stage) => stage.status === 'failed');
+  const details = failedStage?.errorDetails ?? job.errorDetails;
+  const lines = [
+    failedStage ? `Bước: ${failedStage.label}` : null,
+    failedStage?.error ?? job.error,
+    details?.reason ? `Lý do: ${details.reason}` : null,
+    details?.missingFields?.length ? `Thiếu: ${details.missingFields.join(', ')}` : null,
+    details?.context ? `Ngữ cảnh: ${details.context}` : null,
+    details?.snippet ? `Snippet:\n${details.snippet}` : null,
+  ].filter(Boolean);
+  return lines.join('\n');
 }
 
 function CopyButton({ value }: { value: string }) {
@@ -55,33 +70,41 @@ function CopyButton({ value }: { value: string }) {
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
       )}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? 'Đã chép' : 'Sao chép'}
     </button>
   );
 }
 
 function getEmptyPanelMessage(job: TaskJob): string {
   if (job.status === 'running') {
-    const label = job.progressLabel ?? 'Processing';
+    const doing = job.stages?.find((stage) => stage.status === 'doing');
+    if (doing) return `${doing.label} — đang làm`;
+    const label = job.progressLabel ?? 'Đang xử lý';
     return `${label} (${job.progress}%)`;
   }
   if (job.status === 'failed') {
-    return job.error ?? 'Task failed';
+    return job.error ?? 'Công việc thất bại';
   }
   if (job.status === 'completed') {
     return getTaskDetailLine(job);
   }
   if (job.status === 'queued') {
-    return 'Pending worker availability';
+    return 'Đang chờ worker';
   }
-  return 'No output available';
+  return 'Chưa có dữ liệu';
 }
 
 export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerProps) {
   const consoleRef = useRef<HTMLDivElement>(null);
   const logs = job?.logs ?? [];
-  const panelTitle = job?.status === 'running' ? 'Live Output' : 'Job Detail';
+  const stages = job?.stages ?? [];
+  const failedStage = stages.find((stage) => stage.status === 'failed');
+  const panelTitle = job?.status === 'running' ? 'Nhật ký trực tiếp' : 'Chi tiết công việc';
   const subtitle = [panelTitle, job?.livePhase].filter(Boolean).join(' · ');
+  const copyValue =
+    job && (failedStage || job.errorDetails)
+      ? [formatErrorCopyText(job), logs.length ? `\n---\n${formatLogText(logs)}` : ''].join('')
+      : formatLogText(logs);
 
   useEffect(() => {
     const el = consoleRef.current;
@@ -99,32 +122,49 @@ export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerP
       title={job.title}
       subtitle={subtitle}
       placement="overlay"
-      widthClassName="w-full max-w-sm lg:w-96 xl:w-[28rem]"
-      headerActions={logs.length > 0 ? <CopyButton value={formatLogText(logs)} /> : null}
+      widthClassName="w-full max-w-xl lg:w-[36rem] xl:w-[42rem]"
+      headerActions={logs.length > 0 || failedStage || job.errorDetails ? <CopyButton value={copyValue} /> : null}
     >
-      <div
-        ref={consoleRef}
-        className="min-h-full bg-neutral-900 p-4 font-mono text-[11px] leading-relaxed"
-      >
-        {logs.length === 0 ? (
-          <p
-            className={cn(
-              'whitespace-pre-wrap break-all',
-              job.status === 'failed' ? 'text-danger' : 'text-neutral-500',
-            )}
-          >
-            {getEmptyPanelMessage(job)}
-          </p>
-        ) : (
-          <div className="space-y-0.5">
-            {logs.map((entry, index) => (
-              <p key={`${entry.at}-${index}`} className={cn('whitespace-pre-wrap break-all', logLineClass(entry.level))}>
-                <span className="text-neutral-500">{entry.at}</span>{' '}
-                <span className="text-neutral-400">[{logLevelLabel(entry.level)}]</span> {entry.message}
-              </p>
-            ))}
+      <div className="flex min-h-full flex-col">
+        {stages.length > 0 ? (
+          <div className="border-b border-border bg-neutral-950 px-4 py-3">
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Các bước</p>
+            <TaskStageChecklist stages={stages} showFailedDetails />
+            {job.status === 'failed' && !failedStage && (job.error || job.errorDetails) ? (
+              <TaskErrorDetailsBlock error={job.error} errorDetails={job.errorDetails} />
+            ) : null}
           </div>
-        )}
+        ) : job.status === 'failed' && (job.error || job.errorDetails) ? (
+          <div className="border-b border-border bg-neutral-950 px-4 py-3">
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Lỗi</p>
+            <TaskErrorDetailsBlock error={job.error} errorDetails={job.errorDetails} />
+          </div>
+        ) : null}
+
+        <div
+          ref={consoleRef}
+          className="min-h-0 flex-1 bg-neutral-900 p-4 font-mono text-[11px] leading-relaxed"
+        >
+          {logs.length === 0 ? (
+            <p
+              className={cn(
+                'whitespace-pre-wrap break-all',
+                job.status === 'failed' ? 'text-danger' : 'text-neutral-500',
+              )}
+            >
+              {getEmptyPanelMessage(job)}
+            </p>
+          ) : (
+            <div className="space-y-0.5">
+              {logs.map((entry, index) => (
+                <p key={`${entry.at}-${index}`} className={cn('whitespace-pre-wrap break-all', logLineClass(entry.level))}>
+                  <span className="text-neutral-500">{entry.at}</span>{' '}
+                  <span className="text-neutral-400">[{logLevelLabel(entry.level)}]</span> {entry.message}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Drawer>
   );

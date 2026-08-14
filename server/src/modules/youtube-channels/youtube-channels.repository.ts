@@ -82,6 +82,26 @@ export class YoutubeChannelsRepository {
 
     return updated;
   }
+
+  remove(id: string): boolean {
+    let removed = false;
+
+    updateJson(
+      paths.youtubeChannels,
+      (store) => {
+        const index = store.channels.findIndex((c) => c.id === id);
+        if (index === -1) return store;
+
+        removed = true;
+        const channels = [...store.channels];
+        channels.splice(index, 1);
+        return { channels };
+      },
+      loadStore(),
+    );
+
+    return removed;
+  }
 }
 
 export const youtubeChannelsRepository = new YoutubeChannelsRepository();

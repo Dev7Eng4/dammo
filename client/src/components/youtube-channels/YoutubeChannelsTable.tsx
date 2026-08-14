@@ -1,10 +1,8 @@
 import { type ColumnDef } from '@tanstack/react-table';
 import type { Niche } from '../../types/niche';
 import {
-  type StoredYoutubeChannelType,
   type YoutubeChannel,
   type YoutubeChannelLanguage,
-  type YoutubeChannelStatus,
 } from '../../types/youtubeChannel';
 import type { SourceChannel } from '../../types/sourceChannel';
 import { resolveNicheLabel } from '../../utils/niche';
@@ -17,6 +15,7 @@ interface YoutubeChannelsTableProps {
   niches?: Niche[];
   selectedIds: Set<string>;
   loading?: boolean;
+  rowNumberStart?: number;
   openingProfileIds: Set<string>;
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
@@ -24,24 +23,12 @@ interface YoutubeChannelsTableProps {
   onOpenProfile: (channel: YoutubeChannel) => void;
 }
 
-const typeLabels: Record<StoredYoutubeChannelType, string> = {
-  content: 'Nội dung',
-  reup_audio: 'Reup âm thanh',
-  reup_video: 'Reup video',
-  content_sale: 'Bán nội dung',
-  reup: 'Reup',
-};
-
 const languageLabels: Record<YoutubeChannelLanguage, string> = {
   en: 'Tiếng Anh',
   ko: 'Tiếng Hàn',
   ja: 'Tiếng Nhật',
   es: 'Tiếng Tây Ban Nha',
 };
-
-function typeLabel(type: StoredYoutubeChannelType): string {
-  return typeLabels[type] ?? type;
-}
 
 function languageLabel(language: YoutubeChannelLanguage): string {
   return languageLabels[language] ?? language;
@@ -66,20 +53,19 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
   return normalized.length > 0 && normalized !== 'default';
 }
 
-function StatusCell({ status }: { status: YoutubeChannelStatus }) {
-  const isActive = status === 'active';
-
+function OpenProfileIcon({ className }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-        isActive
-          ? 'border-success/30 bg-success/10 text-success'
-          : 'border-danger/30 bg-danger/10 text-danger'
-      }`}
+    <svg
+      className={className}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      aria-hidden='true'
     >
-      <span className={`size-1.5 rounded-full ${isActive ? 'bg-success' : 'bg-danger'}`} />
-      {isActive ? 'Đang hoạt động' : 'Bị tạm ngưng'}
-    </span>
+      <path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' />
+      <circle cx='12' cy='7' r='4' />
+    </svg>
   );
 }
 
@@ -89,6 +75,7 @@ export function YoutubeChannelsTable({
   niches = [],
   selectedIds,
   loading,
+  rowNumberStart,
   openingProfileIds,
   onSelect,
   onToggleRow,
@@ -125,13 +112,6 @@ export function YoutubeChannelsTable({
       ),
     },
     {
-      accessorKey: 'type',
-      header: 'LOẠI',
-      cell: ({ getValue }) => (
-        <span className="text-neutral-300">{typeLabel(getValue<StoredYoutubeChannelType>())}</span>
-      ),
-    },
-    {
       id: 'source',
       header: 'NGUỒN',
       cell: ({ row }) => <SourceCell value={formatChannelSources(row.original, sources)} />,
@@ -154,11 +134,6 @@ export function YoutubeChannelsTable({
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'TRẠNG THÁI',
-      cell: ({ row }) => <StatusCell status={row.original.status} />,
-    },
-    {
       id: 'actions',
       header: 'THAO TÁC',
       cell: ({ row }) => {
@@ -170,13 +145,14 @@ export function YoutubeChannelsTable({
           <div onClick={e => e.stopPropagation()}>
             <Button
               variant="outlined"
-              size="sm"
-              className="rounded-lg"
+              size="icon"
+              className="size-8 rounded-lg"
               disabled={!canOpen || opening}
-              title={canOpen ? undefined : 'Kênh chưa có email liên kết'}
+              title={opening ? 'Đang mở…' : canOpen ? 'Mở Profile' : 'Kênh chưa có email liên kết'}
+              aria-label={opening ? 'Đang mở profile' : 'Mở Profile'}
               onClick={() => onOpenProfile(channel)}
             >
-              {opening ? 'Đang mở…' : 'Mở Profile'}
+              <OpenProfileIcon className="size-4" />
             </Button>
           </div>
         );
@@ -190,6 +166,7 @@ export function YoutubeChannelsTable({
       columns={columns}
       getRowId={channel => channel.id}
       loading={loading}
+      rowNumberStart={rowNumberStart}
       enableRowSelection
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}

@@ -1,26 +1,18 @@
 import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import {
+  extractJsonText,
+  formatParseFailureReason,
+  snippetFromResponse,
+  truncateSnippet,
+  type LlmParseResult,
+} from './llm-parse-result.js';
+import {
   isCelebrityWisdomNiche,
   type CelebrityWisdomThumbnailSpec,
   type MetadataLlmOutput,
 } from './metadata.types.js';
 
-function stripMarkdownFences(text: string): string {
-  return text
-    .replace(/^```[\w]*\n?/gm, '')
-    .replace(/\n?```$/gm, '')
-    .trim();
-}
-
-export function extractJsonText(response: LlmBrowserResponse): string {
-  for (let i = response.codeBlocks.length - 1; i >= 0; i -= 1) {
-    const block = response.codeBlocks[i].trim();
-    if (block.includes('{')) {
-      return stripMarkdownFences(block);
-    }
-  }
-  return stripMarkdownFences(response.content);
-}
+export { extractJsonText } from './llm-parse-result.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -40,12 +32,17 @@ function validateStringArrayLength(value: unknown, min: number, max: number): bo
   return value.every(item => item.trim().length > 0);
 }
 
+function collectMetadataFieldIssues(value: unknown): string[] {
+  if (!isRecord(value)) return ['metadata'];
+  const missing: string[] = [];
+  if (typeof value.title !== 'string' || !value.title.trim()) missing.push('metadata.title');
+  if (typeof value.description !== 'string' || !value.description.trim()) missing.push('metadata.description');
+  if (!validateStringArrayLength(value.tags, 1, 10)) missing.push('metadata.tags');
+  return missing;
+}
+
 function validateMetadataFields(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  if (typeof value.title !== 'string' || !value.title.trim()) return false;
-  if (typeof value.description !== 'string' || !value.description.trim()) return false;
-  if (!validateStringArrayLength(value.tags, 1, 10)) return false;
-  return true;
+  return collectMetadataFieldIssues(value).length === 0;
 }
 
 function pickOptionalTrimmedString(value: unknown): string | undefined {
@@ -113,35 +110,91 @@ function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOu
   return output;
 }
 
-export function tryParseMetadataResponse(response: LlmBrowserResponse, options?: { niche?: string }): MetadataLlmOutput | null {
+export function parseMetadataResponse(
+  response: LlmBrowserResponse,
+  options?: { niche?: string },
+): LlmParseResult<MetadataLlmOutput> {
   const jsonText = extractJsonText(response);
+  const snippet = snippetFromResponse(response);
+
+  if (!jsonText.trim()) {
+    return { ok: false, reason: 'no JSON found in response', snippet };
+  }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
-  } catch {
-    return null;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'JSON.parse failed';
+    return { ok: false, reason: `invalid JSON (${message})`, snippet: truncateSnippet(jsonText) };
   }
 
-  if (!isRecord(parsed)) return null;
-  if (!hasRequiredKeys(parsed, ['metadata'])) return null;
-  if (!validateMetadataFields(parsed.metadata)) return null;
+  if (!isRecord(parsed)) {
+    return { ok: false, reason: 'JSON root is not an object', snippet };
+  }
+
+  if (!hasRequiredKeys(parsed, ['metadata'])) {
+    return {
+      ok: false,
+      reason: 'missing required fields',
+      missingFields: ['metadata'],
+      snippet,
+    };
+  }
+
+  const metadataIssues = collectMetadataFieldIssues(parsed.metadata);
+  if (metadataIssues.length > 0) {
+    return {
+      ok: false,
+      reason: 'metadata schema mismatch',
+      missingFields: metadataIssues,
+      snippet,
+    };
+  }
 
   const niche = options?.niche?.trim() || '';
-  // Niche-specific meta prompts must return thumbnail.image_generation_prompt.
   if (niche && niche !== 'all') {
     const imagePrompt = pickThumbnailImageGenerationPrompt(parsed);
-    if (!imagePrompt) return null;
+    if (!imagePrompt) {
+      return {
+        ok: false,
+        reason: 'missing required fields',
+        missingFields: ['thumbnail.image_generation_prompt'],
+        snippet,
+      };
+    }
+
     const output = buildBaseMetadataOutput(parsed);
     output.image_generation_prompt = imagePrompt;
 
-    // Niche meta (except celebrity wisdom) must return top-level video_visual_prompt (SI one_image background).
     if (!isCelebrityWisdomNiche(niche) && !output.video_visual_prompt) {
-      return null;
+      return {
+        ok: false,
+        reason: 'missing required fields',
+        missingFields: ['video_visual_prompt'],
+        snippet,
+      };
     }
 
-    return output;
+    return { ok: true, value: output };
   }
 
-  return buildBaseMetadataOutput(parsed);
+  return { ok: true, value: buildBaseMetadataOutput(parsed) };
+}
+
+export function tryParseMetadataResponse(
+  response: LlmBrowserResponse,
+  options?: { niche?: string },
+): MetadataLlmOutput | null {
+  const result = parseMetadataResponse(response, options);
+  return result.ok ? result.value : null;
+}
+
+export function describeMetadataParseFailure(
+  response: LlmBrowserResponse,
+  options?: { niche?: string },
+): string {
+  const result = parseMetadataResponse(response, options);
+  if (result.ok) return 'unknown parse failure';
+  return formatParseFailureReason(result);
 }
