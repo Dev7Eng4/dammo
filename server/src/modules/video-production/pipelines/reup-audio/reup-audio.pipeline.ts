@@ -17,6 +17,7 @@ import {
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
 import { runMetadata, hasNicheMetadataPrompt } from '../../shared/meta/run-metadata.js';
 import { runDramaMetadata } from '../../shared/meta/drama/run-drama-metadata.js';
+import { runSeniorHealthMetadata } from '../../shared/meta/senior-health/run-senior-health-metadata.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
 import {
   DEFAULT_HERO_IMAGE_FILENAME,
@@ -45,6 +46,7 @@ import {
   hasLegacyVisualMeta,
   isCelebrityWisdomNiche,
   isDramaNiche,
+  isSeniorHealthNiche,
   type MetaStep3Output,
   type VideoMetaOutput,
 } from '../../shared/meta/metadata.types.js';
@@ -447,7 +449,7 @@ export class ReupAudioPipeline {
                         }) => {
                           const profileLabel = progress.profileName;
                           const stepPart =
-                            progress.step != null ? `Drama meta step ${progress.step}` : 'Metadata';
+                            progress.step != null ? `Meta step ${progress.step}` : 'Metadata';
 
                           if (progress.status === 'retry') {
                             taskQueueRepository.appendLogMessage(
@@ -467,21 +469,33 @@ export class ReupAudioPipeline {
                       : undefined,
                   };
 
-                  return isDramaNiche(destination.niche)
-                    ? runDramaMetadata(
-                        task.sourceTitle,
-                        jaSrtPath,
-                        destination.language,
-                        downloaded.youtubeVideoId,
-                        metaOptions,
-                      )
-                    : runMetadata(
-                        task.sourceTitle,
-                        jaSrtPath,
-                        destination.language,
-                        downloaded.youtubeVideoId,
-                        metaOptions,
-                      );
+                  if (isDramaNiche(destination.niche)) {
+                    return runDramaMetadata(
+                      task.sourceTitle,
+                      jaSrtPath,
+                      destination.language,
+                      downloaded.youtubeVideoId,
+                      metaOptions,
+                    );
+                  }
+
+                  if (isSeniorHealthNiche(destination.niche)) {
+                    return runSeniorHealthMetadata(
+                      task.sourceTitle,
+                      jaSrtPath,
+                      destination.language,
+                      downloaded.youtubeVideoId,
+                      metaOptions,
+                    );
+                  }
+
+                  return runMetadata(
+                    task.sourceTitle,
+                    jaSrtPath,
+                    destination.language,
+                    downloaded.youtubeVideoId,
+                    metaOptions,
+                  );
                 },
                 stepTimer,
               );
@@ -603,7 +617,11 @@ export class ReupAudioPipeline {
                 }
 
                 const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
-                const useSiOneImageBatch = videoType === 'si' && siBackgroundImage === 'one_image';
+                // Senior-health meta has thumbnail only (no general_background / video_visual_prompt).
+                const useSiOneImageBatch =
+                  videoType === 'si' &&
+                  siBackgroundImage === 'one_image' &&
+                  !isSeniorHealthNiche(destination.niche);
 
                 if (useSiOneImageBatch) {
                   const videoVisualPrompt = videoMetaOutput.video_visual_prompt?.trim() ?? '';
@@ -956,7 +974,8 @@ export class ReupAudioPipeline {
                   const videoVisualPrompt = siMeta.video_visual_prompt?.trim() ?? '';
                   const requiresVideoVisualPrompt =
                     hasNicheMetadataPrompt(destination.language, destination.niche) &&
-                    !isCelebrityWisdomNiche(destination.niche);
+                    !isCelebrityWisdomNiche(destination.niche) &&
+                    !isSeniorHealthNiche(destination.niche);
 
                   if (requiresVideoVisualPrompt && !videoVisualPrompt && !heroImagePath) {
                     throw new AppError(

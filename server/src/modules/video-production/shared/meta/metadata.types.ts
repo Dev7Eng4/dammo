@@ -34,12 +34,19 @@ export const CELEBRITY_WISDOM_NICHE_ID = 'a073ce74-07d7-4386-b59a-cb15a4fb2d99';
 /** Niche UUID for "Drama" (niches.json + metadata_drama prompt). */
 export const DRAMA_NICHE_ID = '9577910e-042c-423b-9d06-5f2028655434';
 
+/** Niche UUID for "Dinh dưỡng và phong cách sống người cao tuổi". */
+export const SENIOR_HEALTH_NICHE_ID = '3b5a9d49-8834-4bae-aa97-427ed9f04828';
+
 export function isCelebrityWisdomNiche(niche?: string): boolean {
   return (niche?.trim() || '') === CELEBRITY_WISDOM_NICHE_ID;
 }
 
 export function isDramaNiche(niche?: string): boolean {
   return (niche?.trim() || '') === DRAMA_NICHE_ID;
+}
+
+export function isSeniorHealthNiche(niche?: string): boolean {
+  return (niche?.trim() || '') === SENIOR_HEALTH_NICHE_ID;
 }
 
 export interface CelebrityWisdomThumbnailLine {

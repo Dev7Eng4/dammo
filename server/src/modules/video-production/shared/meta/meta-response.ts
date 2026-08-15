@@ -8,6 +8,7 @@ import {
 } from './llm-parse-result.js';
 import {
   isCelebrityWisdomNiche,
+  isSeniorHealthNiche,
   type CelebrityWisdomThumbnailSpec,
   type MetadataLlmOutput,
 } from './metadata.types.js';
@@ -167,7 +168,7 @@ export function parseMetadataResponse(
     const output = buildBaseMetadataOutput(parsed);
     output.image_generation_prompt = imagePrompt;
 
-    if (!isCelebrityWisdomNiche(niche) && !output.video_visual_prompt) {
+    if (!isCelebrityWisdomNiche(niche) && !isSeniorHealthNiche(niche) && !output.video_visual_prompt) {
       return {
         ok: false,
         reason: 'missing required fields',
