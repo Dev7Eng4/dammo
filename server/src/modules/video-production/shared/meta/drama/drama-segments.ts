@@ -1,33 +1,10 @@
 import type { SrtBlock } from '../../../../../infrastructure/subtitle/srt-utils.js';
 import { srtTimestampToMs } from '../../../../../infrastructure/subtitle/srt-utils.js';
 
-/** Videos at or under this duration use step1 → step3 (skip step2). */
-export const DRAMA_SHORT_MAX_MS = 40 * 60 * 1000;
-/** Short-path step1 uses only the first N minutes of transcript. */
-export const DRAMA_SHORT_TRANSCRIPT_MS = 30 * 60 * 1000;
-/** Long-path segment window for videos >40 min and <=1h30. */
-export const DRAMA_SEGMENT_MS = 28 * 60 * 1000;
-/** Very-long-path threshold: videos above this use wider segments. */
-export const DRAMA_VERY_LONG_MIN_MS = 90 * 60 * 1000;
-/** Long-path segment window for videos >1h30. */
-export const DRAMA_VERY_LONG_SEGMENT_MS = 38 * 60 * 1000;
-/** Overlap between consecutive long-path windows. */
-export const DRAMA_OVERLAP_MS = 2 * 60 * 1000;
-/** Step 1 analyzes at most the first 2 hours of transcript. */
-export const DRAMA_STEP1_MAX_TRANSCRIPT_MS = 1.5 * 60 * 60 * 1000;
-
-function resolveLongPathSegmentMs(durationMs: number): number {
-  return durationMs > DRAMA_VERY_LONG_MIN_MS ? DRAMA_VERY_LONG_SEGMENT_MS : DRAMA_SEGMENT_MS;
-}
-
-export interface DramaTranscriptSegment {
-  /** 1-based id string passed to prompt step 1, e.g. "seg-1". */
-  id: string;
-  index: number;
-  startMs: number;
-  endMs: number;
-  text: string;
-}
+/** Step 1 uses at most the first 1h30 of transcript. */
+export const DRAMA_STEP1_MAX_TRANSCRIPT_MS = 90 * 60 * 1000;
+/** Soft cap on transcript character length passed to step 1 prompt. */
+export const DRAMA_STEP1_MAX_CHARS = 28_000;
 
 export function getSrtDurationMs(blocks: SrtBlock[]): number {
   let maxMs = 0;
@@ -53,47 +30,15 @@ export function extractTranscriptText(blocks: SrtBlock[], startMs: number, endMs
 }
 
 /**
- * Build transcript windows for drama metadata step 1.
- * - ≤40 min → one window of the first 30 minutes (or full duration if shorter)
- * - >40 min and ≤1h30 → 28-min windows with 2-min overlap (stride 26 min), capped at first 2h
- * - >1h30 → 38-min windows with 2-min overlap (stride 36 min), capped at first 2h
+ * Extract the first 1h30 of SRT cues, then truncate to at most 28_000 characters
+ * (drop excess from the end) for drama metadata step 1.
  */
-export function buildDramaSegments(blocks: SrtBlock[], durationMs: number): DramaTranscriptSegment[] {
-  if (durationMs <= 0 || blocks.length === 0) {
-    return [];
-  }
+export function extractDramaStep1Transcript(blocks: SrtBlock[]): string {
+  if (blocks.length === 0) return '';
 
-  if (durationMs <= DRAMA_SHORT_MAX_MS) {
-    const endMs = Math.min(DRAMA_SHORT_TRANSCRIPT_MS, durationMs);
-    const text = extractTranscriptText(blocks, 0, endMs);
-    if (!text) return [];
-    return [{ id: 'seg-1', index: 0, startMs: 0, endMs, text }];
-  }
+  const text = extractTranscriptText(blocks, 0, DRAMA_STEP1_MAX_TRANSCRIPT_MS);
+  if (!text) return '';
 
-  const step1DurationMs = Math.min(durationMs, DRAMA_STEP1_MAX_TRANSCRIPT_MS);
-  const segmentMs = resolveLongPathSegmentMs(durationMs);
-  const strideMs = segmentMs - DRAMA_OVERLAP_MS;
-  const segments: DramaTranscriptSegment[] = [];
-  let startMs = 0;
-  let index = 0;
-
-  while (startMs < step1DurationMs) {
-    const endMs = Math.min(startMs + segmentMs, step1DurationMs);
-    const text = extractTranscriptText(blocks, startMs, endMs);
-    if (text) {
-      segments.push({
-        id: `seg-${index + 1}`,
-        index,
-        startMs,
-        endMs,
-        text,
-      });
-      index += 1;
-    }
-
-    if (endMs >= step1DurationMs) break;
-    startMs += strideMs;
-  }
-
-  return segments;
+  if (text.length <= DRAMA_STEP1_MAX_CHARS) return text;
+  return text.slice(0, DRAMA_STEP1_MAX_CHARS);
 }

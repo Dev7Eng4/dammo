@@ -1,253 +1,46 @@
-export default (
-  transcript,
-  segment_id,
-) => `You are an expert Japanese narrative analyst specializing in Japanese Drama, Emotional Storytelling, Heartwarming Human Stories, Family Stories, Relationship Drama, 修羅場, スカッとする話, and related Japanese storytelling content.
-
-Analyze the supplied transcript and create a COMPACT, FACTUAL STORY ANALYSIS.
-
-The transcript may be:
-1. the complete transcript of a short video, or
-2. one segment of a longer video.
-
-Your primary goal is INFORMATION PRESERVATION WITH HIGH COMPRESSION.
-
-==================================================
-SOURCE OF TRUTH
-==================================================
-
-TRANSCRIPT = ONLY factual source.
-
-Never invent, assume, predict, or complete missing information.
-
-If speech-to-text contains an obvious error and the intended meaning is certain from context, silently correct it.
-
-If meaning is uncertain, mark it as UNCERTAIN.
-
-Never infer events outside the supplied transcript.
-
-==================================================
-IMPORTANT COMPRESSION RULE
-==================================================
-
-Do NOT summarize every sentence or dialogue.
-
-Extract only information that is important for reconstructing the story.
-
-Preserve information that:
-
-- changes the story
-- introduces or changes a relationship
-- creates or escalates conflict
-- reveals important information
-- changes character motivation
-- introduces an important object
-- creates a meaningful emotional turning point
-- establishes a cause or consequence
-- represents a genuine reversal
-- represents a genuine revelation
-- affects later events
-
-Merge consecutive minor actions into one event.
-
-Ignore:
-
-- greetings
-- filler dialogue
-- repetitive dialogue
-- ordinary actions
-- redundant descriptions
-- insignificant reactions
-- repeated information
-
-Target a highly information-dense output.
-
-Prefer approximately:
-
-- summary: 80–150 words
-- characters: only story-relevant characters
-- relationships: only meaningful relationships
-- events: approximately 5–12 major events
-- important_objects: only narratively significant objects
-- emotional_beats: only major emotional moments
-- revelations: only confirmed important revelations
-- reversals: only genuine reversals
-- unresolved: only important unresolved questions
-
-Do NOT sacrifice important story information merely to meet these targets.
-
-==================================================
-CHARACTERS
-==================================================
-
-Identify only characters who are relevant to the story.
-
-For each character preserve:
-
-- name if confirmed
-- role
-- age if confirmed
-- occupation if confirmed
-- relevant confirmed characteristics
-- important actions
-
-Do not invent physical appearance.
-
-If a character is mentioned but irrelevant to the story, omit them.
-
-==================================================
-RELATIONSHIPS
-==================================================
-
-Preserve only meaningful confirmed relationships.
-
-Examples:
-
-- family
-- marriage
-- romantic
-- friendship
-- workplace
-- conflict
-- betrayal
-- separation
-- reconciliation
-
-Do not repeat the same relationship unnecessarily.
-
-==================================================
-EVENTS
-==================================================
-
-Extract only MAJOR STORY EVENTS.
-
-For each event include:
-
-- approximate position in the segment
-- what happened
-- why it matters
-
-Preserve chronological order.
-
-Do not include minor actions or ordinary dialogue.
-
-==================================================
-IMPORTANT OBJECTS
-==================================================
-
-Include only objects that have narrative, emotional, symbolic, or causal significance.
-
-Examples:
-
-- letter
-- photograph
-- phone
-- document
-- gift
-- money
-- jewelry
-- food
-- keepsake
-- personal item
-
-Do not list ordinary objects.
-
-==================================================
-EMOTIONAL BEATS
-==================================================
-
-Include only major emotional moments that affect the story.
-
-Do not describe every emotional reaction.
-
-==================================================
-REVELATIONS
-==================================================
-
-Include only confirmed information that changes the viewer's understanding of the story.
-
-Do not manufacture revelations.
-
-==================================================
-REVERSALS
-==================================================
-
-Include only genuine confirmed reversals or changes in story direction.
-
-Do not label ordinary events as reversals.
-
-==================================================
-UNRESOLVED
-==================================================
-
-Include only important questions or situations that remain unresolved within this transcript.
-
-Do not predict the answer.
-
-==================================================
-CONTINUITY
-==================================================
-
-The transcript may start or end in the middle of an event.
-
-Set:
-
-"starts_in_middle": true/false
-
-"ends_in_middle": true/false
-
-Do not complete incomplete events using assumptions.
-
-==================================================
-FACTUAL CERTAINTY
-==================================================
-
-Separate uncertain information into the "uncertain" field.
-
-Only confirmed information may be used as factual information later.
-
-==================================================
-OUTPUT
-==================================================
-
-Return ONLY valid JSON.
-
-Use exactly this structure:
-
-{
-  "id": "${segment_id}",
-  "continuation": {
-    "starts_in_middle": false,
-    "ends_in_middle": false
-  },
-  "summary": "",
-  "characters": [],
-  "relationships": [],
-  "events": [],
-  "important_objects": [],
-  "emotional_beats": [],
-  "revelations": [],
-  "reversals": [],
-  "unresolved": [],
-  "uncertain": []
-}
-
-==================================================
-INPUT
-==================================================
-
-SEGMENT ID
-
-${segment_id}
-
-TRANSCRIPT
-
+export default transcript => `
+Bạn là một Chuyên gia Phân tích Kịch bản và Cấu trúc Tường thuật (Narrative Analyst).
+Nhiệm vụ của bạn là đọc toàn bộ transcript dưới đây (video dài 1h-2h) và bóc tách thành một bản tóm tắt cấu trúc cốt truyện và các yếu tố hình ảnh trực quan.
+
+TRANSCRIPT ĐẦU VÀO:
 ${transcript}
 
-==================================================
+---
 
-Return ONLY valid JSON.
-Do not output Markdown.
-Do not output code fences.
-Do not explain reasoning.
-Do not output internal analysis.
+## YÊU CẦU BÓC TÁCH:
+
+1. **Nhận diện ngách:** Audio drama (2ch, 修羅場, スカッと), Sức khỏe người cao tuổi, Tài chính/Hưu trí, Đời sống, v.v.
+2. **Cấu trúc kịch tính:**
+   - **Bối cảnh & Nhân vật chính:** Ai, mối quan hệ là gì, hoàn cảnh ban đầu.
+   - **Ngòi nổ & Xung đột chính:** Hành vi bất công, phản bội, hiểu lầm hoặc cảnh báo rủi ro lớn nhất.
+   - **Câu thoại/Chi tiết chấn động:** Câu nói gây phẫn nộ nhất, bằng chứng bị lộ, hoặc con số/mốc thời gian quan trọng.
+   - **Đỉnh điểm (Climax) & Bước ngoặt (Twist):** Tình tiết làm đảo chiều toàn bộ câu chuyện.
+   - **Kết cục & Bài học:** Sự thật cuối cùng, hình phạt/kết quả (Dùng để kiểm soát, không để lộ trên title).
+3. **Dữ liệu trực quan (Visual Cues):**
+   - **Nhân vật đại diện:** Độ tuổi, giới tính, trang phục, biểu cảm đặc trưng trong khoảnh khắc cao trào.
+   - **Không gian/Bối cảnh chính:** Căn phòng, địa điểm, thời gian trong ngày, thời tiết, ánh sáng.
+   - **Vibe/Mood:** Căng thẳng, u ám, ấm cúng, cô đơn, phẫn nộ, v.v.
+
+---
+
+## OUTPUT FORMAT:
+Chỉ xuất JSON hợp lệ duy nhất, không dùng Markdown, không giải thích:
+
+{
+  "detected_niche": "Tên ngách chính xác",
+  "target_audience": "Đối tượng khán giả chính",
+  "narrative_core": {
+    "protagonist": "Nhân vật chính và bối cảnh ngắn gọn",
+    "inciting_incident": "Sự việc kích hoạt xung đột",
+    "shocking_quotes_or_details": ["Chi tiết hoặc câu thoại đắt giá 1", "Chi tiết 2"],
+    "climax_conflict": "Xung đột đỉnh điểm",
+    "major_twist": "Cú lừa/bước ngoặt quan trọng nhất",
+    "final_resolution": "Kết cục câu chuyện (Bảo mật, cấm spoil)"
+  },
+  "visual_cues": {
+    "characters": "Mô tả ngoại hình, tuổi tác, biểu cảm nhân vật lúc gay cấn",
+    "environment": "Mô tả chi tiết bối cảnh, đồ vật xung quanh, thời gian, ánh sáng",
+    "dominant_mood": "Tông màu cảm xúc chủ đạo"
+  }
+}
 `;

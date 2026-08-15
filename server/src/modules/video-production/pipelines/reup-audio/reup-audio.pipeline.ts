@@ -444,17 +444,10 @@ export class ReupAudioPipeline {
                           profileName: string;
                           status: string;
                           step?: number;
-                          segmentIndex?: number;
-                          segmentTotal?: number;
                         }) => {
                           const profileLabel = progress.profileName;
                           const stepPart =
-                            progress.step != null
-                              ? `Drama meta step ${progress.step}` +
-                                (progress.segmentIndex != null && progress.segmentTotal != null
-                                  ? ` (seg ${progress.segmentIndex + 1}/${progress.segmentTotal})`
-                                  : '')
-                              : 'Metadata';
+                            progress.step != null ? `Drama meta step ${progress.step}` : 'Metadata';
 
                           if (progress.status === 'retry') {
                             taskQueueRepository.appendLogMessage(

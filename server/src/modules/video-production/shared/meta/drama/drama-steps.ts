@@ -1,5 +1,4 @@
 import { AppError } from '../../../../../shared/http/errors.js';
-import type { ChromeProfile } from '../../../../chrome-profiles/chrome-profiles.types.js';
 import { chromeProfilesService } from '../../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../../llm-browser/llm-browser.service.js';
 import { executePromptTemplate } from '../../../../prompts/prompts.file-store.js';
@@ -8,19 +7,12 @@ import { promptsSettingsService } from '../../../../prompts/prompts-settings.ser
 import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
-import {
-  parseDramaStep1Response,
-  parseDramaStep2Response,
-  parseDramaStep3Response,
-} from './drama-response.js';
-import type { DramaTranscriptSegment } from './drama-segments.js';
+import { parseDramaStep1Response, parseDramaStep2Response } from './drama-response.js';
 import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
 
 const MAX_RETRIES = 3;
-const MAX_PARALLEL_PROFILES = 7;
-const BATCH_DELAY_MS = 2_000;
 
-export type DramaMetadataStep = 1 | 2 | 3;
+export type DramaMetadataStep = 1 | 2;
 export type DramaMetadataStatus = 'started' | 'retry';
 
 export interface DramaMetadataProgress {
@@ -29,16 +21,10 @@ export interface DramaMetadataProgress {
   profileId: string;
   profileName: string;
   status: DramaMetadataStatus;
-  segmentIndex?: number;
-  segmentTotal?: number;
 }
 
 export interface RunDramaStepOptions {
   onProgress?: (progress: DramaMetadataProgress) => void;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function resolveDramaStepKey(language: PromptLanguage, step: DramaMetadataStep): string {
@@ -64,10 +50,7 @@ async function runDramaLlmStep<T>(
   step: DramaMetadataStep,
   buildPrompt: () => Promise<string>,
   parse: (response: Awaited<ReturnType<typeof llmBrowserService.chat>>) => LlmParseResult<T>,
-  options?: RunDramaStepOptions & {
-    segmentIndex?: number;
-    segmentTotal?: number;
-  },
+  options?: RunDramaStepOptions,
 ): Promise<T> {
   let lastReason = 'unknown error';
   let lastDetails: Record<string, unknown> | undefined;
@@ -80,8 +63,6 @@ async function runDramaLlmStep<T>(
       profileId: session.profileId,
       profileName: session.profileName,
       status: attempt === 1 ? 'started' : 'retry',
-      segmentIndex: options.segmentIndex,
-      segmentTotal: options.segmentTotal,
     });
 
     try {
@@ -97,11 +78,7 @@ async function runDramaLlmStep<T>(
 
       const parsed = parse(response);
       if (parsed.ok) {
-        const segLabel =
-          options?.segmentIndex !== undefined && options?.segmentTotal !== undefined
-            ? ` seg ${options.segmentIndex + 1}/${options.segmentTotal}`
-            : '';
-        console.log(`[drama-metadata] step ${step}${segLabel} done (${stepKey})`);
+        console.log(`[drama-metadata] step ${step} done (${stepKey})`);
         return parsed.value;
       }
 
@@ -112,9 +89,6 @@ async function runDramaLlmStep<T>(
         reason: parsed.reason,
         ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
         ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
-        ...(options?.segmentIndex !== undefined && options?.segmentTotal !== undefined
-          ? { context: `seg ${options.segmentIndex + 1}/${options.segmentTotal}` }
-          : {}),
       };
       logValidationFailure(step, attempt, lastReason);
     } catch (err) {
@@ -127,146 +101,51 @@ async function runDramaLlmStep<T>(
     }
   }
 
-  const segSuffix =
-    options?.segmentIndex !== undefined && options?.segmentTotal !== undefined
-      ? ` (seg ${options.segmentIndex + 1}/${options.segmentTotal})`
-      : '';
-
   throw new AppError(
-    `Drama metadata step ${step} failed after ${MAX_RETRIES} attempts${segSuffix}: ${lastReason}`,
+    `Drama metadata step ${step} failed after ${MAX_RETRIES} attempts: ${lastReason}`,
     502,
     'DRAMA_METADATA_FAILED',
     lastDetails ?? { step, reason: lastReason },
   );
 }
 
+/** Step 1: narrative extraction from truncated transcript. */
 export async function runDramaStep1(
   session: MetaLlmSession,
   language: PromptLanguage,
-  segment: DramaTranscriptSegment,
-  segmentTotal: number,
+  transcript: string,
   options?: RunDramaStepOptions,
 ): Promise<Record<string, unknown>> {
   return runDramaLlmStep(
     session,
     language,
     1,
-    () => executePromptTemplate(language, resolveDramaStepKey(language, 1), [segment.text, segment.id]),
+    () => executePromptTemplate(language, resolveDramaStepKey(language, 1), [transcript]),
     parseDramaStep1Response,
-    {
-      ...options,
-      segmentIndex: segment.index,
-      segmentTotal,
-    },
-  );
-}
-
-/** Run step 1 for every segment with up to 7 Chrome profiles; results stay in transcript order. */
-export async function runDramaStep1Parallel(
-  language: PromptLanguage,
-  segments: DramaTranscriptSegment[],
-  options?: RunDramaStepOptions,
-): Promise<Record<string, unknown>[]> {
-  if (segments.length === 0) {
-    throw new AppError('No drama transcript segments to analyze', 400, 'INVALID_INPUT');
-  }
-
-  if (segments.length === 1) {
-    const provider = promptsSettingsService.get().defaultLlmProvider;
-    const profile = chromeProfilesService.pickSubProfile();
-    try {
-      await llmBrowserService.open(profile.id, provider);
-      return [
-        await runDramaStep1(
-          { profileId: profile.id, profileName: profile.name, provider },
-          language,
-          segments[0]!,
-          1,
-          options,
-        ),
-      ];
-    } finally {
-      await chromeProfilesService.closeSubProfiles([profile.id]);
-    }
-  }
-
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const workerCount = Math.min(MAX_PARALLEL_PROFILES, segments.length);
-  const profiles = chromeProfilesService.pickSubProfiles(workerCount);
-  const results: Record<string, unknown>[] = new Array(segments.length);
-  let nextIndex = 0;
-
-  console.log(
-    `[drama-metadata] parallel step1: ${segments.length} segments on ${workerCount} profiles (${profiles
-      .map((p) => p.name)
-      .join(', ')})`,
-  );
-
-  try {
-    async function worker(profile: ChromeProfile): Promise<void> {
-      await llmBrowserService.open(profile.id, provider);
-      const session: MetaLlmSession = {
-        profileId: profile.id,
-        profileName: profile.name,
-        provider,
-      };
-
-      while (true) {
-        const index = nextIndex++;
-        if (index >= segments.length) break;
-
-        const segment = segments[index]!;
-        console.log(
-          `[drama-metadata] profile ${profile.name} step1 seg ${index + 1}/${segments.length} (${segment.id})`,
-        );
-
-        results[index] = await runDramaStep1(session, language, segment, segments.length, options);
-
-        if (nextIndex < segments.length) {
-          await sleep(BATCH_DELAY_MS);
-        }
-      }
-    }
-
-    await Promise.all(profiles.map(worker));
-    return results;
-  } finally {
-    await chromeProfilesService.closeSubProfiles(profiles.map((profile) => profile.id));
-  }
-}
-
-export async function runDramaStep2(
-  session: MetaLlmSession,
-  language: PromptLanguage,
-  segmentAnalyses: Record<string, unknown>[],
-  options?: RunDramaStepOptions,
-): Promise<Record<string, unknown>> {
-  const payload = JSON.stringify(segmentAnalyses);
-  return runDramaLlmStep(
-    session,
-    language,
-    2,
-    () => executePromptTemplate(language, resolveDramaStepKey(language, 2), [payload]),
-    parseDramaStep2Response,
     options,
   );
 }
 
-export async function runDramaStep3(
+/** Step 2: metadata + thumbnail/background prompts from extracted story. */
+export async function runDramaStep2(
   session: MetaLlmSession,
   language: PromptLanguage,
   sourceTitle: string,
-  storyInput: string,
+  extractedStoryJson: Record<string, unknown>,
   imageStyle: string,
   options?: RunDramaStepOptions,
 ): Promise<MetadataLlmOutput> {
   return runDramaLlmStep(
     session,
     language,
-    3,
+    2,
     () =>
-      executePromptTemplate(language, resolveDramaStepKey(language, 3), [sourceTitle, storyInput, imageStyle]),
-    parseDramaStep3Response,
+      executePromptTemplate(language, resolveDramaStepKey(language, 2), [
+        sourceTitle,
+        extractedStoryJson,
+        imageStyle,
+      ]),
+    parseDramaStep2Response,
     options,
   );
 }

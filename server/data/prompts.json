@@ -26,7 +26,7 @@
       "category": "meta",
       "niche": "9577910e-042c-423b-9d06-5f2028655434",
       "createdAt": "2026-08-10T17:52:32.900Z",
-      "updatedAt": "2026-08-13T07:36:38.535Z",
+      "updatedAt": "2026-08-15T06:34:17.044Z",
       "steps": [
         {
           "id": "363b7c5c-ae97-4832-9bec-888f234e8b6e",
@@ -38,12 +38,6 @@
           "id": "9f745f43-ef40-4be6-9f6f-e1d5b425147c",
           "key": "metadata_drama_step_2",
           "step": 2,
-          "outputType": "text"
-        },
-        {
-          "id": "93b931c3-1686-40bf-942a-86c2054fb90a",
-          "key": "metadata_drama_step_3",
-          "step": 3,
           "outputType": "text"
         }
       ]

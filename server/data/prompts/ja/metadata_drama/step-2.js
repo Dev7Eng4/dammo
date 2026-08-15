@@ -1,270 +1,68 @@
-export default segmentAnalyses => `You are an expert Japanese narrative analyst.
+export default (title, extractedStoryJson, imageStyle = 'cinematic') => `
+Bạn là Giám đốc Sáng tạo và Chuyên gia Tối ưu hóa CTR YouTube hàng đầu tại thị trường Nhật Bản.
+Nhiệm vụ của bạn là tạo trọn bộ Metadata và **Prompt tạo ảnh Thumbnail All-in-One (Hình ảnh + Chữ tiếng Nhật Telop vẽ trực tiếp)** cùng **Background Image** theo đúng phong cách \`${imageStyle}\`.
 
-Your task is to reconstruct the COMPLETE STORY from multiple chronological transcript-segment analyses.
+---
 
-The supplied analyses were generated independently from different parts of the same video.
+## DỮ LIỆU ĐẦU VÀO:
 
-Create ONE coherent, FACTUAL FINAL STORY DOSSIER for downstream YouTube metadata, thumbnail, and cinematic visual generation.
+### TITLE CŨ:
+${title}
 
-==================================================
-SOURCE OF TRUTH
-==================================================
+### PHONG CÁCH HÌNH ẢNH (IMAGE STYLE):
+${imageStyle}
 
-SEGMENT ANALYSES = ONLY factual source.
+### BẢN PHÂN TÍCH CỐT TRUYỆN:
+${JSON.stringify(extractedStoryJson, null, 2)}
 
-Never invent, assume, predict, or complete missing information.
+---
 
-Do not add information that is not supported by the supplied analyses.
+## QUY TẮC THIẾT KẾ PROMPT THUMBNAIL (HÌNH ẢNH + CHỮ TRỰC TIẾP):
 
-If information conflicts:
+Thumbnail YouTube Nhật Bản thành công bắt buộc phải có sự kết hợp hài hòa giữa **Kịch tính hình ảnh** và **Đồ họa chữ giật gân (テロップ - Telop)**.
 
-1. Prefer explicitly confirmed information.
-2. If the conflict cannot be resolved, preserve it as uncertain.
-3. Never invent a resolution.
+Trong \`thumbnail.all_in_one_prompt_en\`, bạn phải kết hợp nhuần nhuyễn:
+1. **Bố cục & Nhân vật:**
+   - Chia bố cục rõ ràng (nhân vật chiếm 1/2 khung hình, 1/2 còn lại dành cho cụm chữ đồ họa).
+   - Biểu cảm cực độ (sốc tái mét, khóc uất ức, nụ cười nham hiểm, hoặc giận dữ).
+   - Hiệu ứng thị giác phụ trợ (Speed lines, dramatic flash, dark vignette).
+2. **Mô tả Typography tiếng Nhật trực tiếp trong Prompt:**
+   - **Badge/Label:** Băng rôn hoặc hộp thoại góc trên (Ví dụ: *A red rectangular badge with bold white Japanese text "【修羅場】"*).
+   - **Main Catchphrase (Chữ chính):** Chữ tiếng Nhật gây sốc nhất, đặt trong dấu ngoặc kép, mô tả rõ font chữ, màu sắc, viền và hiệu ứng 3D (Ví dụ: *Massive extra-bold 3D pop-out Japanese text reading "「即離婚よ！」" in bright yellow font with heavy black outline and subtle red shadow*).
+   - **Sub Catchphrase (Chữ phụ):** Dòng chữ ngữ cảnh nằm bên dưới chữ chính (Ví dụ: *Secondary Japanese text below reading "夫の裏切りが発覚…" in white bold font with dark stroke*).
+3. **Phong cách & Tham số:**
+   - Hòa trộn với \`${imageStyle}\`.
+   - Bắt buộc có tham số: \`--ar 16:9\`.
 
-==================================================
-RECONSTRUCTION
-==================================================
+---
 
-Reconstruct the story in chronological order.
-
-Identify:
-
-- story setup
-- main characters
-- important relationships
-- central conflict
-- escalation
-- major turning points
-- revelations
-- reversals
-- important consequences
-- climax
-- resolution
-- unresolved elements
-
-Only include stages that are confirmed.
-
-Do not force a traditional story structure if the source does not support it.
-
-==================================================
-CHARACTERS
-==================================================
-
-Merge duplicate characters across segments.
-
-For each important character preserve:
-
-- confirmed name
-- role
-- confirmed age
-- occupation
-- relevant characteristics
-- important actions
-- meaningful development
-
-Do not invent physical appearance.
-
-Do not repeat the same character multiple times.
-
-==================================================
-RELATIONSHIPS
-==================================================
-
-Merge relationships across segments.
-
-Track only meaningful confirmed changes:
-
-- trust
-- conflict
-- betrayal
-- separation
-- sacrifice
-- reconciliation
-- reunion
-- relationship development
-
-==================================================
-CHRONOLOGY
-==================================================
-
-Merge the segment events into one coherent chronological sequence.
-
-Remove duplicate events.
-
-Merge overlapping descriptions of the same event.
-
-Preserve important causal relationships.
-
-Do not lose important events merely to make the output shorter.
-
-==================================================
-CENTRAL CONFLICT
-==================================================
-
-Identify:
-
-- main problem
-- central conflict
-- emotional stakes
-- what the characters want
-- what prevents them from achieving it
-
-Only use confirmed information.
-
-==================================================
-IMPORTANT OBJECTS
-==================================================
-
-Preserve only objects with meaningful narrative, emotional, symbolic, or causal significance.
-
-Merge duplicate objects.
-
-==================================================
-EMOTIONAL STRUCTURE
-==================================================
-
-Identify the strongest emotional beats across the COMPLETE story.
-
-Prioritize moments that are:
-
-- emotionally significant
-- story-changing
-- visually powerful
-- relevant to the audience
-
-Do not include every emotional reaction.
-
-==================================================
-REVELATIONS
-==================================================
-
-Identify confirmed revelations across the entire story.
-
-Explain briefly why each revelation matters.
-
-==================================================
-REVERSALS
-==================================================
-
-Identify confirmed genuine reversals.
-
-Explain briefly how they change the story.
-
-==================================================
-UNRESOLVED QUESTIONS
-==================================================
-
-Preserve important unresolved questions.
-
-Do not answer them through speculation.
-
-==================================================
-ENDING
-==================================================
-
-Determine only what is confirmed:
-
-"resolved"
-"partially_resolved"
-"unresolved"
-"ending_not_provided"
-
-Never predict an ending.
-
-==================================================
-CREATIVE INFORMATION
-==================================================
-
-Identify the strongest factual elements that could later support:
-
-- title
-- thumbnail
-- emotional framing
-- curiosity
-- visual storytelling
-
-Do NOT generate titles or thumbnail text here.
-
-Do NOT optimize for CTR here.
-
-Your job is to provide accurate story information for Step 3.
-
-==================================================
-COMPRESSION
-==================================================
-
-The final dossier must be significantly more compact than the combined segment analyses.
-
-Remove:
-
-- duplicated information
-- minor events
-- filler
-- repetitive descriptions
-- redundant character information
-- unnecessary dialogue
-
-Preserve:
-
-- all major story events
-- important causality
-- important relationships
-- meaningful character development
-- important revelations
-- genuine reversals
-- important objects
-- strongest emotional beats
-- ending status
-
-The final dossier should contain enough information for another model to understand the complete story without seeing the original transcript.
-
-==================================================
-OUTPUT
-==================================================
-
-Return ONLY valid JSON.
-
-Use exactly this structure:
+## OUTPUT FORMAT:
+Chỉ xuất JSON hợp lệ duy nhất, không dùng Markdown ngoài JSON, không giải thích:
 
 {
-  "story_dossier": {
-    "story_overview": "",
-    "characters": [],
-    "relationships": [],
-    "chronology": [],
-    "central_conflict": "",
-    "emotional_stakes": "",
-    "turning_points": [],
-    "revelations": [],
-    "reversals": [],
-    "important_objects": [],
-    "emotional_beats": [],
-    "unresolved_questions": [],
-    "ending_status": "",
-    "title_relevant_facts": [],
-    "thumbnail_relevant_facts": [],
-    "visual_relevant_facts": []
+  "detected_niche": "Tên ngách bằng tiếng Việt",
+  "metadata": {
+    "title": "Title tiếng Nhật có CTR cao nhất",
+    "description": "Description tiếng Nhật ngắn gọn kèm CTA",
+    "tags": ["tag 1", "tag 2", "tag 3", "tag 4", "tag 5"]
   },
-  "factual_constraints": {
-    "confirmed": [],
-    "uncertain": []
+  "alternative_titles": [
+    "Title tiếng Nhật phương án 2 (Cảm xúc)",
+    "Title tiếng Nhật phương án 3 (Tò mò/Cảnh báo)"
+  ],
+  "thumbnail": {
+    "concept": "Mô tả tổng thể bố cục và nội dung thumbnail bằng tiếng Việt",
+    "telop_japanese": {
+      "badge": "【修羅場】",
+      "main_text": "「即離婚よ！」",
+      "sub_text": "夫が隠していた裏の顔…",
+      "color": "Chữ chính vàng chanh viền đen dày, chữ phụ trắng viền đỏ, badge đỏ chữ trắng"
+    },
+    "prompt": "YouTube thumbnail graphic design, split composition, on the left side a shocked 30yo Japanese woman with pale face and teary eyes staring at camera, dynamic anime speed lines in the background. On the top-right corner, a red badge with bold white Japanese text reading '【修羅場】'. In the center-right, massive extra-bold 3D Japanese typography reading '「即離婚よ！」' in vibrant yellow with a thick black outer stroke and drop shadow, beneath it secondary white Japanese text reading '夫が隠していた裏の顔…' with red outline. High contrast, dramatic studio lighting, professional YouTube thumbnail layout, styled in ${imageStyle} --ar 16:9"
+  },
+  "general_background": {
+    "concept": "Mô tả ý tưởng ảnh nền tĩnh phát toàn video bằng tiếng Việt",
+    "prompt": "Atmospheric wide establishing shot of a quiet Japanese apartment room at dusk, rain gently hitting the window, warm ambient floor lamp light, deep depth of field, calm environmental storytelling, styled in ${imageStyle} --ar 16:9"
   }
 }
-
-==================================================
-INPUT
-==================================================
-
-SEGMENT ANALYSES
-
-${segmentAnalyses}
-
-==================================================
-
-Return ONLY valid JSON.
-Do not output Markdown.
-Do not output code fences.
-Do not explain reasoning.
-Do not output internal analysis.
 `;
