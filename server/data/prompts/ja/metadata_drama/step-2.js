@@ -14,7 +14,7 @@ Bạn nhận được:
 ${title}
 
 ### IMAGE STYLE:
-${imageStyle}
+cinematic
 
 ### BẢN PHÂN TÍCH KỊCH BẢN DRAMA:
 ${JSON.stringify(extractedDramaJson, null, 2)}
@@ -47,7 +47,7 @@ Dựa vào \`dominant_emotion\` và \`conflict_framework\`, hãy chọn **1 tron
 - **Main Text:** 3–7 ký tự (Ví dụ: 「即刻追放」「慰謝料請求」「顔面蒼白」「自業自得」) viết font đậm, màu vàng chanh viền đen dày 3D hoặc đỏ rực.
 - **Badge:** Góc trên cùng bên trái/phải (Ví dụ: 【修羅場】, 【スカッと】).
 - **TUYỆT ĐỐI KHÔNG ĐẶT TEXT QUAN TRỌNG Ở GÓC DƯỚI BÊN PHẢI (Tránh Timestamp của YouTube).**
-- Thêm tham số: \`styled in ${imageStyle} --ar 16:9\`.
+- Thêm tham số: \`styled in cinematic --ar 16:9\`.
 
 ### 3. THIẾT KẾ ẢNH PHÂN CẢNH VIDEO (GENERAL VIDEO SCENE ARTWORK):
 Ảnh này phát liên tục suốt video, đóng vai trò là bức tranh minh họa phân cảnh đối đầu (Scene CG):
@@ -55,7 +55,7 @@ Dựa vào \`dominant_emotion\` và \`conflict_framework\`, hãy chọn **1 tron
 - **Góc máy:** Medium shot hoặc Medium-wide shot để thấy rõ cả 2 nhân vật, ngôn ngữ cơ thể căng thẳng và không gian xung quanh.
 - **Ánh sáng & Mood:** Ánh sáng kịch tính (Dramatic lighting, deep shadows), thể hiện rõ không khí ngột ngạt, lạnh lẽo hoặc xúc động sâu sắc.
 - **TUYỆT ĐỐI KHÔNG CÓ BẤT KỲ CHỮ NÀO (NO TEXT, NO LOGO, NO WATERMARK).**
-- Thêm tham số: \`styled in ${imageStyle} --ar 16:9\`.
+- Thêm tham số: \`styled in cinematic --ar 16:9\`.
 
 ---
 
