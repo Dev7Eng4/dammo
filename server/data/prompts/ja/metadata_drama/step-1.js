@@ -41,6 +41,11 @@ Chỉ xuất JSON hợp lệ duy nhất, không dùng Markdown, không giải th
     "characters": "Mô tả ngoại hình, tuổi tác, biểu cảm nhân vật lúc gay cấn",
     "environment": "Mô tả chi tiết bối cảnh, đồ vật xung quanh, thời gian, ánh sáng",
     "dominant_mood": "Tông màu cảm xúc chủ đạo"
-  }
+  },
+  "key_scene_action": {
+    "characters_involved": "Ai với ai (Ví dụ: Vợ 30 tuổi và Chồng 32 tuổi)",
+    "dramatic_action": "Hành động cụ thể (Ví dụ: Người vợ đang cầm tờ giấy xét nghiệm ADN chất vấn người chồng đang ngồi cúi gằm mặt)",
+    "setting_and_mood": "Không gian (phòng khách tối đèn, ánh sáng hắt từ đèn bàn) và bầu không khí (căng thẳng nghẹt thở)"
+  },
 }
 `;
