@@ -63,7 +63,7 @@ NGOÀI RA:
 
 Một ảnh nhân vật sẽ được attach kèm theo input.
 
-Ảnh này là REFERENCE IMAGE cho nhân vật trong thumbnail.
+Ảnh này là REFERENCE IMAGE GỐC CHO NHÂN VẬT trong thumbnail.
 
 ==================================================
 NGUYÊN TẮC LỚN
@@ -692,114 +692,62 @@ Mục tiêu:
 Mắt người xem phải nhận ra keyword mạnh nhất đầu tiên.
 
 ==================================================
-BƯỚC 13 — THUMBNAIL COMPOSITION
+BƯỚC 13 — THUMBNAIL COMPOSITION & STRICT CHARACTER ANCHORING
 ==================================================
 
-Sử dụng ảnh nhân vật được attach làm REFERENCE IMAGE.
+QUY TẮC BẤT DI BẤT DỊCH VỀ NHÂN VẬT (ZERO DEVIATION):
 
-Không thay đổi identity của nhân vật.
+1. Sử dụng ảnh nhân vật đính kèm làm EXACT CHARACTER REFERENCE (Anchor).
+2. KHÔNG ĐƯỢC biến đổi nhân vật thành người khác.
+3. KHÔNG ĐƯỢC sinh ra khuôn mặt AI ngẫu nhiên (No generic AI face/stock face).
+4. KHÔNG ĐƯỢC làm trẻ hóa, thay đổi độ tuổi, đổi giới tính, hoặc sửa đổi đặc điểm nhân trắc học.
+5. PHẢI GIỮ NGUYÊN 100%:
+   - Tỷ lệ và cấu trúc khuôn mặt (Facial bone structure)
+   - Tuổi tác thực tế và nếp nhăn tự nhiên (Exact age & wrinkles)
+   - Kiểu tóc, màu tóc (Hair style & hair line)
+   - Kính mắt, nốt ruồi, râu (nếu có trong ảnh reference)
+   - Biểu cảm nghiêm nghị/thông thái (Dignified, solemn, philosophical expression)
+   - Trang phục đặc trưng (Suit/Traditional Kimono/Yukata theo ảnh gốc)
 
-Không tạo một người khác.
-
-Không làm khuôn mặt thành generic AI face.
-
-Giữ:
-
-- facial structure
-- age
-- hairstyle
-- glasses nếu có
-- clothing
-- overall identity
+Composition:
 
 Character:
-
-30〜40% thumbnail.
+30〜40% thumbnail (Close-up portrait hoặc Bust shot, rõ nét khuôn mặt).
 
 Text:
-
 60〜70%.
 
 Ưu tiên:
+Character bên LEFT, Text bên RIGHT (hoặc ngược lại tùy theo hướng nhìn của nhân vật trong ảnh reference).
 
-Character bên LEFT
-Text bên RIGHT
-
-hoặc ngược lại nếu ảnh reference phù hợp hơn.
-
-Không để text che mặt.
-
-Không để text che mắt.
+Không để text che mặt hoặc che mắt nhân vật.
 
 Background:
-
-BLACK hoặc VERY DARK CHARCOAL.
-
-Có thể có subtle texture.
-
-Không có nhiều object.
-
-Không có background clutter.
-
-Không có logo.
-
-Không có watermark.
-
-Không có icon không cần thiết.
+BLACK hoặc SOLID DARK CHARCOAL, subtle vignette, zero background clutter.
 
 ==================================================
-BƯỚC 14 — IMAGE GENERATION PROMPT
+BƯỚC 14 — IMAGE GENERATION PROMPT FORMULATION
 ==================================================
 
-Tạo một prompt hoàn chỉnh dùng cho image generation.
+Tạo một prompt hoàn chỉnh bằng TIẾNG ANH chuyên dụng cho Image Generator (Midjourney / Flux / DALL-E / SDXL).
 
-Prompt phải nói rõ:
+Prompt PHẢI chứa các cấu trúc khóa nhận dạng và typography nghiêm ngặt sau:
 
-1. Sử dụng attached character image làm reference.
-2. Giữ nguyên identity.
-3. Character placement.
-4. Background.
-5. Lighting.
-6. Typography.
-7. Exact Japanese text.
-8. Exact line breaks.
-9. Exact colors cho từng dòng.
-10. Font style.
-11. Stroke.
-12. Shadow.
-13. Composition.
-14. Mobile readability.
-15. No extra text.
+1. IDENTITY LOCK DIRECTIVE:
+   - "Exact 1:1 photorealistic likeness of the person in the attached reference image ([detected_name] if identified)."
+   - "Maintain exact facial structure, actual age, facial wrinkles, hairstyle, gaze, and clothing from the reference image without any alteration."
+   - "Strictly DO NOT generate a different person, do not use generic AI face, do not de-age or beautify, do not alter identity."
 
-Bắt buộc mô tả font:
+2. COMPOSITION & LIGHTING:
+   - "High-contrast Japanese YouTube thumbnail composition, 16:9 ratio."
+   - "[Position: Left/Right] 35% side features the character in a dignified, philosophical close-up bust shot against a pure dark charcoal/black background with subtle dramatic rim lighting."
+   - "[Position: Right/Left] 65% space reserved exclusively for large vertical/horizontal Japanese typography."
 
-「極太の明朝体」
-「力強い太字の明朝体」
-「Japanese heavy bold Mincho typography」
-「high-contrast traditional Japanese serif」
-「classic Japanese calligraphy-inspired display typography」
-
-KHÔNG được mô tả font là:
-
-Gothic
-Sans-serif
-modern
-minimal
-rounded
-
-Prompt phải yêu cầu:
-
-EXACT JAPANESE TEXT ONLY.
-
-Không được tạo thêm Japanese text.
-
-Không được thay đổi wording.
-
-Không được typo.
-
-Không được duplicate text.
-
-Không được thêm title lên thumbnail.
+3. TYPOGRAPHY & TEXT SPECIFICATION:
+   - "Large, ultra-bold, high-impact Japanese Heavy Mincho (極太明朝体) serif typography."
+   - "Text content formatted exactly as: [Dòng 1 text] ([Color 1]), [Dòng 2 text] ([Color 2]), [Dòng 3 text] ([Color 3])."
+   - "Thick black outline, heavy drop shadow, highly legible on mobile screens."
+   - "Clean dark background, no clutter, no extra Japanese characters, no duplicate text, no English watermarks."
 
 ==================================================
 BƯỚC 15 — DESCRIPTION
@@ -864,6 +812,7 @@ TITLE:
 
 THUMBNAIL:
 
+[ ] nhân vật được fix cứng 100% theo ảnh reference (không biến dạng)
 [ ] chỉ một emotional idea
 [ ] không copy title
 [ ] 2〜4 dòng
@@ -888,8 +837,7 @@ TAGS:
 
 IMAGE PROMPT:
 
-[ ] dùng attached image làm reference
-[ ] giữ identity
+[ ] chứa đầy đủ chỉ thị khóa nhận dạng (1:1 likeness, zero-alteration)
 [ ] exact Japanese text
 [ ] exact color
 [ ] exact line breaks
@@ -900,9 +848,9 @@ IMAGE PROMPT:
 OUTPUT
 ==================================================
 
-CHỈ OUTPUT JSON.
+CHỈ OUTPUT JSON HỢP LỆ (VALID JSON).
 
-KHÔNG markdown.
+KHÔNG markdown code block ngoài json (hoặc chỉ raw json).
 
 KHÔNG giải thích.
 
@@ -921,7 +869,6 @@ FORMAT:
   "detected_name": "",
   "framing": "",
   "core_promise": "",
-
   "metadata": {
     "title": "",
     "description": "",
@@ -933,15 +880,12 @@ FORMAT:
       ""
     ]
   },
-
   "alternative_titles": [
     "",
     "",
     ""
   ],
-
   "recommended_title_index": 0,
-
   "thumbnail": {
     "text": "",
     "lines": [
@@ -964,9 +908,9 @@ FORMAT:
     "background": "BLACK",
     "character_position": "LEFT",
     "text_position": "RIGHT",
-    "visual_strategy": ""
+    "visual_strategy": "",
     "image_generation_prompt": ""
-  },
+  }
 }
 
 ==================================================

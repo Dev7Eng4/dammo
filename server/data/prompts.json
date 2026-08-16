@@ -1,6 +1,54 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_triet_ly_chua_lanh_tam_hon",
+      "baseKey": "metadata_triet_ly_chua_lanh_tam_hon",
+      "language": "ja",
+      "name": "Metadata Triết lý & chữa lành tâm hồn",
+      "category": "meta",
+      "niche": "82ecb2a0-4491-4164-9d1d-ac25f15340e8",
+      "createdAt": "2026-08-15T16:12:45.458Z",
+      "updatedAt": "2026-08-15T16:12:45.496Z",
+      "steps": [
+        {
+          "id": "a144c63a-dcbe-4311-8fb2-bc315569d8b5",
+          "key": "metadata_triet_ly_chua_lanh_tam_hon_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "37953ea9-d976-42d7-8c8f-5dda8ef0d804",
+          "key": "metadata_triet_ly_chua_lanh_tam_hon_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tai_chinh_luong_huu",
+      "baseKey": "metadata_tai_chinh_luong_huu",
+      "language": "ja",
+      "name": "Metadata Tài chính lương hưu",
+      "category": "meta",
+      "niche": "1b760071-c53d-4696-9223-5106f1e853c2",
+      "createdAt": "2026-08-15T15:44:42.687Z",
+      "updatedAt": "2026-08-15T15:44:42.706Z",
+      "steps": [
+        {
+          "id": "6d6e59df-8637-458a-a9d9-88fe00bf0f52",
+          "key": "metadata_tai_chinh_luong_huu_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "5e46bf29-7a12-4830-8902-93b5350ed19d",
+          "key": "metadata_tai_chinh_luong_huu_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_dinh_duong_va_phong_sach_song_nguoi_cao_tuoi",
       "baseKey": "metadata_dinh_duong_va_phong_sach_song_nguoi_cao_tuoi",
       "language": "ja",

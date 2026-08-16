@@ -12,7 +12,9 @@ export async function clickElement(
   scrollIntoView = true,
   force = false,
 ): Promise<void> {
-  const locator = typeof selectorOrLocator === 'string' ? page.locator(selectorOrLocator) : selectorOrLocator;
+  const locator = (
+    typeof selectorOrLocator === 'string' ? page.locator(selectorOrLocator) : selectorOrLocator
+  ).first();
   if (scrollIntoView) {
     await locator.scrollIntoViewIfNeeded().catch(() => undefined);
   }

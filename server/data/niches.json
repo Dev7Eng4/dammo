@@ -1,6 +1,16 @@
 {
   "niches": [
     {
+      "key": "82ecb2a0-4491-4164-9d1d-ac25f15340e8",
+      "label": "TRIẾT LÝ & CHỮA LÀNH TÂM HỒN",
+      "createdAt": "2026-08-15T16:10:21.172Z"
+    },
+    {
+      "key": "1b760071-c53d-4696-9223-5106f1e853c2",
+      "label": "TÀI CHÍNH LƯƠNG HƯU",
+      "createdAt": "2026-08-15T15:40:36.374Z"
+    },
+    {
       "key": "3b5a9d49-8834-4bae-aa97-427ed9f04828",
       "label": "DINH DƯỠNG VÀ PHONG CÁCH SỐNG NGƯỜI CAO TUỐI",
       "createdAt": "2026-08-15T13:35:22.954Z"
