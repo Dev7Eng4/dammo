@@ -3,5 +3,6 @@ import type { LlmTextProvider, ImageBrowserProvider, VideoBrowserProvider } from
 export interface PromptsSettings {
   defaultLlmProvider: LlmTextProvider;
   defaultImageProvider: ImageBrowserProvider;
+  defaultThumbnailProvider: ImageBrowserProvider;
   defaultVideoProvider: VideoBrowserProvider;
 }

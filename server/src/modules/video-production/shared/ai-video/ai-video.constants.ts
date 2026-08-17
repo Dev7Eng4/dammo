@@ -19,11 +19,24 @@ export const AI_SMALL_VIDEO_OVERLAY_X = 0;
 export const AI_SMALL_VIDEO_OVERLAY_Y = 0;
 
 /**
- * Ken Burns internal upscale for AI slideshow. Must stay at 4 (same as
- * SS_TEMP_SCALE_FACTOR): zoompan rounds crop to integer pixels, and lower
- * values produce visible hold-and-jump motion on slow pans/zooms.
+ * Ken Burns internal upscale for AI slideshow. zoompan rounds crop to integer
+ * pixels; values below 4 produce visible hold-and-jump on slow pans/zooms.
+ * 6 gives smoother motion on long AI scenes (up to ~60s) at higher RAM/CPU cost.
  */
-export const AI_SLIDESHOW_TEMP_SCALE_FACTOR = 4;
+export const AI_SLIDESHOW_TEMP_SCALE_FACTOR = 6;
+
+/** Target avg crop travel on the supersampled canvas (mitigates zoompan #4298). */
+export const AI_KEN_BURNS_MIN_PX_PER_FRAME = 1.75;
+
+/** Slides longer than this use linear easing (easeInOut stalls near endpoints). */
+export const AI_KEN_BURNS_LONG_SLIDE_LINEAR_SEC = 20;
+
+/** Max zoom after duration-adaptive amplitude scaling. */
+export const AI_KEN_BURNS_MAX_ZOOM = 1.55;
+
+/** Focal-point clamp so boosted pans keep a valid crop window. */
+export const AI_KEN_BURNS_FOCAL_MIN = 0.2;
+export const AI_KEN_BURNS_FOCAL_MAX = 0.8;
 
 /**
  * Max seconds the final slide may absorb when the scene timeline is shorter

@@ -18,12 +18,14 @@ export type VideoBrowserProvider = 'meta';
 export interface PromptsSettings {
   defaultLlmProvider: PlaygroundProvider;
   defaultImageProvider: ImageBrowserProvider;
+  defaultThumbnailProvider: ImageBrowserProvider;
   defaultVideoProvider: VideoBrowserProvider;
 }
 
 export interface UpdatePromptsSettingsPayload {
   defaultLlmProvider?: PlaygroundProvider;
   defaultImageProvider?: ImageBrowserProvider;
+  defaultThumbnailProvider?: ImageBrowserProvider;
   defaultVideoProvider?: VideoBrowserProvider;
 }
 

@@ -1,4 +1,4 @@
-import type { EasingType, FitMode, KenBurnsEffect } from './slideshow.types.js';
+import type { EasingType, FitMode, FocalPoint, KenBurnsEffect } from './slideshow.types.js';
 import { SS_PIXEL_FORMAT } from './slideshow.constants.js';
 
 export interface KenBurnsFilterOptions {
@@ -9,6 +9,100 @@ export interface KenBurnsFilterOptions {
   /** Internal upscale multiplier (works around zoompan jitter bug #4298). */
   tempScaleFactor: number;
   fit: FitMode;
+}
+
+export interface AdaptKenBurnsOptions {
+  width: number;
+  height: number;
+  fps: number;
+  tempScaleFactor: number;
+  /** Minimum average crop travel on the supersampled canvas (px/frame). */
+  minPxPerFrame?: number;
+  /** Use linear easing when duration exceeds this (seconds). */
+  longSlideLinearSec?: number;
+  maxZoom?: number;
+  focalMin?: number;
+  focalMax?: number;
+}
+
+const DEFAULT_MIN_PX_PER_FRAME = 1.75;
+const DEFAULT_LONG_SLIDE_LINEAR_SEC = 20;
+const DEFAULT_MAX_ZOOM = 1.55;
+const DEFAULT_FOCAL_MIN = 0.2;
+const DEFAULT_FOCAL_MAX = 0.8;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function clampFocal(point: FocalPoint, min: number, max: number): FocalPoint {
+  return { x: clamp(point.x, min, max), y: clamp(point.y, min, max) };
+}
+
+/**
+ * Scales pan/zoom amplitude so average crop travel on the supersampled canvas
+ * stays above ~minPxPerFrame. Slow motion below that threshold triggers zoompan
+ * integer hold-and-jump (#4298). Long slides also switch to linear easing.
+ */
+export function adaptKenBurnsForDuration(
+  effect: KenBurnsEffect,
+  durationSec: number,
+  opts: AdaptKenBurnsOptions,
+): KenBurnsEffect {
+  const minPx = opts.minPxPerFrame ?? DEFAULT_MIN_PX_PER_FRAME;
+  const longLinearSec = opts.longSlideLinearSec ?? DEFAULT_LONG_SLIDE_LINEAR_SEC;
+  const maxZoom = opts.maxZoom ?? DEFAULT_MAX_ZOOM;
+  const focalMin = opts.focalMin ?? DEFAULT_FOCAL_MIN;
+  const focalMax = opts.focalMax ?? DEFAULT_FOCAL_MAX;
+
+  const frames = Math.max(1, Math.round(opts.fps * durationSec) - 1);
+  const uw = opts.width * opts.tempScaleFactor;
+  const uh = opts.height * opts.tempScaleFactor;
+
+  const dx = effect.to.x - effect.from.x;
+  const dy = effect.to.y - effect.from.y;
+  const panTravel = Math.hypot(dx * uw, dy * uh);
+
+  const z0 = Math.max(1, effect.zoomStart);
+  const z1 = Math.max(1, effect.zoomEnd);
+  const zoomTravel = Math.abs(uw / z0 - uw / z1);
+
+  // Pan moves the crop window; zoom changes its size — take the stronger signal.
+  const travel = Math.max(panTravel, zoomTravel);
+  const pxPerFrame = travel / frames;
+
+  let next: KenBurnsEffect = { ...effect, from: { ...effect.from }, to: { ...effect.to } };
+
+  if (pxPerFrame < minPx && travel > 0) {
+    const boost = minPx / pxPerFrame;
+    const midX = (effect.from.x + effect.to.x) / 2;
+    const midY = (effect.from.y + effect.to.y) / 2;
+    next.from = clampFocal(
+      { x: midX - (dx / 2) * boost, y: midY - (dy / 2) * boost },
+      focalMin,
+      focalMax,
+    );
+    next.to = clampFocal(
+      { x: midX + (dx / 2) * boost, y: midY + (dy / 2) * boost },
+      focalMin,
+      focalMax,
+    );
+
+    const zoomMid = (effect.zoomStart + effect.zoomEnd) / 2;
+    const zoomHalf = ((effect.zoomEnd - effect.zoomStart) / 2) * boost;
+    next.zoomStart = clamp(zoomMid - zoomHalf, 1, maxZoom);
+    next.zoomEnd = clamp(zoomMid + zoomHalf, 1, maxZoom);
+  } else if (pxPerFrame < minPx && travel === 0) {
+    // Static-like preset on a long slide: inject a mild zoom so motion has room.
+    next.zoomStart = 1;
+    next.zoomEnd = clamp(1 + (minPx * frames) / uw, 1, maxZoom);
+  }
+
+  if (durationSec > longLinearSec) {
+    next.easing = 'linear';
+  }
+
+  return next;
 }
 
 /**

@@ -7,8 +7,9 @@
       "name": "Metadata Triết lý & chữa lành tâm hồn",
       "category": "meta",
       "niche": "82ecb2a0-4491-4164-9d1d-ac25f15340e8",
+      "requireGeneralBackground": true,
       "createdAt": "2026-08-15T16:12:45.458Z",
-      "updatedAt": "2026-08-15T16:12:45.496Z",
+      "updatedAt": "2026-08-16T07:42:59.360Z",
       "steps": [
         {
           "id": "a144c63a-dcbe-4311-8fb2-bc315569d8b5",
@@ -31,8 +32,9 @@
       "name": "Metadata Tài chính lương hưu",
       "category": "meta",
       "niche": "1b760071-c53d-4696-9223-5106f1e853c2",
+      "requireGeneralBackground": false,
       "createdAt": "2026-08-15T15:44:42.687Z",
-      "updatedAt": "2026-08-15T15:44:42.706Z",
+      "updatedAt": "2026-08-16T07:42:55.441Z",
       "steps": [
         {
           "id": "6d6e59df-8637-458a-a9d9-88fe00bf0f52",
@@ -55,8 +57,9 @@
       "name": "Metadata Dinh dưỡng và phong sách sống người cao tuổi",
       "category": "meta",
       "niche": "3b5a9d49-8834-4bae-aa97-427ed9f04828",
+      "requireGeneralBackground": false,
       "createdAt": "2026-08-15T13:53:02.382Z",
-      "updatedAt": "2026-08-15T13:53:02.416Z",
+      "updatedAt": "2026-08-16T07:42:46.241Z",
       "steps": [
         {
           "id": "99eb9d82-5421-46a2-804f-a74fc1426f8c",

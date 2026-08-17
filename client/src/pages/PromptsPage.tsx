@@ -154,12 +154,15 @@ export function PromptsPage() {
 
   const [provider, setProvider] = useState<PlaygroundProvider>('gpt');
   const [imageProvider, setImageProvider] = useState<ImageBrowserProvider>('flow');
+  const [thumbnailProvider, setThumbnailProvider] = useState<ImageBrowserProvider>('flow');
   const [videoProvider, setVideoProvider] = useState<VideoBrowserProvider>('meta');
   const [providerSaving, setProviderSaving] = useState(false);
   const [imageProviderSaving, setImageProviderSaving] = useState(false);
+  const [thumbnailProviderSaving, setThumbnailProviderSaving] = useState(false);
   const [videoProviderSaving, setVideoProviderSaving] = useState(false);
   const [providerSettingsError, setProviderSettingsError] = useState<string | null>(null);
   const [imageProviderSettingsError, setImageProviderSettingsError] = useState<string | null>(null);
+  const [thumbnailProviderSettingsError, setThumbnailProviderSettingsError] = useState<string | null>(null);
   const [videoProviderSettingsError, setVideoProviderSettingsError] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [variableValuesByStep, setVariableValuesByStep] = useState<Record<string, Record<string, string>>>({});
@@ -213,6 +216,7 @@ export function PromptsPage() {
       const { item } = await fetchPromptSettings({ signal });
       setProvider(item.defaultLlmProvider);
       setImageProvider(item.defaultImageProvider);
+      setThumbnailProvider(item.defaultThumbnailProvider ?? 'flow');
       setVideoProvider(item.defaultVideoProvider);
     } catch (err) {
       if (isAbortError(err)) return;
@@ -250,6 +254,25 @@ export function PromptsPage() {
       setImageProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp hình ảnh');
     } finally {
       setImageProviderSaving(false);
+    }
+  }
+
+  async function handleThumbnailProviderChange(next: ImageBrowserProvider) {
+    const previous = thumbnailProvider;
+    setThumbnailProvider(next);
+    setThumbnailProviderSettingsError(null);
+    setThumbnailProviderSaving(true);
+
+    try {
+      const { item } = await updatePromptSettings({ defaultThumbnailProvider: next });
+      setThumbnailProvider(item.defaultThumbnailProvider);
+    } catch (err) {
+      setThumbnailProvider(previous);
+      setThumbnailProviderSettingsError(
+        err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp thumbnail',
+      );
+    } finally {
+      setThumbnailProviderSaving(false);
     }
   }
 
@@ -706,12 +729,15 @@ export function PromptsPage() {
         onActiveStepChange={handleActiveStepChange}
         provider={provider}
         imageProvider={imageProvider}
+        thumbnailProvider={thumbnailProvider}
         videoProvider={videoProvider}
         providerSaving={providerSaving}
         imageProviderSaving={imageProviderSaving}
+        thumbnailProviderSaving={thumbnailProviderSaving}
         videoProviderSaving={videoProviderSaving}
         providerSettingsError={providerSettingsError}
         imageProviderSettingsError={imageProviderSettingsError}
+        thumbnailProviderSettingsError={thumbnailProviderSettingsError}
         videoProviderSettingsError={videoProviderSettingsError}
         variableValues={variableValues}
         running={running}
@@ -719,6 +745,7 @@ export function PromptsPage() {
         error={playgroundError}
         onProviderChange={handleProviderChange}
         onImageProviderChange={handleImageProviderChange}
+        onThumbnailProviderChange={handleThumbnailProviderChange}
         onVideoProviderChange={handleVideoProviderChange}
         onVariableChange={(name, value) => {
           if (!activeStepLocalId) return;

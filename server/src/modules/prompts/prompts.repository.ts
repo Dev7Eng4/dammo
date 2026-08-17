@@ -111,6 +111,9 @@ function sanitizeStore(raw: PromptsStore | LegacyStore | null): PromptsStore {
         ...set,
         baseKey: normalizeKey(set.baseKey),
         niche: set.niche || 'all',
+        ...(typeof set.requireGeneralBackground === 'boolean'
+          ? { requireGeneralBackground: set.requireGeneralBackground }
+          : {}),
         steps: [...set.steps]
           .map((step) => ({
             id: step.id,
@@ -158,6 +161,30 @@ function findSetIndexByBaseKey(
 export class PromptsRepository {
   findAll(): Prompt[] {
     return flattenStore(loadStore());
+  }
+
+  findAllSets(): PromptSet[] {
+    return cloneStore(loadStore()).promptSets;
+  }
+
+  /**
+   * Niche-specific meta prompt set for a language.
+   * Prefer a 2-step set when multiple match; otherwise the first match.
+   */
+  findMetaSetForNiche(language: PromptLanguage, niche: string): PromptSet | null {
+    const nicheId = niche.trim();
+    if (!nicheId || nicheId === 'all') return null;
+
+    const matches = this.findAllSets().filter(
+      (set) =>
+        set.category === 'meta' &&
+        set.language === language &&
+        (set.niche || 'all') === nicheId,
+    );
+    if (matches.length === 0) return null;
+
+    const twoStep = matches.find((set) => set.steps.length === 2);
+    return twoStep ?? matches[0] ?? null;
   }
 
   findById(id: string): Prompt | null {

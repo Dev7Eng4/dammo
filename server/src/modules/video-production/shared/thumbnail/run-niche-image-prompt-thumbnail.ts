@@ -1,6 +1,7 @@
 import { AppError } from '../../../../shared/http/errors.js';
 import {
-  runFlowImageGeneration,
+  resolveThumbnailImageProvider,
+  runBrowserImageGeneration,
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
@@ -17,8 +18,9 @@ export interface NicheImagePromptThumbnailResult {
 }
 
 /**
- * Generate thumbnail.jpg from metadata `image_generation_prompt` via Flow,
- * without attaching any reference images (unlike celebrity-wisdom path).
+ * Generate thumbnail.jpg from metadata `image_generation_prompt` via the
+ * configured thumbnail provider, without attaching any reference images
+ * (unlike celebrity-wisdom path).
  */
 export async function runNicheImagePromptThumbnail(
   workDir: string,
@@ -34,9 +36,10 @@ export async function runNicheImagePromptThumbnail(
     );
   }
 
-  console.log('[niche-image-prompt-thumbnail] Generating thumbnail with Flow (no reference)...');
+  const provider = resolveThumbnailImageProvider();
+  console.log(`[niche-image-prompt-thumbnail] Generating thumbnail with ${provider} (no reference)...`);
 
-  const flowResult = await runFlowImageGeneration(prompt, workDir, {
+  const flowResult = await runBrowserImageGeneration(prompt, workDir, {
     fileName: THUMBNAIL_FILENAME,
     profileId: options?.profileId,
     onProgress: options?.onProgress,

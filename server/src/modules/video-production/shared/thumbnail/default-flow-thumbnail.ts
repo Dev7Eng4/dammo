@@ -4,7 +4,8 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 import {
-  runFlowImageGeneration,
+  resolveThumbnailImageProvider,
+  runBrowserImageGeneration,
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
@@ -77,9 +78,10 @@ export async function runDefaultFlowThumbnail(
     throw new AppError(`Empty prompt for thumbnail style ${promptKey}`, 500, 'PROMPT_EMPTY');
   }
 
-  console.log(`[default-flow-thumbnail] Generating thumbnail via Flow single (style ${promptKey})...`);
+  const provider = resolveThumbnailImageProvider();
+  console.log(`[default-flow-thumbnail] Generating thumbnail via ${provider} (style ${promptKey})...`);
 
-  const flowResult = await runFlowImageGeneration(promptUsed, workDir, {
+  const flowResult = await runBrowserImageGeneration(promptUsed, workDir, {
     fileName: THUMBNAIL_FILENAME,
     referenceImagePaths: flowReferenceImagePaths,
     profileId: options?.profileId,

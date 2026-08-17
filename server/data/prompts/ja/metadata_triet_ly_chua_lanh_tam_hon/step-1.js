@@ -1,5 +1,4 @@
-export default fullTranscript => `
-Bạn là Chuyên gia Biên kịch và Nhà Nghiên cứu Triết học Phật giáo, Tâm lý học Chữa lành & Phong cách sống Tối giản Nhật Bản (chuyên về ブッダの教え, 禅, 老荘思想, 人間関係の断捨離, 孤独の技術).
+export default (fullTranscript) => `Bạn là Chuyên gia Biên kịch và Nhà Nghiên cứu Triết học Phật giáo, Tâm lý học Chữa lành & Phong cách sống Tối giản Nhật Bản (chuyên về ブッダの教え, 禅, 老荘思想, 人間関係の断捨離, 孤独の技術).
 Nhiệm vụ của bạn là đọc toàn bộ transcript video để:
 1. Bóc tách toàn bộ "lõi triết lý", các mâu thuẫn nội tâm, bài học giác ngộ và giải pháp giải tỏa tâm lý.
 2. **THIẾT LẬP BẢNG NHẬN DIỆN THỊ GIÁC CỐ ĐỊNH (VISUAL DNA)** gồm **Nhân vật đại diện (Zen Master hoặc Persona)** và **Biểu tượng thanh tịnh (Sacred Zen Props)** để đảm bảo đồng nhất 100% giữa Thumbnail và Ảnh nền video.

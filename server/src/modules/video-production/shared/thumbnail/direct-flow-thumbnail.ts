@@ -3,7 +3,8 @@ import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 import type { MetaStep3Output } from '../meta/metadata.types.js';
 import {
-  runFlowImageGeneration,
+  resolveThumbnailImageProvider,
+  runBrowserImageGeneration,
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
@@ -48,9 +49,10 @@ export async function runDirectFlowThumbnail(
     throw new AppError(`Empty prompt for thumbnail style ${promptKey}`, 500, 'PROMPT_EMPTY');
   }
 
-  console.log(`[direct-flow-thumbnail] Generating thumbnail via Flow single (style ${promptKey})...`);
+  const provider = resolveThumbnailImageProvider();
+  console.log(`[direct-flow-thumbnail] Generating thumbnail via ${provider} (style ${promptKey})...`);
 
-  const flowResult = await runFlowImageGeneration(promptUsed, outputDir, {
+  const flowResult = await runBrowserImageGeneration(promptUsed, outputDir, {
     fileName: THUMBNAIL_FILENAME,
     profileId: options?.profileId,
     onProgress: options?.onProgress,

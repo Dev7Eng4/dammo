@@ -3,7 +3,8 @@ import { celebrityDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { celebritiesService } from '../../../celebrities/celebrities.service.js';
 import {
-  runFlowImageGeneration,
+  resolveThumbnailImageProvider,
+  runBrowserImageGeneration,
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
@@ -56,11 +57,12 @@ export async function runCelebrityWisdomThumbnail(
 
   const referenceImagePath = path.join(celebrityDir(trimmedCelebrityId), pickRandomItem(imageMedia).name);
 
+  const provider = resolveThumbnailImageProvider();
   console.log(
-    `[celebrity-wisdom-thumbnail] Generating thumbnail with Flow (reference: ${path.basename(referenceImagePath)})...`,
+    `[celebrity-wisdom-thumbnail] Generating thumbnail with ${provider} (reference: ${path.basename(referenceImagePath)})...`,
   );
 
-  const flowResult = await runFlowImageGeneration(prompt, workDir, {
+  const flowResult = await runBrowserImageGeneration(prompt, workDir, {
     fileName: THUMBNAIL_FILENAME,
     referenceImagePaths: [referenceImagePath],
     profileId: options?.profileId,

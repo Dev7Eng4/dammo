@@ -1,7 +1,8 @@
 import { AppError } from '../../../../shared/http/errors.js';
 import {
+  resolveThumbnailImageProvider,
+  runBrowserImageGenerations,
   DEFAULT_HERO_IMAGE_FILENAME,
-  runFlowImageGenerations,
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
@@ -19,7 +20,7 @@ export interface SiOneImageFlowBatchResult {
 }
 
 /**
- * Generate thumbnail.jpg + background.jpg via Flow single in one Chrome session
+ * Generate thumbnail.jpg + background.jpg via the configured thumbnail provider
  * (open once → two sequential generateImage calls → close once).
  */
 export async function runSiOneImageFlowBatch(
@@ -30,6 +31,7 @@ export async function runSiOneImageFlowBatch(
 ): Promise<SiOneImageFlowBatchResult> {
   const thumbnailPrompt = imageGenerationPrompt.trim();
   const backgroundPrompt = videoVisualPrompt.trim();
+  const provider = resolveThumbnailImageProvider();
 
   if (!thumbnailPrompt) {
     throw new AppError(
@@ -47,33 +49,34 @@ export async function runSiOneImageFlowBatch(
   }
 
   console.log(
-    '[si-one-image-flow-batch] Generating thumbnail + background via Flow single (2 jobs, one session)...',
+    `[si-one-image-flow-batch] Generating thumbnail + background via ${provider} (2 jobs, one session)...`,
   );
 
-  const results = await runFlowImageGenerations(
+  const results = await runBrowserImageGenerations(
     workDir,
     [
       {
         prompt: thumbnailPrompt,
         fileName: THUMBNAIL_FILENAME,
-        logPrefix: '[si-one-image-flow-batch] thumbnail',
+        logPrefix: `[si-one-image-flow-batch] thumbnail (${provider})`,
         failureCode: 'SI_ONE_IMAGE_THUMBNAIL_FAILED',
         buildFailureMessage: reason =>
-          `SI one_image thumbnail failed after retries: ${reason}`,
+          `SI one_image thumbnail failed via ${provider}: ${reason}`,
       },
       {
         prompt: backgroundPrompt,
         fileName: DEFAULT_HERO_IMAGE_FILENAME,
-        logPrefix: '[si-one-image-flow-batch] background',
+        logPrefix: `[si-one-image-flow-batch] background (${provider})`,
         failureCode: 'SI_ONE_IMAGE_BACKGROUND_FAILED',
         buildFailureMessage: reason =>
-          `SI one_image background failed after retries: ${reason}`,
+          `SI one_image background failed via ${provider}: ${reason}`,
       },
     ],
     {
       profileId: options?.profileId,
       onProgress: options?.onProgress,
       onJobProgress: options?.onJobProgress,
+      provider,
     },
   );
 
@@ -81,7 +84,7 @@ export async function runSiOneImageFlowBatch(
   const backgroundResult = results[1];
   if (!thumbnailResult || !backgroundResult) {
     throw new AppError(
-      'SI one_image Flow single batch returned incomplete results',
+      `SI one_image ${provider} batch returned incomplete results`,
       502,
       'SI_ONE_IMAGE_FLOW_BATCH_INCOMPLETE',
     );

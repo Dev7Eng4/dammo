@@ -6,7 +6,8 @@ import { promptsRepository } from '../../../prompts/prompts.repository.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import {
   DEFAULT_HERO_IMAGE_FILENAME,
-  runFlowImageGeneration,
+  resolveThumbnailImageProvider,
+  runBrowserImageGeneration,
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
@@ -67,9 +68,11 @@ export async function runGeneralImage(
     throw new AppError(`Empty prompt for general image style ${promptKey}`, 500, 'PROMPT_EMPTY');
   }
 
-  console.log(`[run-general-image] Generating hero image with Google Flow (general + reference)...`);
+  console.log(
+    `[run-general-image] Generating hero image with ${resolveThumbnailImageProvider()} (general + reference)...`,
+  );
 
-  const flowResult = await runFlowImageGeneration(promptUsed, workDir, {
+  const flowResult = await runBrowserImageGeneration(promptUsed, workDir, {
     fileName: DEFAULT_HERO_IMAGE_FILENAME,
     referenceImagePaths,
     profileId: options?.profileId,

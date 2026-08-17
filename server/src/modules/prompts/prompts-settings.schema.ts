@@ -7,5 +7,6 @@ export const videoBrowserProviderSchema = z.enum(['meta']);
 export const updatePromptsSettingsSchema = z.object({
   defaultLlmProvider: llmTextProviderSchema.optional(),
   defaultImageProvider: imageBrowserProviderSchema.optional(),
+  defaultThumbnailProvider: imageBrowserProviderSchema.optional(),
   defaultVideoProvider: videoBrowserProviderSchema.optional(),
 });

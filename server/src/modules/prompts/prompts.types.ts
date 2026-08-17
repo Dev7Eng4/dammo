@@ -41,6 +41,11 @@ export interface PromptSet {
   category: PromptCategory;
   niche: string;
   isSystem?: boolean;
+  /**
+   * Meta 2-step only: when true, step-2 must include general_background.prompt.
+   * When omitted, inferred from the step-2 template containing `general_background`.
+   */
+  requireGeneralBackground?: boolean;
   createdAt: string;
   updatedAt: string;
   steps: PromptStep[];

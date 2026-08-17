@@ -135,7 +135,15 @@ export async function prepareRawStockVideoClip(
 
   args.push('-i', inputPath, '-vf', vf, '-an', ...buildH264VideoEncoderArgs(stockEncodeOpts), outputPath);
 
-  await runFfmpeg(args, { encodeOpts: stockEncodeOpts, onLog, label });
+  const expectedDurationSec =
+    typeof durationSec === 'number' && durationSec > 0 ? durationSec * STOCK_SLOWMO_FACTOR : undefined;
+
+  await runFfmpeg(args, {
+    encodeOpts: stockEncodeOpts,
+    onLog,
+    label,
+    ...(expectedDurationSec !== undefined ? { expectedDurationSec } : {}),
+  });
 
   return outputPath;
 }
@@ -201,6 +209,7 @@ export async function prepareBakedLocalStockClip(
       encodeOpts: stockEncodeOpts,
       onLog,
       label,
+      expectedDurationSec: cutDurationSec * LOCAL_STOCK_SLOWMO_FACTOR,
     });
   } finally {
     await fs.unlink(filterScriptPath).catch(() => undefined);

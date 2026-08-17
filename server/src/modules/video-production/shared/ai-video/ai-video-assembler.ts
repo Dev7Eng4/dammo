@@ -8,6 +8,7 @@ import {
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
+import { adaptKenBurnsForDuration } from '../slideshow/ken-burns.js';
 import {
   AUTO_KEN_BURNS_ROTATION,
   AUTO_TRANSITION_ROTATION,
@@ -38,6 +39,11 @@ import {
   scaleSrtTimestamps,
 } from '../si-video/si-subtitle.js';
 import {
+  AI_KEN_BURNS_FOCAL_MAX,
+  AI_KEN_BURNS_FOCAL_MIN,
+  AI_KEN_BURNS_LONG_SLIDE_LINEAR_SEC,
+  AI_KEN_BURNS_MAX_ZOOM,
+  AI_KEN_BURNS_MIN_PX_PER_FRAME,
   AI_MAX_LAST_SLIDE_PAD_SEC,
   AI_SLIDESHOW_FINAL_PRESET,
   AI_SLIDESHOW_RAW_BASENAME,
@@ -121,6 +127,27 @@ function padSlidesToAudioDuration(
   return padded;
 }
 
+/** Boost pan/zoom on long slides so zoompan stays above the integer-step jitter floor. */
+function applyDurationAdaptiveKenBurns(slides: SlideSpec[]): SlideSpec[] {
+  return slides.map(slide => {
+    if (!slide.kenBurns) return slide;
+    return {
+      ...slide,
+      kenBurns: adaptKenBurnsForDuration(slide.kenBurns, slide.durationSec, {
+        width: SI_CANVAS_W,
+        height: SI_CANVAS_H,
+        fps: SI_FPS,
+        tempScaleFactor: AI_SLIDESHOW_TEMP_SCALE_FACTOR,
+        minPxPerFrame: AI_KEN_BURNS_MIN_PX_PER_FRAME,
+        longSlideLinearSec: AI_KEN_BURNS_LONG_SLIDE_LINEAR_SEC,
+        maxZoom: AI_KEN_BURNS_MAX_ZOOM,
+        focalMin: AI_KEN_BURNS_FOCAL_MIN,
+        focalMax: AI_KEN_BURNS_FOCAL_MAX,
+      }),
+    };
+  });
+}
+
 export async function assembleReupAiSlideshowVideo(
   input: AssembleReupAiSlideshowVideoInput,
 ): Promise<string> {
@@ -180,9 +207,10 @@ export async function assembleReupAiSlideshowVideo(
   }
 
   slides = padSlidesToAudioDuration(slides, audioDurationAfterTempo, log);
+  slides = applyDurationAdaptiveKenBurns(slides);
 
   log(
-    `[ai-video] ${slides.length} timed slides (Ken Burns, no shuffle) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
+    `[ai-video] ${slides.length} timed slides (Ken Burns adaptive, no shuffle) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
   );
 
   if (channelAvatarPath) {

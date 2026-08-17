@@ -17,11 +17,16 @@ import {
 import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
 import { runMetadata, hasNicheMetadataPrompt } from '../../shared/meta/run-metadata.js';
 import { runDramaMetadata } from '../../shared/meta/drama/run-drama-metadata.js';
-import { runSeniorHealthMetadata } from '../../shared/meta/senior-health/run-senior-health-metadata.js';
+import { runTwoStepNicheMetadata } from '../../shared/meta/two-step/run-two-step-metadata.js';
+import {
+  isThumbnailOnlyTwoStepNiche,
+  isTwoStepNicheMetadata,
+} from '../../shared/meta/two-step/two-step-niche.config.js';
 import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
 import {
   DEFAULT_HERO_IMAGE_FILENAME,
-  runFlowImageGeneration,
+  resolveThumbnailImageProvider,
+  runBrowserImageGeneration,
   runThumbnailVisualGeneration,
 } from '../../shared/thumbnail/hero-image.js';
 import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
@@ -46,7 +51,6 @@ import {
   hasLegacyVisualMeta,
   isCelebrityWisdomNiche,
   isDramaNiche,
-  isSeniorHealthNiche,
   type MetaStep3Output,
   type VideoMetaOutput,
 } from '../../shared/meta/metadata.types.js';
@@ -479,8 +483,8 @@ export class ReupAudioPipeline {
                     );
                   }
 
-                  if (isSeniorHealthNiche(destination.niche)) {
-                    return runSeniorHealthMetadata(
+                  if (isTwoStepNicheMetadata(destination.language, destination.niche)) {
+                    return runTwoStepNicheMetadata(
                       task.sourceTitle,
                       jaSrtPath,
                       destination.language,
@@ -552,13 +556,13 @@ export class ReupAudioPipeline {
                   taskQueueRepository.appendLogMessage(
                     taskJobId,
                     'info',
-                    'Creating celebrity wisdom thumbnail via Flow (celebrity reference)...',
+                    `Creating celebrity wisdom thumbnail via ${resolveThumbnailImageProvider()} (celebrity reference)...`,
                   );
                 }
 
                 try {
                   const wisdomThumb = await timedStep(
-                    'Celebrity wisdom thumbnail (Flow)',
+                    `Celebrity wisdom thumbnail (${resolveThumbnailImageProvider()})`,
                     () =>
                       runCelebrityWisdomThumbnail(workDir, celebrityId, imageGenerationPrompt, {
                         onProgress: taskJobId
@@ -586,6 +590,8 @@ export class ReupAudioPipeline {
 
                   const flowDebugPath = path.join(workDir, 'flow-debug.png');
                   await fs.unlink(flowDebugPath).catch(() => undefined);
+                  const metaDebugPath = path.join(workDir, 'meta-debug.png');
+                  await fs.unlink(metaDebugPath).catch(() => undefined);
 
                   if (taskJobId) {
                     taskQueueRepository.appendLogMessage(
@@ -617,11 +623,11 @@ export class ReupAudioPipeline {
                 }
 
                 const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
-                // Senior-health meta has thumbnail only (no general_background / video_visual_prompt).
+                // Thumbnail-only 2-step meta niches have no video_visual_prompt.
                 const useSiOneImageBatch =
                   videoType === 'si' &&
                   siBackgroundImage === 'one_image' &&
-                  !isSeniorHealthNiche(destination.niche);
+                  !isThumbnailOnlyTwoStepNiche(destination.language, destination.niche);
 
                 if (useSiOneImageBatch) {
                   const videoVisualPrompt = videoMetaOutput.video_visual_prompt?.trim() ?? '';
@@ -637,13 +643,13 @@ export class ReupAudioPipeline {
                     taskQueueRepository.appendLogMessage(
                       taskJobId,
                       'info',
-                      'Creating thumbnail + background via Flow single (image_generation_prompt + video_visual_prompt)...',
+                      `Creating thumbnail + background via ${resolveThumbnailImageProvider()} (image_generation_prompt + video_visual_prompt)...`,
                     );
                   }
 
                   try {
                     const batchResult = await timedStep(
-                      'SI one_image (thumbnail + background Flow single)',
+                      `SI one_image (thumbnail + background ${resolveThumbnailImageProvider()})`,
                       () =>
                         runSiOneImageFlowBatch(workDir, imageGenerationPrompt, videoVisualPrompt, {
                           onJobProgress: taskJobId
@@ -673,12 +679,14 @@ export class ReupAudioPipeline {
 
                     const flowDebugPath = path.join(workDir, 'flow-debug.png');
                     await fs.unlink(flowDebugPath).catch(() => undefined);
+                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
+                    await fs.unlink(metaDebugPath).catch(() => undefined);
 
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'ok',
-                        'SI one_image Flow single saved → thumbnail.jpg, background.jpg',
+                        `SI one_image ${resolveThumbnailImageProvider()} saved → thumbnail.jpg, background.jpg`,
                       );
                     }
                   } catch (err) {
@@ -687,13 +695,13 @@ export class ReupAudioPipeline {
                         ? err.message
                         : err instanceof Error
                           ? err.message
-                          : 'SI one_image Flow batch failed';
-                    console.warn(`[reup-video] SI one_image Flow batch skipped (non-fatal): ${message}`);
+                          : 'SI one_image batch failed';
+                    console.warn(`[reup-video] SI one_image batch skipped (non-fatal): ${message}`);
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'info',
-                        `SI one_image Flow batch skipped: ${message}`,
+                        `SI one_image batch skipped: ${message}`,
                       );
                     }
                   }
@@ -702,13 +710,13 @@ export class ReupAudioPipeline {
                     taskQueueRepository.appendLogMessage(
                       taskJobId,
                       'info',
-                      'Creating niche thumbnail via Flow (image_generation_prompt, no reference)...',
+                      `Creating niche thumbnail via ${resolveThumbnailImageProvider()} (image_generation_prompt, no reference)...`,
                     );
                   }
 
                   try {
                     const nicheThumb = await timedStep(
-                      'Niche image_generation_prompt thumbnail (Flow)',
+                      `Niche image_generation_prompt thumbnail (${resolveThumbnailImageProvider()})`,
                       () =>
                         runNicheImagePromptThumbnail(workDir, imageGenerationPrompt, {
                           onProgress: taskJobId
@@ -736,6 +744,8 @@ export class ReupAudioPipeline {
 
                     const flowDebugPath = path.join(workDir, 'flow-debug.png');
                     await fs.unlink(flowDebugPath).catch(() => undefined);
+                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
+                    await fs.unlink(metaDebugPath).catch(() => undefined);
 
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(
@@ -765,7 +775,11 @@ export class ReupAudioPipeline {
 
               if (styleKey && !useHorizontalFlow) {
                 if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', `Creating thumbnail via Flow (${styleKey})...`);
+                  taskQueueRepository.appendLogMessage(
+                    taskJobId,
+                    'info',
+                    `Creating thumbnail via ${resolveThumbnailImageProvider()} (${styleKey})...`,
+                  );
                 }
 
                 try {
@@ -777,7 +791,7 @@ export class ReupAudioPipeline {
                     thumbnailBackgroundFile: destination.thumbnailBackgroundFile,
                   });
                   const defaultResult = await timedStep(
-                    `Thumbnail Flow (${styleKey})`,
+                    `Thumbnail ${resolveThumbnailImageProvider()} (${styleKey})`,
                     () =>
                       runDefaultFlowThumbnail(workDir, destination.language, {
                         promptKey: styleKey,
@@ -811,7 +825,7 @@ export class ReupAudioPipeline {
                 } catch (err) {
                   const message =
                     err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
-                  console.warn(`[reup-video] default flow thumbnail skipped (non-fatal): ${message}`);
+                  console.warn(`[reup-video] default thumbnail skipped (non-fatal): ${message}`);
                   if (taskJobId) {
                     taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail skipped: ${message}`);
                   }
@@ -869,12 +883,16 @@ export class ReupAudioPipeline {
 
                 if (useHorizontalFlow && thumbnailHorizontalOutput) {
                   if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Generating thumbnail visual with Google Flow...');
+                    taskQueueRepository.appendLogMessage(
+                      taskJobId,
+                      'info',
+                      `Generating thumbnail visual with ${resolveThumbnailImageProvider()}...`,
+                    );
                   }
 
                   try {
                     const visualResult = await timedStep(
-                      'Thumbnail visual (Google Flow)',
+                      `Thumbnail visual (${resolveThumbnailImageProvider()})`,
                       () =>
                         runThumbnailVisualGeneration(
                           workDir,
@@ -975,7 +993,7 @@ export class ReupAudioPipeline {
                   const requiresVideoVisualPrompt =
                     hasNicheMetadataPrompt(destination.language, destination.niche) &&
                     !isCelebrityWisdomNiche(destination.niche) &&
-                    !isSeniorHealthNiche(destination.niche);
+                    !isThumbnailOnlyTwoStepNiche(destination.language, destination.niche);
 
                   if (requiresVideoVisualPrompt && !videoVisualPrompt && !heroImagePath) {
                     throw new AppError(
@@ -990,7 +1008,7 @@ export class ReupAudioPipeline {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'info',
-                        'Skipping background image (already created with thumbnail Flow single batch)',
+                        'Skipping background image (already created with thumbnail batch)',
                       );
                     }
                   } else if (videoVisualPrompt) {
@@ -998,14 +1016,14 @@ export class ReupAudioPipeline {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'info',
-                        'Creating background image via Flow (video_visual_prompt, no reference)...',
+                        `Creating background image via ${resolveThumbnailImageProvider()} (video_visual_prompt, no reference)...`,
                       );
                     }
 
                     const heroResult = await timedStep(
-                      'Background image (video_visual_prompt)',
+                      `Background image (${resolveThumbnailImageProvider()} video_visual_prompt)`,
                       () =>
-                        runFlowImageGeneration(videoVisualPrompt, workDir, {
+                        runBrowserImageGeneration(videoVisualPrompt, workDir, {
                           fileName: DEFAULT_HERO_IMAGE_FILENAME,
                           onProgress: taskJobId
                             ? progress => {
@@ -1032,6 +1050,8 @@ export class ReupAudioPipeline {
 
                     const flowDebugPath = path.join(workDir, 'flow-debug.png');
                     await fs.unlink(flowDebugPath).catch(() => undefined);
+                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
+                    await fs.unlink(metaDebugPath).catch(() => undefined);
 
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(
@@ -1050,12 +1070,12 @@ export class ReupAudioPipeline {
                       taskQueueRepository.appendLogMessage(
                         taskJobId,
                         'info',
-                        'Creating general image via Flow (general + reference)...',
+                        `Creating general image via ${resolveThumbnailImageProvider()} (general + reference)...`,
                       );
                     }
 
                     const heroResult = await timedStep(
-                      'General image (Flow + reference)',
+                      `General image (${resolveThumbnailImageProvider()} + reference)`,
                       () =>
                         runGeneralImage(generalImageTitle, destination.language, workDir, {
                           referenceImagePaths: downloaded.thumbnailPath ? [downloaded.thumbnailPath] : [],
@@ -1084,6 +1104,8 @@ export class ReupAudioPipeline {
 
                     const flowDebugPath = path.join(workDir, 'flow-debug.png');
                     await fs.unlink(flowDebugPath).catch(() => undefined);
+                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
+                    await fs.unlink(metaDebugPath).catch(() => undefined);
 
                     if (taskJobId) {
                       taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');

@@ -31,14 +31,17 @@ export interface RunFfmpegOptions {
   encodeOpts?: H264EncodeOptions;
   onLog?: (msg: string) => void;
   label?: string;
-  /** Kill ffmpeg after this many ms without stderr output (0 disables). */
+  /**
+   * Kill ffmpeg after this many ms without encoding progress (`time=`).
+   * `0` disables. When omitted, scales with `expectedDurationSec` when set.
+   */
   stallTimeoutMs?: number;
 }
 
 interface FfmpegRunResult {
   code: number | null;
   stderr: string;
-  /** True when the process was killed because it stopped producing output. */
+  /** True when the process was killed because it stopped producing progress. */
   stalled?: boolean;
 }
 
@@ -60,8 +63,11 @@ const PROGRESS_LOG_INTERVAL_MS = 2000;
  * which would block the caller forever since we only resolve on `close`.
  */
 const FFMPEG_STALL_TIMEOUT_MS = 120_000;
+const FFMPEG_STALL_TIMEOUT_MAX_MS = 30 * 60_000;
 /** Keep a sliding window of stderr — full concat can OOM on long encodes. */
 const STDERR_MAX_CHARS = 256 * 1024;
+
+const QUIET_LOG_LEVELS = new Set(['quiet', 'panic', 'fatal', 'error']);
 
 function appendCappedStderr(current: string, chunk: string, maxChars = STDERR_MAX_CHARS): string {
   const next = current + chunk;
@@ -153,6 +159,56 @@ function buildProgressFromTime(
   };
 }
 
+/**
+ * Base 120s; when expectedDurationSec is known, allow longer silence of progress
+ * up to 30m so long encodes are not false-stalled.
+ */
+export function resolveFfmpegStallTimeoutMs(options?: RunFfmpegOptions): number {
+  if (options?.stallTimeoutMs !== undefined) {
+    return options.stallTimeoutMs;
+  }
+
+  const expected = options?.expectedDurationSec;
+  if (typeof expected === 'number' && Number.isFinite(expected) && expected > 0) {
+    return Math.max(FFMPEG_STALL_TIMEOUT_MS, Math.min(FFMPEG_STALL_TIMEOUT_MAX_MS, expected * 2000));
+  }
+
+  return FFMPEG_STALL_TIMEOUT_MS;
+}
+
+/**
+ * Ensure ffmpeg emits encoding progress on stderr when the stall watchdog is on.
+ * Callers often pass `-loglevel error`, which suppresses `time=` stats and causes
+ * false stalls on long jobs.
+ */
+export function ensureFfmpegProgressLoggingArgs(args: string[]): string[] {
+  const out = [...args];
+
+  for (let i = 0; i < out.length - 1; i += 1) {
+    if (out[i] !== '-loglevel') continue;
+    const level = String(out[i + 1] ?? '').toLowerCase();
+    if (QUIET_LOG_LEVELS.has(level)) {
+      out[i + 1] = 'info';
+    }
+  }
+
+  const noStatsIdx = out.indexOf('-nostats');
+  if (noStatsIdx >= 0) {
+    out.splice(noStatsIdx, 1);
+  }
+
+  if (!out.includes('-stats')) {
+    const hideBannerIdx = out.indexOf('-hide_banner');
+    if (hideBannerIdx >= 0) {
+      out.splice(hideBannerIdx + 1, 0, '-stats');
+    } else {
+      out.unshift('-stats');
+    }
+  }
+
+  return out;
+}
+
 function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<FfmpegRunResult> {
   return new Promise((resolve, reject) => {
     const proc = spawn(env.ffmpegPath, args);
@@ -161,7 +217,7 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
     let stalled = false;
     const logState = { lastLoggedProgress: -1, lastLoggedAt: 0 };
 
-    const stallTimeoutMs = options?.stallTimeoutMs ?? FFMPEG_STALL_TIMEOUT_MS;
+    const stallTimeoutMs = resolveFfmpegStallTimeoutMs(options);
     let stallTimer: NodeJS.Timeout | undefined;
 
     const clearStallTimer = () => {
@@ -175,7 +231,7 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
       stallTimer = setTimeout(() => {
         stalled = true;
         const msg =
-          `[ffmpeg]${options?.label ? ` ${options.label}` : ''} no output for ` +
+          `[ffmpeg]${options?.label ? ` ${options.label}` : ''} no progress for ` +
           `${Math.round(stallTimeoutMs / 1000)}s, killing stalled process`;
         console.warn(msg);
         options?.onLog?.(msg);
@@ -183,10 +239,10 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
       }, stallTimeoutMs);
     };
 
+    // Wait for first encoding progress (or kill if none arrives in time).
     armStallTimer();
 
     proc.stderr.on('data', (chunk: Buffer) => {
-      armStallTimer();
       const text = chunk.toString();
       stderr = appendCappedStderr(stderr, text);
 
@@ -198,6 +254,9 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
       const parsed = parseFfmpegProgressLine(text);
       const time = parsed?.time ?? text.match(/time=(\d+:\d+:\d+\.\d+)/)?.[1];
       if (!time) return;
+
+      // Only real encode progress resets the stall watchdog.
+      armStallTimer();
 
       const effectiveDurationSec = options?.expectedDurationSec ?? durationSec;
       const progress = buildProgressFromTime(time, effectiveDurationSec, parsed);
@@ -211,7 +270,7 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
       clearStallTimer();
       resolve({
         code,
-        stderr: stalled ? `${stderr}\nffmpeg stalled with no output and was killed` : stderr,
+        stderr: stalled ? `${stderr}\nffmpeg stalled with no progress and was killed` : stderr,
         stalled,
       });
     });
@@ -245,12 +304,16 @@ async function runFfmpegWithEncoderFallback(
 ): Promise<void> {
   const encoderFallback = options?.encoderFallback ?? true;
   const encoder = resolveFfmpegHwEncoder();
+  const stallTimeoutMs = resolveFfmpegStallTimeoutMs(options);
+  const effectiveOptions: RunFfmpegOptions = { ...options, stallTimeoutMs };
+  const effectiveArgs =
+    stallTimeoutMs > 0 ? ensureFfmpegProgressLoggingArgs(args) : args;
 
-  await logFfmpegCommand(args, options);
-  const first = await spawnFfmpegOnce(args, options);
+  await logFfmpegCommand(effectiveArgs, effectiveOptions);
+  const first = await spawnFfmpegOnce(effectiveArgs, effectiveOptions);
 
   if (first.code === 0) {
-    completeFfmpegProgress(options);
+    completeFfmpegProgress(effectiveOptions);
     return;
   }
 
@@ -268,12 +331,14 @@ async function runFfmpegWithEncoderFallback(
   console.warn(fallbackMsg);
   options?.onLog?.(fallbackMsg);
 
-  const fallbackArgs = await buildCpuEncoderFallbackArgs(args, options?.encodeOpts);
-  await logFfmpegCommand(fallbackArgs, options, '(cpu-fallback)');
-  const second = await spawnFfmpegOnce(fallbackArgs, options);
+  const fallbackArgsRaw = await buildCpuEncoderFallbackArgs(effectiveArgs, options?.encodeOpts);
+  const fallbackArgs =
+    stallTimeoutMs > 0 ? ensureFfmpegProgressLoggingArgs(fallbackArgsRaw) : fallbackArgsRaw;
+  await logFfmpegCommand(fallbackArgs, effectiveOptions, '(cpu-fallback)');
+  const second = await spawnFfmpegOnce(fallbackArgs, effectiveOptions);
 
   if (second.code === 0) {
-    completeFfmpegProgress(options);
+    completeFfmpegProgress(effectiveOptions);
     return;
   }
 

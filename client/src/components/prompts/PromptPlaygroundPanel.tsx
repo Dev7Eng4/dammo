@@ -22,12 +22,15 @@ export interface PromptPlaygroundPanelProps {
   onActiveStepChange: (index: number) => void;
   provider: PlaygroundProvider;
   imageProvider: ImageBrowserProvider;
+  thumbnailProvider: ImageBrowserProvider;
   videoProvider: VideoBrowserProvider;
   providerSaving?: boolean;
   imageProviderSaving?: boolean;
+  thumbnailProviderSaving?: boolean;
   videoProviderSaving?: boolean;
   providerSettingsError?: string | null;
   imageProviderSettingsError?: string | null;
+  thumbnailProviderSettingsError?: string | null;
   videoProviderSettingsError?: string | null;
   variableValues: Record<string, string>;
   running: boolean;
@@ -35,6 +38,7 @@ export interface PromptPlaygroundPanelProps {
   error: string | null;
   onProviderChange: (provider: PlaygroundProvider) => void;
   onImageProviderChange: (provider: ImageBrowserProvider) => void;
+  onThumbnailProviderChange: (provider: ImageBrowserProvider) => void;
   onVideoProviderChange: (provider: VideoBrowserProvider) => void;
   onVariableChange: (name: string, value: string) => void;
   onRun: () => void;
@@ -43,18 +47,20 @@ export interface PromptPlaygroundPanelProps {
 export function PromptPlaygroundPanel({
   template,
   templateParams,
-  outputType,
   stepCount,
   activeStepIndex,
   onActiveStepChange,
   provider,
   imageProvider,
+  thumbnailProvider,
   videoProvider,
   providerSaving = false,
   imageProviderSaving = false,
+  thumbnailProviderSaving = false,
   videoProviderSaving = false,
   providerSettingsError = null,
   imageProviderSettingsError = null,
+  thumbnailProviderSettingsError = null,
   videoProviderSettingsError = null,
   variableValues,
   running,
@@ -62,15 +68,13 @@ export function PromptPlaygroundPanel({
   error,
   onProviderChange,
   onImageProviderChange,
+  onThumbnailProviderChange,
   onVideoProviderChange,
   onVariableChange,
   onRun,
 }: PromptPlaygroundPanelProps) {
   const userFunctionTemplate = isUserFunctionTemplate(template);
   const variables = extractTemplateVariables(template, templateParams);
-  const isImagePrompt = outputType === 'image';
-  const isVideoPrompt = outputType === 'video';
-  const isTextPrompt = outputType === 'text';
   const stepOptions = Array.from({ length: Math.max(stepCount, 1) }, (_, index) => ({
     value: String(index),
     label: `Bước ${index + 1}`,
@@ -102,6 +106,99 @@ export function PromptPlaygroundPanel({
         <p className="mt-0.5 text-xs text-neutral-500">Chạy thử prompt qua browser automation</p>
       </div>
 
+      <div className="space-y-3 border-b border-border p-4">
+        <div>
+          <p className="text-xs font-medium text-neutral-300">Nhà cung cấp</p>
+          <p className="mt-0.5 text-[10px] text-neutral-500">Cấu hình mặc định toàn cục</p>
+        </div>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">Tạo nội dung</span>
+            {providerSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
+          </div>
+          <DropdownSelect
+            value={provider}
+            onChange={onProviderChange}
+            options={PLAYGROUND_PROVIDER_OPTIONS}
+            disabled={providerSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          {providerSettingsError ? (
+            <p className="text-[10px] text-danger">{providerSettingsError}</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho tạo nội dung.</p>
+          )}
+        </label>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">Tạo hình ảnh video</span>
+            {imageProviderSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
+          </div>
+          <DropdownSelect
+            value={imageProvider}
+            onChange={onImageProviderChange}
+            options={IMAGE_PROVIDER_OPTIONS}
+            disabled={imageProviderSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          {imageProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{imageProviderSettingsError}</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">
+              Dùng cho tạo ảnh AI và SI nhiều hình ảnh.
+            </p>
+          )}
+        </label>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">Tạo thumbnail</span>
+            {thumbnailProviderSaving ? (
+              <span className="text-[10px] text-neutral-500">Đang lưu...</span>
+            ) : null}
+          </div>
+          <DropdownSelect
+            value={thumbnailProvider}
+            onChange={onThumbnailProviderChange}
+            options={IMAGE_PROVIDER_OPTIONS}
+            disabled={thumbnailProviderSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          {thumbnailProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{thumbnailProviderSettingsError}</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">
+              Dùng cho thumbnail và general/one_image.
+            </p>
+          )}
+        </label>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">Tạo video</span>
+            {videoProviderSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
+          </div>
+          <DropdownSelect
+            value={videoProvider}
+            onChange={onVideoProviderChange}
+            options={VIDEO_PROVIDER_OPTIONS}
+            disabled={videoProviderSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          {videoProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{videoProviderSettingsError}</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho tạo video.</p>
+          )}
+        </label>
+      </div>
+
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-4">
         {stepCount > 1 ? (
           <label className="block space-y-1.5">
@@ -116,162 +213,89 @@ export function PromptPlaygroundPanel({
           </label>
         ) : null}
 
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Nhà cung cấp LLM mặc định</span>
-            {providerSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
-          </div>
-          <DropdownSelect
-            value={provider}
-            onChange={onProviderChange}
-            options={PLAYGROUND_PROVIDER_OPTIONS}
-            disabled={providerSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {isTextPrompt ? (
-            <p className="text-[10px] text-primary-400">Dùng cho prompt này.</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">Không dùng cho loại prompt này.</p>
-          )}
-          {providerSettingsError ? (
-            <p className="text-[10px] text-danger">{providerSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho prompt văn bản.</p>
-          )}
-        </label>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Nhà cung cấp hình ảnh mặc định</span>
-            {imageProviderSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
-          </div>
-          <DropdownSelect
-            value={imageProvider}
-            onChange={onImageProviderChange}
-            options={IMAGE_PROVIDER_OPTIONS}
-            disabled={imageProviderSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {isImagePrompt ? (
-            <p className="text-[10px] text-primary-400">Dùng cho prompt này.</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">Không dùng cho loại prompt này.</p>
-          )}
-          {imageProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{imageProviderSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho prompt tạo hình ảnh.</p>
-          )}
-        </label>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Nhà cung cấp video mặc định</span>
-            {videoProviderSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
-          </div>
-          <DropdownSelect
-            value={videoProvider}
-            onChange={onVideoProviderChange}
-            options={VIDEO_PROVIDER_OPTIONS}
-            disabled={videoProviderSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {isVideoPrompt ? (
-            <p className="text-[10px] text-primary-400">Dùng cho prompt này.</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">Không dùng cho loại prompt này.</p>
-          )}
-          {videoProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{videoProviderSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho prompt tạo video.</p>
-          )}
-        </label>
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-neutral-400">Biến</p>
-          {userFunctionTemplate ? (
-            <p className="text-xs text-neutral-500">Mẫu function — không có biến</p>
-          ) : variables.length === 0 ? (
-            <p className="text-xs text-neutral-500">Không có biến trong mẫu</p>
-          ) : (
-            <div className="space-y-2">
-              {variables.map((name) => (
-                <label key={name} className="block space-y-1">
-                  <span className="font-mono text-[10px] text-neutral-500">
-                    {templateParams.includes(name) ? `\${${name}}` : formatVariableToken(name, template)}
-                  </span>
-                  <Input
-                    value={variableValues[name] ?? ''}
-                    onChange={(e) => onVariableChange(name, e.target.value)}
-                    placeholder={`Giá trị cho ${name}`}
-                    className="h-9 rounded-lg text-xs"
-                  />
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Button className="w-full" onClick={onRun} disabled={running || !template.trim()}>
-          {running ? 'Đang chạy...' : 'Chạy thử'}
-        </Button>
-
-        {error ? (
-          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-            {error}
-          </div>
-        ) : null}
-
-        {result ? (
-          <div className="card-surface space-y-3 p-3">
-            <div className="flex flex-wrap gap-2 text-[10px] text-neutral-500">
-              <span>{result.kind}</span>
-              <span>·</span>
-              <span>{result.provider}</span>
-              <span>·</span>
-              <span>{result.elapsedMs}ms</span>
-              {result.profileId ? (
-                <>
-                  <span>·</span>
-                  <span>profile {result.profileId.slice(0, 8)}</span>
-                </>
-              ) : null}
-              {result.model ? (
-                <>
-                  <span>·</span>
-                  <span>{result.model}</span>
-                </>
-              ) : null}
-              {result.usage ? (
-                <>
-                  <span>·</span>
-                  <span>{result.usage.totalTokens} tokens</span>
-                </>
-              ) : null}
-            </div>
-            {imagePreviewUrl ? (
-              <img
-                src={imagePreviewUrl}
-                alt="Xem trước ảnh thumbnail đã tạo"
-                className="max-h-[320px] w-full rounded-lg border border-border object-contain"
-              />
-            ) : videoPreviewUrl ? (
-              <video
-                src={videoPreviewUrl}
-                controls
-                className="max-h-[320px] w-full rounded-lg border border-border"
-              />
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-neutral-400">Biến</p>
+            {userFunctionTemplate ? (
+              <p className="text-xs text-neutral-500">Mẫu function — không có biến</p>
+            ) : variables.length === 0 ? (
+              <p className="text-xs text-neutral-500">Không có biến trong mẫu</p>
             ) : (
-              <pre className="scrollbar-thin max-h-[320px] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-neutral-200">
-                {formattedContent}
-              </pre>
+              <div className="space-y-2">
+                {variables.map((name) => (
+                  <label key={name} className="block space-y-1">
+                    <span className="font-mono text-[10px] text-neutral-500">
+                      {templateParams.includes(name) ? `\${${name}}` : formatVariableToken(name, template)}
+                    </span>
+                    <Input
+                      value={variableValues[name] ?? ''}
+                      onChange={(e) => onVariableChange(name, e.target.value)}
+                      placeholder={`Giá trị cho ${name}`}
+                      className="h-9 rounded-lg text-xs"
+                    />
+                  </label>
+                ))}
+              </div>
             )}
           </div>
-        ) : null}
+
+          <Button className="w-full" onClick={onRun} disabled={running || !template.trim()}>
+            {running ? 'Đang chạy...' : 'Chạy thử'}
+          </Button>
+
+          {error ? (
+            <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+              {error}
+            </div>
+          ) : null}
+
+          {result ? (
+            <div className="card-surface space-y-3 p-3">
+              <div className="flex flex-wrap gap-2 text-[10px] text-neutral-500">
+                <span>{result.kind}</span>
+                <span>·</span>
+                <span>{result.provider}</span>
+                <span>·</span>
+                <span>{result.elapsedMs}ms</span>
+                {result.profileId ? (
+                  <>
+                    <span>·</span>
+                    <span>profile {result.profileId.slice(0, 8)}</span>
+                  </>
+                ) : null}
+                {result.model ? (
+                  <>
+                    <span>·</span>
+                    <span>{result.model}</span>
+                  </>
+                ) : null}
+                {result.usage ? (
+                  <>
+                    <span>·</span>
+                    <span>{result.usage.totalTokens} tokens</span>
+                  </>
+                ) : null}
+              </div>
+              {imagePreviewUrl ? (
+                <img
+                  src={imagePreviewUrl}
+                  alt="Xem trước ảnh thumbnail đã tạo"
+                  className="max-h-[320px] w-full rounded-lg border border-border object-contain"
+                />
+              ) : videoPreviewUrl ? (
+                <video
+                  src={videoPreviewUrl}
+                  controls
+                  className="max-h-[320px] w-full rounded-lg border border-border"
+                />
+              ) : (
+                <pre className="scrollbar-thin max-h-[320px] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-neutral-200">
+                  {formattedContent}
+                </pre>
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
     </aside>
   );
