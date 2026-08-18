@@ -1,6 +1,22 @@
 {
   "styles": [
     {
+      "id": "daa933c7-0eb8-4dd6-8e84-81fde6428e4c",
+      "name": "Test",
+      "rule": "A high-quality 2D digital anime/manga art style, specifically resembling slice-of-life storytelling. It features clean, dark outlines and distinct cell-shading with a realistic color palette. The aesthetic is clean and modern, focusing on detailed, relatable characters and environments. It is characteristic of narrative illustration commonly seen on Japanese YouTube channels (like Sukatto stories).",
+      "niche": "a",
+      "createdAt": "2026-08-17T06:18:58.363Z",
+      "updatedAt": "2026-08-17T06:18:58.363Z"
+    },
+    {
+      "id": "c69ce248-38af-4717-bcea-6853bb7d3ae7",
+      "name": "Japanese anime-inspired 2D illustration",
+      "rule": "Japanese semi-realistic anime illustration, slice-of-life visual storytelling, clean expressive line art, soft cel shading, muted pastel colors, natural human proportions, detailed Japanese residential environments, warm cinematic lighting, subtle facial expressions, hand-drawn 2D illustration",
+      "niche": "Lối sống",
+      "createdAt": "2026-08-17T06:17:12.672Z",
+      "updatedAt": "2026-08-17T06:17:12.672Z"
+    },
+    {
       "id": "3ecdf27b-bf6e-426b-b235-78cc6054c98c",
       "name": "Japanese Semi-Realistic Anime Storytelling Illustration",
       "rule": "Japanese 2D semi-realistic storytelling illustration, clean anime line art, soft pastel colors, expressive characters, detailed everyday Japanese backgrounds, warm natural lighting.",

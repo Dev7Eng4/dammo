@@ -1,6 +1,12 @@
 {
   "celebrities": [
     {
+      "id": "f85ff01e-c077-44ea-acb6-fad544688bc8",
+      "name": "Akihiro Miwa",
+      "createdAt": "2026-08-16T04:18:36.439Z",
+      "updatedAt": "2026-08-17T02:18:10.644Z"
+    },
+    {
       "id": "733c690b-48f6-4142-a4e1-8fb64187c412",
       "name": "Daisetz Suzuki",
       "note": "JAPAN",
