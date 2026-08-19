@@ -55,6 +55,19 @@ export const DEFAULT_AI_SCENE_DENSITY_MAX_SEC: AiSceneDensityMaxSec = {
 /** SI overlay picker: random asset at video assemble time. */
 export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
 
+/** SI small-video picker: random clip from a group at assemble time. */
+export const SI_SMALL_VIDEO_GROUP_PREFIX = 'group:';
+
+export function parseSmallVideoGroupId(value: string): string | null {
+  if (!value.startsWith(SI_SMALL_VIDEO_GROUP_PREFIX)) return null;
+  const id = value.slice(SI_SMALL_VIDEO_GROUP_PREFIX.length).trim();
+  return id || null;
+}
+
+export function encodeSmallVideoGroupSelection(groupId: string): string {
+  return `${SI_SMALL_VIDEO_GROUP_PREFIX}${groupId}`;
+}
+
 export function isReupYoutubeChannelType(type: YoutubeChannelType | ''): type is ReupYoutubeChannelType {
   return type === 'reup_audio' || type === 'reup_video';
 }

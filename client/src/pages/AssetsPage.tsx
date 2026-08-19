@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset, type PrepareKeyColor } from '../api/assets';
 import { CelebritiesPanel } from '../components/celebrities/CelebritiesPanel';
+import { SmallVideoPanel } from '../components/small-video-groups/SmallVideoPanel';
 import { Button, DataTable, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
@@ -92,8 +93,9 @@ export function AssetsPage() {
   const [prepareKeyColor, setPrepareKeyColor] = useState<PrepareKeyColor>('green');
 
   const isCelebritiesTab = activeTabId === 'celebrities';
+  const isSmallVideoTab = activeTabId === 'smallVideo';
   const activeKind: AssetKind = isCelebritiesTab ? 'audioBar' : activeTabId;
-  const showPrepareColor = !isCelebritiesTab && (activeKind === 'audioBar' || activeKind === 'subscribe');
+  const showPrepareColor = !isCelebritiesTab && !isSmallVideoTab && (activeKind === 'audioBar' || activeKind === 'subscribe');
 
   async function handlePrepareColor(name: string, keyColor: PrepareKeyColor) {
     setPrepareColorTarget(null);
@@ -119,11 +121,11 @@ export function AssetsPage() {
   }
 
   const activeTab = TABS.find(tab => tab.kind === activeKind) ?? TABS[0];
-  const showVideoGrid = !isCelebritiesTab && isVideoKind(activeKind);
+  const showVideoGrid = !isCelebritiesTab && !isSmallVideoTab && isVideoKind(activeKind);
 
   useAbortableEffect(
     async signal => {
-      if (isCelebritiesTab) {
+      if (isCelebritiesTab || isSmallVideoTab) {
         setLoading(false);
         setItems([]);
         return;
@@ -140,7 +142,7 @@ export function AssetsPage() {
         if (!signal.aborted) setLoading(false);
       }
     },
-    [activeKind, refreshKey, isCelebritiesTab],
+    [activeKind, refreshKey, isCelebritiesTab, isSmallVideoTab],
   );
 
   const columns = useMemo<ColumnDef<AssetFileItem, unknown>[]>(
@@ -276,6 +278,8 @@ export function AssetsPage() {
 
       {isCelebritiesTab ? (
         <CelebritiesPanel />
+      ) : isSmallVideoTab ? (
+        <SmallVideoPanel />
       ) : (
         <>
       <div className='flex flex-wrap items-center justify-between gap-3'>

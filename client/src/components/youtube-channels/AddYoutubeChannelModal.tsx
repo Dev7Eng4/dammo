@@ -5,6 +5,7 @@ import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { fetchCelebrities } from '../../api/celebrities';
+import { fetchSmallVideoGroups } from '../../api/small-video-groups';
 import {
   createYoutubeChannel,
   fetchYoutubeChannels,
@@ -29,6 +30,7 @@ import {
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { CelebrityListItem } from '../../types/celebrity';
+import type { SmallVideoGroupListItem } from '../../types/smallVideoGroup';
 import type { MailAccount } from '../../types/mailAccount';
 import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
@@ -43,6 +45,7 @@ import {
   isReupAudioChannelType,
   isReupYoutubeChannelType,
   parseStoredChannelLanguage,
+  parseSmallVideoGroupId,
   SI_OVERLAY_AUTO_SENTINEL,
 } from '../../types/youtubeChannel';
 import { normalizeBackgroundFootageSourceIds } from '../../utils/backgroundFootage';
@@ -289,6 +292,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [visualStylesLoading, setVisualStylesLoading] = useState(false);
   const [celebritiesWithMedia, setCelebritiesWithMedia] = useState<CelebrityListItem[]>([]);
   const [celebritiesLoading, setCelebritiesLoading] = useState(false);
+  const [smallVideoGroups, setSmallVideoGroups] = useState<SmallVideoGroupListItem[]>([]);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
   const [tempBackgroundSessionId, setTempBackgroundSessionId] = useState(() => crypto.randomUUID());
   const [audioBarPickerOpen, setAudioBarPickerOpen] = useState(false);
@@ -331,6 +335,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const thumbnailBackgroundFile = watch('thumbnailBackgroundFile');
   const audioBarFile = watch('audioBarFile');
   const smallVideoFile = watch('smallVideoFile');
+  const smallVideoGroupId = parseSmallVideoGroupId(smallVideoFile);
+  const smallVideoGroupName = smallVideoGroupId
+    ? smallVideoGroups.find(group => group.id === smallVideoGroupId)?.name
+    : undefined;
   const subscribeFile = watch('subscribeFile');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
   const showThumbnailBackgroundPicker = Boolean(thumbnailStyleKey && thumbnailStyleFlags[thumbnailStyleKey]);
@@ -497,6 +505,25 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     },
     [open, formReady, isReupAudio, reupAudioVideoType],
     { enabled: open && formReady && isReupAudio && reupAudioVideoType === 'si' },
+  );
+
+  useAbortableEffect(
+    async signal => {
+      if (!open || !formReady || !isReupAudio) {
+        setSmallVideoGroups([]);
+        return;
+      }
+
+      try {
+        const { items } = await fetchSmallVideoGroups({ signal });
+        setSmallVideoGroups(items);
+      } catch {
+        if (signal.aborted) return;
+        setSmallVideoGroups([]);
+      }
+    },
+    [open, formReady, isReupAudio],
+    { enabled: open && formReady && isReupAudio },
   );
 
   useAbortableEffect(
@@ -1162,9 +1189,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               >
                 {smallVideoFile === SI_OVERLAY_AUTO_SENTINEL
                   ? 'Đã chọn: Tự động'
-                  : smallVideoFile
-                    ? `Đã chọn: ${smallVideoFile}`
-                    : 'Chọn video nhỏ'}
+                  : smallVideoGroupId
+                    ? `Đã chọn nhóm: ${smallVideoGroupName ?? 'nhóm'}`
+                    : smallVideoFile
+                      ? `Đã chọn: ${smallVideoFile}`
+                      : 'Chọn video nhỏ'}
               </Button>
             </FormField>
           ) : null}

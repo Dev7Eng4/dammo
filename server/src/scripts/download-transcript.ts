@@ -8,6 +8,7 @@ async function main() {
   ensureDataDirs();
 
   const { url, language } = await readInput();
+
   console.log(`Reading URL from ${INPUT_FILE}`);
   console.log(`Downloading transcript (language: ${language})...`);
 
@@ -20,7 +21,7 @@ async function main() {
   printResult('SRT cleaned', srtPath, srtStat.size);
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });

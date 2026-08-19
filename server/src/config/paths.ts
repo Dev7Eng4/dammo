@@ -29,6 +29,7 @@ export const paths = {
   niches: path.join(env.dataDir, 'niches.json'),
   celebrities: path.join(env.dataDir, 'celebrities.json'),
   celebritiesDir: path.join(env.dataDir, 'celebrities'),
+  smallVideoGroups: path.join(env.dataDir, 'small-video-groups.json'),
   promptsDir: path.join(env.dataDir, 'prompts'),
   playgroundDir: path.join(env.dataDir, 'playground'),
   reupSiAssetsDir: path.join(env.dataDir, 'assets'),
@@ -41,6 +42,10 @@ export const paths = {
 
 export function celebrityDir(celebrityId: string): string {
   return path.join(paths.celebritiesDir, celebrityId);
+}
+
+export function smallVideoGroupDir(groupId: string): string {
+  return path.join(paths.siSmallVideoDir, groupId);
 }
 
 export function siLocalStockUsageFile(): string {

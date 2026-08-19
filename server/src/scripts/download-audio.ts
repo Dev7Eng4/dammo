@@ -13,7 +13,7 @@ async function main() {
   printResult('Audio saved', item.path, item.sizeBytes);
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });

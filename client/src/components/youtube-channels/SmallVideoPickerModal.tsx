@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { assetFileUrl, fetchAssets } from '../../api/assets';
+import { fetchSmallVideoGroups } from '../../api/small-video-groups';
 import type { AssetFileItem } from '../../types/asset';
-import { SI_OVERLAY_AUTO_SENTINEL } from '../../types/youtubeChannel';
+import type { SmallVideoGroupListItem } from '../../types/smallVideoGroup';
+import {
+  encodeSmallVideoGroupSelection,
+  parseSmallVideoGroupId,
+  SI_OVERLAY_AUTO_SENTINEL,
+} from '../../types/youtubeChannel';
 import { Button, Modal } from '../ui';
 
 interface SmallVideoPickerModalProps {
@@ -30,10 +36,13 @@ function CheckIcon({ className }: { className?: string }) {
 
 export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }: SmallVideoPickerModalProps) {
   const [items, setItems] = useState<AssetFileItem[]>([]);
+  const [groups, setGroups] = useState<SmallVideoGroupListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const autoSelected = selectedFile === SI_OVERLAY_AUTO_SENTINEL;
+  const selectedGroupId = parseSmallVideoGroupId(selectedFile);
+  const selectableGroups = groups.filter(group => group.mediaCount > 0);
 
   useEffect(() => {
     if (!open) {
@@ -46,13 +55,17 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
     setLoading(true);
     setError(null);
 
-    void fetchAssets('smallVideo')
-      .then(({ items: next }) => {
-        if (!cancelled) setItems(next);
+    void Promise.all([fetchAssets('smallVideo'), fetchSmallVideoGroups()])
+      .then(([assetData, groupData]) => {
+        if (!cancelled) {
+          setItems(assetData.items);
+          setGroups(groupData.items);
+        }
       })
       .catch(err => {
         if (!cancelled) {
           setItems([]);
+          setGroups([]);
           setError(err instanceof Error ? err.message : 'Không thể tải danh sách video nhỏ');
         }
       })
@@ -93,82 +106,105 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
           {loading ? (
             <p className='text-center text-xs text-neutral-500'>Đang tải danh sách video...</p>
           ) : (
-            <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
-              <button
-                type='button'
-                onClick={() => handleToggleSelect(SI_OVERLAY_AUTO_SENTINEL)}
-                className={`relative flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 bg-neutral-950 px-3 text-center transition ${
-                  autoSelected
-                    ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
-                    : 'border-neutral-800 hover:border-neutral-600'
-                }`}
-              >
-                {autoSelected ? (
-                  <span className='absolute right-2 top-2 rounded-full bg-emerald-500 p-1 text-white shadow'>
-                    <CheckIcon className='size-3' />
-                  </span>
-                ) : null}
-                <span className='text-sm font-medium text-neutral-100'>Tự động</span>
-                <span className='text-[10px] text-neutral-500'>Random khi tạo video</span>
-              </button>
+            <div className='space-y-4'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <button
+                  type='button'
+                  onClick={() => handleToggleSelect(SI_OVERLAY_AUTO_SENTINEL)}
+                  className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                    autoSelected
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                      : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                  }`}
+                >
+                  Tự động
+                </button>
+                {selectableGroups.map(group => {
+                  const value = encodeSmallVideoGroupSelection(group.id);
+                  const selected = selectedGroupId === group.id;
+                  return (
+                    <button
+                      key={group.id}
+                      type='button'
+                      title={`Random ${group.mediaCount} video trong nhóm`}
+                      onClick={() => handleToggleSelect(value)}
+                      className={`max-w-[10rem] truncate rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                        selected
+                          ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                          : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                      }`}
+                    >
+                      {group.name}
+                    </button>
+                  );
+                })}
+              </div>
 
-              {items.map(item => {
-                const selected = selectedFile === item.name;
-                const src = assetFileUrl('smallVideo', item.name);
-                return (
-                  <div
-                    key={item.name}
-                    className={`group relative overflow-hidden rounded-xl border-2 transition ${
-                      selected
-                        ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
-                        : 'border-neutral-800 hover:border-neutral-600'
-                    }`}
-                  >
-                    <video
-                      src={src}
-                      muted
-                      playsInline
-                      controls
-                      preload='metadata'
-                      className='aspect-square h-full w-full bg-neutral-950 object-contain'
-                    />
-                    <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
-                      <button
-                        type='button'
-                        title='Xem'
-                        className='rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800'
-                        onClick={() => setPreviewUrl(src)}
-                      >
-                        <EyeIcon className='size-4' />
-                      </button>
-                      <button
-                        type='button'
-                        title={selected ? 'Bỏ chọn' : 'Chọn'}
-                        className={`rounded-full p-2 text-white ${
-                          selected
-                            ? 'bg-neutral-600/90 hover:bg-neutral-500'
-                            : 'bg-emerald-600/90 hover:bg-emerald-500'
-                        }`}
-                        onClick={() => handleToggleSelect(item.name)}
-                      >
-                        <CheckIcon className='size-4' />
-                      </button>
-                    </div>
-                    {selected ? (
-                      <span className='absolute right-2 top-2 rounded-full bg-emerald-500 p-1 text-white shadow'>
-                        <CheckIcon className='size-3' />
-                      </span>
-                    ) : null}
-                    <p className='truncate border-t border-neutral-800 bg-surface px-2 py-1 text-[10px] text-neutral-400'>
-                      {item.name}
-                    </p>
+              {items.length > 0 ? (
+                <div>
+                  <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500'>
+                    Video không thuộc nhóm
+                  </h3>
+                  <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
+                    {items.map(item => {
+                      const selected = selectedFile === item.name;
+                      const src = assetFileUrl('smallVideo', item.name);
+                      return (
+                        <div
+                          key={item.name}
+                          className={`group relative aspect-square overflow-hidden rounded-lg border bg-neutral-950 transition ${
+                            selected
+                              ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
+                              : 'border-neutral-800 hover:border-neutral-600'
+                          }`}
+                        >
+                          <video
+                            src={src}
+                            muted
+                            playsInline
+                            preload='metadata'
+                            className='absolute inset-0 h-full w-full object-contain'
+                          />
+                          <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-1.5 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
+                            <button
+                              type='button'
+                              title='Xem'
+                              className='rounded-full bg-neutral-900/90 p-1.5 text-neutral-100 hover:bg-neutral-800'
+                              onClick={() => setPreviewUrl(src)}
+                            >
+                              <EyeIcon className='size-3.5' />
+                            </button>
+                            <button
+                              type='button'
+                              title={selected ? 'Bỏ chọn' : 'Chọn'}
+                              className={`rounded-full p-1.5 text-white ${
+                                selected
+                                  ? 'bg-neutral-600/90 hover:bg-neutral-500'
+                                  : 'bg-emerald-600/90 hover:bg-emerald-500'
+                              }`}
+                              onClick={() => handleToggleSelect(item.name)}
+                            >
+                              <CheckIcon className='size-3.5' />
+                            </button>
+                          </div>
+                          {selected ? (
+                            <span className='absolute right-1.5 top-1.5 rounded-full bg-emerald-500 p-0.5 text-white shadow'>
+                              <CheckIcon className='size-2.5' />
+                            </span>
+                          ) : null}
+                          <p className='absolute inset-x-0 bottom-0 truncate bg-black/70 px-1.5 py-0.5 text-[10px] text-neutral-300'>
+                            {item.name}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ) : null}
             </div>
           )}
 
-          {!loading && items.length === 0 ? (
+          {!loading && items.length === 0 && selectableGroups.length === 0 ? (
             <p className='text-center text-xs text-neutral-500'>Chưa có video nhỏ trong assets</p>
           ) : null}
         </div>

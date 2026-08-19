@@ -1,5 +1,5 @@
-/** Delays after failed attempts before retrying (10s, then 20s → 3 attempts total). */
-export const YOUTUBE_DOWNLOAD_RETRY_DELAYS_MS = [10_000, 20_000] as const;
+/** Delays after failed attempts before retrying (10s → 2 attempts total). */
+export const YOUTUBE_DOWNLOAD_RETRY_DELAYS_MS = [10_000] as const;
 
 export interface YoutubeDownloadRetryOptions {
   onRetry?: (info: { attempt: number; maxAttempts: number; delayMs: number; reason: string }) => void;

@@ -40,8 +40,9 @@ import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
 import { channelAvatarsService } from './channel-avatars.service.js';
-import { SI_OVERLAY_AUTO_SENTINEL } from '../video-production/shared/si-video/si.constants.js';
+import { parseSmallVideoGroupId, SI_OVERLAY_AUTO_SENTINEL } from '../video-production/shared/si-video/si.constants.js';
 import { celebritiesService } from '../celebrities/celebrities.service.js';
+import { smallVideoGroupsService } from '../small-video-groups/small-video-groups.service.js';
 import type {
   AiSceneDensityMaxSec,
   CaptionStyleKey,
@@ -348,9 +349,24 @@ function validateChannelConfig(input: ChannelConfigInput): {
       smallVideoFile = SI_OVERLAY_AUTO_SENTINEL;
       showSmallVideo = true;
     } else if (selectedSmallVideo) {
-      assetsService.getAsset('smallVideo', selectedSmallVideo);
-      smallVideoFile = selectedSmallVideo;
-      showSmallVideo = true;
+      const groupId = parseSmallVideoGroupId(selectedSmallVideo);
+      if (groupId) {
+        smallVideoGroupsService.getById(groupId);
+        const media = smallVideoGroupsService.listMedia(groupId);
+        if (media.length === 0) {
+          throw new AppError(
+            'Selected small video group has no clips',
+            400,
+            'SMALL_VIDEO_GROUP_EMPTY',
+          );
+        }
+        smallVideoFile = selectedSmallVideo;
+        showSmallVideo = true;
+      } else {
+        assetsService.getAsset('smallVideo', selectedSmallVideo);
+        smallVideoFile = selectedSmallVideo;
+        showSmallVideo = true;
+      }
     } else {
       showSmallVideo = input.showSmallVideo === true;
     }

@@ -139,6 +139,19 @@ export const SI_OUTPUT_VIDEO_BASENAME = 'video';
 /** Channel overlay file value: pick a random asset at assemble time. */
 export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
 
+/** Channel small-video value: pick a random clip from a small-video group at assemble time. */
+export const SI_SMALL_VIDEO_GROUP_PREFIX = 'group:';
+
+export function parseSmallVideoGroupId(value: string): string | null {
+  if (!value.startsWith(SI_SMALL_VIDEO_GROUP_PREFIX)) return null;
+  const id = value.slice(SI_SMALL_VIDEO_GROUP_PREFIX.length).trim();
+  return id || null;
+}
+
+export function encodeSmallVideoGroupSelection(groupId: string): string {
+  return `${SI_SMALL_VIDEO_GROUP_PREFIX}${groupId}`;
+}
+
 export function resolveSiSubtitleMarginBottomPx(showBackgroundBox: boolean): number {
   return showBackgroundBox ? SI_SUBTITLE_MARGIN_BOTTOM_PX : SI_SUBTITLE_NO_BACKGROUND_MARGIN_BOTTOM_PX;
 }

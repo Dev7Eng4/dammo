@@ -1,8 +1,15 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { paths } from '../../../../config/paths.js';
+import { paths, smallVideoGroupDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import { SI_FPS, SI_OVERLAY_AUTO_SENTINEL, SI_SMALL_VIDEO_H, SI_SMALL_VIDEO_W } from './si.constants.js';
+import { isUuid } from '../../../../shared/id.js';
+import {
+  parseSmallVideoGroupId,
+  SI_FPS,
+  SI_OVERLAY_AUTO_SENTINEL,
+  SI_SMALL_VIDEO_H,
+  SI_SMALL_VIDEO_W,
+} from './si.constants.js';
 
 const SMALL_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
 
@@ -22,17 +29,24 @@ export function appendSiSmallVideoScaleFilters(
   );
 }
 
-export async function selectRandomSiSmallVideoClip(): Promise<SiSmallVideoClip> {
-  let entries: string[];
+async function listVideoClipsInDir(dir: string): Promise<string[]> {
+  let entries: import('node:fs').Dirent[];
   try {
-    entries = await fs.readdir(paths.siSmallVideoDir);
+    entries = await fs.readdir(dir, { withFileTypes: true });
   } catch {
-    throw new AppError('Small video assets directory not found', 500, 'SI_SMALL_VIDEO_EMPTY');
+    return [];
   }
 
-  const clips = entries
-    .filter(name => SMALL_VIDEO_EXTENSIONS.has(path.extname(name).toLowerCase()))
+  return entries
+    .filter(
+      (entry) => entry.isFile() && SMALL_VIDEO_EXTENSIONS.has(path.extname(entry.name).toLowerCase()),
+    )
+    .map((entry) => entry.name)
     .sort();
+}
+
+export async function selectRandomSiSmallVideoClip(): Promise<SiSmallVideoClip> {
+  const clips = await listVideoClipsInDir(paths.siSmallVideoDir);
 
   if (clips.length === 0) {
     throw new AppError('No small video assets found', 400, 'SI_SMALL_VIDEO_EMPTY');
@@ -45,10 +59,39 @@ export async function selectRandomSiSmallVideoClip(): Promise<SiSmallVideoClip> 
   };
 }
 
+export async function selectRandomSiSmallVideoClipFromGroup(groupId: string): Promise<SiSmallVideoClip> {
+  if (!isUuid(groupId)) {
+    throw new AppError(`Invalid small video group id: ${groupId}`, 400, 'INVALID_SMALL_VIDEO_GROUP');
+  }
+
+  const dir = smallVideoGroupDir(groupId);
+  try {
+    await fs.access(dir);
+  } catch {
+    throw new AppError(`Small video group not found: ${groupId}`, 400, 'SI_SMALL_VIDEO_GROUP_MISSING');
+  }
+
+  const clips = await listVideoClipsInDir(dir);
+  if (clips.length === 0) {
+    throw new AppError('Selected small video group has no clips', 400, 'SI_SMALL_VIDEO_GROUP_EMPTY');
+  }
+
+  const filename = clips[Math.floor(Math.random() * clips.length)]!;
+  return {
+    path: path.join(dir, filename),
+    filename,
+  };
+}
+
 export async function resolveSiSmallVideoClip(filename?: string): Promise<SiSmallVideoClip> {
   const selected = filename?.trim();
   if (!selected || selected === SI_OVERLAY_AUTO_SENTINEL) {
     return selectRandomSiSmallVideoClip();
+  }
+
+  const groupId = parseSmallVideoGroupId(selected);
+  if (groupId) {
+    return selectRandomSiSmallVideoClipFromGroup(groupId);
   }
 
   const safeName = path.basename(selected);

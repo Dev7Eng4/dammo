@@ -16,7 +16,9 @@ export function extractYoutubeVideoId(url: string): string | null {
 }
 
 export function requireYoutubeVideoId(url: string): string {
+  console.log('🚀 ~ requireYoutubeVideoId ~ url:', url);
   const videoId = extractYoutubeVideoId(url);
+  console.log('🚀 ~ requireYoutubeVideoId ~ videoId:', videoId);
   if (!videoId) {
     throw new AppError('Invalid YouTube video URL', 400, 'INVALID_VIDEO_URL');
   }

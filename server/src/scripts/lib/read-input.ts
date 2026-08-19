@@ -18,7 +18,11 @@ function parseLine(line: string): string | null {
 export interface InputFileContent {
   url: string;
   language: TranscriptLanguage;
+  transcriptEngine: TranscriptEngine;
 }
+
+export type TranscriptEngine = 'auto' | 'ytdlp' | 'youtubei' | 'youtube-transcript';
+const SUPPORTED_ENGINES = new Set<TranscriptEngine>(['auto', 'ytdlp', 'youtubei', 'youtube-transcript']);
 
 export async function readInput(): Promise<InputFileContent> {
   let raw: string;
@@ -41,7 +45,13 @@ export async function readInput(): Promise<InputFileContent> {
       ? (languageCandidate as TranscriptLanguage)
       : DEFAULT_TRANSCRIPT_LANGUAGE;
 
-  return { url, language };
+  const engineCandidate = lines[2]?.toLowerCase();
+  const transcriptEngine =
+    engineCandidate && SUPPORTED_ENGINES.has(engineCandidate as TranscriptEngine)
+      ? (engineCandidate as TranscriptEngine)
+      : 'auto';
+
+  return { url, language, transcriptEngine };
 }
 
 export function printResult(label: string, filePath: string, sizeBytes: number): void {
