@@ -16,10 +16,13 @@ interface YoutubeChannelDetailHeaderProps {
   openingProfile?: boolean;
   canDeleteVideos?: boolean;
   deletingVideos?: boolean;
+  canUploadVideos?: boolean;
+  uploadDisabledReason?: string;
   onSync?: () => void;
   onEdit?: () => void;
   onCreateVideo?: () => void;
   onPrepareVideo?: () => void;
+  onUploadVideos?: () => void;
   onDeleteVideos?: () => void;
   onOpenProfile?: () => void;
 }
@@ -46,10 +49,13 @@ export function YoutubeChannelDetailHeader({
   openingProfile,
   canDeleteVideos,
   deletingVideos,
+  canUploadVideos,
+  uploadDisabledReason,
   onSync,
   onEdit,
   onCreateVideo,
   onPrepareVideo,
+  onUploadVideos,
   onDeleteVideos,
   onOpenProfile,
 }: YoutubeChannelDetailHeaderProps) {
@@ -105,6 +111,22 @@ export function YoutubeChannelDetailHeader({
           {onCreateVideo ? (
             <Button variant='outlined' className='rounded-lg' disabled={!canRunCreateActions || creatingVideo} onClick={onCreateVideo}>
               {creatingVideo ? 'Đang tạo…' : 'Tạo video'}
+            </Button>
+          ) : null}
+          {onUploadVideos ? (
+            <Button
+              variant='outlined'
+              className='rounded-lg'
+              disabled={!canUploadVideos}
+              title={uploadDisabledReason}
+              onClick={onUploadVideos}
+            >
+              <svg className='size-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                <polyline points='17 8 12 3 7 8' />
+                <line x1='12' y1='3' x2='12' y2='15' />
+              </svg>
+              Tải lên
             </Button>
           ) : null}
           {onDeleteVideos ? (

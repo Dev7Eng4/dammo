@@ -83,6 +83,22 @@ export function YoutubeChannelDetailPage() {
     !isPendingFilter &&
     selectedVideos.length > 0 &&
     selectedVideos.every(video => isDeletableVideoStatus(video.status));
+  const canUploadFromSelection =
+    !isPendingFilter &&
+    selectedVideoIds.size > 0 &&
+    channel != null &&
+    isStoredReupChannelType(channel.type) &&
+    selectedVideos.every(video => video.status === 'Created');
+  const uploadDisabledReason =
+    isPendingFilter
+      ? 'Chuyển sang bộ lọc khác để tải video lên'
+      : channel != null && !isStoredReupChannelType(channel.type)
+        ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tải video lên'
+        : selectedVideoIds.size === 0
+          ? 'Chọn video trạng thái Đã tạo để tải lên'
+          : selectedVideos.some(video => video.status !== 'Created')
+            ? 'Chỉ video trạng thái Đã tạo mới có thể tải lên'
+            : undefined;
 
   useAbortableEffect(
     async signal => {
@@ -170,6 +186,19 @@ export function YoutubeChannelDetailPage() {
         videoIds,
         ...(prepareOnly ? { prepareOnly: true } : {}),
       },
+    });
+    setSelectedVideoIds(new Set());
+  }
+
+  function handleUploadSelected() {
+    if (!id || !channel || !canUploadFromSelection) return;
+
+    const videoIds = Array.from(selectedVideoIds);
+    void enqueueTask({
+      type: 'upload_video',
+      title: `Đang tải lên: ${channel.name}`,
+      subtitle: `${channel.handle} · ${videoIds.length} video đã chọn`,
+      payload: { channelId: id, videoIds },
     });
     setSelectedVideoIds(new Set());
   }
@@ -287,10 +316,13 @@ export function YoutubeChannelDetailPage() {
               openingProfile={openingProfile}
               canDeleteVideos={canDeleteVideos}
               deletingVideos={deletingVideos}
+              canUploadVideos={canUploadFromSelection}
+              uploadDisabledReason={uploadDisabledReason}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}
               onCreateVideo={() => enqueueSelectedVideos(false)}
               onPrepareVideo={() => enqueueSelectedVideos(true)}
+              onUploadVideos={handleUploadSelected}
               onDeleteVideos={() => setShowDeleteConfirm(true)}
               onOpenProfile={handleOpenProfile}
             />
