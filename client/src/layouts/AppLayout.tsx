@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { ProxyExpiryWarningModal } from '../components/proxy-manager/ProxyExpiryWarningModal';
 import { TaskQueuePopup } from '../components/task-queue/TaskQueuePopup';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
@@ -14,6 +15,7 @@ export function AppLayout() {
         </main>
       </div>
       <TaskQueuePopup />
+      <ProxyExpiryWarningModal />
     </div>
   );
 }

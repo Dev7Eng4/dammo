@@ -3,7 +3,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { updateGpmProfile } from '../../api/gpm';
 import { fetchProxies, setProfileProxy } from '../../api/proxies';
 import { fetchMailAccounts } from '../../api/mailAccounts';
-import { buildRawProxy, formatProxyLabel } from '../../lib/proxy-format';
+import { buildRawProxy, formatProxyOptionLabel } from '../../lib/proxy-format';
 import type {
   EditGpmProfileFormValues,
   GpmGroup,
@@ -52,7 +52,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       { value: '', label: 'Không proxy' },
       ...proxies.map((proxy) => ({
         value: proxy.id,
-        label: formatProxyLabel(proxy),
+        label: formatProxyOptionLabel(proxy),
       })),
     ],
     [proxies],
@@ -165,8 +165,10 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
         ? proxies.find((proxy) => proxy.id === values.proxyId)
         : undefined;
 
-      const payload: UpdateGpmProfilePayload = { name: values.name.trim() };
-      if (values.group_id) payload.group_id = values.group_id;
+      const payload: UpdateGpmProfilePayload = {
+        name: values.name.trim(),
+        group_id: values.group_id || null,
+      };
       if (selectedProxy) payload.raw_proxy = buildRawProxy(selectedProxy);
       const note = values.note.trim();
       if (note) payload.note = note;

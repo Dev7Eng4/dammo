@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  deleteGpmGroup,
   deleteGpmProfile,
   fetchGpmGroups,
   fetchGpmProfiles,
@@ -12,6 +13,7 @@ import {
 import { setProfileProxy } from '../api/proxies';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
 import { AddGpmGroupModal } from '../components/gpm-manager/AddGpmGroupModal';
+import { EditGpmGroupModal } from '../components/gpm-manager/EditGpmGroupModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
 import { GpmConnectionBanner } from '../components/gpm-manager/GpmConnectionBanner';
 import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
@@ -62,6 +64,10 @@ export function GpmManagerPage() {
   const [showDeleteProfileModal, setShowDeleteProfileModal] = useState(false);
   const [deleteHardMode, setDeleteHardMode] = useState(false);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+  const [showDeleteGroupModal, setShowDeleteGroupModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GpmGroup | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState(false);
 
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
@@ -310,6 +316,32 @@ export function GpmManagerPage() {
     }
   }
 
+  function handleEditGroup(group: GpmGroup) {
+    setSelectedGroup(group);
+    setShowEditGroupModal(true);
+  }
+
+  function handleDeleteGroup(group: GpmGroup) {
+    setSelectedGroup(group);
+    setShowDeleteGroupModal(true);
+  }
+
+  async function handleConfirmDeleteGroup() {
+    if (!selectedGroup || deletingGroup) return;
+    setDeletingGroup(true);
+    try {
+      await deleteGpmGroup(selectedGroup.id);
+      toast.success(`Đã xóa nhóm "${selectedGroup.name}"`);
+      setShowDeleteGroupModal(false);
+      setSelectedGroup(null);
+      handleRefresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Xóa nhóm thất bại');
+    } finally {
+      setDeletingGroup(false);
+    }
+  }
+
   return (
     <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -402,7 +434,14 @@ export function GpmManagerPage() {
               {groupsError ? <p className="mt-2 text-xs text-danger">{groupsError}</p> : null}
 
               <div className="mt-4 card-surface px-5 pt-3 pb-4">
-                <GpmGroupsTable groups={filteredGroups} loading={groupsLoading} readOnly />
+                <GpmGroupsTable
+                  groups={filteredGroups}
+                  loading={groupsLoading}
+                  readOnly={false}
+                  deletingId={deletingGroup ? selectedGroup?.id ?? null : null}
+                  onEdit={handleEditGroup}
+                  onDelete={handleDeleteGroup}
+                />
               </div>
             </>
           )}
@@ -425,6 +464,19 @@ export function GpmManagerPage() {
         onClose={() => setShowAddGroupModal(false)}
         onSuccess={() => {
           toast.success('Đã tạo nhóm GPM');
+          handleRefresh();
+        }}
+      />
+
+      <EditGpmGroupModal
+        open={showEditGroupModal}
+        group={selectedGroup}
+        onClose={() => {
+          setShowEditGroupModal(false);
+          setSelectedGroup(null);
+        }}
+        onSuccess={() => {
+          toast.success('Đã cập nhật nhóm GPM');
           handleRefresh();
         }}
       />
@@ -532,6 +584,44 @@ export function GpmManagerPage() {
         </label>
         <p className="mt-2 text-xs text-neutral-500">
           Bỏ chọn sẽ dùng mode 1 (chỉ database).
+        </p>
+      </Modal>
+
+      <Modal
+        open={showDeleteGroupModal}
+        onClose={() => {
+          if (deletingGroup) return;
+          setShowDeleteGroupModal(false);
+          setSelectedGroup(null);
+        }}
+        title="Xóa nhóm GPM"
+        footer={
+          <>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="rounded-lg"
+              onClick={() => {
+                setShowDeleteGroupModal(false);
+                setSelectedGroup(null);
+              }}
+              disabled={deletingGroup}
+            >
+              Hủy
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-lg"
+              onClick={handleConfirmDeleteGroup}
+              disabled={deletingGroup}
+            >
+              {deletingGroup ? 'Đang xóa…' : 'Xóa'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-neutral-300">
+          Xóa nhóm &quot;{selectedGroup?.name}&quot;? Các profile đang thuộc nhóm này sẽ bị gỡ khỏi nhóm.
         </p>
       </Modal>
     </div>

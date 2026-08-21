@@ -125,7 +125,29 @@ function resolveAvatarAsset(dir: string, filename: string): ChannelAvatarAsset {
   };
 }
 
+function findAvatarFileName(dir: string): string | null {
+  if (!fs.existsSync(dir)) return null;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const candidate = entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .find((name) => {
+      const parsed = path.parse(name);
+      return (
+        parsed.name.toLowerCase() === CHANNEL_AVATAR_BASENAME.toLowerCase() &&
+        IMAGE_EXTENSIONS.has(parsed.ext.toLowerCase())
+      );
+    });
+  return candidate ?? null;
+}
+
 export class ChannelAvatarsService {
+  findForChannel(channelId: string, urlPrefix: string): ChannelAvatarItem | null {
+    const name = findAvatarFileName(youtubeChannelDir(channelId));
+    if (!name) return null;
+    return { name, url: `${urlPrefix}/${encodeURIComponent(name)}` };
+  }
+
   async uploadForChannel(channelId: string, upload: ChannelAvatarUpload, urlPrefix: string): Promise<ChannelAvatarItem> {
     const dir = youtubeChannelDir(channelId);
     const name = writeAvatarFile(dir, upload);

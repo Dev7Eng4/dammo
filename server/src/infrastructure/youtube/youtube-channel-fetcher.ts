@@ -1,5 +1,5 @@
 import { youtubeDl } from './youtube-dl-client.js';
-import { getYoutubeDlCommonOptions } from './youtube-dl-auth.js';
+import { getYoutubeDlPublicOptions } from './youtube-dl-auth.js';
 import { inferNiche } from './niche-inferrer.js';
 import type { YoutubeChannelMetadata, YtdlpChannelResponse } from './youtube-channel.types.js';
 
@@ -42,14 +42,7 @@ function mapResponse(data: YtdlpChannelResponse): Omit<YoutubeChannelMetadata, '
 
 export async function fetchYoutubeChannelMetadata(channelUrl: string): Promise<YoutubeChannelMetadata> {
   try {
-    const raw = await youtubeDl(channelUrl, {
-      ...getYoutubeDlCommonOptions(),
-      dumpSingleJson: true,
-      flatPlaylist: true,
-      skipDownload: true,
-      noWarnings: true,
-      ignoreErrors: true,
-    });
+    const raw = await youtubeDl(channelUrl, getYoutubeDlPublicOptions());
 
     const data = raw as YtdlpChannelResponse;
     const base = mapResponse(data);

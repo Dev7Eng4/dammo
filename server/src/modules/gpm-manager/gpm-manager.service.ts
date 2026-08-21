@@ -1,20 +1,19 @@
 import {
-  createGpmGroup,
   createGpmProfile,
-  deleteGpmGroup,
   deleteGpmProfile,
-  getGpmGroup,
   getGpmProfile,
-  listGpmGroups,
   listGpmProfiles,
   pingGpm,
   startGpmProfile,
   stopGpmProfile,
-  updateGpmGroup,
   updateGpmProfile,
+  type GpmGroup,
+  type GpmPaginated,
   type GpmProfile,
 } from '../../infrastructure/gpm/gpm-api.client.js';
 import { resolveGpmProfileIdByEmail } from '../../infrastructure/gpm/gpm-playwright.connector.js';
+import { AppError } from '../../shared/http/errors.js';
+import { gpmGroupsRepository } from './gpm-groups.repository.js';
 import {
   gpmProfileCapabilitiesRepository,
   type GpmProfileCapabilitiesPatch,
@@ -28,25 +27,71 @@ import type {
   GpmUpdateProfileInput,
 } from './gpm-manager.types.js';
 
+function paginateGroups(groups: GpmGroup[], query: GpmListQuery = {}): GpmPaginated<GpmGroup> {
+  const page = query.page && query.page > 0 ? query.page : 1;
+  const pageSize = query.page_size && query.page_size > 0 ? query.page_size : groups.length || 30;
+  const search = query.search?.trim().toLowerCase();
+
+  const filtered = search
+    ? groups.filter((group) => group.name.toLowerCase().includes(search))
+    : groups;
+
+  const total = filtered.length;
+  const lastPage = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const start = (page - 1) * pageSize;
+  const data = filtered.slice(start, start + pageSize);
+
+  return {
+    data,
+    current_page: page,
+    per_page: pageSize,
+    total,
+    last_page: lastPage,
+  };
+}
+
 export class GpmManagerService {
   getStatus() {
     return pingGpm();
   }
 
-  private mergeCapabilities(profile: GpmProfile): GpmProfile {
+  private mergeLocalProfileState(profile: GpmProfile): GpmProfile {
     const caps = gpmProfileCapabilitiesRepository.get(profile.id);
     return {
       ...profile,
+      group_id: caps.groupId ?? '',
       flowEnabled: caps.flowEnabled,
       metaEnabled: caps.metaEnabled,
     };
   }
 
+  private assertGroupExists(groupId: string | null | undefined): void {
+    if (groupId == null || groupId === '') return;
+    if (!gpmGroupsRepository.findById(groupId)) {
+      throw new AppError(`GPM group not found: ${groupId}`, 404, 'NOT_FOUND');
+    }
+  }
+
+  private withoutGroupId<T extends { group_id?: string | null }>(
+    input: T,
+  ): Omit<T, 'group_id'> {
+    const { group_id: _groupId, ...rest } = input;
+    return rest;
+  }
+
   listProfiles(query: GpmListQuery) {
-    return listGpmProfiles(query).then((item) => ({
-      ...item,
-      data: item.data.map((profile) => this.mergeCapabilities(profile)),
-    }));
+    const { group_id: groupIdFilter, ...gpmQuery } = query;
+    return listGpmProfiles(gpmQuery).then((item) => {
+      let data = item.data.map((profile) => this.mergeLocalProfileState(profile));
+      if (groupIdFilter?.trim()) {
+        data = data.filter((profile) => profile.group_id === groupIdFilter.trim());
+      }
+      return {
+        ...item,
+        data,
+        total: groupIdFilter?.trim() ? data.length : item.total,
+      };
+    });
   }
 
   async listMetaEnabledProfiles(): Promise<GpmProfile[]> {
@@ -55,15 +100,29 @@ export class GpmManagerService {
   }
 
   getProfile(id: string) {
-    return getGpmProfile(id).then((profile) => this.mergeCapabilities(profile));
+    return getGpmProfile(id).then((profile) => this.mergeLocalProfileState(profile));
   }
 
-  createProfile(input: GpmCreateProfileInput) {
-    return createGpmProfile(input).then((profile) => this.mergeCapabilities(profile));
+  async createProfile(input: GpmCreateProfileInput) {
+    this.assertGroupExists(input.group_id);
+    const profile = await createGpmProfile(this.withoutGroupId(input));
+    if (input.group_id !== undefined) {
+      gpmProfileCapabilitiesRepository.set(profile.id, {
+        groupId: input.group_id || null,
+      });
+    }
+    return this.mergeLocalProfileState(profile);
   }
 
-  updateProfile(id: string, input: GpmUpdateProfileInput) {
-    return updateGpmProfile(id, input).then((profile) => this.mergeCapabilities(profile));
+  async updateProfile(id: string, input: GpmUpdateProfileInput) {
+    this.assertGroupExists(input.group_id);
+    const profile = await updateGpmProfile(id, this.withoutGroupId(input));
+    if (input.group_id !== undefined) {
+      gpmProfileCapabilitiesRepository.set(id, {
+        groupId: input.group_id || null,
+      });
+    }
+    return this.mergeLocalProfileState(profile);
   }
 
   async updateCapabilities(id: string, patch: GpmProfileCapabilitiesPatch) {
@@ -91,23 +150,28 @@ export class GpmManagerService {
   }
 
   listGroups(query: GpmListQuery) {
-    return listGpmGroups(query);
+    return paginateGroups(gpmGroupsRepository.findAll(), query);
   }
 
   getGroup(id: string) {
-    return getGpmGroup(id);
+    const group = gpmGroupsRepository.findById(id);
+    if (!group) {
+      throw new AppError(`GPM group not found: ${id}`, 404, 'NOT_FOUND');
+    }
+    return group;
   }
 
   createGroup(input: GpmCreateGroupInput) {
-    return createGpmGroup(input);
+    return gpmGroupsRepository.create(input);
   }
 
   updateGroup(id: string, input: GpmUpdateGroupInput) {
-    return updateGpmGroup(id, input);
+    return gpmGroupsRepository.update(id, input);
   }
 
   deleteGroup(id: string) {
-    return deleteGpmGroup(id);
+    gpmGroupsRepository.remove(id);
+    gpmProfileCapabilitiesRepository.clearGroupId(id);
   }
 }
 

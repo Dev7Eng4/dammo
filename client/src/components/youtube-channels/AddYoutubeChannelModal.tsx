@@ -8,6 +8,7 @@ import { fetchCelebrities } from '../../api/celebrities';
 import { fetchSmallVideoGroups } from '../../api/small-video-groups';
 import {
   createYoutubeChannel,
+  fetchYoutubeChannelAvatars,
   fetchYoutubeChannels,
   updateYoutubeChannel,
   uploadYoutubeChannelAvatar,
@@ -301,6 +302,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarTempSessionId, setAvatarTempSessionId] = useState(() => crypto.randomUUID());
   const [hasTempAvatar, setHasTempAvatar] = useState(false);
+  const [hasChannelAvatar, setHasChannelAvatar] = useState(false);
 
   const {
     register,
@@ -342,6 +344,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const subscribeFile = watch('subscribeFile');
   const publishTimeSlotCount = getPublishTimeSlotCount(uploadFrequency);
   const showThumbnailBackgroundPicker = Boolean(thumbnailStyleKey && thumbnailStyleFlags[thumbnailStyleKey]);
+  const canShowChannelAvatar = isEdit ? hasChannelAvatar : hasTempAvatar;
 
   const sourceOptions = useMemo(
     () => sources.filter(s => s.purpose !== 'background_footage').map(s => toSourceOption(s, niches)),
@@ -409,13 +412,29 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             setMailOptions([]);
           }
 
-          reset(getChannelFormValues(channel, mailAccountId));
+          let avatarExists = false;
+          try {
+            const avatars = await fetchYoutubeChannelAvatars(channel.id, { signal });
+            avatarExists = avatars.items.length > 0;
+          } catch {
+            avatarExists = false;
+          }
+          setHasChannelAvatar(avatarExists);
+          setHasTempAvatar(false);
+
+          const formValues = getChannelFormValues(channel, mailAccountId);
+          if (!avatarExists) {
+            formValues.showChannelAvatar = false;
+          }
+          reset(formValues);
         } else {
           const channels = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal });
           const usedEmails = new Set(channels.items.map(item => item.linkedEmail.toLowerCase()));
           const availableMailOptions = buildAvailableMailOptions(mails.items, usedEmails);
 
           setMailOptions(availableMailOptions);
+          setHasChannelAvatar(false);
+          setHasTempAvatar(false);
           reset({
             ...defaultValues,
             mailAccountId: availableMailOptions[0]?.value ?? '',
@@ -603,6 +622,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setTempBackgroundSessionId(crypto.randomUUID());
     setAvatarTempSessionId(crypto.randomUUID());
     setHasTempAvatar(false);
+    setHasChannelAvatar(false);
     onClose();
   }
 
@@ -613,6 +633,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     try {
       if (isEdit && channel) {
         await uploadYoutubeChannelAvatar(channel.id, file);
+        setHasChannelAvatar(true);
       } else {
         await uploadYoutubeChannelAvatarTemp(avatarTempSessionId, file);
         setHasTempAvatar(true);
@@ -686,7 +707,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             }
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
-        showChannelAvatar: values.showChannelAvatar,
+        showChannelAvatar: values.showChannelAvatar === true && (isEdit ? hasChannelAvatar : hasTempAvatar),
         showDisclaimer: values.showDisclaimer,
         disclaimerText: values.disclaimerText,
         descriptionDisclaimerText: values.descriptionDisclaimerText,
@@ -717,6 +738,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setTempBackgroundSessionId(crypto.randomUUID());
       setAvatarTempSessionId(crypto.randomUUID());
       setHasTempAvatar(false);
+      setHasChannelAvatar(false);
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : isEdit ? 'Không thể cập nhật kênh' : 'Không thể thêm kênh');
@@ -1243,14 +1265,22 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               control={control}
               render={({ field }) => (
                 <div className='flex items-center gap-2'>
-                  <label htmlFor='show-channel-avatar' className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'>
+                  <label
+                    htmlFor='show-channel-avatar'
+                    className={`flex items-center gap-2 text-sm text-neutral-200 ${
+                      canShowChannelAvatar && !isSubmitting && !avatarUploading
+                        ? 'cursor-pointer'
+                        : 'cursor-not-allowed opacity-60'
+                    }`}
+                    title={canShowChannelAvatar ? undefined : 'Tải ảnh avatar kênh trước'}
+                  >
                     <input
                       id='show-channel-avatar'
                       type='checkbox'
-                      checked={!!field.value}
+                      checked={!!field.value && canShowChannelAvatar}
                       onChange={e => field.onChange(e.target.checked)}
                       onBlur={field.onBlur}
-                      disabled={isSubmitting || avatarUploading}
+                      disabled={isSubmitting || avatarUploading || !canShowChannelAvatar}
                       className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
                     />
                     Hiển thị avatar kênh

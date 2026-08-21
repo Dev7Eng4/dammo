@@ -148,6 +148,15 @@ export function createYoutubeChannelsRoutes() {
     return c.json({ item });
   });
 
+  // Must be registered before DELETE /:id so "uploaded-videos" is not treated as a channel id.
+  app.delete('/uploaded-videos', zValidator('json', deleteUploadedVideosSchema), (c) => {
+    const body = c.req.valid('json');
+    const result = youtubeChannelsService.deleteAllUploadedVideoFolders({
+      deletePreparedVideos: body.deletePreparedVideos,
+    });
+    return c.json(result);
+  });
+
   app.delete('/:id', (c) => {
     youtubeChannelsService.deleteChannel(c.req.param('id'));
     return c.body(null, 204);
@@ -227,6 +236,14 @@ export function createYoutubeChannelsRoutes() {
     const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/thumbnail-backgrounds`;
     const item = await thumbnailBackgroundsService.uploadForChannel(id, parsed.upload, urlPrefix);
     return c.json({ item }, 201);
+  });
+
+  app.get('/:id/avatars', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/avatar`;
+    const item = channelAvatarsService.findForChannel(id, urlPrefix);
+    return c.json({ items: item ? [item] : [] });
   });
 
   app.post('/:id/avatar', async (c) => {
@@ -377,14 +394,6 @@ export function createYoutubeChannelsRoutes() {
   app.delete('/:id/videos', zValidator('json', deleteYoutubeVideosSchema), (c) => {
     const body = c.req.valid('json');
     const result = youtubeChannelsService.deleteVideos(c.req.param('id'), body.videoIds);
-    return c.json(result);
-  });
-
-  app.delete('/uploaded-videos', zValidator('json', deleteUploadedVideosSchema), (c) => {
-    const body = c.req.valid('json');
-    const result = youtubeChannelsService.deleteAllUploadedVideoFolders({
-      deletePreparedVideos: body.deletePreparedVideos,
-    });
     return c.json(result);
   });
 

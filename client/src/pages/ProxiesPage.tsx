@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   archiveProxy,
   exportProxiesExcel,
@@ -11,6 +11,7 @@ import {
 } from '../api/proxies';
 import { AddProxyModal } from '../components/proxy-manager/AddProxyModal';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
+import { ProxyExpiryWarningModal } from '../components/proxy-manager/ProxyExpiryWarningModal';
 import { ProxyPageHeader } from '../components/proxy-manager/ProxyPageHeader';
 import { ProxyProvidersTab } from '../components/proxy-manager/ProxyProvidersTab';
 import { ProxiesTable } from '../components/proxy-manager/ProxiesTable';
@@ -19,10 +20,6 @@ import { ProxyStatCards } from '../components/proxy-manager/ProxyStatCards';
 import { Button, Input, Modal, useToast } from '../components/ui';
 import { useAbortableEffect, usePaginatedList } from '../hooks';
 import type { Proxy, ProxyFilter, ProxyStats, ProxyTab } from '../types/proxy';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const EXPIRY_WARNING_DAYS = 5;
-const EXPIRY_MODAL_MAX_ITEMS = 10;
 
 function getExpiryEndMs(expiresAt?: string): number | null {
   if (!expiresAt) return null;
@@ -40,31 +37,6 @@ function isProxyExpired(proxy: Proxy, nowMs = Date.now()): boolean {
 /** Deletable when unassigned, or already past expiry (even if still bound to profiles). */
 function canDeleteProxy(proxy: Proxy, nowMs = Date.now()): boolean {
   return proxy.assignedProfileIds.length === 0 || isProxyExpired(proxy, nowMs);
-}
-
-function getExpiryWarningMeta(
-  expiresAt: string | undefined,
-  nowMs: number,
-): null | { label: string; expired: boolean; expireEndMs: number } {
-  const expireEndMs = getExpiryEndMs(expiresAt);
-  if (expireEndMs == null) return null;
-
-  // Inclusive: show when expiresAt <= now + 5 days (even if already expired).
-  const isExpiring = expireEndMs <= nowMs + EXPIRY_WARNING_DAYS * DAY_MS;
-  if (!isExpiring) return null;
-
-  if (expireEndMs < nowMs) {
-    return { label: 'Đã hết hạn', expired: true, expireEndMs };
-  }
-
-  const diffMs = expireEndMs - nowMs;
-  const daysLeft = Math.ceil(diffMs / DAY_MS);
-  return { label: `Còn ${daysLeft} ngày`, expired: false, expireEndMs };
-}
-
-interface ExpiringProxyItem {
-  proxy: Proxy;
-  label: string;
 }
 
 export function ProxiesPage() {
@@ -88,9 +60,6 @@ export function ProxiesPage() {
   const [extendDays, setExtendDays] = useState('');
   const [extending, setExtending] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
-
-  const [showExpiryWarning, setShowExpiryWarning] = useState(false);
-  const [expiringProxies, setExpiringProxies] = useState<ExpiringProxyItem[]>([]);
   const [limit, setLimit] = useState(20);
 
   const list = usePaginatedList({
@@ -121,57 +90,6 @@ export function ProxiesPage() {
     setStatsRefreshKey(key => key + 1);
     list.refresh();
   }
-
-  // Popup cảnh báo khi có proxy sắp hết hạn (<= 5 ngày).
-  // Chạy khi trang mount và mỗi lần refreshAll() (thay đổi listRefreshKey).
-  useEffect(() => {
-    const controller = new AbortController();
-    let cancelled = false;
-
-    async function run() {
-      try {
-        const nowMs = Date.now();
-        const expiring: Array<{ proxy: Proxy; expireEndMs: number; label: string }> = [];
-
-        const limit = 100;
-        const first = await fetchProxies('all', '', 1, limit, { signal: controller.signal });
-
-        for (const proxy of first.items) {
-          const meta = getExpiryWarningMeta(proxy.expiresAt, nowMs);
-          if (meta) expiring.push({ proxy, expireEndMs: meta.expireEndMs, label: meta.label });
-        }
-
-        // Fetch additional pages (if any) to check all proxies in system.
-        for (let page = 2; page <= first.totalPages; page++) {
-          const res = await fetchProxies('all', '', page, limit, { signal: controller.signal });
-          for (const proxy of res.items) {
-            const meta = getExpiryWarningMeta(proxy.expiresAt, nowMs);
-            if (meta) expiring.push({ proxy, expireEndMs: meta.expireEndMs, label: meta.label });
-          }
-        }
-
-        if (cancelled) return;
-
-        if (expiring.length > 0) {
-          expiring.sort((a, b) => a.expireEndMs - b.expireEndMs);
-          setExpiringProxies(expiring.map(({ proxy, label }) => ({ proxy, label })));
-          setShowExpiryWarning(true);
-        } else {
-          setShowExpiryWarning(false);
-          setExpiringProxies([]);
-        }
-      } catch {
-        // Ignore abort/cancel errors; don't block the page due to warning.
-      }
-    }
-
-    void run();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [listRefreshKey]);
 
   function clearSelection() {
     setSelectedId(null);
@@ -523,42 +441,7 @@ export function ProxiesPage() {
         </p>
       </Modal>
 
-      <Modal
-        open={showExpiryWarning}
-        onClose={() => setShowExpiryWarning(false)}
-        title='Proxy sắp hết hạn (<= 5 ngày)'
-        footer={
-          <Button size='sm' className='rounded-lg' onClick={() => setShowExpiryWarning(false)}>
-            Đã hiểu
-          </Button>
-        }
-      >
-        {expiringProxies.length > 0 ? (
-          <div className='space-y-4'>
-            <p className='text-sm text-neutral-300'>
-              Có <span className='font-mono text-neutral-100'>{expiringProxies.length}</span> proxy sắp hết hạn hoặc đã hết hạn. Vui lòng
-              kiểm tra và gia hạn trước khi hết hạn.
-            </p>
-            <div className='space-y-2'>
-              {expiringProxies.slice(0, EXPIRY_MODAL_MAX_ITEMS).map(({ proxy, label }) => (
-                <div key={proxy.id} className='flex items-center justify-between gap-4 rounded-lg border border-border px-3 py-2'>
-                  <span className='font-mono text-xs text-neutral-300'>
-                    {proxy.host}:{proxy.port}
-                  </span>
-                  <span className='text-xs text-neutral-500'>
-                    {proxy.expiresAt ? `HẾT HẠN ${proxy.expiresAt}` : 'Không có hạn'} · {label}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {expiringProxies.length > EXPIRY_MODAL_MAX_ITEMS ? (
-              <p className='text-xs text-neutral-500'>Hiển thị {EXPIRY_MODAL_MAX_ITEMS} proxy đầu tiên.</p>
-            ) : null}
-          </div>
-        ) : (
-          <p className='text-sm text-neutral-300'>Không có proxy sắp hết hạn.</p>
-        )}
-      </Modal>
+      <ProxyExpiryWarningModal />
     </div>
   );
 }

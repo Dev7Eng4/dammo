@@ -264,6 +264,13 @@ export function deleteThumbnailBackground(scope: ThumbnailBackgroundScope, filen
   });
 }
 
+export function fetchYoutubeChannelAvatars(channelId: string, options?: FetchOptions) {
+  return fetchJson<{ items: ChannelAvatarItem[] }>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/avatars`,
+    withSignal(undefined, options),
+  );
+}
+
 export function uploadYoutubeChannelAvatar(channelId: string, file: File) {
   const body = new FormData();
   body.append('file', file);

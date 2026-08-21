@@ -15,8 +15,15 @@ export function formatProxyLabel(proxy: Proxy): string {
   return `${hostPort}${suffix}`;
 }
 
+function formatProxyLastUsed(value?: string): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
+}
+
+/** Select label: `host:port (n) / date` — n = assigned profiles, date = last used */
 export function formatProxyOptionLabel(proxy: Proxy): string {
   const count = proxy.assignedProfileIds.length;
-  const profileSuffix = count === 1 ? '1 profile' : `${count} profiles`;
-  return `${formatProxyLabel(proxy)} · ${profileSuffix}`;
+  const lastUsed = formatProxyLastUsed(proxy.lastUsed);
+  return `${formatProxyLabel(proxy)} (${count}) / ${lastUsed}`;
 }

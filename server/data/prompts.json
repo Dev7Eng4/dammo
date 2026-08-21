@@ -1,6 +1,30 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_ngach_tam_ly_hoc_ung_dung_nguoi_cao_tuoi",
+      "baseKey": "metadata_ngach_tam_ly_hoc_ung_dung_nguoi_cao_tuoi",
+      "language": "ja",
+      "name": "Metadata ngách tâm lý học ứng dụng người cao tuổi",
+      "category": "meta",
+      "niche": "b1b9c012-f01d-4a65-8922-9b0317097ff3",
+      "createdAt": "2026-08-20T08:44:21.658Z",
+      "updatedAt": "2026-08-20T08:44:21.670Z",
+      "steps": [
+        {
+          "id": "6e5016e9-85df-4fbe-83fd-958e10a54a99",
+          "key": "metadata_ngach_tam_ly_hoc_ung_dung_nguoi_cao_tuoi_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "35fb1ca0-d7cf-426b-93ad-08c0c7f1f5a9",
+          "key": "metadata_ngach_tam_ly_hoc_ung_dung_nguoi_cao_tuoi_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_triet_ly_chua_lanh_tam_hon",
       "baseKey": "metadata_triet_ly_chua_lanh_tam_hon",
       "language": "ja",

@@ -40,6 +40,12 @@ function formatDate(value?: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
 }
 
+function formatDateOnly(value?: string): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
+}
+
 function SourceCell({ value }: { value: string }) {
   return (
     <p className="max-w-[12rem] truncate text-xs text-neutral-400" title={value}>
@@ -129,9 +135,18 @@ export function YoutubeChannelsTable({
     {
       accessorKey: 'lastUploadAt',
       header: 'LẦN TẢI LÊN GẦN NHẤT',
-      cell: ({ getValue }) => (
-        <span className="text-neutral-300">{formatDate(getValue<string | undefined>())}</span>
-      ),
+      cell: ({ row }) => {
+        const lastUploadAt = row.original.lastUploadAt;
+        if (lastUploadAt) {
+          return <span className="text-neutral-300">{formatDate(lastUploadAt)}</span>;
+        }
+        return (
+          <span className="text-neutral-300">
+            {formatDateOnly(row.original.createdAt)}{' '}
+            <span className="text-neutral-500">(SEEDING)</span>
+          </span>
+        );
+      },
     },
     {
       id: 'actions',

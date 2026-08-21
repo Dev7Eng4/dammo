@@ -19,6 +19,7 @@ export const paths = {
   chromeProfilesDir: path.join(env.dataDir, 'chrome-profiles'),
   flowProjects: path.join(env.dataDir, 'flow-projects.json'),
   gpmProfileCapabilities: path.join(env.dataDir, 'gpm-profile-capabilities.json'),
+  gpmGroups: path.join(env.dataDir, 'gpm-groups.json'),
   reupVideoDownloadsDir: path.join(env.dataDir, 'renders', 'downloads'),
   reupVideoOutputDir: path.join(env.dataDir, 'renders', 'reup'),
   taskQueueDir: path.join(env.dataDir, 'task-queue'),
