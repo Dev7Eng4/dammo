@@ -15,7 +15,12 @@ export function writeJson<T>(filePath: string, data: T): void {
 
   const tempPath = `${filePath}.${process.pid}.tmp`;
   fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tempPath, filePath);
+  try {
+    fs.renameSync(tempPath, filePath);
+  } catch {
+    fs.copyFileSync(tempPath, filePath);
+    fs.unlinkSync(tempPath);
+  }
 }
 
 export function updateJson<T>(filePath: string, updater: (current: T) => T, fallback: T): T {

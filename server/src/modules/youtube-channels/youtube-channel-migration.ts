@@ -43,6 +43,5 @@ export function channelNeedsMigration(raw: LegacyYoutubeChannel): boolean {
   const hasLegacySourceMapping = typeof raw.sourceMapping === 'string' && raw.sourceMapping.trim().length > 0;
   const hasLegacyBackground = Boolean(raw.backgroundFootageSourceId?.trim());
   const missingSourceChannels = !Array.isArray(raw.sourceChannels);
-  const missingBackgroundSources = !Array.isArray(raw.backgroundFootageSources);
-  return hasLegacySourceMapping || hasLegacyBackground || missingSourceChannels || missingBackgroundSources;
+  return hasLegacySourceMapping || hasLegacyBackground || missingSourceChannels;
 }

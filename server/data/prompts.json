@@ -1,6 +1,30 @@
 {
   "promptSets": [
     {
+      "id": "es:metadata",
+      "baseKey": "metadata",
+      "language": "es",
+      "name": "Metadata",
+      "category": "meta",
+      "niche": "all",
+      "createdAt": "2026-08-22T07:46:10.535Z",
+      "updatedAt": "2026-08-22T07:46:10.552Z",
+      "steps": [
+        {
+          "id": "a9a67dfe-161d-453e-a73c-1ff5ec971383",
+          "key": "metadata_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "7dbf1b43-9bfd-48b3-b0d3-3ca6aadaa615",
+          "key": "metadata_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_ngach_tam_ly_hoc_ung_dung_nguoi_cao_tuoi",
       "baseKey": "metadata_ngach_tam_ly_hoc_ung_dung_nguoi_cao_tuoi",
       "language": "ja",

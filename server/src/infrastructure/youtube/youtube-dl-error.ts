@@ -25,12 +25,13 @@ function isMissingBinaryError(err: ExecaLikeError, detail: string): boolean {
  * (which is often empty when the binary itself cannot be spawned). This picks
  * the most descriptive available field.
  */
-function extractDetail(err: ExecaLikeError): string {
+export function extractYoutubeDlDetail(err: unknown): string {
+  const execErr = (err ?? {}) as ExecaLikeError;
   return (
-    asString(err.stderr) ||
-    asString(err.shortMessage) ||
-    asString(err.message) ||
-    asString(err.stdout) ||
+    asString(execErr.stderr) ||
+    asString(execErr.shortMessage) ||
+    asString(execErr.message) ||
+    asString(execErr.stdout) ||
     'Unknown error'
   );
 }
@@ -42,7 +43,7 @@ function extractDetail(err: ExecaLikeError): string {
  */
 export function toYoutubeDlError(err: unknown, action: string): AppError {
   const execErr = (err ?? {}) as ExecaLikeError;
-  const detail = extractDetail(execErr);
+  const detail = extractYoutubeDlDetail(err);
 
   if (isMissingBinaryError(execErr, detail)) {
     return new AppError(

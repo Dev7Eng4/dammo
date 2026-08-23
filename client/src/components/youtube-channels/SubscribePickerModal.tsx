@@ -75,12 +75,26 @@ export function SubscribePickerModal({ open, onClose, selectedFile, onSelect }: 
         open={open}
         onClose={onClose}
         title='Chọn subscribe'
-        className='max-w-2xl'
-        bodyClassName='max-h-[60vh] overflow-y-auto'
+        className='max-w-4xl'
+        bodyClassName='min-h-[50vh] max-h-[75vh] overflow-y-auto'
         footer={
-          <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose}>
-            Đóng
-          </Button>
+          <div className='flex flex-wrap items-center justify-end gap-2'>
+            <Button
+              variant='outlined'
+              size='sm'
+              className={`rounded-lg ${
+                autoSelected
+                  ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                  : ''
+              }`}
+              onClick={() => handleToggleSelect(SI_OVERLAY_AUTO_SENTINEL)}
+            >
+              Tự động
+            </Button>
+            <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose}>
+              Đóng
+            </Button>
+          </div>
         }
       >
         <div className='space-y-4'>
@@ -92,80 +106,64 @@ export function SubscribePickerModal({ open, onClose, selectedFile, onSelect }: 
 
           {loading ? (
             <p className='text-center text-xs text-neutral-500'>Đang tải danh sách video...</p>
-          ) : (
-            <div className='space-y-3'>
-              <button
-                type='button'
-                onClick={() => handleToggleSelect(SI_OVERLAY_AUTO_SENTINEL)}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                  autoSelected
-                    ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                    : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                }`}
-              >
-                Tự động
-              </button>
-
-              <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
-                {items.map(item => {
-                  const selected = selectedFile === item.name;
-                  const src = assetFileUrl('subscribe', item.name);
-                  return (
-                    <div
-                      key={item.name}
-                      className={`group relative aspect-square overflow-hidden rounded-lg border bg-neutral-950 transition ${
-                        selected
-                          ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
-                          : 'border-neutral-800 hover:border-neutral-600'
-                      }`}
-                    >
-                      <video
-                        src={src}
-                        muted
-                        playsInline
-                        preload='metadata'
-                        className='absolute inset-0 h-full w-full object-contain'
-                      />
-                      <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-1.5 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
-                        <button
-                          type='button'
-                          title='Xem'
-                          className='rounded-full bg-neutral-900/90 p-1.5 text-neutral-100 hover:bg-neutral-800'
-                          onClick={() => setPreviewUrl(src)}
-                        >
-                          <EyeIcon className='size-3.5' />
-                        </button>
-                        <button
-                          type='button'
-                          title={selected ? 'Bỏ chọn' : 'Chọn'}
-                          className={`rounded-full p-1.5 text-white ${
-                            selected
-                              ? 'bg-neutral-600/90 hover:bg-neutral-500'
-                              : 'bg-emerald-600/90 hover:bg-emerald-500'
-                          }`}
-                          onClick={() => handleToggleSelect(item.name)}
-                        >
-                          <CheckIcon className='size-3.5' />
-                        </button>
-                      </div>
-                      {selected ? (
-                        <span className='absolute right-1.5 top-1.5 rounded-full bg-emerald-500 p-0.5 text-white shadow'>
-                          <CheckIcon className='size-2.5' />
-                        </span>
-                      ) : null}
-                      <p className='absolute inset-x-0 bottom-0 truncate bg-black/70 px-1.5 py-0.5 text-[10px] text-neutral-300'>
-                        {item.name}
-                      </p>
+          ) : items.length > 0 ? (
+            <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
+              {items.map(item => {
+                const selected = selectedFile === item.name;
+                const src = assetFileUrl('subscribe', item.name);
+                return (
+                  <div
+                    key={item.name}
+                    className={`group relative aspect-square overflow-hidden rounded-lg border bg-neutral-950 transition ${
+                      selected
+                        ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
+                        : 'border-neutral-800 hover:border-neutral-600'
+                    }`}
+                  >
+                    <video
+                      src={src}
+                      muted
+                      playsInline
+                      preload='metadata'
+                      className='absolute inset-0 h-full w-full object-contain'
+                    />
+                    <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-1.5 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
+                      <button
+                        type='button'
+                        title='Xem'
+                        className='rounded-full bg-neutral-900/90 p-1.5 text-neutral-100 hover:bg-neutral-800'
+                        onClick={() => setPreviewUrl(src)}
+                      >
+                        <EyeIcon className='size-3.5' />
+                      </button>
+                      <button
+                        type='button'
+                        title={selected ? 'Bỏ chọn' : 'Chọn'}
+                        className={`rounded-full p-1.5 text-white ${
+                          selected
+                            ? 'bg-neutral-600/90 hover:bg-neutral-500'
+                            : 'bg-emerald-600/90 hover:bg-emerald-500'
+                        }`}
+                        onClick={() => handleToggleSelect(item.name)}
+                      >
+                        <CheckIcon className='size-3.5' />
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                    {selected ? (
+                      <span className='absolute right-1.5 top-1.5 rounded-full bg-emerald-500 p-0.5 text-white shadow'>
+                        <CheckIcon className='size-2.5' />
+                      </span>
+                    ) : null}
+                    <p className='absolute inset-x-0 bottom-0 truncate bg-black/70 px-1.5 py-0.5 text-[10px] text-neutral-300'>
+                      {item.name}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-          )}
-
-          {!loading && items.length === 0 ? (
+          ) : (
             <p className='text-center text-xs text-neutral-500'>Chưa có video subscribe trong assets</p>
-          ) : null}
+          )}
         </div>
       </Modal>
 

@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react';
 import { assetFileUrl, fetchAssets } from '../../api/assets';
-import { fetchSmallVideoGroups } from '../../api/small-video-groups';
+import {
+  fetchSmallVideoGroupMedia,
+  fetchSmallVideoGroups,
+  smallVideoGroupMediaUrl,
+} from '../../api/small-video-groups';
+import { fetchYoutubeChannels } from '../../api/youtubeChannels';
 import type { AssetFileItem } from '../../types/asset';
-import type { SmallVideoGroupListItem } from '../../types/smallVideoGroup';
+import type { SmallVideoGroupListItem, SmallVideoGroupMediaItem } from '../../types/smallVideoGroup';
 import {
   encodeSmallVideoGroupSelection,
   parseSmallVideoGroupId,
@@ -10,12 +15,34 @@ import {
 } from '../../types/youtubeChannel';
 import { Button, Modal } from '../ui';
 
+function buildSmallVideoChannelUsage(channels: { smallVideoFile?: string }[]): {
+  groupUsage: Map<string, number>;
+  ungroupedCount: number;
+} {
+  const groupUsage = new Map<string, number>();
+  let ungroupedCount = 0;
+  for (const channel of channels) {
+    const value = channel.smallVideoFile?.trim() ?? '';
+    if (!value) continue;
+    const groupId = parseSmallVideoGroupId(value);
+    if (groupId) {
+      groupUsage.set(groupId, (groupUsage.get(groupId) ?? 0) + 1);
+      continue;
+    }
+    // Specific ungrouped file or __auto__ (random from ungrouped)
+    ungroupedCount += 1;
+  }
+  return { groupUsage, ungroupedCount };
+}
+
 interface SmallVideoPickerModalProps {
   open: boolean;
   onClose: () => void;
   selectedFile: string;
   onSelect: (filename: string) => void;
 }
+
+type ActiveTab = 'ungrouped' | string;
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -34,38 +61,72 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
+function tabButtonClass(active: boolean): string {
+  return `rounded-lg border px-3 py-2 text-sm font-medium transition ${
+    active
+      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+      : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
+  }`;
+}
+
 export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }: SmallVideoPickerModalProps) {
   const [items, setItems] = useState<AssetFileItem[]>([]);
   const [groups, setGroups] = useState<SmallVideoGroupListItem[]>([]);
+  const [groupChannelUsage, setGroupChannelUsage] = useState<Map<string, number>>(() => new Map());
+  const [ungroupedChannelCount, setUngroupedChannelCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('ungrouped');
+  const [groupMedia, setGroupMedia] = useState<SmallVideoGroupMediaItem[]>([]);
+  const [groupMediaLoading, setGroupMediaLoading] = useState(false);
+  const [groupMediaError, setGroupMediaError] = useState<string | null>(null);
+
   const autoSelected = selectedFile === SI_OVERLAY_AUTO_SENTINEL;
   const selectedGroupId = parseSmallVideoGroupId(selectedFile);
-  const selectableGroups = groups.filter(group => group.mediaCount > 0);
+  const isFolderTab = activeTab !== 'ungrouped';
+  const activeGroup = isFolderTab ? groups.find(g => g.id === activeTab) : null;
+  const folderHasVideos =
+    isFolderTab && ((activeGroup?.mediaCount ?? 0) > 0 || groupMedia.length > 0);
+  const canSelectGroup = folderHasVideos;
+  const groupSelectedOnTab = isFolderTab && selectedGroupId === activeTab;
 
   useEffect(() => {
     if (!open) {
       setPreviewUrl(null);
       setError(null);
+      setGroupMedia([]);
+      setGroupMediaError(null);
       return;
     }
+
+    const initialTab = parseSmallVideoGroupId(selectedFile) ?? 'ungrouped';
+    setActiveTab(initialTab);
 
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    void Promise.all([fetchAssets('smallVideo'), fetchSmallVideoGroups()])
-      .then(([assetData, groupData]) => {
+    void Promise.all([
+      fetchAssets('smallVideo'),
+      fetchSmallVideoGroups(),
+      fetchYoutubeChannels('all', 'all', '', 1, 100),
+    ])
+      .then(([assetData, groupData, channelsData]) => {
         if (!cancelled) {
           setItems(assetData.items);
           setGroups(groupData.items);
+          const usage = buildSmallVideoChannelUsage(channelsData.items);
+          setGroupChannelUsage(usage.groupUsage);
+          setUngroupedChannelCount(usage.ungroupedCount);
         }
       })
       .catch(err => {
         if (!cancelled) {
           setItems([]);
           setGroups([]);
+          setGroupChannelUsage(new Map());
+          setUngroupedChannelCount(0);
           setError(err instanceof Error ? err.message : 'Không thể tải danh sách video nhỏ');
         }
       })
@@ -76,11 +137,68 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
     return () => {
       cancelled = true;
     };
+    // Only re-init when modal opens; selectedFile is read once for initial tab.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional on open
   }, [open]);
+
+  useEffect(() => {
+    if (!open || activeTab === 'ungrouped') {
+      setGroupMedia([]);
+      setGroupMediaError(null);
+      setGroupMediaLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setGroupMedia([]);
+    setGroupMediaLoading(true);
+    setGroupMediaError(null);
+
+    void fetchSmallVideoGroupMedia(activeTab)
+      .then(data => {
+        if (!cancelled) setGroupMedia(data.items);
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setGroupMedia([]);
+          setGroupMediaError(err instanceof Error ? err.message : 'Không thể tải video trong nhóm');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setGroupMediaLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, activeTab]);
 
   function handleToggleSelect(filename: string) {
     onSelect(selectedFile === filename ? '' : filename);
   }
+
+  function handleSelectAuto() {
+    onSelect(autoSelected ? '' : SI_OVERLAY_AUTO_SENTINEL);
+    if (!autoSelected) onClose();
+  }
+
+  function handleSelectGroup() {
+    if (!isFolderTab || !canSelectGroup) return;
+    const value = encodeSmallVideoGroupSelection(activeTab);
+    if (selectedGroupId === activeTab) {
+      onSelect('');
+      return;
+    }
+    onSelect(value);
+    onClose();
+  }
+
+  const showEmpty =
+    !loading &&
+    !error &&
+    activeTab === 'ungrouped' &&
+    items.length === 0 &&
+    groups.length === 0;
 
   return (
     <>
@@ -88,12 +206,48 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
         open={open}
         onClose={onClose}
         title='Chọn video nhỏ'
-        className='max-w-2xl'
-        bodyClassName='max-h-[60vh] overflow-y-auto'
+        className='max-w-4xl'
+        bodyClassName='min-h-[50vh] max-h-[75vh] overflow-y-auto'
         footer={
-          <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose}>
-            Đóng
-          </Button>
+          <div className='flex flex-wrap items-center justify-end gap-2'>
+            <Button
+              variant='outlined'
+              size='sm'
+              className={`rounded-lg ${
+                autoSelected
+                  ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                  : ''
+              }`}
+              onClick={handleSelectAuto}
+            >
+              Tự động
+            </Button>
+            <Button
+              variant='outlined'
+              size='sm'
+              className={`rounded-lg ${
+                groupSelectedOnTab
+                  ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                  : ''
+              }`}
+              disabled={!canSelectGroup}
+              title={
+                !isFolderTab
+                  ? 'Chọn tab folder rồi bấm Chọn nhóm'
+                  : !canSelectGroup
+                    ? 'Nhóm chưa có video'
+                    : groupSelectedOnTab
+                      ? 'Bỏ chọn nhóm'
+                      : `Chọn cả nhóm "${activeGroup?.name ?? ''}" (random video mỗi lần)`
+              }
+              onClick={handleSelectGroup}
+            >
+              {groupSelectedOnTab ? 'Bỏ chọn nhóm' : 'Chọn nhóm'}
+            </Button>
+            <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose}>
+              Đóng
+            </Button>
+          </div>
         }
       >
         <div className='space-y-4'>
@@ -110,41 +264,30 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
               <div className='flex flex-wrap items-center gap-2'>
                 <button
                   type='button'
-                  onClick={() => handleToggleSelect(SI_OVERLAY_AUTO_SENTINEL)}
-                  className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                    autoSelected
-                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                      : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                  }`}
+                  onClick={() => setActiveTab('ungrouped')}
+                  title={`Không có nhóm — ${ungroupedChannelCount} kênh đang dùng`}
+                  className={tabButtonClass(activeTab === 'ungrouped')}
                 >
-                  Tự động
+                  Không có nhóm ({ungroupedChannelCount})
                 </button>
-                {selectableGroups.map(group => {
-                  const value = encodeSmallVideoGroupSelection(group.id);
-                  const selected = selectedGroupId === group.id;
+                {groups.map(group => {
+                  const channelCount = groupChannelUsage.get(group.id) ?? 0;
                   return (
                     <button
                       key={group.id}
                       type='button'
-                      title={`Random ${group.mediaCount} video trong nhóm`}
-                      onClick={() => handleToggleSelect(value)}
-                      className={`max-w-[10rem] truncate rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                        selected
-                          ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                          : 'border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                      }`}
+                      title={`${group.name} — ${channelCount} kênh đang dùng`}
+                      onClick={() => setActiveTab(group.id)}
+                      className={`max-w-48 truncate ${tabButtonClass(activeTab === group.id)}`}
                     >
-                      {group.name}
+                      {group.name} ({channelCount})
                     </button>
                   );
                 })}
               </div>
 
-              {items.length > 0 ? (
-                <div>
-                  <h3 className='mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500'>
-                    Video không thuộc nhóm
-                  </h3>
+              {activeTab === 'ungrouped' ? (
+                items.length > 0 ? (
                   <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
                     {items.map(item => {
                       const selected = selectedFile === item.name;
@@ -199,12 +342,71 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                       );
                     })}
                   </div>
+                ) : (
+                  <p className='text-center text-xs text-neutral-500'>Chưa có video không thuộc nhóm</p>
+                )
+              ) : groupMediaLoading ? (
+                <p className='text-center text-xs text-neutral-500'>Đang tải video trong nhóm...</p>
+              ) : groupMediaError ? (
+                <p className='rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-xs text-red-300'>
+                  {groupMediaError}
+                </p>
+              ) : groupMedia.length > 0 ? (
+                <div className='space-y-3'>
+                  <p className='text-xs text-neutral-400'>
+                    {groupSelectedOnTab
+                      ? `Đã chọn cả nhóm "${activeGroup?.name ?? ''}" — mỗi lần render sẽ random 1 video trong folder.`
+                      : `Xem trước video trong folder. Bấm "Chọn nhóm" bên dưới để dùng cả folder (không chọn từng video).`}
+                  </p>
+                  <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
+                    {groupMedia.map(item => {
+                      const src = smallVideoGroupMediaUrl(activeTab, item.name);
+                      return (
+                        <div
+                          key={item.name}
+                          className={`group relative aspect-square overflow-hidden rounded-lg border bg-neutral-950 transition ${
+                            groupSelectedOnTab
+                              ? 'border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]'
+                              : 'border-neutral-800 hover:border-neutral-600'
+                          }`}
+                        >
+                          <video
+                            src={src}
+                            muted
+                            playsInline
+                            preload='metadata'
+                            className='absolute inset-0 h-full w-full object-contain'
+                          />
+                          <div className='pointer-events-none absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
+                            <button
+                              type='button'
+                              title='Xem trước'
+                              className='rounded-full bg-neutral-900/90 p-1.5 text-neutral-100 hover:bg-neutral-800'
+                              onClick={() => setPreviewUrl(src)}
+                            >
+                              <EyeIcon className='size-3.5' />
+                            </button>
+                          </div>
+                          {groupSelectedOnTab ? (
+                            <span className='absolute right-1.5 top-1.5 rounded-full bg-emerald-500 p-0.5 text-white shadow'>
+                              <CheckIcon className='size-2.5' />
+                            </span>
+                          ) : null}
+                          <p className='absolute inset-x-0 bottom-0 truncate bg-black/70 px-1.5 py-0.5 text-[10px] text-neutral-300'>
+                            {item.name}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : null}
+              ) : (
+                <p className='text-center text-xs text-neutral-500'>Nhóm chưa có video</p>
+              )}
             </div>
           )}
 
-          {!loading && items.length === 0 && selectableGroups.length === 0 ? (
+          {showEmpty ? (
             <p className='text-center text-xs text-neutral-500'>Chưa có video nhỏ trong assets</p>
           ) : null}
         </div>
