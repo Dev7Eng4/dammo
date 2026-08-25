@@ -1,3 +1,12 @@
+export const CHROME_BACKGROUND_USE_OFFSCREEN = true;
+để setup hiển thị hay không browser
+
+/\*_ Global switch for Ken Burns pan/zoom on slideshow images. _/
+export const SS_ENABLE_KEN_BURNS = true;
+
+/\*_ Global switch for transitions between slideshow images. _/
+export const SS_ENABLE_IMAGE_TRANSITIONS = true;
+
 # Retention Video
 
 1-5 minutes => 60-70%
@@ -82,3 +91,8 @@ video stock ở dưới + hình nhân vật sẽ ở bên phải to + transcrip 
 dạng video dài hơn 1 tiếng ở phần tạo metadata nên có 1 bước tóm tắt nội dung từ transcript rồi mới tạo -> vì tạo luôn ko hiểu hết nội dung
 
 ddang khong chon duoc 1 video, 1 subscribe
+
+optional -> show để các tab browser chrome show hoặc không
+optional animation effect của image trong dạng video ai
+
+prompt tạo thumbnail của người nổi tiếng sửa nhân vật -> sai

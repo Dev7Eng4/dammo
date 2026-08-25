@@ -45,6 +45,8 @@ export interface RunWithFlowRetriesOptions {
   buildFailureMessage?: (lastReason: string, maxRetries: number) => string;
   onProgress?: (progress: FlowRetryProgress) => void;
   onAttemptFailure?: (attempt: number, reason: string) => void;
+  /** Shared across jobs in a batch; tracks profiles opened during failover. */
+  openedProfileIds?: Set<string>;
 }
 
 export interface FlowRetrySuccess {
@@ -63,6 +65,7 @@ export async function runWithFlowRetries(options: RunWithFlowRetriesOptions): Pr
     buildFailureMessage,
     onProgress,
     onAttemptFailure,
+    openedProfileIds,
   } = options;
 
   let lastReason = 'unknown error';
@@ -86,6 +89,7 @@ export async function runWithFlowRetries(options: RunWithFlowRetriesOptions): Pr
         },
         {
           startProfileId: profileId,
+          openedProfileIds,
           onProfileSwitch: (from, to) => {
             console.warn(
               `${logPrefix} Flow quota exhausted on ${from.name}, switching to ${to.name}`,

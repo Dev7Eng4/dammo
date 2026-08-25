@@ -7,9 +7,18 @@ import {
   resolveOutputPixelFormat,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
-import { buildSlideVideoFilter } from './ken-burns.js';
-import { SS_CLIP_CRF, SS_CLIP_PRESET } from './slideshow.constants.js';
-import type { SlideSpec } from './slideshow.types.js';
+import {
+  adaptKenBurnsForDuration,
+  buildSlideVideoFilter,
+  resolveKenBurnsAnimationSec,
+} from './ken-burns.js';
+import {
+  SS_CLIP_CRF,
+  SS_CLIP_PRESET,
+  SS_ENABLE_KEN_BURNS,
+  SS_MAX_KEN_BURNS_ANIMATION_SEC,
+} from './slideshow.constants.js';
+import type { KenBurnsAdaptConfig, SlideSpec } from './slideshow.types.js';
 
 export interface RenderClipOptions {
   width: number;
@@ -19,6 +28,7 @@ export interface RenderClipOptions {
   cacheDir: string;
   crf?: number;
   preset?: string;
+  kenBurnsAdapt?: KenBurnsAdaptConfig;
   onLog?: (msg: string) => void;
 }
 
@@ -55,13 +65,26 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   }
 
   const fit = slide.fit ?? 'cover';
+  const maxAnimSec = slide.maxKenBurnsAnimationSec ?? SS_MAX_KEN_BURNS_ANIMATION_SEC;
+  const animSec = resolveKenBurnsAnimationSec(slide.durationSec, maxAnimSec);
+  const kenBurns = SS_ENABLE_KEN_BURNS && slide.kenBurns
+    ? adaptKenBurnsForDuration(slide.kenBurns, animSec, {
+        width: opts.width,
+        height: opts.height,
+        fps: opts.fps,
+        tempScaleFactor: opts.tempScaleFactor,
+        ...opts.kenBurnsAdapt,
+      })
+    : undefined;
+
   const filter = appendPixelFormatToVideoFilter(
-    buildSlideVideoFilter(slide.kenBurns, {
+    buildSlideVideoFilter(kenBurns, {
       width: opts.width,
       height: opts.height,
       fps: opts.fps,
       durationSec: slide.durationSec,
       tempScaleFactor: opts.tempScaleFactor,
+      maxKenBurnsAnimationSec: maxAnimSec,
       fit,
     }),
   );

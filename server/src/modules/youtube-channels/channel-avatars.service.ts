@@ -5,7 +5,7 @@ import {
   youtubeChannelDir,
 } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
-import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/si-video/si.constants.js';
+import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/render-core/canvas.constants.js';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const IMAGE_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);

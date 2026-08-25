@@ -1,7 +1,8 @@
 import type { AiSceneDensityMaxSec, AiVideoDensityLevel } from './ai-video.constants.js';
 import type { MetaConcurrencyMode } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
-import type { CaptionStyleKey } from '../si-video/caption-styles.js';
+import type { CaptionStyleKey } from '../render-core/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
+import type { SlideSpec } from '../slideshow/slideshow.types.js';
 
 export type { MetaConcurrencyMode };
 
@@ -112,6 +113,11 @@ export interface GenerateAiSceneSlideImagesInput {
   workDir: string;
   youtubeVideoId: string;
   scenes: AiVideoScenePrompt[];
+  /** Persisted audio speed from ai-render-config.json. Required when SS_ENABLE_KEN_BURNS. */
+  audioSpeed?: number;
+  audioPath?: string;
+  /** Precomputed final SlideSpec per scene name (scene-001, …) for incremental Ken Burns prebake. */
+  assumedFinalSlidesByName?: ReadonlyMap<string, SlideSpec>;
   /** Meta only. Default `batch`. */
   metaConcurrency?: MetaImageConcurrencyMode;
   onLog?: (msg: string) => void;

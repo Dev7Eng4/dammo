@@ -7,8 +7,8 @@ import {
   type AiVideoScenePrompt,
   type AiVideoScenePromptsFile,
 } from '../../modules/video-production/shared/ai-video/index.js';
-import type { CaptionStyleKey } from '../../modules/video-production/shared/si-video/caption-styles.js';
-import { SI_OUTPUT_VIDEO_BASENAME } from '../../modules/video-production/shared/si-video/si.constants.js';
+import type { CaptionStyleKey } from '../../modules/video-production/shared/render-core/caption-styles.js';
+import { OUTPUT_VIDEO_BASENAME } from '../../modules/video-production/shared/render-core/output-artifacts.constants.js';
 import { formatElapsedMs } from '../../shared/timing/step-timer.js';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -85,7 +85,7 @@ export async function runAiVideoTest(props: AiVideoTestProps = {}): Promise<stri
   const audioPath = path.join(workDir, AUDIO_FILE);
   const subtitlePath = path.join(workDir, SUBTITLE_FILE);
   const stockPath = path.join(workDir, STOCK_FILE);
-  const outputPath = path.join(workDir, `${SI_OUTPUT_VIDEO_BASENAME}.mp4`);
+  const outputPath = path.join(workDir, `${OUTPUT_VIDEO_BASENAME}.mp4`);
 
   await assertFileExists(audioPath, 'audio');
   await assertFileExists(subtitlePath, 'subtitle');

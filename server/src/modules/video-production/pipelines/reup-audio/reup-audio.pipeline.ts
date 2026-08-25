@@ -1,69 +1,12 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
-import { mediaDownloadDir, resolveSourceChannelVideoDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import { generateId } from '../../../../shared/id.js';
-import { timedStep, type TimedStepOptions } from '../../../../shared/timing/step-timer.js';
-import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
-import { cleanSrt } from '../../../../infrastructure/subtitle/clean-srt.js';
-import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
-import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
-import {
-  downloadReupAssets,
-  downloadReupAudioAssets,
-  type ReupAudioDownloadResult,
-  type ReupDownloadResult,
-} from '../../shared/assets/asset-downloader.js';
-import { updateTranscriptWithLlm } from '../../shared/assets/transcript-updater.js';
-import { runMetadata, hasNicheMetadataPrompt } from '../../shared/meta/run-metadata.js';
-import { runDramaMetadata } from '../../shared/meta/drama/run-drama-metadata.js';
-import { runTwoStepNicheMetadata } from '../../shared/meta/two-step/run-two-step-metadata.js';
-import {
-  isThumbnailOnlyTwoStepNiche,
-  isTwoStepNicheMetadata,
-} from '../../shared/meta/two-step/two-step-niche.config.js';
-import { runGeneralImage } from '../../shared/thumbnail/run-general-image.js';
-import {
-  DEFAULT_HERO_IMAGE_FILENAME,
-  resolveThumbnailImageProvider,
-  runBrowserImageGeneration,
-  runThumbnailVisualGeneration,
-} from '../../shared/thumbnail/hero-image.js';
-import { runDefaultFlowThumbnail } from '../../shared/thumbnail/default-flow-thumbnail.js';
-import { runCelebrityWisdomThumbnail } from '../../shared/thumbnail/run-celebrity-wisdom-thumbnail.js';
-import { runNicheImagePromptThumbnail } from '../../shared/thumbnail/run-niche-image-prompt-thumbnail.js';
-import { runSiOneImageFlowBatch } from '../../shared/thumbnail/run-si-one-image-flow-batch.js';
-import { buildThumbnailReferenceImagePaths } from '../../shared/thumbnail/thumbnail-reference-images.js';
-import { runThumbnailHorizontal } from '../../shared/thumbnail/thumbnail-horizontal.js';
-import { renderThumbnailHorizontalFlowCompositeToPath } from '../../shared/thumbnail/thumbnail-composite.js';
-import { isHorizontalMultiStepStyle } from '../../../prompts/thumbnail-styles.js';
-import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
-import { assembleReupSiVideo } from '../../shared/si-video/si-video-assembler.js';
-import { listSiMultiImagePaths, copyCelebrityImagesToWorkDir } from '../../shared/si-video/si-multi-image.js';
-import {
-  AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC,
-  assembleReupAiSlideshowVideo,
-  generateAiScenePromptsForPipeline,
-  generateAiSceneSlideImages,
-} from '../../shared/ai-video/index.js';
-import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
-import {
-  hasLegacyVisualMeta,
-  isCelebrityWisdomNiche,
-  isDramaNiche,
-  type MetaStep3Output,
-  type VideoMetaOutput,
-} from '../../shared/meta/metadata.types.js';
-import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
-import { findFinalVideoMp4, sanitizeVideoOutputBasename } from '../../shared/si-video/video-output-file.js';
-import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
+import type { TimedStepOptions } from '../../../../shared/timing/step-timer.js';
+import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { resolveChannelAvatarForVideoAssembly } from '../../../youtube-channels/resolve-channel-avatar.js';
-import { moveVideoFolderToDestination, remapOutputItemPaths } from './video-folder-mover.js';
-import { REUP_VIDEOS_PER_RUN } from './reup-audio.constants.js';
-import type { CreateReupVideosResult, ReupVideoOutputItem, ReupVideoTask } from './reup-audio.types.js';
+import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
+import { sanitizeVideoOutputBasename } from '../../shared/render-core/video-output-file.js';
 import { sourceCatalogAdapter } from '../../adapters/source-catalog.adapter.js';
 import type { ProductionDestination } from '../../ports/production-destination.port.js';
-import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
 import type { SourceCatalog } from '../../ports/source-catalog.port.js';
 import { taskQueueRepository } from '../../../task-queue/task-queue.repository.js';
 import {
@@ -74,13 +17,21 @@ import {
   skipCreateVideoStage,
   startCreateVideoStage,
 } from '../../../task-queue/task-stage.js';
-import { copySourceAssetsToDir, findSourceThumbnailPath, findSourceTranscriptPath } from '../../../source-channels/source-assets.js';
-import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
+import { resolveReupAudioDownload, resolveReupVideoDownload } from './steps/download.step.js';
+import { runFinalizeStep } from './steps/finalize.step.js';
+import { runMetadataStep } from './steps/metadata.step.js';
+import { buildTasks, collectSourceVideos } from './steps/task-selection.js';
+import { runThumbnailStep } from './steps/thumbnail.step.js';
+import { runCleanTranscript, runUpdateTranscript } from './steps/transcript.step.js';
+import { resolveVideoTypeStrategy, type VisualAssets } from './strategies/index.js';
+import { createTaskLogger, type TaskLogger } from './task-logger.js';
+import { buildAssembleContext, type StepTimerOptions, type VideoTaskContext } from './video-task.context.js';
+import type { CreateReupVideosResult, ReupVideoOutputItem, ReupVideoTask } from './reup-audio.types.js';
 
 interface CreateVideosOptions {
   taskJobId?: string;
   skipLivePhaseDone?: boolean;
-  /** Khi true: bỏ qua bước assembleReupSiVideo, video sẽ ở status Prepared */
+  /** Khi true: bỏ qua bước assemble, video sẽ ở status Prepared */
   skipVideoAssembly?: boolean;
   /** Số video tối đa xử lý trên mỗi channel trong một lần chạy */
   maxVideosPerChannel?: number;
@@ -88,46 +39,15 @@ interface CreateVideosOptions {
   videoIds?: string[];
 }
 
+interface TaskRunContext {
+  taskJobId?: string;
+  log: TaskLogger;
+  stepTimer: StepTimerOptions;
+  skipVideoAssembly: boolean;
+}
+
 function isReupAudioPipeline(pipelineType: ProductionDestination['pipelineType']): boolean {
   return pipelineType === 'reup_audio';
-}
-
-interface SourceVideoWithSource extends SourceVideoRecord {
-  sourceId: string;
-}
-
-function collectSourceVideos(sourceCatalog: SourceCatalog, sourceChannels: string[]): SourceVideoWithSource[] {
-  const videos: SourceVideoWithSource[] = [];
-
-  for (const source of sourceCatalog.resolveSources(sourceChannels)) {
-    for (const video of sourceCatalog.listVideos(source.id)) {
-      videos.push({ ...video, sourceId: source.id });
-    }
-  }
-
-  return videos;
-}
-
-/** Chọn video theo thứ tự tạo (mảng store thường mới → cũ). Bỏ qua video đã prepare. */
-function selectVideosForCreation(
-  videos: SourceVideoWithSource[],
-  preparedVideoIds: Set<string>,
-  limit: number,
-  order: 'oldest_first' | 'newest_first' = 'oldest_first',
-): SourceVideoWithSource[] {
-  const eligible = videos.filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id));
-  const ordered = order === 'oldest_first' ? [...eligible].reverse() : eligible;
-  return ordered.slice(0, limit);
-}
-
-const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);
-
-function resolveVideoPrepareTitle(outputItem: ReupVideoOutputItem): string {
-  const title = outputItem.videoMetaOutput?.metadata?.title;
-  if (typeof title === 'string' && title.trim()) {
-    return title.trim();
-  }
-  return outputItem.youtubeVideoId;
 }
 
 function createStepTimer(taskJobId: string | undefined, videoId: string): Pick<TimedStepOptions, 'prefix' | 'onLog'> {
@@ -137,140 +57,13 @@ function createStepTimer(taskJobId: string | undefined, videoId: string): Pick<T
   };
 }
 
-async function resolveReupAudioDownload(
-  task: ReupVideoTask,
-  language: ChannelLanguage,
-  taskJobId?: string,
-): Promise<ReupAudioDownloadResult> {
-  const outputDir = mediaDownloadDir('youtube', task.videoId);
-
-  if (task.sourceStatus === 'Downloaded') {
-    const sourceAssetsDir = resolveSourceChannelVideoDir(task.sourceId, task.videoId);
-    if (!sourceAssetsDir) {
-      throw new AppError('Downloaded source folder not found', 404, 'SOURCE_ASSETS_NOT_FOUND');
-    }
-
-    if (taskJobId) {
-      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Copying pre-downloaded source assets for ${task.videoId}...`);
-    }
-
-    await copySourceAssetsToDir(sourceAssetsDir, outputDir);
-    const thumbnailPath = await findSourceThumbnailPath(outputDir);
-    const transcriptPath = await findSourceTranscriptPath(outputDir);
-
-    if (!transcriptPath) {
-      throw new AppError('Pre-downloaded source assets incomplete after copy', 500, 'SOURCE_ASSETS_INCOMPLETE');
-    }
-
-    return {
-      youtubeVideoId: task.videoId,
-      outputDir,
-      ...(thumbnailPath ? { thumbnailPath } : {}),
-      audioPath: path.join(outputDir, 'audio.mp3'),
-      transcriptPath,
-    };
+/** The thumbnail stage stays `doing` when assembly follows; close it explicitly. */
+function completeThumbnailStageIfRunning(taskJobId: string | undefined): void {
+  if (!taskJobId) return;
+  const stages = taskQueueRepository.findById(taskJobId)?.stages;
+  if (stages?.find(stage => stage.id === CREATE_VIDEO_STAGE_IDS.thumbnail)?.status === 'doing') {
+    completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
   }
-
-  if (taskJobId) {
-    taskQueueRepository.appendLogMessage(
-      taskJobId,
-      'info',
-      `Downloading audio + transcript (${language}) for source video ${task.videoId}...`,
-    );
-  }
-
-  return downloadReupAudioAssets(task.link, language);
-}
-
-async function resolveReupVideoDownload(
-  task: ReupVideoTask,
-  pipelineType: ProductionDestination['pipelineType'],
-  language: ChannelLanguage,
-  taskJobId?: string,
-): Promise<ReupDownloadResult> {
-  if (task.sourceStatus === 'Downloaded') {
-    const outputDir = mediaDownloadDir('youtube', task.videoId);
-    const sourceAssetsDir = resolveSourceChannelVideoDir(task.sourceId, task.videoId);
-    if (!sourceAssetsDir) {
-      throw new AppError('Downloaded source folder not found', 404, 'SOURCE_ASSETS_NOT_FOUND');
-    }
-
-    if (taskJobId) {
-      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Copying pre-downloaded source assets for ${task.videoId}...`);
-    }
-
-    await copySourceAssetsToDir(sourceAssetsDir, outputDir);
-
-    const videoPath = path.join(outputDir, 'video.mp4');
-    try {
-      await fs.access(videoPath);
-      return {
-        youtubeVideoId: task.videoId,
-        outputDir,
-        primaryPath: videoPath,
-        videoPath,
-      };
-    } catch {
-      if (taskJobId) {
-        taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading video file for ${task.videoId}...`);
-      }
-
-      const downloadedVideoPath = await downloadYoutubeVideo(task.link, outputDir, {
-        outputBasename: 'video',
-      });
-
-      return {
-        youtubeVideoId: task.videoId,
-        outputDir,
-        primaryPath: downloadedVideoPath,
-        videoPath: downloadedVideoPath,
-      };
-    }
-  }
-
-  if (taskJobId) {
-    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Downloading source video ${task.videoId}...`);
-  }
-
-  return downloadReupAssets(task.link, pipelineType, language);
-}
-
-function buildTasks(
-  destination: ProductionDestination,
-  videos: SourceVideoWithSource[],
-  options?: Pick<CreateVideosOptions, 'maxVideosPerChannel' | 'videoIds'>,
-): ReupVideoTask[] {
-  const preparedVideoIds = destination.getPreparedVideoIds();
-
-  let selected: SourceVideoWithSource[];
-
-  if (options?.videoIds?.length) {
-    const byId = new Map(videos.map(video => [video.id, video]));
-    selected = options.videoIds
-      .map(id => byId.get(id))
-      .filter((video): video is SourceVideoWithSource => {
-        if (!video?.url) return false;
-        return !preparedVideoIds.has(video.id);
-      });
-  } else {
-    const limit = options?.maxVideosPerChannel ?? REUP_VIDEOS_PER_RUN;
-    selected = selectVideosForCreation(
-      videos,
-      preparedVideoIds,
-      limit,
-      destination.videoCreationOrder ?? 'oldest_first',
-    );
-  }
-
-  return selected.map(video => ({
-    link: video.url,
-    id: destination.id,
-    language: destination.language,
-    videoId: video.id,
-    sourceId: video.sourceId,
-    sourceTitle: video.title?.trim() || video.id,
-    sourceStatus: video.status,
-  }));
 }
 
 export class ReupAudioPipeline {
@@ -285,8 +78,7 @@ export class ReupAudioPipeline {
       throw new AppError('Channel has no source mapping configured', 400, 'NO_SOURCE_MAPPING');
     }
 
-    const sources = this.sourceCatalog.resolveSources(destination.sourceChannels);
-    if (sources.length === 0) {
+    if (this.sourceCatalog.resolveSources(destination.sourceChannels).length === 0) {
       throw new AppError('No source channels matched source mapping', 400, 'SOURCE_NOT_FOUND');
     }
 
@@ -310,1269 +102,28 @@ export class ReupAudioPipeline {
 
     for (const task of tasks) {
       const taskJobId = options?.taskJobId;
-      const stepTimer = createStepTimer(taskJobId, task.videoId);
+      const log = createTaskLogger(taskJobId);
+      const run: TaskRunContext = {
+        ...(taskJobId ? { taskJobId } : {}),
+        log,
+        stepTimer: createStepTimer(taskJobId, task.videoId),
+        skipVideoAssembly: options?.skipVideoAssembly === true,
+      };
 
       try {
-        let outputItem: ReupVideoOutputItem;
-
-        if (isAudioChannel) {
-          let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.download;
-          if (taskJobId) {
-            initCreateVideoStages(taskJobId, {
-              copyingAssets: task.sourceStatus === 'Downloaded',
-              includeUpdateTranscript: destination.language === 'ja',
-            });
-            startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
-            taskQueueRepository.setLivePhase(taskJobId, 'downloading');
-          }
-
-          try {
-          const downloaded = await resolveReupAudioDownload(task, destination.language, taskJobId);
-          const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
-
-          if (taskJobId) {
-            if (downloaded.thumbnailPath) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Source thumbnail saved → ${downloaded.thumbnailPath}`);
-            }
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Audio saved → ${downloaded.audioPath}`);
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → ${downloaded.transcriptPath}`);
-            completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
-          }
-
-          activeStageId = CREATE_VIDEO_STAGE_IDS.cleanTranscript;
-          if (taskJobId) {
-            startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
-            taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Cleaning transcript → SRT...');
-          }
-
-          const srtPath = await timedStep('Làm sạch SRT', () => cleanSrt(downloaded.transcriptPath), stepTimer);
-
-          if (taskJobId) {
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SRT cleaned → ${srtPath}`);
-            completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
-          }
-
-          let updatedSrtPath: string | undefined;
-          let videoMetaOutput: VideoMetaOutput | undefined;
-          let thumbnailHorizontalOutput: ThumbnailHorizontalOutput | undefined;
-          let heroImagePath: string | undefined;
-          let thumbnailVisualPath: string | undefined;
-          let reupThumbnailPath: string | undefined;
-          let reupVideoPath: string | undefined;
-          let aiScenePrompts: AiVideoScenePrompt[] | undefined;
-          let aiScenePromptsPath: string | undefined;
-          let aiSlidesDir: string | undefined;
-          let primaryOutputPath = downloaded.audioPath;
-          let subtitleForAssembly: string | undefined = srtPath;
-          if (destination.language === 'ja') {
-            activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
-            if (taskJobId) {
-              startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
-              taskQueueRepository.appendLogMessage(taskJobId, 'info', `Updating transcript via LLM (${destination.language})...`);
-            }
-
-            updatedSrtPath = await timedStep(
-              'Cập nhật transcript (LLM)',
-              () =>
-                updateTranscriptWithLlm(srtPath, destination.language as TranscriptLanguage, {
-                  onProgress: taskJobId
-                    ? progress => {
-                        const label = `${progress.batchIndex}/${progress.totalBatches}`;
-                        const profileLabel = progress.profileName;
-
-                        if (progress.status === 'started') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `LLM batch ${label} on ${profileLabel} (attempt ${progress.attempt})...`,
-                          );
-                          return;
-                        }
-
-                        if (progress.status === 'retry') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `LLM batch ${label} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                          );
-                          return;
-                        }
-
-                        if (progress.status === 'fallback') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `LLM batch ${label} on ${profileLabel} fallback to original`,
-                          );
-                          return;
-                        }
-
-                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', `LLM batch ${label} on ${profileLabel} done`);
-                      }
-                    : undefined,
-                }),
-              stepTimer,
-            );
-
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Transcript saved → transcript.srt`);
-              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
-            }
-
-            const jaSrtPath = updatedSrtPath;
-            const jaWorkDir = path.dirname(jaSrtPath);
-
-            subtitleForAssembly = updatedSrtPath;
-
-            if (videoType === 'si' || videoType === 'ai') {
-              activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
-              if (taskJobId) {
-                startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
-                taskQueueRepository.setLivePhase(taskJobId, 'metadata');
-                taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating metadata...');
-              }
-
-              videoMetaOutput = await timedStep(
-                'Metadata',
-                () => {
-                  const metaOptions = {
-                    outputDir: jaWorkDir,
-                    niche: destination.niche,
-                    imageStyle: destination.visualStyle?.rule?.trim() || undefined,
-                    descriptionDisclaimer:
-                      destination.showDisclaimer === true && destination.descriptionDisclaimerText?.trim()
-                        ? destination.descriptionDisclaimerText.trim()
-                        : undefined,
-                    onProgress: taskJobId
-                      ? (progress: {
-                          attempt: number;
-                          profileId: string;
-                          profileName: string;
-                          status: string;
-                          step?: number;
-                        }) => {
-                          const profileLabel = progress.profileName;
-                          const stepPart =
-                            progress.step != null ? `Meta step ${progress.step}` : 'Metadata';
-
-                          if (progress.status === 'retry') {
-                            taskQueueRepository.appendLogMessage(
-                              taskJobId,
-                              'info',
-                              `${stepPart} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                            );
-                            return;
-                          }
-
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `${stepPart} on ${profileLabel} (attempt ${progress.attempt})...`,
-                          );
-                        }
-                      : undefined,
-                  };
-
-                  if (isDramaNiche(destination.niche)) {
-                    return runDramaMetadata(
-                      task.sourceTitle,
-                      jaSrtPath,
-                      destination.language,
-                      downloaded.youtubeVideoId,
-                      metaOptions,
-                    );
-                  }
-
-                  if (isTwoStepNicheMetadata(destination.language, destination.niche)) {
-                    return runTwoStepNicheMetadata(
-                      task.sourceTitle,
-                      jaSrtPath,
-                      destination.language,
-                      downloaded.youtubeVideoId,
-                      metaOptions,
-                    );
-                  }
-
-                  return runMetadata(
-                    task.sourceTitle,
-                    jaSrtPath,
-                    destination.language,
-                    downloaded.youtubeVideoId,
-                    metaOptions,
-                  );
-                },
-                stepTimer,
-              );
-
-              if (taskJobId) {
-                const videoMetaPath = path.join(jaWorkDir, 'video-meta.json');
-                taskQueueRepository.appendLogMessage(
-                  taskJobId,
-                  'ok',
-                  `Metadata done → ${videoMetaPath}, title: ${videoMetaOutput.metadata.title}, niche: ${
-                    videoMetaOutput.detected_niche ?? 'n/a'
-                  }`,
-                );
-                completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
-              }
-            } else if (taskJobId) {
-              skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
-              skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
-            }
-
-            if (videoType === 'si' || videoType === 'ai') {
-              if (!videoMetaOutput) {
-                throw new AppError('Metadata is required for thumbnail generation', 400, 'INVALID_INPUT');
-              }
-
-              activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
-              if (taskJobId) {
-                startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
-              }
-
-              const workDir = jaWorkDir;
-              const useCelebrityWisdomFlow = isCelebrityWisdomNiche(destination.niche);
-
-              if (useCelebrityWisdomFlow) {
-                const imageGenerationPrompt = videoMetaOutput.image_generation_prompt?.trim() ?? '';
-                if (!imageGenerationPrompt) {
-                  throw new AppError(
-                    'image_generation_prompt is required for celebrity wisdom thumbnail',
-                    400,
-                    'INVALID_INPUT',
-                  );
-                }
-
-                const celebrityId = destination.celebrityId?.trim() ?? '';
-                if (!celebrityId) {
-                  throw new AppError(
-                    'celebrityId is required for celebrity wisdom thumbnail',
-                    400,
-                    'INVALID_INPUT',
-                  );
-                }
-
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    `Creating celebrity wisdom thumbnail via ${resolveThumbnailImageProvider()} (celebrity reference)...`,
-                  );
-                }
-
-                try {
-                  const wisdomThumb = await timedStep(
-                    `Celebrity wisdom thumbnail (${resolveThumbnailImageProvider()})`,
-                    () =>
-                      runCelebrityWisdomThumbnail(workDir, celebrityId, imageGenerationPrompt, {
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              if (progress.status === 'retry') {
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Wisdom thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                );
-                                return;
-                              }
-                              taskQueueRepository.appendLogMessage(
-                                taskJobId,
-                                'info',
-                                `Wisdom thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
-                              );
-                            }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  reupThumbnailPath = wisdomThumb.thumbnailPath;
-
-                  const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                  await fs.unlink(flowDebugPath).catch(() => undefined);
-                  const metaDebugPath = path.join(workDir, 'meta-debug.png');
-                  await fs.unlink(metaDebugPath).catch(() => undefined);
-
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'ok',
-                      `Wisdom thumbnail saved → thumbnail.jpg (ref: ${path.basename(wisdomThumb.referenceImagePath)})`,
-                    );
-                  }
-                } catch (err) {
-                  const message =
-                    err instanceof AppError
-                      ? err.message
-                      : err instanceof Error
-                        ? err.message
-                        : 'Celebrity wisdom thumbnail generation failed';
-                  console.warn(`[reup-video] celebrity wisdom thumbnail skipped (non-fatal): ${message}`);
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Wisdom thumbnail skipped: ${message}`);
-                  }
-                }
-              } else if (hasNicheMetadataPrompt(destination.language, destination.niche)) {
-                const imageGenerationPrompt = videoMetaOutput.image_generation_prompt?.trim() ?? '';
-                if (!imageGenerationPrompt) {
-                  throw new AppError(
-                    'image_generation_prompt is required for niche metadata thumbnail',
-                    400,
-                    'INVALID_INPUT',
-                  );
-                }
-
-                const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
-                // Thumbnail-only 2-step meta niches have no video_visual_prompt.
-                const useSiOneImageBatch =
-                  videoType === 'si' &&
-                  siBackgroundImage === 'one_image' &&
-                  !isThumbnailOnlyTwoStepNiche(destination.language, destination.niche);
-
-                if (useSiOneImageBatch) {
-                  const videoVisualPrompt = videoMetaOutput.video_visual_prompt?.trim() ?? '';
-                  if (!videoVisualPrompt) {
-                    throw new AppError(
-                      'video_visual_prompt is required for SI one_image background',
-                      400,
-                      'INVALID_INPUT',
-                    );
-                  }
-
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      `Creating thumbnail + background via ${resolveThumbnailImageProvider()} (image_generation_prompt + video_visual_prompt)...`,
-                    );
-                  }
-
-                  try {
-                    const batchResult = await timedStep(
-                      `SI one_image (thumbnail + background ${resolveThumbnailImageProvider()})`,
-                      () =>
-                        runSiOneImageFlowBatch(workDir, imageGenerationPrompt, videoVisualPrompt, {
-                          onJobProgress: taskJobId
-                            ? (jobIndex, progress) => {
-                                const profileLabel = progress.profileName;
-                                const jobLabel = jobIndex === 0 ? 'thumbnail' : 'background';
-                                if (progress.status === 'retry') {
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `SI ${jobLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                  );
-                                  return;
-                                }
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `SI ${jobLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer,
-                    );
-                    reupThumbnailPath = batchResult.thumbnailPath;
-                    heroImagePath = batchResult.heroImagePath;
-
-                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                    await fs.unlink(flowDebugPath).catch(() => undefined);
-                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
-                    await fs.unlink(metaDebugPath).catch(() => undefined);
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'ok',
-                        `SI one_image ${resolveThumbnailImageProvider()} saved → thumbnail.jpg, background.jpg`,
-                      );
-                    }
-                  } catch (err) {
-                    const message =
-                      err instanceof AppError
-                        ? err.message
-                        : err instanceof Error
-                          ? err.message
-                          : 'SI one_image batch failed';
-                    console.warn(`[reup-video] SI one_image batch skipped (non-fatal): ${message}`);
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `SI one_image batch skipped: ${message}`,
-                      );
-                    }
-                  }
-                } else {
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      `Creating niche thumbnail via ${resolveThumbnailImageProvider()} (image_generation_prompt, no reference)...`,
-                    );
-                  }
-
-                  try {
-                    const nicheThumb = await timedStep(
-                      `Niche image_generation_prompt thumbnail (${resolveThumbnailImageProvider()})`,
-                      () =>
-                        runNicheImagePromptThumbnail(workDir, imageGenerationPrompt, {
-                          onProgress: taskJobId
-                            ? progress => {
-                                const profileLabel = progress.profileName;
-                                if (progress.status === 'retry') {
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `Niche thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                  );
-                                  return;
-                                }
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Niche thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer,
-                    );
-                    reupThumbnailPath = nicheThumb.thumbnailPath;
-
-                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                    await fs.unlink(flowDebugPath).catch(() => undefined);
-                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
-                    await fs.unlink(metaDebugPath).catch(() => undefined);
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'ok',
-                        'Niche thumbnail saved → thumbnail.jpg (no reference)',
-                      );
-                    }
-                  } catch (err) {
-                    const message =
-                      err instanceof AppError
-                        ? err.message
-                        : err instanceof Error
-                          ? err.message
-                          : 'Niche thumbnail generation failed';
-                    console.warn(`[reup-video] niche image_generation_prompt thumbnail skipped (non-fatal): ${message}`);
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Niche thumbnail skipped: ${message}`);
-                    }
-                  }
-                }
-              } else {
-              const styleKey = destination.thumbnailStyleKey?.trim();
-              const useHorizontalFlow = styleKey
-                ? isHorizontalMultiStepStyle(styleKey, destination.language)
-                : false;
-
-              if (styleKey && !useHorizontalFlow) {
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    `Creating thumbnail via ${resolveThumbnailImageProvider()} (${styleKey})...`,
-                  );
-                }
-
-                try {
-                  const referenceImagePaths = buildThumbnailReferenceImagePaths({
-                    promptKey: styleKey,
-                    language: destination.language,
-                    oldThumbnailPath: downloaded.thumbnailPath,
-                    channelId: destination.id,
-                    thumbnailBackgroundFile: destination.thumbnailBackgroundFile,
-                  });
-                  const defaultResult = await timedStep(
-                    `Thumbnail ${resolveThumbnailImageProvider()} (${styleKey})`,
-                    () =>
-                      runDefaultFlowThumbnail(workDir, destination.language, {
-                        promptKey: styleKey,
-                        referenceImagePaths,
-                        onProgress: taskJobId
-                          ? progress => {
-                              const profileLabel = progress.profileName;
-                              if (progress.status === 'retry') {
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Thumbnail on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                );
-                                return;
-                              }
-                              taskQueueRepository.appendLogMessage(
-                                taskJobId,
-                                'info',
-                                `Thumbnail on ${profileLabel} (attempt ${progress.attempt})...`,
-                              );
-                            }
-                          : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  reupThumbnailPath = defaultResult.thumbnailPath;
-
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Thumbnail saved → thumbnail.jpg');
-                  }
-                } catch (err) {
-                  const message =
-                    err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
-                  console.warn(`[reup-video] default thumbnail skipped (non-fatal): ${message}`);
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail skipped: ${message}`);
-                  }
-                }
-              } else if (useHorizontalFlow && hasLegacyVisualMeta(videoMetaOutput)) {
-                const metaOutput: MetaStep3Output = videoMetaOutput;
-
-                if (useHorizontalFlow && styleKey) {
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Creating horizontal thumbnail (LLM step 1/2/3)...');
-                  }
-
-                  try {
-                    thumbnailHorizontalOutput = await timedStep(
-                      'Thumbnail ngang (LLM 3 bước)',
-                      () =>
-                        runThumbnailHorizontal(metaOutput, destination.language, styleKey, {
-                          onProgress: taskJobId
-                            ? progress => {
-                                const profileLabel = progress.profileName;
-                                const stepLabel = `step ${progress.step}/3`;
-
-                                if (progress.status === 'retry') {
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `Thumbnail ${stepLabel} on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                  );
-                                  return;
-                                }
-
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Thumbnail ${stepLabel} on ${profileLabel} (attempt ${progress.attempt})...`,
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer,
-                    );
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Horizontal thumbnail LLM done');
-                    }
-                  } catch (err) {
-                    const message =
-                      err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail generation failed';
-                    console.warn(`[reup-video] thumbnail LLM skipped (non-fatal): ${message}`);
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail LLM skipped: ${message}`);
-                    }
-                  }
-                }
-
-                if (useHorizontalFlow && thumbnailHorizontalOutput) {
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      `Generating thumbnail visual with ${resolveThumbnailImageProvider()}...`,
-                    );
-                  }
-
-                  try {
-                    const visualResult = await timedStep(
-                      `Thumbnail visual (${resolveThumbnailImageProvider()})`,
-                      () =>
-                        runThumbnailVisualGeneration(
-                          workDir,
-                          {
-                            visualPrompt: thumbnailHorizontalOutput!.plan.visualPrompt,
-                            negativePrompt: thumbnailHorizontalOutput!.plan.negativePrompt,
-                          },
-                          {
-                            onProgress: taskJobId
-                              ? progress => {
-                                  const profileLabel = progress.profileName;
-                                  if (progress.status === 'retry') {
-                                    taskQueueRepository.appendLogMessage(
-                                      taskJobId,
-                                      'info',
-                                      `Thumbnail visual on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                    );
-                                    return;
-                                  }
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `Thumbnail visual on ${profileLabel} (attempt ${progress.attempt})...`,
-                                  );
-                                }
-                              : undefined,
-                          },
-                        ),
-                      stepTimer,
-                    );
-                    thumbnailVisualPath = visualResult.thumbnailVisualPath;
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Thumbnail visual saved → thumbnail_visual.jpg');
-                    }
-                  } catch (err) {
-                    const message =
-                      err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail visual generation failed';
-                    console.warn(`[reup-video] thumbnail visual skipped (non-fatal): ${message}`);
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail visual skipped: ${message}`);
-                    }
-                  }
-
-                  if (thumbnailVisualPath) {
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Compositing horizontal thumbnail (canvas)...');
-                    }
-
-                    const horizontalOutput = thumbnailHorizontalOutput;
-                    const visualPath = thumbnailVisualPath;
-
-                    try {
-                      const compositeOutPath = path.join(workDir, 'thumbnail.jpg');
-                      reupThumbnailPath = await timedStep(
-                        'Composite thumbnail',
-                        () =>
-                          renderThumbnailHorizontalFlowCompositeToPath({
-                            backgroundImagePath: visualPath,
-                            flowLayout: {
-                              thumbnail_copy: horizontalOutput.plan.thumbnailCopy,
-                              color_strategy: horizontalOutput.plan.colorStrategy,
-                            },
-                            outPath: compositeOutPath,
-                          }),
-                        stepTimer,
-                      );
-
-                      if (taskJobId) {
-                        taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Thumbnail composite saved → thumbnail.jpg');
-                      }
-                    } catch (err) {
-                      const message =
-                        err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Thumbnail composite failed';
-                      console.warn(`[reup-video] thumbnail composite skipped (non-fatal): ${message}`);
-                      if (taskJobId) {
-                        taskQueueRepository.appendLogMessage(taskJobId, 'info', `Thumbnail composite skipped: ${message}`);
-                      }
-                    }
-                  }
-                }
-              }
-
-              if (videoType === 'si') {
-                if (!videoMetaOutput) {
-                  throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
-                }
-
-                const siMeta: VideoMetaOutput = videoMetaOutput;
-                const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
-                if (siBackgroundImage !== 'one_image') {
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', `Skipping general image (backgroundImage=${siBackgroundImage})`);
-                  }
-                  console.log(`[reup-video] Skipping general image (backgroundImage=${siBackgroundImage})`);
-                } else {
-                  const videoVisualPrompt = siMeta.video_visual_prompt?.trim() ?? '';
-                  const requiresVideoVisualPrompt =
-                    hasNicheMetadataPrompt(destination.language, destination.niche) &&
-                    !isCelebrityWisdomNiche(destination.niche) &&
-                    !isThumbnailOnlyTwoStepNiche(destination.language, destination.niche);
-
-                  if (requiresVideoVisualPrompt && !videoVisualPrompt && !heroImagePath) {
-                    throw new AppError(
-                      'video_visual_prompt is required for SI one_image background',
-                      400,
-                      'INVALID_INPUT',
-                    );
-                  }
-
-                  if (heroImagePath) {
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        'Skipping background image (already created with thumbnail batch)',
-                      );
-                    }
-                  } else if (videoVisualPrompt) {
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Creating background image via ${resolveThumbnailImageProvider()} (video_visual_prompt, no reference)...`,
-                      );
-                    }
-
-                    const heroResult = await timedStep(
-                      `Background image (${resolveThumbnailImageProvider()} video_visual_prompt)`,
-                      () =>
-                        runBrowserImageGeneration(videoVisualPrompt, workDir, {
-                          fileName: DEFAULT_HERO_IMAGE_FILENAME,
-                          onProgress: taskJobId
-                            ? progress => {
-                                const profileLabel = progress.profileName;
-                                if (progress.status === 'retry') {
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `Background image on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                  );
-                                  return;
-                                }
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `Background image on ${profileLabel} (attempt ${progress.attempt})...`,
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer,
-                    );
-                    heroImagePath = heroResult.imagePath;
-
-                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                    await fs.unlink(flowDebugPath).catch(() => undefined);
-                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
-                    await fs.unlink(metaDebugPath).catch(() => undefined);
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'ok',
-                        'Background image saved → background.jpg (video_visual_prompt)',
-                      );
-                    }
-                  } else {
-                    const generalImageTitle = String(siMeta.metadata.title ?? '').trim();
-                    if (!generalImageTitle) {
-                      throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
-                    }
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(
-                        taskJobId,
-                        'info',
-                        `Creating general image via ${resolveThumbnailImageProvider()} (general + reference)...`,
-                      );
-                    }
-
-                    const heroResult = await timedStep(
-                      `General image (${resolveThumbnailImageProvider()} + reference)`,
-                      () =>
-                        runGeneralImage(generalImageTitle, destination.language, workDir, {
-                          referenceImagePaths: downloaded.thumbnailPath ? [downloaded.thumbnailPath] : [],
-                          onProgress: taskJobId
-                            ? progress => {
-                                const profileLabel = progress.profileName;
-                                if (progress.status === 'retry') {
-                                  taskQueueRepository.appendLogMessage(
-                                    taskJobId,
-                                    'info',
-                                    `General image on ${profileLabel} retry (attempt ${progress.attempt})...`,
-                                  );
-                                  return;
-                                }
-                                taskQueueRepository.appendLogMessage(
-                                  taskJobId,
-                                  'info',
-                                  `General image on ${profileLabel} (attempt ${progress.attempt})...`,
-                                );
-                              }
-                            : undefined,
-                        }),
-                      stepTimer,
-                    );
-                    heroImagePath = heroResult.heroImagePath;
-
-                    const flowDebugPath = path.join(workDir, 'flow-debug.png');
-                    await fs.unlink(flowDebugPath).catch(() => undefined);
-                    const metaDebugPath = path.join(workDir, 'meta-debug.png');
-                    await fs.unlink(metaDebugPath).catch(() => undefined);
-
-                    if (taskJobId) {
-                      taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'General image saved → background.jpg');
-                    }
-                  }
-                }
-              }
-              }
-            }
-          } else if (taskJobId) {
-            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
-            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
-          }
-
-          const workDir = subtitleForAssembly ? path.dirname(subtitleForAssembly) : path.dirname(srtPath);
-          const useReferenceImage = destination.useReferenceImage === true;
-
-          const runSharedScenePromptAndImages = async (options: {
-            label: string;
-            maxTranscriptSec?: number;
-          }) => {
-            if (!destination.visualStyle) {
-              throw new AppError(
-                `Reup Audio ${options.label} channel is missing visual style`,
-                400,
-                'VALIDATION_ERROR',
-              );
-            }
-            if (!downloaded.audioPath || !subtitleForAssembly) {
-              return;
-            }
-
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'info',
-                useReferenceImage
-                  ? `Generating ${options.label} scene prompts with character references via LLM...`
-                  : `Generating ${options.label} scene prompts via LLM...`,
-              );
-            }
-
-            const promptResult = await timedStep(
-              `${options.label} scene prompts`,
-              () =>
-                generateAiScenePromptsForPipeline({
-                  workDir,
-                  youtubeVideoId: downloaded.youtubeVideoId,
-                  visualStyle: destination.visualStyle!,
-                  subtitlePath: subtitleForAssembly!,
-                  audioPath: downloaded.audioPath,
-                  language: destination.language,
-                  maxTranscriptSec: options.maxTranscriptSec,
-                  densityMaxSceneSec: destination.aiSceneDensityMaxSec,
-                  useReferenceImage,
-                  onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                  onProgress: taskJobId
-                    ? progress =>
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `${options.label} scene prompts ${progress.density} chunk ${progress.chunkIndex + 1}/${progress.totalChunks} (attempt ${progress.attempt})...`,
-                        )
-                    : undefined,
-                }),
-              stepTimer,
-            );
-
-            aiScenePrompts = promptResult.scenes;
-            aiScenePromptsPath = promptResult.filePath;
-
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'ok',
-                `${options.label} scene prompts saved (${aiScenePrompts.length} scene(s)) → ${aiScenePromptsPath}`,
-              );
-            }
-
-            if (useReferenceImage && taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'info',
-                `${options.label}: generating scene images (Meta may attach character references per scene)...`,
-              );
-            }
-
-            const imageProvider = promptsSettingsService.get().defaultImageProvider;
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'info',
-                `Generating ${options.label} scene images via ${imageProvider}...`,
-              );
-            }
-
-            const aiSlideResult = await timedStep(
-              `${options.label} scene images`,
-              () =>
-                generateAiSceneSlideImages({
-                  workDir,
-                  youtubeVideoId: downloaded.youtubeVideoId,
-                  scenes: aiScenePrompts!,
-                  onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                  onProgress: taskJobId
-                    ? progress => {
-                        if (progress.status === 'skipped') {
-                          taskQueueRepository.appendLogMessage(
-                            taskJobId,
-                            'info',
-                            `${options.label} scene image ${progress.sceneName} skipped (already exists)`,
-                          );
-                          return;
-                        }
-
-                        const batchLabel =
-                          progress.batchIndex && progress.totalBatches
-                            ? ` batch ${progress.batchIndex}/${progress.totalBatches}`
-                            : '';
-                        taskQueueRepository.appendLogMessage(
-                          taskJobId,
-                          'info',
-                          `${options.label} scene image ${progress.sceneName} (${progress.sceneIndex}/${progress.totalScenes})${batchLabel}...`,
-                        );
-                      }
-                    : undefined,
-                }),
-              stepTimer,
-            );
-            aiSlidesDir = aiSlideResult.slidesDir;
-            aiScenePrompts = aiSlideResult.scenes;
-
-            if (taskJobId) {
-              taskQueueRepository.appendLogMessage(
-                taskJobId,
-                'ok',
-                `${options.label} scene images saved (${aiSlideResult.generatedCount} generated, ${aiSlideResult.skippedCount} skipped, ${aiSlideResult.failedCount} failed) → ${aiSlidesDir}`,
-              );
-            }
-          };
-
-          if (videoType === 'ai' && downloaded.audioPath && subtitleForAssembly) {
-            await runSharedScenePromptAndImages({ label: 'AI' });
-          }
-
-          if (
-            videoType === 'si' &&
-            (destination.reupAudioBackgroundImage ?? 'one_image') === 'multi_image' &&
-            downloaded.audioPath &&
-            subtitleForAssembly
-          ) {
-            await runSharedScenePromptAndImages({
-              label: 'SI multi_image',
-              maxTranscriptSec: AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC,
-            });
-          }
-
-          if (!options?.skipVideoAssembly && downloaded.audioPath && subtitleForAssembly) {
-            if (taskJobId) {
-              const stages = taskQueueRepository.findById(taskJobId)?.stages;
-              const thumb = stages?.find(s => s.id === CREATE_VIDEO_STAGE_IDS.thumbnail);
-              if (thumb?.status === 'doing') {
-                completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
-              }
-            }
-            activeStageId = CREATE_VIDEO_STAGE_IDS.assemble;
-            if (taskJobId) {
-              startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
-            }
-            const disclaimerText = destination.disclaimerText?.trim();
-            const showDisclaim = destination.showDisclaimer === true && Boolean(disclaimerText);
-            const assemblyLog = taskJobId
-              ? (msg: string) => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg)
-              : undefined;
-            const channelAvatarPath = await resolveChannelAvatarForVideoAssembly(destination.id, {
-              enabled: destination.showChannelAvatar,
-              onLog: assemblyLog,
-            });
-            const metaTitle = videoMetaOutput?.metadata?.title;
-            const outputBasename = sanitizeVideoOutputBasename(
-              typeof metaTitle === 'string' ? metaTitle : '',
-            );
-
-            if (videoType === 'si') {
-              const siBackgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
-              const needsCenterImage = siBackgroundImage === 'one_image';
-              const needsMultiImage =
-                siBackgroundImage === 'multi_image' || siBackgroundImage === 'celebrity';
-
-              if (siBackgroundImage === 'celebrity') {
-                const celebrityId = destination.celebrityId?.trim();
-                if (!celebrityId) {
-                  throw new AppError(
-                    'Channel is missing celebrityId for celebrity background image mode',
-                    400,
-                    'VALIDATION_ERROR',
-                  );
-                }
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    `Copying celebrity images (${celebrityId}) into images/...`,
-                  );
-                }
-                const copied = await copyCelebrityImagesToWorkDir(
-                  celebrityId,
-                  workDir,
-                  taskJobId
-                    ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg)
-                    : undefined,
-                );
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'ok',
-                    `Copied ${copied.length} celebrity image(s) → images/`,
-                  );
-                }
-              }
-
-              const multiImagePaths = needsMultiImage ? await listSiMultiImagePaths(workDir) : [];
-
-              if (needsCenterImage && !heroImagePath) {
-                console.warn(`[reup-video] SI video assembly skipped: hero image not generated`);
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', 'SI video assembly skipped: hero image missing');
-                }
-              } else if (needsMultiImage && multiImagePaths.length === 0) {
-                console.warn(`[reup-video] SI video assembly skipped: no images in videoId/images`);
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    siBackgroundImage === 'celebrity'
-                      ? 'SI video assembly skipped: celebrity has no images in images/'
-                      : 'SI video assembly skipped: multi_image requires at least one image in images/',
-                  );
-                }
-              } else if (!destination.backgroundFootageSources?.length) {
-                console.warn(`[reup-video] SI video assembly skipped: channel ${destination.id} has no backgroundFootageSources`);
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(
-                    taskJobId,
-                    'info',
-                    'SI video assembly skipped: no backgroundFootageSources configured on channel',
-                  );
-                }
-              } else {
-                if (taskJobId) {
-                  taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                  const assembleLabel = needsMultiImage
-                    ? `Assembling SI video (stock + ${siBackgroundImage === 'celebrity' ? 'celebrity' : 'multi-image'} slideshow ${multiImagePaths.length} images + subtitles)...`
-                    : needsCenterImage
-                      ? 'Assembling SI video (stock + overlay + subtitles)...'
-                      : `Assembling SI video (stock + subtitles, backgroundImage=${siBackgroundImage})...`;
-                  taskQueueRepository.appendLogMessage(taskJobId, 'info', assembleLabel);
-                }
-
-                reupVideoPath = await assembleReupSiVideo({
-                  workDir,
-                  audioPath: downloaded.audioPath,
-                  subtitlePath: subtitleForAssembly,
-                  outputBasename,
-                  ...(needsCenterImage && heroImagePath ? { centerImagePath: heroImagePath } : {}),
-                  ...(needsMultiImage
-                    ? {
-                        centerImagePaths: multiImagePaths,
-                        centerSlideshowVariant:
-                          siBackgroundImage === 'celebrity' ? ('celebrity' as const) : ('multi' as const),
-                      }
-                    : {}),
-                  backgroundFootageSourceIds: destination.backgroundFootageSources,
-                  language: destination.language,
-                  captionStyleKey: destination.captionStyleKey,
-                  showAudioBar: destination.showAudioBar,
-                  audioBarFile: destination.audioBarFile,
-                  showSmallVideo: destination.showSmallVideo,
-                  smallVideoFile: destination.smallVideoFile,
-                  showSubscribe: destination.showSubscribe,
-                  subscribeFile: destination.subscribeFile,
-                  showDisclaim,
-                  disclaimerText,
-                  ...(channelAvatarPath ? { channelAvatarPath } : {}),
-                  onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                });
-                primaryOutputPath = reupVideoPath;
-
-                if (taskJobId) {
-                  taskQueueRepository.appendLogMessage(taskJobId, 'ok', `SI video saved → ${outputBasename}.mp4`);
-                }
-              }
-            } else if (videoType === 'ai') {
-              const timedScenes = (aiScenePrompts ?? []).filter(scene => Boolean(scene.path?.trim()));
-              if (timedScenes.length === 0) {
-                  console.warn(`[reup-video] AI video assembly skipped: no scene images`);
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'info', 'AI video assembly skipped: no scene images');
-                  }
-                } else {
-                  if (taskJobId) {
-                    taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
-                    taskQueueRepository.appendLogMessage(
-                      taskJobId,
-                      'info',
-                      `Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`,
-                    );
-                  }
-
-                  reupVideoPath = await timedStep(
-                    'AI assemble video',
-                    () =>
-                      assembleReupAiSlideshowVideo({
-                        workDir,
-                        scenes: timedScenes,
-                        audioPath: downloaded.audioPath!,
-                        subtitlePath: subtitleForAssembly!,
-                        language: destination.language,
-                        captionStyleKey: destination.captionStyleKey,
-                        outputBasename,
-                        showDisclaim,
-                        disclaimerText,
-                        ...(channelAvatarPath ? { channelAvatarPath } : {}),
-                        ...(destination.showSmallVideo || destination.smallVideoFile
-                          ? {
-                              showSmallVideo: destination.showSmallVideo,
-                              ...(destination.smallVideoFile ? { smallVideoFile: destination.smallVideoFile } : {}),
-                            }
-                          : {}),
-                        onLog: taskJobId ? msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg) : undefined,
-                      }),
-                    stepTimer,
-                  );
-                  primaryOutputPath = reupVideoPath;
-
-                  if (taskJobId) {
-                    taskQueueRepository.appendLogMessage(taskJobId, 'ok', `AI video saved → ${outputBasename}.mp4`);
-                  }
-                }
-            }
-            if (taskJobId) {
-              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
-            }
-          } else if (options?.skipVideoAssembly && (videoType === 'si' || videoType === 'ai') && taskJobId) {
-            const stages = taskQueueRepository.findById(taskJobId)?.stages;
-            const thumb = stages?.find(s => s.id === CREATE_VIDEO_STAGE_IDS.thumbnail);
-            if (thumb?.status === 'doing') {
-              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
-            }
-            taskQueueRepository.appendLogMessage(taskJobId, 'info', 'Video assembly skipped (prepare-only mode)');
-            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
-          } else if (taskJobId) {
-            const stages = taskQueueRepository.findById(taskJobId)?.stages;
-            const thumb = stages?.find(s => s.id === CREATE_VIDEO_STAGE_IDS.thumbnail);
-            if (thumb?.status === 'doing') {
-              completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
-            }
-            skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
-          }
-
-          outputItem = {
-            link: task.link,
-            channelId: destination.id,
-            language: destination.language,
-            videoId: task.videoId,
-            youtubeVideoId: downloaded.youtubeVideoId,
-            outputPath: primaryOutputPath,
-            thumbnailPath: downloaded.thumbnailPath,
-            audioPath: downloaded.audioPath,
-            ...(subtitleForAssembly
-              ? {
-                  updatedSrtPath: subtitleForAssembly,
-                  ...(videoMetaOutput ? { videoMetaOutput } : {}),
-                  ...(thumbnailHorizontalOutput ? { thumbnailHorizontalOutput } : {}),
-                  ...(heroImagePath ? { heroImagePath } : {}),
-                  ...(thumbnailVisualPath ? { thumbnailVisualPath } : {}),
-                  ...(reupThumbnailPath ? { reupThumbnailPath } : {}),
-                  ...(reupVideoPath ? { reupVideoPath } : {}),
-                  ...(aiScenePrompts ? { aiScenePrompts } : {}),
-                  ...(aiScenePromptsPath ? { aiScenePromptsPath } : {}),
-                  ...(aiSlidesDir ? { aiSlidesDir } : {}),
-                }
-              : { transcriptPath: downloaded.transcriptPath, srtPath }),
-          };
-          } catch (stageErr) {
-            if (taskJobId && activeStageId) {
-              failCreateVideoStage(taskJobId, activeStageId, stageErr);
-            }
-            throw stageErr;
-          }
-        } else {
-          if (taskJobId) {
-            taskQueueRepository.setLivePhase(taskJobId, 'downloading');
-          }
-
-          const downloaded = await timedStep(
-            'Tải source video',
-            () => resolveReupVideoDownload(task, destination.pipelineType, destination.language, taskJobId),
-            stepTimer,
-          );
-
-          if (taskJobId) {
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', `Video saved → ${downloaded.videoPath}`);
-          }
-
-          outputItem = {
-            link: task.link,
-            channelId: destination.id,
-            language: destination.language,
-            videoId: task.videoId,
-            youtubeVideoId: downloaded.youtubeVideoId,
-            outputPath: downloaded.primaryPath,
-            ...(downloaded.videoPath ? { videoPath: downloaded.videoPath } : {}),
-          };
-        }
-
-        const sourceDir = mediaDownloadDir('youtube', outputItem.youtubeVideoId);
-        const expectedDestDir = destination.getVideoOutputDir(outputItem.youtubeVideoId);
-        const destDir = await timedStep(
-          'Di chuyển thư mục video',
-          () => moveVideoFolderToDestination('youtube', outputItem.youtubeVideoId, expectedDestDir),
-          stepTimer,
+        const outputItem = isAudioChannel
+          ? await this.runAudioTask(destination, task, run)
+          : await this.runVideoDownloadTask(destination, task, run);
+
+        items.push(
+          await runFinalizeStep(outputItem, destination, {
+            skipVideoAssembly: run.skipVideoAssembly,
+            log,
+            stepTimer: run.stepTimer,
+          }),
         );
-        outputItem = remapOutputItemPaths(outputItem, sourceDir, destDir);
-
-        if (path.resolve(destDir) === path.resolve(expectedDestDir)) {
-          destination.trackPreparedVideo({
-            id: generateId(),
-            videoId: outputItem.youtubeVideoId,
-            title: resolveVideoPrepareTitle(outputItem),
-            status: 'Prepared',
-          });
-
-          if (taskJobId) {
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video prepare tracked → video-prepare.json');
-          }
-
-          if (!options?.skipVideoAssembly) {
-            const finalVideoPath = findFinalVideoMp4(destDir);
-            if (finalVideoPath) {
-              videoPrepareRepository.markCreated(destination.id, outputItem.youtubeVideoId);
-              if (taskJobId) {
-                taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video ready → status Created in video-prepare.json');
-              }
-            }
-            /* else: final mp4 not ready yet — stays Prepared */
-          } else if (taskJobId) {
-            taskQueueRepository.appendLogMessage(taskJobId, 'ok', 'Video assets saved → status Prepared in video-prepare.json');
-          }
-        }
-
-        items.push(outputItem);
       } catch (err) {
-        if (taskJobId) {
-          const alreadyLogged = taskQueueRepository
-            .findById(taskJobId)
-            ?.stages?.some(stage => stage.status === 'failed');
-          if (!alreadyLogged) {
-            const message =
-              err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Video processing failed';
-            taskQueueRepository.appendLogMessage(taskJobId, 'err', message);
-            const details = err instanceof AppError ? err.details : undefined;
-            if (details && typeof details.snippet === 'string') {
-              taskQueueRepository.appendLogMessage(taskJobId, 'err', `Response snippet: ${details.snippet}`);
-            }
-          }
-        }
+        this.logUnhandledTaskError(taskJobId, err);
         throw err;
       }
     }
@@ -1582,6 +133,229 @@ export class ReupAudioPipeline {
     }
 
     return { items };
+  }
+
+  /** reup_video channels: download only, no transcript/metadata/assembly. */
+  private async runVideoDownloadTask(
+    destination: ProductionDestination,
+    task: ReupVideoTask,
+    run: TaskRunContext,
+  ): Promise<ReupVideoOutputItem> {
+    if (run.taskJobId) {
+      taskQueueRepository.setLivePhase(run.taskJobId, 'downloading');
+    }
+
+    const downloaded = await timedStep(
+      'Tải source video',
+      () => resolveReupVideoDownload(task, destination.pipelineType, destination.language, run.log),
+      run.stepTimer,
+    );
+
+    run.log.ok(`Video saved → ${downloaded.videoPath}`);
+
+    return {
+      link: task.link,
+      channelId: destination.id,
+      language: destination.language,
+      videoId: task.videoId,
+      youtubeVideoId: downloaded.youtubeVideoId,
+      outputPath: downloaded.primaryPath,
+      ...(downloaded.videoPath ? { videoPath: downloaded.videoPath } : {}),
+    };
+  }
+
+  private async runAudioTask(
+    destination: ProductionDestination,
+    task: ReupVideoTask,
+    run: TaskRunContext,
+  ): Promise<ReupVideoOutputItem> {
+    const { taskJobId, log, stepTimer } = run;
+    let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.download;
+
+    if (taskJobId) {
+      initCreateVideoStages(taskJobId, {
+        copyingAssets: task.sourceStatus === 'Downloaded',
+        includeUpdateTranscript: destination.language === 'ja',
+      });
+      startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
+      taskQueueRepository.setLivePhase(taskJobId, 'downloading');
+    }
+
+    try {
+      const downloaded = await resolveReupAudioDownload(task, destination.language, log);
+      const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
+      const strategy = resolveVideoTypeStrategy(videoType);
+      /* Only these two produce an mp4; anything else stops after the transcript. */
+      const isRenderable = videoType === 'si' || videoType === 'ai';
+
+      if (downloaded.thumbnailPath) {
+        log.ok(`Source thumbnail saved → ${downloaded.thumbnailPath}`);
+      }
+      log.ok(`Audio saved → ${downloaded.audioPath}`);
+      log.ok(`Transcript saved → ${downloaded.transcriptPath}`);
+      completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
+
+      activeStageId = CREATE_VIDEO_STAGE_IDS.cleanTranscript;
+      startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
+      const srtPath = await runCleanTranscript(downloaded.transcriptPath, log, stepTimer);
+      completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
+
+      const ctx: VideoTaskContext = {
+        destination,
+        videoType,
+        task,
+        ...(taskJobId ? { taskJobId } : {}),
+        log,
+        stepTimer,
+        workDir: path.dirname(srtPath),
+        downloaded,
+        subtitlePath: srtPath,
+      };
+
+      const assets: VisualAssets = {};
+      let updatedSrtPath: string | undefined;
+      let thumbnailHorizontalOutput: ReupVideoOutputItem['thumbnailHorizontalOutput'];
+      let thumbnailVisualPath: string | undefined;
+
+      /**
+       * Only Japanese channels run the LLM transcript rewrite, and metadata +
+       * thumbnail depend on that rewrite. Other languages skip straight to
+       * assembly using the cleaned SRT and a fallback output basename.
+       */
+      const needsLlmEnrichment = destination.language === 'ja';
+
+      if (needsLlmEnrichment) {
+        activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
+        updatedSrtPath = await runUpdateTranscript(srtPath, destination.language, log, stepTimer);
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
+
+        ctx.subtitlePath = updatedSrtPath;
+        ctx.workDir = path.dirname(updatedSrtPath);
+
+        if (isRenderable) {
+          activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
+          startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+          if (taskJobId) taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+          ctx.videoMeta = await runMetadataStep(ctx);
+          completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+
+          activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
+          startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+
+          const thumbnail = await runThumbnailStep(ctx, strategy);
+          Object.assign(assets, {
+            ...(thumbnail.reupThumbnailPath ? { reupThumbnailPath: thumbnail.reupThumbnailPath } : {}),
+            ...(thumbnail.heroImagePath ? { heroImagePath: thumbnail.heroImagePath } : {}),
+          });
+          thumbnailHorizontalOutput = thumbnail.thumbnailHorizontalOutput;
+          thumbnailVisualPath = thumbnail.thumbnailVisualPath;
+
+          Object.assign(assets, await strategy.prepareEnrichedVisuals(ctx, assets, thumbnail.flow));
+        }
+      } else {
+        skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+        skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+      }
+
+      if (isRenderable) {
+        Object.assign(assets, await strategy.prepareSceneAssets(ctx));
+      }
+
+      let reupVideoPath: string | undefined;
+
+      if (!run.skipVideoAssembly) {
+        completeThumbnailStageIfRunning(taskJobId);
+        activeStageId = CREATE_VIDEO_STAGE_IDS.assemble;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+
+        if (isRenderable) {
+          reupVideoPath = await this.assemble(ctx, strategy, assets);
+        }
+
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+      } else {
+        completeThumbnailStageIfRunning(taskJobId);
+        if (isRenderable) {
+          log.info('Video assembly skipped (prepare-only mode)');
+        }
+        skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+      }
+
+      return {
+        link: task.link,
+        channelId: destination.id,
+        language: destination.language,
+        videoId: task.videoId,
+        youtubeVideoId: downloaded.youtubeVideoId,
+        outputPath: reupVideoPath ?? downloaded.audioPath,
+        thumbnailPath: downloaded.thumbnailPath,
+        audioPath: downloaded.audioPath,
+        updatedSrtPath: ctx.subtitlePath,
+        ...(ctx.videoMeta ? { videoMetaOutput: ctx.videoMeta } : {}),
+        ...(thumbnailHorizontalOutput ? { thumbnailHorizontalOutput } : {}),
+        ...(assets.heroImagePath ? { heroImagePath: assets.heroImagePath } : {}),
+        ...(thumbnailVisualPath ? { thumbnailVisualPath } : {}),
+        ...(assets.reupThumbnailPath ? { reupThumbnailPath: assets.reupThumbnailPath } : {}),
+        ...(reupVideoPath ? { reupVideoPath } : {}),
+        ...(assets.aiScenePrompts ? { aiScenePrompts: assets.aiScenePrompts } : {}),
+        ...(assets.aiScenePromptsPath ? { aiScenePromptsPath: assets.aiScenePromptsPath } : {}),
+        ...(assets.aiSlidesDir ? { aiSlidesDir: assets.aiSlidesDir } : {}),
+      };
+    } catch (stageErr) {
+      if (taskJobId && activeStageId) {
+        failCreateVideoStage(taskJobId, activeStageId, stageErr);
+      }
+      throw stageErr;
+    }
+  }
+
+  /** Returns the assembled mp4 path, or undefined when the strategy is not ready. */
+  private async assemble(
+    ctx: VideoTaskContext,
+    strategy: ReturnType<typeof resolveVideoTypeStrategy>,
+    assets: VisualAssets,
+  ): Promise<string | undefined> {
+    const { destination, taskJobId, log } = ctx;
+
+    const channelAvatarPath = await resolveChannelAvatarForVideoAssembly(destination.id, {
+      enabled: destination.showChannelAvatar,
+      onLog: log.enabled ? msg => log.info(msg) : undefined,
+    });
+
+    const metaTitle = ctx.videoMeta?.metadata?.title;
+    const assembleCtx = buildAssembleContext(ctx, {
+      outputBasename: sanitizeVideoOutputBasename(typeof metaTitle === 'string' ? metaTitle : ''),
+      ...(channelAvatarPath ? { channelAvatarPath } : {}),
+      ...(taskJobId ? { beginRenderPhase: () => taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg') } : {}),
+    });
+
+    const readiness = await strategy.canAssemble(assembleCtx, assets);
+    if (!readiness.ready) {
+      log.info(readiness.reason);
+      return undefined;
+    }
+
+    return strategy.assemble(assembleCtx, assets);
+  }
+
+  /** Stage failures already log; this only covers errors thrown outside a stage. */
+  private logUnhandledTaskError(taskJobId: string | undefined, err: unknown): void {
+    if (!taskJobId) return;
+
+    const alreadyLogged = taskQueueRepository
+      .findById(taskJobId)
+      ?.stages?.some(stage => stage.status === 'failed');
+    if (alreadyLogged) return;
+
+    const message =
+      err instanceof AppError ? err.message : err instanceof Error ? err.message : 'Video processing failed';
+    taskQueueRepository.appendLogMessage(taskJobId, 'err', message);
+
+    const details = err instanceof AppError ? err.details : undefined;
+    if (details && typeof details.snippet === 'string') {
+      taskQueueRepository.appendLogMessage(taskJobId, 'err', `Response snippet: ${details.snippet}`);
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CAPTION_STYLE_KEYS } from '../video-production/shared/si-video/caption-styles.js';
+import { CAPTION_STYLE_KEYS } from '../video-production/shared/render-core/caption-styles.js';
 import { getPublishTimeSlotCount } from './upload-schedule.js';
 
 const uploadFrequencySchema = z.enum([

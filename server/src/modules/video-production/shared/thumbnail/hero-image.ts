@@ -122,6 +122,8 @@ export async function runFlowImageGenerations(
     `[hero-image] Mở Chrome main profile ${profile.name} cho Google Flow (${jobs.length} job(s))...`,
   );
 
+  const openedProfileIds = new Set<string>();
+
   try {
     for (let jobIndex = 0; jobIndex < jobs.length; jobIndex += 1) {
       const job = jobs[jobIndex]!;
@@ -151,6 +153,7 @@ export async function runFlowImageGenerations(
         onAttemptFailure: (attempt, reason) => {
           console.warn(`${logPrefix} attempt ${attempt}: generation failed (${reason})`);
         },
+        openedProfileIds,
       });
 
       console.log(`${logPrefix} saved: ${savedPath} (${response.elapsedMs}ms)`);
@@ -159,7 +162,8 @@ export async function runFlowImageGenerations(
 
     return results;
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    openedProfileIds.add(profile.id);
+    await chromeProfilesService.closeSubProfiles([...openedProfileIds]);
   }
 }
 

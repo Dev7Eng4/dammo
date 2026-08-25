@@ -11,9 +11,13 @@ import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
+import { SS_ENABLE_KEN_BURNS } from '../slideshow/slideshow.constants.js';
+import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';
+import { AiClipPrebakePool } from './ai-video-clip-prebake.js';
 import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
+import { buildFinalAiSlides } from './ai-video-slide-spec.js';
 import {
   attachSceneImagePaths,
   redistributeMissingSceneTimes,
@@ -105,12 +109,78 @@ async function resolvePendingJobs(jobs: SceneVisualJob[]): Promise<{
   return { pending, skippedCount };
 }
 
+function createPrebakeEnqueue(
+  assumedSlidesByName: ReadonlyMap<string, SlideSpec> | undefined,
+  pool: AiClipPrebakePool | null,
+): (jobName: string) => void {
+  if (!pool || !assumedSlidesByName) {
+    return () => undefined;
+  }
+
+  const enqueued = new Set<string>();
+
+  return (jobName: string) => {
+    if (enqueued.has(jobName)) return;
+    const slide = assumedSlidesByName.get(jobName);
+    if (!slide) return;
+
+    enqueued.add(jobName);
+    pool.enqueueProvisionalSlide(slide);
+  };
+}
+
+function clipPrebakeEnabled(input: GenerateAiSceneSlideImagesInput): boolean {
+  return (
+    SS_ENABLE_KEN_BURNS &&
+    input.audioSpeed != null &&
+    input.assumedFinalSlidesByName != null &&
+    input.assumedFinalSlidesByName.size > 0
+  );
+}
+
+async function finalizeScenesWithPaths(
+  workDir: string,
+  youtubeVideoId: string,
+  scenes: AiVideoScenePrompt[],
+  log: (msg: string) => void,
+): Promise<AiVideoScenePrompt[]> {
+  const withPaths = await attachSceneImagePaths(scenes, workDir);
+  const redistributed = redistributeMissingSceneTimes(withPaths);
+  const filePath = await persistAiScenePromptsFile(workDir, youtubeVideoId, redistributed);
+  const withImage = scenesWithImagePaths(redistributed).length;
+  const missing = redistributed.length - withImage;
+  log(
+    `[ai-video] Scene prompts updated → ${filePath} (${withImage} with path, ${missing} missing)`,
+  );
+  return redistributed;
+}
+
+async function reconcileClipPrebake(
+  input: GenerateAiSceneSlideImagesInput,
+  scenes: AiVideoScenePrompt[],
+  pool: AiClipPrebakePool | null,
+  log: (msg: string) => void,
+): Promise<void> {
+  if (!pool || input.audioSpeed == null || !input.audioPath) return;
+
+  await pool.drain();
+  const finalSlides = await buildFinalAiSlides(
+    input.workDir,
+    scenes,
+    input.audioSpeed,
+    input.audioPath,
+    log,
+  );
+  await pool.reconcileFinalSlides(finalSlides);
+}
+
 async function generateFlowSceneImages(
   slidesDir: string,
   pending: SceneVisualJob[],
   totalScenes: number,
   log: (msg: string) => void,
   onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
+  onImageSaved?: (jobName: string) => void,
 ): Promise<{ generatedCount: number; failedCount: number }> {
   const batches = chunkArray(pending, AI_FLOW_TOOL_BATCH_SIZE);
   let generatedCount = 0;
@@ -138,6 +208,9 @@ async function generateFlowSceneImages(
       await generateImagesViaToolWithFailover(visuals, {
         outputDir: slidesDir,
         timeoutMs: FLOW_TOOL_TIMEOUT_MS,
+        onImageSaved: saved => {
+          onImageSaved?.(saved.name);
+        },
       }, {
         onProfileSwitch: (from, to, remainingCount) => {
           log(
@@ -154,6 +227,7 @@ async function generateFlowSceneImages(
     for (const job of batch) {
       if (await fileExists(job.outputPath)) {
         generatedCount += 1;
+        onImageSaved?.(job.name);
       } else {
         failedCount += 1;
       }
@@ -171,6 +245,7 @@ async function generateMetaSceneImages(
   log: (msg: string) => void,
   onProgress: GenerateAiSceneSlideImagesInput['onProgress'] | undefined,
   mode: MetaConcurrencyMode,
+  onImageSaved?: (jobName: string) => void,
 ): Promise<{ generatedCount: number; failedCount: number }> {
   const jobs: MetaMediaBatchJob[] = [];
 
@@ -209,6 +284,10 @@ async function generateMetaSceneImages(
         });
         return;
       }
+      if (progress.status === 'done') {
+        onImageSaved?.(pendingJob.name);
+        return;
+      }
       if (progress.status === 'failed') {
         onProgress?.({
           sceneIndex: pendingJob.index + 1,
@@ -224,23 +303,6 @@ async function generateMetaSceneImages(
     generatedCount: result.generatedCount,
     failedCount: result.failedCount,
   };
-}
-
-async function finalizeScenesWithPaths(
-  workDir: string,
-  youtubeVideoId: string,
-  scenes: AiVideoScenePrompt[],
-  log: (msg: string) => void,
-): Promise<AiVideoScenePrompt[]> {
-  const withPaths = await attachSceneImagePaths(scenes, workDir);
-  const redistributed = redistributeMissingSceneTimes(withPaths);
-  const filePath = await persistAiScenePromptsFile(workDir, youtubeVideoId, redistributed);
-  const withImage = scenesWithImagePaths(redistributed).length;
-  const missing = redistributed.length - withImage;
-  log(
-    `[ai-video] Scene prompts updated → ${filePath} (${withImage} with path, ${missing} missing)`,
-  );
-  return redistributed;
 }
 
 export async function generateAiSceneSlideImages(
@@ -261,6 +323,14 @@ export async function generateAiSceneSlideImages(
   const jobs = buildSceneVisualJobs(input.scenes, slidesDir);
   const { pending, skippedCount } = await resolvePendingJobs(jobs);
 
+  const kenBurnsPrebake = clipPrebakeEnabled(input);
+  const prebakePool = kenBurnsPrebake
+    ? new AiClipPrebakePool(input.workDir, { onLog: log })
+    : null;
+  const enqueuePrebake = kenBurnsPrebake
+    ? createPrebakeEnqueue(input.assumedFinalSlidesByName, prebakePool)
+    : () => undefined;
+
   for (const job of jobs) {
     if (!(await fileExists(job.outputPath))) continue;
     input.onProgress?.({
@@ -269,6 +339,7 @@ export async function generateAiSceneSlideImages(
       sceneName: job.name,
       status: 'skipped',
     });
+    enqueuePrebake(job.name);
   }
 
   const imageProvider = promptsSettingsService.get().defaultImageProvider;
@@ -283,6 +354,7 @@ export async function generateAiSceneSlideImages(
       input.scenes,
       log,
     );
+    await reconcileClipPrebake(input, scenes, prebakePool, log);
     return {
       slidesDir,
       imagePaths,
@@ -296,7 +368,8 @@ export async function generateAiSceneSlideImages(
   log(
     `[ai-video] Generating ${pending.length} scene image(s) via ${imageProvider}` +
       (imageProvider === 'meta' ? ` mode=${metaConcurrency}` : '') +
-      ` (${skippedCount} skipped) → ${slidesDir}`,
+      ` (${skippedCount} skipped) → ${slidesDir}` +
+      (kenBurnsPrebake ? ' (Ken Burns prebake on save, max 4 concurrent)' : ''),
   );
 
   let generatedCount = 0;
@@ -314,6 +387,7 @@ export async function generateAiSceneSlideImages(
         input.scenes.length,
         log,
         input.onProgress,
+        enqueuePrebake,
       );
       generatedCount = flowResult.generatedCount;
       failedCount = flowResult.failedCount;
@@ -333,6 +407,7 @@ export async function generateAiSceneSlideImages(
       log,
       input.onProgress,
       metaConcurrency,
+      enqueuePrebake,
     );
     generatedCount = metaResult.generatedCount;
     failedCount = metaResult.failedCount;
@@ -355,6 +430,8 @@ export async function generateAiSceneSlideImages(
     input.scenes,
     log,
   );
+
+  await reconcileClipPrebake(input, scenes, prebakePool, log);
 
   return {
     slidesDir,

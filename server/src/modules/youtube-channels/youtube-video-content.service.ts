@@ -10,7 +10,7 @@ import {
   findOldThumbnailPath,
   findThumbnailPath,
 } from '../youtube-upload/upload-assets.js';
-import { findFinalVideoMp4 } from '../video-production/shared/si-video/video-output-file.js';
+import { findFinalVideoMp4 } from '../video-production/shared/render-core/video-output-file.js';
 import { videoPrepareRepository } from './video-prepare.repository.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 

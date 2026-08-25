@@ -1,23 +1,25 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FfmpegProgress } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
+import { runFfmpegFilterComplex, type FfmpegProgress } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { formatClockDuration, getAudioDurationSeconds } from '../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import { buildH264VideoEncoderArgs, isHardwareEncoder, resolveFfmpegHwEncoder } from '../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { resizeImageToFit } from '../../infrastructure/ffmpeg/image-resize.js';
 import { timedStep } from '../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from '../../modules/video-production/shared/si-video/si-assets.js';
 import {
+  CANVAS_H,
+  CANVAS_W,
+  FPS,
+  SUBTITLE_BOX_OPACITY,
+  SUBTITLE_MARGIN_BOTTOM_PX,
+  resolveRandomAudioSpeed,
+} from '../../modules/video-production/shared/render-core/canvas.constants.js';
+import {
   SI_AUDIO_BAR_MARGIN_LEFT_PX,
-  SI_CANVAS_H,
-  SI_CANVAS_W,
   SI_CENTER_IMAGE_MARGIN_TOP_PX,
   SI_CENTER_IMAGE_OPACITY,
   SI_CENTER_IMAGE_WIDTH_RATIO,
-  SI_FPS,
-  SI_SUBTITLE_BOX_OPACITY,
-  SI_SUBTITLE_MARGIN_BOTTOM_PX,
-  resolveRandomSiAudioSpeed,
   resolveSiCenterImageOverlayX,
   SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX,
 } from '../../modules/video-production/shared/si-video/si.constants.js';
@@ -28,16 +30,15 @@ import {
   prepareRawStockVideoClip,
   stockNormalizeFilterChain,
 } from '../../modules/video-production/shared/stock-background/index.js';
-import { runFfmpegFilterComplex } from '../../modules/video-production/shared/si-video/si-ffmpeg.js';
 import { selectRandomSiAudioBarClip, appendSiAudioBarScaleFilters } from '../../modules/video-production/shared/si-video/si-audio-bar.js';
-import { getCaptionStylePreset, resolveCaptionStyleKey } from '../../modules/video-production/shared/si-video/caption-styles.js';
-import type { CaptionStyleKey } from '../../modules/video-production/shared/si-video/caption-styles.js';
+import { getCaptionStylePreset, resolveCaptionStyleKey } from '../../modules/video-production/shared/render-core/caption-styles.js';
+import type { CaptionStyleKey } from '../../modules/video-production/shared/render-core/caption-styles.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
   resolveJapaneseSubtitleStyle,
   scaleSrtTimestamps,
-} from '../../modules/video-production/shared/si-video/si-subtitle.js';
+} from '../../modules/video-production/shared/render-core/subtitle.js';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.resolve(TEST_DIR, '../../../../output');
@@ -105,7 +106,7 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
   await assertFileExists(centerImagePath, 'center image');
 
   const assets = assertRequiredSiAssets(captionStyleKey);
-  const speed = resolveRandomSiAudioSpeed();
+  const speed = resolveRandomAudioSpeed();
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
   const outputDurationSec = durationLimitSec ? Math.min(audioDurationAfterTempo, durationLimitSec) : audioDurationAfterTempo;
@@ -169,7 +170,7 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
         activeSubtitlePath = scaledSrtPath;
       }
 
-      await resizeImageToFit(centerImagePath, resizedCenterImagePath, SI_CANVAS_W, SI_CANVAS_H, onLog);
+      await resizeImageToFit(centerImagePath, resizedCenterImagePath, CANVAS_W, CANVAS_H, onLog);
 
       mergeArgs = ['-y'];
       let inputIdx = 0;
@@ -197,10 +198,10 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
 
       filterParts.push(`[${vBgLabel}]lutyuv=y='val*${STOCK_DIM_FACTOR}':u='val':v='val'[v_dimmed]`);
 
-      const targetW = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+      const targetW = Math.round(CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
       const centerImageOverlayX = resolveSiCenterImageOverlayX(showAudioBar);
       filterParts.push(
-        `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
+        `[${centerImgIndex}:v]fps=${FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
       );
       filterParts.push(`[v_dimmed][center_img]overlay=${centerImageOverlayX}:${SI_CENTER_IMAGE_MARGIN_TOP_PX}:shortest=1[v_centered_img]`);
 
@@ -230,9 +231,9 @@ export async function createSiOneImageVideo(input: CreateSiOneImageVideoInput = 
       const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
       const videoFilters = captionPreset.showBackgroundBox
         ? (() => {
-            const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
-            const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
-            const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
+            const subtitleBoxHeight = Math.floor(CANVAS_H / 3);
+            const boxY = CANVAS_H - subtitleBoxHeight - SUBTITLE_MARGIN_BOTTOM_PX;
+            const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SUBTITLE_BOX_OPACITY}:t=fill`;
             return `${drawboxFilter},${subFilter}`;
           })()
         : subFilter;

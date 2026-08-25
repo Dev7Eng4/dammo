@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 
 export const CAPTION_FONT_SIZE_WITH_BOX = 60;
@@ -48,7 +51,7 @@ export interface CaptionStylePreset {
   showBackgroundBox: boolean;
   outlinePx: number;
   shadowPx: number;
-  /** ASS Spacing (extra px between characters). Defaults to SI_SUBTITLE_CHAR_SPACING. */
+  /** ASS Spacing (extra px between characters). Defaults to SUBTITLE_CHAR_SPACING. */
   charSpacing?: number;
   assLayout?: CaptionAssLayout;
   glowPrimaryColor?: string;
@@ -312,4 +315,27 @@ export function assertValidCaptionStyleKey(key: string | undefined, required = f
 
 export function getCaptionStylePreset(key?: string | null): CaptionStylePreset {
   return CAPTION_STYLE_PRESETS[resolveCaptionStyleKey(key)];
+}
+
+export interface CaptionFontAssets {
+  fontPath: string;
+  fontDir: string;
+}
+
+export function resolveCaptionFont(captionStyleKey?: CaptionStyleKey | string | null): CaptionFontAssets {
+  const preset = getCaptionStylePreset(captionStyleKey);
+  const fontPath = path.join(paths.reupSiAssetsDir, preset.fontRelPath);
+
+  if (!fs.existsSync(fontPath)) {
+    throw new AppError(
+      `Missing caption font for style "${preset.key}" in ${paths.reupSiAssetsDir}: ${preset.fontRelPath}`,
+      500,
+      'SI_ASSETS_MISSING',
+    );
+  }
+
+  return {
+    fontPath,
+    fontDir: path.dirname(fontPath),
+  };
 }

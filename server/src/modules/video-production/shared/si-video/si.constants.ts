@@ -1,7 +1,4 @@
-/** Canvas + SI assemble pipeline. */
-export const SI_CANVAS_W = 1280;
-export const SI_CANVAS_H = 720;
-export const SI_FPS = 30;
+import { CANVAS_W } from '../render-core/canvas.constants.js';
 
 /** @deprecated Import from `../stock-background` instead. */
 export {
@@ -42,8 +39,6 @@ export const SI_CENTER_IMAGE_AUDIO_BAR_OFFSET_X_PX = 100;
 export const SI_MULTI_IMAGE_DIRNAME = 'images';
 /** Thời lượng mỗi ảnh trong slideshow center (giây). */
 export const SI_MULTI_IMAGE_DURATION_SEC = 30;
-/** Basename video slideshow tạm (không kèm extension). */
-export const SI_MULTI_IMAGE_SLIDESHOW_BASENAME = 'center_slideshow';
 
 /** Max celebrity images used for SI center slideshow. */
 export const SI_CELEBRITY_MAX_IMAGES = 5;
@@ -58,41 +53,15 @@ export const SI_CELEBRITY_ZOOM_MAX = 1.12;
 export const SI_CELEBRITY_FOCAL_JITTER = 0.12;
 /** Extra shrink so cutout can pan inside the box (1 = flush to box edge). */
 export const SI_CELEBRITY_FIT_SCALE_MIN = 0.88;
-/** Basename for alpha-preserving celebrity center slideshow (qtrle .mov). */
-export const SI_CELEBRITY_SLIDESHOW_BASENAME = 'center_slideshow_celebrity';
 
 /** Kích thước render slideshow = đúng khung center image (ratio 0.65, 16:9, chẵn). */
-export const SI_CENTER_VIDEO_W = Math.round(SI_CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
+export const SI_CENTER_VIDEO_W = Math.round(CANVAS_W * SI_CENTER_IMAGE_WIDTH_RATIO);
 export const SI_CENTER_VIDEO_H = Math.round((SI_CENTER_VIDEO_W * 9) / 16);
 export const SI_NOISE_ALPHA = 0.6;
 
 export const SI_STOCK_OVERLAY_PTS_MULT = 3;
 export const SI_STOCK_OVERLAY_ZOOM = 1.4;
 export const SI_STOCK_OVERLAY_OPACITY = 0.5;
-
-export const SI_SUBTITLE_FONT_SIZE = 90;
-export const SI_SUBTITLE_LINE_GAP_PX = 0;
-export const SI_SUBTITLE_PADDING_HORIZONTAL = 0;
-export const SI_SUBTITLE_MARGIN_BOTTOM_PX = 0;
-/** Margin bottom cho caption không có nền xám (px). */
-export const SI_SUBTITLE_NO_BACKGROUND_MARGIN_BOTTOM_PX = 40;
-export const SI_SUBTITLE_BOX_OPACITY = 0.5;
-export const SI_SUBTITLE_CHAR_SPACING = 0;
-export const SI_SUBTITLE_FONT_ASS_NAME = 'Noto Sans JP Black';
-
-/** Top-left disclaimer overlay (first N seconds of assembled video). */
-export const SI_DISCLAIMER_DURATION_SEC = 5;
-export const SI_DISCLAIMER_FONT_SIZE = 20;
-export const SI_DISCLAIMER_MARGIN_LEFT_PX = 20;
-export const SI_DISCLAIMER_MARGIN_TOP_PX = 20;
-export const SI_DISCLAIMER_OPACITY = 0.9;
-/** #D9D9D9 @ SI_DISCLAIMER_OPACITY → ASS &HAABBGGRR (alpha = round((1-opacity)*255)=0x19). */
-export const SI_DISCLAIMER_PRIMARY_COLOR = '&H19D9D9D9';
-export const SI_DISCLAIMER_TEXT =
-  '【免責事項】\\N本動画の情報は一般知識の共有であり、医学的アドバイスではありません。健康状態や摂取については、必ず医師にご相談ください。';
-
-export const SI_AUDIO_SPEED_MIN = 0.95;
-export const SI_AUDIO_SPEED_MAX = 0.98;
 
 export const SI_AUDIO_BAR_WIDTH_PX = 360;
 export const SI_AUDIO_BAR_MARGIN_LEFT_PX = 25;
@@ -120,11 +89,6 @@ export const SI_SUBSCRIBE_COLORKEY = SI_PREPARE_COLORKEY_GREEN;
 export const SI_SUBSCRIBE_COLORKEY_SIMILARITY = SI_PREPARE_COLORKEY_GREEN_SIMILARITY;
 export const SI_SUBSCRIBE_COLORKEY_BLEND = SI_PREPARE_COLORKEY_GREEN_BLEND;
 
-export const CHANNEL_AVATAR_SIZE_PX = 100;
-export const CHANNEL_AVATAR_MARGIN_TOP_PX = 30;
-export const CHANNEL_AVATAR_MARGIN_RIGHT_PX = 30;
-export const CHANNEL_AVATAR_BASENAME = 'avatar';
-
 /** Random edge inset for movable overlays (subscribe / audioBar / smallVideo). */
 export const SI_OVERLAY_EDGE_MARGIN_MIN_PX = 15;
 export const SI_OVERLAY_EDGE_MARGIN_MAX_PX = 55;
@@ -134,36 +98,10 @@ export const SI_OVERLAY_MID_Y_JITTER_MAX_PX = 100;
 /** Extra upward shift for mid-slot overlays (audioBar / subscribe / smallVideo). */
 export const SI_OVERLAY_MID_UPWARD_SHIFT_PX = 100;
 
-export const SI_OUTPUT_VIDEO_BASENAME = 'video';
-
-/** Channel overlay file value: pick a random asset at assemble time. */
-export const SI_OVERLAY_AUTO_SENTINEL = '__auto__';
-
-/** Channel small-video value: pick a random clip from a small-video group at assemble time. */
-export const SI_SMALL_VIDEO_GROUP_PREFIX = 'group:';
-
-export function parseSmallVideoGroupId(value: string): string | null {
-  if (!value.startsWith(SI_SMALL_VIDEO_GROUP_PREFIX)) return null;
-  const id = value.slice(SI_SMALL_VIDEO_GROUP_PREFIX.length).trim();
-  return id || null;
-}
-
-export function encodeSmallVideoGroupSelection(groupId: string): string {
-  return `${SI_SMALL_VIDEO_GROUP_PREFIX}${groupId}`;
-}
-
-export function resolveSiSubtitleMarginBottomPx(showBackgroundBox: boolean): number {
-  return showBackgroundBox ? SI_SUBTITLE_MARGIN_BOTTOM_PX : SI_SUBTITLE_NO_BACKGROUND_MARGIN_BOTTOM_PX;
-}
-
-export function resolveRandomSiAudioSpeed(): number {
-  return SI_AUDIO_SPEED_MIN + Math.random() * (SI_AUDIO_SPEED_MAX - SI_AUDIO_SPEED_MIN);
-}
-
 /** Even px width/height for center image overlay (ratio jittered per assemble). */
 export function resolveRandomSiCenterImageSize(): { width: number; height: number } {
   const ratio = SI_CENTER_IMAGE_WIDTH_RATIO_MIN + Math.random() * (SI_CENTER_IMAGE_WIDTH_RATIO_MAX - SI_CENTER_IMAGE_WIDTH_RATIO_MIN);
-  const width = Math.round((SI_CANVAS_W * ratio) / 2) * 2;
+  const width = Math.round((CANVAS_W * ratio) / 2) * 2;
   const height = Math.round((width * 9) / 16 / 2) * 2;
   return { width, height };
 }

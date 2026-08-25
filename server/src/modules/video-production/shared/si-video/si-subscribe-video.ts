@@ -2,13 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import type { SiSmallVideoClip } from './si-small-video.js';
+import type { SmallVideoClip } from '../render-core/small-video.js';
 import { getPreparedColorAssetPath, getPreferredPrepareKeyColor, prepareColorAsset } from './si-prepare-color-cache.js';
-import { SI_OVERLAY_AUTO_SENTINEL } from './si.constants.js';
+import { OVERLAY_AUTO_SENTINEL } from '../render-core/canvas.constants.js';
 
 const SUBSCRIBE_VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
 
-export interface SiSubscribeClipResolved extends SiSmallVideoClip {
+export interface SiSubscribeClipResolved extends SmallVideoClip {
   /** True when using a pre-keyed cached file (no runtime colorkey needed). */
   preKeyed: boolean;
 }
@@ -49,7 +49,7 @@ export async function selectRandomSiSubscribeClip(): Promise<SiSubscribeClipReso
 
 export async function resolveSiSubscribeClip(filename?: string): Promise<SiSubscribeClipResolved> {
   const selected = filename?.trim();
-  if (!selected || selected === SI_OVERLAY_AUTO_SENTINEL) {
+  if (!selected || selected === OVERLAY_AUTO_SENTINEL) {
     return selectRandomSiSubscribeClip();
   }
 

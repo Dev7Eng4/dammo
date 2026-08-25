@@ -12,7 +12,7 @@ const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.resolve(TEST_DIR, '../../../../output');
 
 /** Edit then run: npm run test:stock-background */
-const STOCK_VIDEO_PATH = 'D:/dammo/server/data/sources/0056ce7a-d147-4e71-b2d0-06a4a96f52bd/videos/00v5IZOo-8Y/video.mp4';
+const STOCK_VIDEO_PATH = 'D:/dammo/server/data/sources/05f3f9cf-ef4f-46b5-9318-775b4dce562f/videos/hB-8Dmwgc90/video.mp4';
 const TARGET_DURATION_SEC = 5400;
 
 export interface PrepareStockBackgroundFromLocalInput {

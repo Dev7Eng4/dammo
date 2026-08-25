@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
-import { findFinalVideoMp4 } from '../video-production/shared/si-video/video-output-file.js';
+import { findFinalVideoMp4 } from '../video-production/shared/render-core/video-output-file.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { findThumbnailPath } from './upload-assets.js';

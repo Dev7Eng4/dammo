@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
+import { runFfmpegFilterComplex, type FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { formatClockDuration, getAudioDurationSeconds } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import {
   buildH264VideoEncoderArgs,
@@ -12,23 +12,25 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { assertRequiredSiAssets } from './si-assets.js';
 import {
+  CANVAS_H,
+  CANVAS_W,
+  FPS,
+  SUBTITLE_BOX_OPACITY,
+  SUBTITLE_MARGIN_BOTTOM_PX,
+  resolveRandomAudioSpeed,
+} from '../render-core/canvas.constants.js';
+import { OUTPUT_VIDEO_BASENAME } from '../render-core/output-artifacts.constants.js';
+import {
   SI_AUDIO_BAR_COLORKEY,
   SI_AUDIO_BAR_COLORKEY_BLEND,
   SI_AUDIO_BAR_COLORKEY_SIMILARITY,
-  SI_CANVAS_H,
-  SI_CANVAS_W,
   SI_CENTER_IMAGE_MARGIN_TOP_PX,
   SI_CENTER_IMAGE_OPACITY,
   SI_CELEBRITY_IMAGE_OPACITY,
-  SI_FPS,
   // SI_NOISE_ALPHA, // TODO: re-enable SI noise
-  SI_OUTPUT_VIDEO_BASENAME,
   SI_SUBSCRIBE_COLORKEY,
   SI_SUBSCRIBE_COLORKEY_BLEND,
   SI_SUBSCRIBE_COLORKEY_SIMILARITY,
-  SI_SUBTITLE_BOX_OPACITY,
-  SI_SUBTITLE_MARGIN_BOTTOM_PX,
-  resolveRandomSiAudioSpeed,
   resolveRandomSiCenterImageSize,
   resolveSiCenterImageOverlayX,
 } from './si.constants.js';
@@ -39,14 +41,14 @@ import {
   prepareStockBackground,
   stockNormalizeFilterChain,
 } from '../stock-background/index.js';
-import { runFfmpegFilterComplex } from './si-ffmpeg.js';
 import { resolveSiAudioBarClip, appendSiAudioBarScaleFilters } from './si-audio-bar.js';
-import { resolveSiSmallVideoClip, appendSiSmallVideoScaleFilters } from './si-small-video.js';
+import { resolveSmallVideoClip } from '../render-core/small-video.js';
+import { appendSiSmallVideoScaleFilters } from './si-small-video.js';
 import { resolveSiSubscribeClip } from './si-subscribe-video.js';
 import {
   appendChannelAvatarOverlayFilters,
   ensurePrebakedChannelAvatar,
-} from './channel-avatar-overlay.js';
+} from '../render-core/channel-avatar-overlay.js';
 import {
   assignSiOverlayLayout,
   type SiMovableOverlayKind,
@@ -57,14 +59,14 @@ import {
   cleanupSiMultiImageArtifacts,
 } from './si-multi-image.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
-import type { CaptionStyleKey } from './caption-styles.js';
-import { getCaptionStylePreset, resolveCaptionStyleKey } from './caption-styles.js';
+import type { CaptionStyleKey } from '../render-core/caption-styles.js';
+import { getCaptionStylePreset, resolveCaptionStyleKey } from '../render-core/caption-styles.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
   resolveJapaneseSubtitleStyle,
   scaleSrtTimestamps,
-} from './si-subtitle.js';
+} from '../render-core/subtitle.js';
 
 export interface AssembleReupSiVideoInput {
   workDir: string;
@@ -103,7 +105,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     centerImagePath,
     centerImagePaths,
     centerSlideshowVariant = 'multi',
-    outputBasename = SI_OUTPUT_VIDEO_BASENAME,
+    outputBasename = OUTPUT_VIDEO_BASENAME,
     showAudioBar = false,
     audioBarFile,
     showSmallVideo = false,
@@ -150,13 +152,13 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   }
 
   const assets = assertRequiredSiAssets(captionStyleKey);
-  const speed = resolveRandomSiAudioSpeed();
+  const speed = resolveRandomAudioSpeed();
   const centerImageSize =
     useMultiImage || centerImagePath ? resolveRandomSiCenterImageSize() : null;
   if (centerImageSize) {
     log(
       `[reup-si] Center image size: ${centerImageSize.width}x${centerImageSize.height} ` +
-        `(ratio ${(centerImageSize.width / SI_CANVAS_W).toFixed(3)})`,
+        `(ratio ${(centerImageSize.width / CANVAS_W).toFixed(3)})`,
     );
   }
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
@@ -205,7 +207,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
   let smallVideoPath: string | undefined;
   if (showSmallVideo || smallVideoFile?.trim()) {
-    const smallVideoClip = await resolveSiSmallVideoClip(smallVideoFile);
+    const smallVideoClip = await resolveSmallVideoClip(smallVideoFile);
     smallVideoPath = smallVideoClip.path;
     log(`[reup-si] Small video clip: ${smallVideoClip.filename}`);
   }
@@ -316,9 +318,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       // if (!isLocalStock) {
       //   prebakedSiNoise = await getPrebakedNoiseMov(
       //     assets.noisePath,
-      //     SI_CANVAS_W,
-      //     SI_CANVAS_H,
-      //     SI_FPS,
+      //     CANVAS_W,
+      //     CANVAS_H,
+      //     FPS,
       //     SI_NOISE_ALPHA,
       //   );
       //   siNoiseInputPath = prebakedSiNoise ?? assets.noisePath;
@@ -345,7 +347,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           '-loop',
           '1',
           '-framerate',
-          String(SI_FPS),
+          String(FPS),
           '-i',
           resizedCenterImagePath,
         );
@@ -378,7 +380,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
           '-loop',
           '1',
           '-framerate',
-          String(SI_FPS),
+          String(FPS),
           '-i',
           preparedAvatarPath,
         );
@@ -412,7 +414,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
         } else {
           const targetW = centerImageSize!.width;
           filterParts.push(
-            `[${centerImgIndex}:v]fps=${SI_FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
+            `[${centerImgIndex}:v]fps=${FPS},scale=${targetW}:-1,format=rgba,colorchannelmixer=aa=${SI_CENTER_IMAGE_OPACITY}[center_img]`,
           );
         }
         filterParts.push(
@@ -478,7 +480,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       //     filterParts.push(`[${siNoiseIndex}:v]null[si_noise]`);
       //   } else {
       //     filterParts.push(
-      //       `[${siNoiseIndex}:v]fps=${SI_FPS},scale=${SI_CANVAS_W}:${SI_CANVAS_H}:flags=fast_bilinear,format=yuva420p,colorkey=0x000000:0.1:0.1,colorchannelmixer=aa=${SI_NOISE_ALPHA}[si_noise]`,
+      //       `[${siNoiseIndex}:v]fps=${FPS},scale=${CANVAS_W}:${CANVAS_H}:flags=fast_bilinear,format=yuva420p,colorkey=0x000000:0.1:0.1,colorchannelmixer=aa=${SI_NOISE_ALPHA}[si_noise]`,
       //     );
       //   }
       //   filterParts.push(`[${currentVLabel}][si_noise]overlay=0:0:shortest=1[v_si_noised]`);
@@ -503,9 +505,9 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
       const videoFilters = captionPreset.showBackgroundBox
         ? (() => {
-            const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
-            const boxY = SI_CANVAS_H - subtitleBoxHeight - SI_SUBTITLE_MARGIN_BOTTOM_PX;
-            const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SI_SUBTITLE_BOX_OPACITY}:t=fill`;
+            const subtitleBoxHeight = Math.floor(CANVAS_H / 3);
+            const boxY = CANVAS_H - subtitleBoxHeight - SUBTITLE_MARGIN_BOTTOM_PX;
+            const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SUBTITLE_BOX_OPACITY}:t=fill`;
             return `${drawboxFilter},${subFilter}`;
           })()
         : subFilter;

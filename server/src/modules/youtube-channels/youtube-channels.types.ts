@@ -1,6 +1,6 @@
 import type { ChannelLanguage } from './channel-language.js';
 export type { ChannelLanguage } from './channel-language.js';
-import type { CaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
+import type { CaptionStyleKey } from '../video-production/shared/render-core/caption-styles.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 
 export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
@@ -26,7 +26,7 @@ export type ReupAudioVideoType = 'si' | 'ai';
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image' | 'celebrity';
 
-export type { CaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
+export type { CaptionStyleKey } from '../video-production/shared/render-core/caption-styles.js';
 
 /** Max scene duration (seconds) per density level for AI / SI multi_image prompts. */
 export interface AiSceneDensityMaxSec {

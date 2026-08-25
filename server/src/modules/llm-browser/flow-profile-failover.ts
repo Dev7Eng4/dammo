@@ -16,6 +16,8 @@ import { flowBrowserService } from './flow-browser.service.js';
 
 export interface FlowProfileFailoverOptions {
   startProfileId?: string;
+  /** Collects every main profile ID used during failover (for batch cleanup). */
+  openedProfileIds?: Set<string>;
   onProfileSwitch?: (from: ChromeProfile, to: ChromeProfile, remainingCount: number) => void;
 }
 
@@ -105,6 +107,8 @@ export async function generateImagesViaToolWithFailover(
       };
     }
 
+    failoverOpts?.openedProfileIds?.add(profile.id);
+
     console.log(
       `[flow-quota] using profile ${profile.name} (${profile.id}), ${pending.length} image(s) remaining`,
     );
@@ -169,6 +173,8 @@ export async function generateImageWithFailover(
   const startedAt = Date.now();
 
   while (true) {
+    failoverOpts?.openedProfileIds?.add(profile.id);
+
     console.log(`[flow-quota] using profile ${profile.name} (${profile.id}) for single image`);
 
     try {

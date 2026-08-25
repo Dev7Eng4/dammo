@@ -1,7 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { BrowserContext, Page } from 'playwright';
-import { buildChromeLaunchOptions } from '../../infrastructure/chrome/browser-launch.config.js';
+import type { BrowserContext, CDPSession, Page } from 'playwright';
+import {
+  buildChromeLaunchOptions,
+  CHROME_BACKGROUND_USE_OFFSCREEN,
+} from '../../infrastructure/chrome/browser-launch.config.js';
 import { applyStealthInit, stealthChromium } from '../../infrastructure/chrome/stealth-init.js';
 import { clearLlmBrowserSessionsForProfile } from '../../infrastructure/llm-browser/llm-browser.session.js';
 import { env } from '../../config/env.js';
@@ -59,6 +62,50 @@ function isProfileBackground(profileId: string): boolean {
   return profileBackgroundMode.get(profileId) ?? false;
 }
 
+async function moveChromeWindowOffscreen(context: BrowserContext, page: Page): Promise<void> {
+  let client: CDPSession | undefined;
+  try {
+    client = await context.newCDPSession(page);
+    const { windowId } = await client.send('Browser.getWindowForTarget');
+    // Bounds cannot be changed while the window is minimized or maximized.
+    await client.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal' } });
+    await client.send('Browser.setWindowBounds', {
+      windowId,
+      bounds: { left: -32_000, top: -32_000, width: 1920, height: 1080 },
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.warn(`[chrome-profile] failed to move window offscreen: ${detail}`);
+  } finally {
+    await client?.detach().catch(() => undefined);
+  }
+}
+
+async function minimizeChromeWindow(context: BrowserContext, page: Page): Promise<void> {
+  let client: CDPSession | undefined;
+  try {
+    client = await context.newCDPSession(page);
+    const { windowId } = await client.send('Browser.getWindowForTarget');
+    await client.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'minimized' } });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.warn(`[chrome-profile] failed to minimize window: ${detail}`);
+  } finally {
+    await client?.detach().catch(() => undefined);
+  }
+}
+
+async function keepProfileInBackground(profileId: string, page: Page): Promise<void> {
+  if (!isProfileBackground(profileId)) return;
+  const context = activeContexts.get(profileId);
+  if (!context) return;
+  if (CHROME_BACKGROUND_USE_OFFSCREEN) {
+    await moveChromeWindowOffscreen(context, page);
+  } else {
+    await minimizeChromeWindow(context, page);
+  }
+}
+
 export interface OpenChromeProfileOptions {
   startUrl?: string;
   background?: boolean;
@@ -90,6 +137,9 @@ async function logChromeLaunch(
   console.log('[chrome-profile] launched', {
     headless,
     background,
+    ...(background
+      ? { backgroundMode: CHROME_BACKGROUND_USE_OFFSCREEN ? 'offscreen' : 'minimized' }
+      : {}),
     chrome: env.chromeExecutablePath || `channel:${env.chromeChannel}`,
     userAgent,
     userDataDir,
@@ -115,16 +165,24 @@ export async function getChromeProfilePage(profileId: string): Promise<Page> {
   if (existing) {
     if (bringToFront) {
       await existing.bringToFront();
+    } else {
+      await keepProfileInBackground(profileId, existing);
     }
     return existing;
   }
 
   try {
-    return await context.waitForEvent('page', { timeout: 5_000 });
+    const page = await context.waitForEvent('page', { timeout: 5_000 });
+    if (!bringToFront) {
+      await keepProfileInBackground(profileId, page);
+    }
+    return page;
   } catch {
     const page = await context.newPage();
     if (bringToFront) {
       await page.bringToFront();
+    } else {
+      await keepProfileInBackground(profileId, page);
     }
     return page;
   }
@@ -139,6 +197,8 @@ export async function createChromeProfilePage(profileId: string): Promise<Page> 
   const page = await context.newPage();
   if (!isProfileBackground(profileId)) {
     await page.bringToFront();
+  } else {
+    await keepProfileInBackground(profileId, page);
   }
   return page;
 }
@@ -196,6 +256,8 @@ async function navigateToStartPage(
 
   if (!isProfileBackground(profileId)) {
     await page.bringToFront();
+  } else {
+    await keepProfileInBackground(profileId, page);
   }
 }
 
@@ -204,6 +266,13 @@ async function bringChromeProfileToFront(profileId: string): Promise<void> {
   if (!context) return;
   const page = await waitForInitialPage(context);
   await page.bringToFront();
+}
+
+async function sendChromeProfileToBackground(profileId: string): Promise<void> {
+  const context = activeContexts.get(profileId);
+  if (!context) return;
+  const page = await waitForInitialPage(context);
+  await keepProfileInBackground(profileId, page);
 }
 
 async function launchChromeContext(
@@ -256,6 +325,8 @@ export async function openChromeProfile(
         await navigateToStartPage(existing, options.startUrl, profileId);
       } else if (!background) {
         await bringChromeProfileToFront(profileId);
+      } else {
+        await sendChromeProfileToBackground(profileId);
       }
       return;
     }

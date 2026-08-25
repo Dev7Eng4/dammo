@@ -2,4 +2,4 @@
 # Dòng thứ 2 (tùy chọn): mã ngôn ngữ transcript — en | ko | ja | es (mặc định: ja)
 # https://www.youtube.com/watch?v=AmLa17rszY4
 
-https://www.youtube.com/watch?v=1MyS-YnclC0
+https://www.youtube.com/watch?v=1w-fw-5O2Zw

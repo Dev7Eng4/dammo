@@ -112,7 +112,6 @@ async function main() {
 
   console.log('\nDone:');
   console.log(`  ${result.thumbnailPath}`);
-  console.log(`\nPrompt used:\n${result.promptUsed}`);
 }
 
 main().catch(err => {

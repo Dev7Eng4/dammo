@@ -119,6 +119,8 @@ export interface FlowGenerateImagesViaToolOptions {
   outputDir: string;
   timeoutMs?: number;
   debugScreenshotPath?: string;
+  /** Called after each image is downloaded and saved to disk. */
+  onImageSaved?: (saved: { name: string; outputPath: string }) => void | Promise<void>;
 }
 
 export interface MetaGenerateMediaOptions {

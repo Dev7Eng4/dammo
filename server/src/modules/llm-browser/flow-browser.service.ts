@@ -177,6 +177,7 @@ export class FlowBrowserService {
           const asset = await downloadAndSaveFlowImage(page, match.imageUrl, outputPath);
           console.log(`[flow-tool] saved image → ${outputPath}`);
           mediaAssets.push(asset);
+          await options.onImageSaved?.({ name: match.name, outputPath });
         },
       });
       // Prevent unhandledRejection if quota fails during submitMavidEditorPrompt delay

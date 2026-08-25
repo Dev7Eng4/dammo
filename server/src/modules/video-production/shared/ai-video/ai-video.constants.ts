@@ -1,3 +1,5 @@
+import { env } from '../../../../config/env.js';
+
 /** Subdirectory under workDir for AI slideshow source images. */
 export const AI_SLIDES_DIRNAME = 'images';
 
@@ -21,9 +23,13 @@ export const AI_SMALL_VIDEO_OVERLAY_Y = 0;
 /**
  * Ken Burns internal upscale for AI slideshow. zoompan rounds crop to integer
  * pixels; values below 4 produce visible hold-and-jump on slow pans/zooms.
- * 6 gives smoother motion on long AI scenes (up to ~60s) at higher RAM/CPU cost.
+ * 5 keeps the working canvas above the safe 4x floor while processing about
+ * 31% fewer pixels than 6x. Override with AI_SLIDESHOW_TEMP_SCALE_FACTOR.
  */
-export const AI_SLIDESHOW_TEMP_SCALE_FACTOR = 6;
+export const AI_SLIDESHOW_TEMP_SCALE_FACTOR = Math.min(
+  8,
+  Math.max(4, Math.round(env.aiSlideshowTempScaleFactor ?? 5)),
+);
 
 /** Target avg crop travel on the supersampled canvas (mitigates zoompan #4298). */
 export const AI_KEN_BURNS_MIN_PX_PER_FRAME = 1.75;

@@ -1,29 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { AI_SLIDESHOW_RAW_BASENAME } from '../ai-video/ai-video.constants.js';
-import { SI_MULTI_IMAGE_SLIDESHOW_BASENAME, SI_OUTPUT_VIDEO_BASENAME } from './si.constants.js';
+import {
+  INTERMEDIATE_MP4_BASENAMES,
+  INTERMEDIATE_MP4_PREFIXES,
+  OUTPUT_VIDEO_BASENAME,
+} from './output-artifacts.constants.js';
 
 /** Max basename length (without .mp4) to stay within Windows path limits. */
 const MAX_BASENAME_LENGTH = 140;
 
-/**
- * Intermediate / artifact mp4 basenames (no extension) that must not be treated
- * as the final uploadable video when scanning a video folder.
- */
-const INTERMEDIATE_MP4_BASENAMES = new Set([
-  AI_SLIDESHOW_RAW_BASENAME,
-  SI_MULTI_IMAGE_SLIDESHOW_BASENAME,
-  'stock_processed',
-  'stock_local_cycle',
-  'stock_raw',
-]);
-
-const INTERMEDIATE_MP4_PREFIXES = ['stock_', 'clip_', 'slideshow_'] as const;
-
 /** Sanitize a metadata title into a safe mp4 basename (no extension). */
 export function sanitizeVideoOutputBasename(title: string): string {
   const trimmed = title.trim();
-  if (!trimmed) return SI_OUTPUT_VIDEO_BASENAME;
+  if (!trimmed) return OUTPUT_VIDEO_BASENAME;
 
   let safe = trimmed
     .replace(/[\\/:*?"<>|]/g, '-')
@@ -33,13 +22,13 @@ export function sanitizeVideoOutputBasename(title: string): string {
     .trim()
     .replace(/^[.\s]+|[.\s]+$/g, '');
 
-  if (!safe) return SI_OUTPUT_VIDEO_BASENAME;
+  if (!safe) return OUTPUT_VIDEO_BASENAME;
 
   if (safe.length > MAX_BASENAME_LENGTH) {
     safe = safe.slice(0, MAX_BASENAME_LENGTH).trim().replace(/[.\s-]+$/g, '');
   }
 
-  return safe || SI_OUTPUT_VIDEO_BASENAME;
+  return safe || OUTPUT_VIDEO_BASENAME;
 }
 
 function isIntermediateMp4Basename(basenameWithoutExt: string): boolean {

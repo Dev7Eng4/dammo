@@ -4,9 +4,9 @@ import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { AppError } from '../../../../shared/http/errors.js';
+import { FPS } from '../render-core/canvas.constants.js';
 import {
   SI_AUDIO_BAR_WIDTH_PX,
-  SI_FPS,
   SI_PREPARE_COLORKEY_BLACK,
   SI_PREPARE_COLORKEY_BLACK_BLEND,
   SI_PREPARE_COLORKEY_BLACK_SIMILARITY,
@@ -71,7 +71,7 @@ async function buildCacheKey(
     params.colorkey,
     params.similarity,
     params.blend,
-    SI_FPS,
+    FPS,
     kind === 'audioBar' ? SI_AUDIO_BAR_WIDTH_PX : `${SI_SMALL_VIDEO_W}x${SI_SMALL_VIDEO_H}`,
     'sized-v2',
   ].join('|');
@@ -166,8 +166,8 @@ async function preprocessToAlphaMov(
   // Bake at final overlay size so merge can skip scale + colorkey.
   const sized =
     kind === 'audioBar'
-      ? `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1:flags=lanczos`
-      : `fps=${SI_FPS},scale=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}`;
+      ? `fps=${FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1:flags=lanczos`
+      : `fps=${FPS},scale=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${SI_SMALL_VIDEO_W}:${SI_SMALL_VIDEO_H}`;
   const vf = `${sized},format=rgba,colorkey=${params.colorkey}:${params.similarity}:${params.blend}`;
   const tempPath = `${outputPath}.tmp.mov`;
   await runFfmpeg(

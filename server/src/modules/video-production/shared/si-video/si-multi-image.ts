@@ -5,15 +5,15 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import { pickAutoEffects } from '../slideshow/slideshow-presets.js';
 import { SS_CACHE_DIRNAME, SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
+import { FPS } from '../render-core/canvas.constants.js';
+import { SI_MULTI_IMAGE_SLIDESHOW_BASENAME } from '../render-core/output-artifacts.constants.js';
 import {
   SI_CENTER_VIDEO_H,
   SI_CENTER_VIDEO_W,
   SI_CELEBRITY_IMAGE_DURATION_SEC,
   SI_CELEBRITY_MAX_IMAGES,
-  SI_FPS,
   SI_MULTI_IMAGE_DIRNAME,
   SI_MULTI_IMAGE_DURATION_SEC,
-  SI_MULTI_IMAGE_SLIDESHOW_BASENAME,
 } from './si.constants.js';
 import {
   assembleSiCelebrityCenterSlideshow,
@@ -135,7 +135,7 @@ export async function buildSiCenterSlideshow(
     workDir,
     outputPath,
     onLog,
-    output: { width, height, fps: SI_FPS },
+    output: { width, height, fps: FPS },
   });
 
   return outputPath;

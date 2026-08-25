@@ -30,7 +30,7 @@ import { sourceCatalogAdapter } from '../video-production/adapters/source-catalo
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
-import { assertValidCaptionStyleKey } from '../video-production/shared/si-video/caption-styles.js';
+import { assertValidCaptionStyleKey } from '../video-production/shared/render-core/caption-styles.js';
 import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
@@ -40,7 +40,7 @@ import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
 import { channelAvatarsService } from './channel-avatars.service.js';
-import { parseSmallVideoGroupId, SI_OVERLAY_AUTO_SENTINEL } from '../video-production/shared/si-video/si.constants.js';
+import { parseSmallVideoGroupId, OVERLAY_AUTO_SENTINEL } from '../video-production/shared/render-core/canvas.constants.js';
 import { celebritiesService } from '../celebrities/celebrities.service.js';
 import { smallVideoGroupsService } from '../small-video-groups/small-video-groups.service.js';
 import type {
@@ -291,8 +291,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
       }
 
       const selectedAudioBar = input.audioBarFile?.trim();
-      if (selectedAudioBar === SI_OVERLAY_AUTO_SENTINEL) {
-        audioBarFile = SI_OVERLAY_AUTO_SENTINEL;
+      if (selectedAudioBar === OVERLAY_AUTO_SENTINEL) {
+        audioBarFile = OVERLAY_AUTO_SENTINEL;
         showAudioBar = true;
       } else if (selectedAudioBar) {
         assetsService.getAsset('audioBar', selectedAudioBar);
@@ -303,8 +303,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
       }
 
       const selectedSubscribe = input.subscribeFile?.trim();
-      if (selectedSubscribe === SI_OVERLAY_AUTO_SENTINEL) {
-        subscribeFile = SI_OVERLAY_AUTO_SENTINEL;
+      if (selectedSubscribe === OVERLAY_AUTO_SENTINEL) {
+        subscribeFile = OVERLAY_AUTO_SENTINEL;
         showSubscribe = true;
       } else if (selectedSubscribe) {
         assetsService.getAsset('subscribe', selectedSubscribe);
@@ -345,8 +345,8 @@ function validateChannelConfig(input: ChannelConfigInput): {
     }
 
     const selectedSmallVideo = input.smallVideoFile?.trim();
-    if (selectedSmallVideo === SI_OVERLAY_AUTO_SENTINEL) {
-      smallVideoFile = SI_OVERLAY_AUTO_SENTINEL;
+    if (selectedSmallVideo === OVERLAY_AUTO_SENTINEL) {
+      smallVideoFile = OVERLAY_AUTO_SENTINEL;
       showSmallVideo = true;
     } else if (selectedSmallVideo) {
       const groupId = parseSmallVideoGroupId(selectedSmallVideo);

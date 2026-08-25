@@ -43,6 +43,9 @@ interface FfmpegRunResult {
   stderr: string;
   /** True when the process was killed because it stopped producing progress. */
   stalled?: boolean;
+  elapsedMs: number;
+  mediaTimeSec: number;
+  lastProgress?: ParsedFfmpegProgressLine;
 }
 
 interface ParsedFfmpegProgressLine {
@@ -81,6 +84,33 @@ function parseDurationToSeconds(duration: string): number {
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
   }
   return 0;
+}
+
+function formatElapsedSeconds(milliseconds: number): string {
+  return `${(milliseconds / 1000).toFixed(1)}s`;
+}
+
+function emitFfmpegSummary(
+  options: RunFfmpegOptions | undefined,
+  result: FfmpegRunResult,
+  encoder: string,
+): void {
+  const label = options?.label ? ` ${options.label}` : '';
+  const durationSec = options?.expectedDurationSec ?? result.mediaTimeSec;
+  const averageSpeed = result.elapsedMs > 0 && durationSec > 0
+    ? durationSec / (result.elapsedMs / 1000)
+    : 0;
+  const parts = [
+    `[ffmpeg]${label} completed`,
+    `wall=${formatElapsedSeconds(result.elapsedMs)}`,
+    durationSec > 0 ? `media=${durationSec.toFixed(1)}s` : '',
+    averageSpeed > 0 ? `avg-speed=${averageSpeed.toFixed(2)}x` : '',
+    result.lastProgress?.fps !== undefined ? `last-fps=${result.lastProgress.fps}` : '',
+    `encoder=${encoder}`,
+  ].filter(Boolean);
+  const message = parts.join(' | ');
+  console.log(message);
+  options?.onLog?.(message);
 }
 
 function formatEta(seconds: number): string {
@@ -211,10 +241,13 @@ export function ensureFfmpegProgressLoggingArgs(args: string[]): string[] {
 
 function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<FfmpegRunResult> {
   return new Promise((resolve, reject) => {
+    const startedAt = performance.now();
     const proc = spawn(env.ffmpegPath, args);
     let durationSec = 0;
     let stderr = '';
     let stalled = false;
+    let mediaTimeSec = 0;
+    let lastProgress: ParsedFfmpegProgressLine | undefined;
     const logState = { lastLoggedProgress: -1, lastLoggedAt: 0 };
 
     const stallTimeoutMs = resolveFfmpegStallTimeoutMs(options);
@@ -254,6 +287,8 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
       const parsed = parseFfmpegProgressLine(text);
       const time = parsed?.time ?? text.match(/time=(\d+:\d+:\d+\.\d+)/)?.[1];
       if (!time) return;
+      mediaTimeSec = parseDurationToSeconds(time);
+      if (parsed) lastProgress = parsed;
 
       // Only real encode progress resets the stall watchdog.
       armStallTimer();
@@ -272,6 +307,9 @@ function spawnFfmpegOnce(args: string[], options?: RunFfmpegOptions): Promise<Ff
         code,
         stderr: stalled ? `${stderr}\nffmpeg stalled with no progress and was killed` : stderr,
         stalled,
+        elapsedMs: performance.now() - startedAt,
+        mediaTimeSec,
+        ...(lastProgress ? { lastProgress } : {}),
       });
     });
 
@@ -314,6 +352,7 @@ async function runFfmpegWithEncoderFallback(
 
   if (first.code === 0) {
     completeFfmpegProgress(effectiveOptions);
+    emitFfmpegSummary(effectiveOptions, first, encoder);
     return;
   }
 
@@ -339,6 +378,7 @@ async function runFfmpegWithEncoderFallback(
 
   if (second.code === 0) {
     completeFfmpegProgress(effectiveOptions);
+    emitFfmpegSummary(effectiveOptions, second, 'cpu-fallback');
     return;
   }
 

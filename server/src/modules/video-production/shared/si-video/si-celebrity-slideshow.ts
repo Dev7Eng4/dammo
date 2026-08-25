@@ -10,14 +10,14 @@ import {
   SS_CACHE_DIRNAME,
 } from '../slideshow/slideshow.constants.js';
 import { buildXfadeChain } from '../slideshow/slideshow-transitions.js';
+import { FPS } from '../render-core/canvas.constants.js';
+import { SI_CELEBRITY_SLIDESHOW_BASENAME } from '../render-core/output-artifacts.constants.js';
 import {
   SI_CELEBRITY_IMAGE_DURATION_SEC,
   SI_CELEBRITY_MAX_IMAGES,
-  SI_CELEBRITY_SLIDESHOW_BASENAME,
   SI_CELEBRITY_TRANSITION_DURATION_SEC,
   SI_CENTER_VIDEO_H,
   SI_CENTER_VIDEO_W,
-  SI_FPS,
   SI_MULTI_IMAGE_DIRNAME,
 } from './si.constants.js';
 
@@ -253,7 +253,7 @@ export async function assembleSiCelebrityCenterSlideshow(options: {
       imagePath,
       width,
       height,
-      fps: SI_FPS,
+      fps: FPS,
       durationSec,
       cacheDir,
       onLog: msg => onLog?.(`[celebrity-slideshow] [${index + 1}/${paths.length}] ${msg}`),

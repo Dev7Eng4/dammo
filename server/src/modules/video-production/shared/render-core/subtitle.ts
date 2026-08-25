@@ -7,19 +7,21 @@ import {
   resolveCaptionStyleKey,
 } from './caption-styles.js';
 import {
-  SI_CANVAS_H,
-  SI_CANVAS_W,
-  SI_DISCLAIMER_DURATION_SEC,
-  SI_DISCLAIMER_FONT_SIZE,
-  SI_DISCLAIMER_MARGIN_LEFT_PX,
-  SI_DISCLAIMER_MARGIN_TOP_PX,
-  SI_DISCLAIMER_PRIMARY_COLOR,
-  SI_DISCLAIMER_TEXT,
-  SI_SUBTITLE_CHAR_SPACING,
-  SI_SUBTITLE_LINE_GAP_PX,
-  SI_SUBTITLE_PADDING_HORIZONTAL,
-  resolveSiSubtitleMarginBottomPx,
-} from './si.constants.js';
+  CANVAS_H,
+  CANVAS_W,
+  DISCLAIMER_DURATION_SEC,
+  DISCLAIMER_FONT_SIZE,
+  DISCLAIMER_MARGIN_LEFT_PX,
+  DISCLAIMER_MARGIN_TOP_PX,
+  DISCLAIMER_PRIMARY_COLOR,
+  DISCLAIMER_TEXT,
+  SUBTITLE_CHAR_SPACING,
+  SUBTITLE_LINE_GAP_PX,
+  SUBTITLE_PADDING_HORIZONTAL,
+  resolveSubtitleMarginBottomPx,
+} from './canvas.constants.js';
+
+export { resolveSmallVideoClip, type SmallVideoClip } from './small-video.js';
 
 export interface ConvertSrtToAssOptions {
   captionStyleKey?: CaptionStyleKey | string | null;
@@ -77,14 +79,14 @@ function buildAssStyleLine(
   outlinePx: number,
   shadowPx: number,
   outlineColor = '&H00000000',
-  charSpacing = SI_SUBTITLE_CHAR_SPACING,
+  charSpacing = SUBTITLE_CHAR_SPACING,
 ): string {
-  return `Style: ${name},${fontName},${fontSize},${primaryColor},${primaryColor},${outlineColor},&H00000000,-1,0,0,0,100,100,${charSpacing},0,1,${outlinePx},${shadowPx},2,${SI_SUBTITLE_PADDING_HORIZONTAL},${SI_SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
+  return `Style: ${name},${fontName},${fontSize},${primaryColor},${primaryColor},${outlineColor},&H00000000,-1,0,0,0,100,100,${charSpacing},0,1,${outlinePx},${shadowPx},2,${SUBTITLE_PADDING_HORIZONTAL},${SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
 }
 
 /** Top-left disclaimer style (Alignment 7). */
 function buildDisclaimerAssStyleLine(fontName: string): string {
-  return `Style: Disclaimer,${fontName},${SI_DISCLAIMER_FONT_SIZE},${SI_DISCLAIMER_PRIMARY_COLOR},${SI_DISCLAIMER_PRIMARY_COLOR},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,${SI_DISCLAIMER_MARGIN_LEFT_PX},0,${SI_DISCLAIMER_MARGIN_TOP_PX},1\r`;
+  return `Style: Disclaimer,${fontName},${DISCLAIMER_FONT_SIZE},${DISCLAIMER_PRIMARY_COLOR},${DISCLAIMER_PRIMARY_COLOR},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,${DISCLAIMER_MARGIN_LEFT_PX},0,${DISCLAIMER_MARGIN_TOP_PX},1\r`;
 }
 
 function formatAssCentiseconds(totalSec: number): string {
@@ -107,12 +109,12 @@ export function escapeDisclaimerAssText(text: string): string {
 
 function buildDisclaimerAssEvent(text: string): string {
   const start = formatAssCentiseconds(0);
-  const end = formatAssCentiseconds(SI_DISCLAIMER_DURATION_SEC);
+  const end = formatAssCentiseconds(DISCLAIMER_DURATION_SEC);
   return `Dialogue: 0,${start},${end},Disclaimer,,0,0,0,,${escapeDisclaimerAssText(text)}\n`;
 }
 
 function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStylePreset): string {
-  const charSpacing = preset.charSpacing ?? SI_SUBTITLE_CHAR_SPACING;
+  const charSpacing = preset.charSpacing ?? SUBTITLE_CHAR_SPACING;
 
   if (preset.assLayout === 'glow_dual') {
     const glowColor = preset.glowPrimaryColor ?? '&H00FF6600';
@@ -168,18 +170,18 @@ export function convertSrtToAss(
   const fontExists = fontFile ? fs.existsSync(fontFile) : false;
   const fontName = fontExists ? preset.fontAssName : 'Arial';
   const fontSize = preset.fontSize;
-  const disclaimerText = options.disclaimerText?.trim() || SI_DISCLAIMER_TEXT;
+  const disclaimerText = options.disclaimerText?.trim() || DISCLAIMER_TEXT;
 
-  const subtitleBoxHeight = Math.floor(SI_CANVAS_H / 3);
-  const marginBottomPx = resolveSiSubtitleMarginBottomPx(preset.showBackgroundBox);
+  const subtitleBoxHeight = Math.floor(CANVAS_H / 3);
+  const marginBottomPx = resolveSubtitleMarginBottomPx(preset.showBackgroundBox);
   const boxMidY = preset.showBackgroundBox
-    ? Math.round(SI_CANVAS_H - marginBottomPx - subtitleBoxHeight / 2)
-    : Math.round(SI_CANVAS_H - marginBottomPx - fontSize / 2);
+    ? Math.round(CANVAS_H - marginBottomPx - subtitleBoxHeight / 2)
+    : Math.round(CANVAS_H - marginBottomPx - fontSize / 2);
 
   const header = `[Script Info]\r
 ScriptType: v4.00+\r
-PlayResX: ${SI_CANVAS_W}\r
-PlayResY: ${SI_CANVAS_H}\r
+PlayResX: ${CANVAS_W}\r
+PlayResY: ${CANVAS_H}\r
 WrapStyle: 1\r
 \r
 [V4+ Styles]\r
@@ -221,8 +223,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
     const end = formatTime(match[5], match[6], match[7], match[8]);
     const textLines = lines.slice(timeLineIdx + 1);
 
-    const cw = SI_CANVAS_W - SI_SUBTITLE_PADDING_HORIZONTAL * 2;
-    const charSpacing = preset.charSpacing ?? SI_SUBTITLE_CHAR_SPACING;
+    const cw = CANVAS_W - SUBTITLE_PADDING_HORIZONTAL * 2;
+    const charSpacing = preset.charSpacing ?? SUBTITLE_CHAR_SPACING;
     const cSize = fontSize + Math.max(0, charSpacing);
     const maxCharsPerLine = Math.max(1, Math.floor(cw / cSize));
 
@@ -239,14 +241,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
       if (currentLine) wrappedLines.push(currentLine);
     }
 
-    const extraGapPx = SI_SUBTITLE_LINE_GAP_PX;
+    const extraGapPx = SUBTITLE_LINE_GAP_PX;
     const lineBreakStr =
       extraGapPx > 0 ? `\\N{\\fs${extraGapPx}}\\h\\N{\\fs${fontSize}}` : '\\N';
     const baseText = wrappedLines.join(lineBreakStr);
 
     const numLines = wrappedLines.length;
-    const totalTextH = numLines * fontSize + Math.max(0, numLines - 1) * SI_SUBTITLE_LINE_GAP_PX;
-    const eventMarginV = Math.max(0, Math.round(SI_CANVAS_H - boxMidY - totalTextH / 2));
+    const totalTextH = numLines * fontSize + Math.max(0, numLines - 1) * SUBTITLE_LINE_GAP_PX;
+    const eventMarginV = Math.max(0, Math.round(CANVAS_H - boxMidY - totalTextH / 2));
 
     events += buildAssEvent(start, end, eventMarginV, baseText, preset);
   }

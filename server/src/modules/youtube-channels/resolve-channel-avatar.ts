@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeChannelDir } from '../../config/paths.js';
-import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/si-video/si.constants.js';
+import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/render-core/canvas.constants.js';
 
 export async function resolveYoutubeChannelAvatarImagePath(channelId: string): Promise<string | null> {
   const dir = youtubeChannelDir(channelId);

@@ -68,7 +68,7 @@ export class MetaBrowserService {
     const profile = chromeProfilesService.getById(profileId);
     const handler = getMetaBrowserHandler();
 
-    await openChromeProfile(profile.id, profile.userDataDir);
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
     const page = await getChromeProfilePage(profile.id);
     await handler.open(page);
     await handler.setupConfig(page, {});

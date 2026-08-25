@@ -1,8 +1,10 @@
 import { env } from '../../config/env.js';
 
 export type FfmpegHwEncoder = 'cpu' | 'intel' | 'amd' | 'nvidia';
+export type FfmpegEncodeProfile = 'balanced' | 'quality';
 
 const VALID_ENCODERS = new Set<FfmpegHwEncoder>(['cpu', 'intel', 'amd', 'nvidia']);
+const VALID_PROFILES = new Set<FfmpegEncodeProfile>(['balanced', 'quality']);
 
 const ENCODER_VALUE_FLAGS = new Set([
   '-preset',
@@ -14,6 +16,8 @@ const ENCODER_VALUE_FLAGS = new Set([
   '-qp_p',
   '-cq',
   '-b:v',
+  '-maxrate',
+  '-tune',
 ]);
 
 export interface H264EncodeOptions {
@@ -29,6 +33,42 @@ export function resolveFfmpegHwEncoder(): FfmpegHwEncoder {
 
 export function isHardwareEncoder(encoder: FfmpegHwEncoder): boolean {
   return encoder !== 'cpu';
+}
+
+export function resolveFfmpegEncodeProfile(): FfmpegEncodeProfile {
+  const raw = (env.ffmpegEncodeProfile ?? 'balanced').toLowerCase();
+  return VALID_PROFILES.has(raw as FfmpegEncodeProfile)
+    ? (raw as FfmpegEncodeProfile)
+    : 'balanced';
+}
+
+function presetRank(preset: string): number {
+  const ranks: Record<string, number> = {
+    ultrafast: 0,
+    superfast: 1,
+    veryfast: 2,
+    faster: 3,
+    fast: 4,
+    medium: 5,
+    slow: 6,
+    slower: 7,
+    veryslow: 8,
+  };
+  return ranks[preset] ?? ranks.fast;
+}
+
+function resolveNvencPreset(requested: string, profile: FfmpegEncodeProfile): string {
+  const rank = presetRank(requested);
+  if (rank <= 2) return profile === 'quality' ? 'p4' : 'p3';
+  if (rank <= 4) return profile === 'quality' ? 'p5' : 'p4';
+  return profile === 'quality' ? 'p6' : 'p5';
+}
+
+function resolveAmfQuality(requested: string, profile: FfmpegEncodeProfile): 'speed' | 'balanced' | 'quality' {
+  const rank = presetRank(requested);
+  if (profile === 'quality') return rank <= 2 ? 'balanced' : 'quality';
+  if (rank <= 2) return 'speed';
+  return rank >= 5 ? 'quality' : 'balanced';
 }
 
 export function resolveOutputPixelFormat(encoder?: FfmpegHwEncoder): 'yuv420p' | 'nv12' {
@@ -49,16 +89,24 @@ export function buildH264VideoEncoderArgs(
   const enc = encoder ?? resolveFfmpegHwEncoder();
   const crf = opts?.crf ?? 23;
   const preset = opts?.preset ?? 'fast';
+  const profile = resolveFfmpegEncodeProfile();
 
   switch (enc) {
     case 'intel':
-      return ['-c:v', 'h264_qsv', '-preset', preset, '-global_quality', String(crf)];
+      return [
+        '-c:v',
+        'h264_qsv',
+        '-preset',
+        profile === 'quality' && preset === 'fast' ? 'medium' : preset,
+        '-global_quality',
+        String(crf),
+      ];
     case 'amd':
       return [
         '-c:v',
         'h264_amf',
         '-quality',
-        'balanced',
+        resolveAmfQuality(preset, profile),
         '-rc',
         'cqp',
         '-qp_i',
@@ -67,9 +115,22 @@ export function buildH264VideoEncoderArgs(
         String(crf),
       ];
     case 'nvidia': {
-      const args = ['-c:v', 'h264_nvenc', '-preset', 'p4', '-rc', 'vbr', '-cq', String(crf)];
+      const args = [
+        '-c:v',
+        'h264_nvenc',
+        '-preset',
+        resolveNvencPreset(preset, profile),
+        '-tune',
+        'hq',
+        '-rc',
+        'vbr',
+        '-cq',
+        String(crf),
+        '-b:v',
+        opts?.bitrate ?? '0',
+      ];
       if (opts?.bitrate) {
-        args.push('-b:v', opts.bitrate);
+        args.push('-maxrate', opts.bitrate);
       }
       return args;
     }

@@ -2,12 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
-import { SI_FPS } from './si.constants.js';
 import {
   CHANNEL_AVATAR_MARGIN_RIGHT_PX,
   CHANNEL_AVATAR_MARGIN_TOP_PX,
   CHANNEL_AVATAR_SIZE_PX,
-} from './si.constants.js';
+  FPS,
+} from './canvas.constants.js';
 
 const AVATAR_SCALED_LABEL = 'channel_avatar_scaled';
 
@@ -34,7 +34,7 @@ function buildCircleMaskFilter(): string {
     `a='if(gte(${d},${r}),0,if(lte(${d},${r}-${feather}),255,255*(${r}-${d})/${feather}))'`;
 
   return (
-    `fps=${SI_FPS},` +
+    `fps=${FPS},` +
     `scale=${hi}:${hi}:force_original_aspect_ratio=increase:flags=lanczos,` +
     `crop=${hi}:${hi},` +
     `${geq},` +

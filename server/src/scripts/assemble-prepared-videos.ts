@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, resolveYoutubeChannelVideoDir } from '../config/paths.js';
 import {
-  assembleReupAiSlideshowVideo,
   attachSceneImagePaths,
   redistributeMissingSceneTimes,
   resolveAiScenePromptsFilePath,
@@ -10,9 +9,14 @@ import {
 } from '../modules/video-production/shared/ai-video/index.js';
 import { AI_SLIDES_DIRNAME } from '../modules/video-production/shared/ai-video/ai-video.constants.js';
 import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../modules/video-production/shared/ai-video/ai-video.types.js';
-import { assembleReupSiVideo } from '../modules/video-production/shared/si-video/si-video-assembler.js';
-import { listSiMultiImagePaths, copyCelebrityImagesToWorkDir } from '../modules/video-production/shared/si-video/si-multi-image.js';
-import { SI_MULTI_IMAGE_DIRNAME } from '../modules/video-production/shared/si-video/si.constants.js';
+import { OUTPUT_VIDEO_BASENAME } from '../modules/video-production/shared/render-core/output-artifacts.constants.js';
+import { createYoutubeProductionDestination } from '../modules/video-production/adapters/youtube-production-destination.adapter.js';
+import {
+  resolveVideoTypeStrategy,
+  type VisualAssets,
+} from '../modules/video-production/pipelines/reup-audio/strategies/index.js';
+import { createConsoleTaskLogger } from '../modules/video-production/pipelines/reup-audio/task-logger.js';
+import type { AssembleContext } from '../modules/video-production/pipelines/reup-audio/video-task.context.js';
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import { resolveChannelAvatarForVideoAssembly } from '../modules/youtube-channels/resolve-channel-avatar.js';
@@ -113,6 +117,42 @@ interface AssembleResult {
   outputPath?: string;
 }
 
+/**
+ * Inputs the pipeline would have produced in earlier steps, recovered from the
+ * already-prepared video folder. Returns the names of anything still missing so
+ * the caller can report a single actionable reason.
+ */
+async function collectVisualAssetsFromDisk(
+  workDir: string,
+  videoType: 'si' | 'ai',
+  backgroundImage: string,
+): Promise<{ assets: VisualAssets; missingFiles: string[] }> {
+  const assets: VisualAssets = {};
+  const missingFiles: string[] = [];
+
+  if (videoType === 'ai') {
+    const scenes = scenesWithImagePaths(await loadAiScenesForAssemble(workDir));
+    if (scenes.length === 0) {
+      missingFiles.push(`${AI_SLIDES_DIRNAME}/*.jpg`);
+    } else {
+      assets.aiScenePrompts = scenes;
+    }
+    return { assets, missingFiles };
+  }
+
+  if (backgroundImage === 'one_image') {
+    const centerImagePath = path.join(workDir, CENTER_IMAGE_FILE);
+    try {
+      await fs.access(centerImagePath);
+      assets.heroImagePath = centerImagePath;
+    } catch {
+      missingFiles.push(CENTER_IMAGE_FILE);
+    }
+  }
+
+  return { assets, missingFiles };
+}
+
 async function main() {
   ensureDataDirs();
 
@@ -150,12 +190,16 @@ async function main() {
       continue;
     }
 
-    const videoType = channel.type === 'reup_audio' ? channel.reupAudioVideoType : 'si';
+    const videoType = channel.type === 'reup_audio' ? channel.reupAudioVideoType! : 'si';
 
     if (videoType === 'si' && !channel.backgroundFootageSources?.length) {
       console.log(`  [skip] ${channel.name}: không có backgroundFootageSources`);
       continue;
     }
+
+    const destination = await createYoutubeProductionDestination(channel);
+    const strategy = resolveVideoTypeStrategy(videoType);
+    const backgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
 
     for (const item of preparedItems) {
       if (processedCount >= ASSEMBLE_VIDEOS_PER_RUN) break;
@@ -182,44 +226,10 @@ async function main() {
       }
       if (!subtitlePath) missingFiles.push(SUBTITLE_FILES.join(' or '));
 
-      if (videoType === 'si') {
-        const siBackgroundImage = channel.reupAudioBackgroundImage ?? 'one_image';
-        if (siBackgroundImage === 'one_image') {
-          const centerImagePath = path.join(workDir, CENTER_IMAGE_FILE);
-          try {
-            await fs.access(centerImagePath);
-          } catch {
-            missingFiles.push(CENTER_IMAGE_FILE);
-          }
-        } else if (siBackgroundImage === 'multi_image' || siBackgroundImage === 'celebrity') {
-          if (siBackgroundImage === 'celebrity') {
-            const celebrityId = channel.celebrityId?.trim();
-            if (!celebrityId) {
-              missingFiles.push('celebrityId');
-            } else {
-              try {
-                await copyCelebrityImagesToWorkDir(celebrityId, workDir, msg => console.log(`      ${msg}`));
-              } catch (err) {
-                missingFiles.push(err instanceof Error ? err.message : 'celebrity images');
-              }
-            }
-          }
-          const multiImagePaths = await listSiMultiImagePaths(workDir);
-          if (multiImagePaths.length === 0) {
-            missingFiles.push(`${SI_MULTI_IMAGE_DIRNAME}/*`);
-          }
-        }
-      }
+      const fromDisk = await collectVisualAssetsFromDisk(workDir, videoType, backgroundImage);
+      missingFiles.push(...fromDisk.missingFiles);
 
-      let aiScenes: AiVideoScenePrompt[] = [];
-      if (videoType === 'ai') {
-        aiScenes = scenesWithImagePaths(await loadAiScenesForAssemble(workDir));
-        if (aiScenes.length === 0) {
-          missingFiles.push(`${AI_SLIDES_DIRNAME}/*.jpg`);
-        }
-      }
-
-      if (missingFiles.length > 0) {
+      if (missingFiles.length > 0 || !subtitlePath) {
         const reason = `Thiếu file: ${missingFiles.join(', ')}`;
         console.log(`    [fail] ${item.videoId}: ${reason}`);
         results.push({ channelName: channel.name, videoId: item.videoId, status: 'failed', reason });
@@ -229,60 +239,41 @@ async function main() {
       try {
         console.log(`    [ghép] ${item.videoId} (${videoType})...`);
         const startedAt = performance.now();
-        let outputPath: string;
-        const disclaimerText = channel.disclaimerText?.trim();
-        const showDisclaim = channel.showDisclaimer === true && Boolean(disclaimerText);
+
+        const log = createConsoleTaskLogger();
         const channelAvatarPath = await resolveChannelAvatarForVideoAssembly(channel.id, {
           enabled: channel.showChannelAvatar,
-          onLog: msg => console.log(`      ${msg}`),
+          onLog: msg => log.info(msg),
         });
+        const disclaimerText = channel.disclaimerText?.trim();
 
-        if (videoType === 'ai') {
-          outputPath = await assembleReupAiSlideshowVideo({
-            workDir,
-            scenes: aiScenes,
-            audioPath,
-            subtitlePath: subtitlePath!,
-            language: channel.language,
-            captionStyleKey: channel.captionStyleKey,
-            showDisclaim,
-            disclaimerText,
-            ...(channelAvatarPath ? { channelAvatarPath } : {}),
-            onLog: msg => console.log(`      ${msg}`),
-          });
-        } else {
-          const siBackgroundImage = channel.reupAudioBackgroundImage ?? 'one_image';
-          const needsMultiImage =
-            siBackgroundImage === 'multi_image' || siBackgroundImage === 'celebrity';
-          const multiImagePaths = needsMultiImage ? await listSiMultiImagePaths(workDir) : [];
+        const assembleCtx: AssembleContext = {
+          destination,
+          videoType,
+          workDir,
+          audioPath,
+          subtitlePath,
+          outputBasename: OUTPUT_VIDEO_BASENAME,
+          ...(channelAvatarPath ? { channelAvatarPath } : {}),
+          showDisclaim: channel.showDisclaimer === true && Boolean(disclaimerText),
+          ...(disclaimerText ? { disclaimerText } : {}),
+          log,
+          stepTimer: { prefix: `[assemble] ${item.videoId}`, onLog: msg => log.info(msg) },
+        };
 
-          outputPath = await assembleReupSiVideo({
-            workDir,
-            audioPath,
-            subtitlePath: subtitlePath!,
-            ...(siBackgroundImage === 'one_image'
-              ? { centerImagePath: path.join(workDir, CENTER_IMAGE_FILE) }
-              : {}),
-            ...(needsMultiImage
-              ? {
-                  centerImagePaths: multiImagePaths,
-                  centerSlideshowVariant:
-                    siBackgroundImage === 'celebrity' ? ('celebrity' as const) : ('multi' as const),
-                }
-              : {}),
-            backgroundFootageSourceIds: channel.backgroundFootageSources,
-            language: channel.language,
-            captionStyleKey: channel.captionStyleKey,
-            showAudioBar: channel.showAudioBar === true,
-            showSmallVideo: channel.showSmallVideo === true,
-            showSubscribe: channel.showSubscribe === true,
-            subscribeFile: channel.subscribeFile,
-            showDisclaim,
-            disclaimerText,
-            ...(channelAvatarPath ? { channelAvatarPath } : {}),
-            onLog: msg => console.log(`      ${msg}`),
+        const readiness = await strategy.canAssemble(assembleCtx, fromDisk.assets);
+        if (!readiness.ready) {
+          console.log(`    [fail] ${item.videoId}: ${readiness.reason}`);
+          results.push({
+            channelName: channel.name,
+            videoId: item.videoId,
+            status: 'failed',
+            reason: readiness.reason,
           });
+          continue;
         }
+
+        const outputPath = await strategy.assemble(assembleCtx, fromDisk.assets);
 
         videoPrepareRepository.markCreated(channel.id, item.videoId);
         console.log(`    [ok]   ${item.videoId} → ${outputPath} (tổng ${formatElapsedMs(performance.now() - startedAt)})`);

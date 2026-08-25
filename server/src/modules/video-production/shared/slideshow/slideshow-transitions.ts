@@ -50,6 +50,28 @@ export interface XfadeChainResult {
   totalDuration: number;
 }
 
+/** Joins clips without overlap or visual transition. */
+export function buildHardCutChain(clipCount: number, durations: number[]): XfadeChainResult {
+  if (clipCount <= 0) {
+    throw new Error('buildHardCutChain requires at least one clip');
+  }
+  if (durations.length !== clipCount) {
+    throw new Error('durations length must equal clipCount');
+  }
+
+  const totalDuration = sumRange(durations, 0, clipCount - 1);
+  if (clipCount === 1) {
+    return { filter: '', outLabel: '0:v', totalDuration };
+  }
+
+  const inputs = Array.from({ length: clipCount }, (_, index) => `[${index}:v]`).join('');
+  return {
+    filter: `${inputs}concat=n=${clipCount}:v=1:a=0[concatout]`,
+    outLabel: 'concatout',
+    totalDuration,
+  };
+}
+
 /**
  * Builds the chained `xfade` filtergraph that crossfades N clips together.
  *

@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
-import { SI_FPS } from '../si-video/si.constants.js';
+import { FPS } from '../render-core/canvas.constants.js';
 import {
   AI_SMALL_VIDEO_H,
   AI_SMALL_VIDEO_OPACITY,
@@ -25,7 +25,7 @@ async function buildCacheKey(sourcePath: string): Promise<string> {
     AI_SMALL_VIDEO_H,
     AI_SMALL_VIDEO_OPACITY,
     AI_SMALL_VIDEO_SLOW,
-    SI_FPS,
+    FPS,
     'ai-pip-v1',
   ].join('|');
   return crypto.createHash('sha1').update(raw).digest('hex').slice(0, 16);
@@ -39,7 +39,7 @@ async function resolveOutputPath(sourcePath: string): Promise<string> {
 
 function buildPrebakeFilter(): string {
   return [
-    `fps=${SI_FPS}`,
+    `fps=${FPS}`,
     `setpts=${AI_SMALL_VIDEO_SLOW}*PTS`,
     `scale=${AI_SMALL_VIDEO_W}:${AI_SMALL_VIDEO_H}:force_original_aspect_ratio=increase:flags=fast_bilinear`,
     `crop=${AI_SMALL_VIDEO_W}:${AI_SMALL_VIDEO_H}`,

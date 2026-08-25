@@ -52,7 +52,7 @@ async function openChromeMetaWorkers(
   const uniqueProfiles = [...new Map(tabProfiles.map(profile => [profile.id, profile])).values()];
   for (const profile of uniqueProfiles) {
     log(`[meta] Mở Chrome main profile ${profile.name}...`);
-    await openChromeProfile(profile.id, profile.userDataDir);
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
   }
 
   const reusedInitialPage = new Set<string>();
@@ -167,7 +167,7 @@ async function openMetaWorkerPoolSingle(log: (msg: string) => void): Promise<Met
 
   if (firstMain) {
     log(`[meta] Mở Chrome main profile ${firstMain.name} (single)...`);
-    await openChromeProfile(firstMain.id, firstMain.userDataDir);
+    await openChromeProfile(firstMain.id, firstMain.userDataDir, { background: true });
     try {
       const page = await getChromeProfilePage(firstMain.id);
       await openMetaOnPage(page);

@@ -1,5 +1,5 @@
 import type { EasingType, FitMode, FocalPoint, KenBurnsEffect } from './slideshow.types.js';
-import { SS_PIXEL_FORMAT } from './slideshow.constants.js';
+import { SS_MAX_KEN_BURNS_ANIMATION_SEC, SS_PIXEL_FORMAT } from './slideshow.constants.js';
 
 export interface KenBurnsFilterOptions {
   width: number;
@@ -9,6 +9,16 @@ export interface KenBurnsFilterOptions {
   /** Internal upscale multiplier (works around zoompan jitter bug #4298). */
   tempScaleFactor: number;
   fit: FitMode;
+  /** Max Ken Burns animation window (seconds). Defaults to SS_MAX_KEN_BURNS_ANIMATION_SEC. */
+  maxKenBurnsAnimationSec?: number;
+}
+
+/** Seconds over which Ken Burns progress runs (capped by maxKenBurnsAnimationSec). */
+export function resolveKenBurnsAnimationSec(
+  durationSec: number,
+  maxAnimationSec = SS_MAX_KEN_BURNS_ANIMATION_SEC,
+): number {
+  return Math.min(durationSec, maxAnimationSec);
 }
 
 export interface AdaptKenBurnsOptions {
@@ -142,9 +152,12 @@ export function buildSlideVideoFilter(
   opts: KenBurnsFilterOptions,
 ): string {
   const { width: w, height: h, fps, durationSec, tempScaleFactor, fit } = opts;
+  const maxAnimSec = opts.maxKenBurnsAnimationSec ?? SS_MAX_KEN_BURNS_ANIMATION_SEC;
+  const animDurationSec = resolveKenBurnsAnimationSec(durationSec, maxAnimSec);
   const uw = Math.round(w * tempScaleFactor);
   const uh = Math.round(h * tempScaleFactor);
   const totalFrames = Math.max(1, Math.round(fps * durationSec));
+  const animFrames = Math.max(1, Math.round(fps * animDurationSec));
 
   const pre = fitFilter(uw, uh, fit);
   const post = `setsar=1,format=${SS_PIXEL_FORMAT}`;
@@ -154,7 +167,7 @@ export function buildSlideVideoFilter(
     return `${pre},scale=${w}:${h},${post}`;
   }
 
-  const p = totalFrames > 1 ? `on/${totalFrames - 1}` : '0';
+  const p = animFrames > 1 ? `min(on/${animFrames - 1}\\,1)` : '0';
   const ease = easeExpr(effect.easing, p);
 
   const dz = effect.zoomEnd - effect.zoomStart;

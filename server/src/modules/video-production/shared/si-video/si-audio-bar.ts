@@ -2,13 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
+import { FPS, OVERLAY_AUTO_SENTINEL } from '../render-core/canvas.constants.js';
 import {
   SI_AUDIO_BAR_COLORKEY,
   SI_AUDIO_BAR_COLORKEY_BLEND,
   SI_AUDIO_BAR_COLORKEY_SIMILARITY,
   SI_AUDIO_BAR_WIDTH_PX,
-  SI_FPS,
-  SI_OVERLAY_AUTO_SENTINEL,
 } from './si.constants.js';
 import { getPreparedColorAssetPath, getPreferredPrepareKeyColor, prepareColorAsset } from './si-prepare-color-cache.js';
 
@@ -33,7 +32,7 @@ export function appendSiAudioBarScaleFilters(
     filterParts.push(`[${inputLabel}]format=rgba[${outputLabel}]`);
     return;
   }
-  const scale = `fps=${SI_FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1:flags=lanczos`;
+  const scale = `fps=${FPS},scale=${SI_AUDIO_BAR_WIDTH_PX}:-1:flags=lanczos`;
   filterParts.push(
     `[${inputLabel}]${scale},format=rgba,colorkey=${SI_AUDIO_BAR_COLORKEY}:${SI_AUDIO_BAR_COLORKEY_SIMILARITY}:${SI_AUDIO_BAR_COLORKEY_BLEND}[${outputLabel}]`,
   );
@@ -75,7 +74,7 @@ export async function selectRandomSiAudioBarClip(): Promise<SiAudioBarClip> {
 
 export async function resolveSiAudioBarClip(filename?: string): Promise<SiAudioBarClip> {
   const selected = filename?.trim();
-  if (!selected || selected === SI_OVERLAY_AUTO_SENTINEL) {
+  if (!selected || selected === OVERLAY_AUTO_SENTINEL) {
     return selectRandomSiAudioBarClip();
   }
 

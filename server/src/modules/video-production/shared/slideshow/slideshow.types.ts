@@ -58,6 +58,15 @@ export type TransitionType =
   | 'smoothleft'
   | 'smoothright';
 
+/** Optional overrides for adaptKenBurnsForDuration before rendering each slide. */
+export interface KenBurnsAdaptConfig {
+  minPxPerFrame?: number;
+  longSlideLinearSec?: number;
+  maxZoom?: number;
+  focalMin?: number;
+  focalMax?: number;
+}
+
 /** Specification of one slide (one source image). */
 export interface SlideSpec {
   imagePath: string;
@@ -71,6 +80,8 @@ export interface SlideSpec {
   transitionToNext?: TransitionType;
   /** Duration of the transition into the next slide (seconds). */
   transitionDurationSec?: number;
+  /** Max Ken Burns animation window (seconds). Defaults to SS_MAX_KEN_BURNS_ANIMATION_SEC. */
+  maxKenBurnsAnimationSec?: number;
 }
 
 /** Output configuration for a slideshow render. */
@@ -84,6 +95,8 @@ export interface SlideshowOutputConfig {
   finalPreset?: string;
   /** Override final compose CRF (default: 20). */
   finalCrf?: number;
+  /** Per-render overrides for duration-adaptive Ken Burns tuning. */
+  kenBurnsAdapt?: KenBurnsAdaptConfig;
 }
 
 /** Full slideshow specification handed to the assembler. */
