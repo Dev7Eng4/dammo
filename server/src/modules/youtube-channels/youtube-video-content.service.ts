@@ -23,7 +23,7 @@ export interface YoutubeVideoContent {
   tags: string[];
   hasThumbnail: boolean;
   hasOldThumbnail: boolean;
-  oldThumbnailFolderPath: string | null;
+  videoFolderPath: string;
   hasVideo: boolean;
 }
 
@@ -224,7 +224,7 @@ export class YoutubeVideoContentService {
       tags: normalizeTags(parsed.metadata.tags),
       hasThumbnail: Boolean(thumbnailPath),
       hasOldThumbnail: Boolean(oldThumbnailPath),
-      oldThumbnailFolderPath: oldThumbnailPath ? path.dirname(path.resolve(oldThumbnailPath)) : null,
+      videoFolderPath: path.resolve(folderPath),
       hasVideo: Boolean(findFinalVideoMp4(folderPath)),
     };
   }

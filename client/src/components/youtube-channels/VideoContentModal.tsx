@@ -243,14 +243,14 @@ export function VideoContentModal({
     setThumbnailPreviewUrl(previewUrl);
   }
 
-  async function handleCopyOldThumbnailFolderPath() {
-    if (!content?.oldThumbnailFolderPath) return;
+  async function handleCopyVideoFolderPath() {
+    if (!content?.videoFolderPath) return;
 
     try {
-      await navigator.clipboard.writeText(content.oldThumbnailFolderPath);
-      toast.success('Đã sao chép đường dẫn folder chứa thumbnail cũ');
+      await navigator.clipboard.writeText(content.videoFolderPath);
+      toast.success('Đã sao chép đường dẫn folder video');
     } catch {
-      toast.error('Không thể sao chép đường dẫn folder chứa thumbnail cũ');
+      toast.error('Không thể sao chép đường dẫn folder video');
     }
   }
 
@@ -289,9 +289,9 @@ export function VideoContentModal({
           <Button
             variant="secondary"
             className="mr-auto"
-            onClick={() => void handleCopyOldThumbnailFolderPath()}
-            disabled={!content?.oldThumbnailFolderPath || saving || marking}
-            title="Sao chép đường dẫn folder chứa thumbnail cũ"
+            onClick={() => void handleCopyVideoFolderPath()}
+            disabled={!content?.videoFolderPath || saving || marking}
+            title="Sao chép đường dẫn folder video"
           >
             Copy path
           </Button>

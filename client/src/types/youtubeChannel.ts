@@ -249,7 +249,7 @@ export interface YoutubeVideoContent {
   hasVideo: boolean;
   thumbnailUrl: string | null;
   oldThumbnailUrl: string | null;
-  oldThumbnailFolderPath: string | null;
+  videoFolderPath: string;
   videoUrl: string | null;
 }
 

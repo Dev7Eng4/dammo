@@ -40,11 +40,8 @@ Mục tiêu là tối đa hóa CTR và emotional relevance đối với người
 Khi nhìn thấy TITLE + THUMBNAIL, người xem phải có cảm giác:
 
 「これは今の自分に必要かもしれない」
-
 「この人は何を言ったんだろう？」
-
 「続きが気になる」
-
 「自分にも当てはまるかもしれない」
 
 ==================================================
@@ -52,18 +49,14 @@ INPUT
 ==================================================
 
 TITLE CŨ:
-
 ${title}
 
 TRANSCRIPT 20 PHÚT ĐẦU:
-
 ${transcript}
 
 NGOÀI RA:
-
-Một ảnh nhân vật sẽ được attach kèm theo input.
-
-Ảnh này là REFERENCE IMAGE GỐC CHO NHÂN VẬT trong thumbnail.
+Một ảnh nhân vật được attach kèm theo input (REFERENCE IMAGE).
+Ảnh này là REFERENCE ANCHOR GỐC duy nhất cho nhận diện khuôn mặt nhân vật trong thumbnail.
 
 ==================================================
 NGUYÊN TẮC LỚN
@@ -96,63 +89,30 @@ THUMBNAIL:
 TITLE:
 なぜ、人を追わない人ほど人生が楽になるのか？｜中村天風が語った人間関係の真実
 
-Đây là cấu trúc mong muốn.
-
 ==================================================
 BƯỚC 1 — ĐỌC VÀ LỌC TRANSCRIPT
 ==================================================
 
 Đọc transcript 20 phút đầu.
-
-Loại bỏ:
-
-- lời chào
-- giới thiệu kênh
-- CTA
-- subscribe
-- quảng cáo
-- sponsor
-- phần lặp
-- câu dẫn không có giá trị nội dung
-- phần giới thiệu dài dòng
-
-Chỉ giữ lại nội dung thực tế.
-
-Không output quá trình suy luận.
+Loại bỏ: lời chào, giới thiệu kênh, CTA, subscribe, quảng cáo, sponsor, phần lặp, câu dẫn không có giá trị nội dung.
+Chỉ giữ lại nội dung thực tế. Không output quá trình suy luận.
 
 ==================================================
 BƯỚC 2 — DETECT NHÂN VẬT
 ==================================================
 
 Tự động detect tên nhân vật chính từ TITLE CŨ.
-
-Tên nhân vật phải được lấy từ TITLE CŨ.
-
-Không tự ý thay thế nhân vật.
-
-Không tự ý thêm nhân vật mới.
-
-Nếu TITLE CŨ có nhiều người:
-
-→ xác định ai là authority chính của video.
-
-Nếu không có tên nhân vật rõ ràng:
-
-detected_name = ""
-
-Nếu detected_name tồn tại:
-
-TẤT CẢ 3 TITLE OPTIONS PHẢI CHỨA detected_name.
-
-Tên phải được viết chính xác như trong TITLE CŨ.
+Tên nhân vật phải được lấy từ TITLE CŨ. Không tự ý thay thế hoặc thêm nhân vật mới.
+Nếu không có tên nhân vật rõ ràng: detected_name = ""
+Nếu detected_name tồn tại: TẤT CẢ 3 TITLE OPTIONS PHẢI CHỨA detected_name (viết chính xác như trong TITLE CŨ).
+Đồng thời chuyển đổi tên nhân vật sang dạng Romaji + Kanji (ví dụ: Kazuo Inamori / 稲盛和夫, Konosuke Matsushita / 松下幸之助, Tempu Nakamura / 中村天風) để đưa vào prompt tạo ảnh.
 
 ==================================================
 BƯỚC 3 — HIỂU NỘI DUNG
 ==================================================
 
 Xác định nội bộ:
-
-- detected_name
+- detected_name (và Romaji + Kanji)
 - detected_topic
 - target_audience
 - viewer_problem
@@ -169,700 +129,137 @@ Xác định nội bộ:
 Không output quá trình phân tích.
 
 ==================================================
-BƯỚC 4 — XÁC ĐỊNH FRAMING
+BƯỚC 4 — XÁC ĐỊNH FRAMING (BẮT BUỘC)
 ==================================================
 
-Đây là bước BẮT BUỘC.
-
 Xác định video đang nói về điều gì theo đúng GÓC NHÌN của transcript.
-
-Ví dụ:
-
-Nếu transcript nói:
-
-怒りを手放すことで心が軽くなる
-
-Framing:
-
-「怒りを手放す意味」
-hoặc
-「怒りを手放すことで心が軽くなる」
-
-KHÔNG được biến thành:
-
-「怒りが人生を壊す理由」
-
-nếu transcript không nói như vậy.
-
-Nếu transcript nói:
-
-孤独の価値
-
-Không được biến thành:
-
-孤独になると成功する
-
-Nếu transcript nói:
-
-執着を手放す意味
-
-Không được biến thành:
-
-執着が人生を壊す理由
-
-Nếu transcript nói:
-
-人間関係で距離を置くことの大切さ
-
-Không được biến thành:
-
-人を捨てれば人生が成功する
-
-FRAMING phải được giữ nguyên.
-
-Được phép thay đổi cách diễn đạt để tăng CTR.
-
-Không được thay đổi bản chất.
+Không được thay đổi bản chất của thông điệp (ví dụ: "giá trị của sự cô độc" KHÔNG ĐƯỢC biến thành "cô độc giúp thành công").
+FRAMING phải được giữ nguyên. Được phép thay đổi cách diễn đạt để tăng CTR.
 
 ==================================================
 BƯỚC 5 — CORE PROMISE
 ==================================================
 
-Tự hỏi:
-
-"Nếu người xem chỉ nhớ MỘT điều sau khi xem video, điều đó là gì?"
-
-Đó là CORE PROMISE.
-
-Core promise phải:
-
-- có thật trong transcript
-- có giá trị với người xem
-- có tính cảm xúc
-- có thể truyền đạt tự nhiên trong title
-- không thêm kết luận mới
+Xác định ĐIỀU DUY NHẤT người xem sẽ nhớ sau khi xem video.
+Core promise phải: có thật trong transcript, có giá trị cảm xúc, truyền đạt tự nhiên trong title, không chế kết luận mới.
 
 ==================================================
 BƯỚC 6 — HOOK SYSTEM
 ==================================================
 
 Tạo hook nội bộ theo 5 nhóm:
+A. TRUTH HOOK: 【99％が知らない】【誰も教えてくれない】【本当の意味】【実は逆だった】
+B. PARADOX HOOK: 頑張るほど苦しくなる / 手放した瞬間 / 人を追わない人ほど / 求めない人ほど
+C. TRANSFORMATION HOOK: 心が軽くなる / 人生の見え方が変わる / 人間関係が楽になる / 人生後半が変わる
+D. AUTHORITY HOOK: 中村天風が語った / 稲盛和夫が何度も伝えた / ○○が最後まで大切にした / ○○が晩年に語った
+E. CURIOSITY HOOK: その理由とは / たった一つ / ある共通点 / 本当の意味とは / なぜなのか
 
-A. TRUTH HOOK
-
-【99％が知らない】
-【誰も教えてくれない】
-【本当の意味】
-【実は逆だった】
-【本当はこうだった】
-
-B. PARADOX HOOK
-
-頑張るほど苦しくなる
-手放した瞬間
-孤独を愛した人だけが
-人を追わない人ほど
-求めない人ほど
-
-C. TRANSFORMATION HOOK
-
-心が軽くなる
-人生の見え方が変わる
-思考が変わる
-人間関係が楽になる
-人生後半が変わる
-
-D. AUTHORITY HOOK
-
-中村天風が語った
-稲盛和夫が何度も伝えた
-松下幸之助が説いた
-○○が最後まで大切にした
-○○が晩年に語った
-
-E. CURIOSITY HOOK
-
-その理由とは
-たった一つ
-ある共通点
-本当の意味とは
-なぜなのか
-最後に残るもの
-
-Ưu tiên:
-
-Paradox
-Truth
-Transformation
-Authority
-Curiosity
-
-KHÔNG mặc định sử dụng Fear.
+Ưu tiên: Paradox, Truth, Transformation, Authority, Curiosity. KHÔNG mặc định sử dụng Fear.
 
 ==================================================
-BƯỚC 7 — TẠO TITLE
+BƯỚC 7 — TẠO TITLE (CHÍNH XÁC 3 OPTIONS)
 ==================================================
 
-Tạo nhiều title nội bộ.
-
-Sau đó đánh giá và chỉ giữ lại 3 title mạnh nhất.
-
-3 TITLE CUỐI CÙNG PHẢI LÀ 3 PHƯƠNG ÁN KHÁC NHAU VỀ HOOK.
-
-Không tạo 3 title chỉ thay đổi vài từ.
-
-Ưu tiên tạo:
-
-TITLE A:
-Paradox Hook
-
-TITLE B:
-Truth / Curiosity Hook
-
-TITLE C:
-Authority Hook
-
-Nhưng chỉ sử dụng cấu trúc nào phù hợp với transcript.
-
-Các cấu trúc có thể dùng:
-
-1.
-
-[Paradox]｜[Name]
-
-Ví dụ:
-
-なぜ、手放した人ほど人生が楽になるのか？｜中村天風が語った心の真実
-
-2.
-
-[Truth]｜[Name]
-
-Ví dụ:
-
-【99％が知らない】手放すことの本当の意味｜中村天風の人生哲学
-
-3.
-
-[Authority]｜[Promise]
-
-Ví dụ:
-
-中村天風が最後まで伝えた「手放す」という生き方、その本当の意味
-
-4.
-
-[Transformation]｜[Name]
-
-Ví dụ:
-
-心が軽くなる人が無意識にやっていること｜中村天風が教えた人生の法則
-
-5.
-
-[Question]｜[Name]
-
-Ví dụ:
-
-なぜ、人を追わない人ほど人生が楽になるのか？｜中村天風の答え
-
-==================================================
-TITLE RULES
-==================================================
-
-Độ dài mục tiêu:
-
-35〜60 ký tự tiếng Nhật.
-
-Có thể dài hơn nếu câu tự nhiên.
-
-Nếu detected_name tồn tại:
-
-CẢ 3 TITLE PHẢI CHỨA TÊN NHÂN VẬT.
-
-Không nhất thiết tên phải đứng đầu.
-
-Ưu tiên:
-
-Nếu hook mạnh hơn khi đặt trước:
-→ HOOK + PROMISE + NAME
-
-Nếu nhân vật cực kỳ mạnh:
-→ NAME + HOOK + PROMISE
-
-Không lặp tên hai lần.
-
-Không nhồi keyword.
-
-Không viết title kiểu SEO.
-
-Tránh:
-
-○○の教え
-○○名言集
-○○の人生訓
-○○の教え5選
-
-nếu có thể tạo một title có curiosity mạnh hơn.
-
-==================================================
-TITLE A/B/C — YOUTUBE TEST
-==================================================
-
-YOUTUBE CHỈ CÓ 3 TITLE OPTIONS.
-
-Vì vậy:
-
-CHỈ ĐƯỢC OUTPUT ĐÚNG 3 TITLE.
-
-Không output title thứ 4.
-
-Không output 5 title.
-
-Không output 10 title.
-
-Không output danh sách dài.
-
-3 title phải là:
-
-OPTION A
-OPTION B
-OPTION C
-
-và đều đủ mạnh để đem đi A/B test thực tế.
-
-Không được có một option rõ ràng yếu hơn chỉ để đủ số lượng.
-
-==================================================
-TITLE SCORING
-==================================================
-
-Chấm nội bộ mỗi title:
-
-Hook = 20
-Curiosity = 20
-Transcript Accuracy = 20
-Philosophy Consistency = 15
-Japanese YouTube Naturalness = 15
-Target Audience Relevance = 10
-
-Tổng = 100.
-
-Chỉ giữ 3 title có điểm cao nhất.
-
-Nếu hai title quá giống nhau:
-
-→ loại title yếu hơn.
-
-==================================================
-LOẠI TITLE NGAY NẾU
-==================================================
-
-- thay đổi framing
-- thêm kết luận transcript không có
-- clickbait sai
-- cường điệu hóa
-- biến triết lý thành fear content
-- tạo promise video không deliver
-- nghe như báo lá cải
-- nghe như quảng cáo
-- nghe như video sức khỏe
-- nghe như video tài chính
-- quá SEO
-- quá chung chung
-- quá dài
-- lặp lại title cũ mà không tạo giá trị mới
+Tạo nội bộ, chấm điểm và chỉ giữ lại 3 title mạnh nhất với 3 ANGLE/HOOK hoàn toàn khác nhau để A/B test:
+- OPTION A: Paradox Hook
+- OPTION B: Truth / Curiosity Hook
+- OPTION C: Authority Hook
+
+Độ dài: 35〜60 ký tự tiếng Nhật.
+Nếu detected_name tồn tại: CẢ 3 TITLE PHẢI CHỨA TÊN NHÂN VẬT.
+Tránh viết dạng listicle nhàm chán (như: ○○名言集, ○○の教え5選).
 
 ==================================================
 BƯỚC 8 — THUMBNAIL STRATEGY
 ==================================================
 
-Thumbnail phải có MỘT emotional idea duy nhất.
-
-Ưu tiên:
-
-1. PARADOX
-
-頑張るな
-人を追うな
-求めるほど遠ざかる
-
-2. DIRECT WISDOM
-
-もう
-十分だ
-
-3. LIFE TRUTH
-
-晩年に
-気づくこと
-
-4. TRANSFORMATION
-
-心が
-軽くなる
-
-5. WARNING
-
-Chỉ dùng nếu transcript thực sự phù hợp:
-
-これだけは
-忘れるな
-
-Không biến mọi video thành warning.
+Thumbnail chỉ truyền tải MỘT emotional idea duy nhất:
+1. PARADOX (頑張るな / 人を追うな / 求めるほど遠ざかる)
+2. DIRECT WISDOM (もう / 十分だ)
+3. LIFE TRUTH (晩年に / 気づくこと)
+4. TRANSFORMATION (心が / 軽くなる)
+5. WARNING (chỉ dùng nếu transcript thực sự cảnh báo)
 
 ==================================================
 BƯỚC 9 — THUMBNAIL TEXT
 ==================================================
 
-Tạo nhiều thumbnail text nội bộ.
-
-Sau đó chọn duy nhất 1 thumbnail text mạnh nhất.
-
-Thumbnail text:
-
+Chọn duy nhất 1 thumbnail text mạnh nhất:
 - 2〜4 dòng
-- khoảng 6〜16 ký tự chính
-- rất dễ đọc trên mobile
-- không phải bản sao của title
-- chỉ chứa một emotional idea
-- không giải thích toàn bộ video
-- không chứa quá nhiều thông tin
-
-Ưu tiên các cấu trúc:
-
-[Short command]
-
-人を
-追うな
-
-[Paradox]
-
-頑張るほど
-苦しくなる
-
-[Truth]
-
-本当は
-逆だった
-
-[Transformation]
-
-心が
-軽くなる
-
-[Late-life truth]
-
-晩年に
-気づくこと
+- 6〜16 ký tự chính
+- Rất dễ đọc trên mobile, không giải thích dài dòng, không copy nguyên văn title.
 
 ==================================================
-BƯỚC 10 — FONT THUMBNAIL
+BƯỚC 10 — FONT & TYPOGRAPHY STYLE
 ==================================================
 
-ĐÂY LÀ QUY TẮC BẮT BUỘC.
-
-Thumbnail phải sử dụng visual typography theo phong cách của ảnh reference thumbnail được cung cấp.
-
-FONT KHÔNG ĐƯỢC là:
-
-- Gothic
-- Sans-serif
-- modern geometric font
-- thin font
-- rounded font
-- minimal corporate font
-
-ƯU TIÊN:
-
-Japanese Heavy Mincho / Bold Mincho
-「極太明朝体」
-「太い明朝体」
-「力強い明朝体」
-
-Đặc điểm bắt buộc:
-
-- nét cực dày
-- high contrast giữa nét ngang và nét dọc
-- chân chữ 明朝 rõ ràng
-- cảm giác cổ điển
-- trang trọng
-- mạnh
-- giống typography của Japanese wisdom / life philosophy YouTube thumbnails
-- gần phong cách 書道・古典・人生訓
-- không hiện đại quá mức
-
-Nếu image generator hỗ trợ font/style reference:
-
-→ ưu tiên visual typography giống reference image.
-
-Không sử dụng font sans-serif.
-
-Không sử dụng font mảnh.
-
-Không sử dụng handwriting casual.
-
-Không sử dụng manga/anime typography.
+ĐẶC TẢ FONT BẮT BUỘC:
+- Font: Japanese Heavy Mincho / Bold Mincho (「極太明朝体」 / 「力強い明朝体」).
+- KHÔNG dùng Gothic/Sans-serif, Thin font, Manga font hay Handwriting casual.
+- Nét dày đậm, tương phản cao giữa nét ngang và dọc, phong cách cổ điển, uy nghiêm của kênh 人生哲学 / 人生訓.
+- Hiệu ứng: Chữ to rõ, thick black outline/dark stroke + subtle dark drop shadow tạo separation rõ ràng trên nền tối.
 
 ==================================================
-BƯỚC 11 — THUMBNAIL TYPOGRAPHY STYLE
+BƯỚC 11 — MÀU SẮC TEXT
 ==================================================
 
-Typography phải:
-
-- cực lớn
-- bold
-- compact
-- high contrast
-- chiếm phần lớn vùng text
-- dễ đọc khi thumbnail thu nhỏ
-
-Text có:
-
-- black outline hoặc dark stroke
-- subtle black shadow
-- depth nhẹ
-- separation rõ với background
-
-Không dùng glow neon.
-
-Không dùng 3D gaming text.
-
-Không dùng gradient quá mạnh.
-
-Không dùng hiệu ứng hiện đại.
-
-Phong cách phải giống:
-
-Japanese wisdom
-Japanese life philosophy
-Japanese elderly audience
-classic authority
-serious
-dramatic
-high CTR
+Chỉ dùng bảng màu kinh điển trên nền đen:
+- WHITE: Ngữ cảnh, cụm từ bổ trợ.
+- YELLOW: Keyword cốt lõi, minh triết, lời hứa quan trọng.
+- RED: Từ khóa tương phản, nghịch lý, hành động, điểm kích hoạt cảm xúc.
+Phân cấp màu rõ ràng giữa các dòng để mắt người xem bắt được keyword chính đầu tiên.
 
 ==================================================
-BƯỚC 12 — MÀU TEXT
+BƯỚC 12 — BỐ CỤC THUMBNAIL HOÀN CHỈNH
 ==================================================
 
-Chỉ dùng:
-
-WHITE
-YELLOW
-RED
-
-BLACK / DARK BACKGROUND.
-
-WHITE:
-
-- context
-- supporting phrase
-
-YELLOW:
-
-- core concept
-- wisdom
-- promise
-- keyword quan trọng
-
-RED:
-
-- contradiction
-- action
-- warning
-- emotional trigger
-
-Không tô toàn bộ text cùng một màu nếu có thể tạo hierarchy.
-
-Ví dụ:
-
-親しくても
-口出しは
-なら
-
-Có thể phân cấp:
-
-親しくても = WHITE
-口出しは = YELLOW
-なら = RED
-
-Mục tiêu:
-
-Mắt người xem phải nhận ra keyword mạnh nhất đầu tiên.
+- Tỷ lệ: 16:9
+- Vùng Nhân vật (Character): Chiếm 35〜40% (Bust shot / Close-up rõ nét khuôn mặt, ánh nhìn nghiêm nghị/thông thái).
+- Vùng Text (Typography Area): Chiếm 60〜65% khung hình bên còn lại.
+- Vị trí: Character bên LEFT thì Text bên RIGHT (hoặc ngược lại tùy hướng nhìn của nhân vật).
+- Nền: Solid Dark Charcoal / Pitch Black (#0a0a0a), zero background clutter.
 
 ==================================================
-BƯỚC 13 — THUMBNAIL COMPOSITION & STRICT CHARACTER ANCHORING
+BƯỚC 13 & 14 — IMAGE GENERATION PROMPT (BANANA / BANANA PRO HOÀN CHỈNH)
 ==================================================
 
-QUY TẮC BẤT DI BẤT DỊCH VỀ NHÂN VẬT (ZERO DEVIATION):
+Tạo ra một câu lệnh \`image_generation_prompt\` duy nhất bằng TIẾNG ANH chuyên dụng để AI tạo ra ẢNH THUMBNAIL HOÀN CHỈNH (Gồm cả nhân vật chuẩn nhận diện và Text tiếng Nhật trên ảnh).
 
-1. Sử dụng ảnh nhân vật đính kèm làm EXACT CHARACTER REFERENCE (Anchor).
-2. KHÔNG ĐƯỢC biến đổi nhân vật thành người khác.
-3. KHÔNG ĐƯỢC sinh ra khuôn mặt AI ngẫu nhiên (No generic AI face/stock face).
-4. KHÔNG ĐƯỢC làm trẻ hóa, thay đổi độ tuổi, đổi giới tính, hoặc sửa đổi đặc điểm nhân trắc học.
-5. PHẢI GIỮ NGUYÊN 100%:
-   - Tỷ lệ và cấu trúc khuôn mặt (Facial bone structure)
-   - Tuổi tác thực tế và nếp nhăn tự nhiên (Exact age & wrinkles)
-   - Kiểu tóc, màu tóc (Hair style & hair line)
-   - Kính mắt, nốt ruồi, râu (nếu có trong ảnh reference)
-   - Biểu cảm nghiêm nghị/thông thái (Dignified, solemn, philosophical expression)
-   - Trang phục đặc trưng (Suit/Traditional Kimono/Yukata theo ảnh gốc)
-
-Composition:
-
-Character:
-30〜40% thumbnail (Close-up portrait hoặc Bust shot, rõ nét khuôn mặt).
-
-Text:
-60〜70%.
-
-Ưu tiên:
-Character bên LEFT, Text bên RIGHT (hoặc ngược lại tùy theo hướng nhìn của nhân vật trong ảnh reference).
-
-Không để text che mặt hoặc che mắt nhân vật.
-
-Background:
-BLACK hoặc SOLID DARK CHARCOAL, subtle vignette, zero background clutter.
-
-==================================================
-BƯỚC 14 — IMAGE GENERATION PROMPT FORMULATION
-==================================================
-
-Tạo một prompt hoàn chỉnh bằng TIẾNG ANH chuyên dụng cho Image Generator (Midjourney / Flux / DALL-E / SDXL).
-
-Prompt PHẢI chứa các cấu trúc khóa nhận dạng và typography nghiêm ngặt sau:
+CẤU TRÚC PROMPT BẮT BUỘC:
 
 1. IDENTITY LOCK DIRECTIVE:
-   - "Exact 1:1 photorealistic likeness of the person in the attached reference image ([detected_name] if identified)."
-   - "Maintain exact facial structure, actual age, facial wrinkles, hairstyle, gaze, and clothing from the reference image without any alteration."
-   - "Strictly DO NOT generate a different person, do not use generic AI face, do not de-age or beautify, do not alter identity."
+   "Keep the exact same face, identity, age, and facial structure of the Japanese philosopher [detected_name in Romaji & Kanji] from the reference image without alteration. A dignified close-up bust portrait positioned strictly on the [LEFT/RIGHT] 35% of the frame, looking calmly towards the viewer, wearing [authentic dark business suit / traditional kimono as seen in reference], with subtle dramatic studio rim lighting on his silhouette."
 
-2. COMPOSITION & LIGHTING:
-   - "High-contrast Japanese YouTube thumbnail composition, 16:9 ratio."
-   - "[Position: Left/Right] 35% side features the character in a dignified, philosophical close-up bust shot against a pure dark charcoal/black background with subtle dramatic rim lighting."
-   - "[Position: Right/Left] 65% space reserved exclusively for large vertical/horizontal Japanese typography."
+2. BACKGROUND SETTING:
+   "Pure solid pitch-black background (#000000), ultra-clean, zero clutter, high contrast."
 
-3. TYPOGRAPHY & TEXT SPECIFICATION:
-   - "Large, ultra-bold, high-impact Japanese Heavy Mincho (極太明朝体) serif typography."
-   - "Text content formatted exactly as: [Dòng 1 text] ([Color 1]), [Dòng 2 text] ([Color 2]), [Dòng 3 text] ([Color 3])."
-   - "Thick black outline, heavy drop shadow, highly legible on mobile screens."
-   - "Clean dark background, no clutter, no extra Japanese characters, no duplicate text, no English watermarks."
+3. EXACT JAPANESE TYPOGRAPHY & TEXT OVERLAY:
+   "On the [RIGHT/LEFT] 65% of the frame, render large, ultra-bold, high-impact Japanese Heavy Mincho (極太明朝体) serif typography. The text must be rendered exactly line-by-line as follows:
+   - Line 1: \\"[Line 1 text]\\" in [Color 1: Pure White / Vivid Gold Yellow / Deep Crimson Red]
+   - Line 2: \\"[Line 2 text]\\" in [Color 2: Pure White / Vivid Gold Yellow / Deep Crimson Red]
+   - Line 3: \\"[Line 3 text]\\" in [Color 3: Pure White / Vivid Gold Yellow / Deep Crimson Red]
+   All Japanese characters must have a thick, crisp black outline and subtle drop shadow for maximum readability on dark background."
 
-==================================================
-BƯỚC 15 — DESCRIPTION
-==================================================
-
-Viết description tiếng Nhật.
-
-2〜4 câu.
-
-Câu 1:
-mở rộng hook.
-
-Câu 2:
-gợi ý core insight.
-
-Câu 3:
-nói người xem sẽ nhận được gì nhưng không spoil.
-
-Câu cuối:
-CTA tự nhiên.
-
-Không SEO stuffing.
-
-Không lặp keyword.
-
-Không spoil ending.
+4. QUALITY & STYLE:
+   "16:9 aspect ratio, 8k resolution, authentic Japanese life philosophy YouTube thumbnail, perfect kanji calligraphy, no extra characters, no typos, high CTR visual impact."
 
 ==================================================
-BƯỚC 16 — TAGS
+BƯỚC 15 — DESCRIPTION & TAGS
 ==================================================
 
-Đúng chính xác 5 tags.
+Description (Tiếng Nhật, 2〜4 câu):
+- Mở rộng hook, gợi ý core insight, nêu giá trị người xem nhận được mà không spoil kết luận, kết thúc bằng CTA tự nhiên.
 
-Không hashtag.
-
-Tags phải liên quan trực tiếp đến:
-
-- detected_name
-- topic
-- framing
-- niche
-- philosophy
+Tags:
+- Đúng chính xác 5 tags tiếng Nhật liên quan trực tiếp đến nhân vật, chủ đề và triết lý.
 
 ==================================================
-BƯỚC 17 — FINAL QUALITY CONTROL
+OUTPUT FORMAT
 ==================================================
 
-Kiểm tra trước khi output:
-
-TITLE:
-
-[ ] đúng framing
-[ ] đúng transcript
-[ ] có detected_name nếu có
-[ ] có curiosity
-[ ] có promise
-[ ] nghe tự nhiên với người Nhật
-[ ] không SEO
-[ ] không clickbait sai
-[ ] 3 title khác nhau đủ để A/B test
-[ ] không có title yếu chỉ để đủ 3 option
-
-THUMBNAIL:
-
-[ ] nhân vật được fix cứng 100% theo ảnh reference (không biến dạng)
-[ ] chỉ một emotional idea
-[ ] không copy title
-[ ] 2〜4 dòng
-[ ] mobile readable
-[ ] font = heavy Japanese Mincho / 極太明朝体
-[ ] không phải Gothic/Sans-serif
-[ ] WHITE/YELLOW/RED hierarchy
-[ ] black/dark background
-[ ] character rõ mặt
-[ ] text không che mặt
-[ ] không có extra text
-
-DESCRIPTION:
-
-[ ] 2〜4 câu
-[ ] không spoil
-[ ] không keyword stuffing
-
-TAGS:
-
-[ ] chính xác 5 tags
-
-IMAGE PROMPT:
-
-[ ] chứa đầy đủ chỉ thị khóa nhận dạng (1:1 likeness, zero-alteration)
-[ ] exact Japanese text
-[ ] exact color
-[ ] exact line breaks
-[ ] exact typography direction
-[ ] no extra text
-
-==================================================
-OUTPUT
-==================================================
-
-CHỈ OUTPUT JSON HỢP LỆ (VALID JSON).
-
-KHÔNG markdown code block ngoài json (hoặc chỉ raw json).
-
-KHÔNG giải thích.
-
-KHÔNG output reasoning.
-
-KHÔNG output scoring.
-
-KHÔNG output title nội bộ.
-
-KHÔNG output quá 3 title options.
-
-FORMAT:
+CHỈ OUTPUT DUY NHẤT VALID JSON.
+KHÔNG markdown code block bọc ngoài json (hoặc chỉ raw json chuẩn).
+KHÔNG output reasoning, giải thích, hay bất kỳ text nào ngoài JSON.
 
 {
   "detected_topic": "",
@@ -903,8 +300,8 @@ FORMAT:
       }
     ],
     "font_style": "極太明朝体 / Japanese Heavy Bold Mincho",
-    "font_characteristics": "very thick traditional Japanese Mincho serif, high stroke contrast, strong classical Japanese wisdom aesthetic",
-    "text_effect": "black outline with subtle dark shadow",
+    "font_characteristics": "Very thick traditional Japanese Mincho serif, high stroke contrast, classical Japanese wisdom aesthetic",
+    "text_effect": "Thick black outline with subtle dark shadow",
     "background": "BLACK",
     "character_position": "LEFT",
     "text_position": "RIGHT",
@@ -912,60 +309,4 @@ FORMAT:
     "image_generation_prompt": ""
   }
 }
-
-==================================================
-QUY TẮC CUỐI CÙNG
-==================================================
-
-alternative_titles PHẢI CÓ ĐÚNG 3 PHẦN TỬ.
-
-Đó chính là 3 title dùng để A/B test trên YouTube.
-
-Không tạo option thứ 4.
-
-metadata.title PHẢI TRÙNG KHỚP với một trong 3 title ở alternative_titles.
-
-recommended_title_index cho biết title được đề xuất mạnh nhất.
-
-3 title phải khác nhau về ANGLE/HOOK, không chỉ thay đổi vài từ.
-
-Ví dụ:
-
-A = Paradox
-B = Truth
-C = Authority
-
-nếu transcript cho phép.
-
-Không hy sinh transcript accuracy để tạo CTR.
-
-Nếu một hook không phù hợp với nội dung:
-
-→ không sử dụng.
-
-Nếu transcript không nói về:
-
-宇宙
-魂
-引き寄せ
-晩年
-
-→ không ép các keyword này vào title.
-
-Nếu transcript thực sự nhấn mạnh một trong các chủ đề trên:
-
-→ có thể sử dụng tự nhiên.
-
-MỤC TIÊU CUỐI:
-
-TITLE:
-「なぜ？」「本当は？」「どういう意味？」
-
-THUMBNAIL:
-「えっ？」「自分のことかも」
-
-VIDEO:
-「なるほど、そういうことだったのか」
-
-Tất cả phải tạo thành một curiosity loop tự nhiên.
 `;
