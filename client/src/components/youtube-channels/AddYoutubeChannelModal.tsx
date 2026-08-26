@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { fetchAppSettings } from '../../api/appSettings';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
@@ -37,6 +38,7 @@ import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import type {
   AddYoutubeChannelFormValues,
+  AiSceneDensityMaxSec,
   StoredYoutubeChannelType,
   YoutubeChannel,
   YoutubeChannelLanguage,
@@ -198,7 +200,11 @@ function normalizeChannelType(type: StoredYoutubeChannelType): AddYoutubeChannel
   return type === 'reup' ? 'reup_video' : type;
 }
 
-function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): AddYoutubeChannelFormValues {
+function getChannelFormValues(
+  channel: YoutubeChannel,
+  mailAccountId: string,
+  densityDefaults: AiSceneDensityMaxSec = DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
+): AddYoutubeChannelFormValues {
   const frequency = channel.uploadFrequency ?? '';
   const slotCount = getPublishTimeSlotCount(frequency);
   const savedTimes = getChannelUploadTimes(channel);
@@ -222,9 +228,9 @@ function getChannelFormValues(channel: YoutubeChannel, mailAccountId: string): A
       channel.celebrityId,
     ),
     aiSceneDensityMaxSec: {
-      high: channel.aiSceneDensityMaxSec?.high ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
-      medium: channel.aiSceneDensityMaxSec?.medium ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
-      low: channel.aiSceneDensityMaxSec?.low ?? DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
+      high: channel.aiSceneDensityMaxSec?.high ?? densityDefaults.high,
+      medium: channel.aiSceneDensityMaxSec?.medium ?? densityDefaults.medium,
+      low: channel.aiSceneDensityMaxSec?.low ?? densityDefaults.low,
     },
     useReferenceImage: channel.useReferenceImage === true,
     audioBarFile: channel.audioBarFile ?? '',
@@ -303,6 +309,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [avatarTempSessionId, setAvatarTempSessionId] = useState(() => crypto.randomUUID());
   const [hasTempAvatar, setHasTempAvatar] = useState(false);
   const [hasChannelAvatar, setHasChannelAvatar] = useState(false);
+  const [sceneDensityDefaults, setSceneDensityDefaults] = useState<AiSceneDensityMaxSec>({
+    ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
+  });
 
   const {
     register,
@@ -391,11 +400,17 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setFormReady(false);
 
       try {
-        const [mails, sourceList, nicheList] = await Promise.all([
+        const [mails, sourceList, nicheList, appSettingsResult] = await Promise.all([
           fetchMailAccounts('', 1, 100, { signal }),
           fetchSourceChannels('all', 'all', 'all', 1, 100, { signal }),
           fetchNiches({ signal }),
+          fetchAppSettings({ signal }).catch(() => null),
         ]);
+
+        const densityDefaults: AiSceneDensityMaxSec = appSettingsResult?.item.aiSceneDensityMaxSec
+          ? { ...appSettingsResult.item.aiSceneDensityMaxSec }
+          : { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC };
+        setSceneDensityDefaults(densityDefaults);
 
         setSources(sourceList.items);
         setNiches(nicheList.items);
@@ -422,7 +437,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setHasChannelAvatar(avatarExists);
           setHasTempAvatar(false);
 
-          const formValues = getChannelFormValues(channel, mailAccountId);
+          const formValues = getChannelFormValues(channel, mailAccountId, densityDefaults);
           if (!avatarExists) {
             formValues.showChannelAvatar = false;
           }
@@ -438,6 +453,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           reset({
             ...defaultValues,
             mailAccountId: availableMailOptions[0]?.value ?? '',
+            aiSceneDensityMaxSec: { ...densityDefaults },
           });
         }
         setFormReady(true);
@@ -488,8 +504,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   useEffect(() => {
     if (!formReady) return;
     if (canEditSceneDensity) return;
-    setValue('aiSceneDensityMaxSec', { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC });
-  }, [formReady, canEditSceneDensity, setValue]);
+    setValue('aiSceneDensityMaxSec', { ...sceneDensityDefaults });
+  }, [formReady, canEditSceneDensity, sceneDensityDefaults, setValue]);
 
   useAbortableEffect(
     async signal => {
@@ -686,9 +702,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           parseSiBackgroundImageValue(values.reupAudioBackgroundImage).mode === 'multi_image')
           ? {
               aiSceneDensityMaxSec: {
-                high: Number(values.aiSceneDensityMaxSec.high) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
-                medium: Number(values.aiSceneDensityMaxSec.medium) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
-                low: Number(values.aiSceneDensityMaxSec.low) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
+                high: Number(values.aiSceneDensityMaxSec.high) || sceneDensityDefaults.high,
+                medium: Number(values.aiSceneDensityMaxSec.medium) || sceneDensityDefaults.medium,
+                low: Number(values.aiSceneDensityMaxSec.low) || sceneDensityDefaults.low,
               },
             }
           : {}),

@@ -11,7 +11,7 @@ import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
-import { SS_ENABLE_KEN_BURNS } from '../slideshow/slideshow.constants.js';
+import { isKenBurnsEnabled } from '../slideshow/slideshow.constants.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';
 import { AiClipPrebakePool } from './ai-video-clip-prebake.js';
@@ -131,7 +131,7 @@ function createPrebakeEnqueue(
 
 function clipPrebakeEnabled(input: GenerateAiSceneSlideImagesInput): boolean {
   return (
-    SS_ENABLE_KEN_BURNS &&
+    isKenBurnsEnabled() &&
     input.audioSpeed != null &&
     input.assumedFinalSlidesByName != null &&
     input.assumedFinalSlidesByName.size > 0

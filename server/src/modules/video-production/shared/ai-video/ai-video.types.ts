@@ -113,7 +113,7 @@ export interface GenerateAiSceneSlideImagesInput {
   workDir: string;
   youtubeVideoId: string;
   scenes: AiVideoScenePrompt[];
-  /** Persisted audio speed from ai-render-config.json. Required when SS_ENABLE_KEN_BURNS. */
+  /** Persisted audio speed from ai-render-config.json. Required when Ken Burns is enabled. */
   audioSpeed?: number;
   audioPath?: string;
   /** Precomputed final SlideSpec per scene name (scene-001, …) for incremental Ken Burns prebake. */

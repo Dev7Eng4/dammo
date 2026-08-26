@@ -405,12 +405,25 @@ export function YoutubeChannelDetailPage() {
           open
           channelId={id}
           video={contentVideo}
+          canRegenerateMetadata={channel?.language === 'ja'}
           onClose={() => setContentVideo(null)}
           onSaved={content => {
-            setAllVideos(current => current.map(video => (video.id === contentVideo.id ? { ...video, title: content.title } : video)));
+            setAllVideos(current =>
+              current.map(video => (video.id === contentVideo.id ? { ...video, title: content.title } : video)),
+            );
+            setContentVideo(current => (current ? { ...current, title: content.title } : current));
           }}
           onMarkedUploaded={videoId => {
             setAllVideos(current => current.map(video => (video.id === videoId ? { ...video, status: 'Uploaded' } : video)));
+            void fetchYoutubeChannel(id)
+              .then(live => setChannel(live))
+              .catch(() => undefined);
+          }}
+          onVideoCreated={videoId => {
+            setAllVideos(current =>
+              current.map(video => (video.id === videoId ? { ...video, status: 'Created' } : video)),
+            );
+            setContentVideo(current => (current?.id === videoId ? { ...current, status: 'Created' } : current));
             void fetchYoutubeChannel(id)
               .then(live => setChannel(live))
               .catch(() => undefined);

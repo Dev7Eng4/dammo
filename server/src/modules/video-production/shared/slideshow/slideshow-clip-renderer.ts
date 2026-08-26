@@ -15,7 +15,7 @@ import {
 import {
   SS_CLIP_CRF,
   SS_CLIP_PRESET,
-  SS_ENABLE_KEN_BURNS,
+  isKenBurnsEnabled,
   SS_MAX_KEN_BURNS_ANIMATION_SEC,
 } from './slideshow.constants.js';
 import type { KenBurnsAdaptConfig, SlideSpec } from './slideshow.types.js';
@@ -67,7 +67,7 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   const fit = slide.fit ?? 'cover';
   const maxAnimSec = slide.maxKenBurnsAnimationSec ?? SS_MAX_KEN_BURNS_ANIMATION_SEC;
   const animSec = resolveKenBurnsAnimationSec(slide.durationSec, maxAnimSec);
-  const kenBurns = SS_ENABLE_KEN_BURNS && slide.kenBurns
+  const kenBurns = isKenBurnsEnabled() && slide.kenBurns
     ? adaptKenBurnsForDuration(slide.kenBurns, animSec, {
         width: opts.width,
         height: opts.height,

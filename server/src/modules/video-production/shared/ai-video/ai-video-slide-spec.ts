@@ -8,7 +8,7 @@ import {
 } from '../slideshow/slideshow-presets.js';
 import {
   SS_DEFAULT_TRANSITION_DURATION,
-  SS_ENABLE_IMAGE_TRANSITIONS,
+  isImageTransitionsEnabled,
 } from '../slideshow/slideshow.constants.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { CANVAS_H, CANVAS_W, FPS } from '../render-core/canvas.constants.js';
@@ -65,7 +65,7 @@ export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]
       fit: 'cover',
     };
 
-    if (SS_ENABLE_IMAGE_TRANSITIONS && !isLast && transitionDurationSec > 0) {
+    if (isImageTransitionsEnabled() && !isLast && transitionDurationSec > 0) {
       slide.transitionToNext = AUTO_TRANSITION_ROTATION[usableIndex % AUTO_TRANSITION_ROTATION.length];
       slide.transitionDurationSec = transitionDurationSec;
     }

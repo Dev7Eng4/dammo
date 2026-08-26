@@ -21,7 +21,8 @@ export type NavIcon =
   | 'task-queue'
   | 'queue'
   | 'support'
-  | 'logs';
+  | 'logs'
+  | 'settings';
 
 export interface NavItem {
   id: string;
@@ -91,6 +92,7 @@ export const navSections: NavSection[] = [
 export const footerNavItems: NavItem[] = [
   { id: 'support', label: 'Hỗ trợ', path: '/support', icon: 'support' },
   { id: 'logs', label: 'Nhật ký', path: '/logs', icon: 'logs' },
+  { id: 'settings', label: 'Cài đặt', path: '/settings', icon: 'settings' },
 ];
 
 export function flattenNavItems(): NavItem[] {

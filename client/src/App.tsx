@@ -11,6 +11,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProxiesPage } from './pages/ProxiesPage';
 import { PromptsPage } from './pages/PromptsPage';
 import { RenderQueuePage } from './pages/RenderQueuePage';
+import { SettingsPage } from './pages/SettingsPage';
 import { SourceChannelDetailPage } from './pages/SourceChannelDetailPage';
 import { SourceChannelsPage } from './pages/SourceChannelsPage';
 import { TaskQueuePage } from './pages/TaskQueuePage';
@@ -51,7 +52,8 @@ export default function App() {
               <Route path="excel-import-export" element={<PlaceholderPage />} />
               <Route path="support" element={<PlaceholderPage />} />
               <Route path="logs" element={<PlaceholderPage />} />
-              <Route path="workspace-settings" element={<PlaceholderPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="workspace-settings" element={<Navigate to="/settings" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

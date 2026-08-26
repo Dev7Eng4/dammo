@@ -66,6 +66,29 @@ async function processAddSource(job: TaskJob): Promise<unknown> {
 
 async function processCreateVideo(job: TaskJob): Promise<unknown> {
   const payload = job.payload as CreateVideoTaskPayload;
+
+  if (payload.regenerateMetadata === true) {
+    updateProgress(job.id, 5, 'Đang tạo lại metadata và thumbnail');
+    const result = await videoProductionService.regenerateMetadataAndThumbnails(
+      payload.channelId!,
+      payload.videoIds!,
+      { taskJobId: job.id },
+    );
+    updateProgress(job.id, 100, 'Hoàn thành');
+    return result;
+  }
+
+  if (payload.assembleOnly === true) {
+    updateProgress(job.id, 5, 'Đang ghép video');
+    const result = await videoProductionService.assemblePreparedVideos(
+      payload.channelId!,
+      payload.videoIds!,
+      { taskJobId: job.id },
+    );
+    updateProgress(job.id, 100, 'Hoàn thành');
+    return result;
+  }
+
   const options = {
     taskJobId: job.id,
     ...(payload.videoCount != null ? { maxVideosPerChannel: payload.videoCount } : {}),

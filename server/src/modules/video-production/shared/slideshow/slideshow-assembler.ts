@@ -14,8 +14,8 @@ import {
   SS_CANVAS_H,
   SS_CANVAS_W,
   SS_DEFAULT_TRANSITION_DURATION,
-  SS_ENABLE_IMAGE_TRANSITIONS,
-  SS_ENABLE_KEN_BURNS,
+  isImageTransitionsEnabled,
+  isKenBurnsEnabled,
   SS_FINAL_CRF,
   SS_FINAL_PRESET,
   SS_FPS,
@@ -75,8 +75,8 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
   const encoder = resolveFfmpegHwEncoder();
   log(
     `[slideshow] rendering ${slides.length} slide clip(s) @ ${cfg.width}x${cfg.height} ${cfg.fps}fps ` +
-      `(kenBurns=${SS_ENABLE_KEN_BURNS ? 'on' : 'off'}, ` +
-      `transitions=${SS_ENABLE_IMAGE_TRANSITIONS ? 'on' : 'off'}, ` +
+      `(kenBurns=${isKenBurnsEnabled() ? 'on' : 'off'}, ` +
+      `transitions=${isImageTransitionsEnabled() ? 'on' : 'off'}, ` +
       `concurrency=${concurrency}, encoder=${encoder})`,
   );
 
@@ -102,7 +102,7 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
     type: s.transitionToNext ?? 'fade',
     durationSec: s.transitionDurationSec ?? SS_DEFAULT_TRANSITION_DURATION,
   }));
-  const chain = SS_ENABLE_IMAGE_TRANSITIONS
+  const chain = isImageTransitionsEnabled()
     ? buildXfadeChain({ clipCount: clipPaths.length, durations, transitions })
     : buildHardCutChain(clipPaths.length, durations);
 

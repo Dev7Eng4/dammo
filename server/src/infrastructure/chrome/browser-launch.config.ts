@@ -1,4 +1,5 @@
 import { env } from '../../config/env.js';
+import { appSettingsService } from '../../modules/app-settings/app-settings.service.js';
 
 const STEALTH_ARGS = ['--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check'] as const;
 
@@ -15,6 +16,8 @@ const RAM_OPTIMIZATION_ARGS = [
 ] as const;
 
 /**
+ * @deprecated Prefer isChromeBackgroundUseOffscreen() — kept as compile-time default only.
+ *
  * When true (default), background Chrome windows are parked off-screen.
  * When false, windows are minimized via CDP instead (see chrome-profile.runner).
  *
@@ -23,12 +26,17 @@ const RAM_OPTIMIZATION_ARGS = [
  */
 export const CHROME_BACKGROUND_USE_OFFSCREEN = true;
 
+/** Runtime switch: park background Chrome off-screen (vs minimize). */
+export function isChromeBackgroundUseOffscreen(): boolean {
+  return appSettingsService.get().chromeBackgroundUseOffscreen;
+}
+
 /**
  * Chrome flags to avoid stealing focus from the user's foreground apps.
  */
 export function backgroundChromeArgs(): string[] {
   const args = ['--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling'];
-  if (CHROME_BACKGROUND_USE_OFFSCREEN && process.platform === 'win32') {
+  if (isChromeBackgroundUseOffscreen() && process.platform === 'win32') {
     args.push('--window-position=-32000,-32000', '--window-size=1920,1080');
   }
   return args;

@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { BrowserContext, CDPSession, Page } from 'playwright';
 import {
   buildChromeLaunchOptions,
-  CHROME_BACKGROUND_USE_OFFSCREEN,
+  isChromeBackgroundUseOffscreen,
 } from '../../infrastructure/chrome/browser-launch.config.js';
 import { applyStealthInit, stealthChromium } from '../../infrastructure/chrome/stealth-init.js';
 import { clearLlmBrowserSessionsForProfile } from '../../infrastructure/llm-browser/llm-browser.session.js';
@@ -99,7 +99,7 @@ async function keepProfileInBackground(profileId: string, page: Page): Promise<v
   if (!isProfileBackground(profileId)) return;
   const context = activeContexts.get(profileId);
   if (!context) return;
-  if (CHROME_BACKGROUND_USE_OFFSCREEN) {
+  if (isChromeBackgroundUseOffscreen()) {
     await moveChromeWindowOffscreen(context, page);
   } else {
     await minimizeChromeWindow(context, page);
@@ -138,7 +138,7 @@ async function logChromeLaunch(
     headless,
     background,
     ...(background
-      ? { backgroundMode: CHROME_BACKGROUND_USE_OFFSCREEN ? 'offscreen' : 'minimized' }
+      ? { backgroundMode: isChromeBackgroundUseOffscreen() ? 'offscreen' : 'minimized' }
       : {}),
     chrome: env.chromeExecutablePath || `channel:${env.chromeChannel}`,
     userAgent,

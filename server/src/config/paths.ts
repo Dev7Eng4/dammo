@@ -26,6 +26,8 @@ export const paths = {
   mediaDownloadsDir: path.join(env.dataDir, 'media-downloads'),
   prompts: path.join(env.dataDir, 'prompts.json'),
   promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
+  appSettings: path.join(env.dataDir, 'app-settings.json'),
+
   visualStyles: path.join(env.dataDir, 'visual-styles.json'),
   niches: path.join(env.dataDir, 'niches.json'),
   celebrities: path.join(env.dataDir, 'celebrities.json'),

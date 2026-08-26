@@ -1,4 +1,5 @@
 import { env } from '../../../../config/env.js';
+import { appSettingsService } from '../../../app-settings/app-settings.service.js';
 
 /** Subdirectory under workDir for AI slideshow source images. */
 export const AI_SLIDES_DIRNAME = 'images';
@@ -82,10 +83,11 @@ export type AiSceneDensityMaxSec = {
   low: number;
 };
 
-/** Merge channel override with defaults (8 / 30 / 60). Invalid values fall back per key. */
+/** Merge channel override with global app-settings defaults. Invalid values fall back per key. */
 export function resolveAiSceneDensityMaxSec(
   override?: Partial<AiSceneDensityMaxSec> | null,
 ): AiSceneDensityMaxSec {
+  const defaults = appSettingsService.get().aiSceneDensityMaxSec;
   const clamp = (value: number | undefined, fallback: number): number => {
     if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
     const rounded = Math.round(value);
@@ -94,9 +96,9 @@ export function resolveAiSceneDensityMaxSec(
   };
 
   return {
-    high: clamp(override?.high, AI_VIDEO_DENSITY_MAX_SCENE_SEC.high),
-    medium: clamp(override?.medium, AI_VIDEO_DENSITY_MAX_SCENE_SEC.medium),
-    low: clamp(override?.low, AI_VIDEO_DENSITY_MAX_SCENE_SEC.low),
+    high: clamp(override?.high, defaults.high),
+    medium: clamp(override?.medium, defaults.medium),
+    low: clamp(override?.low, defaults.low),
   };
 }
 

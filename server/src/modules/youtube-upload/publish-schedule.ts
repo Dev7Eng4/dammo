@@ -48,12 +48,6 @@ function addLocalDays(d: Date, n: number): Date {
   return x;
 }
 
-function diffLocalCalendarDays(a: Date, b: Date): number {
-  const t0 = startOfLocalDay(a).getTime();
-  const t1 = startOfLocalDay(b).getTime();
-  return Math.round((t1 - t0) / 86_400_000);
-}
-
 function toMmDdYyyy(d: Date): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
@@ -131,21 +125,16 @@ function nextPublishOnCalendarInterval(
   const sh = slot ? slot.h : 9;
   const sm = slot ? slot.m : 0;
   const refDay = startOfLocalDay(lastPublishRef);
-  let probeDay = addLocalDays(refDay, spacingDays);
+  const idealDay = addLocalDays(refDay, spacingDays);
+  const ideal = new Date(idealDay.getFullYear(), idealDay.getMonth(), idealDay.getDate(), sh, sm, 0, 0);
 
-  for (let guard = 0; guard < 800; guard += 1) {
-    const y = probeDay.getFullYear();
-    const mo = probeDay.getMonth();
-    const da = probeDay.getDate();
-    const candidate = new Date(y, mo, da, sh, sm, 0, 0);
-    const gap = diffLocalCalendarDays(refDay, probeDay);
-    if (gap >= spacingDays && candidate.getTime() > notBefore.getTime()) {
-      return candidate;
-    }
-    probeDay = addLocalDays(probeDay, spacingDays);
+  // Ideal next = lastUpload + spacingDays at publish time; if still upcoming, use it.
+  if (ideal.getTime() > notBefore.getTime()) {
+    return ideal;
   }
 
-  throw new Error('Could not find interval publish slot within ~800 steps.');
+  // Missed ideal slot — next calendar day at publish time after notBefore (no +N jumps).
+  return nextPublishAfter(notBefore, 1, timesHHmm);
 }
 
 export function getYoutubePublishPlan(channel: YoutubeChannel, uploadCount: number): {

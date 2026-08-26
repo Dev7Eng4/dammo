@@ -1,5 +1,6 @@
 import { env } from '../../../../config/env.js';
 import { resolveFfmpegHwEncoder } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { appSettingsService } from '../../../app-settings/app-settings.service.js';
 
 /**
  * Slideshow effect library constants.
@@ -14,11 +15,21 @@ export const SS_DEFAULT_SLIDE_DURATION = 5;
 /** Default cross-transition duration (seconds) between two slides. */
 export const SS_DEFAULT_TRANSITION_DURATION = 1;
 
-/** Global switch for Ken Burns pan/zoom on slideshow images. */
+/** @deprecated Prefer isKenBurnsEnabled() — kept as compile-time default only. */
 export const SS_ENABLE_KEN_BURNS = true;
 
-/** Global switch for transitions between slideshow images. */
+/** @deprecated Prefer isImageTransitionsEnabled() — kept as compile-time default only. */
 export const SS_ENABLE_IMAGE_TRANSITIONS = true;
+
+/** Runtime switch for Ken Burns pan/zoom on slideshow images. */
+export function isKenBurnsEnabled(): boolean {
+  return appSettingsService.get().enableKenBurns;
+}
+
+/** Runtime switch for transitions between slideshow images. */
+export function isImageTransitionsEnabled(): boolean {
+  return appSettingsService.get().enableImageTransitions;
+}
 
 /** Ken Burns animation runs at most this many seconds; the slide holds the final frame after. */
 export const SS_MAX_KEN_BURNS_ANIMATION_SEC = 30;

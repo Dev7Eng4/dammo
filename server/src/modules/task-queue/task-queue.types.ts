@@ -48,6 +48,10 @@ export interface CreateVideoTaskPayload {
   videoCount?: number;
   prepareOnly?: boolean;
   videoIds?: string[];
+  /** Re-run metadata + thumbnail only for existing Prepared/Created videos */
+  regenerateMetadata?: boolean;
+  /** Assemble final mp4 only for existing Prepared videos (skip transcript/metadata/thumbnail) */
+  assembleOnly?: boolean;
 }
 
 export interface UploadVideoTaskPayload {

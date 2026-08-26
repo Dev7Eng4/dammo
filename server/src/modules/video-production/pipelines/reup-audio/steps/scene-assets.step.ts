@@ -11,7 +11,7 @@ import {
   buildAssumedFinalSlidesByName,
 } from '../../../shared/ai-video/ai-video-slide-spec.js';
 import type { AiVideoScenePrompt } from '../../../shared/ai-video/ai-video.types.js';
-import { SS_ENABLE_KEN_BURNS } from '../../../shared/slideshow/slideshow.constants.js';
+import { isKenBurnsEnabled } from '../../../shared/slideshow/slideshow.constants.js';
 import type { SlideSpec } from '../../../shared/slideshow/slideshow.types.js';
 import { toOnLog, type VideoTaskContext } from '../video-task.context.js';
 
@@ -86,7 +86,7 @@ export async function runSceneAssetsStep(
   let audioSpeed: number | undefined;
   let assumedFinalSlidesByName: Map<string, SlideSpec> | undefined;
 
-  if (SS_ENABLE_KEN_BURNS) {
+  if (isKenBurnsEnabled()) {
     const renderConfig = await resolveAiRenderConfig(workDir);
     audioSpeed = renderConfig.audioSpeed;
     log.info(`${options.label} audio speed locked early → ${audioSpeed.toFixed(3)} (ai-render-config.json)`);

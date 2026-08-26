@@ -59,6 +59,48 @@ export class VideoProductionService {
     return this.createVideosForYoutubeChannel(channelId, { ...options, skipVideoAssembly: true });
   }
 
+  async regenerateMetadataAndThumbnails(
+    channelId: string,
+    videoIds: string[],
+    options?: { taskJobId?: string },
+  ): Promise<CreateReupVideosResult> {
+    const channel = youtubeChannelsRepository.findById(channelId);
+    if (!channel) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    if (!isReupChannelType(channel.type)) {
+      throw new AppError('Only reup audio or reup video channels can regenerate metadata', 400, 'INVALID_CHANNEL_TYPE');
+    }
+
+    const destination = await createYoutubeProductionDestination(channel);
+    return resolvePipeline(destination.pipelineType).regenerateMetadataAndThumbnails(destination, {
+      videoIds,
+      ...(options?.taskJobId ? { taskJobId: options.taskJobId } : {}),
+    });
+  }
+
+  async assemblePreparedVideos(
+    channelId: string,
+    videoIds: string[],
+    options?: { taskJobId?: string },
+  ): Promise<CreateReupVideosResult> {
+    const channel = youtubeChannelsRepository.findById(channelId);
+    if (!channel) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    if (!isReupChannelType(channel.type)) {
+      throw new AppError('Only reup audio or reup video channels can assemble videos', 400, 'INVALID_CHANNEL_TYPE');
+    }
+
+    const destination = await createYoutubeProductionDestination(channel);
+    return resolvePipeline(destination.pipelineType).assemblePreparedVideos(destination, {
+      videoIds,
+      ...(options?.taskJobId ? { taskJobId: options.taskJobId } : {}),
+    });
+  }
+
   async createVideosForChannels(channelIds: string[], options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
     if (channelIds.length === 0) {
       throw new AppError('No channels specified', 400, 'NO_CHANNELS');

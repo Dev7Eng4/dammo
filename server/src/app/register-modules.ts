@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { isAppError } from '../shared/http/errors.js';
+import { createAppSettingsRoutes } from '../modules/app-settings/app-settings.routes.js';
 import { createChromeProfilesRoutes } from '../modules/chrome-profiles/chrome-profiles.routes.js';
 import { createContentDownloadRoutes } from '../modules/content-download/content-download.routes.js';
 import { createDashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
@@ -40,6 +41,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/assets`, createAssetsRoutes());
   app.route(`${prefix}/celebrities`, createCelebritiesRoutes());
   app.route(`${prefix}/small-video-groups`, createSmallVideoGroupsRoutes());
+  app.route(`${prefix}/app-settings`, createAppSettingsRoutes());
 }
 
 export function registerModules(app: Hono) {

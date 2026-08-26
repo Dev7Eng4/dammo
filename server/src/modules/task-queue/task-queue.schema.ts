@@ -24,6 +24,8 @@ const createVideoPayloadSchema = z
     videoCount: z.number().int().min(1).max(50).optional(),
     prepareOnly: z.boolean().optional(),
     videoIds: z.array(z.string().min(1)).min(1).optional(),
+    regenerateMetadata: z.boolean().optional(),
+    assembleOnly: z.boolean().optional(),
   })
   .refine(
     (data) => {
@@ -35,6 +37,28 @@ const createVideoPayloadSchema = z
       return modes === 1;
     },
     { message: 'Provide exactly one of channelId, channelIds, or allReupChannels' },
+  )
+  .refine(
+    (data) =>
+      data.regenerateMetadata !== true ||
+      (Boolean(data.channelId) && Boolean(data.videoIds?.length) && !data.allReupChannels && !data.channelIds?.length),
+    {
+      message: 'regenerateMetadata requires channelId and videoIds',
+    },
+  )
+  .refine(
+    (data) =>
+      data.assembleOnly !== true ||
+      (Boolean(data.channelId) && Boolean(data.videoIds?.length) && !data.allReupChannels && !data.channelIds?.length),
+    {
+      message: 'assembleOnly requires channelId and videoIds',
+    },
+  )
+  .refine(
+    (data) => !(data.assembleOnly === true && data.regenerateMetadata === true),
+    {
+      message: 'assembleOnly and regenerateMetadata cannot both be true',
+    },
   );
 
 const uploadVideoPayloadSchema = z

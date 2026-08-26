@@ -1,9 +1,13 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
+import { resolveYoutubeChannelVideoDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { resolveChannelAvatarForVideoAssembly } from '../../../youtube-channels/resolve-channel-avatar.js';
+import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
 import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
+import { findOldThumbnailPath } from '../../../youtube-upload/upload-assets.js';
 import { sanitizeVideoOutputBasename } from '../../shared/render-core/video-output-file.js';
 import { sourceCatalogAdapter } from '../../adapters/source-catalog.adapter.js';
 import type { ProductionDestination } from '../../ports/production-destination.port.js';
@@ -23,10 +27,18 @@ import { runMetadataStep } from './steps/metadata.step.js';
 import { buildTasks, collectSourceVideos } from './steps/task-selection.js';
 import { runThumbnailStep } from './steps/thumbnail.step.js';
 import { runCleanTranscript, runUpdateTranscript } from './steps/transcript.step.js';
+import {
+  PREPARED_AUDIO_FILE,
+  PREPARED_SUBTITLE_FILES,
+  collectVisualAssetsFromDisk,
+  findFirstExistingPath,
+} from './steps/assemble-from-prepared.js';
 import { resolveVideoTypeStrategy, type VisualAssets } from './strategies/index.js';
 import { createTaskLogger, type TaskLogger } from './task-logger.js';
 import { buildAssembleContext, type StepTimerOptions, type VideoTaskContext } from './video-task.context.js';
 import type { CreateReupVideosResult, ReupVideoOutputItem, ReupVideoTask } from './reup-audio.types.js';
+import { parseVideoMetaContent } from '../../shared/meta/metadata.types.js';
+import { OUTPUT_VIDEO_BASENAME } from '../../shared/render-core/output-artifacts.constants.js';
 
 interface CreateVideosOptions {
   taskJobId?: string;
@@ -39,12 +51,25 @@ interface CreateVideosOptions {
   videoIds?: string[];
 }
 
+interface RegenerateMetadataOptions {
+  taskJobId?: string;
+  videoIds: string[];
+}
+
+interface AssemblePreparedOptions {
+  taskJobId?: string;
+  videoIds: string[];
+}
+
 interface TaskRunContext {
   taskJobId?: string;
   log: TaskLogger;
   stepTimer: StepTimerOptions;
   skipVideoAssembly: boolean;
 }
+
+const AUDIO_FILE = 'audio.mp3';
+const SUBTITLE_FILES = ['transcript-updated.srt', 'transcript.srt'] as const;
 
 function isReupAudioPipeline(pipelineType: ProductionDestination['pipelineType']): boolean {
   return pipelineType === 'reup_audio';
@@ -64,6 +89,18 @@ function completeThumbnailStageIfRunning(taskJobId: string | undefined): void {
   if (stages?.find(stage => stage.id === CREATE_VIDEO_STAGE_IDS.thumbnail)?.status === 'doing') {
     completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
   }
+}
+
+async function findFirstExisting(...paths: string[]): Promise<string | null> {
+  for (const candidate of paths) {
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {
+      // try next
+    }
+  }
+  return null;
 }
 
 export class ReupAudioPipeline {
@@ -130,6 +167,366 @@ export class ReupAudioPipeline {
 
     if (options?.taskJobId && !options.skipLivePhaseDone) {
       taskQueueRepository.setLivePhase(options.taskJobId, 'done');
+    }
+
+    return { items };
+  }
+
+  /**
+   * Re-run metadata + thumbnail only against an existing Prepared/Created video folder.
+   * Skips download, transcript rewrite, and assembly.
+   */
+  async regenerateMetadataAndThumbnails(
+    destination: ProductionDestination,
+    options: RegenerateMetadataOptions,
+  ): Promise<CreateReupVideosResult> {
+    if (!isReupAudioPipeline(destination.pipelineType) && destination.pipelineType !== 'reup') {
+      throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
+    }
+
+    if (destination.language !== 'ja') {
+      throw new AppError(
+        'Regenerate metadata is only supported for Japanese channels',
+        400,
+        'UNSUPPORTED_LANGUAGE',
+      );
+    }
+
+    const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
+    if (videoType !== 'si' && videoType !== 'ai') {
+      throw new AppError(
+        'Regenerate metadata requires reupAudioVideoType si or ai',
+        400,
+        'INVALID_VIDEO_TYPE',
+      );
+    }
+
+    const videoIds = [...new Set(options.videoIds.map(id => id.trim()).filter(Boolean))];
+    if (videoIds.length === 0) {
+      throw new AppError('No video IDs provided', 400, 'NO_VIDEO_IDS');
+    }
+
+    const items: ReupVideoOutputItem[] = [];
+    const taskJobId = options.taskJobId;
+
+    for (const videoId of videoIds) {
+      const log = createTaskLogger(taskJobId);
+      const stepTimer = createStepTimer(taskJobId, videoId);
+      let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.metadata;
+
+      try {
+        const prepareItem = videoPrepareRepository
+          .read(destination.id)
+          .find(
+            item =>
+              item.videoId.trim() === videoId &&
+              (item.status === 'Prepared' || item.status === 'Created'),
+          );
+        if (!prepareItem) {
+          throw new AppError(
+            'Video is not in Prepared or Created status',
+            409,
+            'VIDEO_NOT_VIEWABLE',
+          );
+        }
+
+        const workDir = resolveYoutubeChannelVideoDir(destination.id, videoId);
+        if (!workDir) {
+          throw new AppError('Video folder not found', 404, 'VIDEO_FOLDER_NOT_FOUND');
+        }
+
+        const audioPath = path.join(workDir, AUDIO_FILE);
+        try {
+          await fs.access(audioPath);
+        } catch {
+          throw new AppError(`Missing audio.mp3 in video folder`, 404, 'AUDIO_NOT_FOUND');
+        }
+
+        const subtitlePath = await findFirstExisting(
+          ...SUBTITLE_FILES.map(name => path.join(workDir, name)),
+        );
+        if (!subtitlePath) {
+          throw new AppError(
+            'Missing transcript.srt or transcript-updated.srt',
+            404,
+            'TRANSCRIPT_NOT_FOUND',
+          );
+        }
+
+        const oldThumbnailPath = findOldThumbnailPath(workDir) ?? undefined;
+
+        if (taskJobId) {
+          initCreateVideoStages(taskJobId, {
+            includeUpdateTranscript: true,
+          });
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+          taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+        }
+
+        const task: ReupVideoTask = {
+          link: `https://www.youtube.com/watch?v=${videoId}`,
+          id: prepareItem.id,
+          language: destination.language,
+          videoId,
+          sourceId: '',
+          sourceTitle: prepareItem.title.trim() || videoId,
+        };
+
+        const strategy = resolveVideoTypeStrategy(videoType);
+        const ctx: VideoTaskContext = {
+          destination,
+          videoType,
+          task,
+          ...(taskJobId ? { taskJobId } : {}),
+          log,
+          stepTimer,
+          workDir,
+          downloaded: {
+            youtubeVideoId: videoId,
+            outputDir: workDir,
+            audioPath,
+            transcriptPath: subtitlePath,
+            ...(oldThumbnailPath ? { thumbnailPath: oldThumbnailPath } : {}),
+          },
+          subtitlePath,
+        };
+
+        activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+        ctx.videoMeta = await runMetadataStep(ctx);
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+
+        const newTitle =
+          typeof ctx.videoMeta.metadata.title === 'string' ? ctx.videoMeta.metadata.title.trim() : '';
+        if (newTitle) {
+          videoPrepareRepository.updateTitle(destination.id, videoId, newTitle);
+        }
+
+        activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+
+        const assets: VisualAssets = {};
+        const thumbnail = await runThumbnailStep(ctx, strategy);
+        Object.assign(assets, {
+          ...(thumbnail.reupThumbnailPath ? { reupThumbnailPath: thumbnail.reupThumbnailPath } : {}),
+          ...(thumbnail.heroImagePath ? { heroImagePath: thumbnail.heroImagePath } : {}),
+        });
+        Object.assign(assets, await strategy.prepareEnrichedVisuals(ctx, assets, thumbnail.flow));
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+
+        log.ok(`Regenerated metadata + thumbnail for ${videoId}`);
+
+        items.push({
+          link: task.link,
+          channelId: destination.id,
+          language: destination.language,
+          videoId,
+          youtubeVideoId: videoId,
+          outputPath: workDir,
+          audioPath,
+          updatedSrtPath: subtitlePath,
+          videoMetaOutput: ctx.videoMeta,
+          ...(oldThumbnailPath ? { thumbnailPath: oldThumbnailPath } : {}),
+          ...(thumbnail.thumbnailHorizontalOutput
+            ? { thumbnailHorizontalOutput: thumbnail.thumbnailHorizontalOutput }
+            : {}),
+          ...(thumbnail.thumbnailVisualPath ? { thumbnailVisualPath: thumbnail.thumbnailVisualPath } : {}),
+          ...(assets.heroImagePath ? { heroImagePath: assets.heroImagePath } : {}),
+          ...(assets.reupThumbnailPath ? { reupThumbnailPath: assets.reupThumbnailPath } : {}),
+        });
+      } catch (err) {
+        if (taskJobId && activeStageId) {
+          failCreateVideoStage(taskJobId, activeStageId, err);
+        }
+        this.logUnhandledTaskError(taskJobId, err);
+        throw err;
+      }
+    }
+
+    if (taskJobId) {
+      taskQueueRepository.setLivePhase(taskJobId, 'done');
+    }
+
+    return { items };
+  }
+
+  /**
+   * Assemble final mp4 only for existing Prepared videos.
+   * Skips download, transcript, metadata, and thumbnail.
+   */
+  async assemblePreparedVideos(
+    destination: ProductionDestination,
+    options: AssemblePreparedOptions,
+  ): Promise<CreateReupVideosResult> {
+    if (!isReupAudioPipeline(destination.pipelineType) && destination.pipelineType !== 'reup') {
+      throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
+    }
+
+    const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
+    if (videoType !== 'si' && videoType !== 'ai') {
+      throw new AppError(
+        'Assemble prepared videos requires reupAudioVideoType si or ai',
+        400,
+        'INVALID_VIDEO_TYPE',
+      );
+    }
+
+    const videoIds = [...new Set(options.videoIds.map(id => id.trim()).filter(Boolean))];
+    if (videoIds.length === 0) {
+      throw new AppError('No video IDs provided', 400, 'NO_VIDEO_IDS');
+    }
+
+    const items: ReupVideoOutputItem[] = [];
+    const taskJobId = options.taskJobId;
+    const strategy = resolveVideoTypeStrategy(videoType);
+    const backgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
+
+    for (const videoId of videoIds) {
+      const log = createTaskLogger(taskJobId);
+      const stepTimer = createStepTimer(taskJobId, videoId);
+      let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.assemble;
+
+      try {
+        const prepareItem = videoPrepareRepository
+          .read(destination.id)
+          .find(item => item.videoId.trim() === videoId && item.status === 'Prepared');
+        if (!prepareItem) {
+          throw new AppError('Video is not in Prepared status', 409, 'VIDEO_NOT_PREPARED');
+        }
+
+        const workDir = resolveYoutubeChannelVideoDir(destination.id, videoId);
+        if (!workDir) {
+          throw new AppError('Video folder not found', 404, 'VIDEO_FOLDER_NOT_FOUND');
+        }
+
+        const audioPath = path.join(workDir, PREPARED_AUDIO_FILE);
+        try {
+          await fs.access(audioPath);
+        } catch {
+          throw new AppError('Missing audio.mp3 in video folder', 404, 'AUDIO_NOT_FOUND');
+        }
+
+        const subtitlePath = await findFirstExistingPath(
+          ...PREPARED_SUBTITLE_FILES.map(name => path.join(workDir, name)),
+        );
+        if (!subtitlePath) {
+          throw new AppError(
+            'Missing transcript.srt or transcript-updated.srt',
+            404,
+            'TRANSCRIPT_NOT_FOUND',
+          );
+        }
+
+        const fromDisk = await collectVisualAssetsFromDisk(workDir, videoType, backgroundImage);
+        if (fromDisk.missingFiles.length > 0) {
+          throw new AppError(
+            `Missing files: ${fromDisk.missingFiles.join(', ')}`,
+            404,
+            'ASSETS_NOT_FOUND',
+            { missingFields: fromDisk.missingFiles },
+          );
+        }
+
+        if (taskJobId) {
+          initCreateVideoStages(taskJobId, { includeUpdateTranscript: true });
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+          skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+          taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg');
+        }
+
+        let metaTitle =
+          typeof prepareItem.title === 'string' ? prepareItem.title.trim() : '';
+        try {
+          const raw = await fs.readFile(path.join(workDir, 'video-meta.json'), 'utf8');
+          const videoMeta = parseVideoMetaContent(JSON.parse(raw));
+          const fromMeta =
+            typeof videoMeta.metadata?.title === 'string' ? videoMeta.metadata.title.trim() : '';
+          if (fromMeta) metaTitle = fromMeta;
+        } catch {
+          // use prepare title / default basename
+        }
+
+        const task: ReupVideoTask = {
+          link: `https://www.youtube.com/watch?v=${videoId}`,
+          id: prepareItem.id,
+          language: destination.language,
+          videoId,
+          sourceId: '',
+          sourceTitle: prepareItem.title.trim() || videoId,
+        };
+
+        const ctx: VideoTaskContext = {
+          destination,
+          videoType,
+          task,
+          ...(taskJobId ? { taskJobId } : {}),
+          log,
+          stepTimer,
+          workDir,
+          downloaded: {
+            youtubeVideoId: videoId,
+            outputDir: workDir,
+            audioPath,
+            transcriptPath: subtitlePath,
+          },
+          subtitlePath,
+        };
+
+        activeStageId = CREATE_VIDEO_STAGE_IDS.assemble;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+
+        const channelAvatarPath = await resolveChannelAvatarForVideoAssembly(destination.id, {
+          enabled: destination.showChannelAvatar,
+          onLog: log.enabled ? msg => log.info(msg) : undefined,
+        });
+
+        const assembleCtx = buildAssembleContext(ctx, {
+          outputBasename: sanitizeVideoOutputBasename(metaTitle) || OUTPUT_VIDEO_BASENAME,
+          ...(channelAvatarPath ? { channelAvatarPath } : {}),
+          ...(taskJobId ? { beginRenderPhase: () => taskQueueRepository.setLivePhase(taskJobId, 'ffmpeg') } : {}),
+        });
+
+        const readiness = await strategy.canAssemble(assembleCtx, fromDisk.assets);
+        if (!readiness.ready) {
+          throw new AppError(readiness.reason, 409, 'NOT_READY_TO_ASSEMBLE');
+        }
+
+        const reupVideoPath = await strategy.assemble(assembleCtx, fromDisk.assets);
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+
+        videoPrepareRepository.markCreated(destination.id, videoId);
+        log.ok(`Assembled video for ${videoId} → ${reupVideoPath}`);
+
+        items.push({
+          link: task.link,
+          channelId: destination.id,
+          language: destination.language,
+          videoId,
+          youtubeVideoId: videoId,
+          outputPath: reupVideoPath,
+          audioPath,
+          updatedSrtPath: subtitlePath,
+          reupVideoPath,
+          ...(fromDisk.assets.heroImagePath ? { heroImagePath: fromDisk.assets.heroImagePath } : {}),
+          ...(fromDisk.assets.aiScenePrompts ? { aiScenePrompts: fromDisk.assets.aiScenePrompts } : {}),
+        });
+      } catch (err) {
+        if (taskJobId && activeStageId) {
+          failCreateVideoStage(taskJobId, activeStageId, err);
+        }
+        this.logUnhandledTaskError(taskJobId, err);
+        throw err;
+      }
+    }
+
+    if (taskJobId) {
+      taskQueueRepository.setLivePhase(taskJobId, 'done');
     }
 
     return { items };
