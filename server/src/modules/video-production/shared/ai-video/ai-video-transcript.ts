@@ -145,6 +145,31 @@ export function clipTranscriptCuesToMaxSec(cues: TranscriptCue[], maxSec: number
   return cues.filter(cue => srtTimestampToMs(cue.startTime) < maxMs);
 }
 
+/**
+ * Keep a prefix of cues so `JSON.stringify(result)` fits within `maxChars`.
+ * Clips on cue boundaries — never mid-JSON — so the result stays valid JSON.
+ */
+export function clipTranscriptCuesToMaxChars(cues: TranscriptCue[], maxChars: number): TranscriptCue[] {
+  if (!Number.isFinite(maxChars) || maxChars <= 0 || cues.length === 0) {
+    return [];
+  }
+
+  if (JSON.stringify(cues).length <= maxChars) {
+    return cues;
+  }
+
+  const selected: TranscriptCue[] = [];
+  for (const cue of cues) {
+    const next = [...selected, cue];
+    if (JSON.stringify(next).length > maxChars) {
+      break;
+    }
+    selected.push(cue);
+  }
+
+  return selected;
+}
+
 export async function loadTranscriptCuesFromSrt(subtitlePath: string): Promise<TranscriptCue[]> {
   const content = await fs.readFile(subtitlePath, 'utf8');
   const blocks = parseSrt(content);

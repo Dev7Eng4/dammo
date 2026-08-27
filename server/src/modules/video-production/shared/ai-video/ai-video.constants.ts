@@ -108,8 +108,11 @@ export const AI_VIDEO_TRANSCRIPT_CHUNK_MAX_SEC = 300;
 /** SI multi_image / shared scene prompt window (20 minutes). */
 export const AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC = 20 * 60;
 
-/** Character design transcript window when useReferenceImage (25 minutes). */
-export const AI_VIDEO_CHARACTER_DESIGN_MAX_TRANSCRIPT_SEC = 25 * 60;
+/**
+ * Max character length of the fully rendered character-design prompt
+ * (template + visualStyle + niche + transcript JSON).
+ */
+export const AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS = 30_000;
 
 export const VIDEO_IMAGE_PROMPT_KEY = 'image_scenes';
 export const VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY = 'image_scenes_with_references_step_2';

@@ -15,14 +15,14 @@ import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import {
-  AI_VIDEO_CHARACTER_DESIGN_MAX_TRANSCRIPT_SEC,
+  AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS,
   CHARACTER_REFERENCES_FILENAME,
   CREATE_CHARACTERS_DESIGN_PROMPT_KEY,
   IMAGE_REFERENCES_DIRNAME,
 } from './ai-video.constants.js';
 import { tryParseAiVideoCharacterResponse } from './ai-video-scene-response.js';
 import {
-  clipTranscriptCuesToMaxSec,
+  clipTranscriptCuesToMaxChars,
   loadTranscriptCuesFromSrt,
 } from './ai-video-transcript.js';
 import type {
@@ -44,7 +44,6 @@ export interface GenerateCharacterReferencesInput {
   language: PromptLanguage;
   /** Human-readable niche from metadata (`detected_niche`); passed into character prompt template. */
   detectedNiche?: string;
-  maxTranscriptSec?: number;
   onLog?: (msg: string) => void;
 }
 
@@ -404,19 +403,48 @@ export async function generateCharacterReferences(
     input.onLog?.(msg);
   };
 
-  const maxTranscriptSec = input.maxTranscriptSec ?? AI_VIDEO_CHARACTER_DESIGN_MAX_TRANSCRIPT_SEC;
   const allCues = await loadTranscriptCuesFromSrt(input.subtitlePath);
-  const cues = clipTranscriptCuesToMaxSec(allCues, maxTranscriptSec);
-
-  if (cues.length === 0) {
+  if (allCues.length === 0) {
     throw new AppError('No transcript cues available for character design', 400, 'INVALID_INPUT');
   }
 
+  const niche = input.detectedNiche ?? '';
+  const overheadPrompt = await executePromptTemplate(input.language, CREATE_CHARACTERS_DESIGN_PROMPT_KEY, [
+    '',
+    input.visualStyle.rule,
+    niche,
+  ]);
+  const overheadChars = overheadPrompt.length;
+  const maxTranscriptChars = AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS - overheadChars;
+
+  if (maxTranscriptChars <= 0) {
+    throw new AppError(
+      `Character design prompt overhead (${overheadChars} chars) exceeds max ` +
+        `${AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS} chars — shorten visualStyle/niche or the template`,
+      400,
+      'PROMPT_BUDGET_EXCEEDED',
+    );
+  }
+
+  const cues = clipTranscriptCuesToMaxChars(allCues, maxTranscriptChars);
+  if (cues.length === 0) {
+    throw new AppError(
+      `First transcript cue alone exceeds remaining budget of ${maxTranscriptChars} chars ` +
+        `(overhead ${overheadChars}/${AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS})`,
+      400,
+      'PROMPT_BUDGET_EXCEEDED',
+    );
+  }
+
+  const transcriptJson = JSON.stringify(cues);
+  const lastCue = cues[cues.length - 1]!;
   log(
-    `[ai-video] Character design using first ${maxTranscriptSec}s transcript (${cues.length} cue(s))`,
+    `[ai-video] Character design prompt budget: overhead=${overheadChars}, ` +
+      `transcriptMax=${maxTranscriptChars}, transcriptUsed=${transcriptJson.length}, ` +
+      `cues=${cues.length}/${allCues.length} (through ${lastCue.startTime})`,
   );
 
-  const characters = await generateCharacterPromptsViaLlm(input, JSON.stringify(cues), log);
+  const characters = await generateCharacterPromptsViaLlm(input, transcriptJson, log);
   log(`[ai-video] Character design → ${characters.length} character(s)`);
 
   return generateCharacterReferenceImagesFromList({

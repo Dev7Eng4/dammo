@@ -26,6 +26,7 @@ export {
   resolveCharacterReferenceImagePaths,
 } from './ai-video-character-references.js';
 export {
+  clipTranscriptCuesToMaxChars,
   clipTranscriptCuesToMaxSec,
   prepareTranscriptDensityChunks,
 } from './ai-video-transcript.js';
