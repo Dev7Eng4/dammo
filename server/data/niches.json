@@ -1,6 +1,11 @@
 {
   "niches": [
     {
+      "key": "3d637eb2-a255-4741-b885-ce46ec54aa70",
+      "label": "NGƯỜI GIÀ",
+      "createdAt": "2026-08-25T08:47:40.081Z"
+    },
+    {
       "key": "b1b9c012-f01d-4a65-8922-9b0317097ff3",
       "label": "TÂM LÝ HỌC ỨNG DỤNG CHO NGƯỜI CAO TUỔI",
       "createdAt": "2026-08-20T08:35:08.186Z"

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, resolveYoutubeChannelVideoDir } from '../config/paths.js';
+import { assertMediaFileComplete } from '../infrastructure/ffmpeg/ffmpeg-probe.js';
 import {
   attachSceneImagePaths,
   redistributeMissingSceneTimes,
@@ -219,12 +220,19 @@ async function main() {
       const subtitlePath = await findFirstExisting(...SUBTITLE_FILES.map(f => path.join(workDir, f)));
 
       const missingFiles: string[] = [];
+      let audioError: string | null = null;
       try {
-        await fs.access(audioPath);
-      } catch {
-        missingFiles.push(AUDIO_FILE);
+        await assertMediaFileComplete(audioPath, { label: AUDIO_FILE });
+      } catch (err) {
+        audioError = err instanceof Error ? err.message : `Không đọc được ${AUDIO_FILE}`;
       }
       if (!subtitlePath) missingFiles.push(SUBTITLE_FILES.join(' or '));
+
+      if (audioError) {
+        console.log(`    [fail] ${item.videoId}: ${audioError}`);
+        results.push({ channelName: channel.name, videoId: item.videoId, status: 'failed', reason: audioError });
+        continue;
+      }
 
       const fromDisk = await collectVisualAssetsFromDisk(workDir, videoType, backgroundImage);
       missingFiles.push(...fromDisk.missingFiles);

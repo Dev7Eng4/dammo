@@ -7,7 +7,9 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { sourceVideosRepository } from '../../../source-channels/source-videos.repository.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
+import { prepareLocalStockBackground } from './local-stock.js';
 import {
+  LOCAL_STOCK_SENTINEL,
   STOCK_MAX_SELECT_ATTEMPTS,
   STOCK_SKIP_START_SEC,
   STOCK_SLOWMO_FACTOR,
@@ -74,9 +76,13 @@ export async function prepareStockBackground(
   targetDurationSec: number,
   workDir: string,
   onLog?: (msg: string) => void,
-  _onFfmpegProgress?: (progress: FfmpegProgress) => void,
+  onFfmpegProgress?: (progress: FfmpegProgress) => void,
 ): Promise<PrepareStockBackgroundResult> {
-  return prepareRemoteStockBackground(options.backgroundFootageSourceIds ?? [], targetDurationSec, workDir, onLog);
+  const ids = [...new Set((options.backgroundFootageSourceIds ?? []).map(id => id.trim()).filter(Boolean))];
+  if (ids.includes(LOCAL_STOCK_SENTINEL)) {
+    return prepareLocalStockBackground(targetDurationSec, workDir, onLog, onFfmpegProgress);
+  }
+  return prepareRemoteStockBackground(ids, targetDurationSec, workDir, onLog);
 }
 
 async function prepareRemoteStockBackground(

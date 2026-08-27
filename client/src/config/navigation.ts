@@ -85,14 +85,13 @@ export const navSections: NavSection[] = [
       // { id: 'factory', label: 'Nhà máy video', path: '/video-factory', icon: 'factory' },
       { id: 'task-queue', label: 'Công việc đang chạy', path: '/task-queue', icon: 'task-queue' },
       { id: 'queue', label: 'Hàng đợi render', path: '/render-queue', icon: 'queue' },
+      { id: 'settings', label: 'Cài đặt', path: '/settings', icon: 'settings' },
     ],
   },
 ];
 
 export const footerNavItems: NavItem[] = [
   { id: 'support', label: 'Hỗ trợ', path: '/support', icon: 'support' },
-  { id: 'logs', label: 'Nhật ký', path: '/logs', icon: 'logs' },
-  { id: 'settings', label: 'Cài đặt', path: '/settings', icon: 'settings' },
 ];
 
 export function flattenNavItems(): NavItem[] {

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { mediaDownloadDir, resolveSourceChannelVideoDir } from '../../../../../config/paths.js';
 import { AppError } from '../../../../../shared/http/errors.js';
+import { assertMediaFileComplete } from '../../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import { downloadYoutubeVideo } from '../../../../../infrastructure/youtube/youtube-video-downloader.js';
 import {
   copySourceAssetsToDir,
@@ -42,11 +43,16 @@ export async function resolveReupAudioDownload(
       throw new AppError('Pre-downloaded source assets incomplete after copy', 500, 'SOURCE_ASSETS_INCOMPLETE');
     }
 
+    // A truncated audio file in the source cache would otherwise be carried all
+    // the way into the render, where it turns into silence after a few minutes.
+    const audioPath = path.join(outputDir, 'audio.mp3');
+    await assertMediaFileComplete(audioPath, { label: 'audio.mp3' });
+
     return {
       youtubeVideoId: task.videoId,
       outputDir,
       ...(thumbnailPath ? { thumbnailPath } : {}),
-      audioPath: path.join(outputDir, 'audio.mp3'),
+      audioPath,
       transcriptPath,
     };
   }

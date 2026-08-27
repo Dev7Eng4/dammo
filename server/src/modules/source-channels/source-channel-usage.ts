@@ -1,3 +1,4 @@
+import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 
 export type SourceUsagePlatform = 'youtube' | 'tiktok' | 'facebook';
@@ -48,7 +49,7 @@ export function buildYoutubeChannelUsageCountMap(): Map<string, number> {
       if (sourceId) sourceIds.add(sourceId);
     }
     for (const sourceId of channel.backgroundFootageSources ?? []) {
-      if (sourceId) sourceIds.add(sourceId);
+      if (sourceId && sourceId !== LOCAL_STOCK_SENTINEL) sourceIds.add(sourceId);
     }
     if (channel.reupVideoSourceId) sourceIds.add(channel.reupVideoSourceId);
     if (channel.reupAudioSourceId) sourceIds.add(channel.reupAudioSourceId);

@@ -113,44 +113,36 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="mb-5">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary-500/10 text-primary-400">
-            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </div>
-          <h1 className="text-lg font-semibold text-neutral-50">Cài đặt</h1>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-neutral-100">Cài đặt</h1>
+        <p className="mt-1 text-sm text-neutral-400">
+          Cấu hình mặc định cho video AI, Chrome automation và mật độ cảnh.
+        </p>
+      </div>
 
-        <div className="mt-4 flex gap-6 border-b border-border">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'relative pb-3 text-sm font-medium transition-colors',
-                activeTab === tab.id
-                  ? 'text-primary-400'
-                  : 'text-neutral-400 hover:text-neutral-200',
-              )}
-            >
-              {tab.label}
-              {activeTab === tab.id ? (
-                <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary-400" />
-              ) : null}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'rounded-lg px-3 py-1.5 text-sm transition-colors',
+              activeTab === tab.id
+                ? 'bg-primary-500/15 text-primary-300'
+                : 'text-neutral-400 hover:bg-surface-elevated hover:text-neutral-200',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
         <p className="text-sm text-neutral-500">Đang tải...</p>
       ) : (
-        <div className="space-y-6">
+        <div className="card-surface space-y-6 p-5">
           {activeTab === 'video-ai' ? (
             <section className="space-y-3">
               <p className="text-sm text-neutral-400">

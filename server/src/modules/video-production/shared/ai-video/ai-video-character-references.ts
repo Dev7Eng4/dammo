@@ -42,6 +42,8 @@ export interface GenerateCharacterReferencesInput {
   visualStyle: AiVideoVisualStyle;
   subtitlePath: string;
   language: PromptLanguage;
+  /** Human-readable niche from metadata (`detected_niche`); passed into character prompt template. */
+  detectedNiche?: string;
   maxTranscriptSec?: number;
   onLog?: (msg: string) => void;
 }
@@ -153,6 +155,7 @@ async function generateCharacterPromptsViaLlm(
   const userPrompt = await executePromptTemplate(input.language, CREATE_CHARACTERS_DESIGN_PROMPT_KEY, [
     transcriptJson,
     input.visualStyle.rule,
+    input.detectedNiche ?? '',
   ]);
 
   const profile = chromeProfilesService.pickSubProfile();

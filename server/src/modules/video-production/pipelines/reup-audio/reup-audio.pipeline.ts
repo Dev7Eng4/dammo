@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { resolveYoutubeChannelVideoDir } from '../../../../config/paths.js';
+import { assertMediaFileComplete } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
@@ -241,6 +242,7 @@ export class ReupAudioPipeline {
         } catch {
           throw new AppError(`Missing audio.mp3 in video folder`, 404, 'AUDIO_NOT_FOUND');
         }
+        await assertMediaFileComplete(audioPath, { label: AUDIO_FILE });
 
         const subtitlePath = await findFirstExisting(
           ...SUBTITLE_FILES.map(name => path.join(workDir, name)),
@@ -408,6 +410,7 @@ export class ReupAudioPipeline {
         } catch {
           throw new AppError('Missing audio.mp3 in video folder', 404, 'AUDIO_NOT_FOUND');
         }
+        await assertMediaFileComplete(audioPath, { label: PREPARED_AUDIO_FILE });
 
         const subtitlePath = await findFirstExistingPath(
           ...PREPARED_SUBTITLE_FILES.map(name => path.join(workDir, name)),

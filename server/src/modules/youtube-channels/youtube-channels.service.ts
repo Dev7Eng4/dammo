@@ -32,6 +32,7 @@ import { normalizeUploadSchedule } from './upload-schedule.js';
 import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
 import { assertValidCaptionStyleKey } from '../video-production/shared/render-core/caption-styles.js';
 import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
+import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
 import { resolveYoutubeChannelVideoDir, youtubeChannelDir, youtubeChannelUploadsDir } from '../../config/paths.js';
@@ -210,9 +211,13 @@ function validateChannelConfig(input: ChannelConfigInput): {
     }
   }
 
-  const backgroundFootageSources = normalizeSourceIds(input.backgroundFootageSources);
-  for (const sourceId of backgroundFootageSources) {
-    requireSourceWithPurpose(sourceId, 'background_footage', 'Background footage');
+  let backgroundFootageSources = normalizeSourceIds(input.backgroundFootageSources);
+  if (backgroundFootageSources.includes(LOCAL_STOCK_SENTINEL)) {
+    backgroundFootageSources = [LOCAL_STOCK_SENTINEL];
+  } else {
+    for (const sourceId of backgroundFootageSources) {
+      requireSourceWithPurpose(sourceId, 'background_footage', 'Background footage');
+    }
   }
 
   const uploadSchedule = normalizeUploadSchedule(input.publishTimes);

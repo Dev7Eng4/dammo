@@ -51,7 +51,11 @@ import {
   parseSmallVideoGroupId,
   SI_OVERLAY_AUTO_SENTINEL,
 } from '../../types/youtubeChannel';
-import { normalizeBackgroundFootageSourceIds } from '../../utils/backgroundFootage';
+import {
+  LOCAL_STOCK_LABEL,
+  LOCAL_STOCK_SENTINEL,
+  normalizeBackgroundFootageSourceIds,
+} from '../../utils/backgroundFootage';
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
@@ -360,7 +364,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     [sources, niches],
   );
   const backgroundFootageOptions = useMemo(
-    () => sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
+    () => [
+      { value: LOCAL_STOCK_SENTINEL, label: LOCAL_STOCK_LABEL },
+      ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
+    ],
     [sources, niches],
   );
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);

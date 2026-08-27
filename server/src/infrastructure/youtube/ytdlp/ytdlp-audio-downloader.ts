@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { youtubeDl } from '../youtube-dl-client.js';
 import { resolveFfmpegLocation } from '../../ffmpeg/ffmpeg-location.js';
+import { assertMediaFileComplete } from '../../ffmpeg/ffmpeg-probe.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { getYoutubeDlCommonOptions } from '../youtube-dl-auth.js';
 import { findFileByPrefix } from '../youtube-download-utils.js';
@@ -35,14 +36,17 @@ export async function downloadYoutubeAudioWithYtdlp(url: string, outputDir: stri
     throw toYoutubeDlError(err, 'Failed to download YouTube audio');
   }
 
+  let audioPath = expectedMp3;
   try {
     await fs.access(expectedMp3);
-    return expectedMp3;
   } catch {
     const match = await findFileByPrefix(outputDir, 'audio.');
     if (!match) {
       throw new AppError('Downloaded audio file not found', 502, 'YOUTUBE_DOWNLOAD_FAILED');
     }
-    return match;
+    audioPath = match;
   }
+
+  await assertMediaFileComplete(audioPath, { label: path.basename(audioPath) });
+  return audioPath;
 }

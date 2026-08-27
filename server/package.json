@@ -16,6 +16,8 @@
     "download-source-videos": "tsx src/scripts/download-source-videos.ts",
     "log-video-stats": "tsx src/scripts/log-video-stats.ts",
     "assemble-prepared-videos": "tsx src/scripts/assemble-prepared-videos.ts",
+    "reassemble-video": "tsx src/scripts/reassemble-video.ts",
+    "scan-truncated-audio": "tsx src/scripts/scan-truncated-audio.ts",
     "upload-videos": "tsx src/scripts/upload-videos.ts",
     "assemble:si-video": "tsx src/scripts/assemble-si-video.ts",
     "test:assemble-si-local": "tsx src/scripts/test-assemble-si-local.ts",

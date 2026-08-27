@@ -1,6 +1,14 @@
 {
   "styles": [
     {
+      "id": "57601127-ff3a-43ef-87e1-ad327ac51b88",
+      "name": "Anime",
+      "rule": "Anime",
+      "niche": "JAPAN",
+      "createdAt": "2026-08-25T14:49:57.566Z",
+      "updatedAt": "2026-08-25T14:49:57.566Z"
+    },
+    {
       "id": "a016f093-9677-4f55-bc9a-7a95dc71048c",
       "name": "Slice-of-life Nhật ấm áp",
       "rule": "Warm slice-of-life anime illustration style, gentle semi-realistic character design for elderly and middle-aged characters, soft rounded facial features, natural expressive emotions, realistic grey/silver hair with soft shading, warm golden natural lighting, cozy everyday Japanese settings (tatami room, family living room, retail store), soft flat coloring with light gradients, heartwarming wholesome atmosphere, detailed but comforting background, storytelling illustration for narrated video, masterpiece, highly detailed",
@@ -19,10 +27,10 @@
     {
       "id": "98d82da3-578b-4bd1-aa17-15030bfcddaf",
       "name": "K-webtoon drama art",
-      "rule": "Korean webtoon drama art, semi-realistic elegant character design, glossy detailed hair and eyes, soft airbrushed skin, luxurious upper-class fashion (pearls, silk, tailored suits), cinematic warm lighting, blurred detailed background, vertical webtoon composition, masterpiece, highly detailed",
+      "rule": "Korean webtoon drama art, semi-realistic elegant character design, glossy detailed hair and eyes, soft airbrushed skin, luxurious upper-class fashion (pearls, silk, tailored suits), cinematic warm lighting, blurred detailed background, cinematic widescreen composition, masterpiece, highly detailed",
       "niche": "Phong cách webtoon hàn quốc .Korean webtoon drama art style, semi-realistic digital illustration, elegant upper-class Korean drama aesthetic, beautifully rendered facial features with detailed almond-shaped eyes and soft eyelid shading, glossy voluminous hair with painterly highlights, smooth airbrushed skin with subtle blush on cheeks and nose, sharp thin eyebrows, glossy lips, luxurious outfits (pearl necklaces, diamond earrings, silk blouses, tailored blazers), cinematic soft lighting, warm neutral color palette (beige, brown, cream, navy), shallow depth of field with blurred detailed background (city skyline, high-rise office, department store, elevator interior), vertical scroll webtoon composition, high production digital painting, masterpiece, ultra detailed, trending on Naver Webtoon/Kakao style",
       "createdAt": "2026-08-19T02:35:28.760Z",
-      "updatedAt": "2026-08-19T02:46:54.998Z"
+      "updatedAt": "2026-08-26T03:24:30.872Z"
     },
     {
       "id": "c69ce248-38af-4717-bcea-6853bb7d3ae7",

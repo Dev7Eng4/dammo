@@ -1,6 +1,30 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_nguoi_gia",
+      "baseKey": "metadata_nguoi_gia",
+      "language": "ja",
+      "name": "Metadata người già",
+      "category": "meta",
+      "niche": "3d637eb2-a255-4741-b885-ce46ec54aa70",
+      "createdAt": "2026-08-25T08:48:08.984Z",
+      "updatedAt": "2026-08-25T08:48:08.998Z",
+      "steps": [
+        {
+          "id": "9794ca0e-2f6a-4646-bd92-0298a9e80333",
+          "key": "metadata_nguoi_gia_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "5ce915e4-0004-4f7c-b97a-89729dc4c0e5",
+          "key": "metadata_nguoi_gia_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "es:metadata",
       "baseKey": "metadata",
       "language": "es",

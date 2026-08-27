@@ -57,6 +57,7 @@ export async function runSceneAssetsStep(
         subtitlePath,
         audioPath: downloaded.audioPath,
         language: destination.language,
+        detectedNiche: ctx.videoMeta?.detected_niche?.trim() ?? '',
         maxTranscriptSec: options.maxTranscriptSec,
         densityMaxSceneSec: destination.aiSceneDensityMaxSec,
         useReferenceImage,

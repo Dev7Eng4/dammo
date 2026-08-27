@@ -65,6 +65,8 @@ export interface GenerateAiVideoImagesInput {
   subtitlePath: string;
   audioPath?: string;
   language: PromptLanguage;
+  /** Human-readable niche from metadata (`detected_niche`); passed into scene prompt templates. */
+  detectedNiche?: string;
   /** When set, only the first N seconds of transcript are used for scene prompts. */
   maxTranscriptSec?: number;
   /** Per-density max scene duration override (defaults 8 / 30 / 60). */

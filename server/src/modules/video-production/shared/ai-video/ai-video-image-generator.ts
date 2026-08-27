@@ -72,15 +72,17 @@ async function executeScenePromptChunk(
   },
 ): Promise<AiVideoScenePrompt[]> {
   const promptKey = options?.promptKey ?? VIDEO_IMAGE_PROMPT_KEY;
+  const niche = input.detectedNiche ?? '';
   const args: unknown[] =
     promptKey === VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY
       ? [
           JSON.stringify(job.transcriptChunk),
           input.visualStyle.rule,
+          niche,
           job.maxDurationSec,
           options?.charactersJson ?? '[]',
         ]
-      : [JSON.stringify(job.transcriptChunk), input.visualStyle.rule, job.maxDurationSec];
+      : [JSON.stringify(job.transcriptChunk), input.visualStyle.rule, niche, job.maxDurationSec];
 
   const userPrompt = await executePromptTemplate(input.language, promptKey, args);
 
@@ -214,6 +216,7 @@ export async function generateAiVideoImagesWithReference(
     visualStyle: input.visualStyle,
     subtitlePath: input.subtitlePath,
     language: input.language,
+    detectedNiche: input.detectedNiche,
     onLog: input.onLog,
   });
 

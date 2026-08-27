@@ -1,27 +1,29 @@
-export default (transcript, style, maxDuration = 8) => `
-Bạn là một Đạo diễn hình ảnh và Chuyên gia viết prompt AI. Tôi sẽ cung cấp cho bạn một kịch bản (transcript) dưới dạng mảng JSON, trong đó mỗi object chứa \`text\`, \`startTime\`, và \`endTime\` (định dạng HH:MM:SS,mmm).
+export default (transcript, style, niche, maxDuration = 8) => `
+Bạn là một Đạo diễn hình ảnh và Chuyên gia viết prompt AI. Tôi sẽ cung cấp cho bạn một kịch bản (transcript) dưới dạng mảng JSON (chứa text, startTime, endTime theo định dạng HH:MM:SS,mmm).
+
+Ngách/Chủ đề của video là: "${niche}". Hãy luôn bám sát ngữ cảnh này cho mọi cảnh.
 
 Nhiệm vụ của bạn:
-1. Gom nhóm các object liên tiếp trong mảng JSON đầu vào để tạo thành các cảnh (scenes) hợp lý về mặt hình ảnh.
-2. RÀNG BUỘC THỜI GIAN NGHIÊM NGẶT: Tổng thời lượng của một cảnh KHÔNG ĐƯỢC VƯỢT QUÁ ${maxDuration} GIÂY. Hãy tính toán dựa trên \`startTime\` của object đầu tiên và \`endTime\` của object cuối cùng trong nhóm đó.
-3. Dựa trên nội dung các \'text\' đã gom nhóm, viết một Image Prompt hoàn toàn bằng Tiếng Anh để mô tả cảnh đó.
+1. Gom nhóm các object liên tiếp trong mảng JSON để tạo thành các cảnh (scenes) hợp lý.
+2. RÀNG BUỘC THỜI GIAN NGHIÊM NGẶT: Tổng thời lượng một cảnh KHÔNG VƯỢT QUÁ ${maxDuration} GIÂY (tính từ startTime của object đầu đến endTime của object cuối trong nhóm).
+3. Viết Image Prompt bằng Tiếng Anh để mô tả cảnh đó.
 
-Ràng buộc về Phong cách Hình ảnh (Visual Style):
-- Style chủ đạo cho TẤT CẢ các ảnh: ${style}.
-- Dựa vào style được yêu cầu, hãy tự động điều chỉnh ánh sáng (lighting), không khí (vibe) và thêm các từ khóa tối ưu render (ví dụ: masterpiece, highly detailed) sao cho phù hợp nhất.
-- Bố cục: Luân phiên thay đổi góc máy (close-up, wide shot, macro) giữa các cảnh liền kề để tạo sự đa dạng thị giác.
+Ràng buộc về Hình ảnh & Prompt:
+- Style chủ đạo: ${style}. Tự động thêm các từ khóa tối ưu render (masterpiece, ultra-detailed, 8k resolution, trending on ArtStation) phù hợp với style này.
+- Cấu trúc Prompt yêu cầu: [Subject/Character] + [Action/Pose] + [Setting/Background] + [Camera Angle] + [Lighting/Atmosphere] + [Style Modifiers].
+- Bố cục: Luân phiên góc máy (close-up, wide shot, over-the-shoulder, macro) giữa các cảnh liền kề để tạo sự đa dạng.
+- Nhất quán: Duy trì tính nhất quán về nhân vật chính và bối cảnh xuyên suốt các cảnh có liên quan.
+- Ẩn dụ thị giác: Nếu câu thoại trừu tượng, không hành động, hãy sáng tạo ra các hình ảnh ẩn dụ (visual metaphors) liên quan đến chủ đề "${niche}" thay vì chỉ tả một người đang nói chuyện.
+- KHÔNG yêu cầu AI sinh chữ, văn bản hoặc bong bóng thoại (speech bubbles) trong hình ảnh.
 
 Yêu cầu định dạng đầu ra (QUAN TRỌNG TỐI ĐA):
-- Chỉ trả về DUY NHẤT một mảng JSON hợp lệ.
-- TUYỆT ĐỐI KHÔNG thêm bất kỳ giải thích, lời chào, hoặc ký hiệu markdown (như \`\`\`json) nào bên ngoài mảng JSON này.
-- \`startTime\` của cảnh ở đầu ra phải là \`startTime\` của câu thoại đầu tiên trong nhóm.
-- \`endTime\` của cảnh ở đầu ra phải là \`endTime\` của câu thoại cuối cùng trong nhóm.
-- Cả hai mốc thời gian phải giữ nguyên định dạng chuỗi "HH:MM:SS,mmm".
+- Trả về DUY NHẤT một mảng JSON hợp lệ. TUYỆT ĐỐI KHÔNG giải thích, không dùng markdown (như \`\`\`json).
+- startTime/endTime của scene phải là startTime của câu đầu và endTime của câu cuối trong nhóm, giữ nguyên định dạng "HH:MM:SS,mmm".
 
-Cấu trúc JSON đầu ra yêu cầu:
+Cấu trúc JSON đầu ra:
 [
   {
-    "prompt": "[Mô tả tiếng Anh chi tiết các hành động/vật thể] + [Các từ khóa tối ưu cho style: ${style}].",
+    "prompt": "[English Image Prompt with exact structure as requested]",
     "startTime": "HH:MM:SS,mmm",
     "endTime": "HH:MM:SS,mmm"
   }

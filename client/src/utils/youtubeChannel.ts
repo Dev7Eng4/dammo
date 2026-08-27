@@ -1,6 +1,7 @@
 import type { SourceChannel } from '../types/sourceChannel';
 import type { ReupAudioVideoType, YoutubeChannel } from '../types/youtubeChannel';
 import { fetchVisualStyles } from '../api/visualStyles';
+import { LOCAL_STOCK_LABEL, LOCAL_STOCK_SENTINEL } from './backgroundFootage';
 
 function buildSourceLookup(sources: SourceChannel[]): Map<string, SourceChannel> {
   const lookup = new Map<string, SourceChannel>();
@@ -58,8 +59,13 @@ export function getChannelBackgroundFootageLabels(
   channel: YoutubeChannel,
   sources: SourceChannel[],
 ): string[] {
+  const ids = channel.backgroundFootageSources ?? [];
+  if (ids.includes(LOCAL_STOCK_SENTINEL)) {
+    return [LOCAL_STOCK_LABEL];
+  }
+
   const lookup = buildSourceLookup(sources);
-  const labels = resolveLabelsFromIds(channel.backgroundFootageSources ?? [], lookup);
+  const labels = resolveLabelsFromIds(ids, lookup);
 
   if (labels.length > 0) {
     return labels;

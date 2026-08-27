@@ -2,6 +2,7 @@ import { canonicalizeSourceUrl } from '../../shared/platform/url-parser.js';
 import { isUuid } from '../../shared/id.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
 import type { SourceChannel } from '../source-channels/source-channels.types.js';
+import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
 import type { YoutubeChannel } from './youtube-channels.types.js';
 
 export function resolveSourceChannelsFromMapping(sourceMapping: string): SourceChannel[] {
@@ -87,7 +88,11 @@ export function resolveSourceChannelNamesOnly(channel: YoutubeChannel): string[]
 }
 
 export function resolveBackgroundFootageNamesOnly(channel: YoutubeChannel): string[] {
-  return resolveSourceChannelsByIds(channel.backgroundFootageSources ?? []).map(source => source.name);
+  const ids = channel.backgroundFootageSources ?? [];
+  if (ids.includes(LOCAL_STOCK_SENTINEL)) {
+    return ['Máy tính Local'];
+  }
+  return resolveSourceChannelsByIds(ids).map(source => source.name);
 }
 
 export function resolveSourceNamesForChannel(channel: YoutubeChannel): string[] {
