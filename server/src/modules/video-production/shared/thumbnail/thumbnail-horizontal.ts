@@ -20,6 +20,7 @@ import type {
   ThumbnailHorizontalStep3Output,
 } from './thumbnail.types.js';
 import { formatParseFailureReason, type LlmParseResult } from '../meta/llm-parse-result.js';
+import { persistLlmParseFailure } from '../meta/persist-llm-failure.js';
 
 const MAX_RETRIES = 3;
 
@@ -74,7 +75,7 @@ async function runStepWithRetry<T>(
 
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const parsed = parse(response);
@@ -84,12 +85,20 @@ async function runStepWithRetry<T>(
       }
 
       lastReason = formatParseFailureReason(parsed);
+      const responsePath = await persistLlmParseFailure({
+        outputDir: options?.outputDir,
+        label: `thumbnail-horizontal-step-${step}`,
+        attempt,
+        reason: lastReason,
+        response,
+      });
       lastDetails = {
         step,
         attempt,
         reason: parsed.reason,
         ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
         ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
+        ...(responsePath ? { responsePath } : {}),
       };
       logValidationFailure(step, attempt, lastReason);
     } catch (err) {

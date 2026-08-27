@@ -62,7 +62,7 @@ export type LlmReceiveResponseOptions = FlowReceiveResponseOptions & MetaReceive
 
 export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
-  /** 'human' = clipboard/typing; 'direct' = set contenteditable đồng bộ (cho prompt dài). */
+  /** Default/recommended: 'human' (clipboard, then sequential typing). 'direct' / 'insertText' still supported but unused by production. */
   pasteStrategy?: 'human' | 'direct' | 'insertText';
   /** Single reference image (Flow/Meta). Prefer referenceImagePaths for multiple. */
   referenceImagePath?: string;

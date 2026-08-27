@@ -112,4 +112,5 @@ export interface ThumbnailHorizontalProgress {
 
 export interface RunThumbnailHorizontalOptions {
   onProgress?: (progress: ThumbnailHorizontalProgress) => void;
+  outputDir?: string;
 }

@@ -209,6 +209,7 @@ async function runHorizontalFlow(
       'Thumbnail ngang (LLM 3 bước)',
       () =>
         runThumbnailHorizontal(metaOutput, destination.language, styleKey, {
+          outputDir: workDir,
           onProgress: log.enabled
             ? progress => {
                 const suffix = progress.status === 'retry' ? 'retry ' : '';

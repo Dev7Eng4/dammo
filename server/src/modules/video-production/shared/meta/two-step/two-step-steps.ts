@@ -8,6 +8,7 @@ import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
 import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
+import { persistLlmParseFailure } from '../persist-llm-failure.js';
 import type { TwoStepNicheConfig } from './two-step-niche.config.js';
 import { parseTwoStepStep1Response, parseTwoStepStep2Response } from './two-step-response.js';
 
@@ -26,6 +27,7 @@ export interface TwoStepMetadataProgress {
 
 export interface RunTwoStepStepOptions {
   onProgress?: (progress: TwoStepMetadataProgress) => void;
+  outputDir?: string;
 }
 
 function resolveTwoStepKey(
@@ -89,7 +91,7 @@ async function runTwoStepLlmStep<T>(
 
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const parsed = parse(response);
@@ -99,12 +101,20 @@ async function runTwoStepLlmStep<T>(
       }
 
       lastReason = formatParseFailureReason(parsed);
+      const responsePath = await persistLlmParseFailure({
+        outputDir: options?.outputDir,
+        label: `${logLabel}-step-${step}`,
+        attempt,
+        reason: lastReason,
+        response,
+      });
       lastDetails = {
         step,
         attempt,
         reason: parsed.reason,
         ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
         ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
+        ...(responsePath ? { responsePath } : {}),
       };
       logValidationFailure(logLabel, step, attempt, lastReason);
     } catch (err) {

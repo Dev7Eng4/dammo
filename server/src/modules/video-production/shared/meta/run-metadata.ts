@@ -11,6 +11,7 @@ import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from './meta-session.js';
 import { parseMetadataResponse } from './meta-response.js';
 import { formatParseFailureReason } from './llm-parse-result.js';
+import { persistLlmParseFailure } from './persist-llm-failure.js';
 import {
   isCelebrityWisdomNiche,
   type MetadataLlmOutput,
@@ -224,7 +225,7 @@ export async function executeMetadata(
       const userPrompt = await executePromptTemplate(language, promptKey, templateArgs);
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const parseResult = parseMetadataResponse(response, { niche: parseNiche });
@@ -242,11 +243,19 @@ export async function executeMetadata(
       }
 
       lastReason = formatParseFailureReason(parseResult);
+      const responsePath = await persistLlmParseFailure({
+        outputDir: options?.outputDir,
+        label: 'metadata',
+        attempt,
+        reason: lastReason,
+        response,
+      });
       lastDetails = {
         attempt,
         reason: parseResult.reason,
         ...(parseResult.missingFields?.length ? { missingFields: parseResult.missingFields } : {}),
         ...(parseResult.snippet ? { snippet: parseResult.snippet } : {}),
+        ...(responsePath ? { responsePath } : {}),
       };
       logValidationFailure(attempt, lastReason);
     } catch (err) {

@@ -66,7 +66,7 @@ export async function runSeniorHealthMetadata(
   }
 
   const title = sourceTitle.trim();
-  const stepOptions = { onProgress: options?.onProgress };
+  const stepOptions = { onProgress: options?.onProgress, outputDir: options?.outputDir };
   const windowMin = Math.min(durationMs, DRAMA_STEP1_MAX_TRANSCRIPT_MS) / 60_000;
 
   console.log(

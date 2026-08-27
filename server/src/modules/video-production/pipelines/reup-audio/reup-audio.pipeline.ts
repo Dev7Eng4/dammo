@@ -125,7 +125,7 @@ export class ReupAudioPipeline {
       throw new AppError('No source videos available for mapped sources', 400, 'NO_SOURCE_VIDEOS');
     }
 
-    const tasks = buildTasks(destination, allVideos, {
+    const { tasks, targetCount } = buildTasks(destination, allVideos, {
       maxVideosPerChannel: options?.maxVideosPerChannel,
       videoIds: options?.videoIds,
     });
@@ -137,8 +137,11 @@ export class ReupAudioPipeline {
 
     const items: ReupVideoOutputItem[] = [];
     const isAudioChannel = isReupAudioPipeline(destination.pipelineType);
+    const failFast = Boolean(options?.videoIds?.length);
 
     for (const task of tasks) {
+      if (items.length >= targetCount) break;
+
       const taskJobId = options?.taskJobId;
       const log = createTaskLogger(taskJobId);
       const run: TaskRunContext = {
@@ -162,8 +165,19 @@ export class ReupAudioPipeline {
         );
       } catch (err) {
         this.logUnhandledTaskError(taskJobId, err);
-        throw err;
+        if (failFast) throw err;
+
+        const detail = err instanceof Error ? err.message : String(err);
+        log.err(`Video ${task.videoId} failed, trying next buffer candidate: ${detail}`);
       }
+    }
+
+    if (items.length === 0) {
+      throw new AppError(
+        'No videos were created successfully',
+        500,
+        'NO_VIDEOS_CREATED',
+      );
     }
 
     if (options?.taskJobId && !options.skipLivePhaseDone) {
@@ -755,6 +769,9 @@ export class ReupAudioPipeline {
     const details = err instanceof AppError ? err.details : undefined;
     if (details && typeof details.snippet === 'string') {
       taskQueueRepository.appendLogMessage(taskJobId, 'err', `Response snippet: ${details.snippet}`);
+    }
+    if (details && typeof details.responsePath === 'string') {
+      taskQueueRepository.appendLogMessage(taskJobId, 'err', `LLM response saved: ${details.responsePath}`);
     }
   }
 }

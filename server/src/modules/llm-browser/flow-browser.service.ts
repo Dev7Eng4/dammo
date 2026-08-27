@@ -243,7 +243,7 @@ export class FlowBrowserService {
       void batchResponsePromise.catch(() => undefined);
 
       await handler.sendPrompt(page, prompt, {
-        pasteStrategy: options?.pasteStrategy ?? 'insertText',
+        pasteStrategy: options?.pasteStrategy ?? 'human',
         submitWith: 'enter',
         referenceImagePath: options?.referenceImagePath,
         referenceImagePaths: options?.referenceImagePaths,

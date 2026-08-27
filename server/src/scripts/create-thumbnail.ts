@@ -123,6 +123,7 @@ async function runHorizontalThumbnailFlow(
   console.log('\nStep 1/3: Horizontal thumbnail LLM (3 prompts)...\n');
 
   const thumbnailHorizontalOutput = await runThumbnailHorizontal(metaStep3Output, language, styleKey, {
+    outputDir: workDir,
     onProgress: progress => {
       const stepLabel = `step ${progress.step}/3`;
       if (progress.status === 'retry') {

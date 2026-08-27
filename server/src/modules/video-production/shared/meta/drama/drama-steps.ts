@@ -9,6 +9,7 @@ import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
 import { parseDramaStep1Response, parseDramaStep2Response } from './drama-response.js';
 import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
+import { persistLlmParseFailure } from '../persist-llm-failure.js';
 
 const MAX_RETRIES = 3;
 
@@ -25,6 +26,7 @@ export interface DramaMetadataProgress {
 
 export interface RunDramaStepOptions {
   onProgress?: (progress: DramaMetadataProgress) => void;
+  outputDir?: string;
 }
 
 function resolveDramaStepKey(language: PromptLanguage, step: DramaMetadataStep): string {
@@ -73,7 +75,7 @@ async function runDramaLlmStep<T>(
 
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const parsed = parse(response);
@@ -83,12 +85,20 @@ async function runDramaLlmStep<T>(
       }
 
       lastReason = formatParseFailureReason(parsed);
+      const responsePath = await persistLlmParseFailure({
+        outputDir: options?.outputDir,
+        label: `drama-step-${step}`,
+        attempt,
+        reason: lastReason,
+        response,
+      });
       lastDetails = {
         step,
         attempt,
         reason: parsed.reason,
         ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
         ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
+        ...(responsePath ? { responsePath } : {}),
       };
       logValidationFailure(step, attempt, lastReason);
     } catch (err) {

@@ -99,7 +99,7 @@ async function processItemWithRetry(
       const step1Prompt = promptStep1(item.title, item.description);
       const step1Res = await llmBrowserService.chat(profile.id, provider, step1Prompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const scene = parseWhatIfStep1Scene(step1Res);
@@ -113,7 +113,7 @@ async function processItemWithRetry(
       const step2Prompt = promptStep2(scene);
       const step2Res = await llmBrowserService.chat(profile.id, provider, step2Prompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const imagePrompt = extractImagePrompt(step2Res);

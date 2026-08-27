@@ -19,6 +19,7 @@ export function toTaskErrorDetails(err: unknown): TaskErrorDetails | undefined {
     ...(typeof details.reason === 'string' ? { reason: details.reason } : {}),
     ...(missingFields?.length ? { missingFields } : {}),
     ...(typeof details.snippet === 'string' ? { snippet: details.snippet } : {}),
+    ...(typeof details.responsePath === 'string' ? { responsePath: details.responsePath } : {}),
     ...(typeof details.context === 'string' ? { context: details.context } : {}),
   };
 }
@@ -64,6 +65,9 @@ export function failCreateVideoStage(taskJobId: string | undefined, stageId: str
   }
   if (details?.snippet) {
     taskQueueRepository.appendLogMessage(taskJobId, 'err', `Response snippet: ${details.snippet}`);
+  }
+  if (details?.responsePath) {
+    taskQueueRepository.appendLogMessage(taskJobId, 'err', `LLM response saved: ${details.responsePath}`);
   }
 }
 

@@ -519,7 +519,7 @@ export async function openFlowToolPage(page: Page, projectId: string, toolId: st
 /** Fill the mavid editor prompt input with the given text (JSON) and submit via Enter. */
 export async function submitMavidEditorPrompt(page: Page, promptText: string): Promise<void> {
   const input = await waitForMavidEditorReady(page);
-  await humanPaste(page, input, promptText, { pasteStrategy: 'direct' });
+  await humanPaste(page, input, promptText, { pasteStrategy: 'human' });
   await assertPromptFilled(input, promptText);
   await humanPressEnter(page);
   await randomDelay(500, 1_000);
@@ -643,7 +643,7 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       }
 
       const input = await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput);
-      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'insertText' });
+      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'human' });
       await assertPromptFilled(input, prompt);
       await humanPressEnter(page);
       await randomDelay(500, 1_000);

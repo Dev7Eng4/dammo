@@ -3,6 +3,7 @@ import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
+import { persistLlmParseFailure } from '../meta/persist-llm-failure.js';
 import { generateCharacterReferences } from './ai-video-character-references.js';
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
@@ -87,6 +88,7 @@ async function executeScenePromptChunk(
   const userPrompt = await executePromptTemplate(input.language, promptKey, args);
 
   let lastReason = 'unknown error';
+  let lastResponsePath: string | undefined;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     input.onProgress?.({
@@ -104,7 +106,7 @@ async function executeScenePromptChunk(
         undefined,
         {
           submitWith: 'enter',
-          pasteStrategy: 'direct',
+          pasteStrategy: 'human',
         },
       );
 
@@ -116,6 +118,13 @@ async function executeScenePromptChunk(
       }
 
       lastReason = 'invalid JSON or schema mismatch';
+      lastResponsePath = await persistLlmParseFailure({
+        outputDir: input.workDir,
+        label: `ai-scene-${job.density}-${job.chunkIndex}`,
+        attempt,
+        reason: lastReason,
+        response,
+      });
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';
     }
@@ -125,6 +134,10 @@ async function executeScenePromptChunk(
     `AI scene prompt generation failed for ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} after ${MAX_RETRIES} attempts: ${lastReason}`,
     502,
     'AI_SCENE_PROMPT_FAILED',
+    {
+      reason: lastReason,
+      ...(lastResponsePath ? { responsePath: lastResponsePath } : {}),
+    },
   );
 }
 

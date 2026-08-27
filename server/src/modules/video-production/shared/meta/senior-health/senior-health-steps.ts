@@ -8,6 +8,7 @@ import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
 import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
+import { persistLlmParseFailure } from '../persist-llm-failure.js';
 import {
   parseSeniorHealthStep1Response,
   parseSeniorHealthStep2Response,
@@ -29,6 +30,7 @@ export interface SeniorHealthMetadataProgress {
 
 export interface RunSeniorHealthStepOptions {
   onProgress?: (progress: SeniorHealthMetadataProgress) => void;
+  outputDir?: string;
 }
 
 function resolveSeniorHealthStepKey(language: PromptLanguage, step: SeniorHealthMetadataStep): string {
@@ -77,7 +79,7 @@ async function runSeniorHealthLlmStep<T>(
 
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'direct',
+        pasteStrategy: 'human',
       });
 
       const parsed = parse(response);
@@ -87,12 +89,20 @@ async function runSeniorHealthLlmStep<T>(
       }
 
       lastReason = formatParseFailureReason(parsed);
+      const responsePath = await persistLlmParseFailure({
+        outputDir: options?.outputDir,
+        label: `senior-health-step-${step}`,
+        attempt,
+        reason: lastReason,
+        response,
+      });
       lastDetails = {
         step,
         attempt,
         reason: parsed.reason,
         ...(parsed.missingFields?.length ? { missingFields: parsed.missingFields } : {}),
         ...(parsed.snippet ? { snippet: parsed.snippet } : {}),
+        ...(responsePath ? { responsePath } : {}),
       };
       logValidationFailure(step, attempt, lastReason);
     } catch (err) {

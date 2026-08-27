@@ -14,6 +14,7 @@ import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
+import { persistLlmParseFailure } from '../meta/persist-llm-failure.js';
 import {
   AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS,
   CHARACTER_REFERENCES_FILENAME,
@@ -161,6 +162,7 @@ async function generateCharacterPromptsViaLlm(
   log(`[ai-video] Mở Chrome profile ${profile.name} cho character design...`);
 
   let lastReason = 'unknown error';
+  let lastResponsePath: string | undefined;
 
   try {
     await llmBrowserService.open(profile.id, promptsSettingsService.get().defaultLlmProvider);
@@ -175,7 +177,7 @@ async function generateCharacterPromptsViaLlm(
           undefined,
           {
             submitWith: 'enter',
-            pasteStrategy: 'direct',
+            pasteStrategy: 'human',
           },
         );
 
@@ -184,6 +186,13 @@ async function generateCharacterPromptsViaLlm(
           return parsed;
         }
         lastReason = 'invalid JSON or schema mismatch';
+        lastResponsePath = await persistLlmParseFailure({
+          outputDir: input.workDir,
+          label: 'ai-character-design',
+          attempt,
+          reason: lastReason,
+          response,
+        });
       } catch (err) {
         lastReason = err instanceof Error ? err.message : 'unknown error';
       }
@@ -196,6 +205,10 @@ async function generateCharacterPromptsViaLlm(
     `Character design prompt generation failed after ${MAX_LLM_RETRIES} attempts: ${lastReason}`,
     502,
     'AI_CHARACTER_PROMPT_FAILED',
+    {
+      reason: lastReason,
+      ...(lastResponsePath ? { responsePath: lastResponsePath } : {}),
+    },
   );
 }
 

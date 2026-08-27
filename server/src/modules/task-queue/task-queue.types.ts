@@ -15,6 +15,8 @@ export interface TaskErrorDetails {
   reason?: string;
   missingFields?: string[];
   snippet?: string;
+  /** Absolute path to persisted full LLM response (llm-debug/*.json). */
+  responsePath?: string;
   context?: string;
 }
 
