@@ -177,7 +177,7 @@ export function SettingsPage() {
               <SettingCheckbox
                 id="chrome-background-offscreen"
                 label="Đưa cửa sổ Chrome nền ra ngoài màn hình"
-                description="Bật: đỗ cửa sổ off-screen. Tắt: minimize (có thể làm viewport bị thu nhỏ)."
+                description="Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường."
                 checked={settings.chromeBackgroundUseOffscreen}
                 onChange={chromeBackgroundUseOffscreen =>
                   setSettings(prev => ({ ...prev, chromeBackgroundUseOffscreen }))

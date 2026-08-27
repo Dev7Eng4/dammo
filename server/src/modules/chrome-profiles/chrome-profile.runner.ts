@@ -5,6 +5,11 @@ import {
   buildChromeLaunchOptions,
   isChromeBackgroundUseOffscreen,
 } from '../../infrastructure/chrome/browser-launch.config.js';
+import {
+  centerRectInWorkArea,
+  resetChromeWindowPlacement,
+  type ChromeWorkArea,
+} from '../../infrastructure/chrome/chrome-window-placement.js';
 import { applyStealthInit, stealthChromium } from '../../infrastructure/chrome/stealth-init.js';
 import { clearLlmBrowserSessionsForProfile } from '../../infrastructure/llm-browser/llm-browser.session.js';
 import { env } from '../../config/env.js';
@@ -81,29 +86,83 @@ async function moveChromeWindowOffscreen(context: BrowserContext, page: Page): P
   }
 }
 
-async function minimizeChromeWindow(context: BrowserContext, page: Page): Promise<void> {
+/** Work area of the display the window currently sits on, per the renderer. */
+async function readScreenWorkArea(page: Page): Promise<ChromeWorkArea | undefined> {
+  try {
+    return await page.evaluate(() => {
+      const screen = window.screen as Screen & { availLeft?: number; availTop?: number };
+      const left = screen.availLeft ?? 0;
+      const top = screen.availTop ?? 0;
+      return {
+        left,
+        top,
+        right: left + screen.availWidth,
+        bottom: top + screen.availHeight,
+      };
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+/** Brings a window back to the middle of the screen (undoes the off-screen parking). */
+async function centerChromeWindow(context: BrowserContext, page: Page): Promise<void> {
   let client: CDPSession | undefined;
   try {
+    const rect = centerRectInWorkArea(await readScreenWorkArea(page));
     client = await context.newCDPSession(page);
     const { windowId } = await client.send('Browser.getWindowForTarget');
-    await client.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'minimized' } });
+    // Bounds cannot be changed while the window is minimized or maximized.
+    await client.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal' } });
+    await client.send('Browser.setWindowBounds', {
+      windowId,
+      bounds: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+    });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    console.warn(`[chrome-profile] failed to minimize window: ${detail}`);
+    console.warn(`[chrome-profile] failed to center window: ${detail}`);
   } finally {
     await client?.detach().catch(() => undefined);
   }
 }
 
+/**
+ * Background profiles are never brought to front. With off-screen parking disabled
+ * the window is left exactly where it is, visible on screen.
+ */
 async function keepProfileInBackground(profileId: string, page: Page): Promise<void> {
   if (!isProfileBackground(profileId)) return;
+  if (!isChromeBackgroundUseOffscreen()) return;
   const context = activeContexts.get(profileId);
   if (!context) return;
-  if (isChromeBackgroundUseOffscreen()) {
-    await moveChromeWindowOffscreen(context, page);
-  } else {
-    await minimizeChromeWindow(context, page);
-  }
+  await moveChromeWindowOffscreen(context, page);
+}
+
+/**
+ * Re-applies the current background window mode to every open profile, so toggling
+ * the setting pulls already-parked windows back onto the screen immediately.
+ */
+export async function applyChromeBackgroundModeToOpenProfiles(): Promise<void> {
+  const profileIds = [...activeContexts.keys()];
+
+  await Promise.all(
+    profileIds.map(async profileId => {
+      const context = activeContexts.get(profileId);
+      if (!context) return;
+
+      try {
+        const page = await waitForInitialPage(context);
+        if (isProfileBackground(profileId) && isChromeBackgroundUseOffscreen()) {
+          await moveChromeWindowOffscreen(context, page);
+        } else {
+          await centerChromeWindow(context, page);
+        }
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        console.warn(`[chrome-profile] failed to re-apply window mode for ${profileId}: ${detail}`);
+      }
+    }),
+  );
 }
 
 export interface OpenChromeProfileOptions {
@@ -138,7 +197,7 @@ async function logChromeLaunch(
     headless,
     background,
     ...(background
-      ? { backgroundMode: isChromeBackgroundUseOffscreen() ? 'offscreen' : 'minimized' }
+      ? { backgroundMode: isChromeBackgroundUseOffscreen() ? 'offscreen' : 'visible' }
       : {}),
     chrome: env.chromeExecutablePath || `channel:${env.chromeChannel}`,
     userAgent,
@@ -283,6 +342,11 @@ async function launchChromeContext(
   return enqueueChromeLaunch(async () => {
     await waitChromeLaunchSlot();
 
+    // A profile parked off-screen before keeps that position in its Preferences file,
+    // so it must be repaired whenever the window is supposed to be visible.
+    const shouldBeVisible = !headless && !(background && isChromeBackgroundUseOffscreen());
+    const windowRect = shouldBeVisible ? await resetChromeWindowPlacement(userDataDir) : undefined;
+
     let lastError: unknown;
     for (let attempt = 1; attempt <= CHROME_LAUNCH_MAX_ATTEMPTS; attempt += 1) {
       if (attempt > 1) {
@@ -293,7 +357,10 @@ async function launchChromeContext(
       try {
         const context = await stealthChromium.launchPersistentContext(
           userDataDir,
-          buildChromeLaunchOptions(headless, { background }),
+          buildChromeLaunchOptions(headless, {
+            background,
+            ...(windowRect ? { windowRect } : {}),
+          }),
         );
         await applyStealthInit(context);
         await logChromeLaunch(context, headless, userDataDir, background);

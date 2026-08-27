@@ -1,5 +1,6 @@
 import { env } from '../../config/env.js';
 import { appSettingsService } from '../../modules/app-settings/app-settings.service.js';
+import type { ChromeWindowRect } from './chrome-window-placement.js';
 
 const STEALTH_ARGS = ['--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check'] as const;
 
@@ -19,14 +20,11 @@ const RAM_OPTIMIZATION_ARGS = [
  * @deprecated Prefer isChromeBackgroundUseOffscreen() — kept as compile-time default only.
  *
  * When true (default), background Chrome windows are parked off-screen.
- * When false, windows are minimized via CDP instead (see chrome-profile.runner).
- *
- * Note: launch uses `viewport: null`, so a minimized window may collapse the page
- * viewport and cause Playwright click actionability failures.
+ * When false, they stay visible on screen (see chrome-profile.runner).
  */
 export const CHROME_BACKGROUND_USE_OFFSCREEN = true;
 
-/** Runtime switch: park background Chrome off-screen (vs minimize). */
+/** Runtime switch: park background Chrome off-screen (vs leave it visible). */
 export function isChromeBackgroundUseOffscreen(): boolean {
   return appSettingsService.get().chromeBackgroundUseOffscreen;
 }
@@ -43,10 +41,16 @@ export function backgroundChromeArgs(): string[] {
 }
 
 /** Shared launch flags for system Google Chrome (not Playwright Chromium bundle). */
-function baseChromeOptions(headless: boolean, background = false) {
+function baseChromeOptions(headless: boolean, background = false, windowRect?: ChromeWindowRect) {
   const args: string[] = [...STEALTH_ARGS, ...RAM_OPTIMIZATION_ARGS];
   if (background) {
     args.push(...backgroundChromeArgs());
+  }
+  if (windowRect) {
+    args.push(
+      `--window-position=${windowRect.left},${windowRect.top}`,
+      `--window-size=${windowRect.width},${windowRect.height}`,
+    );
   }
   return {
     headless,
@@ -64,6 +68,8 @@ function resolveChromeTarget() {
 
 export interface ChromeLaunchOptions {
   background?: boolean;
+  /** Forces the window on screen, overriding the position persisted in the profile. */
+  windowRect?: ChromeWindowRect;
 }
 
 /**
@@ -72,7 +78,7 @@ export interface ChromeLaunchOptions {
  */
 export function buildChromeLaunchOptions(headless: boolean, options: ChromeLaunchOptions = {}) {
   return {
-    ...baseChromeOptions(headless, options.background),
+    ...baseChromeOptions(headless, options.background, options.windowRect),
     viewport: null,
     locale: 'en-US',
     acceptDownloads: true,
