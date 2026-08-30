@@ -67,6 +67,17 @@ async function processAddSource(job: TaskJob): Promise<unknown> {
 async function processCreateVideo(job: TaskJob): Promise<unknown> {
   const payload = job.payload as CreateVideoTaskPayload;
 
+  if (payload.recreateMetadataFromUrl === true) {
+    updateProgress(job.id, 5, 'Đang tạo metadata từ link video');
+    const result = await videoProductionService.recreateMetadataFromUrl(
+      payload.channelId!,
+      payload.videoUrl!,
+      { taskJobId: job.id },
+    );
+    updateProgress(job.id, 100, 'Hoàn thành');
+    return result;
+  }
+
   if (payload.regenerateMetadata === true) {
     updateProgress(job.id, 5, 'Đang tạo lại metadata và thumbnail');
     const result = await videoProductionService.regenerateMetadataAndThumbnails(

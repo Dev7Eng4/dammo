@@ -4,6 +4,7 @@ import type { Page } from 'playwright';
 import { paths } from '../../config/paths.js';
 import { resizeImageToFit } from '../ffmpeg/image-resize.js';
 import { AppError } from '../../shared/http/errors.js';
+import { isBlobUrl, isHttpUrl } from './meta-image-url.js';
 import type { LlmMediaAsset, MetaGenerateMediaOptions } from './llm-browser.types.js';
 
 export const META_IMAGE_WIDTH = 1280;
@@ -92,6 +93,52 @@ export function resolveMetaMediaSavePath(
   return path.join(metaTestDir, defaultTimestampFileName(kind));
 }
 
+async function fetchBlobInBrowser(page: Page, blobUrl: string): Promise<Buffer> {
+  const bytes = await page.evaluate(async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`blob fetch failed (${response.status})`);
+    }
+    const buffer = await response.arrayBuffer();
+    return Array.from(new Uint8Array(buffer));
+  }, blobUrl);
+
+  return Buffer.from(bytes);
+}
+
+async function downloadMetaAssetBuffer(page: Page, sourceUrl: string, kind: 'image' | 'video'): Promise<Buffer> {
+  if (isHttpUrl(sourceUrl)) {
+    const response = await page.request.get(sourceUrl);
+    if (!response.ok()) {
+      throw new AppError(
+        `Failed to download Meta ${kind} (${response.status()})`,
+        502,
+        'META_MEDIA_DOWNLOAD_FAILED',
+      );
+    }
+    return response.body();
+  }
+
+  if (isBlobUrl(sourceUrl)) {
+    try {
+      return await fetchBlobInBrowser(page, sourceUrl);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new AppError(
+        `Failed to download Meta ${kind} blob: ${message}`,
+        502,
+        'META_MEDIA_BLOB_DOWNLOAD_FAILED',
+      );
+    }
+  }
+
+  throw new AppError(
+    `Unsupported Meta ${kind} source URL: ${sourceUrl.slice(0, 80)}`,
+    502,
+    'META_MEDIA_UNSUPPORTED_URL',
+  );
+}
+
 export async function downloadAndSaveMetaAsset(
   page: Page,
   sourceUrl: string,
@@ -99,16 +146,7 @@ export async function downloadAndSaveMetaAsset(
   kind: 'image' | 'video',
   aspectRatio: '16:9' | '3:4' = '16:9',
 ): Promise<LlmMediaAsset> {
-  const response = await page.request.get(sourceUrl);
-  if (!response.ok()) {
-    throw new AppError(
-      `Failed to download Meta ${kind} (${response.status()})`,
-      502,
-      'META_MEDIA_DOWNLOAD_FAILED',
-    );
-  }
-
-  const buffer = await response.body();
+  const buffer = await downloadMetaAssetBuffer(page, sourceUrl, kind);
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
   if (kind === 'image' && aspectRatio === '16:9') {

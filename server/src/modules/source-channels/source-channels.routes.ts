@@ -19,9 +19,9 @@ export function createSourceChannelsRoutes() {
   });
 
   app.get('/', zValidator('query', listSourceChannelsQuerySchema), (c) => {
-    const { platform, purpose, language, risk, q, page, limit } = c.req.valid('query');
+    const { platform, purpose, language, risk, niche, q, page, limit } = c.req.valid('query');
     return c.json(
-      sourceChannelsService.listPaginated(platform, purpose, language, risk, q, page, limit),
+      sourceChannelsService.listPaginated(platform, purpose, language, risk, niche, q, page, limit),
     );
   });
 

@@ -5,7 +5,7 @@ export function VideoFactoryPage() {
   const { toast } = useToast();
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+    <div className="-m-6 flex h-svh flex-col">
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mb-6">
           <h1 className="text-lg font-semibold text-neutral-100">Create Video</h1>

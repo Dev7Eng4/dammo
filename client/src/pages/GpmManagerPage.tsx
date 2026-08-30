@@ -4,7 +4,6 @@ import {
   deleteGpmProfile,
   fetchGpmGroups,
   fetchGpmProfiles,
-  fetchGpmStatus,
   startGpmProfile,
   stopGpmProfile,
   testGpmProfile,
@@ -15,7 +14,6 @@ import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal
 import { AddGpmGroupModal } from '../components/gpm-manager/AddGpmGroupModal';
 import { EditGpmGroupModal } from '../components/gpm-manager/EditGpmGroupModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
-import { GpmConnectionBanner } from '../components/gpm-manager/GpmConnectionBanner';
 import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
 import { GpmGroupsToolbar } from '../components/gpm-manager/GpmGroupsToolbar';
 import {
@@ -27,7 +25,6 @@ import { Button, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import { cn } from '../lib/cn';
 import type {
-  GpmConnectionStatus,
   GpmGroup,
   GpmProfile,
   GpmProfileSort,
@@ -40,9 +37,6 @@ export function GpmManagerPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<GpmTab>('profiles');
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const [status, setStatus] = useState<GpmConnectionStatus | null>(null);
-  const [statusLoading, setStatusLoading] = useState(true);
 
   const [profiles, setProfiles] = useState<GpmProfile[]>([]);
   const [groups, setGroups] = useState<GpmGroup[]>([]);
@@ -96,26 +90,6 @@ export function GpmManagerPage() {
     const timer = window.setTimeout(() => setDebouncedProfileSearch(profileSearch.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [profileSearch]);
-
-  useAbortableEffect(
-    async (signal) => {
-      setStatusLoading(true);
-      try {
-        const { item } = await fetchGpmStatus({ signal });
-        setStatus(item);
-      } catch (err) {
-        if (signal.aborted) return;
-        setStatus({
-          connected: false,
-          baseUrl: 'http://127.0.0.1:19995/api/v3',
-          message: err instanceof Error ? err.message : 'Không kiểm tra được trạng thái GPM',
-        });
-      } finally {
-        if (!signal.aborted) setStatusLoading(false);
-      }
-    },
-    [refreshKey],
-  );
 
   useAbortableEffect(
     async (signal) => {
@@ -343,11 +317,9 @@ export function GpmManagerPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+    <div className="-m-6 flex h-svh flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
-          <GpmConnectionBanner status={status} loading={statusLoading} className="mb-4" />
-
           <div className="mb-4 flex gap-1 border-b border-border">
             {(
               [

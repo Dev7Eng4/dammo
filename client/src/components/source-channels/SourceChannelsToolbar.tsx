@@ -1,4 +1,5 @@
 import { Button, DropdownSelect } from '../ui';
+import type { Niche } from '../../types/niche';
 import type {
   SourceLanguageFilter,
   SourcePlatformFilter,
@@ -10,12 +11,17 @@ interface SourceChannelsToolbarProps {
   platformFilter: SourcePlatformFilter;
   purposeFilter: SourcePurposeFilter;
   languageFilter: SourceLanguageFilter;
+  nicheFilter: string;
+  search: string;
+  niches: Niche[];
   canDownload?: boolean;
   downloadDisabledReason?: string;
   canDelete?: boolean;
   onPlatformFilterChange: (value: SourcePlatformFilter) => void;
   onPurposeFilterChange: (value: SourcePurposeFilter) => void;
   onLanguageFilterChange: (value: SourceLanguageFilter) => void;
+  onNicheFilterChange: (value: string) => void;
+  onSearchChange: (value: string) => void;
   onAddSource: () => void;
   onAddNiche?: () => void;
   onDownload?: () => void;
@@ -46,38 +52,83 @@ export function SourceChannelsToolbar({
   platformFilter,
   purposeFilter,
   languageFilter,
+  nicheFilter,
+  search,
+  niches,
   canDownload = true,
   downloadDisabledReason,
   canDelete = false,
   onPlatformFilterChange,
   onPurposeFilterChange,
   onLanguageFilterChange,
+  onNicheFilterChange,
+  onSearchChange,
   onAddSource,
   onAddNiche,
   onDownload,
   onDelete,
 }: SourceChannelsToolbarProps) {
+  const nicheOptions: { value: string; label: string }[] = [
+    { value: 'all', label: 'Tất cả niche' },
+    ...niches.map((item) => ({ value: item.key, label: item.label })),
+  ];
+
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
-      <div className="flex flex-wrap items-end gap-4">
-        <DropdownSelect
-          label="Nền tảng"
-          options={platformOptions}
-          value={platformFilter}
-          onChange={onPlatformFilterChange}
-        />
-        <DropdownSelect
-          label="Mục đích"
-          options={purposeOptions}
-          value={purposeFilter}
-          onChange={onPurposeFilterChange}
-        />
-        <DropdownSelect
-          label="Ngôn ngữ"
-          options={languageOptions}
-          value={languageFilter}
-          onChange={onLanguageFilterChange}
-        />
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-neutral-500">
+              Tên
+            </span>
+            <div className="relative">
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => onSearchChange(e.currentTarget.value)}
+                placeholder="Lọc theo tên..."
+                className="w-48 rounded-lg border border-border bg-surface-elevated py-1.5 pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 transition-colors focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30 lg:w-56"
+              />
+            </div>
+          </div>
+          <DropdownSelect
+            label="Niche"
+            options={nicheOptions}
+            value={nicheFilter}
+            onChange={onNicheFilterChange}
+            triggerClassName="min-w-[18rem]"
+          />
+          <DropdownSelect
+            label="Ngôn ngữ"
+            options={languageOptions}
+            value={languageFilter}
+            onChange={onLanguageFilterChange}
+          />
+        </div>
+        <div className="flex flex-wrap items-end gap-4">
+          <DropdownSelect
+            label="Mục đích"
+            options={purposeOptions}
+            value={purposeFilter}
+            onChange={onPurposeFilterChange}
+          />
+          <DropdownSelect
+            label="Nền tảng"
+            options={platformOptions}
+            value={platformFilter}
+            onChange={onPlatformFilterChange}
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

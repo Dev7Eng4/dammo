@@ -89,6 +89,10 @@ export function mediaDownloadDir(platform: string, mediaId: string): string {
   return path.join(paths.mediaDownloadsDir, platform, mediaId);
 }
 
+export function recreateMetadataDir(): string {
+  return path.join(paths.mediaDownloadsDir, 'youtube', 'recreate-metadata');
+}
+
 export function promptTemplateFile(language: string, key: string): string {
   const stepMatch = key.match(/^(.+)_step_(\d+)$/);
   if (stepMatch) {
@@ -141,6 +145,18 @@ export function youtubeChannelUploadsDir(channelId: string): string {
 
 export function youtubeChannelUploadedVideoDir(channelId: string, youtubeVideoId: string): string {
   return path.join(youtubeChannelUploadsDir(channelId), youtubeVideoId);
+}
+
+/** Returns `uploads/{videoId}/` when the post-upload archive folder exists. */
+export function resolveYoutubeChannelUploadedVideoDir(
+  channelId: string,
+  youtubeVideoId: string,
+): string | null {
+  const candidate = youtubeChannelUploadedVideoDir(channelId, youtubeVideoId);
+  if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+    return candidate;
+  }
+  return null;
 }
 
 export function youtubeChannelThumbnailBackgroundsDir(channelId: string): string {
@@ -267,6 +283,7 @@ export function ensureDataDirs(): void {
     paths.reupVideoOutputDir,
     paths.taskQueueDir,
     paths.mediaDownloadsDir,
+    path.join(paths.mediaDownloadsDir, 'youtube', 'recreate-metadata'),
     paths.youtubeChannelsDir,
     paths.promptsDir,
     paths.playgroundDir,

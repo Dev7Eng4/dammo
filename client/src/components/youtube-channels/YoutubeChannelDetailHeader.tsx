@@ -25,6 +25,7 @@ interface YoutubeChannelDetailHeaderProps {
   onUploadVideos?: () => void;
   onDeleteVideos?: () => void;
   onOpenProfile?: () => void;
+  onRecreateMetadata?: () => void;
 }
 
 function formatVideosFetchedAt(value: string): string {
@@ -58,6 +59,7 @@ export function YoutubeChannelDetailHeader({
   onUploadVideos,
   onDeleteVideos,
   onOpenProfile,
+  onRecreateMetadata,
 }: YoutubeChannelDetailHeaderProps) {
   const initial = channel.name.charAt(0).toUpperCase();
   const canOpenProfile = canOpenGpmProfile(channel.linkedEmail);
@@ -92,6 +94,11 @@ export function YoutubeChannelDetailHeader({
         </div>
 
         <div className='flex shrink-0 flex-wrap items-start gap-2'>
+          {onRecreateMetadata ? (
+            <Button variant="outlined" className="rounded-lg" onClick={onRecreateMetadata}>
+              Tạo Metadata
+            </Button>
+          ) : null}
           {onOpenProfile ? (
             <Button
               variant='outlined'

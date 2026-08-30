@@ -326,7 +326,7 @@ export function AssetsPage() {
           ) : items.length === 0 ? (
             <p className='py-10 text-center text-sm text-neutral-500'>Chưa có file nào trong mục này.</p>
           ) : (
-            <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+            <div className='grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8'>
               {items.map(item => {
                 const src = assetFileUrl(activeKind, item.name);
                 return (

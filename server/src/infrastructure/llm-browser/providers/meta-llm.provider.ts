@@ -4,6 +4,7 @@ import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
 import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from '../meta.config.js';
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from '../meta-media.js';
+import { resolveMetaImageSourceUrl } from '../meta-image-url.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
   LlmBrowserResponse,
@@ -174,14 +175,16 @@ async function extractFirstAssistantImage(
     if ((await assistant.count().catch(() => 0)) > 0) {
       try {
         await assistant.waitFor({ state: 'visible', timeout: 1_500 });
-        const src = await assistant.locator('img').first().getAttribute('src');
-        const trimmed = src?.trim();
-        if (trimmed) {
-          return { assistant, sourceUrl: trimmed };
-        }
-        await humanReadLatestResponse(page, assistant);
+        const remainingMs = Math.max(1_000, deadline - Date.now());
+        const resolved = await resolveMetaImageSourceUrl(assistant, remainingMs, {
+          pollDelayMs: 400,
+        });
+        console.log(
+          `[meta] resolved image url (${resolved.kind}, candidates=${resolved.candidateCount}): ${resolved.url.slice(0, 120)}`,
+        );
+        return { assistant, sourceUrl: resolved.url };
       } catch {
-        // Keep polling until the first assistant image is available.
+        await humanReadLatestResponse(page, assistant).catch(() => undefined);
       }
     }
 

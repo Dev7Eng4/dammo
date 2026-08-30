@@ -21,6 +21,7 @@ export interface YoutubeChannelVideo {
   commentCount?: number;
   duration?: number;
   status?: YoutubeChannelVideoStatus;
+  localFolder?: 'uploads';
 }
 
 export interface YtdlpVideoEntry {

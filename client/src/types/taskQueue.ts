@@ -49,6 +49,9 @@ export interface CreateVideoTaskPayload {
   prepareOnly?: boolean;
   videoIds?: string[];
   regenerateMetadata?: boolean;
+  /** Download transcript from URL and recreate metadata into ephemeral folder */
+  recreateMetadataFromUrl?: boolean;
+  videoUrl?: string;
   /** Assemble final mp4 only for existing Prepared videos */
   assembleOnly?: boolean;
 }

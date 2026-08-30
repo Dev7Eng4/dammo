@@ -44,7 +44,9 @@ export function YoutubeChannelsPage() {
   const [showDeleteUploadedModal, setShowDeleteUploadedModal] = useState(false);
   const [showDeleteChannelModal, setShowDeleteChannelModal] = useState(false);
   const [deletingUploadedVideos, setDeletingUploadedVideos] = useState(false);
-  const [deletingChannel, setDeletingChannel] = useState(false);
+  const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null);
+  const [editingChannel, setEditingChannel] = useState<YoutubeChannel | null>(null);
+  const [deletingChannelTarget, setDeletingChannelTarget] = useState<YoutubeChannel | null>(null);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
@@ -93,16 +95,6 @@ export function YoutubeChannelsPage() {
           : selectedIds.size > 1
             ? `Tải video lên cho ${selectedIds.size} kênh đã chọn`
             : undefined;
-  const canEdit = selectedIds.size === 1;
-  const editDisabledReason =
-    selectedIds.size === 0 ? 'Chọn một kênh để chỉnh sửa' : selectedIds.size > 1 ? 'Chỉ chọn một kênh để chỉnh sửa' : undefined;
-  const canDeleteChannel = selectedIds.size === 1;
-  const deleteChannelDisabledReason =
-    selectedIds.size === 0
-      ? 'Chọn một kênh để xóa'
-      : selectedIds.size > 1
-        ? 'Chỉ chọn một kênh để xóa'
-        : undefined;
 
   useAbortableEffect(async signal => {
     setStatsLoading(true);
@@ -213,12 +205,23 @@ export function YoutubeChannelsPage() {
 
   function handleEditSuccess(_updated?: YoutubeChannel) {
     setShowEditModal(false);
+    setEditingChannel(null);
     list.markLoading();
     setChannelsRefreshKey(key => key + 1);
 
     void fetchYoutubeChannelStats()
       .then(setStats)
       .catch(() => setStats(null));
+  }
+
+  function handleEditChannel(channel: YoutubeChannel) {
+    setEditingChannel(channel);
+    setShowEditModal(true);
+  }
+
+  function handleDeleteChannel(channel: YoutubeChannel) {
+    setDeletingChannelTarget(channel);
+    setShowDeleteChannelModal(true);
   }
 
   function handleVideoCountConfirm(count: number) {
@@ -337,20 +340,21 @@ export function YoutubeChannelsPage() {
   }
 
   async function handleConfirmDeleteChannel() {
-    if (!selectedChannel) return;
+    if (!deletingChannelTarget) return;
 
-    setDeletingChannel(true);
+    setDeletingChannelId(deletingChannelTarget.id);
     try {
-      await deleteYoutubeChannel(selectedChannel.id);
+      await deleteYoutubeChannel(deletingChannelTarget.id);
       setShowDeleteChannelModal(false);
-      toast.success(`Đã xóa kênh "${selectedChannel.name}"`);
+      setDeletingChannelTarget(null);
+      toast.success(`Đã xóa kênh "${deletingChannelTarget.name}"`);
       list.markLoading();
       list.refresh();
       clearSelection();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Không thể xóa kênh');
     } finally {
-      setDeletingChannel(false);
+      setDeletingChannelId(null);
     }
   }
 
@@ -381,7 +385,7 @@ export function YoutubeChannelsPage() {
   }
 
   return (
-    <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
+    <div className='-m-6 flex h-svh flex-col'>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
         <div className='flex-1 overflow-y-auto p-6'>
           {/* <YoutubeChannelStatCards data={stats} loading={statsLoading} /> */}
@@ -403,13 +407,6 @@ export function YoutubeChannelsPage() {
               onUpload={() => setShowUploadCountModal(true)}
               deletingUploadedVideos={deletingUploadedVideos}
               onDeleteUploadedVideos={() => setShowDeleteUploadedModal(true)}
-              canDeleteChannel={canDeleteChannel}
-              deleteChannelDisabledReason={deleteChannelDisabledReason}
-              deletingChannel={deletingChannel}
-              onDeleteChannel={() => setShowDeleteChannelModal(true)}
-              canEdit={canEdit}
-              editDisabledReason={editDisabledReason}
-              onEdit={() => setShowEditModal(true)}
             />
           </div>
           {list.error ? <p className='mt-2 text-xs text-danger'>Không thể tải danh sách kênh YouTube.</p> : null}
@@ -426,6 +423,9 @@ export function YoutubeChannelsPage() {
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
               onOpenProfile={handleOpenProfile}
+              onEdit={handleEditChannel}
+              onDelete={handleDeleteChannel}
+              deletingChannelId={deletingChannelId}
             />
             <MailAccountsPagination
               page={list.page}
@@ -491,17 +491,24 @@ export function YoutubeChannelsPage() {
 
       <DeleteYoutubeChannelConfirmModal
         open={showDeleteChannelModal}
-        channelName={selectedChannel?.name ?? ''}
-        deleting={deletingChannel}
-        onClose={() => setShowDeleteChannelModal(false)}
+        channelName={deletingChannelTarget?.name ?? ''}
+        deleting={deletingChannelId !== null}
+        onClose={() => {
+          if (deletingChannelId !== null) return;
+          setShowDeleteChannelModal(false);
+          setDeletingChannelTarget(null);
+        }}
         onConfirm={() => void handleConfirmDeleteChannel()}
       />
 
-      {selectedChannel ? (
+      {editingChannel ? (
         <AddYoutubeChannelModal
           open={showEditModal}
-          channel={selectedChannel}
-          onClose={() => setShowEditModal(false)}
+          channel={editingChannel}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingChannel(null);
+          }}
           onSuccess={handleEditSuccess}
         />
       ) : null}

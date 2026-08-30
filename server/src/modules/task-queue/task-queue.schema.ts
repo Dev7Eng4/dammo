@@ -25,6 +25,8 @@ const createVideoPayloadSchema = z
     prepareOnly: z.boolean().optional(),
     videoIds: z.array(z.string().min(1)).min(1).optional(),
     regenerateMetadata: z.boolean().optional(),
+    recreateMetadataFromUrl: z.boolean().optional(),
+    videoUrl: z.string().min(1).optional(),
     assembleOnly: z.boolean().optional(),
   })
   .refine(
@@ -55,9 +57,35 @@ const createVideoPayloadSchema = z
     },
   )
   .refine(
+    (data) =>
+      data.recreateMetadataFromUrl !== true ||
+      (Boolean(data.channelId) &&
+        Boolean(data.videoUrl?.trim()) &&
+        !data.allReupChannels &&
+        !data.channelIds?.length &&
+        !data.videoIds?.length &&
+        data.regenerateMetadata !== true &&
+        data.assembleOnly !== true),
+    {
+      message: 'recreateMetadataFromUrl requires channelId and videoUrl',
+    },
+  )
+  .refine(
     (data) => !(data.assembleOnly === true && data.regenerateMetadata === true),
     {
       message: 'assembleOnly and regenerateMetadata cannot both be true',
+    },
+  )
+  .refine(
+    (data) => !(data.assembleOnly === true && data.recreateMetadataFromUrl === true),
+    {
+      message: 'assembleOnly and recreateMetadataFromUrl cannot both be true',
+    },
+  )
+  .refine(
+    (data) => !(data.regenerateMetadata === true && data.recreateMetadataFromUrl === true),
+    {
+      message: 'regenerateMetadata and recreateMetadataFromUrl cannot both be true',
     },
   );
 

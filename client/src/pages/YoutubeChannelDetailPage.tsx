@@ -10,6 +10,7 @@ import { YoutubeChannelDetailHeader, YoutubeChannelDetailHeaderSkeleton } from '
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
 import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
 import { VideoCommentsDrawer } from '../components/youtube-channels/VideoCommentsDrawer';
+import { RecreateMetadataModal } from '../components/youtube-channels/RecreateMetadataModal';
 import { VideoContentModal } from '../components/youtube-channels/VideoContentModal';
 import { useToast } from '../components/ui';
 import { useAbortableEffect, useClientPaginatedList, useTaskQueue } from '../hooks';
@@ -53,8 +54,11 @@ export function YoutubeChannelDetailPage() {
   const [pendingError, setPendingError] = useState<string | null>(null);
   const [pendingResetKey, setPendingResetKey] = useState(0);
   const [limit, setLimit] = useState(20);
+  const [recreateMetadataOpen, setRecreateMetadataOpen] = useState(false);
 
   const isPendingFilter = statusFilter === 'Pending';
+  const canRecreateMetadata =
+    channel != null && channel.language === 'ja' && isStoredReupChannelType(channel.type);
 
   const filteredVideos = useMemo(() => {
     if (isPendingFilter) return pendingVideos;
@@ -289,7 +293,7 @@ export function YoutubeChannelDetailPage() {
 
   if (!id || notFound) {
     return (
-      <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col'>
+      <div className='-m-6 flex h-svh flex-col'>
         <div className='flex flex-1 flex-col items-center justify-center p-6 text-center'>
           <p className='text-sm text-neutral-400'>Không tìm thấy kênh YouTube.</p>
           <Link to='/youtube-channels' className='mt-3 text-sm text-secondary-400 hover:text-secondary-300'>
@@ -301,7 +305,7 @@ export function YoutubeChannelDetailPage() {
   }
 
   return (
-    <div className='-m-6 flex h-[calc(100svh-3.5rem)] flex-col lg:flex-row'>
+    <div className='-m-6 flex h-svh flex-col lg:flex-row'>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
         <div className='flex-1 overflow-y-auto p-6'>
           {loading || !channel ? (
@@ -325,6 +329,7 @@ export function YoutubeChannelDetailPage() {
               onUploadVideos={handleUploadSelected}
               onDeleteVideos={() => setShowDeleteConfirm(true)}
               onOpenProfile={handleOpenProfile}
+              onRecreateMetadata={canRecreateMetadata ? () => setRecreateMetadataOpen(true) : undefined}
             />
           )}
 
@@ -413,8 +418,14 @@ export function YoutubeChannelDetailPage() {
             );
             setContentVideo(current => (current ? { ...current, title: content.title } : current));
           }}
-          onMarkedUploaded={videoId => {
-            setAllVideos(current => current.map(video => (video.id === videoId ? { ...video, status: 'Uploaded' } : video)));
+          onMarkedUploaded={() => {
+            void fetchYoutubeChannelVideos(id)
+              .then(data => {
+                setAllVideos(data.items);
+                setVideosFetchedAt(data.fetchedAt ?? null);
+                setVideoResetKey(key => key + 1);
+              })
+              .catch(() => undefined);
             void fetchYoutubeChannel(id)
               .then(live => setChannel(live))
               .catch(() => undefined);
@@ -428,6 +439,14 @@ export function YoutubeChannelDetailPage() {
               .then(live => setChannel(live))
               .catch(() => undefined);
           }}
+        />
+      ) : null}
+
+      {id && channel && canRecreateMetadata ? (
+        <RecreateMetadataModal
+          open={recreateMetadataOpen}
+          channelId={id}
+          onClose={() => setRecreateMetadataOpen(false)}
         />
       ) : null}
     </div>

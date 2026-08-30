@@ -1,4 +1,5 @@
 import type { SourceVideoRecord } from '../../../../source-channels/source-channels.types.js';
+import type { VideoCreationOrder } from '../../../../youtube-channels/youtube-channels.types.js';
 import type { ProductionDestination } from '../../../ports/production-destination.port.js';
 import type { SourceCatalog } from '../../../ports/source-catalog.port.js';
 import { REUP_VIDEO_SELECTION_BUFFER, REUP_VIDEOS_PER_RUN } from '../reup-audio.constants.js';
@@ -34,9 +35,25 @@ function selectVideosForCreation(
   videos: SourceVideoWithSource[],
   preparedVideoIds: Set<string>,
   limit: number,
-  order: 'oldest_first' | 'newest_first' = 'oldest_first',
+  order: VideoCreationOrder = 'oldest_first',
 ): SourceVideoWithSource[] {
-  const eligible = videos.filter(video => Boolean(video.url) && !preparedVideoIds.has(video.id));
+  const eligibleWithIndex = videos
+    .map((video, index) => ({ video, index }))
+    .filter(({ video }) => Boolean(video.url) && !preparedVideoIds.has(video.id));
+
+  if (order === 'lowest_views_first') {
+    return eligibleWithIndex
+      .sort((a, b) => {
+        const viewA = a.video.viewCount ?? Infinity;
+        const viewB = b.video.viewCount ?? Infinity;
+        if (viewA !== viewB) return viewA - viewB;
+        return b.index - a.index;
+      })
+      .map(({ video }) => video)
+      .slice(0, limit);
+  }
+
+  const eligible = eligibleWithIndex.map(({ video }) => video);
   const ordered = order === 'oldest_first' ? [...eligible].reverse() : eligible;
   return ordered.slice(0, limit);
 }

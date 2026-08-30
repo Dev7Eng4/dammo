@@ -21,6 +21,7 @@ import {
   type YoutubeThumbnailUpload,
   type YoutubeVideoAssetKind,
 } from './youtube-video-content.service.js';
+import { youtubeRecreateMetadataService } from './youtube-recreate-metadata.service.js';
 import {
   thumbnailBackgroundsService,
   type ThumbnailBackgroundContentType,
@@ -289,6 +290,29 @@ export function createYoutubeChannelsRoutes() {
   app.get('/:id/videos/pending', (c) => {
     const result = youtubeChannelsService.getPendingSourceVideos(c.req.param('id'));
     return c.json(result);
+  });
+
+  app.get('/:id/recreate-metadata/content', (c) => {
+    const item = youtubeRecreateMetadataService.getContent(c.req.param('id'));
+    const baseUrl = c.req.path;
+    return c.json({
+      ...item,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail` : null,
+      oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
+      videoUrl: null,
+    });
+  });
+
+  app.get('/:id/recreate-metadata/content/:asset', (c) => {
+    const assetKind = c.req.param('asset');
+    if (assetKind !== 'thumbnail' && assetKind !== 'old-thumbnail') {
+      return c.json({ error: 'Asset not found' }, 404);
+    }
+    const asset = youtubeRecreateMetadataService.getAsset(
+      c.req.param('id'),
+      assetKind as YoutubeVideoAssetKind,
+    );
+    return streamVideoAsset(c.req.raw, asset);
   });
 
   app.get('/:id/videos/:videoId/comments', async (c) => {

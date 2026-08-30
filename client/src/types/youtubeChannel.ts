@@ -122,7 +122,7 @@ export function formatTargetAudienceLabel(value: string): string {
   return formatChannelLanguageLabel(value);
 }
 export type UploadFrequency = 'every_5_days' | 'every_3_days' | 'every_2_days' | 'daily_1' | 'daily_2' | 'daily_3';
-export type VideoCreationOrder = 'oldest_first' | 'newest_first';
+export type VideoCreationOrder = 'oldest_first' | 'newest_first' | 'lowest_views_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
@@ -233,6 +233,7 @@ export interface YoutubeChannelVideo {
   commentCount?: number;
   duration?: number;
   status?: YoutubeChannelVideoStatus;
+  localFolder?: 'uploads';
 }
 
 export interface YoutubeChannelVideosResponse {

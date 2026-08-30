@@ -23,7 +23,7 @@ const channelConfigFields = {
   language: channelLanguageSchema,
   niche: z.string().default(''),
   sourceChannels: z.array(z.string().min(1)).optional(),
-  videoCreationOrder: z.enum(['oldest_first', 'newest_first']).optional(),
+  videoCreationOrder: z.enum(['oldest_first', 'newest_first', 'lowest_views_first']).optional(),
   backgroundFootageSources: z.array(z.string().min(1)).optional(),
   thumbnailStyleKey: z.string().optional(),
   thumbnailBackgroundFile: z.string().optional(),

@@ -125,7 +125,7 @@ async function main() {
 
     console.log(`${label}`);
     console.log(`Prompt: ${item.prompt}`);
-    console.log('Generating video...');
+    console.log('Generating image...');
 
     try {
       const response = await metaBrowserService.generateMedia(profile.id, item.prompt, {

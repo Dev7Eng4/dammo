@@ -126,7 +126,7 @@ export function ChromeProfilesPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+    <div className="-m-6 flex h-svh flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <div className="border-b border-border pb-4">

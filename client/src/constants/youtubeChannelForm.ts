@@ -115,6 +115,7 @@ export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }
 export const VIDEO_CREATION_ORDER_OPTIONS: { value: VideoCreationOrder; label: string }[] = [
   { value: 'oldest_first', label: 'Từ cũ đến mới' },
   { value: 'newest_first', label: 'Từ mới đến cũ' },
+  { value: 'lowest_views_first', label: 'Video view tăng dần' },
 ];
 
 export function getPublishTimeSlotCount(frequency: UploadFrequency | ''): number {

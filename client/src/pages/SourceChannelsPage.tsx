@@ -14,7 +14,7 @@ import { DeleteSourceChannelModal } from '../components/source-channels/DeleteSo
 import { SourceChannelsTable } from '../components/source-channels/SourceChannelsTable';
 import { SourceChannelsToolbar } from '../components/source-channels/SourceChannelsToolbar';
 import { useToast } from '../components/ui';
-import { useAbortableEffect, usePaginatedList } from '../hooks';
+import { useAbortableEffect, useDebouncedValue, usePaginatedList } from '../hooks';
 import { useTaskQueue } from '../hooks/useTaskQueue';
 import type { Niche } from '../types/niche';
 import type {
@@ -26,6 +26,8 @@ import type {
   SourcePurposeFilter,
 } from '../types/sourceChannel';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function SourceChannelsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,6 +35,8 @@ export function SourceChannelsPage() {
   const [platformFilter, setPlatformFilter] = useState<SourcePlatformFilter>('all');
   const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('reup');
   const [languageFilter, setLanguageFilter] = useState<SourceLanguageFilter>('all');
+  const [nicheFilter, setNicheFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddNicheModal, setShowAddNicheModal] = useState(false);
@@ -46,13 +50,21 @@ export function SourceChannelsPage() {
   const [checkingDelete, setCheckingDelete] = useState(false);
   const [limit, setLimit] = useState(20);
 
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+
   const list = usePaginatedList({
-    fetcher: ({ platform, purpose, language, page, limit: pageLimit, signal }) =>
-      fetchSourceChannels(platform, purpose, language, page, pageLimit, { signal }),
+    fetcher: ({ platform, purpose, language, niche, query, page, limit: pageLimit, signal }) =>
+      fetchSourceChannels(platform, purpose, language, page, pageLimit, {
+        signal,
+        ...(niche !== 'all' ? { niche } : {}),
+        ...(query.trim() ? { q: query } : {}),
+      }),
     query: {
       platform: platformFilter,
       purpose: purposeFilter,
       language: languageFilter,
+      niche: nicheFilter,
+      query: debouncedSearch,
     },
     limit,
   });
@@ -107,6 +119,20 @@ export function SourceChannelsPage() {
   function handleLanguageFilterChange(next: SourceLanguageFilter) {
     list.markLoading();
     setLanguageFilter(next);
+    list.resetPage();
+    clearSelection();
+  }
+
+  function handleNicheFilterChange(next: string) {
+    list.markLoading();
+    setNicheFilter(next);
+    list.resetPage();
+    clearSelection();
+  }
+
+  function handleSearchChange(next: string) {
+    list.markLoading();
+    setSearch(next);
     list.resetPage();
     clearSelection();
   }
@@ -211,6 +237,9 @@ export function SourceChannelsPage() {
     try {
       const data = await fetchNiches();
       setNiches(data.items);
+      setNicheFilter((current) =>
+        current === 'all' || data.items.some((item) => item.key === current) ? current : 'all',
+      );
     } catch {
       // keep existing niches on refresh failure
     }
@@ -308,18 +337,23 @@ export function SourceChannelsPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+    <div className="-m-6 flex h-svh flex-col">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6">
           <SourceChannelsToolbar
             platformFilter={platformFilter}
             purposeFilter={purposeFilter}
             languageFilter={languageFilter}
+            nicheFilter={nicheFilter}
+            search={search}
+            niches={niches}
             canDownload={canDownload}
             downloadDisabledReason={downloadDisabledReason}
             onPlatformFilterChange={handlePlatformFilterChange}
             onPurposeFilterChange={handlePurposeFilterChange}
             onLanguageFilterChange={handleLanguageFilterChange}
+            onNicheFilterChange={handleNicheFilterChange}
+            onSearchChange={handleSearchChange}
             onAddSource={() => setShowAddModal(true)}
             onAddNiche={() => setShowAddNicheModal(true)}
             onDownload={handleDownload}

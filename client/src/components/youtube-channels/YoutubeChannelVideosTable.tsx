@@ -64,6 +64,14 @@ function formatCount(count?: number | null): string {
   return count.toLocaleString('vi-VN');
 }
 
+function isContentViewable(video: YoutubeChannelVideo): boolean {
+  return (
+    video.status === 'Prepared' ||
+    video.status === 'Created' ||
+    video.localFolder === 'uploads'
+  );
+}
+
 export function YoutubeChannelVideosTable({
   videos,
   loading,
@@ -83,7 +91,7 @@ export function YoutubeChannelVideosTable({
       header: 'TIÊU ĐỀ',
       cell: ({ row, getValue }) => {
         const title = getValue<string>();
-        if ((row.original.status === 'Prepared' || row.original.status === 'Created') && onTitleClick) {
+        if (isContentViewable(row.original) && onTitleClick) {
           return (
             <button
               type='button'

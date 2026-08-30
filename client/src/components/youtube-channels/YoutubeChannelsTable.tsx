@@ -21,6 +21,9 @@ interface YoutubeChannelsTableProps {
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
   onOpenProfile: (channel: YoutubeChannel) => void;
+  onEdit?: (channel: YoutubeChannel) => void;
+  onDelete?: (channel: YoutubeChannel) => void;
+  deletingChannelId?: string | null;
 }
 
 const languageLabels: Record<YoutubeChannelLanguage, string> = {
@@ -75,6 +78,39 @@ function OpenProfileIcon({ className }: { className?: string }) {
   );
 }
 
+function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      aria-hidden='true'
+    >
+      <path d='M12 20h9' />
+      <path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z' />
+    </svg>
+  );
+}
+
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      aria-hidden='true'
+    >
+      <path d='M3 6h18' />
+      <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' />
+      <path d='M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
+    </svg>
+  );
+}
+
 export function YoutubeChannelsTable({
   channels,
   sources,
@@ -87,6 +123,9 @@ export function YoutubeChannelsTable({
   onToggleRow,
   onToggleAll,
   onOpenProfile,
+  onEdit,
+  onDelete,
+  deletingChannelId = null,
 }: YoutubeChannelsTableProps) {
   const columns: ColumnDef<YoutubeChannel, unknown>[] = [
     {
@@ -138,7 +177,15 @@ export function YoutubeChannelsTable({
       cell: ({ row }) => {
         const lastUploadAt = row.original.lastUploadAt;
         if (lastUploadAt) {
-          return <span className="text-neutral-300">{formatDate(lastUploadAt)}</span>;
+          const nextUploadAt = row.original.nextUploadAt;
+          const dueSoon =
+            Boolean(nextUploadAt) &&
+            new Date(nextUploadAt!).getTime() <= Date.now() + 24 * 60 * 60 * 1000;
+          return (
+            <span className={dueSoon ? 'text-danger' : 'text-neutral-300'}>
+              {formatDate(lastUploadAt)}
+            </span>
+          );
         }
         return (
           <span className="text-neutral-300">
@@ -156,8 +203,10 @@ export function YoutubeChannelsTable({
         const opening = openingProfileIds.has(channel.id);
         const canOpen = canOpenGpmProfile(channel.linkedEmail);
 
+        const deleting = deletingChannelId === channel.id;
+
         return (
-          <div onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
             <Button
               variant="outlined"
               size="icon"
@@ -169,6 +218,32 @@ export function YoutubeChannelsTable({
             >
               <OpenProfileIcon className="size-4" />
             </Button>
+            {onEdit ? (
+              <Button
+                variant="outlined"
+                size="icon"
+                className="size-8 rounded-lg"
+                title="Chỉnh sửa"
+                aria-label="Chỉnh sửa kênh"
+                disabled={deleting}
+                onClick={() => onEdit(channel)}
+              >
+                <EditIcon className="size-4" />
+              </Button>
+            ) : null}
+            {onDelete ? (
+              <Button
+                variant="danger"
+                size="icon"
+                className="size-8 rounded-lg"
+                title={deleting ? 'Đang xóa…' : 'Xóa kênh'}
+                aria-label={deleting ? 'Đang xóa kênh' : 'Xóa kênh'}
+                disabled={deleting}
+                onClick={() => onDelete(channel)}
+              >
+                <TrashIcon className="size-4" />
+              </Button>
+            ) : null}
           </div>
         );
       },

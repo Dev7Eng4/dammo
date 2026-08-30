@@ -13,15 +13,26 @@ function prepareItemToVideo(item: VideoPrepareItem): YoutubeChannelVideo {
 export function mergeChannelVideos(
   published: YoutubeChannelVideo[],
   prepare: VideoPrepareItem[],
+  uploadedFromFolder: YoutubeChannelVideo[] = [],
 ): YoutubeChannelVideo[] {
+  const publishedIds = new Set(published.map(video => video.id));
+
   const publishedWithStatus = published.map(video => ({
     ...video,
     status: 'Published' as const,
   }));
 
+  const uploadedOnly = uploadedFromFolder
+    .filter(video => !publishedIds.has(video.id))
+    .map(video => ({
+      ...video,
+      status: 'Published' as const,
+      localFolder: 'uploads' as const,
+    }));
+
   const prepareVideos = prepare
     .filter(item => item.status !== 'Uploaded')
     .map(prepareItemToVideo);
 
-  return [...publishedWithStatus, ...prepareVideos];
+  return [...publishedWithStatus, ...uploadedOnly, ...prepareVideos];
 }

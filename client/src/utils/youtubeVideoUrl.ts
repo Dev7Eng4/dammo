@@ -1,5 +1,3 @@
-import { AppError } from '../../shared/http/errors.js';
-
 export function extractYoutubeVideoId(url: string): string | null {
   try {
     const parsed = new URL(url.trim());
@@ -22,15 +20,10 @@ export function extractYoutubeVideoId(url: string): string | null {
   }
 }
 
-export function requireYoutubeVideoId(url: string): string {
+export function canonicalizeYoutubeVideoUrl(url: string): string {
   const videoId = extractYoutubeVideoId(url);
   if (!videoId) {
-    throw new AppError('Invalid YouTube video URL', 400, 'INVALID_VIDEO_URL');
+    throw new Error('Invalid YouTube video URL');
   }
-  return videoId;
-}
-
-export function canonicalizeYoutubeVideoUrl(url: string): string {
-  const videoId = requireYoutubeVideoId(url.trim());
   return `https://www.youtube.com/watch?v=${videoId}`;
 }

@@ -126,6 +126,16 @@ export function fetchYoutubeVideoContent(
   );
 }
 
+export function fetchRecreateMetadataContent(
+  channelId: string,
+  options?: FetchOptions,
+) {
+  return fetchJson<YoutubeVideoContent>(
+    `${API_V1}/youtube-channels/${channelId}/recreate-metadata/content`,
+    withSignal(undefined, options),
+  );
+}
+
 export function updateYoutubeVideoContent(
   channelId: string,
   videoId: string,

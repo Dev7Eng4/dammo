@@ -195,7 +195,7 @@ export function CelebritiesPanel() {
               Chưa có ảnh hoặc video. Bấm &quot;Thêm ảnh / video&quot; để tải lên.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
               {media.map((item) => {
                 const src = celebrityMediaUrl(selected.id, item.name);
                 return (

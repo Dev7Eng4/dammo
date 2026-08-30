@@ -1,7 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { resolveYoutubeChannelVideoDir } from '../../../../config/paths.js';
+import { recreateMetadataDir, resolveYoutubeChannelVideoDir } from '../../../../config/paths.js';
 import { assertMediaFileComplete } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
+import { downloadYoutubeTranscript } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
+import { downloadYoutubeThumbnail } from '../../../../infrastructure/youtube/youtube-thumbnail-downloader.js';
+import { fetchYoutubeVideoTitle } from '../../../../infrastructure/youtube/youtube-video-title.js';
+import { canonicalizeYoutubeVideoUrl, requireYoutubeVideoId } from '../../../../infrastructure/youtube/youtube-url.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
@@ -55,6 +59,11 @@ interface CreateVideosOptions {
 interface RegenerateMetadataOptions {
   taskJobId?: string;
   videoIds: string[];
+}
+
+interface RecreateMetadataFromUrlOptions {
+  videoUrl: string;
+  taskJobId?: string;
 }
 
 interface AssemblePreparedOptions {
@@ -367,6 +376,177 @@ export class ReupAudioPipeline {
     }
 
     return { items };
+  }
+
+  /**
+   * Download transcript from an external YouTube URL and regenerate metadata + thumbnail
+   * into media-downloads/youtube/recreate-metadata (ephemeral flat folder).
+   */
+  async recreateMetadataFromUrl(
+    destination: ProductionDestination,
+    options: RecreateMetadataFromUrlOptions,
+  ): Promise<CreateReupVideosResult> {
+    if (!isReupAudioPipeline(destination.pipelineType) && destination.pipelineType !== 'reup') {
+      throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
+    }
+
+    if (destination.language !== 'ja') {
+      throw new AppError(
+        'Recreate metadata from URL is only supported for Japanese channels',
+        400,
+        'UNSUPPORTED_LANGUAGE',
+      );
+    }
+
+    const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
+    if (videoType !== 'si' && videoType !== 'ai') {
+      throw new AppError(
+        'Recreate metadata from URL requires reupAudioVideoType si or ai',
+        400,
+        'INVALID_VIDEO_TYPE',
+      );
+    }
+
+    const trimmedVideoUrl = options.videoUrl.trim();
+    if (!trimmedVideoUrl) {
+      throw new AppError('Video URL is required', 400, 'INVALID_VIDEO_URL');
+    }
+
+    const videoUrl = canonicalizeYoutubeVideoUrl(trimmedVideoUrl);
+    const youtubeVideoId = requireYoutubeVideoId(videoUrl);
+    const taskJobId = options.taskJobId;
+    const log = createTaskLogger(taskJobId);
+    const stepTimer = createStepTimer(taskJobId, youtubeVideoId);
+    let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.download;
+
+    try {
+      const workDir = recreateMetadataDir();
+      await fs.rm(workDir, { recursive: true, force: true });
+      await fs.mkdir(workDir, { recursive: true });
+
+      if (taskJobId) {
+        initCreateVideoStages(taskJobId, { includeUpdateTranscript: false });
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
+        taskQueueRepository.setLivePhase(taskJobId, 'downloading');
+      }
+
+      log.info('Downloading transcript...');
+      const transcriptPath = await timedStep(
+        'Tải transcript',
+        () => downloadYoutubeTranscript(videoUrl, workDir, destination.language),
+        stepTimer,
+      );
+      log.ok(`Transcript saved → ${transcriptPath}`);
+
+      const sourceTitle = await timedStep(
+        'Lấy tiêu đề video',
+        () => fetchYoutubeVideoTitle(videoUrl),
+        stepTimer,
+      );
+      log.ok(`Source title → ${sourceTitle}`);
+
+      let thumbnailPath: string | undefined;
+      try {
+        thumbnailPath = await downloadYoutubeThumbnail(videoUrl, workDir, {
+          outputBasename: 'old-thumbnail',
+        });
+        log.ok(`Source thumbnail saved → ${thumbnailPath}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'thumbnail download failed';
+        log.info(`Source thumbnail skipped (non-fatal): ${message}`);
+      }
+
+      completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
+
+      activeStageId = CREATE_VIDEO_STAGE_IDS.cleanTranscript;
+      startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
+      const srtPath = await runCleanTranscript(transcriptPath, log, stepTimer);
+      completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.cleanTranscript);
+
+      skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
+      skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.assemble);
+
+      const task: ReupVideoTask = {
+        link: videoUrl,
+        id: destination.id,
+        language: destination.language,
+        videoId: youtubeVideoId,
+        sourceId: '',
+        sourceTitle,
+      };
+
+      const strategy = resolveVideoTypeStrategy(videoType);
+      const ctx: VideoTaskContext = {
+        destination,
+        videoType,
+        task,
+        ...(taskJobId ? { taskJobId } : {}),
+        log,
+        stepTimer,
+        workDir,
+        downloaded: {
+          youtubeVideoId,
+          outputDir: workDir,
+          audioPath: path.join(workDir, AUDIO_FILE),
+          transcriptPath,
+          ...(thumbnailPath ? { thumbnailPath } : {}),
+        },
+        subtitlePath: srtPath,
+      };
+
+      activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
+      startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+      if (taskJobId) taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+      ctx.videoMeta = await runMetadataStep(ctx);
+      completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+
+      activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
+      startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+
+      const assets: VisualAssets = {};
+      const thumbnail = await runThumbnailStep(ctx, strategy);
+      Object.assign(assets, {
+        ...(thumbnail.reupThumbnailPath ? { reupThumbnailPath: thumbnail.reupThumbnailPath } : {}),
+        ...(thumbnail.heroImagePath ? { heroImagePath: thumbnail.heroImagePath } : {}),
+      });
+      Object.assign(assets, await strategy.prepareEnrichedVisuals(ctx, assets, thumbnail.flow));
+      completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+
+      log.ok(`Recreate metadata done for ${youtubeVideoId}`);
+
+      if (taskJobId) {
+        taskQueueRepository.setLivePhase(taskJobId, 'done');
+      }
+
+      return {
+        items: [
+          {
+            link: videoUrl,
+            channelId: destination.id,
+            language: destination.language,
+            videoId: youtubeVideoId,
+            youtubeVideoId,
+            outputPath: workDir,
+            transcriptPath,
+            updatedSrtPath: srtPath,
+            videoMetaOutput: ctx.videoMeta,
+            ...(thumbnailPath ? { thumbnailPath } : {}),
+            ...(thumbnail.thumbnailHorizontalOutput
+              ? { thumbnailHorizontalOutput: thumbnail.thumbnailHorizontalOutput }
+              : {}),
+            ...(thumbnail.thumbnailVisualPath ? { thumbnailVisualPath: thumbnail.thumbnailVisualPath } : {}),
+            ...(assets.heroImagePath ? { heroImagePath: assets.heroImagePath } : {}),
+            ...(assets.reupThumbnailPath ? { reupThumbnailPath: assets.reupThumbnailPath } : {}),
+          },
+        ],
+      };
+    } catch (err) {
+      if (taskJobId && activeStageId) {
+        failCreateVideoStage(taskJobId, activeStageId, err);
+      }
+      this.logUnhandledTaskError(taskJobId, err);
+      throw err;
+    }
   }
 
   /**

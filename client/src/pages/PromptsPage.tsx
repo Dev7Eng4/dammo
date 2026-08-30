@@ -691,7 +691,7 @@ export function PromptsPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] overflow-hidden">
+    <div className="-m-6 flex h-svh overflow-hidden">
       <PromptsListPanel
         prompts={prompts}
         loading={listLoading}

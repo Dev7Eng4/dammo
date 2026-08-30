@@ -55,6 +55,7 @@ function filterSources(
   purpose?: SourcePurpose,
   language?: SourceChannelLanguage,
   risk?: SourceRiskLevel,
+  niche?: string,
   query?: string,
 ): SourceChannel[] {
   let results = sources.map(withNormalizedLanguage);
@@ -75,13 +76,16 @@ function filterSources(
     results = results.filter((s) => s.riskLevel === risk);
   }
 
+  if (niche) {
+    results = results.filter((s) => s.niche === niche);
+  }
+
   if (query?.trim()) {
     const q = query.trim().toLowerCase();
     results = results.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         s.url.toLowerCase().includes(q) ||
-        s.niche.toLowerCase().includes(q) ||
         s.fullUrl.toLowerCase().includes(q),
     );
   }
@@ -140,6 +144,7 @@ export class SourceChannelsService {
     purpose: SourcePurpose | undefined,
     language: SourceChannelLanguage | undefined,
     risk: SourceRiskLevel | undefined,
+    niche: string | undefined,
     query: string | undefined,
     page: number,
     limit: number,
@@ -150,6 +155,7 @@ export class SourceChannelsService {
       purpose,
       language,
       risk,
+      niche,
       query,
     );
     const result = paginate(filtered, page, limit);

@@ -237,7 +237,7 @@ export function SmallVideoPanel() {
               Chưa có video. Bấm &quot;Thêm video&quot; để tải lên.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
               {media.map((item) => {
                 const src = smallVideoGroupMediaUrl(selected.id, item.name);
                 return (
@@ -417,7 +417,7 @@ export function SmallVideoPanel() {
                   Chưa có video ngoài nhóm. Bấm &quot;Thêm video&quot; để tải lên.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
                   {ungrouped.map((item) => {
                     const src = assetFileUrl('smallVideo', item.name);
                     return (

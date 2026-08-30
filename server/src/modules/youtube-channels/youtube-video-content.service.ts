@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
+import {
+  resolveYoutubeChannelUploadedVideoDir,
+  resolveYoutubeChannelVideoDir,
+} from '../../config/paths.js';
 import { runFfmpeg } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { AppError } from '../../shared/http/errors.js';
@@ -68,6 +71,15 @@ function requireViewableVideoFolder(channelId: string, videoId: string): string 
       item.videoId.trim() === safeVideoId &&
       (item.status === 'Prepared' || item.status === 'Created'),
     );
+
+  if (prepareItem) {
+    const folderPath = resolveYoutubeChannelVideoDir(safeChannelId, safeVideoId);
+    if (folderPath) return folderPath;
+  }
+
+  const uploadedFolderPath = resolveYoutubeChannelUploadedVideoDir(safeChannelId, safeVideoId);
+  if (uploadedFolderPath) return uploadedFolderPath;
+
   if (!prepareItem) {
     throw new AppError(
       'Video is not in Prepared or Created status',
@@ -76,11 +88,7 @@ function requireViewableVideoFolder(channelId: string, videoId: string): string 
     );
   }
 
-  const folderPath = resolveYoutubeChannelVideoDir(safeChannelId, safeVideoId);
-  if (!folderPath) {
-    throw new AppError('Video folder not found', 404, 'VIDEO_FOLDER_NOT_FOUND');
-  }
-  return folderPath;
+  throw new AppError('Video folder not found', 404, 'VIDEO_FOLDER_NOT_FOUND');
 }
 
 function metadataPath(folderPath: string): string {

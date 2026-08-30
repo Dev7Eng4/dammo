@@ -20,17 +20,19 @@ export function fetchSourceChannels(
   language: SourceLanguageFilter = 'all',
   page = 1,
   limit = 20,
-  options?: FetchOptions,
+  options?: FetchOptions & { niche?: string; q?: string },
 ) {
   const params = new URLSearchParams();
   if (platform !== 'all') params.set('platform', platform);
   if (purpose !== 'all') params.set('purpose', purpose);
   if (language !== 'all') params.set('language', language);
+  if (options?.niche) params.set('niche', options.niche);
+  if (options?.q?.trim()) params.set('q', options.q.trim());
   params.set('page', String(page));
   params.set('limit', String(limit));
   return fetchJson<SourceChannelsResponse>(
     `${API_V1}/source-channels?${params}`,
-    withSignal(undefined, options),
+    withSignal(undefined, { signal: options?.signal }),
   );
 }
 

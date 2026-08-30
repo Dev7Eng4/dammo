@@ -18,6 +18,7 @@ import { sourceChannelsRepository } from '../source-channels/source-channels.rep
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelVideosRepository } from './youtube-channel-videos.repository.js';
 import { videoProductionService } from '../video-production/video-production.service.js';
+import { listUploadedFolderVideos } from './list-uploaded-folder-videos.js';
 import { mergeChannelVideos } from './merge-channel-videos.js';
 import { videoPrepareRepository } from './video-prepare.repository.js';
 import {
@@ -490,6 +491,7 @@ export class YoutubeChannelsService {
         sourceNames: resolveSourceNamesForChannel(channel),
         sourceChannelNames: resolveSourceChannelNamesOnly(channel),
         backgroundFootageNames: resolveBackgroundFootageNamesOnly(channel),
+        nextUploadAt: getNextYoutubePublishSlot(channel)?.iso ?? null,
       })),
     };
   }
@@ -591,7 +593,8 @@ export class YoutubeChannelsService {
 
   private mergeVideosWithPrepare(channelId: string, videos: YoutubeChannelVideo[]): YoutubeChannelVideo[] {
     const prepare = videoPrepareRepository.read(channelId);
-    return mergeChannelVideos(videos, prepare);
+    const uploadedFromFolder = listUploadedFolderVideos(channelId);
+    return mergeChannelVideos(videos, prepare, uploadedFromFolder);
   }
 
   async getVideos(id: string): Promise<{ items: YoutubeChannelVideo[]; fetchedAt?: string }> {

@@ -153,7 +153,7 @@ export function SourceChannelDetailPage() {
 
   if (!id || notFound) {
     return (
-      <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+      <div className="-m-6 flex h-svh flex-col">
         <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
           <p className="text-sm text-neutral-400">Không tìm thấy kênh nguồn.</p>
           <Link to="/source-channels" className="mt-3 text-sm text-secondary-400 hover:text-secondary-300">
@@ -165,7 +165,7 @@ export function SourceChannelDetailPage() {
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+    <div className="-m-6 flex h-svh flex-col">
       <div className="flex-1 overflow-y-auto p-6">
         {loading || !source ? (
           <SourceChannelDetailHeaderSkeleton />

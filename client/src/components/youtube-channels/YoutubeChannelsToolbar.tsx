@@ -12,11 +12,6 @@ interface YoutubeChannelsToolbarProps {
   uploadDisabledReason?: string;
   uploading?: boolean;
   deletingUploadedVideos?: boolean;
-  canEdit?: boolean;
-  editDisabledReason?: string;
-  canDeleteChannel?: boolean;
-  deleteChannelDisabledReason?: string;
-  deletingChannel?: boolean;
   onTypeFilterChange: (value: YoutubeChannelTypeFilter) => void;
   onMonetizationFilterChange: (value: YoutubeMonetizationFilter) => void;
   onSearchChange: (value: string) => void;
@@ -25,8 +20,6 @@ interface YoutubeChannelsToolbarProps {
   onPrepareVideo?: () => void;
   onUpload?: () => void;
   onDeleteUploadedVideos?: () => void;
-  onDeleteChannel?: () => void;
-  onEdit?: () => void;
 }
 
 const typeOptions: { value: YoutubeChannelTypeFilter; label: string }[] = [
@@ -55,11 +48,6 @@ export function YoutubeChannelsToolbar({
   uploadDisabledReason,
   uploading,
   deletingUploadedVideos,
-  canEdit,
-  editDisabledReason,
-  canDeleteChannel = false,
-  deleteChannelDisabledReason,
-  deletingChannel,
   onTypeFilterChange,
   onMonetizationFilterChange,
   onSearchChange,
@@ -68,8 +56,6 @@ export function YoutubeChannelsToolbar({
   onPrepareVideo,
   onUpload,
   onDeleteUploadedVideos,
-  onDeleteChannel,
-  onEdit,
 }: YoutubeChannelsToolbarProps) {
   return (
     <div className='flex flex-wrap items-center justify-between gap-3'>
@@ -157,33 +143,6 @@ export function YoutubeChannelsToolbar({
               <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
             </svg>
             {deletingUploadedVideos ? 'Đang xóa…' : 'Xóa video'}
-          </Button>
-        ) : null}
-        {onDeleteChannel ? (
-          <Button
-            variant='danger'
-            className='rounded-lg'
-            onClick={onDeleteChannel}
-            disabled={deletingChannel || !canDeleteChannel}
-            title={!deletingChannel && !canDeleteChannel ? deleteChannelDisabledReason : undefined}
-          >
-            <svg className='size-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-              <path d='M3 6h18' />
-              <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' />
-              <path d='M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
-            </svg>
-            {deletingChannel ? 'Đang xóa…' : 'Xóa kênh'}
-          </Button>
-        ) : null}
-        {onEdit ? (
-          <Button
-            variant='outlined'
-            className='rounded-lg'
-            onClick={onEdit}
-            disabled={!canEdit}
-            title={!canEdit ? editDisabledReason : undefined}
-          >
-            Chỉnh sửa
           </Button>
         ) : null}
         <button type='button' className='inline-flex items-center gap-1.5 text-md text-neutral-400 hover:text-neutral-200'>
