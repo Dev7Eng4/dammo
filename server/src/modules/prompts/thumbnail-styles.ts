@@ -62,8 +62,7 @@ export function resolveDefaultThumbnailStyleKey(language: ChannelLanguage | Prom
   const options = listThumbnailStyleOptions(language);
   if (options.length === 0) return undefined;
 
-  const horizontal = options.find(option => option.name.toLowerCase() === 'horizontal');
-  return horizontal?.key ?? options[0]?.key;
+  return options[0]?.key;
 }
 
 export function resolveThumbnailStyleKey(
@@ -75,21 +74,6 @@ export function resolveThumbnailStyleKey(
     return trimmed;
   }
   return resolveDefaultThumbnailStyleKey(language);
-}
-
-export function isHorizontalMultiStepStyle(
-  styleKey: string,
-  language: ChannelLanguage | PromptLanguage,
-): boolean {
-  const lang = toPromptLanguage(language);
-  const base = styleKey.trim();
-  if (!base) return false;
-
-  const stepKeys = [1, 2, 3].map(step => `${base}_step_${step}`);
-  return stepKeys.every((stepKey) => {
-    const prompt = promptsRepository.findByKeyWithFallback(stepKey, lang);
-    return prompt?.category === 'thumbnail';
-  });
 }
 
 export function assertValidThumbnailStyleKey(

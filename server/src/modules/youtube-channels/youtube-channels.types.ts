@@ -17,7 +17,11 @@ export type UploadFrequency =
   | 'daily_1'
   | 'daily_2'
   | 'daily_3';
-export type VideoCreationOrder = 'oldest_first' | 'newest_first' | 'lowest_views_first';
+export type VideoCreationOrder =
+  | 'oldest_first'
+  | 'newest_first'
+  | 'lowest_views_first'
+  | 'shortest_duration_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';

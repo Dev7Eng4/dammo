@@ -355,10 +355,6 @@ export class ReupAudioPipeline {
           updatedSrtPath: subtitlePath,
           videoMetaOutput: ctx.videoMeta,
           ...(oldThumbnailPath ? { thumbnailPath: oldThumbnailPath } : {}),
-          ...(thumbnail.thumbnailHorizontalOutput
-            ? { thumbnailHorizontalOutput: thumbnail.thumbnailHorizontalOutput }
-            : {}),
-          ...(thumbnail.thumbnailVisualPath ? { thumbnailVisualPath: thumbnail.thumbnailVisualPath } : {}),
           ...(assets.heroImagePath ? { heroImagePath: assets.heroImagePath } : {}),
           ...(assets.reupThumbnailPath ? { reupThumbnailPath: assets.reupThumbnailPath } : {}),
         });
@@ -531,10 +527,6 @@ export class ReupAudioPipeline {
             updatedSrtPath: srtPath,
             videoMetaOutput: ctx.videoMeta,
             ...(thumbnailPath ? { thumbnailPath } : {}),
-            ...(thumbnail.thumbnailHorizontalOutput
-              ? { thumbnailHorizontalOutput: thumbnail.thumbnailHorizontalOutput }
-              : {}),
-            ...(thumbnail.thumbnailVisualPath ? { thumbnailVisualPath: thumbnail.thumbnailVisualPath } : {}),
             ...(assets.heroImagePath ? { heroImagePath: assets.heroImagePath } : {}),
             ...(assets.reupThumbnailPath ? { reupThumbnailPath: assets.reupThumbnailPath } : {}),
           },
@@ -808,8 +800,6 @@ export class ReupAudioPipeline {
 
       const assets: VisualAssets = {};
       let updatedSrtPath: string | undefined;
-      let thumbnailHorizontalOutput: ReupVideoOutputItem['thumbnailHorizontalOutput'];
-      let thumbnailVisualPath: string | undefined;
 
       /**
        * Only Japanese channels run the LLM transcript rewrite, and metadata +
@@ -842,8 +832,6 @@ export class ReupAudioPipeline {
             ...(thumbnail.reupThumbnailPath ? { reupThumbnailPath: thumbnail.reupThumbnailPath } : {}),
             ...(thumbnail.heroImagePath ? { heroImagePath: thumbnail.heroImagePath } : {}),
           });
-          thumbnailHorizontalOutput = thumbnail.thumbnailHorizontalOutput;
-          thumbnailVisualPath = thumbnail.thumbnailVisualPath;
 
           Object.assign(assets, await strategy.prepareEnrichedVisuals(ctx, assets, thumbnail.flow));
         }
@@ -887,9 +875,7 @@ export class ReupAudioPipeline {
         audioPath: downloaded.audioPath,
         updatedSrtPath: ctx.subtitlePath,
         ...(ctx.videoMeta ? { videoMetaOutput: ctx.videoMeta } : {}),
-        ...(thumbnailHorizontalOutput ? { thumbnailHorizontalOutput } : {}),
         ...(assets.heroImagePath ? { heroImagePath: assets.heroImagePath } : {}),
-        ...(thumbnailVisualPath ? { thumbnailVisualPath } : {}),
         ...(assets.reupThumbnailPath ? { reupThumbnailPath: assets.reupThumbnailPath } : {}),
         ...(reupVideoPath ? { reupVideoPath } : {}),
         ...(assets.aiScenePrompts ? { aiScenePrompts: assets.aiScenePrompts } : {}),

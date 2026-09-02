@@ -102,14 +102,18 @@ async function findVisibleSelectorButton(page: Page, selector: string): Promise<
 }
 
 async function dismissDialogIfPresent(page: Page): Promise<void> {
-  const dialog = page.locator(FLOW_CONFIG.selectors.dialog).last();
-  if (!(await dialog.isVisible().catch(() => false))) return;
+  try {
+    const dialog = page.locator(FLOW_CONFIG.selectors.dialog).last();
+    if (!(await dialog.isVisible().catch(() => false))) return;
 
-  const lastButton = dialog.locator('button').last();
-  if (!(await lastButton.isVisible().catch(() => false))) return;
+    const lastButton = dialog.locator('button').last();
+    if (!(await lastButton.isVisible().catch(() => false))) return;
 
-  await humanClick(page, lastButton);
-  await randomDelay(500, 1_000);
+    await humanClick(page, lastButton);
+    await randomDelay(500, 1_000);
+  } catch (err) {
+    console.warn('[flow] dismissDialogIfPresent skipped:', err instanceof Error ? err.message : err);
+  }
 }
 
 async function clickNewProjectButton(page: Page): Promise<void> {
@@ -210,6 +214,7 @@ export async function openFlowProjectPage(page: Page, projectId: string, timeout
   });
 
   await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+  await dismissDialogIfPresent(page);
   await page.keyboard.press('Escape');
 
   try {
@@ -604,6 +609,7 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       const skipInitialSetup = options?.skipInitialSetup === true;
 
       if (projectId && isOnFlowProjectPage(page.url(), projectId) && (await isPromptInputReady(page))) {
+        await dismissDialogIfPresent(page);
         if (!skipInitialSetup) {
           await ensureInitialProjectSetup(page, projectId);
         }

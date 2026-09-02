@@ -96,3 +96,7 @@ optional -> show để các tab browser chrome show hoặc không
 optional animation effect của image trong dạng video ai
 
 prompt tạo thumbnail của người nổi tiếng sửa nhân vật -> sai
+
+thêm chức năng tạo lại metadata cho video ở màn hình youtube
+
+flow hết lượt ngày -> đánh dấu luôn đỡ mỗi lần tạo lại mở

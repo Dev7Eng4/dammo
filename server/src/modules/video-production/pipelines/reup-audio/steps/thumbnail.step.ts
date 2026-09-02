@@ -2,20 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
-import { isHorizontalMultiStepStyle } from '../../../../prompts/thumbnail-styles.js';
 import { hasNicheMetadataPrompt } from '../../../shared/meta/run-metadata.js';
-import { hasLegacyVisualMeta, isCelebrityWisdomNiche, type MetaStep3Output } from '../../../shared/meta/metadata.types.js';
+import { isCelebrityWisdomNiche } from '../../../shared/meta/metadata.types.js';
 import { runDefaultFlowThumbnail } from '../../../shared/thumbnail/default-flow-thumbnail.js';
-import {
-  resolveThumbnailImageProvider,
-  runThumbnailVisualGeneration,
-} from '../../../shared/thumbnail/hero-image.js';
+import { resolveThumbnailImageProvider } from '../../../shared/thumbnail/hero-image.js';
 import { runCelebrityWisdomThumbnail } from '../../../shared/thumbnail/run-celebrity-wisdom-thumbnail.js';
 import { runNicheImagePromptThumbnail } from '../../../shared/thumbnail/run-niche-image-prompt-thumbnail.js';
-import { renderThumbnailHorizontalFlowCompositeToPath } from '../../../shared/thumbnail/thumbnail-composite.js';
 import { buildThumbnailReferenceImagePaths } from '../../../shared/thumbnail/thumbnail-reference-images.js';
-import { runThumbnailHorizontal } from '../../../shared/thumbnail/thumbnail-horizontal.js';
-import type { ThumbnailHorizontalOutput } from '../../../shared/thumbnail/thumbnail.types.js';
 import type { VideoTypeStrategy } from '../strategies/video-type.strategy.js';
 import type { VideoTaskContext } from '../video-task.context.js';
 
@@ -30,8 +23,6 @@ export interface ThumbnailStepResult {
   reupThumbnailPath?: string;
   /** Set only when the video type produced thumbnail + background in one batch. */
   heroImagePath?: string;
-  thumbnailHorizontalOutput?: ThumbnailHorizontalOutput;
-  thumbnailVisualPath?: string;
 }
 
 /** Image tools drop these next to the output; they are never part of the deliverable. */
@@ -107,9 +98,8 @@ export async function runThumbnailStep(
   }
 
   const styleKey = destination.thumbnailStyleKey?.trim();
-  const useHorizontalFlow = styleKey ? isHorizontalMultiStepStyle(styleKey, destination.language) : false;
 
-  if (styleKey && !useHorizontalFlow) {
+  if (styleKey) {
     log.info(`Creating thumbnail via ${resolveThumbnailImageProvider()} (${styleKey})...`);
 
     try {
@@ -145,10 +135,6 @@ export async function runThumbnailStep(
       log.info(`Thumbnail skipped: ${message}`);
       return { flow: 'legacy' };
     }
-  }
-
-  if (useHorizontalFlow && styleKey && hasLegacyVisualMeta(ctx.videoMeta)) {
-    return runHorizontalFlow(ctx, ctx.videoMeta, styleKey);
   }
 
   return { flow: 'legacy' };
@@ -191,102 +177,4 @@ async function runCelebrityWisdomFlow(ctx: VideoTaskContext): Promise<ThumbnailS
     log.info(`Wisdom thumbnail skipped: ${message}`);
     return { flow: 'celebrity_wisdom' };
   }
-}
-
-/** LLM plan (3 steps) → visual image → canvas composite. Each stage is non-fatal. */
-async function runHorizontalFlow(
-  ctx: VideoTaskContext,
-  metaOutput: MetaStep3Output,
-  styleKey: string,
-): Promise<ThumbnailStepResult> {
-  const { destination, workDir, log, stepTimer } = ctx;
-  const result: ThumbnailStepResult = { flow: 'legacy' };
-
-  log.info('Creating horizontal thumbnail (LLM step 1/2/3)...');
-
-  try {
-    result.thumbnailHorizontalOutput = await timedStep(
-      'Thumbnail ngang (LLM 3 bước)',
-      () =>
-        runThumbnailHorizontal(metaOutput, destination.language, styleKey, {
-          outputDir: workDir,
-          onProgress: log.enabled
-            ? progress => {
-                const suffix = progress.status === 'retry' ? 'retry ' : '';
-                log.info(
-                  `Thumbnail step ${progress.step}/3 on ${progress.profileName} ${suffix}(attempt ${progress.attempt})...`,
-                );
-              }
-            : undefined,
-        }),
-      stepTimer,
-    );
-    log.ok('Horizontal thumbnail LLM done');
-  } catch (err) {
-    const message = nonFatalMessage(err, 'Thumbnail generation failed');
-    console.warn(`[reup-video] thumbnail LLM skipped (non-fatal): ${message}`);
-    log.info(`Thumbnail LLM skipped: ${message}`);
-    return result;
-  }
-
-  const horizontalOutput = result.thumbnailHorizontalOutput;
-  log.info(`Generating thumbnail visual with ${resolveThumbnailImageProvider()}...`);
-
-  try {
-    const visualResult = await timedStep(
-      `Thumbnail visual (${resolveThumbnailImageProvider()})`,
-      () =>
-        runThumbnailVisualGeneration(
-          workDir,
-          {
-            visualPrompt: horizontalOutput.plan.visualPrompt,
-            negativePrompt: horizontalOutput.plan.negativePrompt,
-          },
-          {
-            onProgress: log.enabled
-              ? progress => {
-                  const suffix = progress.status === 'retry' ? 'retry ' : '';
-                  log.info(
-                    `Thumbnail visual on ${progress.profileName} ${suffix}(attempt ${progress.attempt})...`,
-                  );
-                }
-              : undefined,
-          },
-        ),
-      stepTimer,
-    );
-    result.thumbnailVisualPath = visualResult.thumbnailVisualPath;
-    log.ok('Thumbnail visual saved → thumbnail_visual.jpg');
-  } catch (err) {
-    const message = nonFatalMessage(err, 'Thumbnail visual generation failed');
-    console.warn(`[reup-video] thumbnail visual skipped (non-fatal): ${message}`);
-    log.info(`Thumbnail visual skipped: ${message}`);
-    return result;
-  }
-
-  const visualPath = result.thumbnailVisualPath;
-  log.info('Compositing horizontal thumbnail (canvas)...');
-
-  try {
-    result.reupThumbnailPath = await timedStep(
-      'Composite thumbnail',
-      () =>
-        renderThumbnailHorizontalFlowCompositeToPath({
-          backgroundImagePath: visualPath,
-          flowLayout: {
-            thumbnail_copy: horizontalOutput.plan.thumbnailCopy,
-            color_strategy: horizontalOutput.plan.colorStrategy,
-          },
-          outPath: path.join(workDir, 'thumbnail.jpg'),
-        }),
-      stepTimer,
-    );
-    log.ok('Thumbnail composite saved → thumbnail.jpg');
-  } catch (err) {
-    const message = nonFatalMessage(err, 'Thumbnail composite failed');
-    console.warn(`[reup-video] thumbnail composite skipped (non-fatal): ${message}`);
-    log.info(`Thumbnail composite skipped: ${message}`);
-  }
-
-  return result;
 }

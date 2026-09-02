@@ -45,7 +45,6 @@ export function ProxiesPage() {
   const [stats, setStats] = useState<ProxyStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<ProxyFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -57,7 +56,7 @@ export function ProxiesPage() {
   const [deletingSelected, setDeletingSelected] = useState(false);
   const [pingingIds, setPingingIds] = useState<Set<string>>(new Set());
   const [extendTargetId, setExtendTargetId] = useState<string | null>(null);
-  const [extendDays, setExtendDays] = useState('');
+  const [extendDays, setExtendDays] = useState('30');
   const [extending, setExtending] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
   const [limit, setLimit] = useState(20);
@@ -91,28 +90,21 @@ export function ProxiesPage() {
     list.refresh();
   }
 
-  function clearSelection() {
-    setSelectedId(null);
-  }
-
   function handleFilterChange(nextFilter: ProxyFilter) {
     list.markLoading();
     setFilter(nextFilter);
     list.resetPage();
-    clearSelection();
   }
 
   function handlePageChange(nextPage: number) {
     list.markLoading();
     list.setPage(nextPage);
-    clearSelection();
   }
 
   function handleLimitChange(nextLimit: number) {
     list.markLoading();
     setLimit(nextLimit);
     list.setPage(1);
-    clearSelection();
   }
 
   function handleAddSuccess() {
@@ -120,10 +112,6 @@ export function ProxiesPage() {
     list.resetPage();
     refreshAll();
     toast.success('Thêm proxy thành công');
-  }
-
-  function handleSelect(id: string) {
-    setSelectedId(id);
   }
 
   function handleToggleRow(id: string) {
@@ -177,7 +165,6 @@ export function ProxiesPage() {
     try {
       const result = await removeFailedProxies();
       setShowRemoveFailedModal(false);
-      clearSelection();
       refreshAll();
       toast.success(`Đã xóa ${result.removed} proxy thất bại`);
     } catch (err) {
@@ -206,7 +193,6 @@ export function ProxiesPage() {
         }
       }
       setShowDeleteSelectedModal(false);
-      clearSelection();
       refreshAll();
       if (removed > 0) {
         toast.success(`Đã xóa ${removed} proxy`);
@@ -243,12 +229,12 @@ export function ProxiesPage() {
 
   function handleOpenExtend(id: string) {
     setExtendTargetId(id);
-    setExtendDays('');
+    setExtendDays('30');
   }
 
   function handleCloseExtend() {
     setExtendTargetId(null);
-    setExtendDays('');
+    setExtendDays('30');
   }
 
   async function handleConfirmExtend() {
@@ -279,7 +265,6 @@ export function ProxiesPage() {
 
   function handleTabChange(tab: ProxyTab) {
     setActiveTab(tab);
-    clearSelection();
   }
 
   return (
@@ -310,12 +295,10 @@ export function ProxiesPage() {
               <div className='mt-4 card-surface px-5 pt-3 pb-4'>
                 <ProxiesTable
                   proxies={list.items}
-                  selectedId={selectedId}
                   selectedIds={selectedIds}
                   loading={list.loading}
                   rowNumberStart={(list.page - 1) * list.limit + 1}
                   pingingIds={pingingIds}
-                  onSelect={handleSelect}
                   onToggleRow={handleToggleRow}
                   onToggleAll={handleToggleAll}
                   onPing={handlePingRow}

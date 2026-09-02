@@ -3,14 +3,15 @@ import type { Proxy } from '../../types/proxy';
 import { Button, DataTable } from '../ui';
 import { ProxyStatusPill } from './ProxyStatusPill';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const EXPIRY_WARNING_DAYS = 5;
+
 interface ProxiesTableProps {
   proxies: Proxy[];
-  selectedId: string | null;
   selectedIds: Set<string>;
   loading?: boolean;
   rowNumberStart?: number;
   pingingIds: Set<string>;
-  onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
   onPing: (id: string) => void;
@@ -29,14 +30,18 @@ function formatDate(value?: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
 }
 
+function isExpirySoon(expiresAt?: string, nowMs = Date.now()): boolean {
+  const end = expiresAt ? new Date(`${expiresAt}T23:59:59.999`).getTime() : NaN;
+  if (Number.isNaN(end)) return false;
+  return end <= nowMs + EXPIRY_WARNING_DAYS * DAY_MS;
+}
+
 export function ProxiesTable({
   proxies,
-  selectedId,
   selectedIds,
   loading,
   rowNumberStart,
   pingingIds,
-  onSelect,
   onToggleRow,
   onToggleAll,
   onPing,
@@ -81,9 +86,13 @@ export function ProxiesTable({
     {
       accessorKey: 'expiresAt',
       header: 'HẾT HẠN',
-      cell: ({ getValue }) => (
-        <span className="text-neutral-400">{formatDate(getValue<string | undefined>())}</span>
-      ),
+      cell: ({ getValue }) => {
+        const raw = getValue<string | undefined>();
+        const soon = isExpirySoon(raw);
+        return (
+          <span className={soon ? 'text-danger' : 'text-neutral-400'}>{formatDate(raw)}</span>
+        );
+      },
     },
     {
       id: 'profiles',
@@ -106,7 +115,7 @@ export function ProxiesTable({
     },
     {
       id: 'actions',
-      header: 'THAO TÁC',
+      header: 'HÀNH ĐỘNG',
       cell: ({ row }) => {
         const proxy = row.original;
         return (
@@ -140,8 +149,7 @@ export function ProxiesTable({
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
-      activeRowId={selectedId}
-      onRowClick={proxy => onSelect(proxy.id)}
+      onRowClick={proxy => onToggleRow(proxy.id)}
       emptyMessage="Không có proxy khớp bộ lọc."
       emptyDescription="Thêm proxy hoặc nhập từ Excel để bắt đầu."
     />

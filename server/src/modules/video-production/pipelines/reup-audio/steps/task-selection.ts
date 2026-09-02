@@ -53,6 +53,18 @@ function selectVideosForCreation(
       .slice(0, limit);
   }
 
+  if (order === 'shortest_duration_first') {
+    return eligibleWithIndex
+      .sort((a, b) => {
+        const durA = a.video.duration ?? Infinity;
+        const durB = b.video.duration ?? Infinity;
+        if (durA !== durB) return durA - durB;
+        return b.index - a.index;
+      })
+      .map(({ video }) => video)
+      .slice(0, limit);
+  }
+
   const eligible = eligibleWithIndex.map(({ video }) => video);
   const ordered = order === 'oldest_first' ? [...eligible].reverse() : eligible;
   return ordered.slice(0, limit);

@@ -122,7 +122,11 @@ export function formatTargetAudienceLabel(value: string): string {
   return formatChannelLanguageLabel(value);
 }
 export type UploadFrequency = 'every_5_days' | 'every_3_days' | 'every_2_days' | 'daily_1' | 'daily_2' | 'daily_3';
-export type VideoCreationOrder = 'oldest_first' | 'newest_first' | 'lowest_views_first';
+export type VideoCreationOrder =
+  | 'oldest_first'
+  | 'newest_first'
+  | 'lowest_views_first'
+  | 'shortest_duration_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'active' | 'suspended';
@@ -370,65 +374,6 @@ export interface MetaStep3Output {
   hero_image_prompt: MetaStep3HeroImagePrompt;
 }
 
-export interface ThumbnailHorizontalCopy {
-  line_1: string;
-  line_2: string;
-  line_3: string;
-  twist_line: string;
-}
-
-export interface ThumbnailHorizontalStep1Output {
-  detected_niche: string;
-  sub_niche: string;
-  dominant_emotion: string;
-  secondary_emotion: string;
-  core_conflict: string;
-  clickable_reveal: string;
-  best_thumbnail_moment: string;
-  evidence_object: string;
-  setting: string;
-  characters: unknown;
-  visual_tone: string;
-  visual_scene: string;
-  safe_visual_description: string;
-  ctr_reasoning: unknown;
-  thumbnail_angle: unknown;
-  risk_flags: unknown;
-  safety_notes: string;
-}
-
-export interface ThumbnailHorizontalStep2Output {
-  thumbnail_copy: ThumbnailHorizontalCopy;
-  copy_intent: unknown;
-  length_check: unknown;
-  safety_check: unknown;
-}
-
-export interface ThumbnailHorizontalStep3Output {
-  thumbnail_copy: ThumbnailHorizontalCopy;
-  layout_tokens: unknown;
-  typography_tokens: unknown;
-  color_strategy: unknown;
-  visual_prompt: string;
-  negative_prompt: string;
-  image_generation_rules: unknown;
-  renderer_notes: unknown;
-}
-
-export interface ThumbnailHorizontalPlan {
-  thumbnailCopy: ThumbnailHorizontalCopy;
-  colorStrategy: unknown;
-  visualPrompt: string;
-  negativePrompt: string;
-}
-
-export interface ThumbnailHorizontalOutput {
-  step1: ThumbnailHorizontalStep1Output;
-  step2: ThumbnailHorizontalStep2Output;
-  step3: ThumbnailHorizontalStep3Output;
-  plan: ThumbnailHorizontalPlan;
-}
-
 export interface ReupVideoOutputItem {
   link: string;
   channelId: string;
@@ -444,9 +389,7 @@ export interface ReupVideoOutputItem {
   metaStep1ChunkDigests?: MetaStep1ChunkDigest[];
   metaStep2StoryBlocks?: MetaStep2StoryBlock[];
   metaStep3Output?: MetaStep3Output;
-  thumbnailHorizontalOutput?: ThumbnailHorizontalOutput;
   heroImagePath?: string;
-  thumbnailVisualPath?: string;
   reupThumbnailPath?: string;
   reupVideoPath?: string;
   videoPath?: string;

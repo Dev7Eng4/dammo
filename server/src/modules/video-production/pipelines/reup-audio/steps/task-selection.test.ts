@@ -28,12 +28,14 @@ function video(
   id: string,
   viewCount?: number,
   sourceId = 'src1',
+  duration?: number,
 ): SourceVideoWithSource {
   return {
     id,
     title: id,
     url: `https://youtube.com/watch?v=${id}`,
     viewCount,
+    duration,
     sourceId,
   };
 }
@@ -88,6 +90,62 @@ describe('buildTasks lowest_views_first', () => {
       video('older-tie', 100),
     ];
     const destination = mockDestination([], 'lowest_views_first');
+    const { tasks } = buildTasks(destination, videos, { maxVideosPerChannel: 2 });
+
+    assert.deepEqual(tasks.map(task => task.videoId), ['older-tie', 'newer-tie']);
+  });
+});
+
+describe('buildTasks shortest_duration_first', () => {
+  test('picks unprocessed videos with shortest duration first', () => {
+    const videos = [
+      video('long', undefined, 'src1', 600),
+      video('short', undefined, 'src1', 60),
+      video('mid', undefined, 'src1', 300),
+    ];
+    const destination = mockDestination([], 'shortest_duration_first');
+    const { tasks } = buildTasks(destination, videos, { maxVideosPerChannel: 3 });
+
+    assert.deepEqual(
+      tasks.map(task => task.videoId),
+      ['short', 'mid', 'long'],
+    );
+  });
+
+  test('skips prepared videos', () => {
+    const videos = [
+      video('prepared', undefined, 'src1', 60),
+      video('next', undefined, 'src1', 120),
+      video('last', undefined, 'src1', 180),
+    ];
+    const destination = mockDestination(['prepared'], 'shortest_duration_first');
+    const { tasks } = buildTasks(destination, videos, { maxVideosPerChannel: 2 });
+
+    assert.deepEqual(tasks.map(task => task.videoId), ['next', 'last']);
+  });
+
+  test('puts videos without duration after videos with duration', () => {
+    const videos = [
+      video('no-duration'),
+      video('has-duration', undefined, 'src1', 100),
+      video('also-no-duration'),
+    ];
+    const destination = mockDestination([], 'shortest_duration_first');
+    const { tasks } = buildTasks(destination, videos, { maxVideosPerChannel: 3 });
+
+    assert.equal(tasks[0]?.videoId, 'has-duration');
+    assert.deepEqual(
+      tasks.slice(1).map(task => task.videoId).sort(),
+      ['also-no-duration', 'no-duration'],
+    );
+  });
+
+  test('breaks duration ties by picking older videos first', () => {
+    const videos = [
+      video('newer-tie', undefined, 'src1', 100),
+      video('older-tie', undefined, 'src1', 100),
+    ];
+    const destination = mockDestination([], 'shortest_duration_first');
     const { tasks } = buildTasks(destination, videos, { maxVideosPerChannel: 2 });
 
     assert.deepEqual(tasks.map(task => task.videoId), ['older-tie', 'newer-tie']);

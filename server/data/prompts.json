@@ -1,6 +1,30 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_thuc_pham",
+      "baseKey": "metadata_thuc_pham",
+      "language": "ja",
+      "name": "Metadata Thực Phẩm",
+      "category": "meta",
+      "niche": "5b1354ab-37cb-4e0e-94ad-3a515d97eecc",
+      "createdAt": "2026-09-01T20:39:21.099Z",
+      "updatedAt": "2026-09-01T20:39:21.116Z",
+      "steps": [
+        {
+          "id": "ceccf887-b569-4f02-b38a-bb16f59d8c3f",
+          "key": "metadata_thuc_pham_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "86735236-8dda-48f6-b230-c3527bf727e7",
+          "key": "metadata_thuc_pham_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_nguoi_gia",
       "baseKey": "metadata_nguoi_gia",
       "language": "ja",
@@ -383,36 +407,6 @@
           "key": "love_story",
           "step": 1,
           "outputType": "image"
-        }
-      ],
-      "niche": "all"
-    },
-    {
-      "id": "ja:ja_thumbnail_horizontal",
-      "baseKey": "ja_thumbnail_horizontal",
-      "language": "ja",
-      "name": "Horizontal",
-      "category": "thumbnail",
-      "createdAt": "2026-06-21T04:19:21.397Z",
-      "updatedAt": "2026-06-21T04:24:53.550Z",
-      "steps": [
-        {
-          "id": "74641628-437b-4879-81b6-192251253b70",
-          "key": "ja_thumbnail_horizontal_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "85102221-2ccf-4f76-8961-34094b75634e",
-          "key": "ja_thumbnail_horizontal_step_2",
-          "step": 2,
-          "outputType": "text"
-        },
-        {
-          "id": "c8da6af4-f803-496f-8741-61eb66e6b576",
-          "key": "ja_thumbnail_horizontal_step_3",
-          "step": 3,
-          "outputType": "text"
         }
       ],
       "niche": "all"

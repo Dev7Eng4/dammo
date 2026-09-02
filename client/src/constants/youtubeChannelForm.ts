@@ -116,6 +116,7 @@ export const VIDEO_CREATION_ORDER_OPTIONS: { value: VideoCreationOrder; label: s
   { value: 'oldest_first', label: 'Từ cũ đến mới' },
   { value: 'newest_first', label: 'Từ mới đến cũ' },
   { value: 'lowest_views_first', label: 'Video view tăng dần' },
+  { value: 'shortest_duration_first', label: 'Thời lượng ngắn đến dài' },
 ];
 
 export function getPublishTimeSlotCount(frequency: UploadFrequency | ''): number {

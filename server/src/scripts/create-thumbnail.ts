@@ -1,15 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, youtubeChannelVideoDir } from '../config/paths.js';
-import { runThumbnailVisualGeneration } from '../modules/video-production/shared/thumbnail/hero-image.js';
 import { hasLegacyVisualMeta, parseVideoMetaContent, type MetaStep3Output } from '../modules/video-production/shared/meta/metadata.types.js';
-import { renderThumbnailHorizontalFlowCompositeToPath } from '../modules/video-production/shared/thumbnail/thumbnail-composite.js';
 import { runDirectFlowThumbnail } from '../modules/video-production/shared/thumbnail/direct-flow-thumbnail.js';
-import { runThumbnailHorizontal } from '../modules/video-production/shared/thumbnail/thumbnail-horizontal.js';
-import {
-  isHorizontalMultiStepStyle,
-  resolveThumbnailStyleKey,
-} from '../modules/prompts/thumbnail-styles.js';
+import { resolveThumbnailStyleKey } from '../modules/prompts/thumbnail-styles.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import type { ChannelLanguage } from '../modules/youtube-channels/channel-language.js';
 
@@ -17,9 +11,6 @@ const DEFAULT_CHANNEL_ID = '85184f4f-6c28-4c3e-a6a4-985689b51840';
 const DEFAULT_YOUTUBE_VIDEO_ID = '9paQm2UbaLc';
 
 const VIDEO_META_FILE = 'video-meta.json';
-const THUMBNAIL_FILE = 'thumbnail.jpg';
-const THUMBNAIL_VISUAL_FILE = 'thumbnail_visual.jpg';
-const THUMBNAIL_PLAN_FILE = 'thumbnail-horizontal-plan.json';
 
 interface CliOptions {
   channelId: string;
@@ -113,73 +104,6 @@ function resolveStyleKey(options: CliOptions) {
   return { channel, styleKey };
 }
 
-async function runHorizontalThumbnailFlow(
-  metaStep3Output: MetaStep3Output,
-  workDir: string,
-  language: ChannelLanguage,
-  styleKey: string,
-  profileId?: string,
-): Promise<void> {
-  console.log('\nStep 1/3: Horizontal thumbnail LLM (3 prompts)...\n');
-
-  const thumbnailHorizontalOutput = await runThumbnailHorizontal(metaStep3Output, language, styleKey, {
-    outputDir: workDir,
-    onProgress: progress => {
-      const stepLabel = `step ${progress.step}/3`;
-      if (progress.status === 'retry') {
-        console.log(`  Thumbnail ${stepLabel} on ${progress.profileName} retry (attempt ${progress.attempt})...`);
-        return;
-      }
-      console.log(`  Thumbnail ${stepLabel} on ${progress.profileName} (attempt ${progress.attempt})...`);
-    },
-  });
-
-  const planPath = path.join(workDir, THUMBNAIL_PLAN_FILE);
-  await fs.writeFile(planPath, `${JSON.stringify(thumbnailHorizontalOutput.plan, null, 2)}\n`, 'utf8');
-  console.log(`\nPlan saved → ${planPath}`);
-
-  console.log('\nStep 2/3: Generating thumbnail visual with Google Flow...\n');
-
-  const thumbnailVisualResult = await runThumbnailVisualGeneration(
-    workDir,
-    {
-      visualPrompt: thumbnailHorizontalOutput.plan.visualPrompt,
-      negativePrompt: thumbnailHorizontalOutput.plan.negativePrompt,
-    },
-    {
-      profileId,
-      onProgress: progress => {
-        if (progress.status === 'retry') {
-          console.log(`  Thumbnail visual on ${progress.profileName} retry (attempt ${progress.attempt})...`);
-          return;
-        }
-        console.log(`  Thumbnail visual on ${progress.profileName} (attempt ${progress.attempt})...`);
-      },
-    },
-  );
-
-  const flowDebugPath = path.join(workDir, 'flow-debug.png');
-  await fs.unlink(flowDebugPath).catch(() => undefined);
-
-  console.log(`\nThumbnail visual saved → ${thumbnailVisualResult.thumbnailVisualPath}`);
-
-  console.log('\nStep 3/3: Compositing horizontal thumbnail (canvas)...\n');
-
-  const thumbnailPath = path.join(workDir, THUMBNAIL_FILE);
-  const compositePath = await renderThumbnailHorizontalFlowCompositeToPath({
-    backgroundImagePath: thumbnailVisualResult.thumbnailVisualPath,
-    flowLayout: {
-      thumbnail_copy: thumbnailHorizontalOutput.plan.thumbnailCopy,
-      color_strategy: thumbnailHorizontalOutput.plan.colorStrategy,
-    },
-    outPath: thumbnailPath,
-  });
-
-  console.log(`\nDone:`);
-  console.log(`  ${path.join(workDir, THUMBNAIL_VISUAL_FILE)}`);
-  console.log(`  ${compositePath}`);
-}
-
 async function runDirectFlowThumbnailScript(
   metaStep3Output: MetaStep3Output,
   workDir: string,
@@ -217,7 +141,6 @@ async function main() {
   await assertFileExists(videoMetaPath, 'video meta');
 
   const { channel, styleKey } = resolveStyleKey(options);
-  const useHorizontalFlow = isHorizontalMultiStepStyle(styleKey, channel.language);
 
   console.log(`Channel: ${options.channelId}`);
   console.log(`YouTube video id: ${options.videoId}`);
@@ -229,17 +152,6 @@ async function main() {
   }
 
   const metaStep3Output = await loadMetaStep3FromVideoMeta(workDir);
-
-  if (useHorizontalFlow) {
-    await runHorizontalThumbnailFlow(
-      metaStep3Output,
-      workDir,
-      channel.language,
-      styleKey,
-      options.profileId,
-    );
-    return;
-  }
 
   await runDirectFlowThumbnailScript(
     metaStep3Output,

@@ -34,33 +34,36 @@ ${JSON.stringify(extractedDramaJson, null, 2)}
 
 ---
 
-### 2. QUY TẮC THIẾT KẾ THUMBNAIL (thumbnail.prompt):
+### 2. QUY TẮC THIẾT KẾ THUMBNAIL (BẮT BUỘC: UNIFIED SCENE & SUPERIMPOSED TEXT):
 
-**A. Cơ chế chọn Bố cục Ngầm (Silent Layout Selection):**
-Dựa vào \`dominant_emotion\` và tình tiết cao trào, hãy tự chọn ngầm 1 trong 3 bố cục sau và diễn đạt bằng văn phong mô tả thị giác tiếng Anh tự nhiên:
-- *Bóng thoại Manga:* Nhân vật phản diện đang quát tháo/chỉ tay + Bong bóng thoại nhọn chứa câu thoại sỉ nhục + Dải chữ phản đòn 3D lớn màu vàng viền đen ở đáy.
-- *Vật chứng + Mặt tái mét:* Nạn nhân cầm vật chứng (\`smoking_gun_prop\`) phát sáng ở một bên + Kẻ phản diện mặt tái mét sững sờ + Bộ chữ Telop gây sốc.
-- *Nước mắt & Hoài niệm (Cho ngách 泣ける話):* Cận cảnh đôi mắt đẫm lệ kìm nén + Ánh sáng hoàng hôn/u tối + Dải ruy băng chữ màu trắng viền đen u buồn.
+**KHÔNG CHIA TỶ LỆ DẠNG LƯỚI, KHÔNG BONG BÓNG THOẠI (SPEECH BUBBLES), KHÔNG HỘP NỀN (TEXT BOXES).**
 
-**B. CẤM KỴ TUYỆT ĐỐI VỀ TỪ NGỮ TRONG thumbnail.prompt:**
-- **NGHIÊM CẤM** viết các tên mã kỹ thuật như: "SPEECH_BUBBLE_MANGA", "EVIDENCE_CONFRONTATION", "EMOTIONAL_TEARS", "CHOSEN_LAYOUT", "LAYOUT" vào trong prompt tiếng Anh.
-- **NGHIÊM CẤM** để lại các placeholder dạng ngoặc vuông như \`[...]\`, \`[LAYOUT]\`, \`[DNA]\`.
-- Toàn bộ prompt tiếng Anh phải là một đoạn văn miêu tả thị giác liền mạch, chi tiết.
+**A. Bố cục hình ảnh (Seamless Background):**
+- Bức ảnh phải là **MỘT KHÔNG GIAN THỐNG NHẤT DUY NHẤT (Single unified scene)**. 
+- Các nhân vật đối đầu (phản diện gào thét vs nạn nhân điềm tĩnh/cầm vật chứng) phải đứng trong CÙNG một không gian. Tập trung mạnh vào sự tương phản biểu cảm.
 
-**C. Tái sử dụng Character DNA & Typography Tiếng Nhật:**
-- Tái sử dụng chính xác các đặc điểm ngoại hình nhân vật (tuổi tác, kiểu tóc, màu tóc, màu sắc và kiểu dáng trang phục cụ thể) từ Giai đoạn 1.
-- Ghi rõ từng dòng chữ tiếng Nhật trong dấu ngoặc kép (kèm escape character nếu có) kèm màu sắc tương phản cao (chữ vàng chanh viền đen dày 3D, badge đỏ chữ trắng).
+**B. Cấu trúc chữ (Superimposed Floating Text - KHÔNG BACKGROUND):**
+Chữ là lớp phủ (superimposed) in đè trực tiếp lên mép trên và mép dưới của bức ảnh gốc. KHÔNG CÓ BẤT KỲ HỘP NỀN, DẢI MÀU HAY BADGE NÀO KHÁC.
+- **text_top:** Đặt nổi trực tiếp (floating) dọc theo sát mép trên cùng của bức ảnh. Chứa câu thoại mỉa mai/gây sốc. Rất ngắn, 1 dòng duy nhất.
+- **text_bottom:** Đặt nổi trực tiếp dọc theo sát mép dưới cùng của bức ảnh. Chứa hậu quả/cú twist. SIÊU TO, 1 dòng duy nhất.
 - **TUYỆT ĐỐI KHÔNG ĐẶT TEXT QUAN TRỌNG Ở GÓC DƯỚI BÊN PHẢI (Tránh Timestamp của YouTube).**
-- Thêm tham số: \`styled in ${imageStyle} --ar 16:9\`.
+
+**C. QUY TẮC PHỐI MÀU TYPOGRAPHY TÙY THEO SUB-NICHE (BẮT BUỘC):**
+- Nếu là ngách **【修羅場 / スカッと / 義実家トラブル】(Cãi vã, Hả dạ, Trả thù):** 
+  + **text_top:** BẮT BUỘC dùng chữ màu Trắng (white) viền đen dày.
+  + **text_bottom:** BẮT BUỘC dùng chữ màu Đỏ (vibrant red) viền đen dày 3D.
+- Nếu là ngách **【泣ける話 / 家族崩壊 / 感動】(Cảm động, Bi kịch, Lấy nước mắt):** 
+  + **text_top & text_bottom:** BẮT BUỘC dùng chữ màu Trắng (white) hoặc Xanh dương nhạt (light blue) với viền đen/xám mỏng, tạo cảm giác điện ảnh buồn, thanh lịch (cinematic elegant, soft glow).
+
+**D. CẤM KỴ TUYỆT ĐỐI VỀ TỪ NGỮ TRONG thumbnail.prompt:**
+- **NGHIÊM CẤM** viết các tên mã kỹ thuật, placeholder dạng ngoặc vuông như \`[...]\` vào prompt tiếng Anh. Bạn phải thay thế toàn bộ bằng mô tả tiếng Anh hoàn chỉnh (bao gồm cả màu sắc được chọn theo quy tắc 2C).
+- Cấu trúc prompt BẮT BUỘC theo trình tự: Tả cảnh chung -> Tả nhân vật -> Lệnh SUPERIMPOSED text (với màu sắc đã dịch sang tiếng Anh) -> Các tham số \`--no\`.
 
 ---
 
 ### 3. QUY TẮC THIẾT KẾ ẢNH PHÂN CẢNH VIDEO (general_background.prompt):
-Ảnh này phát liên tục suốt video, đóng vai trò là bức tranh minh họa phân cảnh đối đầu (Scene CG):
 - **Tái sử dụng 100% đặc điểm ngoại hình và trang phục của các nhân vật từ Giai đoạn 1.**
-- **BẮT BUỘC CÓ HÀNH ĐỘNG CỤ THỂ:** Nhân vật đang thực hiện hành động đối đầu dựa trên \`key_confrontation_action\` (Ví dụ: ném phong bì tài liệu xuống bàn ăn, ngồi ôm đầu gục ngã trên sofa, khoanh tay trừng mắt...).
-- **Góc máy:** Medium shot hoặc Medium-wide shot thấy rõ ngôn ngữ cơ thể căng thẳng và không gian xung quanh.
-- **Ánh sáng & Mood:** Ánh sáng kịch tính (Dramatic lighting, deep shadows), thể hiện rõ không khí ngột ngạt hoặc xúc động.
+- **BẮT BUỘC CÓ HÀNH ĐỘNG CỤ THỂ:** Nhân vật đang thực hiện hành động đối đầu dựa trên \`key_confrontation_action\`.
 - **TUYỆT ĐỐI KHÔNG CÓ BẤT KỲ CHỮ NÀO (NO TEXT, NO LOGO, NO WATERMARK).**
 - Thêm tham số: \`styled in ${imageStyle} --ar 16:9\`.
 
@@ -70,35 +73,31 @@ Dựa vào \`dominant_emotion\` và tình tiết cao trào, hãy tự chọn ng�
 Chỉ xuất một JSON hợp lệ duy nhất, không bọc Markdown, không giải thích:
 
 {
-  "detected_sub_niche": "Tên phân nhánh Drama tiếng Việt",
+  "detected_sub_niche": "Tên phân nhánh Drama (VD: Trả thù hả dạ / Bi kịch lấy nước mắt)",
   "metadata": {
     "title": "Title tiếng Nhật có CTR cao nhất (38-58 ký tự, hook mạnh, giữ cliffhanger)",
     "description": "Description tiếng Nhật 2-4 câu chuẩn văn phong Drama, kèm 1 CTA tự nhiên",
     "tags": [
       "tag ngách drama",
-      "tag chủ đề cụ thể",
-      "tag nhân vật chính/đối tượng",
-      "tag format (朗読, まとめ...)",
-      "tag cảm xúc (スカッとする話, 因果応報...)"
+      "tag chủ đề cụ thể"
     ]
   },
   "alternative_titles": [
-    "Title phương án 2 (Góc nhìn phản đòn/hả dạ)",
-    "Title phương án 3 (Góc nhìn bí mật/con số gây sốc)"
+    "Title phương án 2",
+    "Title phương án 3"
   ],
   "thumbnail": {
-    "chosen_layout": "Tên layout chọn ngầm (SPEECH_BUBBLE_MANGA / EVIDENCE_CONFRONTATION / EMOTIONAL_TEARS)",
-    "concept": "Mô tả ý tưởng bố cục, nhân vật và tương phản thị giác bằng tiếng Việt",
+    "chosen_layout": "Single unified scene with superimposed text",
+    "concept": "Mô tả ý tưởng biểu cảm nhân vật và sự tương phản bằng tiếng Việt.",
     "telop_japanese": {
-      "badge": "【Nhãn góc 2-4 chữ】",
-      "main_text": "「Câu chữ chính 3-7 chữ giật gân」",
-      "sub_text": "Dòng chữ ngữ cảnh 8-14 chữ",
-      "color": "Mô tả màu sắc và hiệu ứng viền chữ"
+      "text_top": "Câu thoại/bối cảnh, 1 dòng (Max 20 ký tự)",
+      "text_bottom": "Hậu quả/Cú twist, 1 dòng (Max 14 ký tự)",
+      "typography_style": "Mô tả màu sắc chữ mà AI quyết định dựa trên quy tắc 2C (VD: Top màu trắng viền đen, Bottom màu đỏ viền đen 3D)"
     },
-    "prompt": "Professional YouTube drama thumbnail graphic design. On the left, an aggressive 60-year-old Japanese woman with short perm grey hair screaming furiously with dramatic manga anger lines, with a prominent white jagged speech bubble above her reading '「出て行け！」'. On the top-left corner, a bold red badge '【スカッと】'. Across the bottom, massive 3D Japanese typography reading '「即刻退去！」' in vibrant yellow with thick heavy black outline. On the right, a calm 28-year-old Japanese woman with straight black hair in a cream cardigan holding a legal document with a subtle smirk. High contrast, dynamic clickbait lighting, styled in ${imageStyle} --ar 16:9"
+    "prompt": "Professional Japanese YouTube drama thumbnail graphic design. CREATE A SINGLE, SEAMLESS, UNIFIED CINEMATIC SCENE. Inside a tense Japanese living room at night, on the left, an aggressive 60-year-old Japanese woman with short perm grey hair screams furiously. On the right, a calm 28-year-old Japanese woman with straight black hair in a cream cardigan holds a legal document with a subtle smirk. Both exist in the SAME seamless environment. SUPERIMPOSED directly floating over this unified background image is Japanese typography: At the absolute top edge, a single horizontal line of massive text reading 'ここにTextTopTiếngNhật' in WHITE with a thick black outline. At the absolute bottom edge, a single horizontal line of massive 3D text reading 'ここにTextBottomTiếngNhật' in VIBRANT RED with a thick heavy black outline. (LƯU Ý: Đổi VIBRANT RED thành LIGHT BLUE nếu kịch bản thuộc ngách Cảm Động/Rơi Nước Mắt). The text must float seamlessly over the image without any background boxes or banners. High contrast, dynamic clickbait lighting, styled in ${imageStyle} --ar 16:9 --no text boxes, banners, speech bubbles, background blocks behind text, panels, frames, borders, collage, grid, split screen"
   },
   "general_background": {
-    "scene_concept": "Mô tả chi tiết phân cảnh kịch tính có nhân vật, hành động đối đầu cụ thể hiển thị suốt video bằng tiếng Việt",
+    "scene_concept": "Mô tả chi tiết phân cảnh kịch tính hiển thị suốt video bằng tiếng Việt",
     "prompt": "Dramatic story scene key visual illustration, no text, no watermark, medium wide shot. Inside a tense Japanese living room at night, a 28-year-old Japanese woman with straight black hair in a cream cardigan stands resolutely placing divorce papers onto the wooden dining table. Across the table, her husband sits slouched on the sofa with head in hands in despair. Warm pendant lamp casting dramatic cinematic shadows, capturing intense emotional conflict, visual novel storytelling art, styled in ${imageStyle} --ar 16:9"
   }
 }

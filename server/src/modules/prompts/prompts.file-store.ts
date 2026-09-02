@@ -29,6 +29,16 @@ function isFunctionExpression(expression: string): boolean {
   return /=>/.test(trimmed);
 }
 
+function stripExportDefaultPrefix(value: string): string {
+  let expression = trimTrailingSemicolon(value.trim());
+  while (true) {
+    const match = expression.match(/^export\s+default\s+([\s\S]+)$/);
+    if (!match) break;
+    expression = trimTrailingSemicolon(match[1]);
+  }
+  return expression;
+}
+
 export function parseTemplateInput(input: string): ParsedTemplate {
   const trimmed = input.trim();
 
@@ -46,6 +56,11 @@ export function parseTemplateInput(input: string): ParsedTemplate {
     if (isFunctionExpression(expression)) {
       return { kind: 'function', expression };
     }
+  }
+
+  const strippedExportDefault = stripExportDefaultPrefix(trimmed);
+  if (strippedExportDefault !== trimmed && isFunctionExpression(strippedExportDefault)) {
+    return { kind: 'function', expression: strippedExportDefault };
   }
 
   if (isFunctionExpression(trimmed)) {

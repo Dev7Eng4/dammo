@@ -1,5 +1,4 @@
 import type { VideoMetaOutput } from '../../shared/meta/metadata.types.js';
-import type { ThumbnailHorizontalOutput } from '../../shared/thumbnail/thumbnail.types.js';
 import type { AiVideoScenePrompt } from '../../shared/ai-video/ai-video.types.js';
 import type { SourceVideoStatus } from '../../../source-channels/source-channels.types.js';
 
@@ -26,9 +25,7 @@ export interface ReupVideoOutputItem {
   srtPath?: string;
   updatedSrtPath?: string;
   videoMetaOutput?: VideoMetaOutput;
-  thumbnailHorizontalOutput?: ThumbnailHorizontalOutput;
   heroImagePath?: string;
-  thumbnailVisualPath?: string;
   reupThumbnailPath?: string;
   reupVideoPath?: string;
   aiScenePrompts?: AiVideoScenePrompt[];

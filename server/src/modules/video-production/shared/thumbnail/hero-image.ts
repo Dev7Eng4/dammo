@@ -8,16 +8,10 @@ import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 
 export const DEFAULT_HERO_IMAGE_FILENAME = 'background.jpg';
-const THUMBNAIL_VISUAL_FILENAME = 'thumbnail_visual.jpg';
 const META_IMAGE_TIMEOUT_MS = 300_000;
 
 export type HeroImageStatus = FlowRetryProgress['status'];
 export type HeroImageProgress = FlowRetryProgress;
-
-export interface ThumbnailVisualGenerationInput {
-  visualPrompt: string;
-  negativePrompt?: string;
-}
 
 export interface FlowProfileOptions {
   profileId?: string;
@@ -55,22 +49,12 @@ export interface RunBrowserImageGenerationOptions extends RunFlowImageGeneration
   provider?: ImageBrowserProvider;
 }
 
-export interface RunThumbnailVisualGenerationOptions extends FlowProfileOptions {
-  onProgress?: (progress: HeroImageProgress) => void;
-  provider?: ImageBrowserProvider;
-}
-
 export interface FlowImageGenerationResult {
   imagePath: string;
   promptUsed: string;
 }
 
 export type BrowserImageGenerationResult = FlowImageGenerationResult;
-
-export interface ThumbnailVisualGenerationResult {
-  thumbnailVisualPath: string;
-  thumbnailVisualPromptUsed: string;
-}
 
 export function resolveThumbnailImageProvider(provider?: ImageBrowserProvider): ImageBrowserProvider {
   return provider ?? promptsSettingsService.get().defaultThumbnailProvider;
@@ -311,44 +295,4 @@ export async function runBrowserImageGeneration(
   }
 
   return result;
-}
-
-export async function runThumbnailVisualGeneration(
-  outputDir: string,
-  thumbnailVisual: ThumbnailVisualGenerationInput,
-  options?: RunThumbnailVisualGenerationOptions,
-): Promise<ThumbnailVisualGenerationResult> {
-  const thumbnailVisualPromptUsed = buildFlowPrompt(
-    thumbnailVisual.visualPrompt,
-    thumbnailVisual.negativePrompt,
-  );
-  const provider = resolveThumbnailImageProvider(options?.provider);
-
-  const [result] = await runBrowserImageGenerations(
-    outputDir,
-    [
-      {
-        prompt: thumbnailVisualPromptUsed,
-        fileName: THUMBNAIL_VISUAL_FILENAME,
-        logPrefix: `[hero-image] thumbnail visual (${provider})`,
-        failureCode: 'THUMBNAIL_VISUAL_FAILED',
-        buildFailureMessage: reason =>
-          `Thumbnail visual generation failed via ${provider}: ${reason}`,
-      },
-    ],
-    {
-      profileId: options?.profileId,
-      onProgress: options?.onProgress,
-      provider,
-    },
-  );
-
-  if (!result) {
-    throw new AppError('Thumbnail visual generation returned no result', 502, 'THUMBNAIL_VISUAL_FAILED');
-  }
-
-  return {
-    thumbnailVisualPath: result.imagePath,
-    thumbnailVisualPromptUsed: result.promptUsed,
-  };
 }

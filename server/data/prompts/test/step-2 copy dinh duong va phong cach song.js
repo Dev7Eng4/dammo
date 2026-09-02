@@ -48,7 +48,7 @@ ${JSON.stringify(extractedHealthJson, null, 2)}
 - Toàn bộ prompt tiếng Anh phải là một đoạn văn miêu tả thị giác tự nhiên, tái sử dụng chính xác \`character_dna_en\` và \`hero_item_dna_en\` từ Giai đoạn 1.
 
 **C. Typography & Safe Zone:**
-- **QUY ĐỊNH VỀ BADGE (TUỲ CHỌN):** Badge (nhãn góc) **không bắt buộc**, AI tự quyết định có cần thiết cho concept bố cục hay không. NẾU SỬ DỤNG, để đảm bảo nhãn góc luôn là hình chữ nhật và text không bị rớt dòng, BẮT BUỘC dùng mẫu câu tiếng Anh: "a solid colored horizontal rectangular text box containing white text '[Text]' strictly aligned on a single straight line". Không được dùng từ "badge" đứng đơn độc. Nếu không dùng badge, không đưa câu lệnh này vào prompt.
+- **QUY ĐỊNH HÌNH DÁNG BADGE:** Để đảm bảo nhãn góc luôn là hình chữ nhật và text không bị rớt dòng, BẮT BUỘC sử dụng mẫu câu tiếng Anh: "a solid colored horizontal rectangular text box containing white text '[Text]' strictly aligned on a single straight line". Không được dùng từ "badge" đứng đơn độc.
 - Ghi rõ từng chuỗi chữ tiếng Nhật trong dấu ngoặc kép (kèm escape character nếu có) kèm màu sắc tương phản (Vàng neon viền đen dày 3D, Đỏ tươi).
 - **TUYỆT ĐỐI KHÔNG ĐẶT TEXT Ở GÓC DƯỚI BÊN PHẢI (Vùng YouTube đè Timestamp).**
 - Thêm tham số: \`styled in ${imageStyle} --ar 16:9\`.
@@ -73,12 +73,12 @@ Chỉ xuất JSON hợp lệ duy nhất, không dùng Markdown, không giải th
     "chosen_layout": "Tên bố cục chọn ngầm (tham khảo nội bộ)",
     "concept": "Mô tả ý tưởng bố cục, nhân vật và tương phản thị giác bằng tiếng Việt",
     "telop_japanese": {
-      "badge": "【Nhãn góc 2-4 chữ】(Hoặc để chuỗi rỗng \"\" nếu không sử dụng)",
+      "badge": "【Nhãn góc 2-4 chữ】",
       "main_text": "「Câu chữ chính 3-7 chữ giật gân」",
       "sub_text": "Dòng chữ ngữ cảnh 8-14 chữ",
       "color": "Màu sắc và viền chữ (ví dụ: Chữ chính vàng neon viền đen dày 3D, badge đỏ chữ trắng)"
     },
-    "prompt": "Professional Japanese YouTube health thumbnail graphic design. On the left, a detailed close-up of a steaming bowl of freshly prepared natto with green onions, overlaid with a bold red warning cross (❌). On the right, a dignified 65-year-old Japanese doctor with neatly combed silver hair and glasses in a white lab coat gesturing with a warning finger. [NẾU CÓ BADGE THÊM CÂU NÀY: In the top-right corner, a solid red horizontal rectangular text box containing the white text '【要注意】' strictly aligned on a single straight line.] Running across the center-top, massive 3D Japanese typography reading '「絶対NGな食べ方」' in radiant yellow with thick heavy black outline and deep drop shadow, followed by secondary white text '毎朝の習慣で血管がドロドロに…'. High contrast, bright medical studio lighting, styled in ${imageStyle} --ar 16:9"
-  }
+    "prompt": "Professional Japanese YouTube health thumbnail graphic design. On the left, a detailed close-up of a steaming bowl of freshly prepared natto with green onions, overlaid with a bold red warning cross (❌). On the right, a dignified 65-year-old Japanese doctor with neatly combed silver hair and glasses in a white lab coat gesturing with a warning finger. In the top-right corner, a solid red horizontal rectangular text box containing the white text '【要注意】' strictly aligned on a single straight line. Running across the center-top, massive 3D Japanese typography reading '「絶対NGな食べ方」' in radiant yellow with thick heavy black outline and deep drop shadow, followed by secondary white text '毎朝の習慣で血管がドロドロに…'. High contrast, bright medical studio lighting, styled in ${imageStyle} --ar 16:9"
+  },
 }
 `;
