@@ -148,18 +148,23 @@ async function main() {
 
   await fs.mkdir(outputDir, { recursive: true });
 
-  console.log(`Profile: ${profile.name} (${profile.id})`);
-  console.log(`Output: ${outputPath}`);
-  console.log(`Mode: ${options.browserMode ? 'browser' : 'api'}`);
+  console.log(`[flow-gen] Profile: ${profile.name} (${profile.id})`);
+  console.log(`[flow-gen] Output: ${outputPath}`);
+  console.log(`[flow-gen] Mode: ${options.browserMode ? 'browser' : 'api'}`);
+  console.log(`[flow-gen] Timeout: ${options.timeoutMs}ms`);
+  if (options.projectId) {
+    console.log(`[flow-gen] Project ID: ${options.projectId}`);
+  }
   if (options.referenceImagePaths.length > 0) {
-    console.log(`Reference images (${options.referenceImagePaths.length}):`);
+    console.log(`[flow-gen] Reference images (${options.referenceImagePaths.length}):`);
     for (const imagePath of options.referenceImagePaths) {
-      console.log(`  ${imagePath}`);
+      console.log(`[flow-gen]   ${imagePath}`);
     }
   }
-  console.log(`Prompt:\n${promptUsed}\n`);
-  console.log('Generating image...');
+  console.log(`[flow-gen] Prompt:\n${promptUsed}\n`);
+  console.log('[flow-gen] Calling generateImage...');
 
+  const startedAt = Date.now();
   const response = await flowBrowserService.generateImage(profile.id, promptUsed, {
     outputPath,
     timeoutMs: options.timeoutMs,
@@ -170,11 +175,20 @@ async function main() {
     projectId: options.projectId,
   });
 
+  const elapsedMs = Date.now() - startedAt;
   const savedPath = response.mediaAssets?.[0]?.localPath ?? outputPath;
-  console.log(`Saved: ${savedPath}`);
+  console.log(`[flow-gen] Done in ${elapsedMs}ms`);
+  console.log(`[flow-gen] Saved: ${savedPath}`);
 }
 
 main().catch(err => {
-  console.error(err instanceof Error ? err.message : err);
+  if (err instanceof Error) {
+    console.error(`[flow-gen] Failed: ${err.message}`);
+    if (err.stack) {
+      console.error(err.stack);
+    }
+  } else {
+    console.error('[flow-gen] Failed:', err);
+  }
   process.exit(1);
 });

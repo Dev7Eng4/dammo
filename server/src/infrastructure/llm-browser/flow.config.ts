@@ -3,7 +3,7 @@ import { env } from '../../config/env.js';
 /**
  * Google Flow DOM selectors.
  *
- * Inspect checklist (update after manual test on https://labs.google/fx/tools/flow):
+ * Inspect checklist (update after manual test on https://flow.google.com):
  * - prompt input (textarea / contenteditable)
  * - generate / create button
  * - loading / stop indicator while generating
@@ -12,7 +12,7 @@ import { env } from '../../config/env.js';
  * - New project button on project list (or onboarding "Create with Google Flow" first)
  * - initial project setup (config button XPath + option buttons scoped to popover)
  */
-export const FLOW_BASE_URL = 'https://labs.google/fx/tools/flow';
+export const FLOW_BASE_URL = 'https://flow.google.com';
 
 export const FLOW_AISANDBOX_BASE = 'https://aisandbox-pa.googleapis.com/v1';
 
@@ -98,6 +98,24 @@ export function buildBatchGenerateImagesUrl(projectId: string): string {
   return `${FLOW_AISANDBOX_BASE}/projects/${projectId}/flowMedia:batchGenerateImages`;
 }
 
+/** CDN host for generated Flow images (browser network responses). */
+export const FLOW_CONTENT_IMAGE_ORIGIN = 'https://flow-content.google';
+
+export const FLOW_CONTENT_IMAGE_PATH_PREFIX = '/image/';
+
+/** True for `https://flow-content.google/image/<id>[?...]` (query string ignored). */
+export function isFlowContentImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.origin !== FLOW_CONTENT_IMAGE_ORIGIN) return false;
+    if (!parsed.pathname.startsWith(FLOW_CONTENT_IMAGE_PATH_PREFIX)) return false;
+    const id = parsed.pathname.slice(FLOW_CONTENT_IMAGE_PATH_PREFIX.length);
+    return id.length > 0 && !id.includes('/');
+  } catch {
+    return false;
+  }
+}
+
 export interface FlowDomSelectors {
   promptInput: string;
   /** Prompt input of the custom Flow tool page (`#david-input-prompts`). */
@@ -113,15 +131,12 @@ export interface FlowDomSelectors {
   btnConfig: string;
   /** Open config popover container — option selectors below must be scoped here, not page-wide. */
   configPopover: string;
-  configPopoverFallback: string;
-  modelSubmenuFallback: string;
+  /** Model picker panel opened from config popover. */
+  modelPickerPanel: string;
   btnOptionImage: string;
-  btnOptionImageTrigger: string;
-  btnOptionImageFallback: string;
   btnOptionRatio: string;
   btnOptionQuantity: string;
   btnOptionModel: string;
-  btnOptionModelFallback: string;
   btnOptionModelPro: string;
   btnOptionModelProFallback: string;
   referenceImageAddButton: string;
@@ -143,7 +158,7 @@ export const FLOW_CONFIG: FlowConfig = {
   url: FLOW_BASE_URL,
   defaultTimeoutMs: 300_000,
   selectors: {
-    promptInput: 'div[role="textbox"]',
+    promptInput: '.prompt-input [contenteditable="true"], .prompt-input',
     mavidEditorPrompt: 'textarea#david-input-prompts',
     generateButton: 'button:has-text("Generate"), button:has-text("Create"), button[aria-label*="Generate" i], button[type="submit"]',
     generatingIndicator:
@@ -153,17 +168,13 @@ export const FLOW_CONFIG: FlowConfig = {
     newProjectButton: 'button:has-text("New project")',
     createWithGoogleFlowButton: 'button:has-text("Create with Google Flow")',
     dialog: 'div[role="dialog"]',
-    btnConfig: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[2]/div[2]/button[1]',
-    configPopover: '[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]:has([data-state="open"])',
-    configPopoverFallback: '/html/body/div[3]',
-    modelSubmenuFallback: '/html/body/div[4]',
+    btnConfig: '.settings-trigger-button',
+    configPopover: '.settings-content-overlay',
+    modelPickerPanel: '.flow-model-picker-panel',
     btnOptionImage: 'Image',
-    btnOptionImageTrigger: '/html/body/div[3]/div/div[1]/div/button[1]',
-    btnOptionImageFallback: '/html/body/div[4]/div/div[1]/div/button[1]',
     btnOptionRatio: '16:9',
     btnOptionQuantity: 'x1',
-    btnOptionModel: 'button[aria-haspopup="menu"]',
-    btnOptionModelFallback: '/html/body/div[3]/div/button',
+    btnOptionModel: '.flow-button-medium',
     btnOptionModelPro: 'Nano Banana Pro',
     btnOptionModelProFallback: '/html/body/div[4]/div/div[1]/div/button',
     referenceImageAddButton:

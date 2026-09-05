@@ -11,7 +11,7 @@ import {
   downloadAndSaveFlowImage,
   extractFifeUrl,
   beginFlowToolBatchImagesCollector,
-  beginBatchGenerateImagesWait,
+  beginFlowContentImageWait,
   resolveFlowImageSavePath,
 } from '../../infrastructure/llm-browser/flow-api-response.js';
 import {
@@ -221,15 +221,23 @@ export class FlowBrowserService {
     prompt: string,
     options?: FlowGenerateImageOptions
   ): Promise<LlmBrowserResponse> {
+    const startedAt = Date.now();
     const handler = getFlowBrowserHandler();
-    const page = await ensureFlowChromeSession(profileId);
 
+    console.log('[flow-browser] ensure Chrome session...');
+    const page = await ensureFlowChromeSession(profileId);
+    console.log('[flow-browser] Chrome session ready');
+
+    console.log('[flow-browser] resolve projectId...');
     const projectId = await resolveFlowProjectId(profileId, page, {
       explicitProjectId: options?.projectId,
     });
+    console.log(`[flow-browser] projectId=${projectId}`);
 
     if (options?.projectId) {
+      console.log(`[flow-browser] open project page ${projectId}...`);
       await handler.open(page, { projectId });
+      console.log('[flow-browser] project page open done');
     }
 
     const timeoutMs = options?.timeoutMs ?? 300_000;
@@ -238,18 +246,22 @@ export class FlowBrowserService {
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
     try {
-      const batchResponsePromise = beginBatchGenerateImagesWait(page, projectId, timeoutMs);
+      console.log(`[flow-browser] start flow-content image wait (timeout=${timeoutMs}ms)...`);
+      const batchResponsePromise = beginFlowContentImageWait(page, timeoutMs);
       // Prevent unhandledRejection if quota fails during sendPrompt delay
       void batchResponsePromise.catch(() => undefined);
 
+      console.log('[flow-browser] sendPrompt...');
       await handler.sendPrompt(page, prompt, {
         pasteStrategy: options?.pasteStrategy ?? 'human',
         submitWith: 'enter',
         referenceImagePath: options?.referenceImagePath,
         referenceImagePaths: options?.referenceImagePaths,
       });
+      console.log('[flow-browser] sendPrompt done');
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
+      console.log('[flow-browser] receiveResponse...');
       const response = await handler.receiveResponse(page, {
         projectId,
         batchResponsePromise,
@@ -257,11 +269,16 @@ export class FlowBrowserService {
         debugScreenshotPath: options?.debugScreenshotPath,
         timeoutMs,
       });
+      console.log(`[flow-browser] receiveResponse done (elapsed=${Date.now() - startedAt}ms)`);
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
       recordFlowProjectUsage(profileId, options?.projectId);
+      console.log(`[flow-browser] done in ${Date.now() - startedAt}ms`);
       return response;
     } catch (err) {
+      console.error(
+        `[flow-browser] failed after ${Date.now() - startedAt}ms: ${err instanceof Error ? err.message : String(err)}`,
+      );
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
       throw err;
     }

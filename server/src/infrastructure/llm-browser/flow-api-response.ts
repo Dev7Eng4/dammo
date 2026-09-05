@@ -3,8 +3,8 @@ import path from 'node:path';
 import type { Page, Request, Response } from 'playwright';
 import { paths } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
-import { createFlowDailyQuotaError, isFlowDailyQuotaExhausted, throwIfFlowBatchGenerateFailed } from './flow-api-errors.js';
-import { FLOW_TOOL_IDLE_MS, buildBatchGenerateImagesUrl } from './flow.config.js';
+import { createFlowDailyQuotaError, isFlowDailyQuotaExhausted } from './flow-api-errors.js';
+import { FLOW_TOOL_IDLE_MS, isFlowContentImageUrl } from './flow.config.js';
 import type { FlowGenerateImageOptions, FlowToolVisual, LlmMediaAsset } from './llm-browser.types.js';
 
 const BATCH_GENERATE_IMAGES_PATH = 'flowMedia:batchGenerateImages';
@@ -171,35 +171,22 @@ export function resolveFlowImageOutputPath(outputPath?: string): string {
   return resolveFlowImageSavePath({ outputPath });
 }
 
-export function beginBatchGenerateImagesWait(page: Page, projectId: string, timeoutMs: number): Promise<Response> {
-  const expectedUrl = buildBatchGenerateImagesUrl(projectId);
-
+export function beginFlowContentImageWait(page: Page, timeoutMs: number): Promise<Response> {
   return page
     .waitForResponse(
-      response => {
-        const url = response.url();
-        return url.includes(BATCH_GENERATE_IMAGES_PATH) && url.includes(projectId) && response.request().method() === 'POST';
-      },
+      response => isFlowContentImageUrl(response.url()) && response.ok(),
       { timeout: timeoutMs },
     )
-    .then(async response => {
-      console.log(`[flow-api] matched batchGenerateImages: ${response.url() || expectedUrl} (status=${response.status()})`);
-
-      if (response.ok()) {
-        return response;
-      }
-
-      let body: unknown = null;
-      let bodyText = '';
+    .then(response => {
+      const fullUrl = response.url();
+      let pathOnly = fullUrl;
       try {
-        bodyText = await response.text();
-        body = bodyText ? JSON.parse(bodyText) : null;
+        const parsed = new URL(fullUrl);
+        pathOnly = `${parsed.origin}${parsed.pathname}`;
       } catch {
-        // keep raw text
+        // keep fullUrl
       }
-
-      throwIfFlowBatchGenerateFailed(response.status(), body, bodyText);
-      // throwIfFlowBatchGenerateFailed always throws; satisfy TypeScript
+      console.log(`[flow-cdn] matched image: ${pathOnly} (status=${response.status()})`);
       return response;
     });
 }

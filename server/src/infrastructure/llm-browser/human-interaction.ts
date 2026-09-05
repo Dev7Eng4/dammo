@@ -91,9 +91,16 @@ export async function humanType(page: Page, locator: Locator, text: string): Pro
 async function getInputTextLength(locator: Locator): Promise<number> {
   return locator.evaluate(el => {
     const target = el as HTMLElement;
-    if (target.isContentEditable) return (target.textContent ?? '').length;
-    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) return target.value.length;
-    return 0;
+    const nested =
+      target.isContentEditable ||
+      target.getAttribute('role') === 'textbox' ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLInputElement
+        ? target
+        : target.querySelector<HTMLElement>('[contenteditable="true"], [role="textbox"], textarea, input');
+    if (!nested) return 0;
+    if (nested instanceof HTMLTextAreaElement || nested instanceof HTMLInputElement) return nested.value.length;
+    return (nested.textContent ?? '').length;
   });
 }
 
