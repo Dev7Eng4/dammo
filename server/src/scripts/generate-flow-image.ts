@@ -1,15 +1,21 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ensureDataDirs, paths } from '../config/paths.js';
 import { AppError } from '../shared/http/errors.js';
 import { chromeProfilesService } from '../modules/chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../modules/chrome-profiles/chrome-profiles.types.js';
 import { flowBrowserService } from '../modules/llm-browser/flow-browser.service.js';
 
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+
 /** Sửa prompt tại đây rồi chạy: npm run flow:generate-image */
 const TEST_PROMPT = 'A cinematic Japanese drama thumbnail, two characters facing each other in tense confrontation';
 
 const TEST_NEGATIVE_PROMPT = '';
+
+/** Default reference image attached when CLI does not pass --ref / --reference-image(s). */
+const DEFAULT_REFERENCE_IMAGE = path.join(SCRIPT_DIR, 'Nakamura_Tempū_image_3.png');
 
 const DEFAULT_TIMEOUT_MS = 300_000;
 
@@ -141,6 +147,10 @@ async function main() {
   ensureDataDirs();
 
   const options = parseArgs(process.argv.slice(2));
+  const referenceImagePaths =
+    options.referenceImagePaths.length > 0
+      ? options.referenceImagePaths
+      : [DEFAULT_REFERENCE_IMAGE];
   const promptUsed = buildPrompt(TEST_PROMPT, TEST_NEGATIVE_PROMPT);
   const outputPath = resolveOutputPath(options.output);
   const outputDir = path.dirname(outputPath);
@@ -155,11 +165,9 @@ async function main() {
   if (options.projectId) {
     console.log(`[flow-gen] Project ID: ${options.projectId}`);
   }
-  if (options.referenceImagePaths.length > 0) {
-    console.log(`[flow-gen] Reference images (${options.referenceImagePaths.length}):`);
-    for (const imagePath of options.referenceImagePaths) {
-      console.log(`[flow-gen]   ${imagePath}`);
-    }
+  console.log(`[flow-gen] Reference images (${referenceImagePaths.length}):`);
+  for (const imagePath of referenceImagePaths) {
+    console.log(`[flow-gen]   ${imagePath}`);
   }
   console.log(`[flow-gen] Prompt:\n${promptUsed}\n`);
   console.log('[flow-gen] Calling generateImage...');
@@ -169,9 +177,7 @@ async function main() {
     outputPath,
     timeoutMs: options.timeoutMs,
     generationMode: options.browserMode ? 'browser' : 'api',
-    ...(options.referenceImagePaths.length > 0
-      ? { referenceImagePaths: options.referenceImagePaths }
-      : {}),
+    referenceImagePaths,
     projectId: options.projectId,
   });
 

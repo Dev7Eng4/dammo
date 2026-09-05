@@ -1,13 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Page, Locator, Response } from 'playwright';
+import type { Page, Locator } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
 import {
   FLOW_CONFIG,
   FLOW_BASE_URL,
   FLOW_INITIAL_SETUP_SELECTORS,
-  FLOW_PROJECT_INITIAL_DATA_PATH,
-  FLOW_UPLOAD_IMAGE_PATH,
   MAVID_EDITOR_TOOL_ID,
   buildFlowProjectUrl,
   buildFlowToolUrl,
@@ -161,12 +159,40 @@ async function clickNewProjectButton(page: Page): Promise<void> {
 }
 
 function isOnFlowProjectPage(pageUrl: string, projectId: string): boolean {
-  return pageUrl.includes('flow/project/') && pageUrl.includes(projectId);
+  return parseProjectIdFromUrl(pageUrl) === projectId;
+}
+
+async function isPromptEditableEnabled(locator: Locator): Promise<boolean> {
+  return locator
+    .evaluate(el => {
+      const target = el as HTMLElement;
+      if (target.getAttribute('aria-disabled') === 'true') return false;
+      if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+        return !target.disabled && !target.readOnly;
+      }
+      if (target.isContentEditable || target.getAttribute('contenteditable') === 'true' || target.getAttribute('role') === 'textbox') {
+        return true;
+      }
+      return false;
+    })
+    .catch(() => false);
+}
+
+/** Wait until prompt input is visible and enabled/editable. */
+async function waitForPromptInputEnabled(page: Page, timeoutMs: number): Promise<Locator> {
+  const deadline = Date.now() + timeoutMs;
+  const promptRoot = await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, timeoutMs);
+  const input = await resolveEditableLocator(promptRoot);
+  while (Date.now() < deadline) {
+    if (await isPromptEditableEnabled(input)) return input;
+    await randomDelay(200, 400);
+  }
+  throw domTimeoutError(`promptInput not enabled within ${timeoutMs}ms (${FLOW_CONFIG.selectors.promptInput})`);
 }
 
 async function isPromptInputReady(page: Page): Promise<boolean> {
   try {
-    await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 2_000);
+    await waitForPromptInputEnabled(page, 2_000);
     return true;
   } catch {
     return false;
@@ -178,63 +204,14 @@ function parseProjectIdFromUrl(pageUrl: string): string | null {
   return match?.[1] ?? null;
 }
 
-function isProjectInitialDataUrl(url: string, projectId: string): boolean {
-  return url.includes(FLOW_PROJECT_INITIAL_DATA_PATH) && url.includes(projectId);
-}
-
-async function parseProjectInitialDataSuccess(response: Response): Promise<boolean> {
-  if (!response.ok()) return false;
-
-  try {
-    const body: unknown = await response.json();
-    if (!body || typeof body !== 'object') return false;
-    if ('error' in body && body.error) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Returns true when flow.projectInitialData responds without a tRPC error. */
-export async function validateFlowProjectOnPage(page: Page, projectId: string, timeoutMs = 45_000): Promise<boolean> {
-  try {
-    const response = await page.waitForResponse(resp => isProjectInitialDataUrl(resp.url(), projectId), {
-      timeout: timeoutMs,
-    });
-    return parseProjectInitialDataSuccess(response);
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Navigate to a Flow project and confirm it is usable.
- * Primary signal: URL contains projectId + prompt input ready.
- * Optional: if flow.projectInitialData is observed, require a successful body;
- * timeout on that request does not fail validation (flow.google.com may omit it).
+ * Signal: URL contains projectId + prompt input visible and enabled.
  */
 export async function openFlowProjectPage(page: Page, projectId: string, timeoutMs = 60_000): Promise<boolean> {
-  const trpcTimeoutMs = Math.min(15_000, timeoutMs);
-  const validationPromise = page.waitForResponse(resp => isProjectInitialDataUrl(resp.url(), projectId), {
-    timeout: trpcTimeoutMs,
-  });
-
   await page.goto(buildFlowProjectUrl(projectId), { waitUntil: 'domcontentloaded', timeout: timeoutMs });
   await dismissDialogIfPresent(page);
   await page.keyboard.press('Escape');
-
-  let trpcOk = false;
-  try {
-    const response = await validationPromise;
-    const valid = await parseProjectInitialDataSuccess(response);
-    if (!valid) {
-      console.warn(`[flow] projectInitialData failed for ${projectId} (HTTP/body error)`);
-      return false;
-    }
-    trpcOk = true;
-  } catch {
-    console.log(`[flow] projectInitialData not observed for ${projectId}, falling back to URL + DOM`);
-  }
 
   const parsedId = parseProjectIdFromUrl(page.url());
   if (parsedId !== projectId) {
@@ -252,7 +229,7 @@ export async function openFlowProjectPage(page: Page, projectId: string, timeout
     return false;
   }
 
-  console.log(`[flow] project ${projectId} valid (${trpcOk ? 'tRPC + DOM' : 'URL + DOM'})`);
+  console.log(`[flow] project ${projectId} valid (URL + DOM)`);
   return true;
 }
 
@@ -264,6 +241,7 @@ export async function createNewFlowProject(page: Page): Promise<string> {
   await clickNewProjectButton(page);
   await waitForFlowProjectReady(page);
   const newProjectId = resolveProjectId(page);
+  console.log(`[flow] new project id from URL: ${newProjectId}`);
   await ensureInitialProjectSetup(page, newProjectId);
   return newProjectId;
 }
@@ -442,7 +420,7 @@ export async function ensureInitialProjectSetup(page: Page, projectId: string): 
 }
 
 export async function waitForFlowProjectReady(page: Page): Promise<void> {
-  await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput, 45_000);
+  await waitForPromptInputEnabled(page, 45_000);
   await randomDelay(400, 900);
 }
 
@@ -563,16 +541,8 @@ async function assertPromptFilled(locator: Locator, prompt: string): Promise<voi
   }
 }
 
-function beginUploadImageWait(page: Page, timeoutMs = 60_000): Promise<Response> {
-  return page.waitForResponse(
-    response => response.url().includes(FLOW_UPLOAD_IMAGE_PATH) && response.request().method() === 'POST' && response.ok(),
-    { timeout: timeoutMs },
-  );
-}
-
-async function attachReferenceFile(page: Page, imagePath: string, index: number): Promise<void> {
-  const attachSelector = index === 0 ? FLOW_CONFIG.selectors.btnAttach : FLOW_CONFIG.selectors.btnAttachSecond;
-  const attachButton = page.locator(`xpath=${attachSelector}`);
+async function attachReferenceFile(page: Page, imagePath: string, _index: number): Promise<void> {
+  const attachButton = page.locator(FLOW_CONFIG.selectors.btnAttach);
   await humanClick(page, attachButton);
   await randomDelay(500, 1_000);
 
@@ -595,18 +565,26 @@ async function attachReferenceFile(page: Page, imagePath: string, index: number)
 async function uploadReferenceImage(page: Page, imagePath: string, index: number): Promise<void> {
   await fs.access(imagePath);
 
-  const uploadPromise = beginUploadImageWait(page);
-
   await attachReferenceFile(page, imagePath, index);
 
-  try {
-    await uploadPromise;
-    console.log('[flow] uploadImage API success');
-  } catch (err) {
-    throw domTimeoutError(`Timed out waiting for uploadImage API (${err instanceof Error ? err.message : 'unknown error'})`);
+  await randomDelay(1_000, 1_000);
+
+  const assetButton = page.locator(FLOW_CONFIG.selectors.assetItemButton).first();
+  await assetButton.waitFor({ state: 'visible', timeout: 15_000 });
+  await humanClick(page, assetButton);
+
+  const addToPromptButton = page.locator(FLOW_CONFIG.selectors.addToPromptButton).first();
+  await addToPromptButton.waitFor({ state: 'visible', timeout: 15_000 });
+
+  const enabledDeadline = Date.now() + 15_000;
+  while (Date.now() < enabledDeadline) {
+    if (await addToPromptButton.isEnabled().catch(() => false)) break;
+    await randomDelay(200, 400);
+  }
+  if (!(await addToPromptButton.isEnabled().catch(() => false))) {
+    throw domTimeoutError(`addToPromptButton not enabled within 15s (${FLOW_CONFIG.selectors.addToPromptButton})`);
   }
 
-  const addToPromptButton = await waitForFirstVisible(page, FLOW_CONFIG.selectors.addToPromptButton, 15_000);
   await humanClick(page, addToPromptButton);
   await randomDelay(500, 1_000);
 }
@@ -630,7 +608,7 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       if (projectId) {
         const valid = await openFlowProjectPage(page, projectId);
         if (!valid) {
-          throw domTimeoutError(`Flow project ${projectId} failed projectInitialData validation`);
+          throw domTimeoutError(`Flow project ${projectId} failed project open validation`);
         }
         if (!skipInitialSetup) {
           await randomDelay(2_000, 4_000);

@@ -20,10 +20,6 @@ export const FLOW_UPLOAD_IMAGE_PATH = 'flow/uploadImage';
 
 export const FLOW_SESSION_URL = 'https://labs.google/fx/api/auth/session';
 
-export const FLOW_TRPC_BASE_URL = 'https://labs.google/fx/api/trpc';
-
-export const FLOW_PROJECT_INITIAL_DATA_PATH = 'flow.projectInitialData';
-
 /** Rotate Flow project after this many successful generate calls per Chrome profile. */
 export const FLOW_PROJECT_MAX_USAGE_COUNT = 70;
 
@@ -85,11 +81,6 @@ export function buildFlowProjectUrl(projectId: string): string {
   return `${FLOW_BASE_URL}/project/${projectId}`;
 }
 
-export function buildFlowProjectInitialDataUrl(projectId: string): string {
-  const input = encodeURIComponent(JSON.stringify({ json: { projectId } }));
-  return `${FLOW_TRPC_BASE_URL}/${FLOW_PROJECT_INITIAL_DATA_PATH}?input=${input}`;
-}
-
 export function buildFlowToolUrl(projectId: string, toolId: string = MAVID_EDITOR_TOOL_ID): string {
   return `${FLOW_BASE_URL}/project/${projectId}/tool/${toolId}`;
 }
@@ -142,9 +133,9 @@ export interface FlowDomSelectors {
   referenceImageAddButton: string;
   referenceImageInput: string;
   addToPromptButton: string;
+  /** First uploaded asset thumbnail button in the media sidebar. */
+  assetItemButton: string;
   btnAttach: string;
-  /** Attach button after the first reference image is already in the prompt. */
-  btnAttachSecond: string;
   btnUploadMedia: string;
 }
 
@@ -180,10 +171,10 @@ export const FLOW_CONFIG: FlowConfig = {
     referenceImageAddButton:
       'button[aria-label*="Upload" i], button[aria-label*="Add" i], button:has-text("Upload"), button:has-text("Add image")',
     referenceImageInput: 'input[type="file"]',
-    addToPromptButton: 'button:has-text("Add to Prompt")',
-    btnAttach: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[2]/div[1]/div/button[1]',
-    btnAttachSecond: '/html/body/div[1]/div[1]/div[5]/div/div/div/div/div[3]/div[1]/div/button[1]',
-    btnUploadMedia: 'button:has-text("Upload media")',
+    addToPromptButton: '.detail-add-to-prompt-btn',
+    assetItemButton: '.asset-item-container button',
+    btnAttach: '.add-menu-trigger',
+    btnUploadMedia: '.sidebar-upload-btn',
   },
 };
 

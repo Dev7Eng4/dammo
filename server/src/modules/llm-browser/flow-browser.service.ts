@@ -246,11 +246,6 @@ export class FlowBrowserService {
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
     try {
-      console.log(`[flow-browser] start flow-content image wait (timeout=${timeoutMs}ms)...`);
-      const batchResponsePromise = beginFlowContentImageWait(page, timeoutMs);
-      // Prevent unhandledRejection if quota fails during sendPrompt delay
-      void batchResponsePromise.catch(() => undefined);
-
       console.log('[flow-browser] sendPrompt...');
       await handler.sendPrompt(page, prompt, {
         pasteStrategy: options?.pasteStrategy ?? 'human',
@@ -260,6 +255,10 @@ export class FlowBrowserService {
       });
       console.log('[flow-browser] sendPrompt done');
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
+
+      // Start after sendPrompt so attach-reference CDN hits are not mistaken for generate.
+      console.log(`[flow-browser] start flow-content image wait (timeout=${timeoutMs}ms)...`);
+      const batchResponsePromise = beginFlowContentImageWait(page, timeoutMs);
 
       console.log('[flow-browser] receiveResponse...');
       const response = await handler.receiveResponse(page, {
@@ -304,7 +303,7 @@ export class FlowBrowserService {
         const valid = await openFlowProjectPage(page, projectId, timeoutMs);
         if (!valid) {
           throw new AppError(
-            `Flow project ${projectId} failed projectInitialData validation`,
+            `Flow project ${projectId} failed project open validation`,
             502,
             'FLOW_PROJECT_INVALID',
           );
