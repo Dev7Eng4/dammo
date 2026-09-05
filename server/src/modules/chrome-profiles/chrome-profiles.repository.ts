@@ -8,11 +8,24 @@ function normalizeRole(role: ChromeProfileRole | undefined): ChromeProfileRole {
   return role === 'main' ? 'main' : 'sub';
 }
 
+function normalizeUsageOrder(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) return undefined;
+  return value;
+}
+
 function normalizeProfile(profile: ChromeProfile): ChromeProfile {
-  return {
-    ...profile,
+  const usageOrder = normalizeUsageOrder(profile.usageOrder);
+  const normalized: ChromeProfile = {
+    id: profile.id,
+    name: profile.name,
+    userDataDir: profile.userDataDir,
+    createdAt: profile.createdAt,
     role: normalizeRole(profile.role),
   };
+  if (usageOrder !== undefined) {
+    normalized.usageOrder = usageOrder;
+  }
+  return normalized;
 }
 
 function sortProfiles(profiles: ChromeProfile[]): ChromeProfile[] {
@@ -111,6 +124,22 @@ export class ChromeProfilesRepository {
         if (normalized.id !== id) return normalized;
 
         updated = { ...normalized, name };
+        return updated;
+      }),
+    }));
+
+    return updated;
+  }
+
+  setUsageOrder(id: string, usageOrder: number): ChromeProfile | null {
+    let updated: ChromeProfile | null = null;
+
+    this.saveStore((store) => ({
+      profiles: store.profiles.map((profile) => {
+        const normalized = normalizeProfile(profile);
+        if (normalized.id !== id) return normalized;
+
+        updated = { ...normalized, usageOrder };
         return updated;
       }),
     }));

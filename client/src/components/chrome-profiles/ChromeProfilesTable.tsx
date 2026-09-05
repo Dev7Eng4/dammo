@@ -63,6 +63,18 @@ export function ChromeProfilesTable({
       ),
     },
     {
+      id: 'usageOrder',
+      header: 'THỨ TỰ',
+      cell: ({ row }) => {
+        const order = row.original.usageOrder;
+        return (
+          <span className="font-mono text-xs text-neutral-300">
+            {typeof order === 'number' ? order : '—'}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: 'id',
       header: 'PROFILE ID',
       cell: ({ getValue }) => {

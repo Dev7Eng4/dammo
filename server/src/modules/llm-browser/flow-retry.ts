@@ -4,7 +4,7 @@ import {
   FLOW_RETRY_BASE_DELAY_MS,
   FLOW_RETRY_RATE_LIMIT_DELAY_MS,
 } from '../../infrastructure/llm-browser/flow.config.js';
-import { isFlowDailyQuotaError } from '../../infrastructure/llm-browser/flow-api-errors.js';
+import { isFlowDailyQuotaError, isFlowPolicyViolationError } from '../../infrastructure/llm-browser/flow-api-errors.js';
 import type { FlowGenerateImageOptions, LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
 import { generateImageWithFailover } from './flow-profile-failover.js';
@@ -112,6 +112,11 @@ export async function runWithFlowRetries(options: RunWithFlowRetriesOptions): Pr
       lastReason = err instanceof Error ? err.message : 'unknown error';
       onAttemptFailure?.(attempt, lastReason);
       console.warn(`${logPrefix} attempt ${attempt}: ${lastReason}`);
+
+      if (isFlowPolicyViolationError(err)) {
+        console.warn(`${logPrefix} policy violation — stopping retries`);
+        throw err;
+      }
 
       if (isFlowDailyQuotaError(err)) {
         hitDailyQuota = true;

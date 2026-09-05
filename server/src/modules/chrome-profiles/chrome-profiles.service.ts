@@ -38,6 +38,29 @@ export class ChromeProfilesService {
     return mains;
   }
 
+  /**
+   * After a Flow daily quota/limit hit: set this main profile's usageOrder to max(main)+1.
+   */
+  markMainProfileLimited(id: string): ChromeProfile {
+    const profile = this.getById(id);
+    const mains = chromeProfilesRepository.findByRole('main');
+    let maxOrder = 0;
+    for (const main of mains) {
+      if (typeof main.usageOrder === 'number' && main.usageOrder > maxOrder) {
+        maxOrder = main.usageOrder;
+      }
+    }
+    const nextOrder = maxOrder + 1;
+    const updated = chromeProfilesRepository.setUsageOrder(id, nextOrder);
+    if (!updated) {
+      throw new AppError('Chrome profile not found', 404, 'NOT_FOUND');
+    }
+    console.log(
+      `[chrome-profile] ${profile.name}: usageOrder ${profile.usageOrder ?? '(none)'} → ${nextOrder} (limit)`,
+    );
+    return updated;
+  }
+
   requireMainProfile(): ChromeProfile {
     return this.listMainProfiles()[0];
   }

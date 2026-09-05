@@ -6,6 +6,8 @@ export interface ChromeProfile {
   userDataDir: string;
   createdAt: string;
   role: ChromeProfileRole;
+  /** Flow main-profile pick order. Absent when newly added. Higher = preferred among numbered. */
+  usageOrder?: number;
 }
 
 export interface ChromeProfilesStore {

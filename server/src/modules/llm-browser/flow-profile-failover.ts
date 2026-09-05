@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { isFlowDailyQuotaError } from '../../infrastructure/llm-browser/flow-api-errors.js';
+import { isFlowDailyQuotaError, isFlowPolicyViolationError, isFlowProfileSwitchError } from '../../infrastructure/llm-browser/flow-api-errors.js';
 import type {
   FlowGenerateImageOptions,
   FlowGenerateImagesViaToolOptions,
@@ -31,7 +31,19 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 export function listAvailableFlowMainProfiles(exhaustedProfileIds: Set<string>): ChromeProfile[] {
-  return chromeProfilesService.listMainProfiles().filter(profile => !exhaustedProfileIds.has(profile.id));
+  return chromeProfilesService
+    .listMainProfiles()
+    .filter(profile => !exhaustedProfileIds.has(profile.id))
+    .sort((a, b) => {
+      const aOrder = a.usageOrder;
+      const bOrder = b.usageOrder;
+      const aHas = typeof aOrder === 'number';
+      const bHas = typeof bOrder === 'number';
+      if (!aHas && bHas) return -1;
+      if (aHas && !bHas) return 1;
+      if (aHas && bHas && aOrder !== bOrder) return bOrder - aOrder;
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    });
 }
 
 function pickStartProfile(startProfileId: string | undefined, exhausted: Set<string>): ChromeProfile {
@@ -122,13 +134,21 @@ export async function generateImagesViaToolWithFailover(
         mediaAssets: mediaAssets.length > 0 ? mediaAssets : response.mediaAssets,
       };
     } catch (err) {
-      if (!isFlowDailyQuotaError(err)) {
+      if (isFlowPolicyViolationError(err)) {
+        console.warn(`[flow-policy] profile ${profile.name}: policy violation — closing, no profile switch`);
+        await closeChromeProfile(profile.id).catch(() => undefined);
         throw err;
       }
 
-      console.warn(
-        `[flow-quota] profile ${profile.name} daily quota exhausted (429 RESOURCE_EXHAUSTED)`,
-      );
+      if (!isFlowProfileSwitchError(err)) {
+        throw err;
+      }
+
+      const reason = isFlowDailyQuotaError(err) ? 'daily quota exhausted' : 'browser tile error';
+      console.warn(`[flow-quota] profile ${profile.name} ${reason} — switching profile`);
+      if (isFlowDailyQuotaError(err)) {
+        chromeProfilesService.markMainProfileLimited(profile.id);
+      }
       exhausted.add(profile.id);
       triedNames.push(profile.name);
 
@@ -141,10 +161,10 @@ export async function generateImagesViaToolWithFailover(
           `[flow-quota] all main profiles exhausted, missing: ${stillMissing.join(', ') || '(none)'}`,
         );
         throw new AppError(
-          `Flow daily quota exhausted on all main profiles (${triedNames.join(', ')}). ` +
+          `Flow profile failover exhausted on all main profiles (${triedNames.join(', ')}). ` +
             `Missing images: ${stillMissing.join(', ') || '(none)'}`,
-          429,
-          'FLOW_DAILY_QUOTA_EXHAUSTED',
+          isFlowDailyQuotaError(err) ? 429 : 502,
+          isFlowDailyQuotaError(err) ? 'FLOW_DAILY_QUOTA_EXHAUSTED' : 'FLOW_BROWSER_TILE_ERROR',
         );
       }
 
@@ -184,13 +204,21 @@ export async function generateImageWithFailover(
         elapsedMs: Date.now() - startedAt,
       };
     } catch (err) {
-      if (!isFlowDailyQuotaError(err)) {
+      if (isFlowPolicyViolationError(err)) {
+        console.warn(`[flow-policy] profile ${profile.name}: policy violation — closing, no profile switch`);
+        await closeChromeProfile(profile.id).catch(() => undefined);
         throw err;
       }
 
-      console.warn(
-        `[flow-quota] profile ${profile.name} daily quota exhausted (429 RESOURCE_EXHAUSTED)`,
-      );
+      if (!isFlowProfileSwitchError(err)) {
+        throw err;
+      }
+
+      const reason = isFlowDailyQuotaError(err) ? 'daily quota exhausted' : 'browser tile error';
+      console.warn(`[flow-quota] profile ${profile.name} ${reason} — switching profile`);
+      if (isFlowDailyQuotaError(err)) {
+        chromeProfilesService.markMainProfileLimited(profile.id);
+      }
       exhausted.add(profile.id);
       triedNames.push(profile.name);
 
@@ -200,9 +228,9 @@ export async function generateImageWithFailover(
       if (nextProfiles.length === 0) {
         console.error(`[flow-quota] all main profiles exhausted: ${triedNames.join(', ')}`);
         throw new AppError(
-          `Flow daily quota exhausted on all main profiles (${triedNames.join(', ')})`,
-          429,
-          'FLOW_DAILY_QUOTA_EXHAUSTED',
+          `Flow profile failover exhausted on all main profiles (${triedNames.join(', ')})`,
+          isFlowDailyQuotaError(err) ? 429 : 502,
+          isFlowDailyQuotaError(err) ? 'FLOW_DAILY_QUOTA_EXHAUSTED' : 'FLOW_BROWSER_TILE_ERROR',
         );
       }
 

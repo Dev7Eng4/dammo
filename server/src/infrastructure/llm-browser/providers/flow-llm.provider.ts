@@ -11,6 +11,7 @@ import {
   buildFlowToolUrl,
 } from '../flow.config.js';
 import { downloadAndSaveFlowImage } from '../flow-api-response.js';
+import { appErrorFromFlowErrorTileText } from '../flow-api-errors.js';
 import type { FlowOpenOptions } from '../llm-browser.types.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
@@ -660,9 +661,17 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
         throw new AppError('Flow batchResponsePromise is required for receiveResponse', 500, 'FLOW_API_WAIT_MISSING');
       }
 
-      try {
+      const timeoutMs = options?.timeoutMs ?? FLOW_CONFIG.defaultTimeoutMs;
+      let settled = false;
+
+      const stopPolling = (): void => {
+        settled = true;
+      };
+
+      const cdnSuccess = (async (): Promise<LlmBrowserResponse> => {
         console.log('[flow] waiting for flow-content image response...');
         const apiResponse = await batchResponsePromise;
+        stopPolling();
         const imageUrl = apiResponse.url();
         console.log(`[flow-cdn] image url: ${imageUrl.split('?')[0]} (status=${apiResponse.status()})`);
 
@@ -682,7 +691,44 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
           elapsedMs: Date.now() - startedAt,
           mediaAssets,
         };
+      })();
+
+      const errorPoll = (async (): Promise<LlmBrowserResponse> => {
+        await randomDelay(500, 500);
+
+        const scroll = page.locator(FLOW_CONFIG.selectors.virtualScrollContainer).first();
+        await scroll.waitFor({ state: 'attached', timeout: Math.min(15_000, timeoutMs) }).catch(() => undefined);
+
+        const deadline = startedAt + timeoutMs;
+        while (!settled && Date.now() < deadline) {
+          const firstItem = scroll.locator(FLOW_CONFIG.selectors.virtualItemContainer).first();
+          const errorTile = firstItem.locator(FLOW_CONFIG.selectors.flowErrorTile).first();
+          const hasError = await errorTile.isVisible().catch(() => false);
+          if (hasError) {
+            const text = ((await errorTile.innerText().catch(() => '')) || '').trim();
+            console.warn(`[flow] error tile detected: ${text.slice(0, 200)}`);
+            stopPolling();
+            void batchResponsePromise.catch(() => undefined);
+            void cdnSuccess.catch(() => undefined);
+            throw appErrorFromFlowErrorTileText(text || 'unknown flow-error-tile');
+          }
+          await randomDelay(1_000, 1_000);
+        }
+
+        if (!settled) {
+          throw domTimeoutError(`Timed out waiting for Flow image or error tile (${timeoutMs}ms)`);
+        }
+
+        // CDN won; this branch is discarded by Promise.race.
+        return new Promise(() => undefined);
+      })();
+
+      try {
+        return await Promise.race([cdnSuccess, errorPoll]);
       } catch (err) {
+        stopPolling();
+        void batchResponsePromise.catch(() => undefined);
+        void cdnSuccess.catch(() => undefined);
         console.error(`[flow] receiveResponse failed: ${err instanceof Error ? err.message : String(err)}`);
         await captureDebugScreenshot(page, options?.debugScreenshotPath);
         if (err instanceof AppError) throw err;

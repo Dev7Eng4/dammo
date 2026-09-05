@@ -137,6 +137,11 @@ export interface FlowDomSelectors {
   assetItemButton: string;
   btnAttach: string;
   btnUploadMedia: string;
+  /** Virtual list of generated result tiles. */
+  virtualScrollContainer: string;
+  virtualItemContainer: string;
+  /** Error tile inside a failed generation result. */
+  flowErrorTile: string;
 }
 
 export interface FlowConfig {
@@ -175,6 +180,9 @@ export const FLOW_CONFIG: FlowConfig = {
     assetItemButton: '.asset-item-container button',
     btnAttach: '.add-menu-trigger',
     btnUploadMedia: '.sidebar-upload-btn',
+    virtualScrollContainer: '.virtual-scroll-container',
+    virtualItemContainer: '.virtual-item-container',
+    flowErrorTile: 'flow-error-tile',
   },
 };
 
