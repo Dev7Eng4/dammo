@@ -13,6 +13,18 @@ import {
   type UpdateChromeProfileInput,
 } from './chrome-profiles.types.js';
 
+/** Empty usageOrder first, then higher numbers before lower; name tie-break. */
+export function compareMainProfilesByUsageOrder(a: ChromeProfile, b: ChromeProfile): number {
+  const aOrder = a.usageOrder;
+  const bOrder = b.usageOrder;
+  const aHas = typeof aOrder === 'number';
+  const bHas = typeof bOrder === 'number';
+  if (!aHas && bHas) return -1;
+  if (aHas && !bHas) return 1;
+  if (aHas && bHas && aOrder !== bOrder) return bOrder - aOrder;
+  return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+}
+
 export class ChromeProfilesService {
   list(): { items: ChromeProfile[] } {
     return { items: chromeProfilesRepository.findAll() };
@@ -35,7 +47,7 @@ export class ChromeProfilesService {
     if (mains.length === 0) {
       throw new AppError('No main Chrome profile configured. Set a profile as main first.', 409, 'NO_MAIN_PROFILE');
     }
-    return mains;
+    return [...mains].sort(compareMainProfilesByUsageOrder);
   }
 
   /**

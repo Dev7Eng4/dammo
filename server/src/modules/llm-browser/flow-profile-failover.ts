@@ -31,19 +31,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 export function listAvailableFlowMainProfiles(exhaustedProfileIds: Set<string>): ChromeProfile[] {
-  return chromeProfilesService
-    .listMainProfiles()
-    .filter(profile => !exhaustedProfileIds.has(profile.id))
-    .sort((a, b) => {
-      const aOrder = a.usageOrder;
-      const bOrder = b.usageOrder;
-      const aHas = typeof aOrder === 'number';
-      const bHas = typeof bOrder === 'number';
-      if (!aHas && bHas) return -1;
-      if (aHas && !bHas) return 1;
-      if (aHas && bHas && aOrder !== bOrder) return bOrder - aOrder;
-      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-    });
+  return chromeProfilesService.listMainProfiles().filter(profile => !exhaustedProfileIds.has(profile.id));
 }
 
 function pickStartProfile(startProfileId: string | undefined, exhausted: Set<string>): ChromeProfile {
