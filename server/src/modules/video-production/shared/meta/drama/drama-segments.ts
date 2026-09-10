@@ -1,10 +1,19 @@
 import type { SrtBlock } from '../../../../../infrastructure/subtitle/srt-utils.js';
 import { srtTimestampToMs } from '../../../../../infrastructure/subtitle/srt-utils.js';
+import { executePromptTemplate } from '../../../../prompts/prompts.file-store.js';
+import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 
 /** Step 1 uses at most the first 1h30 of transcript. */
 export const DRAMA_STEP1_MAX_TRANSCRIPT_MS = 90 * 60 * 1000;
-/** Soft cap on transcript character length passed to step 1 prompt. */
-export const DRAMA_STEP1_MAX_CHARS = 28_000;
+
+/**
+ * Soft budget for the full step-1 chat input (prompt shell + transcript).
+ * Kept under the ~32k chat paste limit with a small margin.
+ */
+export const STEP1_PROMPT_INPUT_BUDGET = 31_000;
+
+/** @deprecated Use STEP1_PROMPT_INPUT_BUDGET / computeStep1MaxTranscriptChars instead. */
+export const DRAMA_STEP1_MAX_CHARS = STEP1_PROMPT_INPUT_BUDGET;
 
 export function getSrtDurationMs(blocks: SrtBlock[]): number {
   let maxMs = 0;
@@ -29,16 +38,30 @@ export function extractTranscriptText(blocks: SrtBlock[], startMs: number, endMs
     .join('\n');
 }
 
+/** Remaining transcript chars after accounting for the rendered step-1 prompt shell. */
+export function computeStep1MaxTranscriptChars(promptShellLength: number): number {
+  return Math.max(0, STEP1_PROMPT_INPUT_BUDGET - Math.max(0, promptShellLength));
+}
+
+/** Render step-1 template with an empty transcript to measure the fixed prompt shell size. */
+export async function measureStep1PromptShellLength(
+  language: PromptLanguage,
+  step1Key: string,
+): Promise<number> {
+  const shell = await executePromptTemplate(language, step1Key, ['']);
+  return shell.length;
+}
+
 /**
- * Extract the first 1h30 of SRT cues, then truncate to at most 28_000 characters
- * (drop excess from the end) for drama metadata step 1.
+ * Extract the first 1h30 of SRT cues, then truncate to at most `maxChars`
+ * (drop excess from the end) for metadata step 1.
  */
-export function extractDramaStep1Transcript(blocks: SrtBlock[]): string {
-  if (blocks.length === 0) return '';
+export function extractDramaStep1Transcript(blocks: SrtBlock[], maxChars: number): string {
+  if (blocks.length === 0 || maxChars <= 0) return '';
 
   const text = extractTranscriptText(blocks, 0, DRAMA_STEP1_MAX_TRANSCRIPT_MS);
   if (!text) return '';
 
-  if (text.length <= DRAMA_STEP1_MAX_CHARS) return text;
-  return text.slice(0, DRAMA_STEP1_MAX_CHARS);
+  if (text.length <= maxChars) return text;
+  return text.slice(0, maxChars);
 }

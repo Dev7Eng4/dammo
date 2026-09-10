@@ -1,7 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { recreateMetadataDir, resolveYoutubeChannelVideoDir } from '../../../../config/paths.js';
+import {
+  recreateMetadataDir,
+  resolveYoutubeChannelUploadedVideoDir,
+  resolveYoutubeChannelVideoDir,
+} from '../../../../config/paths.js';
 import { assertMediaFileComplete } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
+import { readJson } from '../../../../infrastructure/storage/json-store.js';
 import { downloadYoutubeTranscript } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
 import { downloadYoutubeThumbnail } from '../../../../infrastructure/youtube/youtube-thumbnail-downloader.js';
 import { fetchYoutubeVideoTitle } from '../../../../infrastructure/youtube/youtube-video-title.js';
@@ -80,6 +85,28 @@ interface TaskRunContext {
 
 const AUDIO_FILE = 'audio.mp3';
 const SUBTITLE_FILES = ['transcript-updated.srt', 'transcript.srt'] as const;
+const VIDEO_META_FILENAME = 'video-meta.json';
+const REGENERATE_PREPARE_STATUSES = new Set(['Prepared', 'Created', 'Uploaded']);
+
+function readTitleFromVideoMeta(folderPath: string): string | null {
+  try {
+    const raw = readJson<unknown>(path.join(folderPath, VIDEO_META_FILENAME));
+    if (!raw || typeof raw !== 'object') return null;
+    const metadata = (raw as Record<string, unknown>).metadata;
+    if (!metadata || typeof metadata !== 'object') return null;
+    const title = (metadata as Record<string, unknown>).title;
+    return typeof title === 'string' && title.trim() ? title.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveRegenerateWorkDir(channelId: string, videoId: string): string | null {
+  return (
+    resolveYoutubeChannelVideoDir(channelId, videoId) ??
+    resolveYoutubeChannelUploadedVideoDir(channelId, videoId)
+  );
+}
 
 function isReupAudioPipeline(pipelineType: ProductionDestination['pipelineType']): boolean {
   return pipelineType === 'reup_audio';
@@ -197,7 +224,8 @@ export class ReupAudioPipeline {
   }
 
   /**
-   * Re-run metadata + thumbnail only against an existing Prepared/Created video folder.
+   * Re-run metadata + thumbnail only against an existing video folder
+   * (Prepared/Created under videos/, or Uploaded/published under uploads/).
    * Skips download, transcript rewrite, and assembly.
    */
   async regenerateMetadataAndThumbnails(
@@ -243,20 +271,22 @@ export class ReupAudioPipeline {
           .read(destination.id)
           .find(
             item =>
-              item.videoId.trim() === videoId &&
-              (item.status === 'Prepared' || item.status === 'Created'),
+              item.videoId.trim() === videoId && REGENERATE_PREPARE_STATUSES.has(item.status),
           );
-        if (!prepareItem) {
+
+        const workDir = resolveRegenerateWorkDir(destination.id, videoId);
+        if (!workDir) {
+          throw new AppError('Video folder not found', 404, 'VIDEO_FOLDER_NOT_FOUND');
+        }
+
+        const uploadedFolderPath = resolveYoutubeChannelUploadedVideoDir(destination.id, videoId);
+        const isUploadsFolder = uploadedFolderPath != null && workDir === uploadedFolderPath;
+        if (!prepareItem && !isUploadsFolder) {
           throw new AppError(
-            'Video is not in Prepared or Created status',
+            'Video is not in Prepared, Created, or Uploaded status',
             409,
             'VIDEO_NOT_VIEWABLE',
           );
-        }
-
-        const workDir = resolveYoutubeChannelVideoDir(destination.id, videoId);
-        if (!workDir) {
-          throw new AppError('Video folder not found', 404, 'VIDEO_FOLDER_NOT_FOUND');
         }
 
         const audioPath = path.join(workDir, AUDIO_FILE);
@@ -291,13 +321,16 @@ export class ReupAudioPipeline {
           taskQueueRepository.setLivePhase(taskJobId, 'metadata');
         }
 
+        const sourceTitle =
+          prepareItem?.title.trim() || readTitleFromVideoMeta(workDir) || videoId;
+
         const task: ReupVideoTask = {
           link: `https://www.youtube.com/watch?v=${videoId}`,
-          id: prepareItem.id,
+          id: prepareItem?.id ?? videoId,
           language: destination.language,
           videoId,
           sourceId: '',
-          sourceTitle: prepareItem.title.trim() || videoId,
+          sourceTitle,
         };
 
         const strategy = resolveVideoTypeStrategy(videoType);
@@ -326,7 +359,7 @@ export class ReupAudioPipeline {
 
         const newTitle =
           typeof ctx.videoMeta.metadata.title === 'string' ? ctx.videoMeta.metadata.title.trim() : '';
-        if (newTitle) {
+        if (newTitle && prepareItem) {
           videoPrepareRepository.updateTitle(destination.id, videoId, newTitle);
         }
 

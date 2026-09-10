@@ -1,3 +1,7 @@
+import { isYoutubePermanentAccessError } from './youtube-download-errors.js';
+
+export { isYoutubePermanentAccessError } from './youtube-download-errors.js';
+
 /** Delays after failed attempts before retrying (10s → 2 attempts total). */
 export const YOUTUBE_DOWNLOAD_RETRY_DELAYS_MS = [10_000] as const;
 
@@ -22,6 +26,12 @@ export async function withYoutubeDownloadRetries<T>(
     } catch (err) {
       lastError = err;
       const reason = err instanceof Error ? err.message : 'Unknown error';
+
+      if (isYoutubePermanentAccessError(err)) {
+        console.warn(`[youtube-download] permanent access error, not retrying: ${reason}`);
+        throw err;
+      }
+
       const delayMs = YOUTUBE_DOWNLOAD_RETRY_DELAYS_MS[attempt - 1];
 
       if (delayMs === undefined) {

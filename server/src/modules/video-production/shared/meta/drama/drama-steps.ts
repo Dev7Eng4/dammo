@@ -29,7 +29,7 @@ export interface RunDramaStepOptions {
   outputDir?: string;
 }
 
-function resolveDramaStepKey(language: PromptLanguage, step: DramaMetadataStep): string {
+export function resolveDramaStepKey(language: PromptLanguage, step: DramaMetadataStep): string {
   const key = `metadata_drama_step_${step}`;
   const prompt = promptsRepository
     .findAll()

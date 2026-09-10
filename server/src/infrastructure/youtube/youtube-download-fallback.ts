@@ -1,4 +1,5 @@
 import { AppError } from '../../shared/http/errors.js';
+import { isYoutubePermanentAccessError } from './youtube-download-errors.js';
 
 export interface YoutubeDownloadFallbackOptions<T> {
   action: string;
@@ -21,8 +22,9 @@ function errorMessage(err: unknown): string {
 }
 
 /**
- * Tries yt-dlp first, then youtubei.js. Skips fallback for invalid URLs and
- * missing ffmpeg — youtubei.js cannot recover those cases.
+ * Tries yt-dlp first, then youtubei.js. Skips fallback for invalid URLs,
+ * missing ffmpeg, and permanent access errors (private / login required) —
+ * youtubei.js cannot recover those cases.
  */
 export async function withYoutubeDownloadFallback<T>(
   options: YoutubeDownloadFallbackOptions<T>,
@@ -32,6 +34,12 @@ export async function withYoutubeDownloadFallback<T>(
   } catch (primaryErr) {
     const code = errorCode(primaryErr);
     if (code && SKIP_FALLBACK_CODES.has(code)) {
+      throw primaryErr;
+    }
+
+    if (isYoutubePermanentAccessError(primaryErr)) {
+      const primaryMsg = errorMessage(primaryErr);
+      console.warn(`[youtube-download] permanent access error, skipping fallback: ${primaryMsg}`);
       throw primaryErr;
     }
 

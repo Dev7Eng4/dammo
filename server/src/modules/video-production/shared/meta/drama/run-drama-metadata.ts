@@ -9,12 +9,14 @@ import {
 } from '../run-metadata.js';
 import type { VideoMetaOutput } from '../metadata.types.js';
 import {
-  DRAMA_STEP1_MAX_CHARS,
   DRAMA_STEP1_MAX_TRANSCRIPT_MS,
+  computeStep1MaxTranscriptChars,
   extractDramaStep1Transcript,
   getSrtDurationMs,
+  measureStep1PromptShellLength,
 } from './drama-segments.js';
 import {
+  resolveDramaStepKey,
   runDramaStep1,
   runDramaStep2,
   withDramaLlmSession,
@@ -29,7 +31,7 @@ export interface RunDramaMetadataOptions extends Omit<RunMetadataOptions, 'onPro
 
 /**
  * Drama niche metadata (2 steps):
- * 1. First 1h30 of transcript (capped at 28_000 chars) → narrative extraction
+ * 1. First 1h30 of transcript (chars budget = 31000 - step1 prompt shell) → narrative extraction
  * 2. extractedStoryJson + title + imageStyle → metadata + image prompts
  */
 export async function runDramaMetadata(
@@ -52,10 +54,21 @@ export async function runDramaMetadata(
     );
   }
 
+  const step1Key = resolveDramaStepKey(language, 1);
+  const shellLen = await measureStep1PromptShellLength(language, step1Key);
+  const maxChars = computeStep1MaxTranscriptChars(shellLen);
+  if (maxChars === 0) {
+    throw new AppError(
+      `Drama step 1 prompt shell (${shellLen} chars) exceeds input budget`,
+      400,
+      'PROMPT_TOO_LONG',
+    );
+  }
+
   const content = await fs.readFile(srtPath, 'utf8');
   const blocks = parseSrt(content);
   const durationMs = getSrtDurationMs(blocks);
-  const transcript = extractDramaStep1Transcript(blocks);
+  const transcript = extractDramaStep1Transcript(blocks, maxChars);
 
   if (!transcript) {
     throw new AppError('No SRT transcript content available for drama metadata', 400, 'INVALID_INPUT');
@@ -67,10 +80,11 @@ export async function runDramaMetadata(
 
   console.log(
     `[drama-metadata] duration=${(durationMs / 60_000).toFixed(1)}min ` +
-      `step1_window=${windowMin.toFixed(1)}min chars=${transcript.length}/${DRAMA_STEP1_MAX_CHARS}`,
+      `step1_window=${windowMin.toFixed(1)}min shell=${shellLen} maxChars=${maxChars} ` +
+      `chars=${transcript.length}/${maxChars}`,
   );
 
-  const parsed = await withDramaLlmSession(async (session) => {
+  const parsed = await withDramaLlmSession(async session => {
     const extractedStoryJson = await runDramaStep1(session, language, transcript, stepOptions);
     return runDramaStep2(session, language, title, extractedStoryJson, imageStyle, stepOptions);
   });

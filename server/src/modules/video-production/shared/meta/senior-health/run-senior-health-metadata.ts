@@ -9,12 +9,14 @@ import {
 } from '../run-metadata.js';
 import type { VideoMetaOutput } from '../metadata.types.js';
 import {
-  DRAMA_STEP1_MAX_CHARS,
   DRAMA_STEP1_MAX_TRANSCRIPT_MS,
+  computeStep1MaxTranscriptChars,
   extractDramaStep1Transcript,
   getSrtDurationMs,
+  measureStep1PromptShellLength,
 } from '../drama/drama-segments.js';
 import {
+  resolveSeniorHealthStepKey,
   runSeniorHealthStep1,
   runSeniorHealthStep2,
   withSeniorHealthLlmSession,
@@ -29,7 +31,7 @@ export interface RunSeniorHealthMetadataOptions extends Omit<RunMetadataOptions,
 
 /**
  * Senior-health niche metadata (2 steps):
- * 1. First 1h30 of transcript (capped at 28_000 chars) → knowledge / visual DNA extraction
+ * 1. First 1h30 of transcript (chars budget = 31000 - step1 prompt shell) → knowledge / visual DNA
  * 2. extractedHealthJson + title + imageStyle → metadata + thumbnail prompt (no general_background)
  */
 export async function runSeniorHealthMetadata(
@@ -56,10 +58,21 @@ export async function runSeniorHealthMetadata(
     );
   }
 
+  const step1Key = resolveSeniorHealthStepKey(language, 1);
+  const shellLen = await measureStep1PromptShellLength(language, step1Key);
+  const maxChars = computeStep1MaxTranscriptChars(shellLen);
+  if (maxChars === 0) {
+    throw new AppError(
+      `Senior health step 1 prompt shell (${shellLen} chars) exceeds input budget`,
+      400,
+      'PROMPT_TOO_LONG',
+    );
+  }
+
   const content = await fs.readFile(srtPath, 'utf8');
   const blocks = parseSrt(content);
   const durationMs = getSrtDurationMs(blocks);
-  const transcript = extractDramaStep1Transcript(blocks);
+  const transcript = extractDramaStep1Transcript(blocks, maxChars);
 
   if (!transcript) {
     throw new AppError('No SRT transcript content available for senior health metadata', 400, 'INVALID_INPUT');
@@ -71,10 +84,11 @@ export async function runSeniorHealthMetadata(
 
   console.log(
     `[senior-health-metadata] duration=${(durationMs / 60_000).toFixed(1)}min ` +
-      `step1_window=${windowMin.toFixed(1)}min chars=${transcript.length}/${DRAMA_STEP1_MAX_CHARS}`,
+      `step1_window=${windowMin.toFixed(1)}min shell=${shellLen} maxChars=${maxChars} ` +
+      `chars=${transcript.length}/${maxChars}`,
   );
 
-  const parsed = await withSeniorHealthLlmSession(async (session) => {
+  const parsed = await withSeniorHealthLlmSession(async session => {
     const extractedHealthJson = await runSeniorHealthStep1(session, language, transcript, stepOptions);
     return runSeniorHealthStep2(session, language, title, extractedHealthJson, imageStyle, stepOptions);
   });

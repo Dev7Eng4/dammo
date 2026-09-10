@@ -16,10 +16,12 @@ export function mergeChannelVideos(
   uploadedFromFolder: YoutubeChannelVideo[] = [],
 ): YoutubeChannelVideo[] {
   const publishedIds = new Set(published.map(video => video.id));
+  const uploadedFolderIds = new Set(uploadedFromFolder.map(video => video.id));
 
   const publishedWithStatus = published.map(video => ({
     ...video,
     status: 'Published' as const,
+    ...(uploadedFolderIds.has(video.id) ? { localFolder: 'uploads' as const } : {}),
   }));
 
   const uploadedOnly = uploadedFromFolder
@@ -34,5 +36,8 @@ export function mergeChannelVideos(
     .filter(item => item.status !== 'Uploaded')
     .map(prepareItemToVideo);
 
-  return [...publishedWithStatus, ...uploadedOnly, ...prepareVideos];
+  const publishedInUploads = publishedWithStatus.filter(video => video.localFolder === 'uploads');
+  const publishedRemoteOnly = publishedWithStatus.filter(video => video.localFolder !== 'uploads');
+
+  return [...publishedInUploads, ...uploadedOnly, ...prepareVideos, ...publishedRemoteOnly];
 }

@@ -45,6 +45,7 @@ describe('mergeChannelVideos', () => {
     assert.equal(result[0]?.title, 'Synced video');
     assert.equal(result[0]?.viewCount, 100);
     assert.equal(result[0]?.status, 'Published');
+    assert.equal(result[0]?.localFolder, 'uploads');
   });
 
   test('keeps Prepared and Created videos while excluding Uploaded prepare items', () => {
@@ -79,5 +80,59 @@ describe('mergeChannelVideos', () => {
         { id: 'created-id', status: 'Created' },
       ],
     );
+  });
+
+  test('puts remote-only Published videos after uploads and prepare', () => {
+    const published: YoutubeChannelVideo[] = [
+      {
+        id: 'remote-1',
+        title: 'Remote only',
+        url: 'https://www.youtube.com/watch?v=remote-1',
+        viewCount: 10,
+      },
+      {
+        id: 'synced-upload',
+        title: 'Synced with uploads',
+        url: 'https://www.youtube.com/watch?v=synced-upload',
+        viewCount: 20,
+      },
+      {
+        id: 'remote-2',
+        title: 'Another remote',
+        url: 'https://www.youtube.com/watch?v=remote-2',
+        viewCount: 30,
+      },
+    ];
+    const uploadedFromFolder: YoutubeChannelVideo[] = [
+      {
+        id: 'synced-upload',
+        title: 'Upload folder title',
+        url: 'https://www.youtube.com/watch?v=synced-upload',
+      },
+      {
+        id: 'uploads-only',
+        title: 'Uploads only',
+        url: 'https://www.youtube.com/watch?v=uploads-only',
+      },
+    ];
+    const prepare: VideoPrepareItem[] = [
+      {
+        id: 'prep-1',
+        videoId: 'prepared-id',
+        title: 'Prepared video',
+        status: 'Prepared',
+      },
+    ];
+
+    const result = mergeChannelVideos(published, prepare, uploadedFromFolder);
+
+    assert.deepEqual(
+      result.map(video => video.id),
+      ['synced-upload', 'uploads-only', 'prepared-id', 'remote-1', 'remote-2'],
+    );
+    assert.equal(result[0]?.localFolder, 'uploads');
+    assert.equal(result[1]?.localFolder, 'uploads');
+    assert.equal(result[3]?.localFolder, undefined);
+    assert.equal(result[4]?.localFolder, undefined);
   });
 });

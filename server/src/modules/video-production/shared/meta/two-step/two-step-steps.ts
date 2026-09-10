@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../../llm-browser/llm-browser.service.js';
@@ -7,7 +8,11 @@ import { promptsSettingsService } from '../../../../prompts/prompts-settings.ser
 import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
-import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
+import {
+  extractJsonText,
+  formatParseFailureReason,
+  type LlmParseResult,
+} from '../llm-parse-result.js';
 import { persistLlmParseFailure } from '../persist-llm-failure.js';
 import type { TwoStepNicheConfig } from './two-step-niche.config.js';
 import { parseTwoStepStep1Response, parseTwoStepStep2Response } from './two-step-response.js';
@@ -30,7 +35,7 @@ export interface RunTwoStepStepOptions {
   outputDir?: string;
 }
 
-function resolveTwoStepKey(
+export function resolveTwoStepKey(
   language: PromptLanguage,
   config: TwoStepNicheConfig,
   step: TwoStepMetadataStep,
@@ -94,6 +99,15 @@ async function runTwoStepLlmStep<T>(
         pasteStrategy: 'human',
       });
 
+      if (step === 2) {
+        console.log(`[${logLabel}-metadata] step 2 response:\n${response.content}`);
+        await writeFile(
+          new URL('../../../../../../data/prompts/test/t.json', import.meta.url),
+          extractJsonText(response),
+          'utf8',
+        );
+      }
+
       const parsed = parse(response);
       if (parsed.ok) {
         console.log(`[${logLabel}-metadata] step ${step} done (${stepKey})`);
@@ -107,6 +121,7 @@ async function runTwoStepLlmStep<T>(
         attempt,
         reason: lastReason,
         response,
+        responseOnly: step === 2,
       });
       lastDetails = {
         step,

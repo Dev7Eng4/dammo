@@ -11,6 +11,7 @@
     "download:video": "tsx src/scripts/download-video.ts",
     "download:audio": "tsx src/scripts/download-audio.ts",
     "download:transcript": "tsx src/scripts/download-transcript.ts",
+    "strip-srt": "tsx src/scripts/transcripts/strip-srt.ts",
     "create-videos": "tsx src/scripts/create-videos.ts",
     "prepare-videos": "tsx src/scripts/prepare-videos.ts",
     "download-source-videos": "tsx src/scripts/download-source-videos.ts",

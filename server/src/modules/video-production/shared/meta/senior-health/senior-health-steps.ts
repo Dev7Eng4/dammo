@@ -33,7 +33,7 @@ export interface RunSeniorHealthStepOptions {
   outputDir?: string;
 }
 
-function resolveSeniorHealthStepKey(language: PromptLanguage, step: SeniorHealthMetadataStep): string {
+export function resolveSeniorHealthStepKey(language: PromptLanguage, step: SeniorHealthMetadataStep): string {
   const key = `${PROMPT_BASE_KEY}_step_${step}`;
   const prompt = promptsRepository
     .findAll()

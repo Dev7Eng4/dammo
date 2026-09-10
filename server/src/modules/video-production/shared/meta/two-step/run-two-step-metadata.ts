@@ -9,13 +9,15 @@ import {
 } from '../run-metadata.js';
 import type { VideoMetaOutput } from '../metadata.types.js';
 import {
-  DRAMA_STEP1_MAX_CHARS,
   DRAMA_STEP1_MAX_TRANSCRIPT_MS,
+  computeStep1MaxTranscriptChars,
   extractDramaStep1Transcript,
   getSrtDurationMs,
+  measureStep1PromptShellLength,
 } from '../drama/drama-segments.js';
 import { getTwoStepNicheConfig } from './two-step-niche.config.js';
 import {
+  resolveTwoStepKey,
   runTwoStepStep1,
   runTwoStepStep2,
   withTwoStepLlmSession,
@@ -30,7 +32,7 @@ export interface RunTwoStepMetadataOptions extends Omit<RunMetadataOptions, 'onP
 
 /**
  * Shared 2-step niche metadata (philosophy healing, retirement finance, …):
- * 1. First 1h30 of transcript (capped at 28_000 chars) → niche extraction / visual DNA
+ * 1. First 1h30 of transcript (chars budget = 31000 - step1 prompt shell) → niche extraction
  * 2. extractedJson + title + imageStyle → metadata + image prompts
  */
 export async function runTwoStepNicheMetadata(
@@ -66,10 +68,21 @@ export async function runTwoStepNicheMetadata(
     );
   }
 
+  const step1Key = resolveTwoStepKey(language, config, 1);
+  const shellLen = await measureStep1PromptShellLength(language, step1Key);
+  const maxChars = computeStep1MaxTranscriptChars(shellLen);
+  if (maxChars === 0) {
+    throw new AppError(
+      `${config.logLabel} step 1 prompt shell (${shellLen} chars) exceeds input budget`,
+      400,
+      'PROMPT_TOO_LONG',
+    );
+  }
+
   const content = await fs.readFile(srtPath, 'utf8');
   const blocks = parseSrt(content);
   const durationMs = getSrtDurationMs(blocks);
-  const transcript = extractDramaStep1Transcript(blocks);
+  const transcript = extractDramaStep1Transcript(blocks, maxChars);
 
   if (!transcript) {
     throw new AppError(
@@ -85,7 +98,8 @@ export async function runTwoStepNicheMetadata(
 
   console.log(
     `[${config.logLabel}-metadata] duration=${(durationMs / 60_000).toFixed(1)}min ` +
-      `step1_window=${windowMin.toFixed(1)}min chars=${transcript.length}/${DRAMA_STEP1_MAX_CHARS}`,
+      `step1_window=${windowMin.toFixed(1)}min shell=${shellLen} maxChars=${maxChars} ` +
+      `chars=${transcript.length}/${maxChars}`,
   );
 
   const parsed = await withTwoStepLlmSession(config, async session => {

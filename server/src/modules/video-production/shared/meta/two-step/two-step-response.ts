@@ -20,8 +20,9 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
 }
 
-function validateStringArrayLength(value: unknown, min: number, max: number): boolean {
-  if (!isStringArray(value) || value.length < min || value.length > max) return false;
+/** Tags must be a non-empty string array; count is not capped. */
+function hasNonEmptyTags(value: unknown): boolean {
+  if (!isStringArray(value) || value.length < 1) return false;
   return value.every(item => item.trim().length > 0);
 }
 
@@ -48,6 +49,27 @@ function parseJsonObjectResult(response: LlmBrowserResponse): LlmParseResult<Rec
   }
 }
 
+/** Step 1 only: any parseable JSON object — niche schemas vary; empty `{}` is allowed. */
+function parseStep1JsonResult(response: LlmBrowserResponse): LlmParseResult<Record<string, unknown>> {
+  const jsonText = extractJsonText(response);
+  const snippet = snippetFromResponse(response);
+
+  if (!jsonText.trim()) {
+    return { ok: false, reason: 'no JSON found in response', snippet };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(jsonText);
+    if (!isRecord(parsed)) {
+      return { ok: false, reason: 'JSON root is not an object', snippet: truncateSnippet(jsonText) };
+    }
+    return { ok: true, value: parsed };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'JSON.parse failed';
+    return { ok: false, reason: `invalid JSON (${message})`, snippet: truncateSnippet(jsonText) };
+  }
+}
+
 function collectStep2FieldIssues(
   parsed: Record<string, unknown>,
   requireGeneralBackground: boolean,
@@ -59,7 +81,7 @@ function collectStep2FieldIssues(
   } else {
     if (!isNonEmptyString(parsed.metadata.title)) missing.push('metadata.title');
     if (!isNonEmptyString(parsed.metadata.description)) missing.push('metadata.description');
-    if (!validateStringArrayLength(parsed.metadata.tags, 1, 10)) missing.push('metadata.tags');
+    if (!hasNonEmptyTags(parsed.metadata.tags)) missing.push('metadata.tags');
   }
 
   if (!isRecord(parsed.thumbnail)) {
@@ -100,11 +122,11 @@ function pickDetectedNiche(parsed: Record<string, unknown>): string {
   return '';
 }
 
-/** Step 1: niche extraction — any non-empty JSON object. */
+/** Step 1: niche extraction — any parseable JSON object (schemas vary by niche). */
 export function parseTwoStepStep1Response(
   response: LlmBrowserResponse,
 ): LlmParseResult<Record<string, unknown>> {
-  return parseJsonObjectResult(response);
+  return parseStep1JsonResult(response);
 }
 
 /**

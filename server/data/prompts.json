@@ -1,6 +1,78 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_test",
+      "baseKey": "metadata_test",
+      "language": "ja",
+      "name": "Metadata Test",
+      "category": "meta",
+      "niche": "b26f9182-9962-4749-9e00-ef0c2d6c8eae",
+      "createdAt": "2026-09-06T08:46:59.691Z",
+      "updatedAt": "2026-09-06T08:46:59.711Z",
+      "steps": [
+        {
+          "id": "4fd21a4c-c3fe-4012-b8af-839336ba4cb0",
+          "key": "metadata_test_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "6fe13191-2d53-48d1-bc24-e198262b60a3",
+          "key": "metadata_test_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_cau_chuyen",
+      "baseKey": "metadata_cau_chuyen",
+      "language": "ja",
+      "name": "Metadata Câu Chuyện",
+      "category": "meta",
+      "niche": "e3f2ca32-964f-47a0-b0a9-3730b082d424",
+      "createdAt": "2026-09-05T18:12:31.466Z",
+      "updatedAt": "2026-09-06T07:42:20.594Z",
+      "steps": [
+        {
+          "id": "791b6879-7053-43b9-95e6-08f329b267cd",
+          "key": "metadata_cau_chuyen_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "250c5e78-0a41-41ef-a36c-13df4e3c57f1",
+          "key": "metadata_cau_chuyen_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_cuoc_song_nguoi_gia",
+      "baseKey": "metadata_cuoc_song_nguoi_gia",
+      "language": "ja",
+      "name": "Metadata Cuộc Sống Người Già",
+      "category": "meta",
+      "niche": "68020000-7a54-4cbd-abf8-b00b9587c0f8",
+      "createdAt": "2026-09-05T17:35:23.957Z",
+      "updatedAt": "2026-09-05T17:35:23.973Z",
+      "steps": [
+        {
+          "id": "df9d97c5-aa1e-4cbc-8651-95d13360fa7c",
+          "key": "metadata_cuoc_song_nguoi_gia_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "0a5ae174-13e8-4cdf-b46c-d716c3f9e93f",
+          "key": "metadata_cuoc_song_nguoi_gia_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_thuc_pham",
       "baseKey": "metadata_thuc_pham",
       "language": "ja",

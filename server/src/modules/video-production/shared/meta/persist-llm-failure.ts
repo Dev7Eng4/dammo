@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import { extractJsonText } from './llm-parse-result.js';
 
 export interface PersistLlmParseFailureInput {
   outputDir?: string;
@@ -8,6 +9,7 @@ export interface PersistLlmParseFailureInput {
   attempt: number;
   reason: string;
   response: LlmBrowserResponse;
+  responseOnly?: boolean;
 }
 
 function sanitizeLabel(label: string): string {
@@ -44,7 +46,11 @@ export async function persistLlmParseFailure(
       codeBlocks: input.response.codeBlocks,
       elapsedMs: input.response.elapsedMs,
     };
-    await fs.writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8');
+    await fs.writeFile(
+      filePath,
+      input.responseOnly ? extractJsonText(input.response) : JSON.stringify(payload, null, 2),
+      'utf8',
+    );
     console.warn(`[llm-debug] saved parse failure → ${filePath}`);
     return filePath;
   } catch (err) {
