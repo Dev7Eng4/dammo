@@ -10,10 +10,12 @@ import {
   updatePrompt,
   updatePromptSettings,
 } from '../api/prompts';
+import { PageHeader, PageShell } from '../components/layout';
 import { PromptEditorPanel } from '../components/prompts/PromptEditorPanel';
 import { PromptPlaygroundPanel } from '../components/prompts/PromptPlaygroundPanel';
 import { PromptsListPanel } from '../components/prompts/PromptsListPanel';
 import { useAbortableEffect, useDebouncedValue } from '../hooks';
+import { Lightbulb } from 'lucide-react';
 import type {
   ImageBrowserProvider,
   PlaygroundProvider,
@@ -691,7 +693,15 @@ export function PromptsPage() {
   }
 
   return (
-    <div className="-m-6 flex h-svh overflow-hidden">
+    <PageShell fullBleed className="overflow-hidden gap-0 !p-0">
+      <div className="shrink-0 border-b border-border px-6 py-4">
+        <PageHeader
+          title="Prompt"
+          subtitle="Quản lý và thử nghiệm prompt theo bước"
+          icon={Lightbulb}
+        />
+      </div>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
       <PromptsListPanel
         prompts={prompts}
         loading={listLoading}
@@ -756,6 +766,7 @@ export function PromptsPage() {
         }}
         onRun={handleRun}
       />
-    </div>
+      </div>
+    </PageShell>
   );
 }

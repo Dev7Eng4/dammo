@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Clapperboard } from 'lucide-react';
 import { fetchRenderJobs } from '../api/renderQueue';
+import { PageHeader, PageShell } from '../components/layout';
 import { RenderJobDetailPanel } from '../components/render-queue/RenderJobDetailPanel';
 import { RenderQueueTable } from '../components/render-queue/RenderQueueTable';
 import { RenderQueueToolbar } from '../components/render-queue/RenderQueueToolbar';
@@ -45,16 +47,24 @@ export function RenderQueuePage() {
 
   if (error) {
     return (
-      <div className="card-surface m-6 p-6 text-center">
-        <p className="text-danger">{error}</p>
-      </div>
+      <PageShell>
+        <div className="card-surface p-6 text-center">
+          <p className="text-danger">{error}</p>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="-m-6 flex h-svh flex-col lg:flex-row">
+    <PageShell fullBleed className="lg:flex-row">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
+          <PageHeader
+            title="Hàng đợi render"
+            subtitle="Theo dõi tiến trình render video"
+            icon={Clapperboard}
+            className="mb-4"
+          />
           <div className="border-b border-border pb-4">
             <RenderQueueToolbar actionsDisabled />
           </div>
@@ -90,6 +100,6 @@ export function RenderQueuePage() {
           </div>
         </>
       ) : null}
-    </div>
+    </PageShell>
   );
 }

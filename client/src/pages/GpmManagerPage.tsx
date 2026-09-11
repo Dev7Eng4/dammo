@@ -17,9 +17,10 @@ import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
 import { GpmGroupsToolbar } from '../components/gpm-manager/GpmGroupsToolbar';
 import { GpmProfilesTable } from '../components/gpm-manager/GpmProfilesTable';
 import { GpmProfilesToolbar } from '../components/gpm-manager/GpmProfilesToolbar';
-import { Button, Modal, useToast } from '../components/ui';
+import { PageHeader, PageShell } from '../components/layout';
+import { Button, Modal, PageTabs, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
-import { cn } from '../lib/cn';
+import { UserPlus } from 'lucide-react';
 import type {
   GpmGroup,
   GpmProfile,
@@ -288,30 +289,20 @@ export function GpmManagerPage() {
   }
 
   return (
-    <div className="-m-6 flex h-svh flex-col">
+    <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mb-4 flex gap-1 border-b border-border">
-            {(
-              [
-                { id: 'profiles' as const, label: 'Hồ sơ' },
-                { id: 'groups' as const, label: 'Nhóm' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
-                  activeTab === tab.id
-                    ? 'border-primary-400 text-primary-400'
-                    : 'border-transparent text-neutral-400 hover:text-neutral-200',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
+        <div className="flex-1 overflow-y-auto">
+          <div className="mb-4 space-y-4">
+            <PageHeader title="Quản lý GPM" subtitle="Hồ sơ và nhóm trình duyệt" icon={UserPlus} />
+            <PageTabs
+              variant="underline"
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as 'profiles' | 'groups')}
+              items={[
+                { id: 'profiles', label: 'Hồ sơ' },
+                { id: 'groups', label: 'Nhóm' },
+              ]}
+            />
           </div>
 
           {activeTab === 'profiles' ? (
@@ -565,6 +556,6 @@ export function GpmManagerPage() {
           Xóa nhóm &quot;{selectedGroup?.name}&quot;? Các profile đang thuộc nhóm này sẽ bị gỡ khỏi nhóm.
         </p>
       </Modal>
-    </div>
+    </PageShell>
   );
 }

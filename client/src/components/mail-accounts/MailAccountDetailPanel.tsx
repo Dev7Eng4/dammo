@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Input, Textarea } from '../ui';
+import { Input, Textarea } from '../ui';
 import { PlatformLinkCell } from './PlatformLinkCell';
 import type { MailAccount, PlatformLinkStatus } from '../../types/mailAccount';
 
@@ -171,28 +171,6 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
               value={account.notes ?? ''}
               className="text-sm text-neutral-300"
             />
-          </div>
-        </div>
-
-        <div className="border-t border-border p-4 space-y-2">
-          <Button className="w-full rounded-lg">
-            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-              <path d="m15 5 4 4" />
-            </svg>
-            Sửa chi tiết
-          </Button>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outlined" size="sm" className="rounded-lg">
-              Nhân bản
-            </Button>
-            <Button variant="outlined" size="sm" className="rounded-lg text-danger border-danger/30 hover:bg-danger/10">
-              <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              Lưu trữ
-            </Button>
           </div>
         </div>
       </div>

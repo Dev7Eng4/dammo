@@ -1,68 +1,39 @@
-import { Button } from '../ui';
+import { FileSpreadsheet, FolderKanban, Mail, Play, Clapperboard } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Button } from '../ui'
 
 const actions = [
-  { label: 'Thêm email', icon: 'mail' },
-  { label: 'Thêm kênh YT', icon: 'youtube' },
-  { label: 'Dự án mới', icon: 'project' },
-  { label: 'Nhập Excel', icon: 'excel' },
-];
-
-function ActionIcon({ icon }: { icon: string }) {
-  const className = 'size-5 text-neutral-400';
-  if (icon === 'mail') {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="2" y="4" width="20" height="16" rx="2" />
-        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-      </svg>
-    );
-  }
-  if (icon === 'youtube') {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
-        <path d="m10 15 5-3-5-3z" />
-      </svg>
-    );
-  }
-  if (icon === 'project') {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-        <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-      <path d="M14 2v6h6" />
-    </svg>
-  );
-}
+  { label: 'Thêm email', to: '/mail-accounts', icon: Mail },
+  { label: 'Thêm kênh YT', to: '/youtube-channels', icon: Clapperboard },
+  { label: 'Video Factory', to: '/video-factory', icon: FolderKanban },
+  { label: 'Tài nguyên', to: '/assets', icon: FileSpreadsheet },
+]
 
 export function QuickActions() {
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Thao tác nhanh</p>
+      <p className="text-sm font-medium text-muted-foreground">Thao tác nhanh</p>
       <div className="grid grid-cols-2 gap-2">
-        {actions.map((action) => (
-          <button
-            key={action.label}
-            type="button"
-            className="flex flex-col items-center gap-2 rounded-xl border border-border bg-transparent px-3 py-4 text-xs text-neutral-400 transition-colors hover:border-neutral-600 hover:bg-surface-elevated hover:text-neutral-200"
-          >
-            <ActionIcon icon={action.icon} />
-            {action.label}
-          </button>
-        ))}
+        {actions.map((action) => {
+          const Icon = action.icon
+          return (
+            <Link
+              key={action.label}
+              to={action.to}
+              className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface px-3 py-3.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-surface-elevated hover:text-foreground"
+            >
+              <Icon className="size-5" />
+              {action.label}
+            </Link>
+          )
+        })}
       </div>
-      <Button className="w-full rounded-lg bg-info text-white hover:bg-info/90">
-        <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M8 5v14l11-7z" />
-        </svg>
-        BẮT ĐẦU HÀNG ĐỢI RENDER
+      <Button asChild variant="primary" className="w-full">
+        <Link to="/render-queue">
+          <Play className="size-4" />
+          Bắt đầu hàng đợi render
+        </Link>
       </Button>
     </div>
-  );
+  )
 }

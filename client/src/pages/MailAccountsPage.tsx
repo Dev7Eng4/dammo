@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { deleteMailAccount, exportMailAccountsExcel, fetchMailAccount, fetchMailAccounts } from '../api/mailAccounts';
+import { PageHeader, PageShell } from '../components/layout';
 import { AddMailModal } from '../components/mail-accounts/AddMailModal';
 import { DeleteMailAccountConfirmModal } from '../components/mail-accounts/DeleteMailAccountConfirmModal';
 import { MailAccountDetailPanel } from '../components/mail-accounts/MailAccountDetailPanel';
@@ -8,6 +9,7 @@ import { MailAccountsTable } from '../components/mail-accounts/MailAccountsTable
 import { MailAccountsToolbar } from '../components/mail-accounts/MailAccountsToolbar';
 import { useToast } from '../components/ui';
 import { useDebouncedValue, useFetchedItem, usePaginatedList } from '../hooks';
+import { Mail } from 'lucide-react';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -144,9 +146,15 @@ export function MailAccountsPage() {
   }
 
   return (
-    <div className="-m-6 flex h-svh flex-col lg:flex-row">
+    <PageShell fullBleed className="lg:flex-row">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
+          <PageHeader
+            title="Email"
+            subtitle="Quản lý tài khoản mail và liên kết nền tảng"
+            icon={Mail}
+            className="mb-4"
+          />
           <MailAccountsToolbar
             total={list.total}
             search={search}
@@ -232,6 +240,6 @@ export function MailAccountsPage() {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={() => void handleConfirmDelete()}
       />
-    </div>
+    </PageShell>
   );
 }

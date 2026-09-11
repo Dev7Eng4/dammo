@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Input } from '../ui';
+import { Input } from '../ui';
 import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm';
 import type { Niche } from '../../types/niche';
 import { formatChannelLanguageLabel, type YoutubeChannel } from '../../types/youtubeChannel';
@@ -123,21 +123,12 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
           <MonetizationPill status={channel.monetizationStatus} />
         </div>
 
-        <div className="flex gap-2 px-4 pt-3">
-          <Button variant="outlined" size="sm" className="flex-1 rounded-lg">
-            Edit
-          </Button>
-          <Button size="sm" className="flex-1 rounded-lg">
-            Sync Now
-          </Button>
-        </div>
-
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
           <div>
-            <SectionTitle>Configuration</SectionTitle>
+            <SectionTitle>Cấu hình</SectionTitle>
             <div className="space-y-3">
               <div>
-                <FieldLabel>Linked Mail Account</FieldLabel>
+                <FieldLabel>Email liên kết</FieldLabel>
                 <div className="relative">
                   <Input
                     readOnly
@@ -156,21 +147,21 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
                 />
               </div>
               <div>
-                <FieldLabel>Language</FieldLabel>
+                <FieldLabel>Ngôn ngữ</FieldLabel>
                 <Input readOnly value={formatChannelLanguageLabel(channel.language)} className="h-9 rounded-lg text-sm" />
               </div>
             </div>
           </div>
 
           <div>
-            <SectionTitle>Operations</SectionTitle>
+            <SectionTitle>Vận hành</SectionTitle>
             <div className="space-y-3">
               <div>
-                <FieldLabel>Upload Schedule</FieldLabel>
+                <FieldLabel>Lịch tải lên</FieldLabel>
                 <Input readOnly value={formatChannelUploadSchedule(channel)} className="h-9 rounded-lg text-sm" />
               </div>
               <div>
-                <FieldLabel>Source Channels</FieldLabel>
+                <FieldLabel>Kênh nguồn</FieldLabel>
                 <Input
                   readOnly
                   value={
@@ -184,7 +175,7 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
                 />
               </div>
               <div>
-                <FieldLabel>Content Project</FieldLabel>
+                <FieldLabel>Dự án nội dung</FieldLabel>
                 <Input readOnly value={channel.contentProjectId} className="h-9 rounded-lg text-sm font-mono" />
               </div>
             </div>
@@ -192,9 +183,9 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
 
           {channel.notes ? (
             <div>
-              <SectionTitle>Status &amp; Notes</SectionTitle>
+              <SectionTitle>Ghi chú</SectionTitle>
               <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">
-                <p className="text-xs font-medium text-warning">Copyright Risk Note</p>
+                <p className="text-xs font-medium text-warning">Cảnh báo bản quyền</p>
                 <p className="mt-1 text-xs text-neutral-300">{channel.notes}</p>
               </div>
             </div>

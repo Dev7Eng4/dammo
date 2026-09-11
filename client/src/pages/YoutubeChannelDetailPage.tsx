@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { isAbortError } from '../api/http';
 import { fetchYoutubeChannel, fetchYoutubeChannelVideos, fetchYoutubeChannelPendingVideos, syncYoutubeChannelVideos, deleteYoutubeChannelVideos } from '../api/youtubeChannels';
+import { PageShell } from '../components/layout';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { DeleteVideosConfirmModal } from '../components/youtube-channels/DeleteVideosConfirmModal';
@@ -293,21 +294,21 @@ export function YoutubeChannelDetailPage() {
 
   if (!id || notFound) {
     return (
-      <div className='-m-6 flex h-svh flex-col'>
-        <div className='flex flex-1 flex-col items-center justify-center p-6 text-center'>
+      <PageShell fullBleed>
+        <div className='flex flex-1 flex-col items-center justify-center text-center'>
           <p className='text-sm text-neutral-400'>Không tìm thấy kênh YouTube.</p>
           <Link to='/youtube-channels' className='mt-3 text-sm text-secondary-400 hover:text-secondary-300'>
             Quay lại danh sách kênh YouTube
           </Link>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className='-m-6 flex h-svh flex-col lg:flex-row'>
+    <PageShell fullBleed className='lg:flex-row'>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='flex-1 overflow-y-auto'>
           {loading || !channel ? (
             <YoutubeChannelDetailHeaderSkeleton />
           ) : (
@@ -449,6 +450,6 @@ export function YoutubeChannelDetailPage() {
           onClose={() => setRecreateMetadataOpen(false)}
         />
       ) : null}
-    </div>
+    </PageShell>
   );
 }

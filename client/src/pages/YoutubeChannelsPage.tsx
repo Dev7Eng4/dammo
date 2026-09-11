@@ -3,19 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
-import { fetchYoutubeChannels, fetchYoutubeChannelStats, deleteAllUploadedVideos, deleteYoutubeChannel } from '../api/youtubeChannels';
+import { fetchYoutubeChannels, deleteAllUploadedVideos, deleteYoutubeChannel } from '../api/youtubeChannels';
+import { PageHeader, PageShell } from '../components/layout';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
 import { DeleteUploadedVideosConfirmModal } from '../components/youtube-channels/DeleteUploadedVideosConfirmModal';
 import { DeleteYoutubeChannelConfirmModal } from '../components/youtube-channels/DeleteYoutubeChannelConfirmModal';
-import { YoutubeChannelStatCards } from '../components/youtube-channels/YoutubeChannelStatCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
 import { useToast } from '../components/ui';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
+import { Clapperboard } from 'lucide-react';
 import type { Niche } from '../types/niche';
-import type { YoutubeChannel, YoutubeChannelStats, YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../types/youtubeChannel';
+import type { YoutubeChannel, YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../types/youtubeChannel';
 import type { SourceChannel } from '../types/sourceChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 
@@ -30,8 +31,6 @@ export function YoutubeChannelsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
-  const [stats, setStats] = useState<YoutubeChannelStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<YoutubeChannelTypeFilter>('all');
   const [monetizationFilter, setMonetizationFilter] = useState<YoutubeMonetizationFilter>('all');
@@ -95,20 +94,6 @@ export function YoutubeChannelsPage() {
           : selectedIds.size > 1
             ? `Tải video lên cho ${selectedIds.size} kênh đã chọn`
             : undefined;
-
-  useAbortableEffect(async signal => {
-    setStatsLoading(true);
-
-    try {
-      const data = await fetchYoutubeChannelStats({ signal });
-      setStats(data);
-    } catch {
-      if (signal.aborted) return;
-      setStats(null);
-    } finally {
-      if (!signal.aborted) setStatsLoading(false);
-    }
-  }, []);
 
   useAbortableEffect(
     async signal => {
@@ -197,10 +182,6 @@ export function YoutubeChannelsPage() {
     list.markLoading();
     list.resetPage();
     setChannelsRefreshKey(key => key + 1);
-
-    void fetchYoutubeChannelStats()
-      .then(setStats)
-      .catch(() => setStats(null));
   }
 
   function handleEditSuccess(_updated?: YoutubeChannel) {
@@ -208,10 +189,6 @@ export function YoutubeChannelsPage() {
     setEditingChannel(null);
     list.markLoading();
     setChannelsRefreshKey(key => key + 1);
-
-    void fetchYoutubeChannelStats()
-      .then(setStats)
-      .catch(() => setStats(null));
   }
 
   function handleEditChannel(channel: YoutubeChannel) {
@@ -385,11 +362,15 @@ export function YoutubeChannelsPage() {
   }
 
   return (
-    <div className='-m-6 flex h-svh flex-col'>
+    <PageShell fullBleed>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
-        <div className='flex-1 overflow-y-auto p-6'>
-          {/* <YoutubeChannelStatCards data={stats} loading={statsLoading} /> */}
-          <div className='mt-4 border-b border-border pb-4'>
+        <div className='flex-1 overflow-y-auto'>
+          <div className="sticky top-0 z-20 -mx-0 mb-4 space-y-4 border-b border-border bg-background/95 pb-4 backdrop-blur-sm">
+            <PageHeader
+              title="Kênh YouTube"
+              subtitle="Quản lý kênh, tạo và tải video lên"
+              icon={Clapperboard}
+            />
             <YoutubeChannelsToolbar
               typeFilter={typeFilter}
               monetizationFilter={monetizationFilter}
@@ -410,7 +391,7 @@ export function YoutubeChannelsPage() {
             />
           </div>
           {list.error ? <p className='mt-2 text-xs text-danger'>Không thể tải danh sách kênh YouTube.</p> : null}
-          <div className='mt-4 card-surface px-5 pt-3 pb-4'>
+          <div className='card-surface px-5 pt-3 pb-4'>
             <YoutubeChannelsTable
               channels={list.items}
               sources={sources}
@@ -512,6 +493,6 @@ export function YoutubeChannelsPage() {
           onSuccess={handleEditSuccess}
         />
       ) : null}
-    </div>
+    </PageShell>
   );
 }

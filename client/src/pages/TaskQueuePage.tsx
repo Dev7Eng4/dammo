@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ListTodo } from 'lucide-react';
+import { PageHeader, PageShell } from '../components/layout';
 import { TaskJobCard } from '../components/task-queue/TaskJobCard';
 import { TaskJobDetailDrawer } from '../components/task-queue/TaskJobDetailDrawer';
 import { TaskQueuePageToolbar } from '../components/task-queue/TaskQueuePageToolbar';
@@ -98,9 +100,15 @@ export function TaskQueuePage() {
   }
 
   return (
-    <div className="-m-6 flex h-svh flex-col">
+    <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
+          <PageHeader
+            title="Hàng đợi task"
+            subtitle="Theo dõi và quản lý các công việc đang chạy"
+            icon={ListTodo}
+            className="mb-4"
+          />
           <TaskQueuePageToolbar
             activeCount={activeCount}
             totalCount={jobs.length}
@@ -141,6 +149,6 @@ export function TaskQueuePage() {
         job={selectedJob}
         onClose={handleClosePanel}
       />
-    </div>
+    </PageShell>
   );
 }

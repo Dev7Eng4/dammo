@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset, type PrepareKeyColor } from '../api/assets';
+import { PageHeader, PageShell } from '../components/layout';
 import { CelebritiesPanel } from '../components/celebrities/CelebritiesPanel';
 import { SmallVideoPanel } from '../components/small-video-groups/SmallVideoPanel';
-import { Button, DataTable, Modal, useToast } from '../components/ui';
+import { Button, DataTable, Modal, PageTabs, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
-import { cn } from '../lib/cn';
+import { Image } from 'lucide-react';
 
 const TABS: { kind: AssetKind; label: string; accept: string }[] = [
   { kind: 'audioBar', label: 'Phổ âm thanh', accept: '.mp4,.mov,video/mp4,video/quicktime' },
@@ -238,43 +239,22 @@ export function AssetsPage() {
   }
 
   return (
-    <div className='space-y-6'>
-      <div>
-        <h1 className='text-xl font-semibold text-neutral-100'>Assets</h1>
-        <p className='mt-1 text-sm text-neutral-400'>
-          Quản lý file phổ âm thanh, phông chữ, video stock, background footage và người nổi tiếng.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Tài nguyên"
+        subtitle="Quản lý file phổ âm thanh, phông chữ, video stock, background footage và người nổi tiếng."
+        icon={Image}
+      />
 
-      <div className='flex flex-wrap gap-2 border-b border-border pb-3'>
-        {TABS.map(tab => (
-          <button
-            key={tab.kind}
-            type='button'
-            onClick={() => setActiveTabId(tab.kind)}
-            className={cn(
-              'rounded-lg px-3 py-1.5 text-sm transition-colors',
-              activeTabId === tab.kind
-                ? 'bg-primary-500/15 text-primary-300'
-                : 'text-neutral-400 hover:bg-surface-elevated hover:text-neutral-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-        <button
-          type='button'
-          onClick={() => setActiveTabId('celebrities')}
-          className={cn(
-            'rounded-lg px-3 py-1.5 text-sm transition-colors',
-            isCelebritiesTab
-              ? 'bg-primary-500/15 text-primary-300'
-              : 'text-neutral-400 hover:bg-surface-elevated hover:text-neutral-200',
-          )}
-        >
-          Người nổi tiếng
-        </button>
-      </div>
+      <PageTabs
+        variant="pill"
+        value={activeTabId}
+        onValueChange={(value) => setActiveTabId(value as AssetsPageTab)}
+        items={[
+          ...TABS.map((tab) => ({ id: tab.kind, label: tab.label })),
+          { id: 'celebrities', label: 'Người nổi tiếng' },
+        ]}
+      />
 
       {isCelebritiesTab ? (
         <CelebritiesPanel />
@@ -533,6 +513,6 @@ export function AssetsPage() {
       ) : null}
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

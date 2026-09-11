@@ -24,7 +24,7 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
 
   if (job.status === 'completed') {
     return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-foreground">
         <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
           <path
             fillRule="evenodd"
@@ -38,7 +38,7 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
 
   if (job.type === 'upload_video') {
     return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-foreground">
         <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
           <path d="M10 3v10" />
           <path d="M6 7l4-4 4 4" />
@@ -50,7 +50,7 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
 
   if (job.type === 'create_video') {
     return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-500/15 text-foreground">
         <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
           <path d="M3.25 4A2.25 2.25 0 001 6.25v7.5A2.25 2.25 0 003.25 16h13.5A2.25 2.25 0 0019 13.75v-7.5A2.25 2.25 0 0016.75 4H3.25zM4.5 7.75v4.5l6-2.25-6-2.25z" />
         </svg>
@@ -71,7 +71,7 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
   }
 
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-800 text-neutral-300">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
       <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
         <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm0 2h12v10H4V5z" />
       </svg>

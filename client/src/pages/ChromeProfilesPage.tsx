@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { fetchChromeProfiles, openChromeProfile, resetSubChromeProfiles, setMainChromeProfile, setSubChromeProfile } from '../api/chromeProfiles';
+import { PageHeader, PageShell } from '../components/layout';
 import { AddChromeProfileModal } from '../components/chrome-profiles/AddChromeProfileModal';
 import { ChromeProfilesTable } from '../components/chrome-profiles/ChromeProfilesTable';
 import { ChromeProfilesToolbar } from '../components/chrome-profiles/ChromeProfilesToolbar';
@@ -7,6 +8,7 @@ import { EditChromeProfileModal } from '../components/chrome-profiles/EditChrome
 import { useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { ChromeProfile, ChromeProfileRole } from '../types/chromeProfile';
+import { Globe } from 'lucide-react';
 
 export function ChromeProfilesPage() {
   const { toast } = useToast();
@@ -126,9 +128,15 @@ export function ChromeProfilesPage() {
   }
 
   return (
-    <div className="-m-6 flex h-svh flex-col">
+    <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
+          <PageHeader
+            title="Hồ sơ Chrome"
+            subtitle="Quản lý và mở hồ sơ trình duyệt Chrome"
+            icon={Globe}
+            className="mb-4"
+          />
           <div className="border-b border-border pb-4">
             <ChromeProfilesToolbar
               count={profiles.length}
@@ -174,6 +182,6 @@ export function ChromeProfilesPage() {
         onClose={() => setShowEditModal(false)}
         onSuccess={handleEditSuccess}
       />
-    </div>
+    </PageShell>
   );
 }

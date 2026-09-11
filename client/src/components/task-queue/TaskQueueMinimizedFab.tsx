@@ -24,7 +24,7 @@ export function TaskQueueMinimizedFab({ activeCount, onClick }: TaskQueueMinimiz
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-50 flex size-12 items-center justify-center rounded-full border border-border bg-surface-elevated text-neutral-100 shadow-lg transition-colors hover:bg-neutral-800"
+      className="fixed bottom-6 right-6 z-50 flex size-12 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground shadow-lg transition-colors hover:bg-muted"
       aria-label={
         activeCount > 0
           ? `Mở hàng đợi công việc, ${activeCount} đang chạy`
@@ -33,7 +33,7 @@ export function TaskQueueMinimizedFab({ activeCount, onClick }: TaskQueueMinimiz
     >
       <TaskQueueStackIcon className="size-5" />
       {activeCount > 0 ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-400 px-1 text-[10px] font-semibold leading-none text-white">
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1 text-[10px] font-semibold leading-none text-on-primary">
           {activeCount > 99 ? '99+' : activeCount}
         </span>
       ) : null}

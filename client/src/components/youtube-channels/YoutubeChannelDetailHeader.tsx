@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui';
 import { type YoutubeChannel } from '../../types/youtubeChannel';
-import { ChannelStatusPill } from './ChannelStatusPill';
-import { ChannelTypePill } from './ChannelTypePill';
-import { MonetizationPill } from './MonetizationPill';
 
 interface YoutubeChannelDetailHeaderProps {
   channel: YoutubeChannel;
@@ -28,7 +25,8 @@ interface YoutubeChannelDetailHeaderProps {
   onRecreateMetadata?: () => void;
 }
 
-function formatVideosFetchedAt(value: string): string {
+function formatVideosFetchedAt(value?: string | null): string {
+  if (!value) return 'chưa đồng bộ';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('vi-VN');
@@ -42,7 +40,6 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
 export function YoutubeChannelDetailHeader({
   channel,
   syncing,
-  syncError,
   videosFetchedAt,
   creatingVideo,
   canCreateVideo,
@@ -53,7 +50,6 @@ export function YoutubeChannelDetailHeader({
   canUploadVideos,
   uploadDisabledReason,
   onSync,
-  onEdit,
   onCreateVideo,
   onPrepareVideo,
   onUploadVideos,
@@ -156,12 +152,6 @@ export function YoutubeChannelDetailHeader({
           ) : null}
         </div>
       </div>
-
-      {/* <div className='flex flex-wrap gap-2'>
-        <ChannelStatusPill status={channel.status} />
-        <MonetizationPill status={channel.monetizationStatus} />
-        <ChannelTypePill type={channel.type} />
-      </div> */}
     </div>
   );
 }

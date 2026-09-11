@@ -1,9 +1,9 @@
 import { cn } from '../../lib/cn'
 
 const toneStyles = {
-  primary: 'bg-primary-400',
-  secondary: 'bg-secondary-400',
-  tertiary: 'bg-tertiary-400',
+  primary: 'bg-primary-500',
+  secondary: 'bg-secondary-500',
+  tertiary: 'bg-tertiary-500',
   neutral: 'bg-neutral-400',
 } as const
 
@@ -30,7 +30,7 @@ export function Progress({
     <div className={cn('w-full', className)}>
       {label ? <p className="text-label mb-2">{label}</p> : null}
       <div
-        className="h-2 w-full overflow-hidden rounded-full bg-neutral-800"
+        className="h-2 w-full overflow-hidden rounded-full bg-muted"
         role="progressbar"
         aria-valuenow={value}
         aria-valuemin={0}

@@ -157,7 +157,7 @@ export function YoutubeChannelVideosTable({
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
-      onRowClick={video => onToggleRow(video.id)}
+      onRowClick={onToggleRow ? (video) => onToggleRow(video.id) : undefined}
     />
   );
 }

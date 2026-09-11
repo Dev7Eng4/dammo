@@ -7,6 +7,8 @@ import {
   deleteSourceChannel,
   fetchSourceChannelUsage,
 } from '../api/sourceChannels';
+import { PageHeader, PageShell } from '../components/layout';
+import { BookOpen } from 'lucide-react';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddNicheModal } from '../components/source-channels/AddNicheModal';
 import { AddSourceChannelModal } from '../components/source-channels/AddSourceChannelModal';
@@ -337,9 +339,15 @@ export function SourceChannelsPage() {
   }
 
   return (
-    <div className="-m-6 flex h-svh flex-col">
+    <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
+          <PageHeader
+            title="Kênh nguồn"
+            subtitle="Nguồn nội dung theo nền tảng và niche"
+            icon={BookOpen}
+            className="mb-4"
+          />
           <SourceChannelsToolbar
             platformFilter={platformFilter}
             purposeFilter={purposeFilter}
@@ -418,6 +426,6 @@ export function SourceChannelsPage() {
         onClose={closeDeleteModal}
         onConfirmDelete={handleConfirmDelete}
       />
-    </div>
+    </PageShell>
   );
 }

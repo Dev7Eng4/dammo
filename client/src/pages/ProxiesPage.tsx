@@ -4,11 +4,11 @@ import {
   exportProxiesExcel,
   extendProxy,
   fetchProxies,
-  fetchProxyStats,
   importProxiesExcel,
   removeFailedProxies,
   testProxy,
 } from '../api/proxies';
+import { PageShell } from '../components/layout';
 import { AddProxyModal } from '../components/proxy-manager/AddProxyModal';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { ProxyExpiryWarningModal } from '../components/proxy-manager/ProxyExpiryWarningModal';
@@ -16,10 +16,9 @@ import { ProxyPageHeader } from '../components/proxy-manager/ProxyPageHeader';
 import { ProxyProvidersTab } from '../components/proxy-manager/ProxyProvidersTab';
 import { ProxiesTable } from '../components/proxy-manager/ProxiesTable';
 import { ProxiesToolbar } from '../components/proxy-manager/ProxiesToolbar';
-import { ProxyStatCards } from '../components/proxy-manager/ProxyStatCards';
 import { Button, Input, Modal, useToast } from '../components/ui';
-import { useAbortableEffect, usePaginatedList } from '../hooks';
-import type { Proxy, ProxyFilter, ProxyStats, ProxyTab } from '../types/proxy';
+import { usePaginatedList } from '../hooks';
+import type { Proxy, ProxyFilter, ProxyTab } from '../types/proxy';
 
 function getExpiryEndMs(expiresAt?: string): number | null {
   if (!expiresAt) return null;
@@ -42,9 +41,6 @@ function canDeleteProxy(proxy: Proxy, nowMs = Date.now()): boolean {
 export function ProxiesPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<ProxyTab>('monitoring');
-  const [stats, setStats] = useState<ProxyStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<ProxyFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -69,24 +65,8 @@ export function ProxiesPage() {
     onFetched: () => setSelectedIds(new Set()),
   });
 
-  useAbortableEffect(
-    async signal => {
-      setStatsLoading(true);
-      try {
-        const data = await fetchProxyStats({ signal });
-        setStats(data);
-      } catch {
-        setStats(null);
-      } finally {
-        if (!signal.aborted) setStatsLoading(false);
-      }
-    },
-    [statsRefreshKey],
-  );
-
   function refreshAll() {
     setListRefreshKey(key => key + 1);
-    setStatsRefreshKey(key => key + 1);
     list.refresh();
   }
 
@@ -268,14 +248,13 @@ export function ProxiesPage() {
   }
 
   return (
-    <div className='-m-6 flex h-svh flex-col'>
+    <PageShell fullBleed>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='flex-1 overflow-y-auto'>
           <ProxyPageHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
           {activeTab === 'monitoring' ? (
             <>
-              {/* <ProxyStatCards data={stats} loading={statsLoading} /> */}
               <ProxiesToolbar
                 total={list.total}
                 filter={filter}
@@ -425,6 +404,6 @@ export function ProxiesPage() {
       </Modal>
 
       <ProxyExpiryWarningModal />
-    </div>
+    </PageShell>
   );
 }

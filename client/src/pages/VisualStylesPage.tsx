@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { deleteVisualStyle, fetchVisualStyles } from '../api/visualStyles';
+import { PageHeader, PageShell } from '../components/layout';
 import { AddVisualStyleModal } from '../components/visual-styles/AddVisualStyleModal';
 import { EditVisualStyleModal } from '../components/visual-styles/EditVisualStyleModal';
 import { VisualStylesTable } from '../components/visual-styles/VisualStylesTable';
 import { Button, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { VisualStyle } from '../types/visualStyle';
+import { Palette } from 'lucide-react';
 
 export function VisualStylesPage() {
   const { toast } = useToast();
@@ -64,13 +66,12 @@ export function VisualStylesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-neutral-100">Phong cách hình ảnh</h1>
-        <p className="mt-1 text-sm text-neutral-400">
-          Quản lý preset phong cách hình ảnh (anime, chibi, cinematic, ...).
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Phong cách hình ảnh"
+        subtitle="Quản lý preset phong cách hình ảnh (anime, chibi, cinematic, ...)."
+        icon={Palette}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <span className="text-sm text-neutral-400">
@@ -137,6 +138,6 @@ export function VisualStylesPage() {
           Xóa phong cách hình ảnh <strong className="text-neutral-100">{selectedStyle?.name}</strong>?
         </p>
       </Modal>
-    </div>
+    </PageShell>
   );
 }

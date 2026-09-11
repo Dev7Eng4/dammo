@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchRecreateMetadataContent } from '../../api/youtubeChannels';
-import { isAbortError } from '../../api/http';
 import { useTaskQueue } from '../../hooks';
 import type { YoutubeVideoContent } from '../../types/youtubeChannel';
 import type { CreateVideoTaskPayload } from '../../types/taskQueue';

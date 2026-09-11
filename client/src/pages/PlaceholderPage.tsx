@@ -1,25 +1,80 @@
-import { useLocation } from 'react-router-dom';
-import { flattenNavItems } from '../config/navigation';
+import {
+  BookOpen,
+  Clapperboard,
+  Construction,
+  Database,
+  Factory,
+  FileCode2,
+  FileSpreadsheet,
+  FolderKanban,
+  Globe,
+  HelpCircle,
+  Image,
+  LayoutDashboard,
+  LayoutTemplate,
+  Lightbulb,
+  ListTodo,
+  Mail,
+  Palette,
+  Radio,
+  Rocket,
+  Settings,
+  Shield,
+  UserPlus,
+  type LucideIcon,
+} from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { PageHeader, PageShell } from '../components/layout'
+import { flattenNavItems, type NavIcon } from '../config/navigation'
+
+const iconMap: Record<NavIcon, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  mail: Mail,
+  youtube: Clapperboard,
+  tiktok: Radio,
+  facebook: Globe,
+  source: BookOpen,
+  prompt: Lightbulb,
+  'visual-styles': Palette,
+  browser: Globe,
+  gpm: UserPlus,
+  proxies: Shield,
+  'launch-logs': Rocket,
+  projects: FolderKanban,
+  scripts: FileCode2,
+  datasets: Database,
+  assets: Image,
+  excel: FileSpreadsheet,
+  templates: LayoutTemplate,
+  factory: Factory,
+  queue: ListTodo,
+  'task-queue': ListTodo,
+  support: HelpCircle,
+  logs: FileCode2,
+  settings: Settings,
+}
 
 export function PlaceholderPage() {
-  const { pathname } = useLocation();
+  const { pathname } = useLocation()
 
-  const match = flattenNavItems().find((item) => item.path === pathname);
-  const title = match?.label ?? 'Module';
+  const match = flattenNavItems().find((item) => item.path === pathname)
+  const title = match?.label ?? 'Module'
+  const Icon = match ? iconMap[match.icon] : Construction
 
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center card-surface p-12 text-center">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-surface-elevated">
-        <svg className="size-8 text-neutral-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-          <path d="M12 8v4" />
-          <path d="M12 16h.01" />
-        </svg>
+    <PageShell>
+      <PageHeader
+        title={title}
+        subtitle="Tính năng đang phát triển. Module này sẽ có sẵn trong phiên bản tiếp theo."
+        icon={Icon}
+        className="mb-6"
+      />
+      <div className="flex min-h-[320px] flex-col items-center justify-center card-surface p-12 text-center">
+        <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-surface-elevated text-muted-foreground">
+          <Icon className="size-8" />
+        </div>
+        <p className="max-w-md text-sm text-muted-foreground">Nội dung module sẽ xuất hiện tại đây.</p>
       </div>
-      <h2 className="text-xl font-semibold text-neutral-100">{title}</h2>
-      <p className="mt-2 max-w-md text-sm text-neutral-400">
-        Tính năng đang phát triển. Module này sẽ có sẵn trong phiên bản tiếp theo.
-      </p>
-    </div>
-  );
+    </PageShell>
+  )
 }

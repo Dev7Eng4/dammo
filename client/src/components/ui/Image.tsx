@@ -65,7 +65,7 @@ export function Image({
       )}
     >
       {isLoading ? (
-        <div className="absolute inset-0 animate-pulse bg-neutral-800" aria-hidden="true" />
+        <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />
       ) : null}
 
       {hasError ? (
