@@ -1,4 +1,4 @@
-export default fullTranscript => `
+export const step1 = fullTranscript => `
 You are an expert Japanese Audio Story Script Analyst and Narrative Structure Specialist.
 
 Your expertise covers Japanese YouTube audio-story content across niches such as:

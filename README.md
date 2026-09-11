@@ -100,3 +100,7 @@ prompt tạo thumbnail của người nổi tiếng sửa nhân vật -> sai
 thêm chức năng tạo lại metadata cho video ở màn hình youtube
 
 flow hết lượt ngày -> đánh dấu luôn đỡ mỗi lần tạo lại mở
+
+[image] Create image 16:9 Sachiko Kobayashi, a 66-year-old Japanese woman, sitting alone at her desk with a deeply shocked and dejected expression, close-up shot, heavy emotional weight, muted lighting, anime style, masterpiece, highly detailed, cinematic lighting, sharp focus
+
+[image] Create image 16:9 Sachiko Kobayashi, a 66-year-old Japanese woman, sitting alone at her desk with a deeply shocked and dejected expression, close-up shot, heavy emotional weight, muted lighting, anime style, masterpiece, highly detailed, cinematic lighting, sharp focus

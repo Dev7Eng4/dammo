@@ -3,20 +3,16 @@ import type { GpmGroup, GpmProfile } from '../../types/gpm';
 import { cn } from '../../lib/cn';
 import { Button, DataTable } from '../ui';
 
-export type GpmCapabilityKey = 'flowEnabled' | 'metaEnabled';
-
 interface GpmProfilesTableProps {
   profiles: GpmProfile[];
   groups: GpmGroup[];
   selectedId: string | null;
   runningProfileIds: Set<string>;
   actionBusyIds: Set<string>;
-  updatingCapabilityIds?: Set<string>;
   loading?: boolean;
   onSelect: (id: string) => void;
   onStart: (id: string) => void;
   onStop: (id: string) => void;
-  onCapabilityChange: (id: string, key: GpmCapabilityKey, value: boolean) => void;
 }
 
 function groupName(groups: GpmGroup[], groupId: string): string {
@@ -29,60 +25,12 @@ export function GpmProfilesTable({
   selectedId,
   runningProfileIds,
   actionBusyIds,
-  updatingCapabilityIds,
   loading,
   onSelect,
   onStart,
   onStop,
-  onCapabilityChange,
 }: GpmProfilesTableProps) {
   const columns: ColumnDef<GpmProfile, unknown>[] = [
-    {
-      id: 'flow',
-      header: 'FLOW',
-      cell: ({ row }) => {
-        const profile = row.original;
-        const updating = updatingCapabilityIds?.has(profile.id) ?? false;
-        return (
-          <label
-            className="inline-flex cursor-pointer items-center"
-            onClick={e => e.stopPropagation()}
-          >
-            <input
-              type="checkbox"
-              checked={profile.flowEnabled === true}
-              disabled={updating}
-              onChange={e => onCapabilityChange(profile.id, 'flowEnabled', e.target.checked)}
-              className="size-3.5 rounded border-border bg-surface accent-primary-500"
-              aria-label={`Bật Flow cho ${profile.name}`}
-            />
-          </label>
-        );
-      },
-    },
-    {
-      id: 'meta',
-      header: 'META',
-      cell: ({ row }) => {
-        const profile = row.original;
-        const updating = updatingCapabilityIds?.has(profile.id) ?? false;
-        return (
-          <label
-            className="inline-flex cursor-pointer items-center"
-            onClick={e => e.stopPropagation()}
-          >
-            <input
-              type="checkbox"
-              checked={profile.metaEnabled === true}
-              disabled={updating}
-              onChange={e => onCapabilityChange(profile.id, 'metaEnabled', e.target.checked)}
-              className="size-3.5 rounded border-border bg-surface accent-primary-500"
-              aria-label={`Bật Meta cho ${profile.name}`}
-            />
-          </label>
-        );
-      },
-    },
     {
       accessorKey: 'name',
       header: 'TÊN',

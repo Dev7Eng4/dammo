@@ -1,0 +1,58 @@
+{
+"detected_niche": "泣ける話 / 家族",
+"metadata": {
+"title": "【涙腺崩壊】左遷先のボロアパート…隣の「空き部屋」から聞こえる謎のノックと老婆の正体とは？",
+"description": "左遷されボロアパートで一人暮らしを始めた男の隣室から響く不気味なノック音。そこに誰も住んでいないはずが、苦しそうに咳込む老婆が現れたことで、予想もつかない感動のドラマが動き出す。",
+"tags": [
+"泣ける話",
+"家族",
+"感動",
+"ボロアパート",
+"謎の老婆",
+"人間ドラマ",
+"心温まる話",
+"単身赴任"
+]
+},
+"thumbnail": {
+"chosen_layout": "single unified scene",
+"packaging_strategy": {
+"hook_type": "mystery",
+"primary_emotion": "loneliness",
+"curiosity_gap": "Why is an elderly woman secretly living in a supposedly empty, condemned apartment building, and how is she connected to the company?",
+"visual_hook": "An eerie yet emotional encounter in a dimly lit apartment hallway with a frail elderly woman holding a glass of water."
+},
+"composition": {
+"camera_angle": "Medium shot at eye level, slightly low angle",
+"subject_position": "A middle-aged man in a worn business suit stands startled in the center-left, while a frail elderly woman holding a glass of water stands in the center-right.",
+"text_placement": {
+"top": "top-left",
+"bottom": "bottom-right"
+},
+"negative_space": "Dark, shadowed wooden walls on the upper-left and side areas, cleanly reserved for text integration.",
+"visual_priority": [
+"Character expression (shock and caution)",
+"Character interaction in the hallway",
+"Key prop (glass of water)"
+]
+},
+"typography_strategy": "single-tone",
+"telop_japanese": {
+"top": {
+"full_text": "空き部屋のはずが…",
+"base_text": "空き部屋のはずが…",
+"highlight_text": "",
+"placement": "top-left",
+"color_description": "warm white text with a thin-to-medium dark outline"
+},
+"bottom": {
+"full_text": "夜な夜な現れる老婆",
+"base_text": "夜な夜な現れる老婆",
+"highlight_text": "",
+"placement": "bottom-right",
+"color_description": "warm white text with a thin-to-medium dark outline"
+}
+},
+"prompt": "Create a premium cinematic Japanese YouTube thumbnail as one unified scene in Japanese anime-style semi-realistic illustration, mature adult drama art style with soft gradient shading. The scene depicts a middle-aged Japanese male office worker in a worn suit looking shocked and cautious, standing next to a frail elderly Japanese woman holding a glass of water in a dimly lit, narrow hallway of a dilapidated old wooden apartment building. Cinematic night lighting, moody melancholic atmosphere, highly detailed. Clean negative space is intentionally preserved in the upper-left and lower-right areas against dark shadowed wooden walls. Display the exact Japanese text 「空き部屋のはずが…」 in the top-left area and 「夜な夜な現れる老婆」 in the bottom-right area using clean warm white typography with a thin dark outline. Ensure no text boxes, banners, speech bubbles, split screens, panels, grids, logos, or watermarks are present."
+}
+}

@@ -48,8 +48,14 @@ describe('mergeChannelVideos', () => {
     assert.equal(result[0]?.localFolder, 'uploads');
   });
 
-  test('keeps Prepared and Created videos while excluding Uploaded prepare items', () => {
+  test('orders prepare statuses Error then Prepared then Created and excludes Uploaded', () => {
     const prepare: VideoPrepareItem[] = [
+      {
+        id: 'prep-2',
+        videoId: 'created-id',
+        title: 'Created video',
+        status: 'Created',
+      },
       {
         id: 'prep-1',
         videoId: 'prepared-id',
@@ -57,10 +63,10 @@ describe('mergeChannelVideos', () => {
         status: 'Prepared',
       },
       {
-        id: 'prep-2',
-        videoId: 'created-id',
-        title: 'Created video',
-        status: 'Created',
+        id: 'prep-0',
+        videoId: 'error-id',
+        title: 'Error video',
+        status: 'Error',
       },
       {
         id: 'prep-3',
@@ -72,17 +78,18 @@ describe('mergeChannelVideos', () => {
 
     const result = mergeChannelVideos([], prepare, []);
 
-    assert.equal(result.length, 2);
+    assert.equal(result.length, 3);
     assert.deepEqual(
       result.map(video => ({ id: video.id, status: video.status })),
       [
+        { id: 'error-id', status: 'Error' },
         { id: 'prepared-id', status: 'Prepared' },
         { id: 'created-id', status: 'Created' },
       ],
     );
   });
 
-  test('puts remote-only Published videos after uploads and prepare', () => {
+  test('puts prepare before uploads Published before remote YouTube Published', () => {
     const published: YoutubeChannelVideo[] = [
       {
         id: 'remote-1',
@@ -128,10 +135,11 @@ describe('mergeChannelVideos', () => {
 
     assert.deepEqual(
       result.map(video => video.id),
-      ['synced-upload', 'uploads-only', 'prepared-id', 'remote-1', 'remote-2'],
+      ['prepared-id', 'synced-upload', 'uploads-only', 'remote-1', 'remote-2'],
     );
-    assert.equal(result[0]?.localFolder, 'uploads');
+    assert.equal(result[0]?.status, 'Prepared');
     assert.equal(result[1]?.localFolder, 'uploads');
+    assert.equal(result[2]?.localFolder, 'uploads');
     assert.equal(result[3]?.localFolder, undefined);
     assert.equal(result[4]?.localFolder, undefined);
   });

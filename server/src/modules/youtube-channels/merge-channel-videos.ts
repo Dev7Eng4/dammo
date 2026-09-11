@@ -36,8 +36,19 @@ export function mergeChannelVideos(
     .filter(item => item.status !== 'Uploaded')
     .map(prepareItemToVideo);
 
+  const draftVideos = prepareVideos.filter(video => video.status === 'Error');
+  const preparedVideos = prepareVideos.filter(video => video.status === 'Prepared');
+  const createdVideos = prepareVideos.filter(video => video.status === 'Created');
+
   const publishedInUploads = publishedWithStatus.filter(video => video.localFolder === 'uploads');
   const publishedRemoteOnly = publishedWithStatus.filter(video => video.localFolder !== 'uploads');
 
-  return [...publishedInUploads, ...uploadedOnly, ...prepareVideos, ...publishedRemoteOnly];
+  return [
+    ...draftVideos,
+    ...preparedVideos,
+    ...createdVideos,
+    ...publishedInUploads,
+    ...uploadedOnly,
+    ...publishedRemoteOnly,
+  ];
 }
