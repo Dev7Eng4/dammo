@@ -10,6 +10,7 @@ const tabs: Array<{ id: SettingsTab; label: string }> = [
   { id: 'video-ai', label: 'Video AI' },
   { id: 'chrome', label: 'Chrome' },
   { id: 'video', label: 'Video' },
+  { id: 'task-queue', label: 'Hàng đợi' },
 ]
 
 const EMPTY_SETTINGS: AppSettings = {
@@ -17,6 +18,7 @@ const EMPTY_SETTINGS: AppSettings = {
   enableImageTransitions: true,
   chromeBackgroundUseOffscreen: true,
   aiSceneDensityMaxSec: { high: 8, medium: 30, low: 60 },
+  taskQueueConcurrency: 1,
 }
 
 function SettingSwitch({
@@ -81,6 +83,10 @@ export function SettingsPage() {
           medium: Math.round(Number(settings.aiSceneDensityMaxSec.medium)) || 30,
           low: Math.round(Number(settings.aiSceneDensityMaxSec.low)) || 60,
         },
+        taskQueueConcurrency: Math.min(
+          8,
+          Math.max(1, Math.round(Number(settings.taskQueueConcurrency)) || 1),
+        ),
       })
       setSettings(item)
       toast.success('Đã lưu cài đặt')
@@ -106,7 +112,7 @@ export function SettingsPage() {
     <PageShell>
       <PageHeader
         title="Cài đặt"
-        subtitle="Cấu hình mặc định cho video AI, Chrome automation và mật độ cảnh."
+        subtitle="Cấu hình video AI, Chrome, mật độ cảnh và hàng đợi task."
         icon={Settings}
       />
 
@@ -208,6 +214,34 @@ export function SettingsPage() {
                   />
                 </label>
               </div>
+            </section>
+          ) : null}
+
+          {activeTab === 'task-queue' ? (
+            <section className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Số công việc trong hàng đợi được chạy đồng thời. Giá trị 1 = tuần tự (job sau chờ job trước xong).
+              </p>
+              <label className="block max-w-xs space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Số job chạy đồng thời</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={8}
+                  className="h-10"
+                  disabled={saving}
+                  value={settings.taskQueueConcurrency}
+                  onChange={(e) => {
+                    const parsed = Number(e.target.value)
+                    setSettings((prev) => ({
+                      ...prev,
+                      taskQueueConcurrency: Number.isFinite(parsed)
+                        ? parsed
+                        : prev.taskQueueConcurrency,
+                    }))
+                  }}
+                />
+              </label>
             </section>
           ) : null}
 

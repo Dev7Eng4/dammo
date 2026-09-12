@@ -36,6 +36,18 @@ export function Modal({ open, onClose, title, children, footer, className, bodyC
             className,
           )}
           aria-describedby={undefined}
+          onPointerDownOutside={(event) => {
+            const target = event.target as HTMLElement | null
+            if (target?.closest('[data-floating-menu]')) event.preventDefault()
+          }}
+          onInteractOutside={(event) => {
+            const target = event.target as HTMLElement | null
+            if (target?.closest('[data-floating-menu]')) event.preventDefault()
+          }}
+          onFocusOutside={(event) => {
+            const target = event.target as HTMLElement | null
+            if (target?.closest('[data-floating-menu]')) event.preventDefault()
+          }}
         >
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <Dialog.Title className="text-base font-semibold text-foreground">{title}</Dialog.Title>

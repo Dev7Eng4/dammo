@@ -162,7 +162,8 @@ export class YoutubeUploadService {
     } finally {
       if (connection) {
         if (delayBeforeGpmClose) {
-          scheduleDelayedGpmDisconnect(connection);
+          // Awaits CDP detach only; 15min GPM profile stop runs in background.
+          await scheduleDelayedGpmDisconnect(connection);
         } else {
           await disconnectGpmPlaywright(connection);
         }

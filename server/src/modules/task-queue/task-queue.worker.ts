@@ -1,4 +1,4 @@
-import { env } from '../../config/env.js';
+import { appSettingsService } from '../app-settings/app-settings.service.js';
 import { sourceChannelsService } from '../source-channels/source-channels.service.js';
 import type { SourcePurpose } from '../source-channels/source-channels.types.js';
 import type { ChannelLanguage } from '../youtube-channels/channel-language.js';
@@ -152,6 +152,9 @@ async function processUploadVideo(job: TaskJob): Promise<unknown> {
       maxUploads: payload.maxUploads,
       videoIds: payload.videoIds,
     });
+    console.log(
+      `[task-queue] Upload job ${job.id} finished uploads; GPM profiles (if any) close ~15 min later in background`,
+    );
     updateProgress(job.id, 90, 'Finishing');
     return result;
   }
@@ -162,6 +165,9 @@ async function processUploadVideo(job: TaskJob): Promise<unknown> {
       maxUploads: payload.maxUploads,
       videoIds: payload.videoIds,
     });
+    console.log(
+      `[task-queue] Upload job ${job.id} finished uploads; GPM profiles (if any) close ~15 min later in background`,
+    );
     updateProgress(job.id, 90, 'Finishing');
     return result;
   }
@@ -171,6 +177,9 @@ async function processUploadVideo(job: TaskJob): Promise<unknown> {
     maxUploads: payload.maxUploads,
     videoIds: payload.videoIds,
   });
+  console.log(
+    `[task-queue] Upload job ${job.id} finished uploads; GPM profile close (if scheduled) runs in background (~15 min)`,
+  );
   updateProgress(job.id, 90, 'Finishing');
   return result;
 }
@@ -222,6 +231,11 @@ async function processJob(job: TaskJob): Promise<void> {
       progressLabel: 'Hoàn thành',
       result,
     });
+    if (job.type === 'upload_video') {
+      console.log(
+        `[task-queue] Job ${job.id} marked completed after upload success (GPM close delay is independent)`,
+      );
+    }
   } catch (err) {
     const message = errorMessageFromUnknown(err);
     const errorDetails = toTaskErrorDetails(err);
@@ -246,7 +260,7 @@ function fillSlots(): void {
 
   filling = true;
   try {
-    while (activeCount < env.taskQueueConcurrency) {
+    while (activeCount < appSettingsService.get().taskQueueConcurrency) {
       const job = taskQueueRepository.findNextQueued();
       if (!job) break;
 

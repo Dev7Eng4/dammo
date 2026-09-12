@@ -11,6 +11,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     medium: 30,
     low: 60,
   },
+  taskQueueConcurrency: 1,
 };
 
 function clampSceneSec(value: number | undefined, fallback: number): number {
@@ -18,6 +19,11 @@ function clampSceneSec(value: number | undefined, fallback: number): number {
   const rounded = Math.round(value);
   if (rounded < 1 || rounded > 300) return fallback;
   return rounded;
+}
+
+function clampConcurrency(value: number | undefined, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(8, Math.max(1, Math.round(value)));
 }
 
 function loadSettings(): AppSettings {
@@ -34,6 +40,10 @@ function loadSettings(): AppSettings {
       medium: clampSceneSec(density?.medium, DEFAULT_APP_SETTINGS.aiSceneDensityMaxSec.medium),
       low: clampSceneSec(density?.low, DEFAULT_APP_SETTINGS.aiSceneDensityMaxSec.low),
     },
+    taskQueueConcurrency: clampConcurrency(
+      stored?.taskQueueConcurrency,
+      DEFAULT_APP_SETTINGS.taskQueueConcurrency,
+    ),
   };
 }
 
@@ -60,6 +70,10 @@ export class AppSettingsService {
         ),
         low: clampSceneSec(input.aiSceneDensityMaxSec?.low, current.aiSceneDensityMaxSec.low),
       },
+      taskQueueConcurrency: clampConcurrency(
+        input.taskQueueConcurrency,
+        current.taskQueueConcurrency,
+      ),
     };
     writeJson(paths.appSettings, next);
     return next;

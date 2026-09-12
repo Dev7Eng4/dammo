@@ -130,7 +130,7 @@ export function ChromeProfilesPage() {
   return (
     <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
+        <div className="shrink-0">
           <PageHeader
             title="Hồ sơ Chrome"
             subtitle="Quản lý và mở hồ sơ trình duyệt Chrome"
@@ -154,10 +154,11 @@ export function ChromeProfilesPage() {
               onResetSubProfiles={handleResetSubProfiles}
             />
           </div>
-
           {error ? <p className="mt-2 text-xs text-danger">{error}</p> : null}
+        </div>
 
-          <div className="mt-4 card-surface px-5 pt-3 pb-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+          <div className="min-h-0 flex-1 overflow-auto">
             <ChromeProfilesTable
               profiles={profiles}
               selectedId={selectedId}

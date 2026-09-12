@@ -250,11 +250,13 @@ export function ProxiesPage() {
   return (
     <PageShell fullBleed>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
-        <div className='flex-1 overflow-y-auto'>
+        <div className='shrink-0'>
           <ProxyPageHeader activeTab={activeTab} onTabChange={handleTabChange} />
+        </div>
 
-          {activeTab === 'monitoring' ? (
-            <>
+        {activeTab === 'monitoring' ? (
+          <>
+            <div className='shrink-0'>
               <ProxiesToolbar
                 total={list.total}
                 filter={filter}
@@ -271,7 +273,9 @@ export function ProxiesPage() {
                 removingFailed={removingFailed}
               />
               {list.error ? <p className='mt-2 text-xs text-danger'>{list.error}</p> : null}
-              <div className='mt-4 card-surface px-5 pt-3 pb-4'>
+            </div>
+            <div className='mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
+              <div className='min-h-0 flex-1 overflow-auto'>
                 <ProxiesTable
                   proxies={list.items}
                   selectedIds={selectedIds}
@@ -283,6 +287,8 @@ export function ProxiesPage() {
                   onPing={handlePingRow}
                   onExtend={handleOpenExtend}
                 />
+              </div>
+              <div className='shrink-0'>
                 <MailAccountsPagination
                   page={list.page}
                   limit={list.limit}
@@ -293,11 +299,15 @@ export function ProxiesPage() {
                   locale="vi"
                 />
               </div>
-            </>
-          ) : null}
+            </div>
+          </>
+        ) : null}
 
-          {activeTab === 'providers' ? <ProxyProvidersTab /> : null}
-        </div>
+        {activeTab === 'providers' ? (
+          <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+            <ProxyProvidersTab />
+          </div>
+        ) : null}
       </div>
 
       <AddProxyModal open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />

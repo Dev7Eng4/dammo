@@ -239,7 +239,9 @@ export function AssetsPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell fullBleed>
+      <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+      <div className='shrink-0 space-y-4'>
       <PageHeader
         title="Tài nguyên"
         subtitle="Quản lý file phổ âm thanh, phông chữ, video stock, background footage và người nổi tiếng."
@@ -255,14 +257,19 @@ export function AssetsPage() {
           { id: 'celebrities', label: 'Người nổi tiếng' },
         ]}
       />
+      </div>
 
       {isCelebritiesTab ? (
-        <CelebritiesPanel />
+        <div className='mt-4 min-h-0 flex-1 overflow-auto'>
+          <CelebritiesPanel />
+        </div>
       ) : isSmallVideoTab ? (
-        <SmallVideoPanel />
+        <div className='mt-4 min-h-0 flex-1 overflow-auto'>
+          <SmallVideoPanel />
+        </div>
       ) : (
         <>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
+      <div className='mt-4 shrink-0 flex flex-wrap items-center justify-between gap-3'>
         <span className='text-sm text-neutral-400'>
           {items.length.toLocaleString('vi-VN')} file · {activeTab.label}
         </span>
@@ -300,7 +307,7 @@ export function AssetsPage() {
       </div>
 
       {showVideoGrid ? (
-        <div className='card-surface space-y-4 p-5'>
+        <div className='mt-4 min-h-0 flex-1 overflow-auto card-surface space-y-4 p-5'>
           {loading ? (
             <p className='py-10 text-center text-sm text-neutral-500'>Đang tải danh sách…</p>
           ) : items.length === 0 ? (
@@ -371,18 +378,20 @@ export function AssetsPage() {
           )}
         </div>
       ) : (
-        <div className='card-surface px-5 pt-3 pb-4'>
-          <DataTable
-            data={items}
-            columns={columns}
-            getRowId={item => item.name}
-            loading={loading}
-            emptyMessage='Chưa có file nào trong mục này.'
-            enableRowSelection
-            selectedIds={selectedIds}
-            onToggleRow={handleToggleRow}
-            onToggleAll={handleToggleAll}
-          />
+        <div className='mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
+          <div className='min-h-0 flex-1 overflow-auto'>
+            <DataTable
+              data={items}
+              columns={columns}
+              getRowId={item => item.name}
+              loading={loading}
+              emptyMessage='Chưa có file nào trong mục này.'
+              enableRowSelection
+              selectedIds={selectedIds}
+              onToggleRow={handleToggleRow}
+              onToggleAll={handleToggleAll}
+            />
+          </div>
         </div>
       )}
 
@@ -513,6 +522,7 @@ export function AssetsPage() {
       ) : null}
         </>
       )}
+      </div>
     </PageShell>
   );
 }

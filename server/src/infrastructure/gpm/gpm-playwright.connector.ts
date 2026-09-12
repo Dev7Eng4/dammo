@@ -219,21 +219,49 @@ export async function disconnectGpmPlaywright(connection: GpmPlaywrightConnectio
 
 export const GPM_CLOSE_DELAY_MS = 15 * 60 * 1000;
 
-export function scheduleDelayedGpmDisconnect(
+/**
+ * Detach Playwright CDP immediately (awaited), then stop the GPM profile after
+ * `delayMs` in the background. Callers can treat the upload as finished once
+ * this resolves — they do not wait for the delayed profile stop.
+ */
+export async function scheduleDelayedGpmDisconnect(
   connection: GpmPlaywrightConnection,
   delayMs = GPM_CLOSE_DELAY_MS,
-): void {
+): Promise<void> {
   const profileId = connection.profileId;
+
+  try {
+    await detachGpmPlaywright(connection);
+    console.log(
+      `[youtube-upload] Detached CDP for GPM profile ${profileId}; will stop profile in ${delayMs / 60_000} min`,
+    );
+  } catch (err) {
+    console.warn(
+      '[youtube-upload] Detach CDP before delayed GPM stop:',
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   void (async () => {
     try {
-      console.log(`[youtube-upload] Waiting ${delayMs / 60_000} min before closing GPM profile ${profileId}`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
     } catch (err) {
-      console.warn('[youtube-upload] Delay before GPM close:', err instanceof Error ? err.message : err);
+      console.warn('[youtube-upload] Delay before GPM stop:', err instanceof Error ? err.message : err);
     }
 
-    await disconnectGpmPlaywright(connection);
+    try {
+      await stopGpmProfile(profileId);
+      console.log(`[youtube-upload] Stopped GPM profile ${profileId} after delay`);
+    } catch (err) {
+      console.warn(
+        `[youtube-upload] Background stopGpmProfile failed for ${profileId}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
   })().catch(err => {
-    console.warn('[youtube-upload] Background GPM disconnect failed:', err instanceof Error ? err.message : err);
+    console.warn(
+      '[youtube-upload] Background GPM delayed stop failed:',
+      err instanceof Error ? err.message : err,
+    );
   });
 }

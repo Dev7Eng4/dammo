@@ -341,7 +341,7 @@ export function SourceChannelsPage() {
   return (
     <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
+        <div className="shrink-0">
           <PageHeader
             title="Kênh nguồn"
             subtitle="Nguồn nội dung theo nền tảng và niche"
@@ -371,7 +371,9 @@ export function SourceChannelsPage() {
           {list.error ? (
             <p className="mt-2 text-xs text-danger">{list.error}</p>
           ) : null}
-          <div className="mt-4 card-surface px-5 pt-3 pb-4">
+        </div>
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+          <div className="min-h-0 flex-1 overflow-auto">
             <SourceChannelsTable
               sources={list.items}
               niches={niches}
@@ -388,6 +390,8 @@ export function SourceChannelsPage() {
               onNotesChange={handleNotesChange}
               onDelete={handleDelete}
             />
+          </div>
+          <div className="shrink-0">
             <MailAccountsPagination
               page={list.page}
               limit={list.limit}

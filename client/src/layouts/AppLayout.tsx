@@ -10,7 +10,7 @@ export function AppLayout() {
       <div className="flex h-svh overflow-hidden bg-background">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <main className="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+          <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <Outlet />
           </main>
         </div>

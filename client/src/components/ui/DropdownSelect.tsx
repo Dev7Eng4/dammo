@@ -108,9 +108,6 @@ export function DropdownSelect<T extends string>({
 
   function openMenu() {
     setSearchQuery('');
-    // #region agent log
-    fetch('http://127.0.0.1:7763/ingest/a15224e6-d015-4543-8083-92c5cbe0ee93',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e44d83'},body:JSON.stringify({sessionId:'e44d83',location:'DropdownSelect.tsx:openMenu',message:'select opened',data:{scrollbarWidth:window.innerWidth-document.documentElement.clientWidth,bodyOverflow:getComputedStyle(document.body).overflowY,docOverflow:getComputedStyle(document.documentElement).overflowY},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
-    // #endregion
     setOpen(true);
   }
 
@@ -136,9 +133,10 @@ export function DropdownSelect<T extends string>({
   const menu = open ? (
     <div
       ref={menuRef}
+      data-floating-menu=""
       style={menuStyle}
       className={cn(
-        'rounded-xl border border-border bg-surface-elevated shadow-lg',
+        'pointer-events-auto rounded-xl border border-border bg-surface-elevated shadow-lg',
         searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
         menuClassName,
       )}

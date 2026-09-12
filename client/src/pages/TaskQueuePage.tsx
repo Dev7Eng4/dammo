@@ -102,7 +102,7 @@ export function TaskQueuePage() {
   return (
     <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
+        <div className="shrink-0">
           <PageHeader
             title="Hàng đợi task"
             subtitle="Theo dõi và quản lý các công việc đang chạy"
@@ -119,28 +119,28 @@ export function TaskQueuePage() {
             onRefresh={() => void refresh()}
             onClear={() => void handleClearFinished()}
           />
+        </div>
 
-          <div className="mt-6 space-y-3">
-            {filteredJobs.length === 0 ? (
-              <div className="card-surface rounded-2xl px-5 py-12 text-center">
-                <p className="text-sm text-neutral-500">
-                  {jobs.length === 0 ? 'Chưa có công việc nào' : 'Không có công việc khớp tìm kiếm'}
-                </p>
-              </div>
-            ) : (
-              filteredJobs.map((job) => (
-                <TaskJobCard
-                  key={job.id}
-                  job={job}
-                  selected={job.id === selectedJobId}
-                  onSelect={handleSelectJob}
-                  onCancel={(id) => void cancelJob(id)}
-                  onRetry={(item) => void retryJob(item)}
-                  onCopyPath={(path) => void handleCopyPath(path)}
-                />
-              ))
-            )}
-          </div>
+        <div className="mt-6 min-h-0 flex-1 space-y-3 overflow-y-auto">
+          {filteredJobs.length === 0 ? (
+            <div className="card-surface rounded-2xl px-5 py-12 text-center">
+              <p className="text-sm text-neutral-500">
+                {jobs.length === 0 ? 'Chưa có công việc nào' : 'Không có công việc khớp tìm kiếm'}
+              </p>
+            </div>
+          ) : (
+            filteredJobs.map((job) => (
+              <TaskJobCard
+                key={job.id}
+                job={job}
+                selected={job.id === selectedJobId}
+                onSelect={handleSelectJob}
+                onCancel={(id) => void cancelJob(id)}
+                onRetry={(item) => void retryJob(item)}
+                onCopyPath={(path) => void handleCopyPath(path)}
+              />
+            ))
+          )}
         </div>
       </div>
 

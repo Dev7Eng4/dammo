@@ -29,12 +29,6 @@ export function useFloatingMenuPosition(
     const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP;
     const spaceAbove = rect.top - MENU_GAP;
     const showAbove = spaceBelow < menuHeight && spaceAbove > spaceBelow;
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const bodyOverflow = document.documentElement.style.overflow || getComputedStyle(document.documentElement).overflow;
-
-    // #region agent log
-    fetch('http://127.0.0.1:7763/ingest/a15224e6-d015-4543-8083-92c5cbe0ee93',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e44d83'},body:JSON.stringify({sessionId:'e44d83',runId:'post-fix',location:'useFloatingMenuPosition.ts:updatePosition',message:'position update',data:{rectLeft:rect.left,rectTop:rect.top,rectBottom:rect.bottom,rectWidth:rect.width,menuHeight,showAbove,computedTop:showAbove?rect.top-menuHeight-MENU_GAP:rect.bottom+MENU_GAP,scrollbarWidth,bodyOverflow,innerWidth:window.innerWidth,clientWidth:document.documentElement.clientWidth,bodyScrollH:document.body.scrollHeight,bodyClientH:document.documentElement.clientHeight,hasMenuRef:!!menuRef.current},timestamp:Date.now(),hypothesisId:'H1-H2-H5'})}).catch(()=>{});
-    // #endregion
 
     setMenuStyle({
       position: 'fixed',
@@ -55,15 +49,8 @@ export function useFloatingMenuPosition(
       return;
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7763/ingest/a15224e6-d015-4543-8083-92c5cbe0ee93',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e44d83'},body:JSON.stringify({sessionId:'e44d83',runId:'post-fix',location:'useFloatingMenuPosition.ts:useLayoutEffect-open',message:'menu opened layout effect',data:{isPositioned,open},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-    // #endregion
-
     updatePosition();
     const frame = requestAnimationFrame(() => {
-      // #region agent log
-      fetch('http://127.0.0.1:7763/ingest/a15224e6-d015-4543-8083-92c5cbe0ee93',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e44d83'},body:JSON.stringify({sessionId:'e44d83',runId:'post-fix',location:'useFloatingMenuPosition.ts:rAF',message:'rAF position update',data:{scrollbarWidth:window.innerWidth-document.documentElement.clientWidth},timestamp:Date.now(),hypothesisId:'H2-H3'})}).catch(()=>{});
-      // #endregion
       updatePosition();
     });
 
@@ -74,9 +61,6 @@ export function useFloatingMenuPosition(
     if (!open) return;
 
     const onScroll = () => {
-      // #region agent log
-      fetch('http://127.0.0.1:7763/ingest/a15224e6-d015-4543-8083-92c5cbe0ee93',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'e44d83'},body:JSON.stringify({sessionId:'e44d83',runId:'post-fix',location:'useFloatingMenuPosition.ts:scroll',message:'scroll event reposition',data:{scrollbarWidth:window.innerWidth-document.documentElement.clientWidth},timestamp:Date.now(),hypothesisId:'H3-H4'})}).catch(()=>{});
-      // #endregion
       updatePosition();
     };
 

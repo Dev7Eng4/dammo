@@ -364,34 +364,34 @@ export function YoutubeChannelsPage() {
   return (
     <PageShell fullBleed>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
-        <div className='flex-1 overflow-y-auto'>
-          <div className="sticky top-0 z-20 -mx-0 mb-4 space-y-4 border-b border-border bg-background/95 pb-4 backdrop-blur-sm">
-            <PageHeader
-              title="Kênh YouTube"
-              subtitle="Quản lý kênh, tạo và tải video lên"
-              icon={Clapperboard}
-            />
-            <YoutubeChannelsToolbar
-              typeFilter={typeFilter}
-              monetizationFilter={monetizationFilter}
-              search={search}
-              canCreateVideo={canCreateVideo}
-              createVideoDisabledReason={createVideoDisabledReason}
-              onTypeFilterChange={handleTypeFilterChange}
-              onMonetizationFilterChange={handleMonetizationFilterChange}
-              onSearchChange={handleSearchChange}
-              onAddChannel={() => setShowAddModal(true)}
-              onCreateVideo={() => setVideoCountAction('create')}
-              onPrepareVideo={() => setVideoCountAction('prepare')}
-              canUpload={canUpload}
-              uploadDisabledReason={uploadDisabledReason}
-              onUpload={() => setShowUploadCountModal(true)}
-              deletingUploadedVideos={deletingUploadedVideos}
-              onDeleteUploadedVideos={() => setShowDeleteUploadedModal(true)}
-            />
-          </div>
-          {list.error ? <p className='mt-2 text-xs text-danger'>Không thể tải danh sách kênh YouTube.</p> : null}
-          <div className='card-surface px-5 pt-3 pb-4'>
+        <div className="shrink-0 space-y-4 border-b border-border pb-4">
+          <PageHeader
+            title="Kênh YouTube"
+            subtitle="Quản lý kênh, tạo và tải video lên"
+            icon={Clapperboard}
+          />
+          <YoutubeChannelsToolbar
+            typeFilter={typeFilter}
+            monetizationFilter={monetizationFilter}
+            search={search}
+            canCreateVideo={canCreateVideo}
+            createVideoDisabledReason={createVideoDisabledReason}
+            onTypeFilterChange={handleTypeFilterChange}
+            onMonetizationFilterChange={handleMonetizationFilterChange}
+            onSearchChange={handleSearchChange}
+            onAddChannel={() => setShowAddModal(true)}
+            onCreateVideo={() => setVideoCountAction('create')}
+            onPrepareVideo={() => setVideoCountAction('prepare')}
+            canUpload={canUpload}
+            uploadDisabledReason={uploadDisabledReason}
+            onUpload={() => setShowUploadCountModal(true)}
+            deletingUploadedVideos={deletingUploadedVideos}
+            onDeleteUploadedVideos={() => setShowDeleteUploadedModal(true)}
+          />
+          {list.error ? <p className='text-xs text-danger'>Không thể tải danh sách kênh YouTube.</p> : null}
+        </div>
+        <div className='mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
+          <div className="min-h-0 flex-1 overflow-auto">
             <YoutubeChannelsTable
               channels={list.items}
               sources={sources}
@@ -408,6 +408,8 @@ export function YoutubeChannelsPage() {
               onDelete={handleDeleteChannel}
               deletingChannelId={deletingChannelId}
             />
+          </div>
+          <div className="shrink-0">
             <MailAccountsPagination
               page={list.page}
               limit={list.limit}

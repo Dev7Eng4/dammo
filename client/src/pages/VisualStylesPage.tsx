@@ -66,29 +66,35 @@ export function VisualStylesPage() {
   }
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Phong cách hình ảnh"
-        subtitle="Quản lý preset phong cách hình ảnh (anime, chibi, cinematic, ...)."
-        icon={Palette}
-      />
+    <PageShell fullBleed>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 space-y-4">
+          <PageHeader
+            title="Phong cách hình ảnh"
+            subtitle="Quản lý preset phong cách hình ảnh (anime, chibi, cinematic, ...)."
+            icon={Palette}
+          />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-        <span className="text-sm text-neutral-400">
-          {styles.length.toLocaleString()} phong cách
-        </span>
-        <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-          + Thêm phong cách
-        </Button>
-      </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+            <span className="text-sm text-neutral-400">
+              {styles.length.toLocaleString()} phong cách
+            </span>
+            <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
+              + Thêm phong cách
+            </Button>
+          </div>
+        </div>
 
-      <div className="card-surface px-5 pt-3 pb-4">
-        <VisualStylesTable
-          styles={styles}
-          loading={loading}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-        />
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+          <div className="min-h-0 flex-1 overflow-auto">
+            <VisualStylesTable
+              styles={styles}
+              loading={loading}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+          </div>
+        </div>
       </div>
 
       <AddVisualStyleModal

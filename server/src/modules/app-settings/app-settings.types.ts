@@ -9,6 +9,8 @@ export interface AppSettings {
   enableImageTransitions: boolean;
   chromeBackgroundUseOffscreen: boolean;
   aiSceneDensityMaxSec: AiSceneDensityMaxSecSettings;
+  /** Max parallel task-queue jobs (1–8). */
+  taskQueueConcurrency: number;
 }
 
 export type UpdateAppSettingsInput = Partial<

@@ -145,37 +145,35 @@ export function DataTable<TData>({
 
   if (loading) {
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-muted-foreground">
-              {enableRowSelection && <th className="min-w-[50px] w-10 pb-3 pr-4" />}
-              {showRowNumbers && <th className="min-w-[50px] w-10 pb-3 pr-4 font-medium">STT</th>}
-              {columns.map((column, index) => (
-                <th
-                  key={column.id ?? ('accessorKey' in column ? String(column.accessorKey) : index)}
-                  className={cn(
-                    'min-w-[50px] pb-3 font-medium',
-                    index < columns.length - 1 ? 'pr-4' : undefined,
-                    column.meta?.headerClassName,
-                  )}
-                >
-                  {typeof column.header === 'string' ? column.header : null}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <tr key={i} className="border-b border-border/50">
-                <td colSpan={colCount} className="py-2.5">
-                  <div className="h-4 animate-pulse rounded bg-muted" />
-                </td>
-              </tr>
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-border text-xs text-muted-foreground">
+            {enableRowSelection && <th className="min-w-[50px] w-10 pb-3 pr-4" />}
+            {showRowNumbers && <th className="min-w-[50px] w-10 pb-3 pr-4 font-medium">STT</th>}
+            {columns.map((column, index) => (
+              <th
+                key={column.id ?? ('accessorKey' in column ? String(column.accessorKey) : index)}
+                className={cn(
+                  'min-w-[50px] pb-3 font-medium',
+                  index < columns.length - 1 ? 'pr-4' : undefined,
+                  column.meta?.headerClassName,
+                )}
+              >
+                {typeof column.header === 'string' ? column.header : null}
+              </th>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <tr key={i} className="border-b border-border/50">
+              <td colSpan={colCount} className="py-2.5">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     )
   }
 
@@ -209,56 +207,54 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className="max-h-[min(70vh,720px)] overflow-auto">
-      <table className="w-full text-left text-sm">
-        <thead>{headerRow}</thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => {
-            const id = row.id
-            const isActive =
-              activeRowId != null ? activeRowId === id : enableRowSelection && !!selectedIds?.has(id)
-            return (
-              <tr
-                key={id}
-                onClick={isInteractive ? () => handleRowActivate(row) : undefined}
-                onKeyDown={isInteractive ? (event) => handleRowKeyDown(event, row) : undefined}
-                tabIndex={isInteractive ? 0 : undefined}
-                aria-selected={isActive || undefined}
-                className={cn(
-                  'border-b border-border/50 transition-colors duration-150',
-                  'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                  isInteractive ? 'cursor-pointer' : 'cursor-default',
-                  isActive
-                    ? cn('bg-primary-500/10', isInteractive && 'hover:bg-primary-500/15')
-                    : isInteractive
-                      ? 'hover:bg-muted/80'
-                      : undefined,
-                )}
-              >
-                {enableRowSelection && (
-                  <SelectionCell
-                    checked={!!selectedIds?.has(id)}
-                    onToggle={onToggleRow ? () => onToggleRow(id) : undefined}
-                  />
-                )}
-                {showRowNumbers && <RowNumberCell value={rowNumberStart + row.index} />}
-                {row.getVisibleCells().map((cell, index) => (
-                  <td
-                    key={cell.id}
-                    className={cn(
-                      'min-w-[50px] py-2.5',
-                      index < row.getVisibleCells().length - 1 ? 'pr-4' : undefined,
-                      cell.column.columnDef.meta?.cellClassName,
-                    )}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <table className="w-full text-left text-sm">
+      <thead>{headerRow}</thead>
+      <tbody>
+        {table.getRowModel().rows.map((row) => {
+          const id = row.id
+          const isActive =
+            activeRowId != null ? activeRowId === id : enableRowSelection && !!selectedIds?.has(id)
+          return (
+            <tr
+              key={id}
+              onClick={isInteractive ? () => handleRowActivate(row) : undefined}
+              onKeyDown={isInteractive ? (event) => handleRowKeyDown(event, row) : undefined}
+              tabIndex={isInteractive ? 0 : undefined}
+              aria-selected={isActive || undefined}
+              className={cn(
+                'border-b border-border/50 transition-colors duration-150',
+                'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                isInteractive ? 'cursor-pointer' : 'cursor-default',
+                isActive
+                  ? cn('bg-primary-500/10', isInteractive && 'hover:bg-primary-500/15')
+                  : isInteractive
+                    ? 'hover:bg-muted/80'
+                    : undefined,
+              )}
+            >
+              {enableRowSelection && (
+                <SelectionCell
+                  checked={!!selectedIds?.has(id)}
+                  onToggle={onToggleRow ? () => onToggleRow(id) : undefined}
+                />
+              )}
+              {showRowNumbers && <RowNumberCell value={rowNumberStart + row.index} />}
+              {row.getVisibleCells().map((cell, index) => (
+                <td
+                  key={cell.id}
+                  className={cn(
+                    'min-w-[50px] py-2.5',
+                    index < row.getVisibleCells().length - 1 ? 'pr-4' : undefined,
+                    cell.column.columnDef.meta?.cellClassName,
+                  )}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }

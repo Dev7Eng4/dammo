@@ -17,5 +17,9 @@ export function PageShell({ children, fullBleed = false, className }: PageShellP
     )
   }
 
-  return <div className={cn('space-y-6 p-6', className)}>{children}</div>
+  return (
+    <div className={cn('scrollbar-thin h-full min-h-0 space-y-6 overflow-y-auto overscroll-contain p-6', className)}>
+      {children}
+    </div>
+  )
 }

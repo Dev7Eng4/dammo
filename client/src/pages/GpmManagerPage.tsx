@@ -291,52 +291,52 @@ export function GpmManagerPage() {
   return (
     <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          <div className="mb-4 space-y-4">
-            <PageHeader title="Quản lý GPM" subtitle="Hồ sơ và nhóm trình duyệt" icon={UserPlus} />
-            <PageTabs
-              variant="underline"
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as 'profiles' | 'groups')}
-              items={[
-                { id: 'profiles', label: 'Hồ sơ' },
-                { id: 'groups', label: 'Nhóm' },
-              ]}
-            />
-          </div>
+        <div className="mb-4 shrink-0 space-y-4">
+          <PageHeader title="Quản lý GPM" subtitle="Hồ sơ và nhóm trình duyệt" icon={UserPlus} />
+          <PageTabs
+            variant="pill"
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as 'profiles' | 'groups')}
+            items={[
+              { id: 'profiles', label: 'Hồ sơ' },
+              { id: 'groups', label: 'Nhóm' },
+            ]}
+          />
+        </div>
 
-          {activeTab === 'profiles' ? (
-            <>
-              <div className="border-b border-border pb-4">
-                <GpmProfilesToolbar
-                  count={profiles.length}
-                  search={profileSearch}
-                  sort={profileSort}
-                  loading={profilesLoading}
-                  starting={starting}
-                  stopping={stopping}
-                  testing={testing}
-                  deleting={deletingProfile}
-                  canStart={selectedProfileId !== null && !isSelectedRunning}
-                  canStop={selectedProfileId !== null && isSelectedRunning}
-                  canTest={selectedProfileId !== null}
-                  canEdit={selectedProfileId !== null}
-                  canDelete={selectedProfileId !== null}
-                  onSearchChange={setProfileSearch}
-                  onSortChange={setProfileSort}
-                  onRefresh={handleRefresh}
-                  onAddProfile={() => setShowAddProfileModal(true)}
-                  onStart={handleStartProfile}
-                  onStop={handleStopProfile}
-                  onTest={handleTestProfile}
-                  onEdit={() => setShowEditProfileModal(true)}
-                  onDelete={() => setShowDeleteProfileModal(true)}
-                />
-              </div>
+        {activeTab === 'profiles' ? (
+          <>
+            <div className="shrink-0 border-b border-border pb-4">
+              <GpmProfilesToolbar
+                count={profiles.length}
+                search={profileSearch}
+                sort={profileSort}
+                loading={profilesLoading}
+                starting={starting}
+                stopping={stopping}
+                testing={testing}
+                deleting={deletingProfile}
+                canStart={selectedProfileId !== null && !isSelectedRunning}
+                canStop={selectedProfileId !== null && isSelectedRunning}
+                canTest={selectedProfileId !== null}
+                canEdit={selectedProfileId !== null}
+                canDelete={selectedProfileId !== null}
+                onSearchChange={setProfileSearch}
+                onSortChange={setProfileSort}
+                onRefresh={handleRefresh}
+                onAddProfile={() => setShowAddProfileModal(true)}
+                onStart={handleStartProfile}
+                onStop={handleStopProfile}
+                onTest={handleTestProfile}
+                onEdit={() => setShowEditProfileModal(true)}
+                onDelete={() => setShowDeleteProfileModal(true)}
+              />
+            </div>
 
-              {profilesError ? <p className="mt-2 text-xs text-danger">{profilesError}</p> : null}
+            {profilesError ? <p className="mt-2 shrink-0 text-xs text-danger">{profilesError}</p> : null}
 
-              <div className="mt-4 card-surface px-5 pt-3 pb-4">
+            <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+              <div className="min-h-0 flex-1 overflow-auto">
                 <GpmProfilesTable
                   profiles={profiles}
                   groups={groups}
@@ -349,23 +349,25 @@ export function GpmManagerPage() {
                   onStop={handleStopRow}
                 />
               </div>
-            </>
-          ) : (
-            <>
-              <div className="border-b border-border pb-4">
-                <GpmGroupsToolbar
-                  count={filteredGroups.length}
-                  search={groupSearch}
-                  loading={groupsLoading}
-                  onSearchChange={setGroupSearch}
-                  onRefresh={handleRefresh}
-                  onAddGroup={() => setShowAddGroupModal(true)}
-                />
-              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="shrink-0 border-b border-border pb-4">
+              <GpmGroupsToolbar
+                count={filteredGroups.length}
+                search={groupSearch}
+                loading={groupsLoading}
+                onSearchChange={setGroupSearch}
+                onRefresh={handleRefresh}
+                onAddGroup={() => setShowAddGroupModal(true)}
+              />
+            </div>
 
-              {groupsError ? <p className="mt-2 text-xs text-danger">{groupsError}</p> : null}
+            {groupsError ? <p className="mt-2 shrink-0 text-xs text-danger">{groupsError}</p> : null}
 
-              <div className="mt-4 card-surface px-5 pt-3 pb-4">
+            <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+              <div className="min-h-0 flex-1 overflow-auto">
                 <GpmGroupsTable
                   groups={filteredGroups}
                   loading={groupsLoading}
@@ -375,9 +377,9 @@ export function GpmManagerPage() {
                   onDelete={handleDeleteGroup}
                 />
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       <AddGpmProfileModal

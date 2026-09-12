@@ -59,19 +59,8 @@ const POLL_ACTIVE_MS = 4_000;
 const POLL_LIVE_LIST_MS = 5_000;
 const POLL_LIVE_LOGS_MS = 1_000;
 
-function sortJobs<T extends { status: TaskStatus; createdAt: string }>(jobs: T[]): T[] {
-  const order: Record<TaskStatus, number> = {
-    running: 0,
-    queued: 1,
-    failed: 2,
-    completed: 3,
-    cancelled: 4,
-  };
-  return [...jobs].sort((a, b) => {
-    const byStatus = order[a.status] - order[b.status];
-    if (byStatus !== 0) return byStatus;
-    return b.createdAt.localeCompare(a.createdAt);
-  });
+function sortJobs<T extends { createdAt: string }>(jobs: T[]): T[] {
+  return [...jobs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 function listItemFromJob(job: TaskJob): TaskJobListItem {

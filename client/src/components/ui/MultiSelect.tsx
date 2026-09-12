@@ -142,9 +142,10 @@ export function MultiSelect<T extends string>({
   const menu = open ? (
     <div
       ref={menuRef}
+      data-floating-menu=""
       style={menuStyle}
       className={cn(
-        'rounded-xl border border-border bg-surface-elevated shadow-lg',
+        'pointer-events-auto rounded-xl border border-border bg-surface-elevated shadow-lg',
         searchable ? 'flex max-h-60 flex-col overflow-hidden' : 'scrollbar-thin max-h-60 overflow-y-auto overscroll-contain py-1',
         menuClassName,
       )}

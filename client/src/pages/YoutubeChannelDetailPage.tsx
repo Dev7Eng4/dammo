@@ -308,7 +308,7 @@ export function YoutubeChannelDetailPage() {
   return (
     <PageShell fullBleed className='lg:flex-row'>
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
-        <div className='flex-1 overflow-y-auto'>
+        <div className='shrink-0'>
           {loading || !channel ? (
             <YoutubeChannelDetailHeaderSkeleton />
           ) : (
@@ -351,7 +351,6 @@ export function YoutubeChannelDetailPage() {
           ) : null}
 
           <div className='mt-4 flex flex-wrap items-end justify-between gap-3'>
-            {/* <YoutubeChannelVideoSummary videos={allVideos} loading={videosLoading} /> */}
             <YoutubeChannelVideosToolbar
               statusFilter={statusFilter}
               onStatusFilterChange={next => {
@@ -361,8 +360,10 @@ export function YoutubeChannelDetailPage() {
               nextUploadAt={channel?.nextUploadAt}
             />
           </div>
+        </div>
 
-          <div className='mt-3 card-surface px-5 pt-3 pb-4'>
+        <div className='mt-3 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
+          <div className='min-h-0 flex-1 overflow-auto'>
             <YoutubeChannelVideosTable
               videos={videos.pageItems}
               loading={tableLoading}
@@ -376,6 +377,8 @@ export function YoutubeChannelDetailPage() {
               onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
               onTitleClick={isPendingFilter ? undefined : setContentVideo}
             />
+          </div>
+          <div className='shrink-0'>
             <MailAccountsPagination
               page={videos.page}
               limit={videos.limit}

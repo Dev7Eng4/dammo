@@ -167,56 +167,64 @@ export function SourceChannelDetailPage() {
 
   return (
     <PageShell fullBleed>
-      <div className="flex-1 overflow-y-auto">
-        {loading || !source ? (
-          <SourceChannelDetailHeaderSkeleton />
-        ) : (
-          <SourceChannelDetailHeader
-            source={source}
-            niches={niches}
-            refreshing={refreshing}
-            refreshError={refreshError}
-            onRefresh={handleRefreshSource}
-          />
-        )}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0">
+          {loading || !source ? (
+            <SourceChannelDetailHeaderSkeleton />
+          ) : (
+            <SourceChannelDetailHeader
+              source={source}
+              niches={niches}
+              refreshing={refreshing}
+              refreshError={refreshError}
+              onRefresh={handleRefreshSource}
+            />
+          )}
+        </div>
 
-        <div className="mt-4 card-surface px-5 pt-3 pb-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
           {source?.platform === 'youtube' || videos.loading ? (
             <>
-              <SourceChannelVideosToolbar
-                durationFilter={durationFilter}
-                onDurationFilterChange={handleDurationFilterChange}
-                canDownload={canDownload}
-                downloadDisabledReason={downloadDisabledReason}
-                onDownload={handleDownload}
-              />
-              <SourceChannelVideosTable
-                videos={videos.items}
-                loading={videos.loading}
-                error={videos.error}
-                rowNumberStart={(videos.page - 1) * videos.limit + 1}
-                selectedIds={selectedIds}
-                onToggleRow={handleToggleRow}
-                onToggleAll={handleToggleAll}
-              />
-              <MailAccountsPagination
-                page={videos.page}
-                limit={videos.limit}
-                total={videos.total}
-                totalPages={videos.totalPages}
-                onPageChange={(nextPage) => {
-                  videos.markLoading();
-                  videos.setPage(nextPage);
-                  clearSelection();
-                }}
-                onLimitChange={(nextLimit) => {
-                  videos.markLoading();
-                  setLimit(nextLimit);
-                  videos.setPage(1);
-                  clearSelection();
-                }}
-                locale="vi"
-              />
+              <div className="shrink-0">
+                <SourceChannelVideosToolbar
+                  durationFilter={durationFilter}
+                  onDurationFilterChange={handleDurationFilterChange}
+                  canDownload={canDownload}
+                  downloadDisabledReason={downloadDisabledReason}
+                  onDownload={handleDownload}
+                />
+              </div>
+              <div className="min-h-0 flex-1 overflow-auto">
+                <SourceChannelVideosTable
+                  videos={videos.items}
+                  loading={videos.loading}
+                  error={videos.error}
+                  rowNumberStart={(videos.page - 1) * videos.limit + 1}
+                  selectedIds={selectedIds}
+                  onToggleRow={handleToggleRow}
+                  onToggleAll={handleToggleAll}
+                />
+              </div>
+              <div className="shrink-0">
+                <MailAccountsPagination
+                  page={videos.page}
+                  limit={videos.limit}
+                  total={videos.total}
+                  totalPages={videos.totalPages}
+                  onPageChange={(nextPage) => {
+                    videos.markLoading();
+                    videos.setPage(nextPage);
+                    clearSelection();
+                  }}
+                  onLimitChange={(nextLimit) => {
+                    videos.markLoading();
+                    setLimit(nextLimit);
+                    videos.setPage(1);
+                    clearSelection();
+                  }}
+                  locale="vi"
+                />
+              </div>
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">

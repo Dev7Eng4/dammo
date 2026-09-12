@@ -64,8 +64,8 @@ export function ProxyProvidersTab() {
   }
 
   return (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <span className="text-sm text-neutral-400">
           {providers.length.toLocaleString()} nhà cung cấp
         </span>
@@ -74,13 +74,15 @@ export function ProxyProvidersTab() {
         </Button>
       </div>
 
-      <div className="mt-4 card-surface px-5 pt-3 pb-4">
-        <ProxyProvidersTable
-          providers={providers}
-          loading={loading}
-          onEdit={handleEdit}
-          onDelete={handleDeleteClick}
-        />
+      <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+        <div className="min-h-0 flex-1 overflow-auto">
+          <ProxyProvidersTable
+            providers={providers}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+          />
+        </div>
       </div>
 
       <AddProxyProviderModal
@@ -130,6 +132,6 @@ export function ProxyProvidersTab() {
           Xóa nhà cung cấp <strong className="text-neutral-100">{selectedProvider?.name}</strong>?
         </p>
       </Modal>
-    </>
+    </div>
   );
 }

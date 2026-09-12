@@ -58,7 +58,7 @@ export function RenderQueuePage() {
   return (
     <PageShell fullBleed className="lg:flex-row">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
+        <div className="shrink-0">
           <PageHeader
             title="Hàng đợi render"
             subtitle="Theo dõi tiến trình render video"
@@ -68,8 +68,10 @@ export function RenderQueuePage() {
           <div className="border-b border-border pb-4">
             <RenderQueueToolbar actionsDisabled />
           </div>
+        </div>
 
-          <div className="mt-4 card-surface px-5 pt-3 pb-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
+          <div className="min-h-0 flex-1 overflow-auto">
             {loading ? (
               <p className="py-8 text-center text-sm text-neutral-400">Loading render jobs...</p>
             ) : jobs.length === 0 ? (

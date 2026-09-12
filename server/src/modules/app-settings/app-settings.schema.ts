@@ -13,4 +13,5 @@ export const updateAppSettingsSchema = z.object({
       low: sceneDensitySecSchema.optional(),
     })
     .optional(),
+  taskQueueConcurrency: z.number().int().min(1).max(8).optional(),
 });

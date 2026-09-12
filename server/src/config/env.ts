@@ -52,8 +52,8 @@ export const env = {
   slideshowCacheMaxAgeDays: optionalNumber(process.env.SLIDESHOW_CACHE_MAX_AGE_DAYS) ?? 7,
   /** Maximum retained slideshow clip cache size per work directory, in GiB. */
   slideshowCacheMaxGiB: optionalNumber(process.env.SLIDESHOW_CACHE_MAX_GIB) ?? 10,
-  /** Max parallel task-queue jobs (1–8, default 3). Override: TASK_QUEUE_CONCURRENCY */
-  taskQueueConcurrency: Math.min(8, Math.max(1, Number(process.env.TASK_QUEUE_CONCURRENCY) || 3)),
+  /** Max parallel task-queue jobs (1–8, default 1). Override: TASK_QUEUE_CONCURRENCY */
+  taskQueueConcurrency: Math.min(8, Math.max(1, Number(process.env.TASK_QUEUE_CONCURRENCY) || 1)),
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',

@@ -46,7 +46,7 @@ export function Select({
       disabled={disabled}
       className="w-full"
       triggerClassName={cn('h-10 w-full min-w-0 rounded-lg px-3 py-0', triggerClassName ?? className)}
-      menuClassName="z-50"
+      menuClassName="z-[60]"
     />
   );
 }
