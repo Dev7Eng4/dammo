@@ -1,6 +1,22 @@
 {
   "styles": [
     {
+      "id": "ec1935b0-32c8-4b08-ac09-783cca59d1a5",
+      "name": "Anime Story Drama",
+      "rule": "Japanese anime story illustration for narrated drama, clean confident line art, cel shading with clear light and shadow separation, expressive adult faces readable in close and medium crops, natural adult proportions, uncluttered everyday Japanese settings, lighting and colour follow each scene's mood from warm and tender to cold and tense, anime key visual quality, masterpiece, highly detailed",
+      "niche": "Câu chuyện / drama, emotional, tình yêu, 修羅場, 泣ける話",
+      "createdAt": "2026-09-13T07:24:47.773Z",
+      "updatedAt": "2026-09-13T07:24:47.773Z"
+    },
+    {
+      "id": "fa1db1d0-5eee-47a8-acc1-f985a15e338d",
+      "name": "Anime Senior Life",
+      "rule": "Japanese anime illustration for senior life storytelling, gentle semi-realistic anime design for elderly characters, soft rounded features with natural wrinkles and grey or silver hair, honest expressions from calm contentment to worry and regret, clean line art with soft cel shading, plain uncluttered Japanese interiors, lighting and colour follow each scene's mood from warm daylight to cool overcast, masterpiece, highly detailed",
+      "niche": "Người già / lối sống, tài chính hưu trí, 断捨離, cảnh báo",
+      "createdAt": "2026-09-13T07:24:47.773Z",
+      "updatedAt": "2026-09-13T07:24:47.773Z"
+    },
+    {
       "id": "5435753b-9942-40a7-aa47-5b8d3d17bf49",
       "name": "Audio Chữa lành",
       "rule": "Beautiful soft cinematic anime illustration, gorgeous bishoujo/ikemen character design, incredibly detailed expressive eyes, ethereal soft-glow lighting, warm intimate atmosphere, dreamy pastel color palette with smooth gradients, soft blending, close-up intimacy, highly detailed ambient background (cozy bedroom, romantic twilight), visual novel CG style, masterpiece, breathtakingly beautiful",
