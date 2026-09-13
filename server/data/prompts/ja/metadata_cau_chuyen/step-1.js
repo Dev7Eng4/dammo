@@ -426,13 +426,12 @@ No backstory, no personality, no emotion in this section.
 
 Judge how compactly the strongest hook can be written in Japanese.
 
-The packaging step uses this to choose the thumbnail text layout.
+The packaging step uses this as the large bottom line of the thumbnail.
 
 Return:
 
 - characters_in_peak_moment (1 or 2)
-- hook_fits_in_8_japanese_characters (true or false)
-- shortest_japanese_hook_phrase (tightest natural phrasing, max 10 characters)
+- shortest_japanese_hook_phrase (tightest natural phrasing, max 7 characters)
 
 ==================================================
 ### 16. FINAL ANALYTICAL CHECK
@@ -507,7 +506,6 @@ Use exactly this structure:
     }
   ],
   "characters_in_peak_moment": 1,
-  "hook_fits_in_8_japanese_characters": true,
   "shortest_japanese_hook_phrase": "",
   "thumbnail_scene_candidate": {
     "moment": "",

@@ -309,193 +309,112 @@ Do NOT create artificial text panels or boxes.
 The text must visually belong to the scene.
 
 ==================================================
-PART 10 — TELOP LAYOUT SELECTION
+PART 10 — THUMBNAIL LAYOUT (FIXED, NEVER CHANGES)
 ==================================================
 
-Choose EXACTLY ONE of the three telop layouts below.
+Every thumbnail uses the same three horizontal bands, inside ONE seamless frame.
 
-The layout is a creative decision, not a default.
+TOP BAND — about 4% to 20% of the frame height
+  Exactly ONE line of Japanese text.
+  This is the setup line: the quote, the situation, or the provocation.
 
-Select it from the story, the detected niche, and the chosen CTR hook.
+IMAGE BAND — about 20% to 72% of the frame height
+  The whole picture: characters, key prop, environment.
+  No lettering anywhere inside this band.
 
---------------------------------------------------
-LAYOUT 1 — single_line
---------------------------------------------------
+BOTTOM BAND — about 74% to 88% of the frame height
+  Exactly ONE line of Japanese text.
+  This is the payoff line: the reaction, consequence, twist, or open question.
+  It is drawn noticeably larger than the top line.
 
-ONE single line of Japanese text.
+The bottom band ENDS at about 88% of the frame height, leaving the lowest 12%
+as clean scene. That keeps the YouTube duration badge in the lower-right corner
+from ever landing on the lettering.
 
-Placement:
+This layout never changes.
 
-- lower-left by default
-- upper-left instead when the subject, the key prop, or the main action
-  occupies the lower-left area
-
-Use single_line when ANY of the following is true:
-
-- the detected niche is a SOFT niche
-  (泣ける話, 家族, 癒やし, ASMR, 恋愛, 乙女向け, 日常, healing, romance)
-- the CTR hook is object-driven, revelation-driven, or mystery-driven
-  and the key prop already explains itself visually
-- Step 1 reports hook_fits_in_8_japanese_characters = true
-- the scene is a single-character close-up carrying a very strong expression
-
---------------------------------------------------
-LAYOUT 2 — stacked_bottom
---------------------------------------------------
-
-TWO lines stacked directly one above the other in the lower-left area,
-read as ONE text block sharing a common left edge.
-
-- line 1 = setup (quote, situation, provocation)
-- line 2 = payoff (reaction, consequence, twist, unanswered question)
-
-Use stacked_bottom when ALL of the following are true:
-
-- the detected niche is a LOUD niche
-  (修羅場, スカッと, 因果応報, betrayal, revenge, workplace humiliation,
-  psychological drama)
-- the story genuinely needs a setup to payoff beat
-- the subject or subjects can be composed in the upper or right area of the frame
-
---------------------------------------------------
-LAYOUT 3 — split_top_bottom
---------------------------------------------------
-
-ONE line in the upper-left area and ONE line in the lower-left area,
-sharing the same left edge, framing the scene between them.
-
-Use split_top_bottom ONLY when BOTH of the following are true:
-
-- Step 1 reports characters_in_peak_moment = 2, and both faces must occupy
-  the horizontal middle band of the frame
-- the two lines carry genuinely distinct narrative beats
-
---------------------------------------------------
-SELECTION PRIORITY
---------------------------------------------------
-
-When more than one layout qualifies, prefer the layout with the
-FEWEST total Japanese characters:
-
-single_line  >  stacked_bottom  >  split_top_bottom
-
-Fewer rendered characters means higher typographic reliability.
-
-Return the decision as:
-
-- telop_layout
-- telop_layout_reason
+Do not move, merge, or drop a band.
+Do not add a third line.
+Do not stack both lines together at one end of the frame.
+Do not place lettering in the vertical middle of the image.
 
 ==================================================
-PART 10B — TEXT PLACEMENT RULES
+PART 10B — PLACEMENT AND SIZE
 ==================================================
 
-These rules apply to EVERY layout.
+ALIGNMENT:
 
-LEFT COLUMN:
+Both lines are centred horizontally inside their own band.
 
-- every telop line is left-aligned
-- every telop line shares ONE common left margin,
-  approximately 6-8% in from the left edge
-- text never starts from the centre and never from the right
+WIDTH:
 
-WIDTH LIMIT:
+- the top line spans about 45-60% of the image width
+- the bottom line spans about 55-75% of the image width
 
-- no telop line may extend beyond approximately 65% of the image width
-- this keeps the lower-right corner clear of the YouTube duration badge
+Size is a share of the image width, never a pixel value.
 
-FORBIDDEN ZONES:
+Because the width ratio is fixed, SHORTER text must be drawn LARGER so the line
+still fills its target width. A 4-character line must appear noticeably bigger
+than a 12-character line.
 
-- never top-center, top-right, bottom-center, bottom-right
-- never the lower-right corner, under any circumstance
-- never vertical Japanese text (縦書き)
+The bottom line must always look clearly larger than the top line.
 
-PROTECTED ELEMENTS:
-
-Text must NEVER cover:
-
-- eyes
-- faces
-- important gestures
-- key props
-- the main action
-
-COMPOSITION MUST ADAPT TO THE LAYOUT:
-
-The subject stays the main event and keeps its natural size in the frame.
-Shift the framing, never shrink the subject, and never clear a slice of the
-image for the text.
-
-- single_line and stacked_bottom:
-  angle the composition so the face and the key prop sit clear of the text
-  strip, while the scene continues behind the lettering all the way to the
-  left edge of the frame
-
-- split_top_bottom:
-  place the subjects across the horizontal middle band, and let the scene
-  continue through the upper and lower strips behind the lettering
-
-Only the strip a telop line occupies has to be low-detail.
-The rest of the left side stays a fully rendered part of the scene.
-
-If the key action would fall under a telop line,
-mirror the composition so the action moves clear of it.
-
-==================================================
-PART 11 — THUMBNAIL TEXT CREATION
-==================================================
-
-Write the telop text for the layout selected in Part 10.
-
---------------------------------------------------
-LINE COUNT, LENGTH AND SIZE
---------------------------------------------------
-
-Size is a share of the total image width, never a pixel value.
-
-single_line — 1 line, 5-10 characters (max 12), spanning 50-65% of the width.
-
-stacked_bottom — 2 lines, combined max 18 characters:
-  line 1: 5-9 characters, spanning 40-50%
-  line 2: 4-8 characters, spanning 50-62%
-
-split_top_bottom — 2 lines, combined max 18 characters:
-  top: 5-10 characters, spanning 38-48%
-  bottom: 4-8 characters, spanning 45-58%
-
-On both two-line layouts the second line must look visually larger.
+ONE LINE EACH:
 
 Every telop line renders as ONE single unbroken horizontal line.
 Never wrap a line into two rows, never split a word across rows.
 
-Because the width ratio is fixed, SHORTER text must be drawn LARGER so the
-line still fills its target width. A 5-character line must appear noticeably
-bigger than a 12-character line.
+EACH STRING APPEARS EXACTLY ONCE:
 
---------------------------------------------------
-CONTENT REQUIREMENTS
---------------------------------------------------
+The image carries exactly two pieces of Japanese lettering, one per text band.
+The two strings differ from each other, and neither is ever repeated anywhere
+else in the frame.
+
+PROTECTED ELEMENTS:
+
+Faces, eyes, key props and the main action all belong inside the image band,
+clear of both text bands.
+
+COMPOSITION:
+
+The scene fills the entire frame, edge to edge, and continues behind the
+lettering in both text bands. Never empty, darken out, or blur a region to make
+room for the text.
+
+Frame the characters so their faces sit inside the image band. The top and
+bottom bands then fall on naturally calmer parts of the scene — a ceiling, a
+wall, sky, a floor, a road surface, a table top — and that is what keeps the
+lettering readable.
+
+Never use vertical Japanese text (縦書き).
+
+==================================================
+PART 11 — THUMBNAIL TEXT
+==================================================
+
+Write exactly TWO Japanese lines.
+
+TOP LINE — the setup: 8-14 Japanese characters.
+
+BOTTOM LINE — the payoff: 3-7 Japanese characters.
+Build it from shortest_japanese_hook_phrase in the Step 1 JSON, tightening it
+if needed.
+
+Combined maximum 20 Japanese characters.
+
+The two lines must differ clearly in BOTH content and length, so they can never
+be mistaken for one another or collapsed into a single repeated string.
 
 The text must:
 
 - be immediately understandable
 - create curiosity
 - reinforce the visual hook
-- complement the title
-- avoid simply copying the title
-- avoid explaining the complete story
+- complement the title without copying it
+- stop short of explaining the whole story
 
-For two-line layouts, the second line does NOT have to describe a consequence.
-
-It may communicate a reaction, a consequence, a mystery, a revelation,
-an emotional payoff, a shocking detail, or an unanswered question.
-
-For single_line, that one line must carry the entire curiosity gap alone.
-
-Do not settle for a weak single line.
-
-If no single line is strong enough on its own, choose a two-line layout instead.
-
+The bottom line does not have to state a consequence. It may carry a reaction,
+a twist, a revelation, a shocking detail, or an unanswered question.
 ==================================================
 PART 12 — TYPOGRAPHY STRATEGY
 ==================================================
@@ -525,8 +444,7 @@ When the typography strategy is single-tone,
 When the typography strategy is two-tone,
 highlight exactly ONE word or short phrase, on ONE line only.
 
-For single_line, prefer single-tone.
-Use two-tone only when exactly one word clearly deserves the emphasis.
+Apply the highlight to the bottom line, never to both lines.
 
 ==================================================
 LOUD NICHES
@@ -577,7 +495,6 @@ Everything else must be natural English.
 
 You must independently determine all thumbnail decisions from the provided Step 1 analysis and the requested image style, including:
 
-- the selected telop layout
 - character appearance taken from character_dna
 - exact Japanese thumbnail text
 - the width ratio of every telop line
@@ -624,7 +541,7 @@ Use JAPANESE only for the exact words that should physically appear on the thumb
 
 Example structure:
 
-"Create a premium cinematic Japanese YouTube thumbnail as one unified scene. A Japanese woman in her forties stands slightly right of centre, her face shocked and emotionally devastated. The room continues behind her across the whole frame, the left side filled by a softly lit plaster wall and a sliding paper door held gently out of focus, so the scene reaches the left edge with nothing emptied or blacked out. In the lower-left area, over that calm wall, display the exact Japanese text 「もう離婚よ」 as one single unbroken horizontal line, left-aligned, spanning about 55% of the image width, in bold white typography with a thick black outline. Keep the lower-right corner free of text."
+"Create a premium cinematic Japanese YouTube thumbnail as one seamless scene. A Japanese woman in her forties stands slightly right of centre, her face shocked and emotionally devastated, framed between about 20% and 72% of the frame height. The room continues behind her across the whole frame, edge to edge, a softly lit plaster wall above her and a wooden floor below, so the scene reaches every edge with nothing emptied or blacked out. Across the top band, about 12% down from the top edge, one single unbroken horizontal line of Japanese text reads 「離婚届を出された」 in bold white with a thick black outline, centred and spanning about 52% of the image width. Across the lower band, about 80% down from the top edge, one single unbroken horizontal line of much larger Japanese text reads 「まさかの真実」 in vibrant red with a thick black outline, centred and spanning about 66% of the image width. Each Japanese string appears exactly once. The lowest 12% of the frame stays clean scene, free of lettering."
 
 Do not write scene descriptions in Japanese.
 
@@ -663,18 +580,20 @@ So express each constraint as an affirmative requirement first:
   simply calmer and less detailed" instead of "leave the left side empty"
 - "the Japanese lettering sits directly on the scene, its strokes touching
   the background" instead of "no text boxes, no banners"
-- "each telop line runs as one unbroken horizontal line, left-aligned"
+- "each telop line runs as one unbroken horizontal line, centred in its band"
   instead of "no wrapped text, no centred text"
 - "the frame holds only the characters and the single key prop"
   instead of "no unnecessary objects, no extra characters"
 - "the lower-right corner stays clean scene, free of lettering"
   instead of "no text in the lower-right corner"
+- "exactly two pieces of Japanese lettering, one in the top band and one in
+  the lower band, each string appearing once" instead of "no repeated text"
 
 Once the affirmative description is complete, close the prompt with ONE
 short negative clause, limited to these items:
 
 no speech bubbles, no text boxes, no banners, no logos, no watermarks,
-no vertical Japanese text, no split screen.
+no vertical Japanese text, no split screen, no duplicated lettering.
 
 Do not repeat anything already covered affirmatively.
 
@@ -701,20 +620,22 @@ SCENE
    the scene fills the whole frame with no emptied or blacked-out region.
 
 TELOP
-7. telop_layout is one of single_line, stacked_bottom, split_top_bottom, and the
-   entry count in telop_japanese.lines matches it.
-8. Every line is left-aligned on one shared margin, runs as one unbroken
-   horizontal line, and stays under ~65% of the image width.
-9. The lower-right corner holds no text; faces, eyes, key prop and action stay clear.
-10. Text is short, does not duplicate the title, and has sufficient contrast.
-11. Typography matches the niche, with highlight_text empty when single-tone.
+7. Exactly two telop lines: one in the top band (4-20% height), one in the
+   bottom band (74-88% height). Nothing in the vertical middle.
+8. Each line is centred in its band, runs as one unbroken horizontal line, and
+   the bottom line is clearly larger than the top line.
+9. The two strings differ from each other and neither is repeated anywhere.
+10. The lowest 12% of the frame holds no text; faces, eyes, key prop and action
+    stay inside the image band.
+11. Text is short, does not duplicate the title, and has sufficient contrast.
+12. Typography matches the niche, with highlight_text empty when single-tone.
 
 IMAGE PROMPT
-12. thumbnail.prompt is English, self-contained, with no unresolved placeholders.
-13. Japanese appears there ONLY as the exact words to render on the thumbnail.
-14. It states the left placement and the width ratio of every telop line.
-15. Constraints are affirmative, with one short negative clause at the end.
-16. Every creative decision derives from the Step 1 JSON and the provided inputs.
+13. thumbnail.prompt is English, self-contained, with no unresolved placeholders.
+14. Japanese appears there ONLY as the exact words to render on the thumbnail.
+15. It states both band positions as percentages and the width ratio of each line.
+16. Constraints are affirmative, with one short negative clause at the end.
+17. Every creative decision derives from the Step 1 JSON and the provided inputs.
 
 ==================================================
 OUTPUT FORMAT
@@ -724,13 +645,6 @@ Return ONLY valid JSON.
 
 Do not use Markdown.
 Do not add explanations outside the JSON.
-
-telop_japanese.lines contains exactly ONE entry for single_line,
-and exactly TWO entries for stacked_bottom and split_top_bottom.
-
-"role" is "single" for single_line,
-"setup" and "payoff" for stacked_bottom,
-"top" and "bottom" for split_top_bottom.
 
 Use exactly this structure:
 
@@ -747,9 +661,7 @@ Use exactly this structure:
     ""
   ],
   "thumbnail": {
-    "chosen_layout": "single unified scene",
-    "telop_layout": "single_line | stacked_bottom | split_top_bottom",
-    "telop_layout_reason": "",
+    "chosen_layout": "top line / image / bottom line, one unified scene",
     "packaging_strategy": {
       "hook_type": "",
       "primary_emotion": "",
@@ -758,10 +670,10 @@ Use exactly this structure:
     },
     "composition": {
       "camera_angle": "",
-      "subject_position": "",
-      "text_column": "left",
-      "text_placement": "",
-      "negative_space": "",
+      "subject_position": "Where the characters sit inside the image band",
+      "top_text_band": "4-20% of frame height",
+      "bottom_text_band": "74-88% of frame height",
+      "calm_area_for_text": "Which real scene element sits behind each line",
       "visual_priority": [
         "",
         "",
@@ -770,17 +682,20 @@ Use exactly this structure:
     },
     "typography_strategy": "two-tone or single-tone",
     "telop_japanese": {
-      "lines": [
-        {
-          "role": "",
-          "full_text": "",
-          "base_text": "",
-          "highlight_text": "",
-          "placement": "",
-          "width_ratio": "",
-          "color_description": ""
-        }
-      ]
+      "top": {
+        "full_text": "Setup line, 8-14 Japanese characters",
+        "base_text": "",
+        "highlight_text": "",
+        "width_ratio": "45-60%",
+        "color_description": ""
+      },
+      "bottom": {
+        "full_text": "Payoff line, 3-7 Japanese characters",
+        "base_text": "",
+        "highlight_text": "",
+        "width_ratio": "55-75%",
+        "color_description": ""
+      }
     },
     "prompt": ""
   }
