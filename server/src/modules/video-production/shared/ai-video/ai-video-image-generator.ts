@@ -1,4 +1,5 @@
 import { AppError } from '../../../../shared/http/errors.js';
+import { countEvent, timedPhase } from '../../../../shared/timing/run-timeline.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
@@ -100,15 +101,17 @@ async function executeScenePromptChunk(
     });
 
     try {
-      const response = await llmBrowserService.chat(
-        profileId,
-        promptsSettingsService.get().defaultLlmProvider,
-        userPrompt,
-        undefined,
-        {
-          submitWith: 'enter',
-          pasteStrategy: 'human',
-        },
+      const response = await timedPhase('scene prompts', `LLM ${job.density}`, () =>
+        llmBrowserService.chat(
+          profileId,
+          promptsSettingsService.get().defaultLlmProvider,
+          userPrompt,
+          undefined,
+          {
+            submitWith: 'enter',
+            pasteStrategy: 'human',
+          },
+        ),
       );
 
       const parsed = tryParseAiVideoSceneResponse(response, {
@@ -118,6 +121,7 @@ async function executeScenePromptChunk(
         return parsed;
       }
 
+      countEvent('scene prompt parse retry');
       lastReason = 'invalid JSON or schema mismatch';
       lastResponsePath = await persistLlmParseFailure({
         outputDir: input.workDir,
@@ -181,7 +185,7 @@ async function generateScenePromptsFromJobs(
 
   const runProfile = async (profileId: string, profileName: string): Promise<void> => {
     try {
-      await llmBrowserService.open(profileId, provider);
+      await timedPhase('scene prompts', 'mở profile', () => llmBrowserService.open(profileId, provider));
 
       while (failure === undefined) {
         const index = nextJob;

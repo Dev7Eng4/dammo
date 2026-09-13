@@ -10,6 +10,7 @@ import {
 import type { CaptionStyleKey } from '../../modules/video-production/shared/render-core/caption-styles.js';
 import { OUTPUT_VIDEO_BASENAME } from '../../modules/video-production/shared/render-core/output-artifacts.constants.js';
 import { formatElapsedMs } from '../../shared/timing/step-timer.js';
+import { reportLines, RunTimeline, runWithTimeline } from '../../shared/timing/run-timeline.js';
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -140,6 +141,16 @@ async function loadScenes(workDir: string, maxScenes?: number): Promise<AiVideoS
 }
 
 export async function runAiVideoTest(props: AiVideoTestProps = {}): Promise<string> {
+  const timeline = new RunTimeline('ai-video test');
+
+  try {
+    return await runWithTimeline(timeline, () => assembleAiVideoTest(props));
+  } finally {
+    for (const line of reportLines(timeline)) console.log(line);
+  }
+}
+
+async function assembleAiVideoTest(props: AiVideoTestProps): Promise<string> {
   const showSmallVideo = props.showSmallVideo !== false;
   const workDir = TEST_DIR;
   const audioPath = path.join(workDir, AUDIO_FILE);

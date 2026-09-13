@@ -7,6 +7,7 @@ import {
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { AppError } from '../../../../shared/http/errors.js';
+import { timedPhase } from '../../../../shared/timing/run-timeline.js';
 import { prepareSlideshow } from '../slideshow/slideshow-assembler.js';
 import { SS_MAX_KEN_BURNS_ANIMATION_SEC } from '../slideshow/slideshow.constants.js';
 import { pruneSlideshowCache } from '../slideshow/slideshow-cache.js';
@@ -156,7 +157,7 @@ export async function assembleReupAiSlideshowVideo(
       label = clip.filename;
     }
     log(`[ai-video] Small video PiP overlay: ${label}`);
-    const prebaked = await ensurePrebakedAiSmallVideo(sourcePath, onLog);
+    const prebaked = await timedPhase('assemble', 'prebake small video', () => ensurePrebakedAiSmallVideo(sourcePath, onLog));
     preparedSmallVideoPath = prebaked.path;
   }
 
@@ -190,7 +191,7 @@ export async function assembleReupAiSlideshowVideo(
   let preparedAvatarPath: string | null = null;
 
   if (channelAvatarPath) {
-    preparedAvatarPath = await ensurePrebakedChannelAvatar(channelAvatarPath, onLog);
+    preparedAvatarPath = await timedPhase('assemble', 'prebake avatar', () => ensurePrebakedChannelAvatar(channelAvatarPath, onLog));
   }
 
   const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
@@ -291,12 +292,14 @@ export async function assembleReupAiSlideshowVideo(
     `[ai-video] One-pass compose + mux (${preparedSlideshow.clipPaths.length} clips, ` +
       `~${preparedSlideshow.totalDuration.toFixed(1)}s)...`,
   );
-  await runFfmpegFilterComplex(mergeArgs, {
-    encodeOpts: aiEncodeOpts,
-    expectedDurationSec: audioDurationAfterTempo,
-    onLog,
-    label: 'ai-compose-mux',
-  });
+  await timedPhase('assemble', 'ffmpeg compose + mux', () =>
+    runFfmpegFilterComplex(mergeArgs, {
+      encodeOpts: aiEncodeOpts,
+      expectedDurationSec: audioDurationAfterTempo,
+      onLog,
+      label: 'ai-compose-mux',
+    }),
+  );
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
@@ -304,10 +307,12 @@ export async function assembleReupAiSlideshowVideo(
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }
 
-  await pruneSlideshowCache(preparedSlideshow.cacheDir, {
-    keepPaths: preparedSlideshow.clipPaths,
-    onLog,
-  });
+  await timedPhase('assemble', 'dọn cache clip', () =>
+    pruneSlideshowCache(preparedSlideshow.cacheDir, {
+      keepPaths: preparedSlideshow.clipPaths,
+      onLog,
+    }),
+  );
 
   log(`[ai-video] Video saved → ${outputPath}`);
   return outputPath;

@@ -14,6 +14,7 @@ import { canonicalizeYoutubeVideoUrl, requireYoutubeVideoId } from '../../../../
 import { AppError } from '../../../../shared/http/errors.js';
 import type { TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
+import { reportLines, RunTimeline, runWithTimeline } from '../../../../shared/timing/run-timeline.js';
 import { resolveChannelAvatarForVideoAssembly } from '../../../youtube-channels/resolve-channel-avatar.js';
 import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
 import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
@@ -783,7 +784,29 @@ export class ReupAudioPipeline {
     };
   }
 
+  /**
+   * Wraps the whole per-video run in a timeline so every instrumented step —
+   * including ones several modules deep — lands in one breakdown, printed even
+   * when the run fails so a slow step before the failure is still visible.
+   */
   private async runAudioTask(
+    destination: ProductionDestination,
+    task: ReupVideoTask,
+    run: TaskRunContext,
+  ): Promise<ReupVideoOutputItem> {
+    const timeline = new RunTimeline(`${destination.reupAudioVideoType ?? 'video'} ${task.videoId}`);
+
+    try {
+      return await runWithTimeline(timeline, () => this.runAudioTaskSteps(destination, task, run));
+    } finally {
+      for (const line of reportLines(timeline)) {
+        console.log(line);
+        run.log.info(line);
+      }
+    }
+  }
+
+  private async runAudioTaskSteps(
     destination: ProductionDestination,
     task: ReupVideoTask,
     run: TaskRunContext,

@@ -7,6 +7,7 @@ import {
   resolveOutputPixelFormat,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
+import { countEvent } from '../../../../shared/timing/run-timeline.js';
 import {
   adaptKenBurnsForDuration,
   buildSlideVideoFilter,
@@ -94,9 +95,12 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   const clipPath = path.join(opts.cacheDir, `clip_${key}.mp4`);
 
   if (fs.existsSync(clipPath)) {
+    countEvent('clip cache hit');
     opts.onLog?.(`[slideshow] cache hit ${path.basename(slide.imagePath)} -> ${path.basename(clipPath)}`);
     return clipPath;
   }
+
+  countEvent('clip render');
 
   fs.mkdirSync(opts.cacheDir, { recursive: true });
 

@@ -69,7 +69,7 @@ export async function runSceneAssetsStep(
               )
           : undefined,
       }),
-    stepTimer,
+    { ...stepTimer, timelineGroup: 'scene prompts' },
   );
 
   log.ok(
@@ -131,7 +131,7 @@ export async function runSceneAssetsStep(
             }
           : undefined,
       }),
-    stepTimer,
+    { ...stepTimer, timelineGroup: 'scene images' },
   );
 
   log.ok(

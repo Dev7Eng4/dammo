@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { mapPool } from '../../../../shared/async/map-pool.js';
+import { timedPhase } from '../../../../shared/timing/run-timeline.js';
 import { renderSlideClip } from '../slideshow/slideshow-clip-renderer.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { resolveAiSlideRenderOptions } from './ai-video-slide-spec.js';
@@ -46,7 +47,7 @@ export class AiClipPrebakePool {
   private async renderOne(slide: SlideSpec): Promise<void> {
     try {
       const opts = resolveAiSlideRenderOptions(this.workDir, this.onLog);
-      await renderSlideClip(slide, opts);
+      await timedPhase('ken burns prebake', 'clip', () => renderSlideClip(slide, opts));
       this.onLog?.(
         `[ai-video] Prebaked Ken Burns clip → ${path.basename(slide.imagePath)} (${slide.durationSec.toFixed(1)}s)`,
       );
@@ -76,7 +77,7 @@ export class AiClipPrebakePool {
 
     await mapPool(slides, this.maxConcurrency, async (slide, index) => {
       try {
-        await renderSlideClip(slide, opts);
+        await timedPhase('ken burns prebake', 'reconcile', () => renderSlideClip(slide, opts));
         this.onLog?.(
           `[ai-video] Reconciled clip ${index + 1}/${slides.length} → ${path.basename(slide.imagePath)}`,
         );

@@ -68,7 +68,7 @@ export const aiStrategy: VideoTypeStrategy = {
             : {}),
           onLog: toOnLog(log),
         }),
-      ctx.stepTimer,
+      { ...ctx.stepTimer, timelineGroup: 'assemble' },
     );
 
     log.ok(`AI video saved → ${outputBasename}.mp4`);

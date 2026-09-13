@@ -6,6 +6,7 @@ import type {
   MetaMediaBatchJob,
 } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../../../shared/http/errors.js';
+import { countEvent, timedPhase } from '../../../../shared/timing/run-timeline.js';
 import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { FlowMainProfilePool } from '../../../llm-browser/flow-main-profile-pool.js';
@@ -228,7 +229,7 @@ async function generateFlowSceneImages(
     let heldProfileId: string | undefined;
 
     try {
-      await generateImagesViaToolWithFailover(
+      await timedPhase('scene images', 'flow batch', () => generateImagesViaToolWithFailover(
         visuals,
         {
           outputDir: slidesDir,
@@ -245,13 +246,14 @@ async function generateFlowSceneImages(
             return next;
           },
           onProfileSwitch: (from, to, remainingCount) => {
+            countEvent('flow profile switch');
             log(
               `[ai-video] Flow quota exhausted on ${from.name}, switching to ${to.name} ` +
                 `(${remainingCount} image(s) remaining)`,
             );
           },
         },
-      );
+      ));
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       log(`[ai-video] Flow batch ${batchIndex + 1}/${batches.length} failed: ${reason}`);
@@ -308,7 +310,7 @@ async function generateMetaSceneImages(
     });
   }
 
-  const result = await metaBrowserService.generateMediaBatch(jobs, {
+  const result = await timedPhase('scene images', 'meta batch', () => metaBrowserService.generateMediaBatch(jobs, {
     concurrency: mode,
     onLog: log,
     onJobProgress: progress => {
@@ -336,7 +338,7 @@ async function generateMetaSceneImages(
         });
       }
     },
-  });
+  }));
 
   return {
     generatedCount: result.generatedCount,
@@ -450,6 +452,7 @@ export async function generateAiSceneSlideImages(
 
   for (let attempt = 1; attempt <= MAX_SCENE_IMAGE_ATTEMPTS && remaining.length > 0; attempt += 1) {
     if (attempt > 1) {
+      countEvent('scene image retry pass');
       log(
         `[ai-video] Retry ${attempt - 1}/${MAX_SCENE_IMAGE_ATTEMPTS - 1} for ` +
           `${remaining.length} missing scene image(s): ${remaining.map(job => job.name).join(', ')}`,
@@ -469,6 +472,9 @@ export async function generateAiSceneSlideImages(
 
   const failedCount = remaining.length;
   const generatedCount = pending.length - failedCount;
+  countEvent('ảnh sinh mới', generatedCount);
+  countEvent('ảnh bỏ qua (đã có)', skippedCount);
+  if (failedCount > 0) countEvent('ảnh lỗi', failedCount);
 
   if (failedCount > 0) {
     log(

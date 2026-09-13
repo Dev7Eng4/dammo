@@ -7,6 +7,7 @@ import {
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { mapPool } from '../../../../shared/async/map-pool.js';
+import { timedPhase } from '../../../../shared/timing/run-timeline.js';
 import { renderSlideClip } from './slideshow-clip-renderer.js';
 import {
   resolveSlideshowClipConcurrency,
@@ -84,7 +85,7 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
 
   const clipsStartedAt = performance.now();
   const clipPaths = await mapPool(slides, concurrency, (slide, index) =>
-    renderSlideClip(slide, {
+    timedPhase('assemble', 'render clip', () => renderSlideClip(slide, {
       width: cfg.width,
       height: cfg.height,
       fps: cfg.fps,
@@ -92,7 +93,7 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
       cacheDir,
       ...(cfg.kenBurnsAdapt ? { kenBurnsAdapt: cfg.kenBurnsAdapt } : {}),
       onLog: msg => spec.onLog?.(`[slideshow] [${index + 1}/${slides.length}] ${msg}`),
-    }),
+    })),
   );
   log(
     `[slideshow] clip phase completed | clips=${clipPaths.length} | ` +
