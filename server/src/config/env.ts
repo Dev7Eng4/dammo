@@ -46,8 +46,14 @@ export const env = {
   ffmpegEncodeProfile: (process.env.FFMPEG_ENCODE_PROFILE ?? 'balanced').toLowerCase(),
   /** Parallel Ken Burns clip renders. The encoder-specific safe default is used when omitted. */
   slideshowClipConcurrency: optionalNumber(process.env.SLIDESHOW_CLIP_CONCURRENCY),
-  /** Ken Burns working-canvas multiplier. 5 is smooth while using ~31% fewer pixels than 6. */
+  /** Set to 0 to compose slides with the legacy linear xfade chain. */
+  slideshowXfadeTree: optionalNumber(process.env.SLIDESHOW_XFADE_TREE),
+  /** Ken Burns working-canvas multiplier. 4 is the smooth floor; higher costs pixels quadratically. */
   aiSlideshowTempScaleFactor: optionalNumber(process.env.AI_SLIDESHOW_TEMP_SCALE_FACTOR),
+  /** Sub Chrome profiles driven in parallel for AI scene prompts (default 3). */
+  aiScenePromptProfiles: optionalNumber(process.env.AI_SCENE_PROMPT_PROFILES),
+  /** Main Chrome profiles driven in parallel for Flow scene images (default 2). */
+  aiFlowImageProfiles: optionalNumber(process.env.AI_FLOW_IMAGE_PROFILES),
   /** Retain reusable slideshow clips for this many days. */
   slideshowCacheMaxAgeDays: optionalNumber(process.env.SLIDESHOW_CACHE_MAX_AGE_DAYS) ?? 7,
   /** Maximum retained slideshow clip cache size per work directory, in GiB. */

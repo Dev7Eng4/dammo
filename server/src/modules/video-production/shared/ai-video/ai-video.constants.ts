@@ -123,3 +123,29 @@ export const CHARACTER_REFERENCES_FILENAME = 'character-references.json';
 
 /** Max scenes per Flow tool batch call (mavid editor). */
 export const AI_FLOW_TOOL_BATCH_SIZE = 10;
+
+/**
+ * Sub profiles driven in parallel while generating scene prompts.
+ *
+ * The density chunks are independent — each covers its own slice of the
+ * transcript — so the only reason they ran one after another was that a single
+ * Chrome profile was opened for the whole loop. Capped because every profile is
+ * a real browser window competing for RAM and for the provider's rate limit.
+ */
+export const AI_SCENE_PROMPT_MAX_PROFILES = Math.max(
+  1,
+  Math.round(env.aiScenePromptProfiles ?? 3),
+);
+
+/**
+ * Main profiles driven in parallel for Flow scene images.
+ *
+ * Batches are handed out through `FlowMainProfilePool`, so a profile is only
+ * ever driven by one batch at a time and quota exhaustion is shared across
+ * workers. Set `AI_FLOW_IMAGE_PROFILES=1` to fall back to the old sequential
+ * behaviour; the effective value is capped by how many main profiles exist.
+ */
+export const AI_FLOW_IMAGE_MAX_PROFILES = Math.max(
+  1,
+  Math.round(env.aiFlowImageProfiles ?? 2),
+);

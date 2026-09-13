@@ -1,5 +1,6 @@
+import os from 'node:os';
 import { env } from '../../../../config/env.js';
-import { resolveFfmpegHwEncoder } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { resolveFfmpegHwEncoder, type FfmpegHwEncoder } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { appSettingsService } from '../../../app-settings/app-settings.service.js';
 
 /**
@@ -69,10 +70,58 @@ export const SS_OUTPUT_VIDEO_BASENAME = 'slideshow';
 /** Sub-directory name used for cached intermediate clips. */
 export const SS_CACHE_DIRNAME = '.slideshow-cache';
 
+/**
+ * Fold clips pairwise instead of threading them through one long xfade chain.
+ *
+ * A chain of N clips makes every finished frame traverse N-1 xfade instances;
+ * a tree cuts that to ceil(log2(N)). Both produce the same timeline — see
+ * `buildXfadeTree` and its tests.
+ *
+ * Off by default because the depth turned out not to matter: composing 48
+ * clips into 337s of 1080p measured 123.3s / 123.4s with the chain (depth 47)
+ * against 132.9s / 110.4s with the tree (depth 6) — the same within noise,
+ * because the cost is in the encoder, not in passing frames down the graph.
+ * Kept behind `SLIDESHOW_XFADE_TREE=1` for far longer timelines, where the
+ * chain depth grows and this is worth re-measuring.
+ */
+export const SS_USE_XFADE_TREE = env.slideshowXfadeTree === 1;
+
+/** Share of the machine's cores handed to CPU clip renders. */
+const SS_CLIP_CPU_CORE_SHARE = 0.7;
+
+function cpuCount(): number {
+  const cores = os.cpus().length;
+  return Number.isFinite(cores) && cores > 0 ? cores : 4;
+}
+
+/**
+ * zoompan has no slice threading, so each CPU clip render is pinned to roughly
+ * one core and the only way to use a wide machine is to run more of them at
+ * once. Hardware encoders keep their fixed defaults — they are capped by
+ * concurrent encoder sessions, not by cores.
+ */
+function resolveDefaultClipConcurrency(encoder: FfmpegHwEncoder): number {
+  const limits = SS_CLIP_RENDER_LIMITS[encoder];
+  if (encoder !== 'cpu') return limits.default;
+  return Math.min(limits.max, Math.max(2, Math.round(cpuCount() * SS_CLIP_CPU_CORE_SHARE)));
+}
+
 export function resolveSlideshowClipConcurrency(): number {
   const encoder = resolveFfmpegHwEncoder();
   const limits = SS_CLIP_RENDER_LIMITS[encoder];
-  const raw = env.slideshowClipConcurrency ?? limits.default;
-  const requested = Number.isFinite(raw) ? Math.floor(raw) : limits.default;
+  const fallback = resolveDefaultClipConcurrency(encoder);
+  const raw = env.slideshowClipConcurrency ?? fallback;
+  const requested = Number.isFinite(raw) ? Math.floor(raw) : fallback;
   return Math.min(limits.max, Math.max(SS_CLIP_RENDER_CONCURRENCY_MIN, requested));
+}
+
+/**
+ * Without this every parallel libx264 spawns threads for the whole machine, so
+ * N concurrent clip renders oversubscribe it N-fold. Split the cores instead.
+ * Hardware encoders ignore `-threads`, so they get no flag at all.
+ */
+export function resolveClipEncoderThreadArgs(): string[] {
+  if (resolveFfmpegHwEncoder() !== 'cpu') return [];
+  const perProcess = Math.floor(cpuCount() / resolveSlideshowClipConcurrency());
+  return ['-threads', String(Math.max(1, Math.min(4, perProcess)))];
 }

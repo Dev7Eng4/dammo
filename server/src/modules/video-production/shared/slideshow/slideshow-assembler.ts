@@ -20,10 +20,12 @@ import {
   SS_FINAL_PRESET,
   SS_FPS,
   SS_TEMP_SCALE_FACTOR,
+  SS_USE_XFADE_TREE,
 } from './slideshow.constants.js';
 import {
   buildHardCutChain,
   buildXfadeChain,
+  buildXfadeTree,
   type ChainTransition,
 } from './slideshow-transitions.js';
 import type { SlideshowOutputConfig, SlideshowSpec } from './slideshow.types.js';
@@ -102,8 +104,9 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
     type: s.transitionToNext ?? 'fade',
     durationSec: s.transitionDurationSec ?? SS_DEFAULT_TRANSITION_DURATION,
   }));
+  const buildTransitionChain = SS_USE_XFADE_TREE ? buildXfadeTree : buildXfadeChain;
   const chain = isImageTransitionsEnabled()
-    ? buildXfadeChain({ clipCount: clipPaths.length, durations, transitions })
+    ? buildTransitionChain({ clipCount: clipPaths.length, durations, transitions })
     : buildHardCutChain(clipPaths.length, durations);
 
   return {

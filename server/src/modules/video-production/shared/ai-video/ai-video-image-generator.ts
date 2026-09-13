@@ -8,6 +8,7 @@ import { generateCharacterReferences } from './ai-video-character-references.js'
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
+  AI_SCENE_PROMPT_MAX_PROFILES,
   resolveAiSceneDensityMaxSec,
   VIDEO_IMAGE_PROMPT_KEY,
   VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
@@ -141,6 +142,12 @@ async function executeScenePromptChunk(
   );
 }
 
+/** How many sub profiles to actually open, given the pool and the work available. */
+function resolveScenePromptProfileCount(jobCount: number): number {
+  const available = chromeProfilesService.listSubProfiles().length;
+  return Math.max(1, Math.min(AI_SCENE_PROMPT_MAX_PROFILES, available, jobCount));
+}
+
 async function generateScenePromptsFromJobs(
   input: GenerateAiVideoImagesInput,
   jobs: DensityChunkJob[],
@@ -151,30 +158,65 @@ async function generateScenePromptsFromJobs(
     requireReferences?: boolean;
   },
 ): Promise<GenerateAiVideoImagesResult> {
-  const profile = chromeProfilesService.pickSubProfile();
-  const allScenes: AiVideoScenePrompt[] = [];
+  const profiles = chromeProfilesService.pickSubProfiles(resolveScenePromptProfileCount(jobs.length));
+  const provider = promptsSettingsService.get().defaultLlmProvider;
 
-  log(`[ai-video] Mở Chrome profile ${profile.name} cho scene prompts...`);
+  /* Results are collected per chunk index so the transcript order survives
+     whatever order the profiles happen to finish in. */
+  const results = new Array<AiVideoScenePrompt[] | undefined>(jobs.length);
+  const orderedScenes = (): AiVideoScenePrompt[] => results.flatMap(chunk => chunk ?? []);
+
+  log(
+    `[ai-video] Mở ${profiles.length} Chrome profile cho scene prompts ` +
+      `(${profiles.map(profile => profile.name).join(', ')}) — ${jobs.length} chunk`,
+  );
+
+  let nextJob = 0;
+  /*
+   * Workers swallow their own failure and stop taking work instead of throwing.
+   * A rejecting `Promise.all` would let the remaining profiles keep driving
+   * Chrome while the `finally` below closes the very windows they are using.
+   */
+  let failure: unknown;
+
+  const runProfile = async (profileId: string, profileName: string): Promise<void> => {
+    try {
+      await llmBrowserService.open(profileId, provider);
+
+      while (failure === undefined) {
+        const index = nextJob;
+        nextJob += 1;
+        if (index >= jobs.length) return;
+
+        const job = jobs[index];
+        log(
+          `[ai-video] [${profileName}] LLM ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} ` +
+            `(${job.transcriptChunk.length} cue(s), maxDuration=${job.maxDurationSec}s)...`,
+        );
+
+        const scenes = await executeScenePromptChunk(profileId, input, job, options);
+        results[index] = scenes;
+        log(`[ai-video] [${profileName}] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`);
+
+        const done = results.filter(Boolean).length;
+        const savedPath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, orderedScenes());
+        log(`[ai-video] Scene prompts checkpoint → ${savedPath} (${done}/${jobs.length} chunk)`);
+      }
+    } catch (err) {
+      failure ??= err;
+      log(`[ai-video] [${profileName}] scene prompts aborted: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
 
   try {
-    await llmBrowserService.open(profile.id, promptsSettingsService.get().defaultLlmProvider);
-
-    for (const job of jobs) {
-      log(
-        `[ai-video] LLM ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} (${job.transcriptChunk.length} cue(s), maxDuration=${job.maxDurationSec}s)...`,
-      );
-
-      const scenes = await executeScenePromptChunk(profile.id, input, job, options);
-      allScenes.push(...scenes);
-      log(`[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`);
-
-      const savedPath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
-      log(`[ai-video] Scene prompts checkpoint → ${savedPath} (${allScenes.length} scene(s))`);
-    }
+    await Promise.all(profiles.map(profile => runProfile(profile.id, profile.name)));
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeSubProfiles(profiles.map(profile => profile.id));
   }
 
+  if (failure !== undefined) throw failure;
+
+  const allScenes = orderedScenes();
   const filePath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
   log(`[ai-video] Scene prompts saved → ${filePath} (${allScenes.length} scene(s))`);
 

@@ -19,6 +19,19 @@ export interface FlowProfileFailoverOptions {
   /** Collects every main profile ID used during failover (for batch cleanup). */
   openedProfileIds?: Set<string>;
   onProfileSwitch?: (from: ChromeProfile, to: ChromeProfile, remainingCount: number) => void;
+  /**
+   * Hands out the profile to work on, replacing the default "first main profile
+   * that is not exhausted" rule.
+   *
+   * Callers running several batches at once must supply this: two concurrent
+   * batches driving the same Chrome user-data-dir corrupt each other's session,
+   * and the default rule would happily give both of them the same profile once
+   * one of them fails over. A pool implementation leases exclusively instead.
+   *
+   * `currentId` is the profile being given up (undefined on the first pick).
+   * Returning undefined means nothing is free and failover stops.
+   */
+  selectProfile?: (exhaustedIds: ReadonlySet<string>, currentId?: string) => ChromeProfile | undefined;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -90,7 +103,14 @@ export async function generateImagesViaToolWithFailover(
 
   const outputDir = path.resolve(options.outputDir);
   const exhausted = new Set<string>();
-  let profile = pickStartProfile(failoverOpts?.startProfileId, exhausted);
+  const selectProfile = failoverOpts?.selectProfile;
+  const firstProfile = selectProfile
+    ? selectProfile(exhausted, undefined)
+    : pickStartProfile(failoverOpts?.startProfileId, exhausted);
+  if (!firstProfile) {
+    throw new AppError('No Chrome main profiles available for Flow', 409, 'NO_MAIN_PROFILE');
+  }
+  let profile = firstProfile;
   const startedAt = Date.now();
   const triedNames: string[] = [];
 
@@ -142,8 +162,10 @@ export async function generateImagesViaToolWithFailover(
 
       await closeChromeProfile(profile.id).catch(() => undefined);
 
-      const nextProfiles = listAvailableFlowMainProfiles(exhausted);
-      if (nextProfiles.length === 0) {
+      const nextProfile = selectProfile
+        ? selectProfile(exhausted, profile.id)
+        : listAvailableFlowMainProfiles(exhausted)[0];
+      if (!nextProfile) {
         const stillMissing = (await resolvePendingVisuals(visuals, outputDir)).map(v => v.name);
         console.error(
           `[flow-quota] all main profiles exhausted, missing: ${stillMissing.join(', ') || '(none)'}`,
@@ -157,7 +179,7 @@ export async function generateImagesViaToolWithFailover(
       }
 
       const from = profile;
-      profile = nextProfiles[0];
+      profile = nextProfile;
       const remaining = (await resolvePendingVisuals(visuals, outputDir)).length;
       console.log(
         `[flow-quota] switching to profile ${profile.name}, ${remaining} image(s) remaining`,

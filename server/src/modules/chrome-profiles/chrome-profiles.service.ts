@@ -77,6 +77,11 @@ export class ChromeProfilesService {
     return this.listMainProfiles()[0];
   }
 
+  /** Sub profiles currently configured, for callers sizing their own pool. */
+  listSubProfiles(): ChromeProfile[] {
+    return chromeProfilesRepository.findByRole('sub');
+  }
+
   pickSubProfiles(count: number): ChromeProfile[] {
     const subs = chromeProfilesRepository.findByRole('sub');
     if (subs.length === 0) {

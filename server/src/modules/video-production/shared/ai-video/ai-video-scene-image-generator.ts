@@ -8,6 +8,7 @@ import type {
 import { AppError } from '../../../../shared/http/errors.js';
 import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
+import { FlowMainProfilePool } from '../../../llm-browser/flow-main-profile-pool.js';
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
@@ -15,7 +16,11 @@ import { isKenBurnsEnabled } from '../slideshow/slideshow.constants.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';
 import { AiClipPrebakePool } from './ai-video-clip-prebake.js';
-import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
+import {
+  AI_FLOW_IMAGE_MAX_PROFILES,
+  AI_FLOW_TOOL_BATCH_SIZE,
+  AI_SLIDES_DIRNAME,
+} from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import { buildFinalAiSlides } from './ai-video-slide-spec.js';
 import {
@@ -32,6 +37,18 @@ import type {
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
 const FLOW_TOOL_TIMEOUT_MS = 300_000;
+
+/**
+ * Passes over the still-missing scenes before giving up on them.
+ *
+ * A scene without an image is not just a lost frame: its time is handed to the
+ * neighbours by `redistributeMissingSceneTimes`, which changes their durations,
+ * which changes their clip cache keys — and if the resulting timeline drifts
+ * more than `AI_MAX_LAST_SLIDE_PAD_SEC` from the audio, *every* slide is
+ * stretched and the whole Ken Burns prebake is discarded. Retrying a handful of
+ * images is far cheaper than re-rendering the entire slideshow.
+ */
+const MAX_SCENE_IMAGE_ATTEMPTS = 3;
 
 interface SceneVisualJob {
   index: number;
@@ -181,17 +198,21 @@ async function generateFlowSceneImages(
   log: (msg: string) => void,
   onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
   onImageSaved?: (jobName: string) => void,
-): Promise<{ generatedCount: number; failedCount: number }> {
+): Promise<void> {
   const batches = chunkArray(pending, AI_FLOW_TOOL_BATCH_SIZE);
-  let generatedCount = 0;
-  let failedCount = 0;
+  const pool = new FlowMainProfilePool({ onLog: log });
+  const workerCount = Math.max(1, Math.min(AI_FLOW_IMAGE_MAX_PROFILES, pool.capacity, batches.length));
 
-  for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+  log(
+    `[ai-video] Flow: ${batches.length} batch(es) across ${workerCount} main profile(s) ` +
+      `(${pool.capacity} configured)`,
+  );
+
+  let nextBatch = 0;
+
+  const runBatch = async (batchIndex: number): Promise<void> => {
     const batch = batches[batchIndex];
-    const visuals: FlowToolVisual[] = batch.map(job => ({
-      name: job.name,
-      prompt: job.prompt,
-    }));
+    const visuals: FlowToolVisual[] = batch.map(job => ({ name: job.name, prompt: job.prompt }));
 
     for (const job of batch) {
       onProgress?.({
@@ -204,37 +225,55 @@ async function generateFlowSceneImages(
       });
     }
 
+    let heldProfileId: string | undefined;
+
     try {
-      await generateImagesViaToolWithFailover(visuals, {
-        outputDir: slidesDir,
-        timeoutMs: FLOW_TOOL_TIMEOUT_MS,
-        onImageSaved: saved => {
-          onImageSaved?.(saved.name);
+      await generateImagesViaToolWithFailover(
+        visuals,
+        {
+          outputDir: slidesDir,
+          timeoutMs: FLOW_TOOL_TIMEOUT_MS,
+          onImageSaved: saved => {
+            onImageSaved?.(saved.name);
+          },
         },
-      }, {
-        onProfileSwitch: (from, to, remainingCount) => {
-          log(
-            `[ai-video] Flow quota exhausted on ${from.name}, switching to ${to.name} ` +
-              `(${remainingCount} image(s) remaining)`,
-          );
+        {
+          selectProfile: (_exhausted, currentId) => {
+            if (currentId) pool.markExhausted(currentId);
+            const next = pool.acquire(currentId);
+            heldProfileId = next?.id;
+            return next;
+          },
+          onProfileSwitch: (from, to, remainingCount) => {
+            log(
+              `[ai-video] Flow quota exhausted on ${from.name}, switching to ${to.name} ` +
+                `(${remainingCount} image(s) remaining)`,
+            );
+          },
         },
-      });
+      );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       log(`[ai-video] Flow batch ${batchIndex + 1}/${batches.length} failed: ${reason}`);
+    } finally {
+      if (heldProfileId) pool.release(heldProfileId);
     }
 
     for (const job of batch) {
-      if (await fileExists(job.outputPath)) {
-        generatedCount += 1;
-        onImageSaved?.(job.name);
-      } else {
-        failedCount += 1;
-      }
+      if (await fileExists(job.outputPath)) onImageSaved?.(job.name);
     }
-  }
+  };
 
-  return { generatedCount, failedCount };
+  const worker = async (): Promise<void> => {
+    while (true) {
+      const index = nextBatch;
+      nextBatch += 1;
+      if (index >= batches.length) return;
+      await runBatch(index);
+    }
+  };
+
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
 }
 
 async function generateMetaSceneImages(
@@ -372,45 +411,70 @@ export async function generateAiSceneSlideImages(
       (kenBurnsPrebake ? ' (Ken Burns prebake on save, max 4 concurrent)' : ''),
   );
 
-  let generatedCount = 0;
-  let failedCount = 0;
-
-  if (imageProvider === 'flow') {
-    const mains = chromeProfilesService.listMainProfiles();
-    log(
-      `[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`,
-    );
-    try {
-      const flowResult = await generateFlowSceneImages(
-        slidesDir,
-        pending,
-        input.scenes.length,
-        log,
-        input.onProgress,
-        enqueuePrebake,
-      );
-      generatedCount = flowResult.generatedCount;
-      failedCount = flowResult.failedCount;
-    } finally {
-      const closedIds = await closeChromeProfiles(mains.map(profile => profile.id));
-      for (const profileId of closedIds) {
-        const name = mains.find(profile => profile.id === profileId)?.name ?? profileId;
-        log(`[ai-video] Closed Chrome profile ${name} after scene images`);
+  const runProviderPass = async (jobs: SceneVisualJob[]): Promise<void> => {
+    if (imageProvider === 'flow') {
+      const mains = chromeProfilesService.listMainProfiles();
+      log(`[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`);
+      try {
+        await generateFlowSceneImages(
+          slidesDir,
+          jobs,
+          input.scenes.length,
+          log,
+          input.onProgress,
+          enqueuePrebake,
+        );
+      } finally {
+        const closedIds = await closeChromeProfiles(mains.map(profile => profile.id));
+        for (const profileId of closedIds) {
+          const name = mains.find(profile => profile.id === profileId)?.name ?? profileId;
+          log(`[ai-video] Closed Chrome profile ${name} after scene images`);
+        }
       }
+      return;
     }
-  } else {
-    const metaResult = await generateMetaSceneImages(
+
+    await generateMetaSceneImages(
       input.workDir,
       slidesDir,
-      pending,
+      jobs,
       input.scenes.length,
       log,
       input.onProgress,
       metaConcurrency,
       enqueuePrebake,
     );
-    generatedCount = metaResult.generatedCount;
-    failedCount = metaResult.failedCount;
+  };
+
+  let remaining = pending;
+
+  for (let attempt = 1; attempt <= MAX_SCENE_IMAGE_ATTEMPTS && remaining.length > 0; attempt += 1) {
+    if (attempt > 1) {
+      log(
+        `[ai-video] Retry ${attempt - 1}/${MAX_SCENE_IMAGE_ATTEMPTS - 1} for ` +
+          `${remaining.length} missing scene image(s): ${remaining.map(job => job.name).join(', ')}`,
+      );
+    }
+
+    try {
+      await runProviderPass(remaining);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log(`[ai-video] Scene image pass ${attempt} failed: ${reason}`);
+      if (attempt === MAX_SCENE_IMAGE_ATTEMPTS) throw err;
+    }
+
+    remaining = (await resolvePendingJobs(remaining)).pending;
+  }
+
+  const failedCount = remaining.length;
+  const generatedCount = pending.length - failedCount;
+
+  if (failedCount > 0) {
+    log(
+      `[ai-video] ${failedCount} scene image(s) still missing after ${MAX_SCENE_IMAGE_ATTEMPTS} ` +
+        `attempt(s): ${remaining.map(job => job.name).join(', ')} — their time is redistributed to neighbours`,
+    );
   }
 
   const imagePaths = await listSlideImagePaths(slidesDir);

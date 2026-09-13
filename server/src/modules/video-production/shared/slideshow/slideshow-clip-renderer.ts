@@ -16,6 +16,7 @@ import {
   SS_CLIP_CRF,
   SS_CLIP_PRESET,
   isKenBurnsEnabled,
+  resolveClipEncoderThreadArgs,
   SS_MAX_KEN_BURNS_ANIMATION_SEC,
 } from './slideshow.constants.js';
 import type { KenBurnsAdaptConfig, SlideSpec } from './slideshow.types.js';
@@ -105,13 +106,16 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   };
   const pixFmt = resolveOutputPixelFormat();
 
+  /*
+   * No `-loop 1`: the filter chain expands a single input frame to the full
+   * slide length itself (zoompan `d`, then a cloned tail). A looping input
+   * would restart the Ken Burns animation instead of holding its last frame.
+   */
   const args = [
     '-hide_banner',
     '-loglevel',
     'error',
     '-y',
-    '-loop',
-    '1',
     '-i',
     slide.imagePath,
     '-t',
@@ -122,6 +126,7 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
     String(opts.fps),
     '-an',
     ...buildH264VideoEncoderArgs(encodeOpts),
+    ...resolveClipEncoderThreadArgs(),
     '-pix_fmt',
     pixFmt,
     clipPath,

@@ -122,6 +122,91 @@ export function buildXfadeChain(params: BuildXfadeChainParams): XfadeChainResult
   return { filter: parts.join(';'), outLabel: prevLabel, totalDuration };
 }
 
+interface XfadeNode {
+  label: string;
+  /** Length of the stream this node emits, transitions already deducted. */
+  duration: number;
+  /** Index of the right-most source clip folded into this node. */
+  lastClip: number;
+}
+
+/**
+ * Same output as {@link buildXfadeChain}, but folds the clips pairwise instead
+ * of threading them through one long chain.
+ *
+ * A linear chain makes every frame of the finished video traverse all N-1
+ * xfade instances; a balanced tree cuts that to ceil(log2(N)). The offsets are
+ * unchanged because the recurrence is identical — merging a left group of
+ * length L with a right group across transition `j` always lands at
+ * `offset = L - transition[j]`, which is exactly what the chain computes by
+ * accumulating sums.
+ */
+export function buildXfadeTree(params: BuildXfadeChainParams): XfadeChainResult {
+  const { clipCount, durations, transitions } = params;
+
+  if (clipCount <= 0) {
+    throw new Error('buildXfadeTree requires at least one clip');
+  }
+  if (durations.length !== clipCount) {
+    throw new Error('durations length must equal clipCount');
+  }
+  if (clipCount > 1 && transitions.length !== clipCount - 1) {
+    throw new Error('transitions length must equal clipCount - 1');
+  }
+
+  if (clipCount === 1) {
+    return { filter: '', outLabel: '0:v', totalDuration: durations[0] };
+  }
+
+  const parts: string[] = [];
+  let nodeCount = 0;
+  let level: XfadeNode[] = durations.map((duration, index) => ({
+    label: `${index}:v`,
+    duration,
+    lastClip: index,
+  }));
+
+  while (level.length > 1) {
+    const next: XfadeNode[] = [];
+
+    for (let i = 0; i < level.length; i += 2) {
+      const left = level[i];
+      const right = level[i + 1];
+
+      // Odd node out: carry it up untouched, it merges on the next level.
+      if (!right) {
+        next.push(left);
+        continue;
+      }
+
+      const seam = left.lastClip;
+      const transDur = Math.min(
+        transitions[seam].durationSec,
+        durations[seam],
+        durations[seam + 1],
+      );
+      const offsetSec = left.duration - transDur;
+      const label = `xt${nodeCount++}`;
+
+      parts.push(
+        `[${left.label}][${right.label}]xfade=transition=${transitions[seam].type}:` +
+          `duration=${transDur.toFixed(4)}:offset=${offsetSec.toFixed(4)}[${label}]`,
+      );
+
+      next.push({
+        label,
+        duration: left.duration + right.duration - transDur,
+        lastClip: right.lastClip,
+      });
+    }
+
+    level = next;
+  }
+
+  const root = level[0];
+  return { filter: parts.join(';'), outLabel: root.label, totalDuration: root.duration };
+}
+
 /** Sum of durations[from..to] inclusive. */
 function sumRange(durations: number[], from: number, to: number): number {
   let s = 0;
