@@ -351,6 +351,13 @@ Prefer:
 
 Do not add unnecessary characters or objects.
 
+For "calm_area_for_text", name the real element of the scene that is quiet
+enough to carry lettering: a wall, a floor, a table surface, a shadowed area,
+or a region held out of focus.
+
+The scene always fills the whole frame.
+Never describe this area as empty, blank, black, or unused space.
+
 Return:
 
 {
@@ -360,7 +367,7 @@ Return:
   "setting": "",
   "camera_angle": "",
   "expression": "",
-  "negative_space": ""
+  "calm_area_for_text": ""
 }
 
 ==================================================
@@ -509,7 +516,7 @@ Use exactly this structure:
     "setting": "",
     "camera_angle": "",
     "expression": "",
-    "negative_space": ""
+    "calm_area_for_text": ""
   },
   "resolution_type": ""
 }

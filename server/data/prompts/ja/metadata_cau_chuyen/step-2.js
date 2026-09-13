@@ -204,7 +204,7 @@ STORY
 → CTR HOOK
 → VISUAL MOMENT
 → COMPOSITION
-→ NEGATIVE SPACE
+→ SPACE FOR TEXT
 → TEXT PLACEMENT
 → TYPOGRAPHY
 
@@ -283,13 +283,26 @@ Choose the framing that best communicates the selected CTR hook.
 Character positioning must create visual tension and a clear focal hierarchy.
 
 ==================================================
-PART 9 — NEGATIVE SPACE
+PART 9 — SPACE FOR THE TYPOGRAPHY
 ==================================================
 
-Intentionally reserve clean negative space for typography.
+The scene fills the ENTIRE frame, edge to edge.
 
-Create it naturally through wall space, a darker background area, an empty
-room area, sky, blurred environment, or separation around the characters.
+Never leave a region of the image empty, black, blurred out, or unused.
+An emptied band reads as an unfinished image and throws away the frame.
+
+Typography does not need empty space. It needs LOW-DETAIL space:
+a part of the real scene calm enough to keep lettering readable.
+
+Build it from something that genuinely belongs in the room:
+
+- a wall, a sliding door, a curtain
+- a floor, a table surface, a ceiling
+- a shadowed or softly lit part of the scene
+- an area thrown gently out of focus by shallow depth of field
+
+Only the narrow horizontal strip that a telop line actually occupies has to
+be calm. Everything around that strip stays a fully rendered scene.
 
 Do NOT create artificial text panels or boxes.
 
@@ -409,16 +422,24 @@ Text must NEVER cover:
 
 COMPOSITION MUST ADAPT TO THE LAYOUT:
 
+The subject stays the main event and keeps its natural size in the frame.
+Shift the framing, never shrink the subject, and never clear a slice of the
+image for the text.
+
 - single_line and stacked_bottom:
-  place the subject or subjects in the right half or upper-right of the frame,
-  and reserve the left 40-50% of the frame as clean negative space
+  angle the composition so the face and the key prop sit clear of the text
+  strip, while the scene continues behind the lettering all the way to the
+  left edge of the frame
 
 - split_top_bottom:
-  place the subjects across the horizontal middle band,
-  and keep a clean, uncluttered band at the top and at the bottom
+  place the subjects across the horizontal middle band, and let the scene
+  continue through the upper and lower strips behind the lettering
 
-If the key action would fall inside the text column,
-mirror the composition so the action moves away from the text.
+Only the strip a telop line occupies has to be low-detail.
+The rest of the left side stays a fully rendered part of the scene.
+
+If the key action would fall under a telop line,
+mirror the composition so the action moves clear of it.
 
 ==================================================
 PART 11 — THUMBNAIL TEXT CREATION
@@ -427,64 +448,29 @@ PART 11 — THUMBNAIL TEXT CREATION
 Write the telop text for the layout selected in Part 10.
 
 --------------------------------------------------
-LINE COUNT AND LENGTH
+LINE COUNT, LENGTH AND SIZE
 --------------------------------------------------
 
-single_line:
+Size is a share of the total image width, never a pixel value.
 
-- 1 line
-- 5-10 Japanese characters (absolute maximum 12)
+single_line — 1 line, 5-10 characters (max 12), spanning 50-65% of the width.
 
-stacked_bottom:
+stacked_bottom — 2 lines, combined max 18 characters:
+  line 1: 5-9 characters, spanning 40-50%
+  line 2: 4-8 characters, spanning 50-62%
 
-- 2 lines
-- line 1: 5-9 Japanese characters
-- line 2: 4-8 Japanese characters
-- combined maximum 18 Japanese characters
+split_top_bottom — 2 lines, combined max 18 characters:
+  top: 5-10 characters, spanning 38-48%
+  bottom: 4-8 characters, spanning 45-58%
 
-split_top_bottom:
+On both two-line layouts the second line must look visually larger.
 
-- 2 lines
-- top line: 5-10 Japanese characters
-- bottom line: 4-8 Japanese characters
-- combined maximum 18 Japanese characters
+Every telop line renders as ONE single unbroken horizontal line.
+Never wrap a line into two rows, never split a word across rows.
 
---------------------------------------------------
-ONE UNBROKEN LINE
---------------------------------------------------
-
-Every telop line must render as ONE single unbroken horizontal line.
-
-Never wrap a line into two rows.
-
-Never split a word across rows.
-
---------------------------------------------------
-TEXT SIZE BY WIDTH RATIO
---------------------------------------------------
-
-Size is expressed as a share of the total image width, never in pixels.
-
-single_line:
-
-- the line spans approximately 50-65% of the image width
-
-stacked_bottom:
-
-- line 1 spans approximately 40-50% of the image width
-- line 2 spans approximately 50-62% of the image width
-- line 2 must always look visually larger than line 1
-
-split_top_bottom:
-
-- the top line spans approximately 38-48% of the image width
-- the bottom line spans approximately 45-58% of the image width
-- the bottom line must always look visually larger than the top line
-
-Because the width ratio is fixed, SHORTER text must be drawn LARGER
-so that the line still fills its target width.
-
-A 5-character line must appear noticeably bigger than a 12-character line.
+Because the width ratio is fixed, SHORTER text must be drawn LARGER so the
+line still fills its target width. A 5-character line must appear noticeably
+bigger than a 12-character line.
 
 --------------------------------------------------
 CONTENT REQUIREMENTS
@@ -546,89 +532,36 @@ Use two-tone only when exactly one word clearly deserves the emphasis.
 LOUD NICHES
 ==================================================
 
-Examples:
+修羅場, スカッと, 因果応報, revenge, betrayal, shocking drama.
 
-修羅場
-スカッと
-因果応報
-revenge
-betrayal
-shocking drama
+Two-tone: white or vibrant red base, bright yellow emphasis, thick black outline.
+Single-tone: white or vibrant red, thick black outline.
 
-You may use:
-
-TWO-TONE:
-- white or vibrant red base text
-- bright yellow emphasis
-- thick black outline
-
-OR
-
-SINGLE-TONE:
-- white
-OR
-- vibrant red
-- thick black outline
-
-Yellow should be used sparingly.
-
-Prefer highlighting ONE important word or short phrase rather than many words.
+Use yellow sparingly, on ONE important word or short phrase, never on many.
 
 ==================================================
 SOFT NICHES
 ==================================================
 
-Examples:
+泣ける話, 癒やし, ASMR, romance, healing, gentle everyday stories.
 
-泣ける話
-癒やし
-ASMR
-romance
-healing
-gentle everyday stories
+Prefer single-tone: white, warm white, warm yellow, or a subtle light blue,
+with a thin-to-medium dark outline.
 
-Prefer single-tone typography.
-
-Suitable colors include:
-
-- white
-- warm white
-- warm yellow
-- subtle light blue when appropriate
-
-Use a thin-to-medium dark outline.
-
-Avoid excessive:
-
-- glow
-- color variation
-- dramatic effects
-- heavy shadows
-
-Soft typography must still have strong readability.
+Avoid heavy glow, colour variation, dramatic effects and heavy shadows.
+Soft typography must still read clearly at small size.
 
 ==================================================
 PART 13 — CONTRAST AUDIT
 ==================================================
 
-Before finalizing the thumbnail typography, evaluate whether the text will remain readable against the actual scene.
+Check that the text stays readable against the actual scene.
 
-If white text overlaps a bright area:
+If light text lands on a bright area, move the text onto a calmer part of the
+scene, darken that part of the scene locally, or reframe the composition.
 
-- adjust the text placement
-- use stronger natural negative space
-- adjust local scene brightness
-- reposition the composition if necessary
-
-Do NOT solve contrast problems with:
-
-- text boxes
-- banners
-- opaque panels
-- huge glow
-- excessive shadow
-
-Typography must remain integrated into the unified scene.
+Never fix contrast with a text box, a banner, an opaque panel, heavy glow, or
+a heavy drop shadow. Typography stays integrated into the unified scene.
 
 ==================================================
 PART 14 — ENGLISH IMAGE-GENERATION PROMPT
@@ -655,7 +588,7 @@ You must independently determine all thumbnail decisions from the provided Step 
 - text placement
 - camera angle
 - composition
-- negative space
+- which part of the scene sits behind each telop line
 - character positioning
 - visual hierarchy
 - lighting
@@ -691,7 +624,7 @@ Use JAPANESE only for the exact words that should physically appear on the thumb
 
 Example structure:
 
-"Create a premium cinematic Japanese YouTube thumbnail as one unified scene. A Japanese woman in her forties stands in the right half of the frame, her face shocked and emotionally devastated. Keep the left 45% of the frame as clean, uncluttered negative space. In the lower-left area, display the exact Japanese text 「もう離婚よ」 as one single unbroken horizontal line, left-aligned, spanning about 55% of the image width, in bold white typography with a thick black outline. Keep the lower-right corner completely free of text."
+"Create a premium cinematic Japanese YouTube thumbnail as one unified scene. A Japanese woman in her forties stands slightly right of centre, her face shocked and emotionally devastated. The room continues behind her across the whole frame, the left side filled by a softly lit plaster wall and a sliding paper door held gently out of focus, so the scene reaches the left edge with nothing emptied or blacked out. In the lower-left area, over that calm wall, display the exact Japanese text 「もう離婚よ」 as one single unbroken horizontal line, left-aligned, spanning about 55% of the image width, in bold white typography with a thick black outline. Keep the lower-right corner free of text."
 
 Do not write scene descriptions in Japanese.
 
@@ -726,6 +659,8 @@ So express each constraint as an affirmative requirement first:
 
 - "one single seamless photographic frame, one continuous environment,
   edge to edge" instead of "no split screen, no panels, no collage"
+- "the scene reaches every edge of the frame, the area behind the lettering
+  simply calmer and less detailed" instead of "leave the left side empty"
 - "the Japanese lettering sits directly on the scene, its strokes touching
   the background" instead of "no text boxes, no banners"
 - "each telop line runs as one unbroken horizontal line, left-aligned"
@@ -762,7 +697,8 @@ METADATA
 
 SCENE
 5. One unified scene, one frozen moment, max 2 characters, max 1 key prop.
-6. Visual hierarchy is clear and character appearance matches character_dna.
+6. Visual hierarchy is clear, character appearance matches character_dna, and
+   the scene fills the whole frame with no emptied or blacked-out region.
 
 TELOP
 7. telop_layout is one of single_line, stacked_bottom, split_top_bottom, and the
