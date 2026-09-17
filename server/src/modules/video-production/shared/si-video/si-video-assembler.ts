@@ -10,6 +10,7 @@ import {
 import { bakeStillWithOpacity, bakeVideoWithOpacity } from '../../../../infrastructure/ffmpeg/image-resize.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
+import { emitDetailLog } from '../video-log.js';
 import { assertRequiredSiAssets } from './si-assets.js';
 import {
   CANVAS_H,
@@ -121,10 +122,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     onLog,
     onFfmpegProgress,
   } = input;
-  const log = (msg: string) => {
-    console.log(msg);
-    onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, onLog);
 
   const multiImagePaths = centerImagePaths?.filter(p => Boolean(p?.trim())) ?? [];
   const useMultiImage = multiImagePaths.length > 0;

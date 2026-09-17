@@ -2,6 +2,7 @@ import {
   isHardwareEncoder,
   resolveFfmpegHwEncoder,
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
+import { emitDetailLog } from '../video-log.js';
 import {
   LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR,
   STOCK_CANVAS_H,
@@ -34,7 +35,7 @@ export function localStockNormalizeFilterChain(
   const cropW = Math.floor(STOCK_CANVAS_W / LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR / 2) * 2;
   const cropH = Math.floor(STOCK_CANVAS_H / LOCAL_STOCK_ASSEMBLE_ZOOM_FACTOR / 2) * 2;
   const pan = randomStockCropPan();
-  onLog?.(`[reup-si] Local assemble ${formatStockCropPanLog(pan)}`);
+  emitDetailLog(`[reup-si] Local assemble ${formatStockCropPanLog(pan)}`, onLog);
   return (
     `[${inputLabel}]fps=${STOCK_FPS},` +
     `${buildStockCropFilter(cropW, cropH, pan)},` +

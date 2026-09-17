@@ -7,6 +7,7 @@ import {
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { mapPool } from '../../../../shared/async/map-pool.js';
+import { emitDetailLog } from '../video-log.js';
 import { renderSlideClip } from './slideshow-clip-renderer.js';
 import {
   resolveSlideshowClipConcurrency,
@@ -57,10 +58,7 @@ export function resolveSlideshowOutputConfig(output?: Partial<SlideshowOutputCon
  */
 export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<PreparedSlideshow> {
   const { slides, workDir } = spec;
-  const log = (msg: string) => {
-    console.log(msg);
-    spec.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, spec.onLog);
 
   if (slides.length === 0) {
     throw new Error('Slideshow requires at least one slide');
@@ -124,10 +122,7 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
  */
 export async function assembleSlideshow(spec: SlideshowSpec): Promise<string> {
   const { workDir, outputPath } = spec;
-  const log = (msg: string) => {
-    console.log(msg);
-    spec.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, spec.onLog);
 
   const prepared = await prepareSlideshow(spec);
   const { clipPaths, config: cfg } = prepared;
@@ -166,7 +161,8 @@ export async function assembleSlideshow(spec: SlideshowSpec): Promise<string> {
 
   log(`[slideshow] composing final video (~${prepared.totalDuration.toFixed(1)}s)...`);
   await runFfmpeg(args, {
-    onProgress: p => spec.onLog?.(`[slideshow] encode ${p.progress}% ETA ${p.eta}`),
+    onProgress: p =>
+      emitDetailLog(`[slideshow] encode ${p.progress}% ETA ${p.eta}`, spec.onLog),
     expectedDurationSec: prepared.totalDuration,
     encodeOpts: slideshowEncodeOpts,
     onLog: spec.onLog,

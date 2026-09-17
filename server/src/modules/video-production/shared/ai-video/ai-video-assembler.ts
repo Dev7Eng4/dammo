@@ -57,6 +57,7 @@ import {
   scaleSceneTimestamps,
   scenesWithImagePaths,
 } from './ai-video-scene-timing.js';
+import { emitDetailLog } from '../video-log.js';
 import type { AssembleReupAiSlideshowVideoInput } from './ai-video.types.js';
 
 async function resolveAudioSpeedForAssemble(workDir: string): Promise<number> {
@@ -86,10 +87,7 @@ export async function assembleReupAiSlideshowVideo(
     smallVideoPath,
     onLog,
   } = input;
-  const log = (msg: string) => {
-    console.log(msg);
-    onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, onLog);
 
   const usableScenes = scenesWithImagePaths(scenes);
   if (usableScenes.length === 0) {

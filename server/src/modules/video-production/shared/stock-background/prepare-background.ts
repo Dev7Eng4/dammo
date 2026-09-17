@@ -5,6 +5,7 @@ import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-ru
 import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
+import { emitDetailLog } from '../video-log.js';
 import { sourceVideosRepository } from '../../../source-channels/source-videos.repository.js';
 import type { SourceVideoRecord } from '../../../source-channels/source-channels.types.js';
 import { prepareLocalStockBackground } from './local-stock.js';
@@ -91,10 +92,7 @@ async function prepareRemoteStockBackground(
   workDir: string,
   onLog?: (msg: string) => void,
 ): Promise<PrepareStockBackgroundResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, onLog);
 
   const ids = [...new Set(backgroundFootageSourceIds.map(id => id.trim()).filter(Boolean))];
   if (ids.length === 0) {

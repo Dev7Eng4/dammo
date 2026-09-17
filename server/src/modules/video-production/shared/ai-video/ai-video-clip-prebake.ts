@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { mapPool } from '../../../../shared/async/map-pool.js';
+import { emitDetailLog } from '../video-log.js';
 import { renderSlideClip } from '../slideshow/slideshow-clip-renderer.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
 import { resolveAiSlideRenderOptions } from './ai-video-slide-spec.js';
@@ -29,9 +30,10 @@ export class AiClipPrebakePool {
     while (this.active < this.maxConcurrency && this.queue.length > 0) {
       const slide = this.queue.shift()!;
       this.active += 1;
-      this.onLog?.(
+      emitDetailLog(
         `[ai-video] Ken Burns prebake start ${path.basename(slide.imagePath)} ` +
           `(active ${this.active}/${this.maxConcurrency}, ${slide.durationSec.toFixed(1)}s)`,
+        this.onLog,
       );
       const task = this.renderOne(slide)
         .finally(() => {
@@ -47,12 +49,15 @@ export class AiClipPrebakePool {
     try {
       const opts = resolveAiSlideRenderOptions(this.workDir, this.onLog);
       await renderSlideClip(slide, opts);
-      this.onLog?.(
+      emitDetailLog(
         `[ai-video] Prebaked Ken Burns clip → ${path.basename(slide.imagePath)} (${slide.durationSec.toFixed(1)}s)`,
+        this.onLog,
       );
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      this.onLog?.(`[ai-video] Ken Burns prebake failed for ${path.basename(slide.imagePath)}: ${reason}`);
+      const msg = `[ai-video] Ken Burns prebake failed for ${path.basename(slide.imagePath)}: ${reason}`;
+      console.log(msg);
+      this.onLog?.(msg);
     }
   }
 
@@ -72,19 +77,20 @@ export class AiClipPrebakePool {
     if (slides.length === 0) return;
 
     const opts = resolveAiSlideRenderOptions(this.workDir, this.onLog);
-    this.onLog?.(`[ai-video] Reconciling ${slides.length} Ken Burns clip(s)...`);
+    emitDetailLog(`[ai-video] Reconciling ${slides.length} Ken Burns clip(s)...`, this.onLog);
 
     await mapPool(slides, this.maxConcurrency, async (slide, index) => {
       try {
         await renderSlideClip(slide, opts);
-        this.onLog?.(
+        emitDetailLog(
           `[ai-video] Reconciled clip ${index + 1}/${slides.length} → ${path.basename(slide.imagePath)}`,
+          this.onLog,
         );
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
-        this.onLog?.(
-          `[ai-video] Ken Burns reconcile failed for ${path.basename(slide.imagePath)}: ${reason}`,
-        );
+        const msg = `[ai-video] Ken Burns reconcile failed for ${path.basename(slide.imagePath)}: ${reason}`;
+        console.log(msg);
+        this.onLog?.(msg);
       }
     });
   }

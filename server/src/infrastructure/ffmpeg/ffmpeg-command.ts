@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { emitDetailLog } from '../../modules/video-production/shared/video-log.js';
 
 export function quoteShellArg(value: string): string {
   if (value.length === 0) return '""';
@@ -41,7 +42,6 @@ export async function buildFfmpegCommandLog(
 
 export function emitFfmpegCommandLog(lines: string[], onLog?: (msg: string) => void): void {
   for (const line of lines) {
-    console.log(line);
-    onLog?.(line);
+    emitDetailLog(line, onLog);
   }
 }

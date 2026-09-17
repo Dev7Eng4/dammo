@@ -12,6 +12,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     low: 60,
   },
   taskQueueConcurrency: 1,
+  verboseVideoLogs: true,
 };
 
 function clampSceneSec(value: number | undefined, fallback: number): number {
@@ -44,6 +45,7 @@ function loadSettings(): AppSettings {
       stored?.taskQueueConcurrency,
       DEFAULT_APP_SETTINGS.taskQueueConcurrency,
     ),
+    verboseVideoLogs: stored?.verboseVideoLogs ?? DEFAULT_APP_SETTINGS.verboseVideoLogs,
   };
 }
 
@@ -74,6 +76,7 @@ export class AppSettingsService {
         input.taskQueueConcurrency,
         current.taskQueueConcurrency,
       ),
+      verboseVideoLogs: input.verboseVideoLogs ?? current.verboseVideoLogs,
     };
     writeJson(paths.appSettings, next);
     return next;

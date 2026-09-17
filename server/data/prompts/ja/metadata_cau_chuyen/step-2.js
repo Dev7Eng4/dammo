@@ -1,4 +1,4 @@
-export const step2 = (title, extractedDramaJson, imageStyle = 'cinematic') => `
+export default (title, extractedDramaJson, imageStyle = 'cinematic') => `
 You are a top-tier Japanese YouTube Creative Director, CTR Optimization Specialist, and Visual Art Director.
 
 You specialize in Japanese YouTube audio-story content including:

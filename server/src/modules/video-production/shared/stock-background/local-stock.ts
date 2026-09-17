@@ -6,6 +6,7 @@ import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import type { FfmpegProgress } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
+import { emitDetailLog } from '../video-log.js';
 import { LOCAL_CYCLE_TARGET_SEC } from './stock-background.constants.js';
 import {
   ensureLocalStockDirExists,
@@ -125,10 +126,7 @@ export async function prepareLocalStockBackground(
   onLog?: (msg: string) => void,
   onFfmpegProgress?: (progress: FfmpegProgress) => void,
 ): Promise<PrepareStockBackgroundResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, onLog);
 
   const stockTempDir = path.join(workDir, '_stock_tmp');
   await fs.mkdir(stockTempDir, { recursive: true });

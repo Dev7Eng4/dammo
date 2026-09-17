@@ -12,6 +12,7 @@ import {
   buildSlideVideoFilter,
   resolveKenBurnsAnimationSec,
 } from './ken-burns.js';
+import { emitDetailLog } from '../video-log.js';
 import {
   SS_CLIP_CRF,
   SS_CLIP_PRESET,
@@ -93,7 +94,10 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   const clipPath = path.join(opts.cacheDir, `clip_${key}.mp4`);
 
   if (fs.existsSync(clipPath)) {
-    opts.onLog?.(`[slideshow] cache hit ${path.basename(slide.imagePath)} -> ${path.basename(clipPath)}`);
+    emitDetailLog(
+      `[slideshow] cache hit ${path.basename(slide.imagePath)} -> ${path.basename(clipPath)}`,
+      opts.onLog,
+    );
     return clipPath;
   }
 
@@ -127,7 +131,10 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
     clipPath,
   ];
 
-  opts.onLog?.(`[slideshow] rendering clip ${path.basename(slide.imagePath)} (${slide.durationSec}s)`);
+  emitDetailLog(
+    `[slideshow] rendering clip ${path.basename(slide.imagePath)} (${slide.durationSec}s)`,
+    opts.onLog,
+  );
   await runFfmpeg(args, { encodeOpts, onLog: opts.onLog, label: 'slideshow-clip' });
   return clipPath;
 }

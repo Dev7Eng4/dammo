@@ -19,6 +19,7 @@ const EMPTY_SETTINGS: AppSettings = {
   chromeBackgroundUseOffscreen: true,
   aiSceneDensityMaxSec: { high: 8, medium: 30, low: 60 },
   taskQueueConcurrency: 1,
+  verboseVideoLogs: true,
 }
 
 function SettingSwitch({
@@ -87,6 +88,7 @@ export function SettingsPage() {
           8,
           Math.max(1, Math.round(Number(settings.taskQueueConcurrency)) || 1),
         ),
+        verboseVideoLogs: settings.verboseVideoLogs,
       })
       setSettings(item)
       toast.success('Đã lưu cài đặt')
@@ -242,6 +244,16 @@ export function SettingsPage() {
                   }}
                 />
               </label>
+              <SettingSwitch
+                id="verbose-video-logs"
+                label="Hiển thị log chi tiết"
+                description="Bật: log ffmpeg/progress/từng clip như hiện tại. Tắt: chỉ tên bước và thời gian thực hiện."
+                checked={settings.verboseVideoLogs}
+                onChange={(verboseVideoLogs) =>
+                  setSettings((prev) => ({ ...prev, verboseVideoLogs }))
+                }
+                disabled={saving}
+              />
             </section>
           ) : null}
 

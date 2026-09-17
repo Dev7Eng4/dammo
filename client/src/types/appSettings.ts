@@ -11,6 +11,8 @@ export interface AppSettings {
   aiSceneDensityMaxSec: AiSceneDensityMaxSecSettings;
   /** Max parallel task-queue jobs (1–8). */
   taskQueueConcurrency: number;
+  /** When true, emit ffmpeg progress / per-clip detail logs. When false, only step summaries. */
+  verboseVideoLogs: boolean;
 }
 
 export type UpdateAppSettingsPayload = Partial<

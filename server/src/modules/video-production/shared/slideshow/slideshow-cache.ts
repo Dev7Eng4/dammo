@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { env } from '../../../../config/env.js';
+import { emitDetailLog } from '../video-log.js';
 
 interface CacheEntry {
   path: string;
@@ -73,9 +74,10 @@ export async function pruneSlideshowCache(
     }
   }
 
-  options.onLog?.(
+  emitDetailLog(
     `[slideshow] cache retained | files=${entries.length - removedFiles} | ` +
       `size=${(Math.max(0, entries.reduce((sum, entry) => sum + entry.size, 0) - removedBytes) / 1024 ** 2).toFixed(1)}MiB` +
       (removedFiles > 0 ? ` | pruned=${removedFiles}` : ''),
+    options.onLog,
   );
 }

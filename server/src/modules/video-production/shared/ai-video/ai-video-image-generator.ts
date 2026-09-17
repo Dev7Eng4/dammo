@@ -15,6 +15,7 @@ import {
   type AiVideoDensityLevel,
 } from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
+import { emitDetailLog } from '../video-log.js';
 import type {
   AiVideoCharacterReference,
   AiVideoScenePrompt,
@@ -182,10 +183,7 @@ async function generateScenePromptsFromJobs(
 }
 
 export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    input.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
   const prepared = await prepareTranscriptDensityChunks(input.subtitlePath, input.audioPath, {
     maxTranscriptSec: input.maxTranscriptSec,
@@ -216,10 +214,7 @@ export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): 
 export async function generateAiVideoImagesWithReference(
   input: GenerateAiVideoImagesInput,
 ): Promise<GenerateAiVideoImagesWithCharactersResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    input.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
   log('[ai-video] useReferenceImage=true → image_scenes_with_references_step_1 + step_2');
 

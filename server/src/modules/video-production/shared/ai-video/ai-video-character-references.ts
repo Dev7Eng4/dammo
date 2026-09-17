@@ -15,6 +15,7 @@ import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import { persistLlmParseFailure } from '../meta/persist-llm-failure.js';
+import { emitDetailLog } from '../video-log.js';
 import {
   AI_VIDEO_CHARACTER_DESIGN_MAX_PROMPT_CHARS,
   CHARACTER_REFERENCES_FILENAME,
@@ -324,10 +325,7 @@ export interface GenerateCharacterReferenceImagesFromListInput {
 export async function generateCharacterReferenceImagesFromList(
   input: GenerateCharacterReferenceImagesFromListInput,
 ): Promise<GenerateCharacterReferencesResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    input.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
   const characters: AiVideoCharacterReference[] = input.characters.map(character => ({
     id: character.id.trim(),
@@ -411,10 +409,7 @@ export async function generateCharacterReferenceImagesFromList(
 export async function generateCharacterReferences(
   input: GenerateCharacterReferencesInput,
 ): Promise<GenerateCharacterReferencesResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    input.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
   const allCues = await loadTranscriptCuesFromSrt(input.subtitlePath);
   if (allCues.length === 0) {

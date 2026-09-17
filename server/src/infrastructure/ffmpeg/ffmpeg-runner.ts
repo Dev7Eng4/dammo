@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { env } from '../../config/env.js';
+import { emitDetailLog } from '../../modules/video-production/shared/video-log.js';
 import { AppError } from '../../shared/http/errors.js';
 import { buildFfmpegCommandLog, emitFfmpegCommandLog } from './ffmpeg-command.js';
 import {
@@ -109,8 +110,7 @@ function emitFfmpegSummary(
     `encoder=${encoder}`,
   ].filter(Boolean);
   const message = parts.join(' | ');
-  console.log(message);
-  options?.onLog?.(message);
+  emitDetailLog(message, options?.onLog);
 }
 
 function formatEta(seconds: number): string {
@@ -160,8 +160,7 @@ function emitFfmpegProgressLog(
   if (!shouldLog) return;
 
   const msg = formatFfmpegProgressLog(options?.label, progress);
-  console.log(msg);
-  options?.onLog?.(msg);
+  emitDetailLog(msg, options?.onLog);
   state.lastLoggedProgress = progress.progress;
   state.lastLoggedAt = now;
 }

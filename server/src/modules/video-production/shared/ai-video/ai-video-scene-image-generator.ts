@@ -18,6 +18,7 @@ import { AiClipPrebakePool } from './ai-video-clip-prebake.js';
 import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import { buildFinalAiSlides } from './ai-video-slide-spec.js';
+import { emitDetailLog } from '../video-log.js';
 import {
   attachSceneImagePaths,
   redistributeMissingSceneTimes,
@@ -308,10 +309,7 @@ async function generateMetaSceneImages(
 export async function generateAiSceneSlideImages(
   input: GenerateAiSceneSlideImagesInput,
 ): Promise<GenerateAiSceneSlideImagesResult> {
-  const log = (msg: string) => {
-    console.log(msg);
-    input.onLog?.(msg);
-  };
+  const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
   if (input.scenes.length === 0) {
     throw new AppError('No AI scenes available for image generation', 400, 'AI_SCENE_IMAGE_NO_SCENES');

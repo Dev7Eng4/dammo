@@ -4,6 +4,7 @@ import path from 'node:path';
 import { paths } from '../../../../config/paths.js';
 import { runFfmpeg } from '../../../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { FPS } from '../render-core/canvas.constants.js';
+import { emitDetailLog } from '../video-log.js';
 import {
   AI_SMALL_VIDEO_H,
   AI_SMALL_VIDEO_OPACITY,
@@ -58,15 +59,16 @@ export async function ensurePrebakedAiSmallVideo(
   try {
     const stat = await fs.stat(outputPath);
     if (stat.isFile()) {
-      onLog?.(`[ai-video] Small video PiP cache hit: ${path.basename(outputPath)}`);
+      emitDetailLog(`[ai-video] Small video PiP cache hit: ${path.basename(outputPath)}`, onLog);
       return { path: outputPath, cached: true };
     }
   } catch {
     // not cached yet
   }
 
-  onLog?.(
+  emitDetailLog(
     `[ai-video] Prebaking small video PiP (${AI_SMALL_VIDEO_W}x${AI_SMALL_VIDEO_H}, opacity ${AI_SMALL_VIDEO_OPACITY}, slow ${AI_SMALL_VIDEO_SLOW}x)...`,
+    onLog,
   );
   const tempPath = `${outputPath}.tmp.mov`;
   await runFfmpeg(
