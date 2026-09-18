@@ -139,8 +139,11 @@ function pickImageGenerationPrompt(record: Record<string, unknown>): string | un
 
   const thumbnail = record.thumbnail;
   if (thumbnail && typeof thumbnail === 'object' && !Array.isArray(thumbnail)) {
-    const nested = pickOptionalString(thumbnail as Record<string, unknown>, 'image_generation_prompt')?.trim();
-    if (nested) return nested;
+    const thumb = thumbnail as Record<string, unknown>;
+    const nestedLegacy = pickOptionalString(thumb, 'image_generation_prompt')?.trim();
+    if (nestedLegacy) return nestedLegacy;
+    const nestedPrompt = pickOptionalString(thumb, 'prompt')?.trim();
+    if (nestedPrompt) return nestedPrompt;
   }
 
   return undefined;

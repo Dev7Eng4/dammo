@@ -20,8 +20,9 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
 }
 
-function validateStringArrayLength(value: unknown, min: number, max: number): boolean {
-  if (!isStringArray(value) || value.length < min || value.length > max) return false;
+/** Tags must be a non-empty string array; count is not capped. */
+function hasNonEmptyTags(value: unknown): boolean {
+  if (!isStringArray(value) || value.length < 1) return false;
   return value.every(item => item.trim().length > 0);
 }
 
@@ -56,7 +57,7 @@ function collectDramaStep2FieldIssues(parsed: Record<string, unknown>): string[]
   } else {
     if (!isNonEmptyString(parsed.metadata.title)) missing.push('metadata.title');
     if (!isNonEmptyString(parsed.metadata.description)) missing.push('metadata.description');
-    if (!validateStringArrayLength(parsed.metadata.tags, 1, 10)) missing.push('metadata.tags');
+    if (!hasNonEmptyTags(parsed.metadata.tags)) missing.push('metadata.tags');
   }
 
   if (!isRecord(parsed.thumbnail)) {

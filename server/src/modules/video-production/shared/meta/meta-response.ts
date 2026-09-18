@@ -28,8 +28,9 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
 }
 
-function validateStringArrayLength(value: unknown, min: number, max: number): boolean {
-  if (!isStringArray(value) || value.length < min || value.length > max) return false;
+/** Tags must be a non-empty string array; count is not capped. */
+function hasNonEmptyTags(value: unknown): boolean {
+  if (!isStringArray(value) || value.length < 1) return false;
   return value.every(item => item.trim().length > 0);
 }
 
@@ -38,7 +39,7 @@ function collectMetadataFieldIssues(value: unknown): string[] {
   const missing: string[] = [];
   if (typeof value.title !== 'string' || !value.title.trim()) missing.push('metadata.title');
   if (typeof value.description !== 'string' || !value.description.trim()) missing.push('metadata.description');
-  if (!validateStringArrayLength(value.tags, 1, 10)) missing.push('metadata.tags');
+  if (!hasNonEmptyTags(value.tags)) missing.push('metadata.tags');
   return missing;
 }
 
@@ -65,12 +66,13 @@ function pickOptionalThumbnail(value: unknown): CelebrityWisdomThumbnailSpec | u
   return value as unknown as CelebrityWisdomThumbnailSpec;
 }
 
-/** Prefer `thumbnail.image_generation_prompt` (current niche schema). */
+/** Prefer `thumbnail.prompt`, fallback `thumbnail.image_generation_prompt` (legacy niche schema). */
 function pickThumbnailImageGenerationPrompt(parsed: Record<string, unknown>): string | undefined {
   if (!isRecord(parsed.thumbnail)) return undefined;
-  const raw = pickOptionalTrimmedString(parsed.thumbnail.image_generation_prompt);
-  const trimmed = raw?.trim() ?? '';
-  return trimmed.length > 0 ? trimmed : undefined;
+  const fromPrompt = pickOptionalTrimmedString(parsed.thumbnail.prompt);
+  if (fromPrompt) return fromPrompt;
+  const fromLegacy = pickOptionalTrimmedString(parsed.thumbnail.image_generation_prompt);
+  return fromLegacy;
 }
 
 function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOutput {
@@ -160,7 +162,9 @@ export function parseMetadataResponse(
       return {
         ok: false,
         reason: 'missing required fields',
-        missingFields: ['thumbnail.image_generation_prompt'],
+        missingFields: [
+          isCelebrityWisdomNiche(niche) ? 'thumbnail.prompt' : 'thumbnail.image_generation_prompt',
+        ],
         snippet,
       };
     }
