@@ -66,7 +66,7 @@ export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
       });
       onQueued?.();
       reset(defaultValues);
-      navigate('/render-queue');
+      navigate('/video-production');
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'Failed to queue render job');
     }

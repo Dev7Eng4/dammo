@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import type { SourceChannelVideo } from '../../types/sourceChannel';
 import { DataTable, Link } from '../ui';
 
@@ -43,17 +44,19 @@ export function SourceChannelVideosTable({
   onToggleRow,
   onToggleAll,
 }: SourceChannelVideosTableProps) {
+  const { t } = useTranslation('source');
+
   const columns: ColumnDef<SourceChannelVideo, unknown>[] = [
     {
       accessorKey: 'title',
-      header: 'TIÊU ĐỀ',
+      header: t('videos.col.title'),
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'url',
-      header: 'LIÊN KẾT',
+      header: t('videos.col.link'),
       cell: ({ row }) => (
         <span className="font-mono text-xs text-neutral-500">
           <Link href={row.original.url}>{truncateLink(row.original.url)}</Link>
@@ -62,24 +65,24 @@ export function SourceChannelVideosTable({
     },
     {
       accessorKey: 'viewCount',
-      header: 'LƯỢT XEM',
+      header: t('videos.col.views'),
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatViews(getValue<number | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'duration',
-      header: 'THỜI LƯỢNG',
+      header: t('videos.col.duration'),
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatDuration(getValue<number | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'TRẠNG THÁI',
+      header: t('videos.col.status'),
       cell: ({ row }) =>
         row.original.status === 'Downloaded' ? (
-          <span className="text-xs font-medium text-primary-400">Đã tải xuống</span>
+          <span className="text-xs font-medium text-primary-400">{t('videos.downloaded')}</span>
         ) : (
           <span className="text-xs text-neutral-500">—</span>
         ),
@@ -99,7 +102,7 @@ export function SourceChannelVideosTable({
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
       onRowClick={video => onToggleRow(video.id)}
-      emptyMessage="Không tìm thấy video."
+      emptyMessage={t('videos.empty')}
     />
   );
 }

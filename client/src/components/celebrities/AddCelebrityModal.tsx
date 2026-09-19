@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createCelebrity } from '../../api/celebrities';
 import { Button, Input, Modal, Textarea } from '../ui';
 import type { CelebrityFormValues } from '../../types/celebrity';
@@ -11,6 +12,7 @@ interface AddCelebrityModalProps {
 }
 
 export function AddCelebrityModal({ open, onClose, onSuccess }: AddCelebrityModalProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -41,7 +43,7 @@ export function AddCelebrityModal({ open, onClose, onSuccess }: AddCelebrityModa
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể thêm người nổi tiếng');
+      setApiError(err instanceof Error ? err.message : t('assets.celebrities.createError'));
     }
   }
 
@@ -49,14 +51,14 @@ export function AddCelebrityModal({ open, onClose, onSuccess }: AddCelebrityModa
     <Modal
       open={open}
       onClose={handleClose}
-      title="Thêm người nổi tiếng"
+      title={t('assets.celebrities.addTitle')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-celebrity-form" type="submit">
-            {isSubmitting ? 'Đang lưu...' : 'Thêm'}
+            {isSubmitting ? t('common:actions.saving') : t('assets.celebrities.addSubmit')}
           </Button>
         </>
       }
@@ -64,25 +66,25 @@ export function AddCelebrityModal({ open, onClose, onSuccess }: AddCelebrityModa
       <form id="add-celebrity-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="celebrity-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên
+            {t('assets.celebrities.name')}
           </label>
           <Input
             id="celebrity-name"
-            placeholder="Tên người nổi tiếng"
+            placeholder={t('assets.celebrities.namePlaceholder')}
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Vui lòng nhập tên' })}
+            {...register('name', { required: t('assets.celebrities.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="celebrity-note" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ghi chú (tuỳ chọn)
+            {t('assets.celebrities.noteOptional')}
           </label>
           <Textarea
             id="celebrity-note"
             rows={3}
-            placeholder="Ghi chú ngắn..."
+            placeholder={t('assets.celebrities.notePlaceholder')}
             className="text-sm"
             {...register('note')}
           />

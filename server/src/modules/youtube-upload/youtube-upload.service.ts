@@ -67,8 +67,12 @@ export class YoutubeUploadService {
       throw new AppError('Upload is only supported for reup channels', 400, 'NOT_REUP_CHANNEL');
     }
 
-    if (channel.status !== 'active') {
-      throw new AppError('Channel is not active', 400, 'CHANNEL_INACTIVE');
+    if (channel.status !== 'created' && channel.status !== 'active') {
+      throw new AppError(
+        'Channel must be created or active to upload',
+        400,
+        'CHANNEL_INACTIVE',
+      );
     }
 
     const email = channel.linkedEmail?.trim();
@@ -256,6 +260,7 @@ export class YoutubeUploadService {
     const updatedChannel = youtubeChannelsRepository.update(channelId, current => ({
       ...current,
       lastUploadAt,
+      status: 'active',
     }));
     if (!updatedChannel) {
       throw new AppError('Failed to update channel lastUploadAt', 500, 'CHANNEL_UPDATE_FAILED');

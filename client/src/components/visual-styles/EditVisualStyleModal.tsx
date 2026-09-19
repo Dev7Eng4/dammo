@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { updateVisualStyle } from '../../api/visualStyles';
 import { Button, Input, Modal, Textarea } from '../ui';
 import type { VisualStyle, VisualStyleFormValues } from '../../types/visualStyle';
@@ -17,6 +18,7 @@ export function EditVisualStyleModal({
   onClose,
   onSuccess,
 }: EditVisualStyleModalProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -52,7 +54,7 @@ export function EditVisualStyleModal({
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể cập nhật phong cách hình ảnh');
+      setApiError(err instanceof Error ? err.message : t('visual.updateError'));
     }
   }
 
@@ -60,11 +62,11 @@ export function EditVisualStyleModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Sửa phong cách hình ảnh"
+      title={t('visual.editTitle')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button
             size="sm"
@@ -73,7 +75,7 @@ export function EditVisualStyleModal({
             form="edit-visual-style-form"
             type="submit"
           >
-            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {isSubmitting ? t('common:actions.saving') : t('visual.saveChanges')}
           </Button>
         </>
       }
@@ -81,33 +83,38 @@ export function EditVisualStyleModal({
       <form id="edit-visual-style-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-style-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên
+            {t('visual.form.name')}
           </label>
           <Input
             id="edit-style-name"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Vui lòng nhập tên' })}
+            {...register('name', { required: t('visual.form.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-style-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Chủ đề
+            {t('visual.form.niche')}
           </label>
           <Input
             id="edit-style-niche"
             className="h-10 rounded-lg"
-            {...register('niche', { required: 'Vui lòng nhập chủ đề' })}
+            {...register('niche', { required: t('visual.form.nicheRequired') })}
           />
           {errors.niche ? <p className="mt-1 text-xs text-danger">{errors.niche.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-style-rule" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Quy tắc
+            {t('visual.form.rule')}
           </label>
-          <Textarea id="edit-style-rule" rows={6} className="text-sm" {...register('rule', { required: 'Vui lòng nhập quy tắc' })} />
+          <Textarea
+            id="edit-style-rule"
+            rows={6}
+            className="text-sm"
+            {...register('rule', { required: t('visual.form.ruleRequired') })}
+          />
           {errors.rule ? <p className="mt-1 text-xs text-danger">{errors.rule.message}</p> : null}
         </div>
 

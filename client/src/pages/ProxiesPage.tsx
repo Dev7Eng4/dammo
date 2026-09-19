@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   archiveProxy,
   exportProxiesExcel,
@@ -39,6 +40,7 @@ function canDeleteProxy(proxy: Proxy, nowMs = Date.now()): boolean {
 }
 
 export function ProxiesPage() {
+  const { t, i18n } = useTranslation(['browser', 'common']);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<ProxyTab>('monitoring');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -56,6 +58,8 @@ export function ProxiesPage() {
   const [extending, setExtending] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
   const [limit, setLimit] = useState(20);
+  const dateLocale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
+  const paginationLocale = i18n.language === 'en' ? 'en' : 'vi';
 
   const list = usePaginatedList({
     fetcher: ({ filter: currentFilter, page, limit: pageLimit, signal }) => fetchProxies(currentFilter, '', page, pageLimit, { signal }),
@@ -91,7 +95,7 @@ export function ProxiesPage() {
     list.markLoading();
     list.resetPage();
     refreshAll();
-    toast.success('Thêm proxy thành công');
+    toast.success(t('proxy.toast.addSuccess'));
   }
 
   function handleToggleRow(id: string) {
@@ -116,9 +120,9 @@ export function ProxiesPage() {
     try {
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
       await exportProxiesExcel(filter, '', ids);
-      toast.success('Xuất Excel thành công');
+      toast.success(t('proxy.toast.exportSuccess'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
+      toast.error(err instanceof Error ? err.message : t('proxy.toast.exportError'));
     } finally {
       setExporting(false);
     }
@@ -129,12 +133,12 @@ export function ProxiesPage() {
     try {
       const result = await importProxiesExcel(file);
       refreshAll();
-      toast.success(`Đã nhập ${result.created} proxy (bỏ qua ${result.skipped})`);
+      toast.success(t('proxy.toast.importSuccess', { created: result.created, skipped: result.skipped }));
       if (result.errors.length > 0) {
-        toast.error(result.errors[0] ?? 'Một số dòng đã bị bỏ qua');
+        toast.error(result.errors[0] ?? t('proxy.toast.importPartial'));
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Nhập Excel thất bại');
+      toast.error(err instanceof Error ? err.message : t('proxy.toast.importError'));
     } finally {
       setImporting(false);
     }
@@ -146,9 +150,9 @@ export function ProxiesPage() {
       const result = await removeFailedProxies();
       setShowRemoveFailedModal(false);
       refreshAll();
-      toast.success(`Đã xóa ${result.removed} proxy thất bại`);
+      toast.success(t('proxy.toast.removeFailedSuccess', { count: result.removed }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xóa thất bại');
+      toast.error(err instanceof Error ? err.message : t('proxy.toast.removeFailedError'));
     } finally {
       setRemovingFailed(false);
     }
@@ -168,17 +172,17 @@ export function ProxiesPage() {
           removed += 1;
         } catch (err) {
           errors.push(
-            `${proxy.host}:${proxy.port} — ${err instanceof Error ? err.message : 'Xóa thất bại'}`,
+            `${proxy.host}:${proxy.port} — ${err instanceof Error ? err.message : t('proxy.toast.removeFailedError')}`,
           );
         }
       }
       setShowDeleteSelectedModal(false);
       refreshAll();
       if (removed > 0) {
-        toast.success(`Đã xóa ${removed} proxy`);
+        toast.success(t('proxy.toast.deleteSuccess', { count: removed }));
       }
       if (errors.length > 0) {
-        toast.error(errors[0] ?? 'Một số proxy không xóa được');
+        toast.error(errors[0] ?? t('proxy.toast.deletePartial'));
       }
     } finally {
       setDeletingSelected(false);
@@ -192,12 +196,12 @@ export function ProxiesPage() {
       const result = await testProxy(id);
       refreshAll();
       if (result.status === 'failed') {
-        toast.error(result.error ?? 'Ping thất bại');
+        toast.error(result.error ?? t('proxy.toast.pingFailed'));
       } else {
-        toast.success(`Ping OK — ${result.latencyMs ?? 0}ms`);
+        toast.success(t('proxy.toast.pingOk', { ms: result.latencyMs ?? 0 }));
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Ping thất bại');
+      toast.error(err instanceof Error ? err.message : t('proxy.toast.pingFailed'));
     } finally {
       setPingingIds(prev => {
         const next = new Set(prev);
@@ -221,7 +225,7 @@ export function ProxiesPage() {
     if (!extendTargetId || extending) return;
     const days = Number(extendDays);
     if (!Number.isInteger(days) || days < 1) {
-      toast.error('Nhập số ngày hợp lệ (tối thiểu 1)');
+      toast.error(t('proxy.extend.daysInvalid'));
       return;
     }
 
@@ -230,9 +234,13 @@ export function ProxiesPage() {
       const { item } = await extendProxy(extendTargetId, days);
       refreshAll();
       handleCloseExtend();
-      toast.success(`Đã gia hạn đến ${item.expiresAt ?? 'ngày mới'}`);
+      toast.success(
+        t('proxy.extend.success', {
+          date: item.expiresAt ?? t('proxy.extend.successFallback'),
+        }),
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Gia hạn proxy thất bại');
+      toast.error(err instanceof Error ? err.message : t('proxy.extend.error'));
     } finally {
       setExtending(false);
     }
@@ -296,7 +304,7 @@ export function ProxiesPage() {
                   totalPages={list.totalPages}
                   onPageChange={handlePageChange}
                   onLimitChange={handleLimitChange}
-                  locale="vi"
+                  locale={paginationLocale}
                 />
               </div>
             </div>
@@ -315,14 +323,14 @@ export function ProxiesPage() {
       <Modal
         open={extendTargetId !== null}
         onClose={handleCloseExtend}
-        title='Gia hạn Proxy'
+        title={t('proxy.extend.title')}
         footer={
           <>
             <Button variant='outlined' size='sm' className='rounded-lg' onClick={handleCloseExtend} disabled={extending}>
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size='sm' className='rounded-lg' disabled={extending} onClick={handleConfirmExtend}>
-              {extending ? 'Đang lưu…' : 'Lưu'}
+              {extending ? t('common:actions.saving') : t('common:actions.save')}
             </Button>
           </>
         }
@@ -330,26 +338,31 @@ export function ProxiesPage() {
         {extendTarget ? (
           <div className='space-y-4'>
             <p className='text-sm text-neutral-300'>
-              Gia hạn cho{' '}
+              {t('proxy.extend.body')}{' '}
               <span className='font-mono text-neutral-100'>
                 {extendTarget.host}:{extendTarget.port}
               </span>
               {extendTarget.expiresAt ? (
-                <> (hiện tại: {new Date(extendTarget.expiresAt).toLocaleDateString('vi-VN')})</>
+                <>
+                  {' '}
+                  {t('proxy.extend.currentExpiry', {
+                    date: new Date(extendTarget.expiresAt).toLocaleDateString(dateLocale),
+                  })}
+                </>
               ) : (
-                ' (chưa đặt ngày hết hạn)'
+                ` ${t('proxy.extend.noExpiry')}`
               )}
             </p>
             <div>
               <label htmlFor='extend-days' className='mb-1.5 block text-xs font-medium text-neutral-400'>
-                Số ngày gia hạn
+                {t('proxy.extend.daysLabel')}
               </label>
               <Input
                 id='extend-days'
                 type='number'
                 min={1}
                 step={1}
-                placeholder='vd. 30'
+                placeholder={t('proxy.extend.daysPlaceholder')}
                 value={extendDays}
                 onChange={e => setExtendDays(e.target.value)}
                 className='h-10 rounded-lg text-sm'
@@ -363,7 +376,7 @@ export function ProxiesPage() {
       <Modal
         open={showDeleteSelectedModal}
         onClose={() => !deletingSelected && setShowDeleteSelectedModal(false)}
-        title='Xóa proxy đã chọn'
+        title={t('proxy.deleteSelected.title')}
         footer={
           <>
             <Button
@@ -373,24 +386,25 @@ export function ProxiesPage() {
               onClick={() => setShowDeleteSelectedModal(false)}
               disabled={deletingSelected}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size='sm' className='rounded-lg' disabled={deletingSelected} onClick={handleDeleteSelected}>
-              {deletingSelected ? 'Đang xóa...' : `Xóa ${selectedProxies.length} proxy`}
+              {deletingSelected
+                ? t('proxy.toolbar.deleting')
+                : t('proxy.deleteSelected.confirm', { count: selectedProxies.length })}
             </Button>
           </>
         }
       >
         <p className='text-sm text-neutral-300'>
-          Lưu trữ {selectedProxies.length} proxy đã chọn (không gắn profile hoặc đã hết hạn)? Không thể hoàn tác
-          thao tác này từ giao diện.
+          {t('proxy.deleteSelected.body', { count: selectedProxies.length })}
         </p>
       </Modal>
 
       <Modal
         open={showRemoveFailedModal}
         onClose={() => setShowRemoveFailedModal(false)}
-        title='Xóa proxy thất bại'
+        title={t('proxy.removeFailedModal.title')}
         footer={
           <>
             <Button
@@ -400,17 +414,15 @@ export function ProxiesPage() {
               onClick={() => setShowRemoveFailedModal(false)}
               disabled={removingFailed}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size='sm' className='rounded-lg' disabled={removingFailed} onClick={handleRemoveFailed}>
-              {removingFailed ? 'Đang xóa...' : 'Xóa tất cả thất bại'}
+              {removingFailed ? t('proxy.toolbar.deleting') : t('proxy.removeFailedModal.confirm')}
             </Button>
           </>
         }
       >
-        <p className='text-sm text-neutral-300'>
-          Lưu trữ tất cả proxy có trạng thái Thất bại? Không thể hoàn tác thao tác này từ giao diện.
-        </p>
+        <p className='text-sm text-neutral-300'>{t('proxy.removeFailedModal.body')}</p>
       </Modal>
 
       <ProxyExpiryWarningModal />

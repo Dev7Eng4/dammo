@@ -24,7 +24,7 @@ export type VideoCreationOrder =
   | 'shortest_duration_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
-export type YoutubeChannelStatus = 'active' | 'suspended';
+export type YoutubeChannelStatus = 'init' | 'created' | 'active' | 'paused' | 'deleted';
 
 export type ReupAudioVideoType = 'si' | 'ai';
 

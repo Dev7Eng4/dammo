@@ -20,83 +20,74 @@ export type NavIcon =
   | 'factory'
   | 'task-queue'
   | 'queue'
-  | 'support'
   | 'logs'
   | 'settings';
 
 export interface NavItem {
   id: string;
-  label: string;
+  /** i18n key under `nav` namespace, e.g. `item.mail` */
+  labelKey: string;
   path: string;
   icon: NavIcon;
 }
 
 export interface NavSection {
   id: string;
-  label: string;
+  /** i18n key under `nav` namespace, e.g. `section.accounts` */
+  labelKey: string;
   items: NavItem[];
 }
 
 export const navSections: NavSection[] = [
-  // {
-  //   id: 'main',
-  //   label: 'CHÍNH',
-  //   items: [{ id: 'dashboard', label: 'Tổng quan', path: '/', icon: 'dashboard' }],
-  // },
   {
     id: 'accounts',
-    label: 'TÀI KHOẢN',
+    labelKey: 'section.accounts',
     items: [
-      { id: 'mail', label: 'Email', path: '/mail-accounts', icon: 'mail' },
-      { id: 'youtube', label: 'YouTube', path: '/youtube-channels', icon: 'youtube' },
-      { id: 'tiktok', label: 'TikTok', path: '/tiktok-accounts', icon: 'tiktok' },
-      { id: 'facebook', label: 'Facebook', path: '/facebook-assets', icon: 'facebook' },
+      { id: 'mail', labelKey: 'item.mail', path: '/mail-accounts', icon: 'mail' },
+      { id: 'youtube', labelKey: 'item.youtube', path: '/youtube-channels', icon: 'youtube' },
+      { id: 'tiktok', labelKey: 'item.tiktok', path: '/tiktok-accounts', icon: 'tiktok' },
+      { id: 'facebook', labelKey: 'item.facebook', path: '/facebook-assets', icon: 'facebook' },
     ],
   },
   {
     id: 'browser-operations',
-    label: 'TRÌNH DUYỆT',
+    labelKey: 'section.browser',
     items: [
-      { id: 'chrome-profiles', label: 'Hồ sơ Chrome', path: '/chrome-profiles', icon: 'browser' },
-      { id: 'gpm-manager', label: 'Quản lý GPM', path: '/gpm-manager', icon: 'gpm' },
-      { id: 'proxies', label: 'Proxy', path: '/proxies', icon: 'proxies' },
-      // { id: 'launch-logs', label: 'Nhật ký khởi chạy', path: '/launch-logs', icon: 'launch-logs' },
+      { id: 'chrome-profiles', labelKey: 'item.chromeProfiles', path: '/chrome-profiles', icon: 'browser' },
+      { id: 'gpm-manager', labelKey: 'item.gpmManager', path: '/gpm-manager', icon: 'gpm' },
+      { id: 'proxies', labelKey: 'item.proxies', path: '/proxies', icon: 'proxies' },
     ],
   },
   {
     id: 'sources',
-    label: 'NGUỒN',
-    items: [{ id: 'source', label: 'Kênh nguồn', path: '/source-channels', icon: 'source' }],
+    labelKey: 'section.sources',
+    items: [{ id: 'source', labelKey: 'item.source', path: '/source-channels', icon: 'source' }],
   },
   {
     id: 'content',
-    label: 'NỘI DUNG',
+    labelKey: 'section.content',
     items: [
-      { id: 'prompts', label: 'Prompt', path: '/prompts', icon: 'prompt' },
-      { id: 'visual-styles', label: 'Phong cách hình ảnh', path: '/visual-styles', icon: 'visual-styles' },
-      { id: 'assets', label: 'Tài nguyên', path: '/assets', icon: 'assets' },
+      { id: 'prompts', labelKey: 'item.prompts', path: '/prompts', icon: 'prompt' },
+      { id: 'visual-styles', labelKey: 'item.visualStyles', path: '/visual-styles', icon: 'visual-styles' },
+      { id: 'assets', labelKey: 'item.assets', path: '/assets', icon: 'assets' },
     ],
   },
   {
     id: 'video-factory',
-    label: 'NHÀ MÁY VIDEO',
+    labelKey: 'section.videoFactory',
     items: [
-      // { id: 'templates', label: 'Mẫu', path: '/video-factory/templates', icon: 'templates' },
-      // { id: 'factory', label: 'Nhà máy video', path: '/video-factory', icon: 'factory' },
-      { id: 'task-queue', label: 'Công việc đang chạy', path: '/task-queue', icon: 'task-queue' },
-      { id: 'queue', label: 'Hàng đợi render', path: '/render-queue', icon: 'queue' },
-      { id: 'settings', label: 'Cài đặt', path: '/settings', icon: 'settings' },
+      { id: 'task-queue', labelKey: 'item.taskQueue', path: '/task-queue', icon: 'task-queue' },
+      { id: 'video-production', labelKey: 'item.videoProduction', path: '/video-production', icon: 'factory' },
+      { id: 'settings', labelKey: 'item.settings', path: '/settings', icon: 'settings' },
     ],
   },
 ];
 
-export const footerNavItems: NavItem[] = [
-  { id: 'support', label: 'Hỗ trợ', path: '/support', icon: 'support' },
-];
+export const footerNavItems: NavItem[] = [];
 
 export function flattenNavItems(): NavItem[] {
   return [...navSections.flatMap(section => section.items), ...footerNavItems];
 }
 
 /** @deprecated Use flattenNavItems() */
-export const navItems = flattenNavItems().filter(item => !footerNavItems.some(footer => footer.id === item.id));
+export const navItems = flattenNavItems();

@@ -1,12 +1,21 @@
+import { useTranslation } from 'react-i18next'
 import { StatusBadge, type StatusTone } from '../ui/StatusBadge'
 import type { ProxyStatus } from '../../types/proxy'
 
-const statusConfig: Record<ProxyStatus, { label: string; tone: StatusTone }> = {
-  active: { label: 'Hoạt động', tone: 'success' },
-  failed: { label: 'Thất bại', tone: 'danger' },
-  slow: { label: 'Chậm', tone: 'warning' },
-  expired: { label: 'Hết hạn', tone: 'neutral' },
-  in_use: { label: 'Đang dùng', tone: 'primary' },
+const statusTone: Record<ProxyStatus, StatusTone> = {
+  active: 'success',
+  failed: 'danger',
+  slow: 'warning',
+  expired: 'neutral',
+  in_use: 'primary',
+}
+
+const statusKey: Record<ProxyStatus, string> = {
+  active: 'proxy.status.active',
+  failed: 'proxy.status.failed',
+  slow: 'proxy.status.slow',
+  expired: 'proxy.status.expired',
+  in_use: 'proxy.status.inUse',
 }
 
 interface ProxyStatusPillProps {
@@ -15,6 +24,6 @@ interface ProxyStatusPillProps {
 }
 
 export function ProxyStatusPill({ status, className }: ProxyStatusPillProps) {
-  const config = statusConfig[status]
-  return <StatusBadge label={config.label} tone={config.tone} withDot className={className} />
+  const { t } = useTranslation('browser')
+  return <StatusBadge label={t(statusKey[status])} tone={statusTone[status]} withDot className={className} />
 }

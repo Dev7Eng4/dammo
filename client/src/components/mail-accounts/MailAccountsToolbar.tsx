@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { SearchInput } from '../ui'
 import { ListToolbar } from '../layout'
 import { Button } from '../ui'
@@ -33,17 +34,20 @@ export function MailAccountsToolbar({
   onExportExcel,
   exporting = false,
 }: MailAccountsToolbarProps) {
+  const { t, i18n } = useTranslation('mail')
+  const numberLocale = i18n.language.startsWith('vi') ? 'vi-VN' : 'en-US'
+
   return (
     <div className="border-b border-border pb-4">
       <ListToolbar
-        countLabel={<span>{total.toLocaleString()} tài khoản</span>}
+        countLabel={<span>{t('toolbar.count', { count: total.toLocaleString(numberLocale) })}</span>}
         filters={
           onSearchChange ? (
             <div className="w-48 lg:w-56">
               <SearchInput
                 value={search}
                 onChange={(e) => onSearchChange(e.currentTarget.value)}
-                placeholder="Tìm theo email..."
+                placeholder={t('toolbar.search')}
                 className="h-9"
               />
             </div>
@@ -59,7 +63,7 @@ export function MailAccountsToolbar({
                 title={!canEdit ? editDisabledReason : undefined}
                 onClick={onEdit}
               >
-                Sửa
+                {t('toolbar.edit')}
               </Button>
             ) : null}
             {onDelete ? (
@@ -70,16 +74,16 @@ export function MailAccountsToolbar({
                 title={!deleting && !canDelete ? deleteDisabledReason : undefined}
                 onClick={onDelete}
               >
-                {deleting ? 'Đang xóa…' : 'Xóa'}
+                {deleting ? t('toolbar.deleting') : t('toolbar.delete')}
               </Button>
             ) : null}
           </>
         }
-        primaryAction={{ label: 'Thêm email', onClick: onAddMail }}
+        primaryAction={{ label: t('toolbar.add'), onClick: onAddMail }}
         secondaryActions={[
           {
             id: 'export',
-            label: exporting ? 'Đang xuất...' : 'Xuất Excel',
+            label: exporting ? t('toolbar.exporting') : t('toolbar.export'),
             onSelect: onExportExcel,
             disabled: exporting,
           },

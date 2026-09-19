@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Modal } from '../ui';
 import type { NicheUsage, NicheUsageItem } from '../../types/niche';
 
@@ -26,26 +27,28 @@ function UsageGroup({ title, items }: { title: string; items: NicheUsageItem[] }
 }
 
 export function NicheInUseModal({ open, nicheLabel, usage, onClose }: NicheInUseModalProps) {
+  const { t } = useTranslation('source');
+
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Không thể xóa niche"
+      title={t('niche.inUseTitle')}
       footer={
         <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose}>
-          OK
+          {t('niche.ok')}
         </Button>
       }
     >
       <div className="space-y-4">
         <p className="text-sm text-neutral-300">
-          Niche &quot;{nicheLabel}&quot; đang được sử dụng ở:
+          {t('niche.inUseBody', { label: nicheLabel })}
         </p>
         {usage ? (
           <div className="space-y-3">
-            <UsageGroup title="Prompt" items={usage.prompts} />
-            <UsageGroup title="Source channel" items={usage.sourceChannels} />
-            <UsageGroup title="YouTube channel" items={usage.youtubeChannels} />
+            <UsageGroup title={t('niche.usagePrompts')} items={usage.prompts} />
+            <UsageGroup title={t('niche.usageSourceChannels')} items={usage.sourceChannels} />
+            <UsageGroup title={t('niche.usageYoutubeChannels')} items={usage.youtubeChannels} />
           </div>
         ) : null}
       </div>

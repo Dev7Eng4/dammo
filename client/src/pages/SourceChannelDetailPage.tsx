@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { fetchNiches } from '../api/niches';
 import {
@@ -20,6 +21,7 @@ import type { Niche } from '../types/niche';
 import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceChannel';
 
 export function SourceChannelDetailPage() {
+  const { t, i18n } = useTranslation('source');
   const { id } = useParams<{ id: string }>();
   const { enqueueTask } = useTaskQueue();
   const [source, setSource] = useState<SourceChannel | null>(null);
@@ -80,13 +82,13 @@ export function SourceChannelDetailPage() {
 
   const downloadDisabledReason =
     selectedIds.size === 0
-      ? 'Chọn video để tải xuống'
+      ? t('hint.selectVideos')
       : source == null
         ? undefined
         : source.platform !== 'youtube'
-          ? 'Chỉ hỗ trợ tải xuống cho nguồn YouTube'
+          ? t('hint.youtubeOnly')
           : source.purpose !== 'reup' && source.purpose !== 'background_footage'
-            ? 'Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền'
+            ? t('hint.reupOrBgOnly')
             : undefined;
 
   function clearSelection() {
@@ -107,7 +109,7 @@ export function SourceChannelDetailPage() {
       videos.refresh();
       clearSelection();
     } catch (err) {
-      setRefreshError(err instanceof Error ? err.message : 'Không thể cập nhật nguồn');
+      setRefreshError(err instanceof Error ? err.message : t('toast.refreshError'));
     } finally {
       setRefreshing(false);
     }
@@ -142,8 +144,8 @@ export function SourceChannelDetailPage() {
 
     void enqueueTask({
       type: 'download_source',
-      title: `Đang tải: ${source.name}`,
-      subtitle: `${selectedIds.size} video đã chọn`,
+      title: t('job.downloadOne', { name: source.name }),
+      subtitle: t('job.downloadOneSub', { count: selectedIds.size }),
       payload: {
         sourceId: source.id,
         sourceName: source.name,
@@ -156,9 +158,9 @@ export function SourceChannelDetailPage() {
     return (
       <PageShell fullBleed>
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <p className="text-sm text-neutral-400">Không tìm thấy kênh nguồn.</p>
+          <p className="text-sm text-neutral-400">{t('page.notFound')}</p>
           <Link to="/source-channels" className="mt-3 text-sm text-secondary-400 hover:text-secondary-300">
-            Quay lại nguồn
+            {t('page.back')}
           </Link>
         </div>
       </PageShell>
@@ -222,13 +224,13 @@ export function SourceChannelDetailPage() {
                     videos.setPage(1);
                     clearSelection();
                   }}
-                  locale="vi"
+                  locale={i18n.language === 'en' ? 'en' : 'vi'}
                 />
               </div>
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm text-neutral-400">Danh sách video chỉ khả dụng cho nguồn YouTube.</p>
+              <p className="text-sm text-neutral-400">{t('videos.youtubeOnly')}</p>
             </div>
           )}
         </div>

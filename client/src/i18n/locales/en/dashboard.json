@@ -1,0 +1,47 @@
+{
+  "page": {
+    "title": "Overview",
+    "subtitle": "Track the pipeline and operational status",
+    "loadError": "Could not load overview",
+    "retry": "Retry"
+  },
+  "quickActions": {
+    "title": "Quick actions",
+    "addEmail": "Add email",
+    "addYt": "Add YT channel",
+    "videoFactory": "Video Factory",
+    "assets": "Assets",
+    "videoProduction": "Video production"
+  },
+  "stats": {
+    "youtubeChannels": "YouTube channels",
+    "tiktokAccounts": "TikTok accounts",
+    "facebookAssets": "Facebook assets",
+    "sourceChannels": "Source channels"
+  },
+  "recent": {
+    "title": "Recent projects",
+    "viewAll": "View all",
+    "col": {
+      "name": "Project name",
+      "format": "Format",
+      "destination": "Destination",
+      "status": "Status"
+    },
+    "empty": "No recent projects yet."
+  },
+  "accountSummary": {
+    "title": "Account summary",
+    "emailTotal": "Total email accounts"
+  },
+  "pipeline": {
+    "title": "Content pipeline"
+  },
+  "activeRender": {
+    "title": "Rendering",
+    "eta": "{{eta}} remaining"
+  },
+  "health": {
+    "title": "Health alerts"
+  }
+}

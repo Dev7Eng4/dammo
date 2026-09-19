@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
-import { fetchYoutubeChannels, deleteAllUploadedVideos, deleteYoutubeChannel } from '../api/youtubeChannels';
+import { fetchYoutubeChannels, deleteAllUploadedVideos, deleteYoutubeChannel, pauseYoutubeChannel, resumeYoutubeChannel } from '../api/youtubeChannels';
 import { PageHeader, PageShell } from '../components/layout';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { CreateVideoCountModal } from '../components/youtube-channels/CreateVideoCountModal';
 import { DeleteUploadedVideosConfirmModal } from '../components/youtube-channels/DeleteUploadedVideosConfirmModal';
 import { DeleteYoutubeChannelConfirmModal } from '../components/youtube-channels/DeleteYoutubeChannelConfirmModal';
+import { PauseYoutubeChannelConfirmModal } from '../components/youtube-channels/PauseYoutubeChannelConfirmModal';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
 import { useToast } from '../components/ui';
@@ -28,6 +30,7 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
 }
 
 export function YoutubeChannelsPage() {
+  const { t, i18n } = useTranslation('youtube');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
@@ -42,16 +45,21 @@ export function YoutubeChannelsPage() {
   const [showUploadCountModal, setShowUploadCountModal] = useState(false);
   const [showDeleteUploadedModal, setShowDeleteUploadedModal] = useState(false);
   const [showDeleteChannelModal, setShowDeleteChannelModal] = useState(false);
+  const [showPauseChannelModal, setShowPauseChannelModal] = useState(false);
   const [deletingUploadedVideos, setDeletingUploadedVideos] = useState(false);
   const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null);
+  const [pausingChannelId, setPausingChannelId] = useState<string | null>(null);
+  const [resumingChannelId, setResumingChannelId] = useState<string | null>(null);
   const [editingChannel, setEditingChannel] = useState<YoutubeChannel | null>(null);
   const [deletingChannelTarget, setDeletingChannelTarget] = useState<YoutubeChannel | null>(null);
+  const [pausingChannelTarget, setPausingChannelTarget] = useState<YoutubeChannel | null>(null);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
   const [limit, setLimit] = useState(20);
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+  const paginationLocale = i18n.language === 'vi' ? 'vi' : 'en';
 
   const list = usePaginatedList({
     fetcher: ({ type, monetization, query, page, limit: pageLimit, signal }) =>
@@ -76,23 +84,23 @@ export function YoutubeChannelsPage() {
   const canUpload = canCreateVideo;
   const createVideoDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
-      ? 'Tất cả kênh đã chọn phải thuộc loại Reup âm thanh hoặc Reup video'
+      ? t('hint.createSelectedNeedReup')
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-        ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tạo video'
+        ? t('hint.createNeedReup')
         : isBulkCreate
-          ? 'Tạo video cho tất cả kênh reup'
+          ? t('hint.createAll')
           : selectedIds.size > 1
-            ? `Tạo video cho ${selectedIds.size} kênh đã chọn`
+            ? t('hint.createSelected', { count: selectedIds.size })
             : undefined;
   const uploadDisabledReason =
     selectedIds.size > 1 && !allSelectedAreReup
-      ? 'Tất cả kênh đã chọn phải thuộc loại Reup âm thanh hoặc Reup video'
+      ? t('hint.uploadSelectedNeedReup')
       : selectedIds.size === 1 && selectedChannel && !isStoredReupChannelType(selectedChannel.type)
-        ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tải video lên'
+        ? t('hint.uploadNeedReup')
         : isBulkCreate
-          ? 'Tải video lên cho tất cả kênh reup'
+          ? t('hint.uploadAll')
           : selectedIds.size > 1
-            ? `Tải video lên cho ${selectedIds.size} kênh đã chọn`
+            ? t('hint.uploadSelected', { count: selectedIds.size })
             : undefined;
 
   useAbortableEffect(
@@ -201,6 +209,11 @@ export function YoutubeChannelsPage() {
     setShowDeleteChannelModal(true);
   }
 
+  function handlePauseChannel(channel: YoutubeChannel) {
+    setPausingChannelTarget(channel);
+    setShowPauseChannelModal(true);
+  }
+
   function handleVideoCountConfirm(count: number) {
     const isPrepare = videoCountAction === 'prepare';
     setVideoCountAction(null);
@@ -208,10 +221,8 @@ export function YoutubeChannelsPage() {
     if (selectedIds.size === 0) {
       void enqueueTask({
         type: 'create_video',
-        title: isPrepare
-          ? 'Đang chuẩn bị video cho tất cả kênh reup'
-          : 'Đang tạo video cho tất cả kênh reup',
-        subtitle: `Tác vụ reup hàng loạt · ${count} video/kênh`,
+        title: isPrepare ? t('job.prepareAll') : t('job.createAll'),
+        subtitle: t('job.bulkSubtitle', { count }),
         payload: {
           allReupChannels: true,
           videoCount: count,
@@ -227,9 +238,9 @@ export function YoutubeChannelsPage() {
       void enqueueTask({
         type: 'create_video',
         title: isPrepare
-          ? `Đang chuẩn bị video cho ${selectedIds.size} kênh`
-          : `Đang tạo video cho ${selectedIds.size} kênh`,
-        subtitle: `${selectedIds.size} kênh đã chọn · ${count} video/kênh`,
+          ? t('job.prepareSelected', { count: selectedIds.size })
+          : t('job.createSelected', { count: selectedIds.size }),
+        subtitle: t('job.selectedSubtitle', { count: selectedIds.size, videos: count }),
         payload: {
           channelIds: Array.from(selectedIds),
           videoCount: count,
@@ -245,9 +256,9 @@ export function YoutubeChannelsPage() {
     void enqueueTask({
       type: 'create_video',
       title: isPrepare
-        ? `Đang chuẩn bị video: ${selectedChannel.name}`
-        : `Đang tạo video: ${selectedChannel.name}`,
-      subtitle: `${selectedChannel.handle} · ${count} video`,
+        ? t('job.prepareOne', { name: selectedChannel.name })
+        : t('job.createOne', { name: selectedChannel.name }),
+      subtitle: t('job.createOneSubtitle', { handle: selectedChannel.handle, count }),
       payload: {
         channelId: selectedChannel.id,
         channelName: selectedChannel.name,
@@ -264,8 +275,8 @@ export function YoutubeChannelsPage() {
     if (selectedIds.size === 0) {
       void enqueueTask({
         type: 'upload_video',
-        title: 'Đang tải video lên cho tất cả kênh reup',
-        subtitle: `Tác vụ tải lên hàng loạt · tối đa ${count} video/kênh`,
+        title: t('job.uploadAll'),
+        subtitle: t('job.uploadAllSubtitle', { count }),
         payload: { allReupChannels: true, maxUploads: count },
       });
       return;
@@ -276,8 +287,8 @@ export function YoutubeChannelsPage() {
 
       void enqueueTask({
         type: 'upload_video',
-        title: `Đang tải video lên cho ${selectedIds.size} kênh`,
-        subtitle: `${selectedIds.size} kênh đã chọn · tối đa ${count} video/kênh`,
+        title: t('job.uploadSelected', { count: selectedIds.size }),
+        subtitle: t('job.uploadSelectedSubtitle', { count: selectedIds.size, videos: count }),
         payload: { channelIds: Array.from(selectedIds), maxUploads: count },
       });
       return;
@@ -288,8 +299,8 @@ export function YoutubeChannelsPage() {
 
     void enqueueTask({
       type: 'upload_video',
-      title: `Đang tải lên: ${selectedChannel.name}`,
-      subtitle: `${selectedChannel.handle} · tối đa ${count} video`,
+      title: t('job.uploadOne', { name: selectedChannel.name }),
+      subtitle: t('job.uploadOneSubtitle', { handle: selectedChannel.handle, count }),
       payload: { channelId: selectedChannel.id, maxUploads: count },
     });
   }
@@ -302,15 +313,18 @@ export function YoutubeChannelsPage() {
 
       const uploadsMessage =
         result.deletedFolders === 0
-          ? 'Không có folder uploads nào để xóa'
-          : `Đã xóa ${result.deletedFolders} folder video trên ${result.channelsProcessed} kênh`;
+          ? t('deleteUploaded.toastEmpty')
+          : t('deleteUploaded.toastSuccess', {
+              folders: result.deletedFolders,
+              channels: result.channelsProcessed,
+            });
       const preparedMessage =
         options.deletePreparedVideos && result.deletedPreparedVideos > 0
-          ? `; đã xóa ${result.deletedPreparedVideos} video đã tạo trong videos/`
+          ? t('deleteUploaded.toastPreparedExtra', { count: result.deletedPreparedVideos })
           : '';
       toast.success(`${uploadsMessage}${preparedMessage}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa folder uploads');
+      toast.error(err instanceof Error ? err.message : t('deleteUploaded.toastError'));
     } finally {
       setDeletingUploadedVideos(false);
     }
@@ -324,14 +338,48 @@ export function YoutubeChannelsPage() {
       await deleteYoutubeChannel(deletingChannelTarget.id);
       setShowDeleteChannelModal(false);
       setDeletingChannelTarget(null);
-      toast.success(`Đã xóa kênh "${deletingChannelTarget.name}"`);
+      toast.success(t('delete.toastSuccess', { name: deletingChannelTarget.name }));
       list.markLoading();
       list.refresh();
       clearSelection();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa kênh');
+      toast.error(err instanceof Error ? err.message : t('delete.toastError'));
     } finally {
       setDeletingChannelId(null);
+    }
+  }
+
+  async function handleConfirmPauseChannel() {
+    if (!pausingChannelTarget) return;
+
+    setPausingChannelId(pausingChannelTarget.id);
+    try {
+      await pauseYoutubeChannel(pausingChannelTarget.id);
+      setShowPauseChannelModal(false);
+      setPausingChannelTarget(null);
+      toast.success(t('pause.toastSuccess', { name: pausingChannelTarget.name }));
+      list.markLoading();
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('pause.toastError'));
+    } finally {
+      setPausingChannelId(null);
+    }
+  }
+
+  async function handleResumeChannel(channel: YoutubeChannel) {
+    if (resumingChannelId) return;
+
+    setResumingChannelId(channel.id);
+    try {
+      await resumeYoutubeChannel(channel.id);
+      toast.success(t('resume.toastSuccess', { name: channel.name }));
+      list.markLoading();
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('resume.toastError'));
+    } finally {
+      setResumingChannelId(null);
     }
   }
 
@@ -347,11 +395,11 @@ export function YoutubeChannelsPage() {
         (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
       toast.success(
         debugInfo
-          ? `Đã mở profile GPM cho ${channel.linkedEmail} — debug ${debugInfo}`
-          : `Đã mở profile GPM cho ${channel.linkedEmail}`,
+          ? t('gpm.openSuccessDebug', { email: channel.linkedEmail, debug: debugInfo })
+          : t('gpm.openSuccess', { email: channel.linkedEmail }),
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể mở profile GPM');
+      toast.error(err instanceof Error ? err.message : t('gpm.openError'));
     } finally {
       setOpeningProfileIds(prev => {
         const next = new Set(prev);
@@ -366,8 +414,8 @@ export function YoutubeChannelsPage() {
       <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
         <div className="shrink-0 space-y-4 border-b border-border pb-4">
           <PageHeader
-            title="Kênh YouTube"
-            subtitle="Quản lý kênh, tạo và tải video lên"
+            title={t('page.title')}
+            subtitle={t('page.subtitle')}
             icon={Clapperboard}
           />
           <YoutubeChannelsToolbar
@@ -388,7 +436,7 @@ export function YoutubeChannelsPage() {
             deletingUploadedVideos={deletingUploadedVideos}
             onDeleteUploadedVideos={() => setShowDeleteUploadedModal(true)}
           />
-          {list.error ? <p className='text-xs text-danger'>Không thể tải danh sách kênh YouTube.</p> : null}
+          {list.error ? <p className='text-xs text-danger'>{t('page.loadError')}</p> : null}
         </div>
         <div className='mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
           <div className="min-h-0 flex-1 overflow-auto">
@@ -405,7 +453,11 @@ export function YoutubeChannelsPage() {
               onToggleAll={handleToggleAll}
               onOpenProfile={handleOpenProfile}
               onEdit={handleEditChannel}
+              onPause={handlePauseChannel}
+              onResume={channel => void handleResumeChannel(channel)}
               onDelete={handleDeleteChannel}
+              pausingChannelId={pausingChannelId}
+              resumingChannelId={resumingChannelId}
               deletingChannelId={deletingChannelId}
             />
           </div>
@@ -417,7 +469,7 @@ export function YoutubeChannelsPage() {
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
-              locale="vi"
+              locale={paginationLocale}
             />
           </div>
         </div>
@@ -430,21 +482,21 @@ export function YoutubeChannelsPage() {
         onClose={() => setVideoCountAction(null)}
         onConfirm={handleVideoCountConfirm}
         title={
-          videoCountAction === 'prepare' ? 'Số lượng video cần chuẩn bị' : 'Số lượng video cần tạo'
+          videoCountAction === 'prepare' ? t('createCount.titlePrepare') : t('createCount.titleCreate')
         }
         description={
           isBulkCreate
             ? videoCountAction === 'prepare'
-              ? 'Chuẩn bị video cho tất cả kênh reup'
-              : 'Tạo video cho tất cả kênh reup'
+              ? t('createCount.descAllPrepare')
+              : t('createCount.descAllCreate')
             : selectedIds.size > 1
               ? videoCountAction === 'prepare'
-                ? `Chuẩn bị video cho ${selectedIds.size} kênh đã chọn`
-                : `Tạo video cho ${selectedIds.size} kênh đã chọn`
+                ? t('createCount.descSelectedPrepare', { count: selectedIds.size })
+                : t('createCount.descSelectedCreate', { count: selectedIds.size })
               : selectedChannel
                 ? videoCountAction === 'prepare'
-                  ? `Chuẩn bị video cho kênh ${selectedChannel.name}`
-                  : `Tạo video cho kênh ${selectedChannel.name}`
+                  ? t('createCount.descOnePrepare', { name: selectedChannel.name })
+                  : t('createCount.descOneCreate', { name: selectedChannel.name })
                 : undefined
         }
       />
@@ -453,14 +505,14 @@ export function YoutubeChannelsPage() {
         open={showUploadCountModal}
         onClose={() => setShowUploadCountModal(false)}
         onConfirm={handleUpload}
-        title='Số lượng video cần tải lên'
+        title={t('createCount.titleUpload')}
         description={
           isBulkCreate
-            ? 'Tải lên video Created cho tất cả kênh reup'
+            ? t('createCount.descAllUpload')
             : selectedIds.size > 1
-              ? `Tải lên video Created cho ${selectedIds.size} kênh đã chọn`
+              ? t('createCount.descSelectedUpload', { count: selectedIds.size })
               : selectedChannel
-                ? `Tải lên video Created cho kênh ${selectedChannel.name}`
+                ? t('createCount.descOneUpload', { name: selectedChannel.name })
                 : undefined
         }
       />
@@ -482,6 +534,18 @@ export function YoutubeChannelsPage() {
           setDeletingChannelTarget(null);
         }}
         onConfirm={() => void handleConfirmDeleteChannel()}
+      />
+
+      <PauseYoutubeChannelConfirmModal
+        open={showPauseChannelModal}
+        channelName={pausingChannelTarget?.name ?? ''}
+        pausing={pausingChannelId !== null}
+        onClose={() => {
+          if (pausingChannelId !== null) return;
+          setShowPauseChannelModal(false);
+          setPausingChannelTarget(null);
+        }}
+        onConfirm={() => void handleConfirmPauseChannel()}
       />
 
       {editingChannel ? (

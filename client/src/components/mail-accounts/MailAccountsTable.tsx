@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '../ui';
 import { PlatformLinkCell } from './PlatformLinkCell';
 import type { MailAccount } from '../../types/mailAccount';
@@ -14,59 +15,6 @@ interface MailAccountsTableProps {
   onToggleAll: () => void;
 }
 
-const columns: ColumnDef<MailAccount, unknown>[] = [
-  {
-    accessorKey: 'email',
-    header: 'EMAIL',
-    cell: ({ getValue }) => (
-      <span className="font-medium text-neutral-100">{getValue<string>()}</span>
-    ),
-  },
-  {
-    accessorKey: 'password',
-    header: 'MẬT KHẨU',
-    cell: ({ getValue }) => (
-      <span className="font-mono text-xs text-neutral-300">{getValue<string | undefined>() || '—'}</span>
-    ),
-  },
-  {
-    accessorKey: 'twoFactorAuth',
-    header: '2FA',
-    cell: ({ getValue }) => (
-      <span className="font-mono text-xs text-neutral-300">{getValue<string | undefined>() || '—'}</span>
-    ),
-  },
-  {
-    accessorKey: 'recoveryEmail',
-    header: 'EMAIL KHÔI PHỤC',
-    cell: ({ getValue }) => (
-      <span className="text-neutral-300">{getValue<string>() || '—'}</span>
-    ),
-  },
-  {
-    accessorKey: 'phone',
-    header: 'SỐ ĐIỆN THOẠI',
-    cell: ({ getValue }) => (
-      <span className="text-neutral-300">{getValue<string | undefined>() || '—'}</span>
-    ),
-  },
-  {
-    id: 'youtube',
-    header: 'YOUTUBE',
-    cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.youtube} />,
-  },
-  {
-    id: 'tiktok',
-    header: 'TIKTOK',
-    cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.tiktok} />,
-  },
-  {
-    id: 'facebook',
-    header: 'FACEBOOK',
-    cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.facebook} />,
-  },
-];
-
 export function MailAccountsTable({
   accounts,
   selectedId,
@@ -77,6 +25,61 @@ export function MailAccountsTable({
   onToggleRow,
   onToggleAll,
 }: MailAccountsTableProps) {
+  const { t } = useTranslation('mail');
+
+  const columns: ColumnDef<MailAccount, unknown>[] = [
+    {
+      accessorKey: 'email',
+      header: t('table.col.email'),
+      cell: ({ getValue }) => (
+        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      ),
+    },
+    {
+      accessorKey: 'password',
+      header: t('table.col.password'),
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'twoFactorAuth',
+      header: t('table.col.twoFa'),
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'recoveryEmail',
+      header: t('table.col.recovery'),
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{getValue<string>() || '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'phone',
+      header: t('table.col.phone'),
+      cell: ({ getValue }) => (
+        <span className="text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+      ),
+    },
+    {
+      id: 'youtube',
+      header: t('table.col.youtube'),
+      cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.youtube} />,
+    },
+    {
+      id: 'tiktok',
+      header: t('table.col.tiktok'),
+      cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.tiktok} />,
+    },
+    {
+      id: 'facebook',
+      header: t('table.col.facebook'),
+      cell: ({ row }) => <PlatformLinkCell status={row.original.platformLinks.facebook} />,
+    },
+  ];
+
   return (
     <DataTable
       data={accounts}
@@ -90,7 +93,7 @@ export function MailAccountsTable({
       onToggleAll={onToggleAll}
       activeRowId={selectedId}
       onRowClick={account => onToggleRow(account.id)}
-      emptyMessage="Không tìm thấy tài khoản email."
+      emptyMessage={t('table.empty')}
     />
   );
 }

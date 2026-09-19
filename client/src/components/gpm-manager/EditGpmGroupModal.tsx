@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { updateGpmGroup } from '../../api/gpm';
 import type { EditGpmGroupFormValues, GpmGroup } from '../../types/gpm';
 import { Button, Input, Modal } from '../ui';
@@ -12,6 +13,7 @@ interface EditGpmGroupModalProps {
 }
 
 export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGroupModalProps) {
+  const { t } = useTranslation(['browser', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const {
@@ -46,7 +48,7 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Cập nhật nhóm thất bại');
+      setApiError(err instanceof Error ? err.message : t('gpm.editGroup.error'));
     }
   }
 
@@ -56,11 +58,11 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
     <Modal
       open={open}
       onClose={handleClose}
-      title="Sửa nhóm GPM"
+      title={t('gpm.editGroup.title')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button
             size="sm"
@@ -69,7 +71,7 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
             form="edit-gpm-group-form"
             type="submit"
           >
-            {isSubmitting ? 'Đang lưu…' : 'Lưu thay đổi'}
+            {isSubmitting ? t('gpm.editGroup.saving') : t('gpm.editGroup.save')}
           </Button>
         </>
       }
@@ -77,20 +79,20 @@ export function EditGpmGroupModal({ open, group, onClose, onSuccess }: EditGpmGr
       <form id="edit-gpm-group-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-gpm-group-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên
+            {t('gpm.editGroup.name')}
           </label>
           <Input
             id="edit-gpm-group-name"
             className="h-10 rounded-lg text-sm"
             disabled={isSubmitting}
-            {...register('name', { required: 'Tên là bắt buộc' })}
+            {...register('name', { required: t('gpm.editGroup.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-gpm-group-sort" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Thứ tự sắp xếp
+            {t('gpm.editGroup.sortOrder')}
           </label>
           <Input
             id="edit-gpm-group-sort"

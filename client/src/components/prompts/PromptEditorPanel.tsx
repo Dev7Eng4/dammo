@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { fetchNiches } from '../../api/niches';
 import { Button, DropdownSelect, Input } from '../ui';
 import {
@@ -31,10 +32,11 @@ export interface PromptEditorPanelProps {
 }
 
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+  const { t } = useTranslation('common');
   return (
     <span className="text-xs font-medium text-neutral-400">
       {children}
-      {optional ? <span className="text-neutral-500"> (tuỳ chọn)</span> : null}
+      {optional ? <span className="text-neutral-500"> {t('actions.optional')}</span> : null}
     </span>
   );
 }
@@ -54,6 +56,7 @@ export function PromptEditorPanel({
   onDuplicate,
   onDelete,
 }: PromptEditorPanelProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [niches, setNiches] = useState<Niche[]>([]);
 
   useAbortableEffect(async (signal) => {
@@ -89,9 +92,13 @@ export function PromptEditorPanel({
             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
           </svg>
         </div>
-        <p className="mt-4 text-sm font-medium text-neutral-200">Chọn một prompt từ danh sách</p>
+        <p className="mt-4 text-sm font-medium text-neutral-200">{t('prompts.editor.selectPrompt')}</p>
         <p className="mt-1 text-xs text-neutral-500">
-          Hoặc bấm <span className="font-medium text-neutral-400">+ Mới</span> để tạo mới
+          <Trans
+            i18nKey="prompts.editor.selectPromptHint"
+            ns="content"
+            components={{ new: <span className="font-medium text-neutral-400" /> }}
+          />
         </p>
       </section>
     );
@@ -112,7 +119,9 @@ export function PromptEditorPanel({
   const displayKey =
     draft.steps.length > 1 ? `${baseKey}_step_1…${draft.steps.length}` : plannedKeys[0] ?? baseKey;
   const hasSavedStep = draft.steps.some((step) => step.id);
-  const headerTitle = isNew ? 'Prompt mới' : draft.name || 'Prompt chưa đặt tên';
+  const headerTitle = isNew
+    ? t('prompts.editor.newPrompt')
+    : draft.name || t('prompts.editor.untitled');
   const nicheValue = draft.niche || PROMPT_NICHE_ALL;
 
   return (
@@ -123,7 +132,7 @@ export function PromptEditorPanel({
             <h1 className="truncate text-lg font-semibold text-neutral-50">{headerTitle}</h1>
             {isNew ? (
               <span className="inline-flex rounded-full border border-primary-400/30 bg-primary-400/10 px-2 py-0.5 text-[10px] font-medium text-primary-300">
-                Nháp
+                {t('prompts.editor.draft')}
               </span>
             ) : (
               <span className="inline-flex rounded-full border border-border bg-surface-elevated px-2 py-0.5 font-mono text-[10px] text-neutral-400">
@@ -132,7 +141,7 @@ export function PromptEditorPanel({
             )}
             {draft.steps.length > 1 ? (
               <span className="inline-flex rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] text-neutral-400">
-                {draft.steps.length} step
+                {t('prompts.stepCount', { count: draft.steps.length })}
               </span>
             ) : null}
           </div>
@@ -140,19 +149,19 @@ export function PromptEditorPanel({
         <div className="flex shrink-0 items-center gap-2">
           {!readOnly ? (
             <Button variant="outlined" size="sm" onClick={onAddStep} disabled={saving}>
-              Thêm step
+              {t('prompts.editor.addStep')}
             </Button>
           ) : null}
           <Button variant="outlined" size="sm" onClick={onDuplicate} disabled={saving}>
-            Nhân bản
+            {t('prompts.editor.duplicate')}
           </Button>
           {!readOnly ? (
             <>
               <Button variant="danger" size="sm" onClick={onDelete} disabled={saving || !hasSavedStep}>
-                Xóa
+                {t('common:actions.delete')}
               </Button>
               <Button size="sm" onClick={onSave} disabled={saving || !dirty || !draft.name.trim()}>
-                {saving ? 'Đang lưu...' : 'Lưu'}
+                {saving ? t('common:actions.saving') : t('common:actions.save')}
               </Button>
             </>
           ) : null}
@@ -161,20 +170,20 @@ export function PromptEditorPanel({
 
       {readOnly ? (
         <div className="border-b border-l-2 border-warning/50 bg-warning/5 px-6 py-2">
-          <p className="text-xs text-warning">Prompt hệ thống — chỉ xem</p>
+          <p className="text-xs text-warning">{t('prompts.editor.systemReadonly')}</p>
         </div>
       ) : null}
 
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-6">
         <div className="card-surface space-y-4 rounded-xl p-4">
-          <h2 className="text-sm font-medium text-neutral-100">Chung</h2>
+          <h2 className="text-sm font-medium text-neutral-100">{t('prompts.editor.general')}</h2>
 
           <label className="block space-y-1.5">
-            <FieldLabel>Tên</FieldLabel>
+            <FieldLabel>{t('prompts.editor.name')}</FieldLabel>
             <Input
               value={draft.name}
               onChange={(e) => onChange({ name: e.target.value })}
-              placeholder="Tên prompt"
+              placeholder={t('prompts.editor.namePlaceholder')}
               className="h-10 rounded-lg"
               readOnly={readOnly}
               disabled={readOnly}
@@ -184,14 +193,19 @@ export function PromptEditorPanel({
               <p className="text-xs text-danger">{saveError}</p>
             ) : isNew ? (
               <p className="text-xs text-neutral-500">
-                Sẽ lưu với key <span className="font-mono text-neutral-400">{displayKey}</span>
+                <Trans
+                  i18nKey="prompts.editor.willSaveWithKey"
+                  ns="content"
+                  values={{ key: displayKey }}
+                  components={{ mono: <span className="font-mono text-neutral-400" /> }}
+                />
               </p>
             ) : null}
           </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <label className="block space-y-1.5">
-              <FieldLabel>Ngôn ngữ</FieldLabel>
+              <FieldLabel>{t('prompts.editor.language')}</FieldLabel>
               <DropdownSelect
                 value={draft.language}
                 onChange={(language) => onChange({ language })}
@@ -202,7 +216,7 @@ export function PromptEditorPanel({
               />
             </label>
             <label className="block space-y-1.5">
-              <FieldLabel>Danh mục</FieldLabel>
+              <FieldLabel>{t('prompts.editor.category')}</FieldLabel>
               <DropdownSelect
                 value={draft.category}
                 onChange={(category) => onChange({ category })}
@@ -213,7 +227,7 @@ export function PromptEditorPanel({
               />
             </label>
             <label className="block space-y-1.5">
-              <FieldLabel>Ngách</FieldLabel>
+              <FieldLabel>{t('prompts.editor.niche')}</FieldLabel>
               <DropdownSelect
                 value={nicheValue}
                 onChange={(niche) => onChange({ niche })}

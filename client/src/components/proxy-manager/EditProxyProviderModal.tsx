@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { updateProxyProvider } from '../../api/proxies';
 import { Button, Input, Modal, Textarea } from '../ui';
 import type { ProxyProvider, ProxyProviderFormValues } from '../../types/proxy';
@@ -18,6 +19,7 @@ export function EditProxyProviderModal({
   onClose,
   onSuccess,
 }: EditProxyProviderModalProps) {
+  const { t } = useTranslation(['browser', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -57,7 +59,7 @@ export function EditProxyProviderModal({
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Cập nhật nhà cung cấp thất bại');
+      setApiError(err instanceof Error ? err.message : t('proxy.providers.editModal.error'));
     }
   }
 
@@ -65,11 +67,11 @@ export function EditProxyProviderModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Sửa nhà cung cấp"
+      title={t('proxy.providers.editModal.title')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button
             size="sm"
@@ -78,7 +80,7 @@ export function EditProxyProviderModal({
             form="edit-provider-form"
             type="submit"
           >
-            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {isSubmitting ? t('common:actions.saving') : t('proxy.providers.editModal.save')}
           </Button>
         </>
       }
@@ -86,19 +88,20 @@ export function EditProxyProviderModal({
       <form id="edit-provider-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-provider-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên nhà cung cấp
+            {t('proxy.providers.addModal.name')}
           </label>
           <Input
             id="edit-provider-name"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Tên là bắt buộc' })}
+            {...register('name', { required: t('proxy.providers.addModal.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="edit-provider-url" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            URL đăng nhập <span className="text-neutral-500">(tùy chọn)</span>
+            {t('proxy.providers.addModal.loginUrl')}{' '}
+            <span className="text-neutral-500">{t('proxy.providers.addModal.loginUrlOptional')}</span>
           </label>
           <Input
             id="edit-provider-url"
@@ -107,7 +110,7 @@ export function EditProxyProviderModal({
             {...register('loginUrl', {
               pattern: {
                 value: /^$|^https?:\/\/.+/i,
-                message: 'URL phải bắt đầu bằng http:// hoặc https://',
+                message: t('proxy.providers.addModal.loginUrlInvalid'),
               },
             })}
           />
@@ -117,12 +120,12 @@ export function EditProxyProviderModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="edit-provider-username" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Tên đăng nhập
+              {t('proxy.providers.addModal.username')}
             </label>
             <Input
               id="edit-provider-username"
               className="h-10 rounded-lg"
-              {...register('username', { required: 'Tên đăng nhập là bắt buộc' })}
+              {...register('username', { required: t('proxy.providers.addModal.usernameRequired') })}
             />
             {errors.username ? (
               <p className="mt-1 text-xs text-danger">{errors.username.message}</p>
@@ -130,12 +133,12 @@ export function EditProxyProviderModal({
           </div>
           <div>
             <label htmlFor="edit-provider-password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Mật khẩu mới
+              {t('proxy.providers.editModal.newPassword')}
             </label>
             <Input
               id="edit-provider-password"
               type="password"
-              placeholder="Để trống nếu giữ nguyên"
+              placeholder={t('proxy.providers.editModal.passwordKeep')}
               className="h-10 rounded-lg"
               {...register('password')}
             />
@@ -144,7 +147,7 @@ export function EditProxyProviderModal({
 
         <div>
           <label htmlFor="edit-provider-notes" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ghi chú
+            {t('proxy.providers.addModal.notes')}
           </label>
           <Textarea id="edit-provider-notes" rows={3} className="text-sm" {...register('notes')} />
         </div>

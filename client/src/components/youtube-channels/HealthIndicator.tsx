@@ -1,23 +1,25 @@
-import { cn } from '../../lib/cn';
-import type { HealthScore } from '../../types/youtubeChannel';
+import { useTranslation } from 'react-i18next'
+import { cn } from '../../lib/cn'
+import type { HealthScore } from '../../types/youtubeChannel'
 
-const config: Record<HealthScore, { label: string; bars: number; color: string }> = {
-  high: { label: 'High', bars: 3, color: 'bg-success' },
-  medium: { label: 'Medium', bars: 2, color: 'bg-warning' },
-  low: { label: 'Low', bars: 1, color: 'bg-danger' },
-};
+const config: Record<HealthScore, { labelKey: string; bars: number; color: string }> = {
+  high: { labelKey: 'health.high', bars: 3, color: 'bg-success' },
+  medium: { labelKey: 'health.medium', bars: 2, color: 'bg-warning' },
+  low: { labelKey: 'health.low', bars: 1, color: 'bg-danger' },
+}
 
 interface HealthIndicatorProps {
-  score: HealthScore;
-  className?: string;
+  score: HealthScore
+  className?: string
 }
 
 export function HealthIndicator({ score, className }: HealthIndicatorProps) {
-  const c = config[score];
+  const { t } = useTranslation('youtube')
+  const c = config[score]
   return (
     <span className={cn('inline-flex items-center gap-2', className)}>
       <span className="inline-flex items-end gap-0.5 h-3.5">
-        {[1, 2, 3].map((bar) => (
+        {[1, 2, 3].map(bar => (
           <span
             key={bar}
             className={cn(
@@ -28,7 +30,7 @@ export function HealthIndicator({ score, className }: HealthIndicatorProps) {
           />
         ))}
       </span>
-      <span className="text-xs text-neutral-400">{c.label}</span>
+      <span className="text-xs text-neutral-400">{t(c.labelKey)}</span>
     </span>
-  );
+  )
 }

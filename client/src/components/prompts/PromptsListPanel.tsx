@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SearchInput, DropdownSelect, Button } from '../ui';
 import {
   PROMPT_CATEGORY_OPTIONS,
@@ -26,17 +27,6 @@ export interface PromptsListPanelProps {
   onNew: () => void;
 }
 
-const categoryFilterOptions = [
-  { value: 'all' as const, label: 'Tất cả danh mục' },
-  ...PROMPT_CATEGORY_OPTIONS,
-];
-
-const languageFilterOptions = [
-  { value: 'any' as const, label: 'Tất cả ngôn ngữ' },
-  { value: 'all' as const, label: 'Namespace ALL' },
-  ...PROMPT_LANGUAGE_OPTIONS,
-];
-
 function categoryBadgeClass(category: PromptCategory): string {
   switch (category) {
     case 'thumbnail':
@@ -63,21 +53,39 @@ export function PromptsListPanel({
   onSelect,
   onNew,
 }: PromptsListPanelProps) {
+  const { t } = useTranslation('content');
   const sets = useMemo(() => groupPromptSets(prompts), [prompts]);
+
+  const categoryFilterOptions = useMemo(
+    () => [
+      { value: 'all' as const, label: t('prompts.filter.allCategories') },
+      ...PROMPT_CATEGORY_OPTIONS,
+    ],
+    [t],
+  );
+
+  const languageFilterOptions = useMemo(
+    () => [
+      { value: 'any' as const, label: t('prompts.filter.allLanguages') },
+      { value: 'all' as const, label: t('prompts.filter.namespaceAll') },
+      ...PROMPT_LANGUAGE_OPTIONS,
+    ],
+    [t],
+  );
 
   return (
     <aside className="flex w-[300px] shrink-0 flex-col border-r border-border bg-surface">
       <div className="space-y-3 border-b border-border p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-neutral-100">Prompts</h2>
+          <h2 className="text-sm font-semibold text-neutral-100">{t('prompts.listTitle')}</h2>
           <Button size="sm" onClick={onNew}>
-            + Mới
+            {t('prompts.new')}
           </Button>
         </div>
         <SearchInput
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Tìm prompt..."
+          placeholder={t('prompts.search')}
           className="h-9 text-sm"
         />
         <div className="grid grid-cols-1 gap-2">
@@ -106,7 +114,7 @@ export function PromptsListPanel({
             ))}
           </div>
         ) : sets.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-neutral-500">Không tìm thấy prompt</p>
+          <p className="px-2 py-6 text-center text-sm text-neutral-500">{t('prompts.empty')}</p>
         ) : (
           <ul className="space-y-1">
             {sets.map((set) => {
@@ -138,12 +146,12 @@ export function PromptsListPanel({
                       </span>
                       {set.stepCount > 1 ? (
                         <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-300">
-                          {set.stepCount} step
+                          {t('prompts.stepCount', { count: set.stepCount })}
                         </span>
                       ) : null}
                       {set.isSystem ? (
                         <span className="inline-flex rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
-                          Hệ thống
+                          {t('prompts.system')}
                         </span>
                       ) : null}
                     </div>

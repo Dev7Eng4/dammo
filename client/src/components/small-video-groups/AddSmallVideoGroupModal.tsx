@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createSmallVideoGroup } from '../../api/small-video-groups';
 import { Button, Input, Modal, Textarea } from '../ui';
 import type { SmallVideoGroupFormValues } from '../../types/smallVideoGroup';
@@ -11,6 +12,7 @@ interface AddSmallVideoGroupModalProps {
 }
 
 export function AddSmallVideoGroupModal({ open, onClose, onSuccess }: AddSmallVideoGroupModalProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -41,7 +43,7 @@ export function AddSmallVideoGroupModal({ open, onClose, onSuccess }: AddSmallVi
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể thêm nhóm');
+      setApiError(err instanceof Error ? err.message : t('assets.smallVideo.createError'));
     }
   }
 
@@ -49,14 +51,14 @@ export function AddSmallVideoGroupModal({ open, onClose, onSuccess }: AddSmallVi
     <Modal
       open={open}
       onClose={handleClose}
-      title="Thêm nhóm video stock nhỏ"
+      title={t('assets.smallVideo.addGroupTitle')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-small-video-group-form" type="submit">
-            {isSubmitting ? 'Đang lưu...' : 'Thêm'}
+            {isSubmitting ? t('common:actions.saving') : t('assets.smallVideo.addSubmit')}
           </Button>
         </>
       }
@@ -64,25 +66,25 @@ export function AddSmallVideoGroupModal({ open, onClose, onSuccess }: AddSmallVi
       <form id="add-small-video-group-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="small-video-group-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên nhóm
+            {t('assets.smallVideo.groupName')}
           </label>
           <Input
             id="small-video-group-name"
-            placeholder="Tên nhóm"
+            placeholder={t('assets.smallVideo.groupNamePlaceholder')}
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Vui lòng nhập tên nhóm' })}
+            {...register('name', { required: t('assets.smallVideo.groupNameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="small-video-group-note" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ghi chú (tuỳ chọn)
+            {t('assets.smallVideo.noteOptional')}
           </label>
           <Textarea
             id="small-video-group-note"
             rows={3}
-            placeholder="Ghi chú ngắn..."
+            placeholder={t('assets.smallVideo.notePlaceholder')}
             className="text-sm"
             {...register('note')}
           />

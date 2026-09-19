@@ -24,6 +24,7 @@ export async function syncAfterYoutubeUpload(params: SyncAfterUploadParams): Pro
   youtubeChannelsRepository.update(params.channelId, channel => ({
     ...channel,
     lastUploadAt: uploadedAt,
+    status: 'active',
   }));
 
   await moveYoutubeChannelVideoToUploads(params.channelId, videoId, params.folderPath);

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import type { ProxyStats } from '../../types/proxy';
 
@@ -6,26 +7,28 @@ interface ProxyStatCardsProps {
   loading?: boolean;
 }
 
-const cards: Array<{
-  key: keyof ProxyStats;
-  label: string;
-  valueClass?: string;
-  format?: (value: number) => string;
-}> = [
-  { key: 'total', label: 'Tổng Proxy' },
-  { key: 'active', label: 'Hoạt động', valueClass: 'text-success' },
-  { key: 'failed', label: 'Thất bại', valueClass: 'text-danger' },
-  { key: 'assigned', label: 'Đã gán', valueClass: 'text-primary-400' },
-  { key: 'unassigned', label: 'Chưa gán', valueClass: 'text-neutral-400' },
-  {
-    key: 'avgLatencyMs',
-    label: 'Độ trễ TB',
-    valueClass: 'text-warning',
-    format: (value) => (value > 0 ? `${value}ms` : '—'),
-  },
-];
-
 export function ProxyStatCards({ data, loading }: ProxyStatCardsProps) {
+  const { t } = useTranslation('browser');
+
+  const cards: Array<{
+    key: keyof ProxyStats;
+    label: string;
+    valueClass?: string;
+    format?: (value: number) => string;
+  }> = [
+    { key: 'total', label: t('proxy.stats.total') },
+    { key: 'active', label: t('proxy.stats.active'), valueClass: 'text-success' },
+    { key: 'failed', label: t('proxy.stats.failed'), valueClass: 'text-danger' },
+    { key: 'assigned', label: t('proxy.stats.assigned'), valueClass: 'text-primary-400' },
+    { key: 'unassigned', label: t('proxy.stats.unassigned'), valueClass: 'text-neutral-400' },
+    {
+      key: 'avgLatencyMs',
+      label: t('proxy.stats.avgLatency'),
+      valueClass: 'text-warning',
+      format: (value) => (value > 0 ? `${value}ms` : '—'),
+    },
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
       {cards.map((card) => {

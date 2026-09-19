@@ -1,17 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Settings } from 'lucide-react'
 import { fetchAppSettings, updateAppSettings } from '../api/appSettings'
 import { PageHeader, PageShell } from '../components/layout'
 import { Button, Input, PageTabs, Switch, useToast } from '../components/ui'
 import { useAbortableEffect } from '../hooks'
 import type { AppSettings, SettingsTab } from '../types/appSettings'
-
-const tabs: Array<{ id: SettingsTab; label: string }> = [
-  { id: 'video-ai', label: 'Video AI' },
-  { id: 'chrome', label: 'Chrome' },
-  { id: 'video', label: 'Video' },
-  { id: 'task-queue', label: 'Hàng đợi' },
-]
 
 const EMPTY_SETTINGS: AppSettings = {
   enableKenBurns: true,
@@ -51,12 +45,20 @@ function SettingSwitch({
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation('factory')
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<SettingsTab>('video-ai')
   const [settings, setSettings] = useState<AppSettings>(EMPTY_SETTINGS)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  const tabs: Array<{ id: SettingsTab; label: string }> = [
+    { id: 'video-ai', label: t('settings.tab.videoAi') },
+    { id: 'chrome', label: t('settings.tab.chrome') },
+    { id: 'video', label: t('settings.tab.video') },
+    { id: 'task-queue', label: t('settings.tab.taskQueue') },
+  ]
 
   useAbortableEffect(async (signal) => {
     setLoading(true)
@@ -65,7 +67,7 @@ export function SettingsPage() {
       if (!signal.aborted) setSettings(item)
     } catch (err) {
       if (!signal.aborted) {
-        toast.error(err instanceof Error ? err.message : 'Không tải được cài đặt')
+        toast.error(err instanceof Error ? err.message : t('settings.toast.loadError'))
       }
     } finally {
       if (!signal.aborted) setLoading(false)
@@ -91,9 +93,9 @@ export function SettingsPage() {
         verboseVideoLogs: settings.verboseVideoLogs,
       })
       setSettings(item)
-      toast.success('Đã lưu cài đặt')
+      toast.success(t('settings.toast.saved'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Lưu cài đặt thất bại')
+      toast.error(err instanceof Error ? err.message : t('settings.toast.saveError'))
     } finally {
       setSaving(false)
     }
@@ -113,8 +115,8 @@ export function SettingsPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Cài đặt"
-        subtitle="Cấu hình video AI, Chrome, mật độ cảnh và hàng đợi task."
+        title={t('settings.page.title')}
+        subtitle={t('settings.page.subtitle')}
         icon={Settings}
       />
 
@@ -135,19 +137,19 @@ export function SettingsPage() {
         <div className="card-surface space-y-6 p-5">
           {activeTab === 'video-ai' ? (
             <section className="space-y-3">
-              <p className="text-sm text-muted-foreground">Hiệu ứng ảnh cho dạng video AI (slideshow).</p>
+              <p className="text-sm text-muted-foreground">{t('settings.videoAi.hint')}</p>
               <SettingSwitch
                 id="enable-ken-burns"
-                label="Ken Burns (pan/zoom)"
-                description="Bật hiệu ứng pan/zoom trên từng ảnh trong slideshow."
+                label={t('settings.kenBurns')}
+                description={t('settings.kenBurnsDesc')}
                 checked={settings.enableKenBurns}
                 onChange={(enableKenBurns) => setSettings((prev) => ({ ...prev, enableKenBurns }))}
                 disabled={saving}
               />
               <SettingSwitch
                 id="enable-image-transitions"
-                label="Chuyển cảnh giữa ảnh"
-                description="Bật transition (xfade) giữa các ảnh; tắt thì cắt cứng."
+                label={t('settings.transitions')}
+                description={t('settings.transitionsDesc')}
                 checked={settings.enableImageTransitions}
                 onChange={(enableImageTransitions) =>
                   setSettings((prev) => ({ ...prev, enableImageTransitions }))
@@ -159,11 +161,11 @@ export function SettingsPage() {
 
           {activeTab === 'chrome' ? (
             <section className="space-y-3">
-              <p className="text-sm text-muted-foreground">Cách giữ cửa sổ Chrome chạy nền khi automation.</p>
+              <p className="text-sm text-muted-foreground">{t('settings.chrome.hint')}</p>
               <SettingSwitch
                 id="chrome-background-offscreen"
-                label="Đưa cửa sổ Chrome nền ra ngoài màn hình"
-                description="Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường."
+                label={t('settings.chromeOffscreen')}
+                description={t('settings.chromeOffscreenDesc')}
                 checked={settings.chromeBackgroundUseOffscreen}
                 onChange={(chromeBackgroundUseOffscreen) =>
                   setSettings((prev) => ({ ...prev, chromeBackgroundUseOffscreen }))
@@ -175,12 +177,12 @@ export function SettingsPage() {
 
           {activeTab === 'video' ? (
             <section className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Thời lượng tối đa mỗi cảnh (giây) — mặc định toàn hệ thống. Kênh YouTube vẫn có thể ghi đè riêng.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('settings.sceneDensity')}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Đầu video</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t('settings.sceneStart')}
+                  </span>
                   <Input
                     type="number"
                     min={1}
@@ -192,7 +194,9 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Giữa video</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t('settings.sceneMiddle')}
+                  </span>
                   <Input
                     type="number"
                     min={1}
@@ -204,7 +208,9 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Cuối video</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t('settings.sceneEnd')}
+                  </span>
                   <Input
                     type="number"
                     min={1}
@@ -221,11 +227,11 @@ export function SettingsPage() {
 
           {activeTab === 'task-queue' ? (
             <section className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Số công việc trong hàng đợi được chạy đồng thời. Giá trị 1 = tuần tự (job sau chờ job trước xong).
-              </p>
+              <p className="text-sm text-muted-foreground">{t('settings.concurrencyHint')}</p>
               <label className="block max-w-xs space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Số job chạy đồng thời</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t('settings.concurrency')}
+                </span>
                 <Input
                   type="number"
                   min={1}
@@ -246,8 +252,8 @@ export function SettingsPage() {
               </label>
               <SettingSwitch
                 id="verbose-video-logs"
-                label="Hiển thị log chi tiết"
-                description="Bật: log ffmpeg/progress/từng clip như hiện tại. Tắt: chỉ tên bước và thời gian thực hiện."
+                label={t('settings.verboseLogs')}
+                description={t('settings.verboseLogsDesc')}
                 checked={settings.verboseVideoLogs}
                 onChange={(verboseVideoLogs) =>
                   setSettings((prev) => ({ ...prev, verboseVideoLogs }))
@@ -259,7 +265,7 @@ export function SettingsPage() {
 
           <div className="flex items-center gap-3 border-t border-border pt-4">
             <Button type="button" onClick={handleSave} disabled={saving || loading}>
-              {saving ? 'Đang lưu...' : 'Lưu'}
+              {saving ? t('settings.saving') : t('settings.save')}
             </Button>
             <Button
               type="button"
@@ -267,7 +273,7 @@ export function SettingsPage() {
               disabled={saving || loading}
               onClick={() => setRefreshKey((k) => k + 1)}
             >
-              Đặt lại
+              {t('settings.reset')}
             </Button>
           </div>
         </div>

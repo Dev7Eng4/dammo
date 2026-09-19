@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import type { ProxyProvider } from '../../types/proxy';
 import { Button, DataTable } from '../ui';
 
@@ -11,6 +12,7 @@ interface ProxyProvidersTableProps {
 }
 
 function MaskedPassword({ value }: { value: string }) {
+  const { t } = useTranslation('browser');
   const [visible, setVisible] = useState(false);
 
   return (
@@ -20,7 +22,7 @@ function MaskedPassword({ value }: { value: string }) {
         type="button"
         onClick={() => setVisible(v => !v)}
         className="text-neutral-500 hover:text-neutral-300"
-        title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+        title={visible ? t('proxy.providers.hidePassword') : t('proxy.providers.showPassword')}
       >
         <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           {visible ? (
@@ -47,17 +49,19 @@ export function ProxyProvidersTable({
   onEdit,
   onDelete,
 }: ProxyProvidersTableProps) {
+  const { t } = useTranslation(['browser', 'common']);
+
   const columns: ColumnDef<ProxyProvider, unknown>[] = [
     {
       accessorKey: 'name',
-      header: 'TÊN',
+      header: t('proxy.providers.table.name'),
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'loginUrl',
-      header: 'URL ĐĂNG NHẬP',
+      header: t('proxy.providers.table.loginUrl'),
       cell: ({ row }) =>
         row.original.loginUrl ? (
           <a
@@ -74,21 +78,21 @@ export function ProxyProvidersTable({
     },
     {
       accessorKey: 'username',
-      header: 'TÊN ĐĂNG NHẬP',
+      header: t('proxy.providers.table.username'),
       cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
     },
     {
       accessorKey: 'password',
-      header: 'MẬT KHẨU',
+      header: t('proxy.providers.table.password'),
       cell: ({ row }) => <MaskedPassword value={row.original.password} />,
     },
     {
       id: 'actions',
-      header: 'THAO TÁC',
+      header: t('proxy.providers.table.actions'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
-            Sửa
+            {t('common:actions.edit')}
           </Button>
           <Button
             variant="outlined"
@@ -96,7 +100,7 @@ export function ProxyProvidersTable({
             className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
             onClick={() => onDelete(row.original)}
           >
-            Xóa
+            {t('common:actions.delete')}
           </Button>
         </div>
       ),
@@ -109,8 +113,8 @@ export function ProxyProvidersTable({
       columns={columns}
       getRowId={provider => provider.id}
       loading={loading}
-      emptyMessage="Chưa có nhà cung cấp."
-      emptyDescription="Thêm URL đăng nhập, tên đăng nhập và mật khẩu để bắt đầu."
+      emptyMessage={t('proxy.providers.empty')}
+      emptyDescription={t('proxy.providers.emptyDesc')}
     />
   );
 }

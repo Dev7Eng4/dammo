@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchProxies } from '../../api/proxies';
 import type { Proxy } from '../../types/proxy';
 import { Button, Modal } from '../ui';
@@ -18,24 +19,6 @@ function getExpiryEndMs(expiresAt?: string): number | null {
   return Number.isNaN(ms) ? null : ms;
 }
 
-function getExpiryWarningMeta(
-  expiresAt: string | undefined,
-  nowMs: number,
-): null | { label: string; expireEndMs: number } {
-  const expireEndMs = getExpiryEndMs(expiresAt);
-  if (expireEndMs == null) return null;
-
-  const isExpiring = expireEndMs <= nowMs + EXPIRY_WARNING_DAYS * DAY_MS;
-  if (!isExpiring) return null;
-
-  if (expireEndMs < nowMs) {
-    return { label: 'Đã hết hạn', expireEndMs };
-  }
-
-  const daysLeft = Math.ceil((expireEndMs - nowMs) / DAY_MS);
-  return { label: `Còn ${daysLeft} ngày`, expireEndMs };
-}
-
 interface ExpiringProxyItem {
   proxy: Proxy;
   label: string;
@@ -43,12 +26,31 @@ interface ExpiringProxyItem {
 
 /** Shows once on mount when any proxy expires within 5 days (or already expired). */
 export function ProxyExpiryWarningModal() {
+  const { t } = useTranslation('browser');
   const [open, setOpen] = useState(false);
   const [expiringProxies, setExpiringProxies] = useState<ExpiringProxyItem[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
+
+    function getExpiryWarningMeta(
+      expiresAt: string | undefined,
+      nowMs: number,
+    ): null | { label: string; expireEndMs: number } {
+      const expireEndMs = getExpiryEndMs(expiresAt);
+      if (expireEndMs == null) return null;
+
+      const isExpiring = expireEndMs <= nowMs + EXPIRY_WARNING_DAYS * DAY_MS;
+      if (!isExpiring) return null;
+
+      if (expireEndMs < nowMs) {
+        return { label: t('proxy.expiry.expired'), expireEndMs };
+      }
+
+      const daysLeft = Math.ceil((expireEndMs - nowMs) / DAY_MS);
+      return { label: t('proxy.expiry.daysLeft', { count: daysLeft }), expireEndMs };
+    }
 
     async function run() {
       try {
@@ -88,24 +90,23 @@ export function ProxyExpiryWarningModal() {
       cancelled = true;
       controller.abort();
     };
-  }, []);
+  }, [t]);
 
   return (
     <Modal
       open={open}
       onClose={() => setOpen(false)}
-      title='Proxy sắp hết hạn (<= 5 ngày)'
+      title={t('proxy.expiry.title')}
       footer={
         <Button size='sm' className='rounded-lg' onClick={() => setOpen(false)}>
-          Đã hiểu
+          {t('proxy.expiry.ack')}
         </Button>
       }
     >
       {expiringProxies.length > 0 ? (
         <div className='space-y-4'>
           <p className='text-sm text-neutral-300'>
-            Có <span className='font-mono text-neutral-100'>{expiringProxies.length}</span> proxy sắp hết hạn hoặc đã hết hạn. Vui lòng
-            kiểm tra và gia hạn trước khi hết hạn.
+            {t('proxy.expiry.body', { count: expiringProxies.length })}
           </p>
           <div className='space-y-2'>
             {expiringProxies.slice(0, EXPIRY_MODAL_MAX_ITEMS).map(({ proxy, label }) => (
@@ -114,17 +115,22 @@ export function ProxyExpiryWarningModal() {
                   {proxy.host}:{proxy.port}
                 </span>
                 <span className='text-xs text-neutral-500'>
-                  {proxy.expiresAt ? `HẾT HẠN ${proxy.expiresAt}` : 'Không có hạn'} · {label}
+                  {proxy.expiresAt
+                    ? t('proxy.expiry.expiresLabel', { date: proxy.expiresAt })
+                    : t('proxy.expiry.noExpiryDate')}{' '}
+                  · {label}
                 </span>
               </div>
             ))}
           </div>
           {expiringProxies.length > EXPIRY_MODAL_MAX_ITEMS ? (
-            <p className='text-xs text-neutral-500'>Hiển thị {EXPIRY_MODAL_MAX_ITEMS} proxy đầu tiên.</p>
+            <p className='text-xs text-neutral-500'>
+              {t('proxy.expiry.showingFirst', { count: EXPIRY_MODAL_MAX_ITEMS })}
+            </p>
           ) : null}
         </div>
       ) : (
-        <p className='text-sm text-neutral-300'>Không có proxy sắp hết hạn.</p>
+        <p className='text-sm text-neutral-300'>{t('proxy.expiry.empty')}</p>
       )}
     </Modal>
   );

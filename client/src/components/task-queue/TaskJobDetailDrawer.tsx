@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { getTaskDetailLine } from '../../utils/taskQueue';
 import type { TaskJob, TaskLogEntry } from '../../types/taskQueue';
@@ -27,21 +28,8 @@ function formatLogText(logs: TaskLogEntry[]): string {
     .join('\n');
 }
 
-function formatErrorCopyText(job: TaskJob): string {
-  const failedStage = job.stages?.find((stage) => stage.status === 'failed');
-  const details = failedStage?.errorDetails ?? job.errorDetails;
-  const lines = [
-    failedStage ? `Bước: ${failedStage.label}` : null,
-    failedStage?.error ?? job.error,
-    details?.reason ? `Lý do: ${details.reason}` : null,
-    details?.missingFields?.length ? `Thiếu: ${details.missingFields.join(', ')}` : null,
-    details?.context ? `Ngữ cảnh: ${details.context}` : null,
-    details?.snippet ? `Snippet:\n${details.snippet}` : null,
-  ].filter(Boolean);
-  return lines.join('\n');
-}
-
 function CopyButton({ value }: { value: string }) {
+  const { t } = useTranslation('factory');
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -70,37 +58,57 @@ function CopyButton({ value }: { value: string }) {
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
       )}
-      {copied ? 'Đã chép' : 'Sao chép'}
+      {copied ? t('queue.job.copied') : t('queue.job.copy')}
     </button>
   );
 }
 
-function getEmptyPanelMessage(job: TaskJob): string {
-  if (job.status === 'running') {
-    const doing = job.stages?.find((stage) => stage.status === 'doing');
-    if (doing) return `${doing.label} — đang làm`;
-    const label = job.progressLabel ?? 'Đang xử lý';
-    return `${label} (${job.progress}%)`;
-  }
-  if (job.status === 'failed') {
-    return job.error ?? 'Công việc thất bại';
-  }
-  if (job.status === 'completed') {
-    return getTaskDetailLine(job);
-  }
-  if (job.status === 'queued') {
-    return 'Đang chờ worker';
-  }
-  return 'Chưa có dữ liệu';
-}
-
 export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerProps) {
+  const { t, i18n } = useTranslation('factory');
+  void i18n.language;
   const consoleRef = useRef<HTMLDivElement>(null);
   const logs = job?.logs ?? [];
   const stages = job?.stages ?? [];
   const failedStage = stages.find((stage) => stage.status === 'failed');
-  const panelTitle = job?.status === 'running' ? 'Nhật ký trực tiếp' : 'Chi tiết công việc';
+  const panelTitle =
+    job?.status === 'running' ? t('queue.job.detailLive') : t('queue.job.detail');
   const subtitle = [panelTitle, job?.livePhase].filter(Boolean).join(' · ');
+
+  function formatErrorCopyText(current: TaskJob): string {
+    const failed = current.stages?.find((stage) => stage.status === 'failed');
+    const details = failed?.errorDetails ?? current.errorDetails;
+    const lines = [
+      failed ? t('queue.job.stepLabel', { label: failed.label }) : null,
+      failed?.error ?? current.error,
+      details?.reason ? t('queue.stage.reason', { reason: details.reason }) : null,
+      details?.missingFields?.length
+        ? t('queue.stage.missing', { fields: details.missingFields.join(', ') })
+        : null,
+      details?.context ? t('queue.stage.context', { context: details.context }) : null,
+      details?.snippet ? t('queue.stage.snippet', { snippet: details.snippet }) : null,
+    ].filter(Boolean);
+    return lines.join('\n');
+  }
+
+  function getEmptyPanelMessage(current: TaskJob): string {
+    if (current.status === 'running') {
+      const doing = current.stages?.find((stage) => stage.status === 'doing');
+      if (doing) return t('queue.job.doingLabel', { label: doing.label });
+      const label = current.progressLabel ?? t('queue.job.processing');
+      return t('queue.job.progressPct', { label, progress: current.progress });
+    }
+    if (current.status === 'failed') {
+      return current.error ?? t('queue.job.failed');
+    }
+    if (current.status === 'completed') {
+      return getTaskDetailLine(current);
+    }
+    if (current.status === 'queued') {
+      return t('queue.job.waitingWorker');
+    }
+    return t('queue.job.noData');
+  }
+
   const copyValue =
     job && (failedStage || job.errorDetails)
       ? [formatErrorCopyText(job), logs.length ? `\n---\n${formatLogText(logs)}` : ''].join('')
@@ -128,7 +136,9 @@ export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerP
       <div className="flex min-h-full flex-col">
         {stages.length > 0 ? (
           <div className="border-b border-border bg-neutral-950 px-4 py-3">
-            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Các bước</p>
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+              {t('queue.job.steps')}
+            </p>
             <TaskStageChecklist stages={stages} showFailedDetails />
             {job.status === 'failed' && !failedStage && (job.error || job.errorDetails) ? (
               <TaskErrorDetailsBlock error={job.error} errorDetails={job.errorDetails} />
@@ -136,7 +146,9 @@ export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerP
           </div>
         ) : job.status === 'failed' && (job.error || job.errorDetails) ? (
           <div className="border-b border-border bg-neutral-950 px-4 py-3">
-            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Lỗi</p>
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+              {t('queue.job.error')}
+            </p>
             <TaskErrorDetailsBlock error={job.error} errorDetails={job.errorDetails} />
           </div>
         ) : null}

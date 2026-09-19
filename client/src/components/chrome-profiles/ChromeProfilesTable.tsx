@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import type { ChromeProfile } from '../../types/chromeProfile';
 import { DataTable } from '../ui';
@@ -12,11 +13,6 @@ interface ChromeProfilesTableProps {
   onRoleChange: (id: string, role: ChromeProfile['role']) => void;
 }
 
-function formatCreatedAt(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
-}
-
 export function ChromeProfilesTable({
   profiles,
   selectedId,
@@ -25,10 +21,18 @@ export function ChromeProfilesTable({
   onSelect,
   onRoleChange,
 }: ChromeProfilesTableProps) {
+  const { t, i18n } = useTranslation('browser');
+  const dateLocale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
+
+  function formatCreatedAt(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString(dateLocale);
+  }
+
   const columns: ColumnDef<ChromeProfile, unknown>[] = [
     {
       id: 'role',
-      header: 'VAI TRÒ',
+      header: t('chrome.table.col.role'),
       cell: ({ row }) => {
         const profile = row.original;
         return (
@@ -49,7 +53,7 @@ export function ChromeProfilesTable({
                 profile.role === 'main' ? 'text-primary-400' : 'text-neutral-500',
               )}
             >
-              {profile.role === 'main' ? 'Chính' : 'Phụ'}
+              {profile.role === 'main' ? t('chrome.table.roleMain') : t('chrome.table.roleSecondary')}
             </span>
           </label>
         );
@@ -57,14 +61,14 @@ export function ChromeProfilesTable({
     },
     {
       accessorKey: 'name',
-      header: 'TÊN',
+      header: t('chrome.table.col.name'),
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       id: 'usageOrder',
-      header: 'THỨ TỰ',
+      header: t('chrome.table.col.order'),
       cell: ({ row }) => {
         const order = row.original.usageOrder;
         return (
@@ -76,7 +80,7 @@ export function ChromeProfilesTable({
     },
     {
       accessorKey: 'id',
-      header: 'PROFILE ID',
+      header: t('chrome.table.col.profileId'),
       cell: ({ getValue }) => {
         const id = getValue<string>();
         return (
@@ -88,7 +92,7 @@ export function ChromeProfilesTable({
     },
     {
       accessorKey: 'createdAt',
-      header: 'TẠO LÚC',
+      header: t('chrome.table.col.createdAt'),
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{formatCreatedAt(getValue<string>())}</span>
       ),
@@ -103,7 +107,7 @@ export function ChromeProfilesTable({
       loading={loading}
       activeRowId={selectedId}
       onRowClick={profile => onSelect(profile.id)}
-      emptyMessage="Chưa có Chrome profile nào. Thêm một profile để bắt đầu."
+      emptyMessage={t('chrome.table.empty')}
     />
   );
 }

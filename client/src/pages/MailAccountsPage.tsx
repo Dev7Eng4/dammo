@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { deleteMailAccount, exportMailAccountsExcel, fetchMailAccount, fetchMailAccounts } from '../api/mailAccounts';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddMailModal } from '../components/mail-accounts/AddMailModal';
@@ -14,6 +15,7 @@ import { Mail } from 'lucide-react';
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function MailAccountsPage() {
+  const { t } = useTranslation(['mail', 'common']);
   const { toast } = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -43,9 +45,9 @@ export function MailAccountsPage() {
   const canDelete = selectedIds.size === 1;
   const selectionDisabledReason =
     selectedIds.size === 0
-      ? 'Chọn một email'
+      ? t('hint.selectOne')
       : selectedIds.size > 1
-        ? 'Chỉ chọn một email'
+        ? t('hint.selectOnlyOne')
         : undefined;
 
   function clearSelection() {
@@ -120,7 +122,7 @@ export function MailAccountsPage() {
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
       await exportMailAccountsExcel(debouncedSearch, ids);
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Xuất file thất bại');
+      setExportError(err instanceof Error ? err.message : t('toast.exportError'));
     } finally {
       setExporting(false);
     }
@@ -133,13 +135,13 @@ export function MailAccountsPage() {
     try {
       await deleteMailAccount(selectedAccount.id);
       setShowDeleteModal(false);
-      toast.success(`Đã xóa email "${selectedAccount.email}"`);
+      toast.success(t('toast.deleteSuccess', { email: selectedAccount.email }));
       list.markLoading();
       list.refresh();
       clearSelection();
       setSelectedIds(new Set());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa email');
+      toast.error(err instanceof Error ? err.message : t('toast.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -150,8 +152,8 @@ export function MailAccountsPage() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="shrink-0">
           <PageHeader
-            title="Email"
-            subtitle="Quản lý tài khoản mail và liên kết nền tảng"
+            title={t('page.title')}
+            subtitle={t('page.subtitle')}
             icon={Mail}
             className="mb-4"
           />
@@ -159,9 +161,9 @@ export function MailAccountsPage() {
             total={list.total}
             search={search}
             canEdit={canEdit}
-            editDisabledReason={selectionDisabledReason ? `${selectionDisabledReason} để sửa` : undefined}
+            editDisabledReason={selectionDisabledReason}
             canDelete={canDelete}
-            deleteDisabledReason={selectionDisabledReason ? `${selectionDisabledReason} để xóa` : undefined}
+            deleteDisabledReason={selectionDisabledReason}
             deleting={deleting}
             onSearchChange={handleSearchChange}
             onAddMail={() => setShowAddModal(true)}
@@ -198,7 +200,6 @@ export function MailAccountsPage() {
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
-              locale="vi"
             />
           </div>
         </div>
@@ -208,7 +209,7 @@ export function MailAccountsPage() {
         <>
           <button
             type="button"
-            aria-label="Đóng panel chi tiết"
+            aria-label={t('common:aria.closeDetailPanel')}
             onClick={handleClosePanel}
             className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           />

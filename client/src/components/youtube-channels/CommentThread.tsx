@@ -1,24 +1,25 @@
-import { useState } from 'react';
-import type { YoutubeVideoComment } from '../../types/youtubeChannel';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { YoutubeVideoComment } from '../../types/youtubeChannel'
 
 interface CommentThreadProps {
-  comment: YoutubeVideoComment;
-  depth?: number;
+  comment: YoutubeVideoComment
+  depth?: number
 }
 
 function countReplies(comment: YoutubeVideoComment): number {
-  if (!comment.replies?.length) return 0;
-  return comment.replies.reduce((total, reply) => total + 1 + countReplies(reply), 0);
+  if (!comment.replies?.length) return 0
+  return comment.replies.reduce((total, reply) => total + 1 + countReplies(reply), 0)
 }
 
-function formatCommentTimestamp(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('vi-VN');
+function formatCommentTimestamp(value: string, locale: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')
 }
 
 function CommentAvatar({ name, thumbnail }: { name: string; thumbnail?: string }) {
-  const initial = name.charAt(0).toUpperCase();
+  const initial = name.charAt(0).toUpperCase()
 
   if (thumbnail) {
     return (
@@ -27,41 +28,46 @@ function CommentAvatar({ name, thumbnail }: { name: string; thumbnail?: string }
         alt=""
         className="size-8 shrink-0 rounded-full bg-surface-elevated object-cover"
       />
-    );
+    )
   }
 
   return (
     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-elevated text-xs font-medium text-neutral-400">
       {initial}
     </div>
-  );
+  )
 }
 
 function CommentBody({ comment }: { comment: YoutubeVideoComment }) {
+  const { t, i18n } = useTranslation('youtube')
+
   return (
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-medium text-neutral-100">{comment.author}</span>
         {comment.timestamp ? (
           <span className="text-xs text-neutral-500">
-            {formatCommentTimestamp(comment.timestamp)}
+            {formatCommentTimestamp(comment.timestamp, i18n.language)}
           </span>
         ) : null}
       </div>
       <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-300">{comment.text}</p>
       {comment.likeCount != null && comment.likeCount > 0 ? (
         <p className="mt-1.5 text-xs text-neutral-500">
-          {comment.likeCount.toLocaleString('vi-VN')} lượt thích
+          {t('comments.likes', {
+            count: comment.likeCount.toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN'),
+          })}
         </p>
       ) : null}
     </div>
-  );
+  )
 }
 
 export function CommentThread({ comment, depth = 0 }: CommentThreadProps) {
-  const [showReplies, setShowReplies] = useState(false);
-  const replyCount = countReplies(comment);
-  const hasReplies = replyCount > 0;
+  const { t, i18n } = useTranslation('youtube')
+  const [showReplies, setShowReplies] = useState(false)
+  const replyCount = countReplies(comment)
+  const hasReplies = replyCount > 0
 
   return (
     <div className={depth > 0 ? 'mt-3' : ''}>
@@ -74,17 +80,19 @@ export function CommentThread({ comment, depth = 0 }: CommentThreadProps) {
         <div className="mt-2 ml-11">
           <button
             type="button"
-            onClick={() => setShowReplies((open) => !open)}
+            onClick={() => setShowReplies(open => !open)}
             className="text-xs font-medium text-secondary-400 hover:text-secondary-300"
           >
             {showReplies
-              ? 'Ẩn phản hồi'
-              : `Xem ${replyCount.toLocaleString('vi-VN')} phản hồi`}
+              ? t('comments.hideReplies')
+              : t('comments.showReplies', {
+                  count: replyCount.toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN'),
+                })}
           </button>
 
           {showReplies ? (
             <div className="mt-2 border-l border-border pl-4">
-              {comment.replies?.map((reply) => (
+              {comment.replies?.map(reply => (
                 <CommentThread key={reply.id} comment={reply} depth={depth + 1} />
               ))}
             </div>
@@ -92,5 +100,5 @@ export function CommentThread({ comment, depth = 0 }: CommentThreadProps) {
         </div>
       ) : null}
     </div>
-  );
+  )
 }

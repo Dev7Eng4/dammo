@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { fetchDashboardData } from '../api/dashboard'
 import { AccountSummaryCard } from '../components/dashboard/AccountSummary'
 import { ActiveRenderCard } from '../components/dashboard/ActiveRenderCard'
@@ -22,6 +23,7 @@ const emptyData: DashboardData = {
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation('dashboard')
   const [data, setData] = useState<DashboardData>(emptyData)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +37,7 @@ export function DashboardPage() {
       setData(nextData)
     } catch (err) {
       if (signal.aborted) return
-      setError(err instanceof Error ? err.message : 'Không thể tải tổng quan')
+      setError(err instanceof Error ? err.message : t('page.loadError'))
     } finally {
       if (!signal.aborted) setLoading(false)
     }
@@ -51,7 +53,7 @@ export function DashboardPage() {
             className="mt-3 text-sm text-secondary-400 hover:text-secondary-300"
             onClick={() => window.location.reload()}
           >
-            Thử lại
+            {t('page.retry')}
           </button>
         </div>
       </PageShell>
@@ -61,8 +63,8 @@ export function DashboardPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Tổng quan"
-        subtitle="Theo dõi pipeline và trạng thái vận hành"
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
         icon={LayoutDashboard}
       />
 

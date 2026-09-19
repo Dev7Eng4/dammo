@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
   Clapperboard,
@@ -9,7 +10,6 @@ import {
   FileSpreadsheet,
   FolderKanban,
   Globe,
-  HelpCircle,
   Image,
   LayoutDashboard,
   LayoutTemplate,
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { footerNavItems, navSections, type NavIcon, type NavItem } from '../config/navigation'
+import { LanguageSwitcher } from '../components/theme/LanguageSwitcher'
 import { ThemeToggleButton } from '../components/theme/ThemeToggleButton'
 import { Button, Tooltip } from '../components/ui'
 
@@ -55,7 +56,6 @@ const iconMap: Record<NavIcon, LucideIcon> = {
   factory: Factory,
   queue: ListTodo,
   'task-queue': ListTodo,
-  support: HelpCircle,
   logs: FileCode2,
   settings: Settings,
 }
@@ -69,6 +69,8 @@ function readStoredCollapsed(): boolean {
 }
 
 function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  const { t } = useTranslation('nav')
+  const label = t(item.labelKey)
   const end = item.path === '/' || item.path === '/video-factory'
   const Icon = iconMap[item.icon] ?? LayoutDashboard
 
@@ -76,7 +78,7 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
     <NavLink
       to={item.path}
       end={end}
-      title={collapsed ? undefined : item.label}
+      title={collapsed ? undefined : label}
       className={({ isActive }) =>
         cn(
           'flex items-center rounded-lg text-sm font-medium transition-colors duration-150',
@@ -88,14 +90,14 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       }
     >
       <Icon className="size-4 shrink-0" />
-      {!collapsed ? <span className="truncate">{item.label}</span> : null}
+      {!collapsed ? <span className="truncate">{label}</span> : null}
     </NavLink>
   )
 
   if (!collapsed) return link
 
   return (
-    <Tooltip content={item.label} side="right">
+    <Tooltip content={label} side="right">
       {link}
     </Tooltip>
   )
@@ -123,6 +125,7 @@ function BrandHeader({ collapsed }: { collapsed: boolean }) {
 }
 
 export function Sidebar() {
+  const { t } = useTranslation(['nav', 'common'])
   const [collapsed, setCollapsed] = useState(readStoredCollapsed)
 
   useEffect(() => {
@@ -137,7 +140,7 @@ export function Sidebar() {
     setCollapsed((prev) => !prev)
   }, [])
 
-  const toggleLabel = collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'
+  const toggleLabel = collapsed ? t('common:sidebar.expand') : t('common:sidebar.collapse')
 
   return (
     <aside
@@ -199,7 +202,7 @@ export function Sidebar() {
               ) : null
             ) : (
               <p className="px-3 pb-1.5 pt-4 text-[10px] font-semibold tracking-wider text-muted-foreground">
-                {section.label}
+                {t(section.labelKey)}
               </p>
             )}
             <div
@@ -218,18 +221,21 @@ export function Sidebar() {
       <div
         className={cn(
           'border-t border-border px-2 py-3',
-          collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center gap-1',
+          collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center justify-end gap-1',
         )}
       >
-        <div
-          className={cn(
-            collapsed ? 'flex flex-col items-center gap-2' : 'min-w-0 flex-1 space-y-0.5',
-          )}
-        >
-          {footerNavItems.map((item) => (
-            <NavItemLink key={item.id} item={item} collapsed={collapsed} />
-          ))}
-        </div>
+        {footerNavItems.length > 0 ? (
+          <div
+            className={cn(
+              collapsed ? 'flex flex-col items-center gap-2' : 'min-w-0 flex-1 space-y-0.5',
+            )}
+          >
+            {footerNavItems.map((item) => (
+              <NavItemLink key={item.id} item={item} collapsed={collapsed} />
+            ))}
+          </div>
+        ) : null}
+        <LanguageSwitcher />
         <ThemeToggleButton className={collapsed ? undefined : 'mr-1'} />
       </div>
     </aside>

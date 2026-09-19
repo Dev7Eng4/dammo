@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createNiche, deleteNiche, fetchNicheUsage, fetchNiches, updateNiche } from '../../api/niches';
 import { Button, Input, Modal } from '../ui';
 import type { AddNicheFormValues, Niche, NicheMutationAction, NicheUsage } from '../../types/niche';
@@ -48,6 +49,7 @@ function XIcon({ className }: { className?: string }) {
 }
 
 export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) {
+  const { t } = useTranslation(['source', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nichesLoading, setNichesLoading] = useState(false);
@@ -110,7 +112,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
       setNiches((prev) => [item, ...prev.filter((n) => n.key !== item.key)]);
       onSuccess?.('create');
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể tạo niche');
+      setApiError(err instanceof Error ? err.message : t('niche.createError'));
     }
   }
 
@@ -128,7 +130,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
   async function saveEdit(key: string) {
     const label = editingLabel.trim();
     if (!label) {
-      setApiError('Tên niche là bắt buộc');
+      setApiError(t('niche.nameRequired'));
       return;
     }
 
@@ -141,7 +143,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
       setEditingLabel('');
       onSuccess?.('update');
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể cập nhật niche');
+      setApiError(err instanceof Error ? err.message : t('niche.updateError'));
     } finally {
       setRowBusyKey(null);
     }
@@ -165,7 +167,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
       }
       onSuccess?.('delete');
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể xóa niche');
+      setApiError(err instanceof Error ? err.message : t('niche.deleteError'));
     } finally {
       setRowBusyKey(null);
     }
@@ -181,7 +183,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
           if (inUseWarning !== null) return;
           handleClose();
         }}
-        title="Thêm niche"
+        title={t('niche.modalTitle')}
         footer={
           <>
             <Button
@@ -191,7 +193,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
               onClick={handleClose}
               disabled={listBusy}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               size="sm"
@@ -200,7 +202,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
               form="add-niche-form"
               type="submit"
             >
-              {isSubmitting ? 'Đang lưu...' : 'Thêm niche'}
+              {isSubmitting ? t('common:actions.saving') : t('niche.add')}
             </Button>
           </>
         }
@@ -208,13 +210,13 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
         <form id="add-niche-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="niche-label" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Tên niche
+              {t('niche.name')}
             </label>
             <Input
               id="niche-label"
               placeholder="Senior Health"
               className="h-10 rounded-lg"
-              {...register('label', { required: 'Tên niche là bắt buộc' })}
+              {...register('label', { required: t('niche.nameRequired') })}
             />
             {errors.label ? <p className="mt-1 text-xs text-danger">{errors.label.message}</p> : null}
           </div>
@@ -222,16 +224,16 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
 
           <div>
             <p className="mb-1.5 text-xs font-medium text-neutral-400">
-              Niche hiện có
+              {t('niche.existing')}
               {!nichesLoading && niches.length > 0 ? (
                 <span className="ml-1 font-normal text-neutral-500">({niches.length})</span>
               ) : null}
             </p>
             <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-900">
               {nichesLoading ? (
-                <p className="px-3 py-2.5 text-xs text-neutral-500">Đang tải...</p>
+                <p className="px-3 py-2.5 text-xs text-neutral-500">{t('niche.loading')}</p>
               ) : niches.length === 0 ? (
-                <p className="px-3 py-2.5 text-xs text-neutral-500">Chưa có niche</p>
+                <p className="px-3 py-2.5 text-xs text-neutral-500">{t('niche.empty')}</p>
               ) : (
                 <ul className="divide-y divide-neutral-800">
                   {niches.map((niche) => {
@@ -273,8 +275,8 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                                 size="sm"
                                 className="size-7 rounded-md p-0"
                                 disabled={isBusy}
-                                title="Lưu"
-                                aria-label="Lưu"
+                                title={t('common:actions.save')}
+                                aria-label={t('niche.saveAria')}
                                 onClick={() => void saveEdit(niche.key)}
                               >
                                 <CheckIcon className="size-3.5" />
@@ -285,8 +287,8 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                                 size="sm"
                                 className="size-7 rounded-md p-0"
                                 disabled={isBusy}
-                                title="Hủy"
-                                aria-label="Hủy"
+                                title={t('common:actions.cancel')}
+                                aria-label={t('niche.cancelAria')}
                                 onClick={cancelEdit}
                               >
                                 <XIcon className="size-3.5" />
@@ -300,8 +302,8 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                                 size="sm"
                                 className="size-7 rounded-md p-0"
                                 disabled={listBusy}
-                                title="Sửa"
-                                aria-label={`Sửa ${niche.label}`}
+                                title={t('common:actions.edit')}
+                                aria-label={t('niche.editAria', { label: niche.label })}
                                 onClick={() => startEdit(niche)}
                               >
                                 <PencilIcon className="size-3.5" />
@@ -312,8 +314,8 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                                 size="sm"
                                 className="size-7 rounded-md p-0"
                                 disabled={listBusy}
-                                title="Xóa"
-                                aria-label={`Xóa ${niche.label}`}
+                                title={t('common:actions.delete')}
+                                aria-label={t('niche.deleteAria', { label: niche.label })}
                                 onClick={() => void handleDelete(niche)}
                               >
                                 <TrashIcon className="size-3.5" />

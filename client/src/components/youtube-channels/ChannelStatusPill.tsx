@@ -1,9 +1,21 @@
+import { useTranslation } from 'react-i18next'
 import { StatusBadge, type StatusTone } from '../ui/StatusBadge'
 import type { YoutubeChannelStatus } from '../../types/youtubeChannel'
 
-const statusConfig: Record<YoutubeChannelStatus, { label: string; tone: StatusTone }> = {
-  active: { label: 'Đang hoạt động', tone: 'success' },
-  suspended: { label: 'Đã đình chỉ', tone: 'danger' },
+const statusTone: Record<YoutubeChannelStatus, StatusTone> = {
+  init: 'neutral',
+  created: 'info',
+  active: 'success',
+  paused: 'warning',
+  deleted: 'danger',
+}
+
+const statusKey: Record<YoutubeChannelStatus, string> = {
+  init: 'status.init',
+  created: 'status.created',
+  active: 'status.active',
+  paused: 'status.paused',
+  deleted: 'status.deleted',
 }
 
 interface ChannelStatusPillProps {
@@ -12,6 +24,8 @@ interface ChannelStatusPillProps {
 }
 
 export function ChannelStatusPill({ status, className }: ChannelStatusPillProps) {
-  const config = statusConfig[status]
-  return <StatusBadge label={config.label} tone={config.tone} withDot className={className} />
+  const { t } = useTranslation('youtube')
+  const key = statusKey[status] ?? statusKey.init
+  const tone = statusTone[status] ?? statusTone.init
+  return <StatusBadge label={t(key)} tone={tone} withDot className={className} />
 }

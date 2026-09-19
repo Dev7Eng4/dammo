@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isAbortError } from '../api/http';
 import {
   createPrompt,
@@ -139,6 +140,7 @@ function clampStepFlags(category: PromptCategory, step: PromptStepDraft): Prompt
 }
 
 export function PromptsPage() {
+  const { t } = useTranslation('content');
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -236,7 +238,7 @@ export function PromptsPage() {
       setProvider(item.defaultLlmProvider);
     } catch (err) {
       setProvider(previous);
-      setProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp mặc định');
+      setProviderSettingsError(err instanceof Error ? err.message : t('prompts.providerError'));
     } finally {
       setProviderSaving(false);
     }
@@ -253,7 +255,7 @@ export function PromptsPage() {
       setImageProvider(item.defaultImageProvider);
     } catch (err) {
       setImageProvider(previous);
-      setImageProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp hình ảnh');
+      setImageProviderSettingsError(err instanceof Error ? err.message : t('prompts.imageProviderError'));
     } finally {
       setImageProviderSaving(false);
     }
@@ -271,7 +273,7 @@ export function PromptsPage() {
     } catch (err) {
       setThumbnailProvider(previous);
       setThumbnailProviderSettingsError(
-        err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp thumbnail',
+        err instanceof Error ? err.message : t('prompts.thumbProviderError'),
       );
     } finally {
       setThumbnailProviderSaving(false);
@@ -289,7 +291,7 @@ export function PromptsPage() {
       setVideoProvider(item.defaultVideoProvider);
     } catch (err) {
       setVideoProvider(previous);
-      setVideoProviderSettingsError(err instanceof Error ? err.message : 'Không cập nhật được nhà cung cấp video');
+      setVideoProviderSettingsError(err instanceof Error ? err.message : t('prompts.videoProviderError'));
     } finally {
       setVideoProviderSaving(false);
     }
@@ -575,11 +577,11 @@ export function PromptsPage() {
     if (!draft) return;
     if (draft.isSystem) return;
     if (!draft.name.trim()) {
-      setSaveError('Tên là bắt buộc');
+      setSaveError(t('prompts.nameRequired'));
       return;
     }
     if (draft.steps.some((step) => !step.template.trim())) {
-      setSaveError('Mỗi step cần có mẫu prompt');
+      setSaveError(t('prompts.stepTemplateRequired'));
       return;
     }
 
@@ -611,7 +613,7 @@ export function PromptsPage() {
       syncStepVariables(nextSteps);
       await refreshList();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Lưu thất bại';
+      const message = err instanceof Error ? err.message : t('prompts.saveError');
       setSaveError(message);
     } finally {
       setSaving(false);
@@ -620,7 +622,9 @@ export function PromptsPage() {
 
   function handleDuplicate() {
     if (!draft) return;
-    const copyName = draft.name ? `${draft.name} (bản sao)` : 'Chưa đặt tên (bản sao)';
+    const copyName = draft.name
+      ? t('prompts.copyName', { name: draft.name })
+      : t('prompts.copyUntitled');
     const copy: PromptFormDraft = {
       language: draft.language,
       name: copyName,
@@ -649,8 +653,12 @@ export function PromptsPage() {
     if (draft.isSystem) return;
     const ids = draft.steps.map((step) => step.id).filter(Boolean) as string[];
     if (ids.length === 0) return;
-    const label = draft.steps.length > 1 ? `bộ ${draft.steps.length} step này` : 'prompt này';
-    if (!window.confirm(`Xóa ${label}?`)) return;
+    const confirmed = window.confirm(
+      draft.steps.length > 1
+        ? t('prompts.deleteConfirmSet', { count: draft.steps.length })
+        : t('prompts.deleteConfirmOne'),
+    );
+    if (!confirmed) return;
 
     try {
       for (const id of ids) {
@@ -662,7 +670,7 @@ export function PromptsPage() {
       setVariableValuesByStep({});
       await refreshList();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Xóa thất bại');
+      window.alert(err instanceof Error ? err.message : t('prompts.deleteError'));
     }
   }
 
@@ -686,7 +694,7 @@ export function PromptsPage() {
       });
       setPlaygroundResult(item);
     } catch (err) {
-      setPlaygroundError(err instanceof Error ? err.message : 'Chạy thử thất bại');
+      setPlaygroundError(err instanceof Error ? err.message : t('prompts.playgroundError'));
     } finally {
       setRunning(false);
     }
@@ -696,8 +704,8 @@ export function PromptsPage() {
     <PageShell fullBleed className="overflow-hidden gap-0 !p-0">
       <div className="shrink-0 border-b border-border px-6 py-4">
         <PageHeader
-          title="Prompt"
-          subtitle="Quản lý và thử nghiệm prompt theo bước"
+          title={t('prompts.page.title')}
+          subtitle={t('prompts.page.subtitle')}
           icon={Lightbulb}
         />
       </div>

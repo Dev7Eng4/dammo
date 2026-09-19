@@ -1,0 +1,156 @@
+{
+  "page": {
+    "title": "Kênh nguồn",
+    "subtitle": "Nguồn nội dung theo nền tảng và niche",
+    "notFound": "Không tìm thấy kênh nguồn.",
+    "back": "Quay lại nguồn"
+  },
+  "toolbar": {
+    "filterName": "Tên",
+    "filterNamePlaceholder": "Lọc theo tên...",
+    "language": "Ngôn ngữ",
+    "purpose": "Mục đích",
+    "platform": "Nền tảng",
+    "delete": "Xóa",
+    "download": "Tải xuống",
+    "niche": "Niche",
+    "addNiche": "Thêm niche",
+    "addSource": "Thêm nguồn"
+  },
+  "filter": {
+    "platformAll": "Tất cả nền tảng",
+    "purposeAll": "Mọi mục đích",
+    "purposeBg": "Footage nền",
+    "langAll": "Tất cả ngôn ngữ",
+    "nicheAll": "Tất cả niche",
+    "durationAll": "Tất cả thời lượng",
+    "durationUnder8m": "Dưới 8 phút",
+    "duration8to30": "8 – 30 phút",
+    "duration30to60": "30 – 60 phút",
+    "durationOver60": "Trên 60 phút"
+  },
+  "videos": {
+    "duration": "Thời lượng",
+    "download": "Tải xuống",
+    "col": {
+      "title": "TIÊU ĐỀ",
+      "link": "LIÊN KẾT",
+      "views": "LƯỢT XEM",
+      "duration": "THỜI LƯỢNG",
+      "status": "TRẠNG THÁI"
+    },
+    "downloaded": "Đã tải xuống",
+    "empty": "Không tìm thấy video.",
+    "youtubeOnly": "Danh sách video chỉ khả dụng cho nguồn YouTube."
+  },
+  "table": {
+    "col": {
+      "platform": "NỀN TẢNG",
+      "name": "TÊN NGUỒN",
+      "url": "URL (ID)",
+      "niche": "NICHE",
+      "purpose": "MỤC ĐÍCH",
+      "notes": "GHI CHÚ"
+    },
+    "notesPlaceholder": "Thêm ghi chú...",
+    "empty": "Không có kênh nguồn khớp bộ lọc."
+  },
+  "detail": {
+    "purpose": "Mục đích",
+    "risk": "Mức rủi ro",
+    "subscribers": "Người đăng ký",
+    "videos": "Video",
+    "refresh": "Cập nhật nguồn",
+    "refreshing": "Đang cập nhật nguồn..."
+  },
+  "purpose": {
+    "trend": "Theo dõi xu hướng",
+    "idea": "Tham khảo ý tưởng",
+    "licensed": "Nguồn có bản quyền",
+    "competitor": "Theo dõi đối thủ",
+    "reup": "Reup",
+    "background": "Footage nền"
+  },
+  "risk": {
+    "low": "Thấp",
+    "medium": "Trung bình",
+    "high": "Cao"
+  },
+  "hint": {
+    "selectToDownload": "Chọn nguồn để tải xuống",
+    "selectVideos": "Chọn video để tải xuống",
+    "youtubeOnly": "Chỉ hỗ trợ tải xuống cho nguồn YouTube",
+    "reupOrBgOnly": "Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền"
+  },
+  "job": {
+    "downloadSelected": "Đang tải video cho {{count}} nguồn",
+    "downloadSelectedSub": "{{count}} nguồn đã chọn",
+    "downloadOne": "Đang tải: {{name}}",
+    "downloadOneSub": "{{count}} video đã chọn",
+    "import": "Đang nhập: {{url}}"
+  },
+  "add": {
+    "title": "Thêm kênh nguồn",
+    "submit": "Thêm nguồn",
+    "urlsLabel": "URL / Handle",
+    "urlsHint": "(mỗi dòng một link)",
+    "urlsRequired": "Nhập ít nhất một URL",
+    "purpose": "Mục đích",
+    "purposeRequired": "Mục đích là bắt buộc",
+    "purposePlaceholder": "Chọn mục đích",
+    "language": "Ngôn ngữ",
+    "languageRequired": "Ngôn ngữ là bắt buộc",
+    "languagePlaceholder": "Chọn ngôn ngữ",
+    "nicheOptional": "(tùy chọn)",
+    "nicheLoading": "Đang tải niches...",
+    "nicheEmpty": "Chưa có niche",
+    "nichePlaceholder": "Chọn niche",
+    "hint": "Nền tảng được nhận diện tự động. Kênh YouTube sẽ lấy metadata và video ở nền sau khi thêm.",
+    "nichesLoadError": "Không thể tải niches"
+  },
+  "niche": {
+    "modalTitle": "Thêm niche",
+    "name": "Tên niche",
+    "nameRequired": "Tên niche là bắt buộc",
+    "existing": "Niche hiện có",
+    "loading": "Đang tải...",
+    "empty": "Chưa có niche",
+    "add": "Thêm niche",
+    "saveAria": "Lưu",
+    "cancelAria": "Hủy",
+    "editAria": "Sửa {{label}}",
+    "deleteAria": "Xóa {{label}}",
+    "createError": "Không thể tạo niche",
+    "updateError": "Không thể cập nhật niche",
+    "deleteError": "Không thể xóa niche",
+    "inUseTitle": "Không thể xóa niche",
+    "inUseBody": "Niche \"{{label}}\" đang được sử dụng ở:",
+    "ok": "OK",
+    "usagePrompts": "Prompt",
+    "usageSourceChannels": "Kênh nguồn",
+    "usageYoutubeChannels": "Kênh YouTube"
+  },
+  "delete": {
+    "title": "Xóa kênh nguồn",
+    "blockedTitle": "Không thể xóa nguồn",
+    "close": "Đóng",
+    "blockedBulk": "Một hoặc nhiều nguồn đang được sử dụng. Không nguồn nào được xóa.",
+    "blockedOne": "Nguồn \"{{name}}\" đang được sử dụng bởi các kênh sau:",
+    "bulkBody": "Xóa {{count}} kênh nguồn? Hành động này không thể hoàn tác.",
+    "oneBody": "Xóa nguồn \"{{name}}\"? Hành động này không thể hoàn tác."
+  },
+  "toast": {
+    "exists": "Đã tồn tại: {{url}}",
+    "addError": "Không thể thêm: {{url}}",
+    "riskError": "Không thể tăng mức rủi ro",
+    "notesError": "Không thể lưu ghi chú",
+    "inUseCheckError": "Không thể kiểm tra nguồn đang được sử dụng",
+    "deleteOne": "Đã xóa nguồn \"{{name}}\"",
+    "deleteMany": "Đã xóa {{count}} kênh nguồn",
+    "deleteError": "Không thể xóa nguồn",
+    "refreshError": "Không thể cập nhật nguồn",
+    "nicheCreated": "Đã thêm niche",
+    "nicheUpdated": "Đã cập nhật niche",
+    "nicheDeleted": "Đã xóa niche"
+  }
+}

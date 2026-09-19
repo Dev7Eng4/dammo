@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import type { GpmGroup, GpmProfile } from '../../types/gpm';
 import { cn } from '../../lib/cn';
 import { Button, DataTable } from '../ui';
@@ -30,24 +31,26 @@ export function GpmProfilesTable({
   onStart,
   onStop,
 }: GpmProfilesTableProps) {
+  const { t } = useTranslation('browser');
+
   const columns: ColumnDef<GpmProfile, unknown>[] = [
     {
       accessorKey: 'name',
-      header: 'TÊN',
+      header: t('gpm.profiles.table.name'),
       cell: ({ getValue }) => (
         <span className="font-medium text-neutral-100">{getValue<string>()}</span>
       ),
     },
     {
       id: 'group',
-      header: 'NHÓM',
+      header: t('gpm.profiles.table.group'),
       cell: ({ row }) => (
         <span className="text-neutral-300">{groupName(groups, row.original.group_id)}</span>
       ),
     },
     {
       accessorKey: 'raw_proxy',
-      header: 'PROXY',
+      header: t('gpm.profiles.table.proxy'),
       cell: ({ row }) => (
         <span
           className="max-w-48 truncate font-mono text-xs text-neutral-400"
@@ -59,7 +62,7 @@ export function GpmProfilesTable({
     },
     {
       id: 'actions',
-      header: 'THAO TÁC',
+      header: t('gpm.profiles.table.actions'),
       cell: ({ row }) => {
         const profile = row.original;
         const running = runningProfileIds.has(profile.id);
@@ -76,7 +79,13 @@ export function GpmProfilesTable({
               disabled={busy}
               onClick={() => (running ? onStop(profile.id) : onStart(profile.id))}
             >
-              {busy ? (running ? 'Đang dừng…' : 'Đang khởi động…') : running ? 'Dừng' : 'Khởi động'}
+              {busy
+                ? running
+                  ? t('gpm.profiles.stopping')
+                  : t('gpm.profiles.starting')
+                : running
+                  ? t('gpm.profiles.stop')
+                  : t('gpm.profiles.start')}
             </Button>
           </div>
         );
@@ -92,7 +101,7 @@ export function GpmProfilesTable({
       loading={loading}
       activeRowId={selectedId}
       onRowClick={profile => onSelect(profile.id)}
-      emptyMessage="Không tìm thấy GPM profile."
+      emptyMessage={t('gpm.profiles.empty')}
     />
   );
 }

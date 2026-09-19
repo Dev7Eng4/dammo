@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Button, Modal } from '../ui';
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Button, Modal } from '../ui'
 
 export interface DeleteUploadedVideosConfirmOptions {
-  deletePreparedVideos: boolean;
+  deletePreparedVideos: boolean
 }
 
 interface DeleteUploadedVideosConfirmModalProps {
-  open: boolean;
-  deleting?: boolean;
-  onClose: () => void;
-  onConfirm: (options: DeleteUploadedVideosConfirmOptions) => void;
+  open: boolean
+  deleting?: boolean
+  onClose: () => void
+  onConfirm: (options: DeleteUploadedVideosConfirmOptions) => void
 }
 
 export function DeleteUploadedVideosConfirmModal({
@@ -18,61 +19,58 @@ export function DeleteUploadedVideosConfirmModal({
   onClose,
   onConfirm,
 }: DeleteUploadedVideosConfirmModalProps) {
-  const [deletePreparedVideos, setDeletePreparedVideos] = useState(false);
+  const { t } = useTranslation('youtube')
+  const { t: tCommon } = useTranslation('common')
+  const [deletePreparedVideos, setDeletePreparedVideos] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setDeletePreparedVideos(false);
+      setDeletePreparedVideos(false)
     }
-  }, [open]);
+  }, [open])
 
   return (
     <Modal
       open={open}
       onClose={deleting ? () => undefined : onClose}
-      title='Xóa video Đã tạo?'
-      className='max-w-sm'
+      title={t('deleteUploaded.modalTitle')}
+      className="max-w-sm"
       footer={
         <>
-          <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose} disabled={deleting}>
-            Hủy
+          <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose} disabled={deleting}>
+            {tCommon('actions.cancel')}
           </Button>
           <Button
-            size='sm'
-            className='rounded-lg'
+            size="sm"
+            className="rounded-lg"
             onClick={() => onConfirm({ deletePreparedVideos })}
             disabled={deleting}
           >
-            {deleting ? 'Đang xóa…' : 'Xóa'}
+            {deleting ? tCommon('actions.deleting') : tCommon('actions.delete')}
           </Button>
         </>
       }
     >
-      <div className='space-y-3'>
-        <p className='text-sm text-neutral-300'>
-          Bạn có chắc muốn xóa tất cả folder video trong uploads/ của mọi kênh YouTube? Thao tác này không thể hoàn
-          tác.
-        </p>
+      <div className="space-y-3">
+        <p className="text-sm text-neutral-300">{t('deleteUploaded.body')}</p>
         <label
-          htmlFor='delete-prepared-videos'
-          className='flex cursor-pointer items-start gap-2 text-sm text-neutral-200'
+          htmlFor="delete-prepared-videos"
+          className="flex cursor-pointer items-start gap-2 text-sm text-neutral-200"
         >
           <input
-            id='delete-prepared-videos'
-            type='checkbox'
+            id="delete-prepared-videos"
+            type="checkbox"
             checked={deletePreparedVideos}
             onChange={e => setDeletePreparedVideos(e.target.checked)}
             disabled={deleting}
-            className='mt-0.5 size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50'
+            className="mt-0.5 size-3.5 shrink-0 rounded border-border bg-surface accent-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
           <span>
-            <span className='block'>Xóa video đã tạo trong videos</span>
-            <span className='mt-0.5 block text-xs text-neutral-400'>
-              Xóa thêm folder trong videos/ và mục prepare không phải Uploaded.
-            </span>
+            <span className="block">{t('deleteUploaded.alsoPrepared')}</span>
+            <span className="mt-0.5 block text-xs text-neutral-400">{t('deleteUploaded.alsoPreparedHint')}</span>
           </span>
         </label>
       </div>
     </Modal>
-  );
+  )
 }

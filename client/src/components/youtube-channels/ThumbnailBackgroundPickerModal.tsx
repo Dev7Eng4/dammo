@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   deleteThumbnailBackground,
   listThumbnailBackgrounds,
@@ -73,6 +74,8 @@ export function ThumbnailBackgroundPickerModal({
   selectedFile,
   onSelect,
 }: ThumbnailBackgroundPickerModalProps) {
+  const { t } = useTranslation('youtube');
+  const { t: tCommon } = useTranslation('common');
   const inputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<ThumbnailBackgroundItem[]>([]);
@@ -102,7 +105,7 @@ export function ThumbnailBackgroundPickerModal({
       .catch(err => {
         if (!cancelled) {
           setItems([]);
-          setError(err instanceof Error ? err.message : 'Không thể tải danh sách ảnh nền');
+          setError(err instanceof Error ? err.message : t('picker.thumbBgLoadError'));
         }
       })
       .finally(() => {
@@ -112,7 +115,7 @@ export function ThumbnailBackgroundPickerModal({
     return () => {
       cancelled = true;
     };
-  }, [open, channelId, tempSessionId]);
+  }, [open, channelId, tempSessionId, t]);
 
   async function handleUpload(file: File | undefined) {
     if (!file || !scope) return;
@@ -125,7 +128,7 @@ export function ThumbnailBackgroundPickerModal({
         return [...without, item].sort((a, b) => a.name.localeCompare(b.name));
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể tải ảnh lên');
+      setError(err instanceof Error ? err.message : t('picker.thumbBgUploadError'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -146,7 +149,7 @@ export function ThumbnailBackgroundPickerModal({
         prev?.includes(encodeURIComponent(filename)) || prev?.endsWith(`/${filename}`) ? null : prev,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể xóa ảnh');
+      setError(err instanceof Error ? err.message : t('picker.thumbBgDeleteError'));
     } finally {
       setDeletingName(null);
     }
@@ -163,12 +166,12 @@ export function ThumbnailBackgroundPickerModal({
       <Modal
         open={open}
         onClose={onClose}
-        title='Chọn ảnh nền thumbnail'
+        title={t('picker.thumbBgTitle')}
         className='max-w-2xl'
         bodyClassName='max-h-[60vh] overflow-y-auto'
         footer={
           <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose}>
-            Đóng
+            {tCommon('actions.close')}
           </Button>
         }
       >
@@ -187,9 +190,9 @@ export function ThumbnailBackgroundPickerModal({
           >
             <UploadIcon className='size-8 text-neutral-400' />
             <span className='text-sm font-medium text-neutral-200'>
-              {uploading ? 'Đang tải ảnh...' : 'Tải ảnh'}
+              {uploading ? t('picker.thumbBgUploading') : t('form.uploadImage')}
             </span>
-            <span className='text-[11px] text-neutral-500'>JPEG, PNG hoặc WebP · tối đa 10 MB</span>
+            <span className='text-[11px] text-neutral-500'>{t('picker.thumbBgHint')}</span>
             <input
               id={inputId}
               ref={fileInputRef}
@@ -204,9 +207,9 @@ export function ThumbnailBackgroundPickerModal({
           </label>
 
           {loading ? (
-            <p className='text-center text-xs text-neutral-500'>Đang tải danh sách ảnh...</p>
+            <p className='text-center text-xs text-neutral-500'>{t('picker.thumbBgLoading')}</p>
           ) : items.length === 0 ? (
-            <p className='text-center text-xs text-neutral-500'>Chưa có ảnh nền nào</p>
+            <p className='text-center text-xs text-neutral-500'>{t('picker.thumbBgEmpty')}</p>
           ) : (
             <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
               {items.map(item => {
@@ -232,7 +235,7 @@ export function ThumbnailBackgroundPickerModal({
                     <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
                       <button
                         type='button'
-                        title='Xem'
+                        title={t('picker.view')}
                         className='rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800'
                         disabled={deleting}
                         onClick={() => setPreviewUrl(src)}
@@ -241,7 +244,7 @@ export function ThumbnailBackgroundPickerModal({
                       </button>
                       <button
                         type='button'
-                        title='Chọn'
+                        title={tCommon('actions.select')}
                         className='rounded-full bg-emerald-600/90 p-2 text-white hover:bg-emerald-500'
                         disabled={deleting}
                         onClick={() => onSelect(item.name)}
@@ -251,7 +254,7 @@ export function ThumbnailBackgroundPickerModal({
                       {!selected ? (
                         <button
                           type='button'
-                          title='Xóa'
+                          title={tCommon('actions.delete')}
                           className='rounded-full bg-red-600/90 p-2 text-white hover:bg-red-500'
                           disabled={deleting}
                           onClick={() => {
@@ -282,18 +285,18 @@ export function ThumbnailBackgroundPickerModal({
         <div className='fixed inset-0 z-60 flex items-center justify-center p-4'>
           <button
             type='button'
-            aria-label='Đóng xem ảnh'
+            aria-label={t('picker.closeImagePreview')}
             className='absolute inset-0 bg-black/80'
             onClick={() => setPreviewUrl(null)}
           />
           <div className='relative z-10 max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface shadow-xl'>
-            <img src={previewUrl} alt='Xem ảnh nền' className='max-h-[85vh] max-w-full object-contain' />
+            <img src={previewUrl} alt={t('picker.thumbBgPreviewAlt')} className='max-h-[85vh] max-w-full object-contain' />
             <button
               type='button'
               className='absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black'
               onClick={() => setPreviewUrl(null)}
             >
-              Đóng
+              {tCommon('actions.close')}
             </button>
           </div>
         </div>

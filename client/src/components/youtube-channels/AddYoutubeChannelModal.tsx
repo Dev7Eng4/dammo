@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { fetchAppSettings } from '../../api/appSettings';
 import { fetchMailAccounts } from '../../api/mailAccounts';
@@ -52,7 +53,6 @@ import {
   SI_OVERLAY_AUTO_SENTINEL,
 } from '../../types/youtubeChannel';
 import {
-  LOCAL_STOCK_LABEL,
   LOCAL_STOCK_SENTINEL,
   normalizeBackgroundFootageSourceIds,
 } from '../../utils/backgroundFootage';
@@ -93,9 +93,10 @@ function isDefaultLinkedEmail(email: string): boolean {
 function buildAvailableMailOptions(
   mailAccounts: Pick<MailAccount, 'id' | 'email' | 'platformLinks'>[],
   usedEmails: Set<string>,
+  defaultLabel: string,
 ): { value: string; label: string }[] {
   return [
-    { value: 'default', label: 'Mặc định' },
+    { value: 'default', label: defaultLabel },
     ...mailAccounts
       .filter(
         (account) =>
@@ -106,69 +107,103 @@ function buildAvailableMailOptions(
   ];
 }
 
-const DEFAULT_THUMBNAIL_STYLE_OPTION = { value: '', label: 'Sử dụng lại Thumbnail cũ' };
+type TFunc = (key: string, options?: Record<string, unknown>) => string;
 
-const CHANNEL_TYPE_OPTIONS = YOUTUBE_CHANNEL_TYPE_OPTIONS.map(option => ({
-  ...option,
-  label: {
-    content: 'Nội dung',
-    reup_audio: 'Sử dụng lại âm thanh',
-    reup_video: 'Sử dụng lại video',
-    content_sale: 'Nội dung bán hàng',
-  }[option.value],
-}));
+function buildDefaultThumbnailStyleOption(t: TFunc) {
+  return { value: '', label: t('form.thumbnailReuseOld') };
+}
 
-const LANGUAGE_OPTIONS = YOUTUBE_CHANNEL_LANGUAGE_OPTIONS.map(option => ({
-  ...option,
-  label: {
-    en: 'Tiếng Anh',
-    ko: 'Tiếng Hàn',
-    ja: 'Tiếng Nhật',
-    es: 'Tiếng Tây Ban Nha',
-  }[option.value],
-}));
+function buildChannelTypeOptions(t: TFunc) {
+  return YOUTUBE_CHANNEL_TYPE_OPTIONS.map(option => ({
+    ...option,
+    label: {
+      content: t('form.typeContent'),
+      reup_audio: t('form.typeReupAudio'),
+      reup_video: t('form.typeReupVideo'),
+      content_sale: t('form.typeContentSale'),
+    }[option.value],
+  }));
+}
 
-const AUDIO_VIDEO_TYPE_OPTIONS = REUP_AUDIO_VIDEO_TYPE_OPTIONS.map(option => ({
-  ...option,
-  label: {
-    si: 'Video cảnh nền + hình ảnh',
-    ai: 'Nhiều hình ảnh chuyển động',
-  }[option.value],
-}));
+function buildLanguageOptions(t: TFunc) {
+  return YOUTUBE_CHANNEL_LANGUAGE_OPTIONS.map(option => ({
+    ...option,
+    label: {
+      en: t('language.en'),
+      ko: t('language.ko'),
+      ja: t('language.ja'),
+      es: t('language.es'),
+    }[option.value],
+  }));
+}
 
-const AUDIO_BACKGROUND_IMAGE_OPTIONS: SelectOption[] = REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS.map(option => ({
-  value: option.value,
-  label: {
-    no_image: 'Không dùng hình ảnh',
-    one_image: 'Một hình ảnh',
-    multi_image: 'Nhiều hình ảnh',
-  }[option.value],
-  group: 'Hình ảnh',
-}));
+function buildAudioVideoTypeOptions(t: TFunc) {
+  return REUP_AUDIO_VIDEO_TYPE_OPTIONS.map(option => ({
+    ...option,
+    label: {
+      si: t('form.videoSi'),
+      ai: t('form.videoAi'),
+    }[option.value],
+  }));
+}
 
-const LOCAL_IMAGE_LEGACY_OPTION: SelectOption = {
-  value: 'local_image',
-  label: 'Hình ảnh trên máy',
-  group: 'Hình ảnh',
-};
+function buildAudioBackgroundImageOptions(t: TFunc): SelectOption[] {
+  return REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS.map(option => ({
+    value: option.value,
+    label: {
+      no_image: t('form.imgNone'),
+      one_image: t('form.imgOne'),
+      multi_image: t('form.imgMulti'),
+    }[option.value],
+    group: t('form.imgGroup'),
+  }));
+}
 
-const VI_UPLOAD_FREQUENCY_OPTIONS = UPLOAD_FREQUENCY_OPTIONS.map(option => ({
-  ...option,
-  label: {
-    every_5_days: '1 video mỗi 5 ngày',
-    every_3_days: '1 video mỗi 3 ngày',
-    every_2_days: '1 video mỗi 2 ngày',
-    daily_1: '1 video mỗi ngày',
-    daily_2: '2 video mỗi ngày',
-    daily_3: '3 video mỗi ngày',
-  }[option.value],
-}));
+function buildLocalImageLegacyOption(t: TFunc): SelectOption {
+  return {
+    value: 'local_image',
+    label: t('form.imgLocal'),
+    group: t('form.imgGroup'),
+  };
+}
 
-function getVideoStylePlaceholder(videoType: string, loading: boolean, optionCount: number) {
-  if (loading) return 'Đang tải kiểu video...';
-  if (!videoType) return 'Chọn loại video trước';
-  if (optionCount === 0) return 'Không có kiểu video khả dụng';
-  return 'Chọn kiểu video';
+function buildUploadFrequencyOptions(t: TFunc) {
+  return UPLOAD_FREQUENCY_OPTIONS.map(option => ({
+    ...option,
+    label: {
+      every_5_days: t('form.freq.every5Days'),
+      every_3_days: t('form.freq.every3Days'),
+      every_2_days: t('form.freq.every2Days'),
+      daily_1: t('form.freq.daily1'),
+      daily_2: t('form.freq.daily2'),
+      daily_3: t('form.freq.daily3'),
+    }[option.value],
+  }));
+}
+
+function buildVideoCreationOrderOptions(t: TFunc) {
+  return VIDEO_CREATION_ORDER_OPTIONS.map(option => ({
+    ...option,
+    label: {
+      oldest_first: t('form.order.oldestFirst'),
+      newest_first: t('form.order.newestFirst'),
+      lowest_views_first: t('form.order.lowestViews'),
+      shortest_duration_first: t('form.order.shortest'),
+    }[option.value],
+  }));
+}
+
+function buildCaptionStyleOptions(t: TFunc) {
+  return CAPTION_STYLE_OPTIONS.map(option =>
+    option.value === 'default' ? { ...option, label: t('form.default') } : option,
+  );
+}
+
+function getVideoStylePlaceholder(t: TFunc, videoType: string, loading: boolean, optionCount: number) {
+  if (loading) return t('form.videoStyleLoading');
+  if (!videoType) return t('form.videoStyleNeedType');
+  if (optionCount === 0) return t('form.videoStyleEmpty');
+  return t('form.videoStylePlaceholder');
 }
 
 const defaultValues: AddYoutubeChannelFormValues = {
@@ -272,11 +307,12 @@ function FormField({
   error?: string;
   className?: string;
 }) {
+  const { t: tCommon } = useTranslation('common');
   return (
     <div className={className}>
       <label htmlFor={htmlFor} className='mb-1.5 block text-xs font-medium text-neutral-400'>
         {label}
-        {optional ? <span className='text-neutral-500'> (không bắt buộc)</span> : null}
+        {optional ? <span className='text-neutral-500'> {tCommon('actions.optional')}</span> : null}
       </label>
       {children}
       {error ? <p className='mt-1 text-xs text-danger'>{error}</p> : null}
@@ -288,15 +324,25 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const { open, onClose, channel } = props;
   const isEdit = channel !== undefined;
   const canEditEmail = !isEdit || isDefaultLinkedEmail(channel.linkedEmail);
+  const { t } = useTranslation('youtube');
+  const { t: tCommon } = useTranslation('common');
   const { toast } = useToast();
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const channelTypeOptions = useMemo(() => buildChannelTypeOptions(t), [t]);
+  const languageOptions = useMemo(() => buildLanguageOptions(t), [t]);
+  const audioVideoTypeOptions = useMemo(() => buildAudioVideoTypeOptions(t), [t]);
+  const audioBackgroundImageOptions = useMemo(() => buildAudioBackgroundImageOptions(t), [t]);
+  const localImageLegacyOption = useMemo(() => buildLocalImageLegacyOption(t), [t]);
+  const uploadFrequencyOptions = useMemo(() => buildUploadFrequencyOptions(t), [t]);
+  const videoCreationOrderOptions = useMemo(() => buildVideoCreationOrderOptions(t), [t]);
+  const captionStyleOptions = useMemo(() => buildCaptionStyleOptions(t), [t]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
   const [sources, setSources] = useState<SourceChannel[]>([]);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [formReady, setFormReady] = useState(false);
-  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([DEFAULT_THUMBNAIL_STYLE_OPTION]);
+  const [thumbnailStyleOptions, setThumbnailStyleOptions] = useState<{ value: string; label: string }[]>([{ value: '', label: '' }]);
   const [thumbnailStyleFlags, setThumbnailStyleFlags] = useState<Record<string, boolean>>({});
   const [thumbnailStylesLoading, setThumbnailStylesLoading] = useState(false);
   const [visualStyleOptions, setVisualStyleOptions] = useState<{ value: string; label: string }[]>([]);
@@ -365,7 +411,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   );
   const backgroundFootageOptions = useMemo(
     () => [
-      { value: LOCAL_STOCK_SENTINEL, label: LOCAL_STOCK_LABEL },
+      { value: LOCAL_STOCK_SENTINEL, label: t('form.localStock') },
       ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
     ],
     [sources, niches],
@@ -373,28 +419,28 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
 
   const siBackgroundImageOptions = useMemo(() => {
-    const options: SelectOption[] = [...AUDIO_BACKGROUND_IMAGE_OPTIONS];
+    const options: SelectOption[] = [...audioBackgroundImageOptions];
     if (parsedBackgroundImage.mode === 'local_image') {
-      options.push(LOCAL_IMAGE_LEGACY_OPTION);
+      options.push(localImageLegacyOption);
     }
     if (celebritiesWithMedia.length > 0) {
       for (const celebrity of celebritiesWithMedia) {
         options.push({
           value: toSiBackgroundImageFormValue('celebrity', celebrity.id),
           label: celebrity.name,
-          group: 'Người nổi tiếng',
+          group: t('form.celebrityGroup'),
         });
       }
     } else {
       options.push({
         value: CELEBRITY_EMPTY_SENTINEL,
-        label: 'Chưa có người nổi tiếng nào có ảnh/video',
-        group: 'Người nổi tiếng',
+        label: t('form.celebrityEmpty'),
+        group: t('form.celebrityGroup'),
         disabled: true,
       });
     }
     return options;
-  }, [celebritiesWithMedia, parsedBackgroundImage.mode]);
+  }, [celebritiesWithMedia, parsedBackgroundImage.mode, audioBackgroundImageOptions, localImageLegacyOption, t]);
 
   useAbortableEffect(
     async signal => {
@@ -429,7 +475,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           if (isDefaultLinkedEmail(channel.linkedEmail)) {
             const channels = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal });
             const usedEmails = new Set(channels.items.filter(item => item.id !== channel.id).map(item => item.linkedEmail.toLowerCase()));
-            setMailOptions(buildAvailableMailOptions(mails.items, usedEmails));
+            setMailOptions(buildAvailableMailOptions(mails.items, usedEmails, t('form.default')));
           } else {
             setMailOptions([]);
           }
@@ -452,7 +498,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         } else {
           const channels = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal });
           const usedEmails = new Set(channels.items.map(item => item.linkedEmail.toLowerCase()));
-          const availableMailOptions = buildAvailableMailOptions(mails.items, usedEmails);
+          const availableMailOptions = buildAvailableMailOptions(mails.items, usedEmails, t('form.default'));
 
           setMailOptions(availableMailOptions);
           setHasChannelAvatar(false);
@@ -599,7 +645,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   useAbortableEffect(
     async signal => {
       if (!open || !formReady || !language) {
-        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
+        setThumbnailStyleOptions([buildDefaultThumbnailStyleOption(t)]);
         setThumbnailStyleFlags({});
         return;
       }
@@ -607,7 +653,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setThumbnailStylesLoading(true);
       try {
         const { items } = await fetchThumbnailStyles(language, { signal });
-        const options = [DEFAULT_THUMBNAIL_STYLE_OPTION, ...items.map(item => ({ value: item.key, label: item.name }))];
+        const options = [buildDefaultThumbnailStyleOption(t), ...items.map(item => ({ value: item.key, label: item.name }))];
         const flags: Record<string, boolean> = {};
         for (const item of items) {
           flags[item.key] = item.useChannelBackgroundImage === true;
@@ -622,7 +668,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         }
       } catch {
         if (signal.aborted) return;
-        setThumbnailStyleOptions([DEFAULT_THUMBNAIL_STYLE_OPTION]);
+        setThumbnailStyleOptions([buildDefaultThumbnailStyleOption(t)]);
         setThumbnailStyleFlags({});
         setValue('thumbnailStyleKey', '');
         setValue('thumbnailBackgroundFile', '');
@@ -661,9 +707,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         await uploadYoutubeChannelAvatarTemp(avatarTempSessionId, file);
         setHasTempAvatar(true);
       }
-      toast.success('Đã tải ảnh avatar kênh');
+      toast.success(t('form.avatarUploadSuccess'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể tải ảnh avatar');
+      toast.error(err instanceof Error ? err.message : t('form.avatarUploadError'));
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
@@ -764,7 +810,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setHasChannelAvatar(false);
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : isEdit ? 'Không thể cập nhật kênh' : 'Không thể thêm kênh');
+      setApiError(err instanceof Error ? err.message : isEdit ? t('form.updateError') : t('form.addError'));
     }
   }
 
@@ -775,13 +821,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       <Modal
         open={open}
         onClose={handleClose}
-        title={isEdit ? 'Chỉnh sửa kênh YouTube' : 'Thêm kênh YouTube'}
+        title={isEdit ? t('form.editTitle') : t('form.addTitle')}
         className='max-h-[90vh] max-w-5xl flex flex-col'
         bodyClassName='max-h-[60vh] overflow-y-auto'
         footer={
           <>
             <Button variant='outlined' size='sm' className='rounded-lg' onClick={handleClose} disabled={isSubmitting}>
-              Hủy
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               size='sm'
@@ -797,18 +843,18 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               form='youtube-channel-form'
               type='submit'
             >
-              {isSubmitting ? (isEdit ? 'Đang lưu...' : 'Đang thêm...') : isEdit ? 'Lưu thay đổi' : 'Thêm kênh'}
+              {isSubmitting ? (isEdit ? tCommon('actions.saving') : t('form.adding')) : isEdit ? t('form.saveChanges') : t('form.add')}
             </Button>
           </>
         }
       >
         <form id='youtube-channel-form' onSubmit={handleSubmit(onSubmit)} className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
           {canEditEmail ? (
-            <FormField label='Email liên kết' htmlFor='mail-account' error={errors.mailAccountId?.message} className='min-w-0'>
+            <FormField label={t('form.linkedEmail')} htmlFor='mail-account' error={errors.mailAccountId?.message} className='min-w-0'>
               <Controller
                 name='mailAccountId'
                 control={control}
-                rules={{ required: 'Email là bắt buộc' }}
+                rules={{ required: t('form.linkedEmailRequired') }}
                 render={({ field }) => (
                   <Select
                     id='mail-account'
@@ -818,12 +864,12 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                     onBlur={field.onBlur}
                     placeholder={
                       optionsLoading
-                        ? 'Đang tải email...'
+                        ? t('form.emailLoading')
                         : mailOptions.length === 0
-                          ? 'Không có tài khoản email khả dụng'
-                          : 'Chọn tài khoản email'
+                          ? t('form.emailEmpty')
+                          : t('form.emailPlaceholder')
                     }
-                    searchPlaceholder='Tìm kiếm email...'
+                    searchPlaceholder={t('form.emailSearch')}
                     searchable
                     disabled={isSubmitting || optionsLoading || mailOptions.length === 0}
                     className='w-full'
@@ -833,35 +879,35 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               />
             </FormField>
           ) : (
-            <FormField label='Email liên kết' className='min-w-0'>
+            <FormField label={t('form.linkedEmail')} className='min-w-0'>
               <div className='flex h-10 items-center rounded-lg border border-neutral-800 bg-surface-elevated px-3 text-sm text-neutral-300'>
                 <span className='truncate'>{channel!.linkedEmail}</span>
               </div>
             </FormField>
           )}
 
-          <FormField label='URL kênh' htmlFor='channel-url' optional error={errors.channelUrl?.message} className='min-w-0'>
+          <FormField label={t('form.channelUrl')} htmlFor='channel-url' optional error={errors.channelUrl?.message} className='min-w-0'>
             <Input
               id='channel-url'
-              placeholder='https://youtube.com/@kenh hoặc @tenkenh'
+              placeholder={t('form.channelUrlPlaceholder')}
               className='h-10 rounded-lg font-mono text-sm'
               disabled={isSubmitting}
               {...register('channelUrl')}
             />
           </FormField>
-          <FormField label='Ngôn ngữ' htmlFor='channel-language' error={errors.language?.message} className='min-w-0'>
+          <FormField label={t('form.language')} htmlFor='channel-language' error={errors.language?.message} className='min-w-0'>
             <Controller
               name='language'
               control={control}
-              rules={{ required: 'Ngôn ngữ là bắt buộc' }}
+              rules={{ required: t('form.languageRequired') }}
               render={({ field }) => (
                 <Select
                   id='channel-language'
-                  options={LANGUAGE_OPTIONS}
+                  options={languageOptions}
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder='Chọn ngôn ngữ'
+                  placeholder={t('form.languagePlaceholder')}
                   disabled={isSubmitting}
                   className='w-full'
                   triggerClassName={selectTriggerClass}
@@ -870,7 +916,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             />
           </FormField>
 
-          <FormField label='Ngách' htmlFor='channel-niche' optional error={errors.niche?.message} className='min-w-0'>
+          <FormField label={t('form.niche')} htmlFor='channel-niche' optional error={errors.niche?.message} className='min-w-0'>
             <Controller
               name='niche'
               control={control}
@@ -884,10 +930,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   clearable
                   placeholder={
                     optionsLoading
-                      ? 'Đang tải ngách...'
+                      ? t('form.nicheLoading')
                       : nicheOptions.length === 0
-                        ? 'Chưa có ngách — hãy thêm ngách trước'
-                        : 'Chọn ngách'
+                        ? t('form.nicheEmpty')
+                        : t('form.nichePlaceholder')
                   }
                   disabled={isSubmitting || optionsLoading}
                   className='w-full'
@@ -899,7 +945,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
           {isReupType ? (
             <FormField
-              label='Thứ tự tạo video'
+              label={t('form.videoOrder')}
               htmlFor='video-creation-order'
               error={errors.videoCreationOrder?.message}
               className='min-w-0'
@@ -907,15 +953,15 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               <Controller
                 name='videoCreationOrder'
                 control={control}
-                rules={{ required: isReupType ? 'Thứ tự tạo video là bắt buộc' : false }}
+                rules={{ required: isReupType ? t('form.videoOrderRequired') : false }}
                 render={({ field }) => (
                   <Select
                     id='video-creation-order'
-                    options={VIDEO_CREATION_ORDER_OPTIONS}
+                    options={videoCreationOrderOptions}
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder='Chọn thứ tự tạo video'
+                    placeholder={t('form.videoOrderPlaceholder')}
                     disabled={isSubmitting}
                     className='w-full'
                     triggerClassName={selectTriggerClass}
@@ -926,7 +972,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           ) : null}
 
           <FormField
-            label='Kênh nguồn'
+            label={t('form.sourceChannels')}
             htmlFor='source-channel'
             optional={!isReupType}
             error={errors.sourceChannels?.message}
@@ -936,7 +982,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               name='sourceChannels'
               control={control}
               rules={{
-                validate: value => !isReupType || value.length > 0 || 'Kênh nguồn là bắt buộc',
+                validate: value => !isReupType || value.length > 0 || t('form.sourceRequired'),
               }}
               render={({ field }) => (
                 <MultiSelect
@@ -945,8 +991,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn kênh nguồn'}
-                  searchPlaceholder='Tìm kiếm kênh nguồn...'
+                  placeholder={optionsLoading ? t('form.sourceLoading') : t('form.sourcePlaceholder')}
+                  searchPlaceholder={t('form.sourceSearch')}
                   searchable
                   disabled={isSubmitting || optionsLoading}
                   className='w-full'
@@ -956,19 +1002,19 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             />
           </FormField>
 
-          <FormField label='Loại kênh' htmlFor='channel-type' error={errors.type?.message} className='min-w-0 sm:col-start-1'>
+          <FormField label={t('form.channelType')} htmlFor='channel-type' error={errors.type?.message} className='min-w-0 sm:col-start-1'>
             <Controller
               name='type'
               control={control}
-              rules={{ required: 'Loại kênh là bắt buộc' }}
+              rules={{ required: t('form.channelTypeRequired') }}
               render={({ field }) => (
                 <Select
                   id='channel-type'
-                  options={CHANNEL_TYPE_OPTIONS}
+                  options={channelTypeOptions}
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder='Chọn loại kênh'
+                  placeholder={t('form.channelTypePlaceholder')}
                   disabled={isSubmitting}
                   className='w-full'
                   triggerClassName={selectTriggerClass}
@@ -979,19 +1025,19 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
           {isReupAudio ? (
             <>
-              <FormField label='Loại video' htmlFor='reup-audio-video-type' error={errors.reupAudioVideoType?.message} className='min-w-0'>
+              <FormField label={t('form.videoType')} htmlFor='reup-audio-video-type' error={errors.reupAudioVideoType?.message} className='min-w-0'>
                 <Controller
                   name='reupAudioVideoType'
                   control={control}
-                  rules={{ required: isReupAudio ? 'Loại hình ảnh video là bắt buộc' : false }}
+                  rules={{ required: isReupAudio ? t('form.videoTypeRequired') : false }}
                   render={({ field }) => (
                     <Select
                       id='reup-audio-video-type'
-                      options={AUDIO_VIDEO_TYPE_OPTIONS}
+                      options={audioVideoTypeOptions}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
-                      placeholder='Chọn loại hình ảnh video'
+                      placeholder={t('form.videoTypePlaceholder')}
                       disabled={isSubmitting}
                       className='w-full'
                       triggerClassName={selectTriggerClass}
@@ -1003,7 +1049,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               {reupAudioVideoType === 'si' ? (
                 <>
                   <FormField
-                    label='Hình ảnh'
+                    label={t('form.images')}
                     htmlFor='reup-audio-background-image'
                     error={errors.reupAudioBackgroundImage?.message}
                     className='min-w-0'
@@ -1013,11 +1059,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       control={control}
                       rules={{
                         required:
-                          isReupAudio && reupAudioVideoType === 'si' ? 'Hình ảnh là bắt buộc đối với Video tư liệu + hình ảnh' : false,
+                          isReupAudio && reupAudioVideoType === 'si' ? t('form.imagesRequired') : false,
                         validate: value => {
                           if (!value || value === CELEBRITY_EMPTY_SENTINEL) {
                             return isReupAudio && reupAudioVideoType === 'si'
-                              ? 'Hình ảnh là bắt buộc đối với Video tư liệu + hình ảnh'
+                              ? t('form.imagesRequired')
                               : true;
                           }
                           return true;
@@ -1030,9 +1076,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                           value={field.value}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
-                          placeholder={celebritiesLoading ? 'Đang tải người nổi tiếng...' : 'Chọn hình ảnh'}
+                          placeholder={celebritiesLoading ? t('form.imagesLoading') : t('form.imagesPlaceholder')}
                           searchable
-                          searchPlaceholder='Tìm hình ảnh hoặc người nổi tiếng...'
+                          searchPlaceholder={t('form.imagesSearch')}
                           disabled={isSubmitting || celebritiesLoading}
                           className='w-full'
                           triggerClassName={selectTriggerClass}
@@ -1044,7 +1090,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               ) : null}
 
               <FormField
-                label='Video cảnh nền'
+                label={t('form.bgFootage')}
                 htmlFor='background-footage'
                 optional
                 className='min-w-0 sm:col-start-1 sm:col-span-2 lg:col-span-3'
@@ -1061,8 +1107,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                         field.onChange(normalizeBackgroundFootageSourceIds(next));
                       }}
                       onBlur={field.onBlur}
-                      placeholder={optionsLoading ? 'Đang tải nguồn...' : 'Chọn video cảnh nền'}
-                      searchPlaceholder='Tìm kiếm video cảnh nền...'
+                      placeholder={optionsLoading ? t('form.sourceLoading') : t('form.bgFootagePlaceholder')}
+                      searchPlaceholder={t('form.bgFootageSearch')}
                       searchable
                       disabled={isSubmitting || optionsLoading}
                       className='w-full'
@@ -1073,7 +1119,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               </FormField>
 
               <FormField
-                label='Phong cách hình ảnh'
+                label={t('form.visualStyle')}
                 htmlFor='reup-audio-visual-style'
                 error={errors.reupAudioVisualStyleId?.message}
                 className='min-w-0 sm:col-start-1 sm:col-span-2'
@@ -1087,7 +1133,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       (reupAudioVideoType === 'ai' ||
                         parsedBackgroundImage.mode === 'multi_image' ||
                         useReferenceImage)
-                        ? 'Phong cách hình ảnh là bắt buộc'
+                        ? t('form.visualStyleRequired')
                         : false,
                   }}
                   render={({ field }) => (
@@ -1097,8 +1143,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
-                      placeholder={getVideoStylePlaceholder(reupAudioVideoType, visualStylesLoading, visualStyleOptions.length)}
-                      searchPlaceholder='Tìm kiếm phong cách hình ảnh...'
+                      placeholder={getVideoStylePlaceholder(t, reupAudioVideoType, visualStylesLoading, visualStyleOptions.length)}
+                      searchPlaceholder={t('form.visualStyleSearch')}
                       searchable
                       disabled={isSubmitting || visualStylesLoading || !reupAudioVideoType}
                       className='w-full'
@@ -1126,17 +1172,17 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                         disabled={isSubmitting}
                         className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
                       />
-                      Ảnh theo cảnh có tham chiếu
+                      {t('form.sceneRefImages')}
                     </label>
                   )}
                 />
               </FormField>
 
               <div className='min-w-0 sm:col-start-1 sm:col-span-2'>
-                <p className='mb-2 text-xs font-medium text-neutral-400'>Thời lượng tối đa mỗi cảnh (giây)</p>
+                <p className='mb-2 text-xs font-medium text-neutral-400'>{t('form.sceneDensity')}</p>
                 <div className='grid grid-cols-3 gap-3'>
                   <FormField
-                    label='Đầu video'
+                    label={t('form.sceneStart')}
                     htmlFor='ai-scene-density-high'
                     error={errors.aiSceneDensityMaxSec?.high?.message}
                     className='min-w-0'
@@ -1150,14 +1196,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       disabled={isSubmitting || !canEditSceneDensity}
                       {...register('aiSceneDensityMaxSec.high', {
                         valueAsNumber: true,
-                        required: canEditSceneDensity ? 'Bắt buộc' : false,
-                        min: canEditSceneDensity ? { value: 1, message: 'Tối thiểu 1' } : undefined,
-                        max: canEditSceneDensity ? { value: 300, message: 'Tối đa 300' } : undefined,
+                        required: canEditSceneDensity ? t('form.required') : false,
+                        min: canEditSceneDensity ? { value: 1, message: t('form.min1') } : undefined,
+                        max: canEditSceneDensity ? { value: 300, message: t('form.max300') } : undefined,
                       })}
                     />
                   </FormField>
                   <FormField
-                    label='Giữa video'
+                    label={t('form.sceneMiddle')}
                     htmlFor='ai-scene-density-medium'
                     error={errors.aiSceneDensityMaxSec?.medium?.message}
                     className='min-w-0'
@@ -1171,14 +1217,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       disabled={isSubmitting || !canEditSceneDensity}
                       {...register('aiSceneDensityMaxSec.medium', {
                         valueAsNumber: true,
-                        required: canEditSceneDensity ? 'Bắt buộc' : false,
-                        min: canEditSceneDensity ? { value: 1, message: 'Tối thiểu 1' } : undefined,
-                        max: canEditSceneDensity ? { value: 300, message: 'Tối đa 300' } : undefined,
+                        required: canEditSceneDensity ? t('form.required') : false,
+                        min: canEditSceneDensity ? { value: 1, message: t('form.min1') } : undefined,
+                        max: canEditSceneDensity ? { value: 300, message: t('form.max300') } : undefined,
                       })}
                     />
                   </FormField>
                   <FormField
-                    label='Cuối video'
+                    label={t('form.sceneEnd')}
                     htmlFor='ai-scene-density-low'
                     error={errors.aiSceneDensityMaxSec?.low?.message}
                     className='min-w-0'
@@ -1192,9 +1238,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       disabled={isSubmitting || !canEditSceneDensity}
                       {...register('aiSceneDensityMaxSec.low', {
                         valueAsNumber: true,
-                        required: canEditSceneDensity ? 'Bắt buộc' : false,
-                        min: canEditSceneDensity ? { value: 1, message: 'Tối thiểu 1' } : undefined,
-                        max: canEditSceneDensity ? { value: 300, message: 'Tối đa 300' } : undefined,
+                        required: canEditSceneDensity ? t('form.required') : false,
+                        min: canEditSceneDensity ? { value: 1, message: t('form.min1') } : undefined,
+                        max: canEditSceneDensity ? { value: 300, message: t('form.max300') } : undefined,
                       })}
                     />
                   </FormField>
@@ -1204,7 +1250,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           ) : null}
 
           {isReupAudio ? (
-            <FormField label='Phổ âm thanh' className='min-w-0 sm:col-start-1'>
+            <FormField label={t('form.audioBar')} className='min-w-0 sm:col-start-1'>
               <Button
                 type='button'
                 variant='outlined'
@@ -1214,16 +1260,16 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 onClick={() => setAudioBarPickerOpen(true)}
               >
                 {audioBarFile === SI_OVERLAY_AUTO_SENTINEL
-                  ? 'Đã chọn: Tự động'
+                  ? t('form.selectedAuto')
                   : audioBarFile
-                    ? `Đã chọn: ${audioBarFile}`
-                    : 'Chọn phổ âm thanh'}
+                    ? t('form.selectedFile', { file: audioBarFile })
+                    : t('form.audioBarSelect')}
               </Button>
             </FormField>
           ) : null}
 
           {isReupAudio ? (
-            <FormField label='Video nhỏ' className='min-w-0'>
+            <FormField label={t('form.smallVideo')} className='min-w-0'>
               <Button
                 type='button'
                 variant='outlined'
@@ -1233,18 +1279,18 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 onClick={() => setSmallVideoPickerOpen(true)}
               >
                 {smallVideoFile === SI_OVERLAY_AUTO_SENTINEL
-                  ? 'Đã chọn: Tự động'
+                  ? t('form.selectedAuto')
                   : smallVideoGroupId
-                    ? `Đã chọn nhóm: ${smallVideoGroupName ?? 'nhóm'}`
+                    ? t('form.selectedGroup', { name: smallVideoGroupName ?? t('form.groupFallback') })
                     : smallVideoFile
-                      ? `Đã chọn: ${smallVideoFile}`
-                      : 'Chọn video nhỏ'}
+                      ? t('form.selectedFile', { file: smallVideoFile })
+                      : t('form.smallVideoSelect')}
               </Button>
             </FormField>
           ) : null}
 
           {isReupAudio ? (
-            <FormField label='Subscribe' className='min-w-0'>
+            <FormField label={t('form.subscribe')} className='min-w-0'>
               <Button
                 type='button'
                 variant='outlined'
@@ -1254,26 +1300,26 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 onClick={() => setSubscribePickerOpen(true)}
               >
                 {subscribeFile === SI_OVERLAY_AUTO_SENTINEL
-                  ? 'Đã chọn: Tự động'
+                  ? t('form.selectedAuto')
                   : subscribeFile
-                    ? `Đã chọn: ${subscribeFile}`
-                    : 'Chọn subscribe'}
+                    ? t('form.selectedFile', { file: subscribeFile })
+                    : t('form.subscribeSelect')}
               </Button>
             </FormField>
           ) : null}
 
-          <FormField label='Kiểu phụ đề' htmlFor='caption-style' optional error={errors.captionStyleKey?.message} className='min-w-0'>
+          <FormField label={t('form.captionStyle')} htmlFor='caption-style' optional error={errors.captionStyleKey?.message} className='min-w-0'>
             <Controller
               name='captionStyleKey'
               control={control}
               render={({ field }) => (
                 <Select
                   id='caption-style'
-                  options={CAPTION_STYLE_OPTIONS}
+                  options={captionStyleOptions}
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder='Chọn kiểu phụ đề'
+                  placeholder={t('form.captionStylePlaceholder')}
                   disabled={isSubmitting}
                   className='w-full'
                   triggerClassName={selectTriggerClass}
@@ -1295,7 +1341,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                         ? 'cursor-pointer'
                         : 'cursor-not-allowed opacity-60'
                     }`}
-                    title={canShowChannelAvatar ? undefined : 'Tải ảnh avatar kênh trước'}
+                    title={canShowChannelAvatar ? undefined : t('form.uploadAvatarFirst')}
                   >
                     <input
                       id='show-channel-avatar'
@@ -1306,7 +1352,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       disabled={isSubmitting || avatarUploading || !canShowChannelAvatar}
                       className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
                     />
-                    Hiển thị avatar kênh
+                    {t('form.showAvatar')}
                   </label>
                   <input
                     ref={avatarInputRef}
@@ -1325,7 +1371,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                     disabled={isSubmitting || avatarUploading}
                     onClick={() => avatarInputRef.current?.click()}
                   >
-                    {avatarUploading ? 'Đang tải...' : 'Tải ảnh'}
+                    {avatarUploading ? t('form.uploadingImage') : t('form.uploadImage')}
                   </Button>
                 </div>
               )}
@@ -1333,7 +1379,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           </FormField>
 
           <FormField
-            label='Kiểu ảnh thu nhỏ'
+            label={t('form.thumbnailStyle')}
             htmlFor='thumbnail-style'
             // optional
             error={errors.thumbnailStyleKey?.message}
@@ -1356,12 +1402,12 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   onBlur={field.onBlur}
                   placeholder={
                     !language
-                      ? 'Chọn ngôn ngữ trước'
+                      ? t('form.thumbnailNeedLang')
                       : thumbnailStylesLoading
-                        ? 'Đang tải kiểu ảnh...'
+                        ? t('form.thumbnailLoading')
                         : thumbnailStyleOptions.length === 0
-                          ? 'Không có kiểu ảnh thu nhỏ cho ngôn ngữ này'
-                          : 'Chọn kiểu ảnh thu nhỏ'
+                          ? t('form.thumbnailEmpty')
+                          : t('form.thumbnailPlaceholder')
                   }
                   disabled={isSubmitting || !language || thumbnailStylesLoading}
                   className='w-full'
@@ -1372,7 +1418,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           </FormField>
 
           {showThumbnailBackgroundPicker ? (
-            <FormField label='Ảnh nền thumbnail' className='min-w-0'>
+            <FormField label={t('form.thumbnailBg')} className='min-w-0'>
               <div className='flex flex-col gap-2'>
                 <Button
                   type='button'
@@ -1382,7 +1428,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   disabled={isSubmitting}
                   onClick={() => setBackgroundPickerOpen(true)}
                 >
-                  {thumbnailBackgroundFile ? `Đã chọn: ${thumbnailBackgroundFile}` : 'Chọn ảnh nền thumbnail'}
+                  {thumbnailBackgroundFile ? t('form.selectedFile', { file: thumbnailBackgroundFile }) : t('form.thumbnailBgSelect')}
                 </Button>
               </div>
             </FormField>
@@ -1403,14 +1449,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                     disabled={isSubmitting}
                     className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
                   />
-                  Hiển thị thông báo miễn trừ trách nhiệm
+                  {t('form.showDisclaimer')}
                 </label>
               )}
             />
           </FormField>
 
           <FormField
-            label='Nội dung miễn trừ trách nhiệm trong video'
+            label={t('form.disclaimerInVideo')}
             htmlFor='disclaimer-text'
             optional
             error={errors.disclaimerText?.message}
@@ -1420,19 +1466,19 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               id='disclaimer-text'
               rows={4}
               maxLength={2000}
-              placeholder='Nhập nội dung miễn trừ trách nhiệm trong video...'
+              placeholder={t('form.disclaimerInVideoPlaceholder')}
               disabled={isSubmitting || !showDisclaimer}
               {...register('disclaimerText', {
                 maxLength: {
                   value: 2000,
-                  message: 'Nội dung miễn trừ trách nhiệm trong video tối đa 2000 ký tự',
+                  message: t('form.disclaimerInVideoMax'),
                 },
               })}
             />
           </FormField>
 
           <FormField
-            label='Nội dung miễn trừ trách nhiệm trong mô tả'
+            label={t('form.disclaimerInDesc')}
             htmlFor='description-disclaimer-text'
             optional
             error={errors.descriptionDisclaimerText?.message}
@@ -1442,30 +1488,30 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               id='description-disclaimer-text'
               rows={4}
               maxLength={2000}
-              placeholder='Nhập nội dung miễn trừ trách nhiệm trong mô tả...'
+              placeholder={t('form.disclaimerInDescPlaceholder')}
               disabled={isSubmitting || !showDisclaimer}
               {...register('descriptionDisclaimerText', {
                 maxLength: {
                   value: 2000,
-                  message: 'Nội dung miễn trừ trách nhiệm trong mô tả tối đa 2000 ký tự',
+                  message: t('form.disclaimerInDescMax'),
                 },
               })}
             />
           </FormField>
 
-          <FormField label='Tần suất đăng tải' htmlFor='upload-frequency' error={errors.uploadFrequency?.message} className='min-w-0'>
+          <FormField label={t('form.uploadFrequency')} htmlFor='upload-frequency' error={errors.uploadFrequency?.message} className='min-w-0'>
             <Controller
               name='uploadFrequency'
               control={control}
-              rules={{ required: 'Tần suất đăng tải là bắt buộc' }}
+              rules={{ required: t('form.uploadFrequencyRequired') }}
               render={({ field }) => (
                 <Select
                   id='upload-frequency'
-                  options={VI_UPLOAD_FREQUENCY_OPTIONS}
+                  options={uploadFrequencyOptions}
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder='Chọn tần suất đăng tải'
+                  placeholder={t('form.uploadFrequencyPlaceholder')}
                   disabled={isSubmitting}
                   className='w-full'
                   triggerClassName={selectTriggerClass}
@@ -1478,7 +1524,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             ? Array.from({ length: publishTimeSlotCount }).map((_, index) => (
                 <FormField
                   key={index}
-                  label={publishTimeSlotCount === 1 ? 'Giờ đăng' : `Giờ đăng ${index + 1}`}
+                  label={publishTimeSlotCount === 1 ? t('form.publishTime') : t('form.publishTimeN', { n: index + 1 })}
                   htmlFor={`publish-time-${index}`}
                   error={errors.publishTimes?.[index]?.message}
                   className='min-w-0'
@@ -1489,7 +1535,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                     className='h-10 rounded-lg text-sm'
                     disabled={isSubmitting}
                     {...register(`publishTimes.${index}` as const, {
-                      required: 'Giờ đăng là bắt buộc',
+                      required: t('form.publishTimeRequired'),
                     })}
                   />
                 </FormField>
@@ -1499,7 +1545,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           {apiError ? <p className='text-xs text-danger sm:col-span-2 lg:col-span-3'>{apiError}</p> : null}
           {isEdit && !optionsLoading && formReady && !mailAccountId ? (
             <p className='text-xs text-danger sm:col-span-2 lg:col-span-3'>
-              Không tìm thấy tài khoản email liên kết. Không thể lưu thay đổi.
+              {/* replaced */}
             </p>
           ) : null}
         </form>

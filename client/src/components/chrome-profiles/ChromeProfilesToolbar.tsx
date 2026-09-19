@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui';
 
 interface ChromeProfilesToolbarProps {
@@ -31,9 +32,13 @@ export function ChromeProfilesToolbar({
   onSetMainProfile,
   onResetSubProfiles,
 }: ChromeProfilesToolbarProps) {
+  const { t } = useTranslation('browser');
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <span className="text-sm text-neutral-400">{count.toLocaleString()} profile</span>
+      <span className="text-sm text-neutral-400">
+        {t('chrome.toolbar.count', { count: count.toLocaleString() })}
+      </span>
 
       <div className="flex items-center gap-2">
         <Button
@@ -47,7 +52,7 @@ export function ChromeProfilesToolbar({
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
           </svg>
-          Sửa tên
+          {t('chrome.toolbar.editName')}
         </Button>
         <Button
           variant="outlined"
@@ -61,7 +66,7 @@ export function ChromeProfilesToolbar({
             <path d="M15 3h6v6" />
             <path d="M10 14 21 3" />
           </svg>
-          {opening ? 'Đang mở…' : 'Mở'}
+          {opening ? t('chrome.toolbar.opening') : t('chrome.toolbar.open')}
         </Button>
         <Button
           variant="outlined"
@@ -73,7 +78,7 @@ export function ChromeProfilesToolbar({
           <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
-          {settingMain ? 'Đang đặt…' : 'Đặt làm chính'}
+          {settingMain ? t('chrome.toolbar.settingMain') : t('chrome.toolbar.setMain')}
         </Button>
         <Button
           variant="outlined"
@@ -88,14 +93,14 @@ export function ChromeProfilesToolbar({
             <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
             <path d="M8 16H3v5" />
           </svg>
-          {resetting ? 'Đang đặt lại…' : 'Đặt lại profile phụ'}
+          {resetting ? t('chrome.toolbar.resetting') : t('chrome.toolbar.resetSecondary')}
         </Button>
         <Button size="sm" className="rounded-lg" onClick={onAddProfile} disabled={resetting}>
           <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M5 12h14" />
             <path d="M12 5v14" />
           </svg>
-          Thêm profile
+          {t('chrome.toolbar.add')}
         </Button>
       </div>
     </div>

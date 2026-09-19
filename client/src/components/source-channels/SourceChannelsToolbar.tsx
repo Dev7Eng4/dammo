@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, DropdownSelect } from '../ui';
 import type { Niche } from '../../types/niche';
 import type {
@@ -28,26 +29,6 @@ interface SourceChannelsToolbarProps {
   onDelete?: () => void;
 }
 
-const platformOptions: { value: SourcePlatformFilter; label: string }[] = [
-  { value: 'all', label: 'Tất cả nền tảng' },
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'tiktok', label: 'TikTok' },
-  { value: 'facebook', label: 'Facebook' },
-];
-
-const purposeOptions: { value: SourcePurposeFilter; label: string }[] = [
-  { value: 'all', label: 'Mọi mục đích' },
-  { value: 'reup', label: 'Reup' },
-  { value: 'background_footage', label: 'Footage nền' },
-];
-
-const languageOptions: { value: SourceLanguageFilter; label: string }[] = [
-  { value: 'all', label: 'Tất cả ngôn ngữ' },
-  ...(Object.entries(SOURCE_CHANNEL_LANGUAGE_LABELS) as [Exclude<SourceLanguageFilter, 'all'>, string][]).map(
-    ([value, label]) => ({ value, label }),
-  ),
-];
-
 export function SourceChannelsToolbar({
   platformFilter,
   purposeFilter,
@@ -68,8 +49,30 @@ export function SourceChannelsToolbar({
   onDownload,
   onDelete,
 }: SourceChannelsToolbarProps) {
+  const { t } = useTranslation('source');
+
+  const platformOptions: { value: SourcePlatformFilter; label: string }[] = [
+    { value: 'all', label: t('filter.platformAll') },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'tiktok', label: 'TikTok' },
+    { value: 'facebook', label: 'Facebook' },
+  ];
+
+  const purposeOptions: { value: SourcePurposeFilter; label: string }[] = [
+    { value: 'all', label: t('filter.purposeAll') },
+    { value: 'reup', label: t('purpose.reup') },
+    { value: 'background_footage', label: t('purpose.background') },
+  ];
+
+  const languageOptions: { value: SourceLanguageFilter; label: string }[] = [
+    { value: 'all', label: t('filter.langAll') },
+    ...(Object.entries(SOURCE_CHANNEL_LANGUAGE_LABELS) as [Exclude<SourceLanguageFilter, 'all'>, string][]).map(
+      ([value, label]) => ({ value, label }),
+    ),
+  ];
+
   const nicheOptions: { value: string; label: string }[] = [
-    { value: 'all', label: 'Tất cả niche' },
+    { value: 'all', label: t('filter.nicheAll') },
     ...niches.map((item) => ({ value: item.key, label: item.label })),
   ];
 
@@ -79,7 +82,7 @@ export function SourceChannelsToolbar({
         <div className="flex flex-wrap items-end gap-4">
           <div>
             <span className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-neutral-500">
-              Tên
+              {t('toolbar.filterName')}
             </span>
             <div className="relative">
               <svg
@@ -96,20 +99,20 @@ export function SourceChannelsToolbar({
                 type="search"
                 value={search}
                 onChange={(e) => onSearchChange(e.currentTarget.value)}
-                placeholder="Lọc theo tên..."
+                placeholder={t('toolbar.filterNamePlaceholder')}
                 className="w-48 rounded-lg border border-border bg-surface-elevated py-1.5 pl-9 pr-3 text-sm text-neutral-200 placeholder:text-neutral-500 transition-colors focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30 lg:w-56"
               />
             </div>
           </div>
           <DropdownSelect
-            label="Niche"
+            label={t('toolbar.niche')}
             options={nicheOptions}
             value={nicheFilter}
             onChange={onNicheFilterChange}
             triggerClassName="min-w-[18rem]"
           />
           <DropdownSelect
-            label="Ngôn ngữ"
+            label={t('toolbar.language')}
             options={languageOptions}
             value={languageFilter}
             onChange={onLanguageFilterChange}
@@ -117,13 +120,13 @@ export function SourceChannelsToolbar({
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <DropdownSelect
-            label="Mục đích"
+            label={t('toolbar.purpose')}
             options={purposeOptions}
             value={purposeFilter}
             onChange={onPurposeFilterChange}
           />
           <DropdownSelect
-            label="Nền tảng"
+            label={t('toolbar.platform')}
             options={platformOptions}
             value={platformFilter}
             onChange={onPlatformFilterChange}
@@ -145,7 +148,7 @@ export function SourceChannelsToolbar({
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
               <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
-            Xóa
+            {t('toolbar.delete')}
           </Button>
         ) : null}
         {onDownload ? (
@@ -162,7 +165,7 @@ export function SourceChannelsToolbar({
               <path d="M8 11l4 4 4-4" />
               <path d="M4 19h16" />
             </svg>
-            Tải xuống
+            {t('toolbar.download')}
           </Button>
         ) : null}
         {onAddNiche ? (
@@ -171,7 +174,7 @@ export function SourceChannelsToolbar({
               <path d="M5 12h14" />
               <path d="M12 5v14" />
             </svg>
-            Thêm niche
+            {t('toolbar.addNiche')}
           </Button>
         ) : null}
         <Button size="sm" className="rounded-lg" onClick={onAddSource}>
@@ -179,7 +182,7 @@ export function SourceChannelsToolbar({
             <path d="M5 12h14" />
             <path d="M12 5v14" />
           </svg>
-          Thêm nguồn
+          {t('toolbar.addSource')}
         </Button>
       </div>
     </div>

@@ -1,0 +1,78 @@
+{
+  "actions": {
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "delete": "Xóa",
+    "deleting": "Đang xóa…",
+    "edit": "Sửa",
+    "add": "Thêm",
+    "confirm": "Đồng ý",
+    "yes": "Có",
+    "retry": "Thử lại",
+    "refresh": "Làm mới",
+    "reset": "Đặt lại",
+    "select": "Chọn",
+    "deselect": "Bỏ chọn",
+    "auto": "Tự động",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép!",
+    "copiedShort": "Đã chép",
+    "loading": "Đang tải...",
+    "opening": "Đang mở…",
+    "optional": "(tuỳ chọn)"
+  },
+  "aria": {
+    "close": "Đóng",
+    "closePanel": "Đóng panel",
+    "closeDetailPanel": "Đóng panel chi tiết",
+    "moreActions": "Thêm thao tác"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm"
+  },
+  "pagination": {
+    "showing": "Hiển thị",
+    "of": "trên",
+    "perPage": "Mỗi trang",
+    "prev": "Trước",
+    "next": "Sau",
+    "page": "Trang"
+  },
+  "status": {
+    "success": "Thành công",
+    "failed": "Thất bại",
+    "rendering": "Đang render",
+    "active": "Hoạt động",
+    "needVerify": "Cần xác minh",
+    "suspended": "Đã khóa"
+  },
+  "theme": {
+    "toLight": "Chuyển sang giao diện sáng",
+    "toDark": "Chuyển sang giao diện tối",
+    "light": "Giao diện sáng",
+    "dark": "Giao diện tối"
+  },
+  "sidebar": {
+    "expand": "Mở rộng sidebar",
+    "collapse": "Thu gọn sidebar"
+  },
+  "lang": {
+    "vi": "VI",
+    "en": "EN",
+    "switchTo": "Ngôn ngữ: {{lang}}"
+  },
+  "filter": {
+    "all": "Tất cả"
+  },
+  "errors": {
+    "generic": "Đã xảy ra lỗi"
+  },
+  "placeholder": {
+    "fallbackTitle": "Module",
+    "subtitle": "Tính năng đang phát triển. Module này sẽ có sẵn trong phiên bản tiếp theo.",
+    "body": "Nội dung module sẽ xuất hiện tại đây."
+  }
+}
+

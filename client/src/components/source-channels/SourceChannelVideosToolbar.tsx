@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, DropdownSelect } from '../ui';
 import type { SourceVideoDurationFilter } from '../../types/sourceChannel';
 
@@ -9,14 +10,6 @@ interface SourceChannelVideosToolbarProps {
   onDownload?: () => void;
 }
 
-const durationOptions: { value: SourceVideoDurationFilter; label: string }[] = [
-  { value: 'all', label: 'Tất cả thời lượng' },
-  { value: 'under_8m', label: 'Dưới 8 phút' },
-  { value: '8m_30m', label: '8 – 30 phút' },
-  { value: '30m_60m', label: '30 – 60 phút' },
-  { value: 'over_60m', label: 'Trên 60 phút' },
-];
-
 export function SourceChannelVideosToolbar({
   durationFilter,
   onDurationFilterChange,
@@ -24,10 +17,20 @@ export function SourceChannelVideosToolbar({
   downloadDisabledReason,
   onDownload,
 }: SourceChannelVideosToolbarProps) {
+  const { t } = useTranslation('source');
+
+  const durationOptions: { value: SourceVideoDurationFilter; label: string }[] = [
+    { value: 'all', label: t('filter.durationAll') },
+    { value: 'under_8m', label: t('filter.durationUnder8m') },
+    { value: '8m_30m', label: t('filter.duration8to30') },
+    { value: '30m_60m', label: t('filter.duration30to60') },
+    { value: 'over_60m', label: t('filter.durationOver60') },
+  ];
+
   return (
     <div className="mb-4 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
       <DropdownSelect
-        label="Thời lượng"
+        label={t('videos.duration')}
         options={durationOptions}
         value={durationFilter}
         onChange={onDurationFilterChange}
@@ -46,7 +49,7 @@ export function SourceChannelVideosToolbar({
             <path d="M8 11l4 4 4-4" />
             <path d="M4 19h16" />
           </svg>
-          Tải xuống
+          {t('videos.download')}
         </Button>
       ) : null}
     </div>

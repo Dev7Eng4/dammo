@@ -143,10 +143,14 @@ async function processUploadVideo(job: TaskJob): Promise<unknown> {
   const payload = job.payload as UploadVideoTaskPayload;
 
   if (payload.allReupChannels) {
-    updateProgress(job.id, 15, 'Uploading all reup channels');
+    updateProgress(job.id, 15, 'Uploading active reup channels');
     const channelIds = youtubeChannelsRepository
       .findAll()
-      .filter(ch => ch.type === 'reup_audio' || ch.type === 'reup_video')
+      .filter(
+        ch =>
+          (ch.type === 'reup_audio' || ch.type === 'reup_video' || ch.type === 'reup') &&
+          ch.status === 'active',
+      )
       .map(ch => ch.id);
     const result = await youtubeUploadService.uploadChannels(channelIds, {
       maxUploads: payload.maxUploads,

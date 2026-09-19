@@ -1,42 +1,44 @@
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { cn } from '../../lib/cn';
 import type { SourcePurpose } from '../../types/sourceChannel';
 
-const config: Record<
-  SourcePurpose,
-  { label: string; dot: string; text: string; bg: string }
-> = {
+const PURPOSE_I18N_KEY: Record<SourcePurpose, string> = {
+  trend_tracking: 'purpose.trend',
+  idea_reference: 'purpose.idea',
+  licensed_source: 'purpose.licensed',
+  competitor_tracking: 'purpose.competitor',
+  reup: 'purpose.reup',
+  background_footage: 'purpose.background',
+};
+
+const config: Record<SourcePurpose, { dot: string; text: string; bg: string }> = {
   trend_tracking: {
-    label: 'Theo dõi xu hướng',
     dot: 'bg-secondary-400',
     text: 'text-secondary-400',
     bg: 'bg-secondary-500/10 border-secondary-500/30',
   },
   idea_reference: {
-    label: 'Tham khảo ý tưởng',
     dot: 'bg-warning',
     text: 'text-warning',
     bg: 'bg-warning/10 border-warning/30',
   },
   licensed_source: {
-    label: 'Nguồn có bản quyền',
     dot: 'bg-primary-400',
     text: 'text-primary-400',
     bg: 'bg-primary-500/10 border-primary-500/30',
   },
   competitor_tracking: {
-    label: 'Theo dõi đối thủ',
     dot: 'bg-neutral-400',
     text: 'text-neutral-400',
     bg: 'bg-neutral-500/10 border-neutral-500/30',
   },
   reup: {
-    label: 'Reup',
     dot: 'bg-success',
     text: 'text-success',
     bg: 'bg-success/10 border-success/30',
   },
   background_footage: {
-    label: 'Footage nền',
     dot: 'bg-info',
     text: 'text-info',
     bg: 'bg-info/10 border-info/30',
@@ -49,6 +51,7 @@ interface PurposePillProps {
 }
 
 export function PurposePill({ purpose, className }: PurposePillProps) {
+  const { t } = useTranslation('source');
   const c = config[purpose];
   return (
     <span
@@ -60,20 +63,20 @@ export function PurposePill({ purpose, className }: PurposePillProps) {
       )}
     >
       <span className={cn('size-1.5 rounded-full', c.dot)} />
-      {c.label}
+      {t(PURPOSE_I18N_KEY[purpose])}
     </span>
   );
 }
 
 export function purposeLabel(purpose: SourcePurpose): string {
-  return config[purpose].label;
+  return i18n.t(PURPOSE_I18N_KEY[purpose], { ns: 'source' });
 }
 
-export const SOURCE_PURPOSE_OPTIONS = (Object.keys(config) as SourcePurpose[]).map((value) => ({
-  value,
-  label: config[value].label,
-}));
+export const SOURCE_PURPOSE_SELECT_VALUES: SourcePurpose[] = ['reup', 'background_footage'];
 
-export const SOURCE_PURPOSE_SELECT_OPTIONS = SOURCE_PURPOSE_OPTIONS.filter(
-  (option) => option.value === 'reup' || option.value === 'background_footage',
-);
+export function getSourcePurposeSelectOptions(t: (key: string) => string) {
+  return SOURCE_PURPOSE_SELECT_VALUES.map((value) => ({
+    value,
+    label: t(PURPOSE_I18N_KEY[value]),
+  }));
+}

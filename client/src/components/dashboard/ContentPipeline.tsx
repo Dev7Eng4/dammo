@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import type { PipelineStep } from '../../types/dashboard'
 
@@ -14,10 +15,12 @@ const highlightBorder: Record<string, string> = {
 }
 
 export function ContentPipeline({ steps, loading }: ContentPipelineProps) {
+  const { t } = useTranslation('dashboard')
+
   if (loading) {
     return (
       <div className="rounded-2xl border border-border bg-surface p-5">
-        <p className="mb-4 text-sm font-medium text-muted-foreground">Luồng nội dung</p>
+        <p className="mb-4 text-sm font-medium text-muted-foreground">{t('pipeline.title')}</p>
         <div className="flex animate-pulse gap-2">
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="h-16 flex-1 rounded-lg bg-muted" />
@@ -29,7 +32,7 @@ export function ContentPipeline({ steps, loading }: ContentPipelineProps) {
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5">
-      <p className="mb-4 text-sm font-medium text-muted-foreground">Luồng nội dung</p>
+      <p className="mb-4 text-sm font-medium text-muted-foreground">{t('pipeline.title')}</p>
       <div className="flex items-center gap-1 overflow-x-auto">
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center gap-1">

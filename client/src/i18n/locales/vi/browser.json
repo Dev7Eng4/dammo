@@ -1,0 +1,405 @@
+{
+  "chrome": {
+    "page": {
+      "title": "Hồ sơ Chrome",
+      "subtitle": "Quản lý và mở hồ sơ trình duyệt Chrome"
+    },
+    "toolbar": {
+      "count": "{{count}} profile",
+      "editName": "Sửa tên",
+      "open": "Mở",
+      "opening": "Đang mở…",
+      "setMain": "Đặt làm chính",
+      "settingMain": "Đang đặt…",
+      "resetSecondary": "Đặt lại profile phụ",
+      "resetting": "Đang đặt lại…",
+      "add": "Thêm profile"
+    },
+    "table": {
+      "col": {
+        "role": "VAI TRÒ",
+        "name": "TÊN",
+        "order": "THỨ TỰ",
+        "profileId": "PROFILE ID",
+        "createdAt": "TẠO LÚC"
+      },
+      "roleMain": "Chính",
+      "roleSecondary": "Phụ",
+      "empty": "Chưa có Chrome profile nào. Thêm một profile để bắt đầu."
+    },
+    "add": {
+      "title": "Thêm Chrome profile",
+      "name": "Tên profile",
+      "namePlaceholder": "vd. Kênh A",
+      "nameRequired": "Vui lòng nhập tên",
+      "submit": "Thêm profile",
+      "submitting": "Đang tạo...",
+      "hint": "Profile Playwright Chromium sẽ được khởi tạo trên server với thư mục user data riêng.",
+      "error": "Không thể tạo profile"
+    },
+    "edit": {
+      "title": "Sửa tên Chrome profile",
+      "save": "Lưu thay đổi",
+      "error": "Không thể cập nhật tên profile"
+    },
+    "toast": {
+      "created": "Đã tạo Chrome profile thành công",
+      "renamed": "Đã cập nhật tên Chrome profile",
+      "setMain": "\\\"{{name}}\\\" đã đặt làm profile chính",
+      "setSecondary": "\\\"{{name}}\\\" đã đặt làm profile phụ",
+      "roleError": "Không thể cập nhật vai trò profile",
+      "resetDone": "Đã xóa {{count}} profile phụ và tạo 8 profile mới.",
+      "resetCreatedOnly": "Đã tạo 8 profile phụ mới.",
+      "resetError": "Không thể đặt lại profile phụ",
+      "opened": "Đã mở Chrome profile \\\"{{name}}\\\"",
+      "openError": "Không thể mở profile",
+      "loadError": "Không thể tải profile"
+    }
+  },
+  "gpm": {
+    "page": {
+      "title": "Quản lý GPM",
+      "subtitle": "Hồ sơ và nhóm trình duyệt"
+    },
+    "tab": {
+      "profiles": "Hồ sơ",
+      "groups": "Nhóm"
+    },
+    "profiles": {
+      "count": "{{count}} profile",
+      "search": "Tìm profile…",
+      "start": "Khởi động",
+      "starting": "Đang khởi động…",
+      "stop": "Dừng",
+      "stopping": "Đang dừng…",
+      "test": "Kiểm tra",
+      "testing": "Đang kiểm tra…",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "add": "Thêm Profile",
+      "table": {
+        "name": "TÊN",
+        "group": "NHÓM",
+        "proxy": "PROXY",
+        "actions": "THAO TÁC"
+      },
+      "empty": "Không tìm thấy GPM profile."
+    },
+    "groups": {
+      "count": "{{count}} Nhóm",
+      "search": "Tìm nhóm…",
+      "readonly": "Chỉ xem (GPM API v3)",
+      "create": "Tạo",
+      "table": {
+        "name": "TÊN",
+        "order": "THỨ TỰ",
+        "createdAt": "TẠO LÚC",
+        "actions": "THAO TÁC"
+      },
+      "empty": "Không tìm thấy nhóm GPM."
+    },
+    "addProfile": {
+      "title": "Thêm GPM Profile",
+      "email": "Email",
+      "emailRequired": "Email là bắt buộc",
+      "loadingEmails": "Đang tải email...",
+      "noEmails": "Không còn email trống",
+      "selectEmail": "Chọn email",
+      "searchEmail": "Tìm kiếm email...",
+      "group": "Nhóm",
+      "noGroup": "Không nhóm",
+      "proxy": "Proxy",
+      "noProxy": "Không proxy",
+      "loadingProxies": "Đang tải proxy…",
+      "note": "Ghi chú",
+      "notePlaceholder": "Ghi chú tùy chọn",
+      "submit": "Thêm Profile",
+      "submitting": "Đang tạo…",
+      "error": "Tạo profile thất bại",
+      "proxiesLoadError": "Không tải được danh sách proxy",
+      "emailsLoadError": "Không tải được danh sách email"
+    },
+    "editProfile": {
+      "title": "Sửa GPM Profile",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu…",
+      "error": "Cập nhật profile thất bại"
+    },
+    "addGroup": {
+      "title": "Tạo nhóm GPM",
+      "name": "Tên",
+      "namePlaceholder": "Tên nhóm",
+      "nameRequired": "Tên là bắt buộc",
+      "submit": "Tạo",
+      "submitting": "Đang tạo…",
+      "error": "Tạo nhóm thất bại"
+    },
+    "editGroup": {
+      "title": "Sửa nhóm GPM",
+      "name": "Tên",
+      "nameRequired": "Tên là bắt buộc",
+      "sortOrder": "Thứ tự sắp xếp",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu…",
+      "error": "Cập nhật nhóm thất bại"
+    },
+    "toast": {
+      "started": "Đã khởi động profile \\\"{{name}}\\\"",
+      "startedDebug": "Đã khởi động \\\"{{name}}\\\" — debug {{debug}}",
+      "stopped": "Đã dừng profile \\\"{{name}}\\\"",
+      "startError": "Khởi động profile thất bại",
+      "stopError": "Dừng profile thất bại",
+      "testError": "Kiểm tra Gemini thất bại",
+      "deleted": "Đã xóa \\\"{{name}}\\\"",
+      "deletedHard": "Đã xóa vĩnh viễn \\\"{{name}}\\\"",
+      "deleteError": "Xóa profile thất bại",
+      "groupDeleted": "Đã xóa nhóm \\\"{{name}}\\\"",
+      "groupDeleteError": "Xóa nhóm thất bại",
+      "created": "Đã tạo GPM profile",
+      "groupCreated": "Đã tạo nhóm GPM",
+      "updated": "Đã cập nhật GPM profile",
+      "groupUpdated": "Đã cập nhật nhóm GPM",
+      "profilesLoadError": "Không tải được danh sách profile",
+      "groupsLoadError": "Không tải được danh sách nhóm"
+    },
+    "test": {
+      "title": "Kết quả kiểm tra Gemini",
+      "profile": "Profile",
+      "prompt": "Prompt",
+      "response": "Phản hồi",
+      "emptyResponse": "(phản hồi trống)",
+      "done": "Hoàn thành trong {{seconds}}s — profile vẫn đang mở."
+    },
+    "deleteProfile": {
+      "title": "Xóa GPM Profile",
+      "body": "Xóa profile \\\"{{name}}\\\"?",
+      "hard": "Xóa vĩnh viễn",
+      "hardLabel": "Xóa vĩnh viễn (mode 2 — database + storage)",
+      "softHint": "Bỏ chọn sẽ dùng mode 1 (chỉ database)."
+    },
+    "deleteGroup": {
+      "title": "Xóa nhóm GPM",
+      "body": "Xóa nhóm \\\"{{name}}\\\"? Các profile đang thuộc nhóm này sẽ bị gỡ khỏi nhóm."
+    }
+  },
+  "proxy": {
+    "page": {
+      "title": "Quản lý Proxy",
+      "subtitle": "Giám sát và nhà cung cấp proxy"
+    },
+    "tab": {
+      "monitoring": "Giám sát",
+      "providers": "Nhà cung cấp"
+    },
+    "toolbar": {
+      "count": "{{count}} proxy",
+      "filterPrefix": "Lọc",
+      "add": "Thêm Proxy",
+      "import": "Nhập Excel",
+      "importing": "Đang nhập...",
+      "export": "Xuất Excel",
+      "exporting": "Đang xuất...",
+      "deleteSelected": "Xóa đã chọn",
+      "deleting": "Đang xóa...",
+      "removeFailed": "Xóa thất bại"
+    },
+    "filter": {
+      "all": "Tất cả",
+      "active": "Hoạt động",
+      "failed": "Thất bại",
+      "slow": "Chậm",
+      "expired": "Hết hạn",
+      "inUse": "Đang dùng"
+    },
+    "table": {
+      "col": {
+        "type": "LOẠI",
+        "host": "HOST",
+        "port": "PORT",
+        "country": "QUỐC GIA",
+        "provider": "NHÀ CUNG CẤP",
+        "expires": "HẾT HẠN",
+        "profiles": "PROFILE",
+        "lastUsed": "DÙNG GẦN NHẤT",
+        "status": "TRẠNG THÁI",
+        "actions": "HÀNH ĐỘNG"
+      },
+      "ping": "Ping",
+      "pinging": "Đang ping…",
+      "renew": "Gia hạn",
+      "empty": "Không có proxy khớp bộ lọc.",
+      "emptyDesc": "Thêm proxy hoặc nhập từ Excel để bắt đầu."
+    },
+    "status": {
+      "active": "Hoạt động",
+      "failed": "Thất bại",
+      "slow": "Chậm",
+      "expired": "Hết hạn",
+      "inUse": "Đang dùng"
+    },
+    "stats": {
+      "total": "Tổng Proxy",
+      "active": "Hoạt động",
+      "failed": "Thất bại",
+      "assigned": "Đã gán",
+      "unassigned": "Chưa gán",
+      "avgLatency": "Độ trễ TB"
+    },
+    "add": {
+      "title": "Thêm Proxy",
+      "type": "Loại",
+      "provider": "Nhà cung cấp",
+      "noProvider": "— Không —",
+      "rawProxy": "Raw Proxy",
+      "rawProxyHint": "(host:port hoặc host:port:user:pass)",
+      "rawProxyRequired": "Raw proxy là bắt buộc",
+      "rawProxyInvalid": "Định dạng proxy không hợp lệ. Dùng host:port hoặc host:port:user:pass",
+      "portInvalid": "Port không hợp lệ. Phải từ 1 đến 65535",
+      "countryCode": "Mã quốc gia",
+      "expiresAt": "Ngày hết hạn",
+      "expiresOptional": "(tùy chọn)",
+      "submit": "Thêm Proxy",
+      "error": "Tạo proxy thất bại"
+    },
+    "edit": {
+      "title": "Sửa Proxy",
+      "name": "Tên Proxy",
+      "nameRequired": "Tên là bắt buộc",
+      "type": "Loại",
+      "host": "Host",
+      "hostRequired": "Host là bắt buộc",
+      "port": "Port",
+      "portRequired": "Port là bắt buộc",
+      "portInvalid": "Port không hợp lệ",
+      "username": "Tên đăng nhập",
+      "password": "Mật khẩu",
+      "location": "Vị trí",
+      "countryCode": "Mã quốc gia",
+      "provider": "Nhà cung cấp",
+      "tags": "Tags",
+      "tagsHint": "(phân tách bằng dấu phẩy)",
+      "save": "Lưu thay đổi",
+      "error": "Cập nhật proxy thất bại"
+    },
+    "extend": {
+      "title": "Gia hạn Proxy",
+      "body": "Gia hạn cho",
+      "currentExpiry": "(hiện tại: {{date}})",
+      "noExpiry": "(chưa đặt ngày hết hạn)",
+      "daysLabel": "Số ngày gia hạn",
+      "daysPlaceholder": "vd. 30",
+      "daysInvalid": "Nhập số ngày hợp lệ (tối thiểu 1)",
+      "success": "Đã gia hạn đến {{date}}",
+      "successFallback": "ngày mới",
+      "error": "Gia hạn proxy thất bại"
+    },
+    "deleteSelected": {
+      "title": "Xóa proxy đã chọn",
+      "body": "Lưu trữ {{count}} proxy đã chọn (không gắn profile hoặc đã hết hạn)? Không thể hoàn tác thao tác này từ giao diện.",
+      "confirm": "Xóa {{count}} proxy"
+    },
+    "removeFailedModal": {
+      "title": "Xóa proxy thất bại",
+      "body": "Lưu trữ tất cả proxy có trạng thái Thất bại? Không thể hoàn tác thao tác này từ giao diện.",
+      "confirm": "Xóa tất cả thất bại"
+    },
+    "detail": {
+      "lastChecked": "Kiểm tra lần cuối: {{time}}",
+      "neverChecked": "Chưa kiểm tra",
+      "justNow": "Vừa xong",
+      "minutesAgo": "{{count}} phút trước",
+      "hoursAgo": "{{count}} giờ trước",
+      "daysAgo": "{{count}} ngày trước",
+      "connection": "Kết nối",
+      "hostPort": "Host:Port",
+      "auth": "Xác thực",
+      "showPassword": "Hiện mật khẩu",
+      "hidePassword": "Ẩn mật khẩu",
+      "meta": "Meta",
+      "location": "Vị trí",
+      "provider": "Nhà cung cấp",
+      "tags": "Tags",
+      "assignedProfiles": "Profile đã gán ({{count}})",
+      "noAssigned": "Chưa gán profile nào",
+      "performance": "Hiệu năng",
+      "latencyHint": "Độ trễ lần kiểm tra gần nhất",
+      "testConnection": "Kiểm tra kết nối",
+      "testing": "Đang kiểm tra...",
+      "archive": "Lưu trữ",
+      "archiveDisabled": "Không thể lưu trữ khi proxy còn {{count}} profile đã gán"
+    },
+    "expiry": {
+      "title": "Proxy sắp hết hạn (<= 5 ngày)",
+      "body": "Có {{count}} proxy sắp hết hạn hoặc đã hết hạn. Vui lòng kiểm tra và gia hạn trước khi hết hạn.",
+      "expired": "Đã hết hạn",
+      "daysLeft": "Còn {{count}} ngày",
+      "expiresLabel": "HẾT HẠN {{date}}",
+      "noExpiryDate": "Không có hạn",
+      "showingFirst": "Hiển thị {{count}} proxy đầu tiên.",
+      "empty": "Không có proxy sắp hết hạn.",
+      "ack": "Đã hiểu"
+    },
+    "providers": {
+      "count": "{{count}} nhà cung cấp",
+      "add": "+ Thêm nhà cung cấp",
+      "table": {
+        "name": "TÊN",
+        "loginUrl": "URL ĐĂNG NHẬP",
+        "username": "TÊN ĐĂNG NHẬP",
+        "password": "MẬT KHẨU",
+        "actions": "THAO TÁC"
+      },
+      "empty": "Chưa có nhà cung cấp.",
+      "emptyDesc": "Thêm URL đăng nhập, tên đăng nhập và mật khẩu để bắt đầu.",
+      "showPassword": "Hiện mật khẩu",
+      "hidePassword": "Ẩn mật khẩu",
+      "addModal": {
+        "title": "Thêm nhà cung cấp",
+        "name": "Tên nhà cung cấp",
+        "nameRequired": "Tên là bắt buộc",
+        "loginUrl": "URL đăng nhập",
+        "loginUrlOptional": "(tùy chọn)",
+        "loginUrlInvalid": "URL phải bắt đầu bằng http:// hoặc https://",
+        "username": "Tên đăng nhập",
+        "usernameRequired": "Tên đăng nhập là bắt buộc",
+        "password": "Mật khẩu",
+        "passwordRequired": "Mật khẩu là bắt buộc",
+        "notes": "Ghi chú",
+        "notesOptional": "(tùy chọn)",
+        "submit": "Thêm nhà cung cấp",
+        "error": "Tạo nhà cung cấp thất bại"
+      },
+      "editModal": {
+        "title": "Sửa nhà cung cấp",
+        "newPassword": "Mật khẩu mới",
+        "passwordKeep": "Để trống nếu giữ nguyên",
+        "save": "Lưu thay đổi",
+        "error": "Cập nhật nhà cung cấp thất bại"
+      },
+      "deleteModal": {
+        "title": "Xóa nhà cung cấp",
+        "body": "Xóa nhà cung cấp {{name}}?"
+      },
+      "toast": {
+        "deleted": "Đã xóa nhà cung cấp",
+        "added": "Đã thêm nhà cung cấp",
+        "updated": "Đã cập nhật nhà cung cấp",
+        "deleteError": "Xóa thất bại"
+      }
+    },
+    "toast": {
+      "addSuccess": "Thêm proxy thành công",
+      "exportSuccess": "Xuất Excel thành công",
+      "exportError": "Xuất Excel thất bại",
+      "importSuccess": "Đã nhập {{created}} proxy (bỏ qua {{skipped}})",
+      "importPartial": "Một số dòng đã bị bỏ qua",
+      "importError": "Nhập Excel thất bại",
+      "removeFailedSuccess": "Đã xóa {{count}} proxy thất bại",
+      "removeFailedError": "Xóa thất bại",
+      "deleteSuccess": "Đã xóa {{count}} proxy",
+      "deletePartial": "Một số proxy không xóa được",
+      "pingOk": "Ping OK — {{ms}}ms",
+      "pingFailed": "Ping thất bại"
+    }
+  }
+}

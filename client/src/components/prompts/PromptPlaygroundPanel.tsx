@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, DropdownSelect, Input } from '../ui';
 import { IMAGE_PROVIDER_OPTIONS, PLAYGROUND_PROVIDER_OPTIONS, VIDEO_PROVIDER_OPTIONS } from '../../constants/promptForm';
 import {
@@ -73,11 +74,12 @@ export function PromptPlaygroundPanel({
   onVariableChange,
   onRun,
 }: PromptPlaygroundPanelProps) {
+  const { t } = useTranslation(['content', 'common']);
   const userFunctionTemplate = isUserFunctionTemplate(template);
   const variables = extractTemplateVariables(template, templateParams);
   const stepOptions = Array.from({ length: Math.max(stepCount, 1) }, (_, index) => ({
     value: String(index),
-    label: `Bước ${index + 1}`,
+    label: t('prompts.playground.stepLabel', { n: index + 1 }),
   }));
 
   let formattedContent = result?.content ?? '';
@@ -102,20 +104,22 @@ export function PromptPlaygroundPanel({
   return (
     <aside className="flex w-[380px] shrink-0 flex-col border-l border-border bg-surface">
       <div className="border-b border-border p-4">
-        <h2 className="text-sm font-semibold text-neutral-100">Thử nghiệm</h2>
-        <p className="mt-0.5 text-xs text-neutral-500">Chạy thử prompt qua browser automation</p>
+        <h2 className="text-sm font-semibold text-neutral-100">{t('prompts.playground.title')}</h2>
+        <p className="mt-0.5 text-xs text-neutral-500">{t('prompts.playground.subtitle')}</p>
       </div>
 
       <div className="space-y-3 border-b border-border p-4">
         <div>
-          <p className="text-xs font-medium text-neutral-300">Nhà cung cấp</p>
-          <p className="mt-0.5 text-[10px] text-neutral-500">Cấu hình mặc định toàn cục</p>
+          <p className="text-xs font-medium text-neutral-300">{t('prompts.playground.providers')}</p>
+          <p className="mt-0.5 text-[10px] text-neutral-500">{t('prompts.playground.providersDesc')}</p>
         </div>
 
         <label className="block space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Tạo nội dung</span>
-            {providerSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.contentGen')}</span>
+            {providerSaving ? (
+              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
+            ) : null}
           </div>
           <DropdownSelect
             value={provider}
@@ -128,14 +132,16 @@ export function PromptPlaygroundPanel({
           {providerSettingsError ? (
             <p className="text-[10px] text-danger">{providerSettingsError}</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho tạo nội dung.</p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.playground.savedContentDefault')}</p>
           )}
         </label>
 
         <label className="block space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Tạo hình ảnh video</span>
-            {imageProviderSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.imageGen')}</span>
+            {imageProviderSaving ? (
+              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
+            ) : null}
           </div>
           <DropdownSelect
             value={imageProvider}
@@ -148,17 +154,15 @@ export function PromptPlaygroundPanel({
           {imageProviderSettingsError ? (
             <p className="text-[10px] text-danger">{imageProviderSettingsError}</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">
-              Dùng cho tạo ảnh AI và SI nhiều hình ảnh.
-            </p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.playground.imageHint')}</p>
           )}
         </label>
 
         <label className="block space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Tạo thumbnail</span>
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.thumbGen')}</span>
             {thumbnailProviderSaving ? (
-              <span className="text-[10px] text-neutral-500">Đang lưu...</span>
+              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
             ) : null}
           </div>
           <DropdownSelect
@@ -172,16 +176,16 @@ export function PromptPlaygroundPanel({
           {thumbnailProviderSettingsError ? (
             <p className="text-[10px] text-danger">{thumbnailProviderSettingsError}</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">
-              Dùng cho thumbnail và general/one_image.
-            </p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.playground.thumbHint')}</p>
           )}
         </label>
 
         <label className="block space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">Tạo video</span>
-            {videoProviderSaving ? <span className="text-[10px] text-neutral-500">Đang lưu...</span> : null}
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.videoGen')}</span>
+            {videoProviderSaving ? (
+              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
+            ) : null}
           </div>
           <DropdownSelect
             value={videoProvider}
@@ -194,7 +198,7 @@ export function PromptPlaygroundPanel({
           {videoProviderSettingsError ? (
             <p className="text-[10px] text-danger">{videoProviderSettingsError}</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">Đã lưu làm mặc định cho tạo video.</p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.playground.savedVideoDefault')}</p>
           )}
         </label>
       </div>
@@ -202,7 +206,7 @@ export function PromptPlaygroundPanel({
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-4">
         {stepCount > 1 ? (
           <label className="block space-y-1.5">
-            <span className="text-xs font-medium text-neutral-400">Step</span>
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.step')}</span>
             <DropdownSelect
               value={String(activeStepIndex)}
               onChange={(value) => onActiveStepChange(Number(value))}
@@ -215,11 +219,11 @@ export function PromptPlaygroundPanel({
 
         <div className="space-y-3">
           <div className="space-y-2">
-            <p className="text-xs font-medium text-neutral-400">Biến</p>
+            <p className="text-xs font-medium text-neutral-400">{t('prompts.playground.variables')}</p>
             {userFunctionTemplate ? (
-              <p className="text-xs text-neutral-500">Mẫu function — không có biến</p>
+              <p className="text-xs text-neutral-500">{t('prompts.playground.functionNoVars')}</p>
             ) : variables.length === 0 ? (
-              <p className="text-xs text-neutral-500">Không có biến trong mẫu</p>
+              <p className="text-xs text-neutral-500">{t('prompts.playground.noVars')}</p>
             ) : (
               <div className="space-y-2">
                 {variables.map((name) => (
@@ -230,7 +234,7 @@ export function PromptPlaygroundPanel({
                     <Input
                       value={variableValues[name] ?? ''}
                       onChange={(e) => onVariableChange(name, e.target.value)}
-                      placeholder={`Giá trị cho ${name}`}
+                      placeholder={t('prompts.playground.valueFor', { name })}
                       className="h-9 rounded-lg text-xs"
                     />
                   </label>
@@ -240,7 +244,7 @@ export function PromptPlaygroundPanel({
           </div>
 
           <Button className="w-full" onClick={onRun} disabled={running || !template.trim()}>
-            {running ? 'Đang chạy...' : 'Chạy thử'}
+            {running ? t('prompts.playground.running') : t('prompts.playground.run')}
           </Button>
 
           {error ? (
@@ -279,7 +283,7 @@ export function PromptPlaygroundPanel({
               {imagePreviewUrl ? (
                 <img
                   src={imagePreviewUrl}
-                  alt="Xem trước ảnh thumbnail đã tạo"
+                  alt={t('prompts.playground.imageAlt')}
                   className="max-h-[320px] w-full rounded-lg border border-border object-contain"
                 />
               ) : videoPreviewUrl ? (

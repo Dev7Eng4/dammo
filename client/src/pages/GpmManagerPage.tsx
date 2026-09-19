@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   deleteGpmGroup,
   deleteGpmProfile,
@@ -31,6 +32,7 @@ import type {
 type GpmTab = 'profiles' | 'groups';
 
 export function GpmManagerPage() {
+  const { t } = useTranslation(['browser', 'common']);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<GpmTab>('profiles');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -108,7 +110,7 @@ export function GpmManagerPage() {
       } catch (err) {
         if (signal.aborted) return;
         setProfiles([]);
-        setProfilesError(err instanceof Error ? err.message : 'Không tải được danh sách profile');
+        setProfilesError(err instanceof Error ? err.message : t('gpm.toast.profilesLoadError'));
       } finally {
         if (!signal.aborted) setProfilesLoading(false);
       }
@@ -126,7 +128,7 @@ export function GpmManagerPage() {
       } catch (err) {
         if (signal.aborted) return;
         setGroups([]);
-        setGroupsError(err instanceof Error ? err.message : 'Không tải được danh sách nhóm');
+        setGroupsError(err instanceof Error ? err.message : t('gpm.toast.groupsLoadError'));
       } finally {
         if (!signal.aborted) setGroupsLoading(false);
       }
@@ -147,7 +149,9 @@ export function GpmManagerPage() {
       item.remote_debugging_address ??
       (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
     toast.success(
-      debugInfo ? `Đã khởi động "${name}" — debug ${debugInfo}` : `Đã khởi động profile "${name}"`,
+      debugInfo
+        ? t('gpm.toast.startedDebug', { name, debug: debugInfo })
+        : t('gpm.toast.started', { name }),
     );
   }
 
@@ -159,7 +163,7 @@ export function GpmManagerPage() {
       next.delete(id);
       return next;
     });
-    toast.success(`Đã dừng profile "${profile?.name ?? id}"`);
+    toast.success(t('gpm.toast.stopped', { name: profile?.name ?? id }));
   }
 
   async function handleStartProfile() {
@@ -168,7 +172,7 @@ export function GpmManagerPage() {
     try {
       await startProfileById(selectedProfileId);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Khởi động profile thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.startError'));
     } finally {
       setStarting(false);
     }
@@ -180,7 +184,7 @@ export function GpmManagerPage() {
     try {
       await stopProfileById(selectedProfileId);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Dừng profile thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.stopError'));
     } finally {
       setStopping(false);
     }
@@ -192,7 +196,7 @@ export function GpmManagerPage() {
     try {
       await startProfileById(id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Khởi động profile thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.startError'));
     } finally {
       setActionBusyIds((prev) => {
         const next = new Set(prev);
@@ -208,7 +212,7 @@ export function GpmManagerPage() {
     try {
       await stopProfileById(id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Dừng profile thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.stopError'));
     } finally {
       setActionBusyIds((prev) => {
         const next = new Set(prev);
@@ -227,7 +231,7 @@ export function GpmManagerPage() {
       setTestResult(item);
       setShowTestResultModal(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Kiểm tra Gemini thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.testError'));
     } finally {
       setTesting(false);
     }
@@ -248,15 +252,15 @@ export function GpmManagerPage() {
       });
       toast.success(
         deleteHardMode
-          ? `Đã xóa vĩnh viễn "${selectedProfile?.name ?? selectedProfileId}"`
-          : `Đã xóa "${selectedProfile?.name ?? selectedProfileId}"`,
+          ? t('gpm.toast.deletedHard', { name: selectedProfile?.name ?? selectedProfileId })
+          : t('gpm.toast.deleted', { name: selectedProfile?.name ?? selectedProfileId }),
       );
       setShowDeleteProfileModal(false);
       setDeleteHardMode(false);
       setSelectedProfileId(null);
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xóa profile thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.deleteError'));
     } finally {
       setDeletingProfile(false);
     }
@@ -277,12 +281,12 @@ export function GpmManagerPage() {
     setDeletingGroup(true);
     try {
       await deleteGpmGroup(selectedGroup.id);
-      toast.success(`Đã xóa nhóm "${selectedGroup.name}"`);
+      toast.success(t('gpm.toast.groupDeleted', { name: selectedGroup.name }));
       setShowDeleteGroupModal(false);
       setSelectedGroup(null);
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xóa nhóm thất bại');
+      toast.error(err instanceof Error ? err.message : t('gpm.toast.groupDeleteError'));
     } finally {
       setDeletingGroup(false);
     }
@@ -292,14 +296,14 @@ export function GpmManagerPage() {
     <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="mb-4 shrink-0 space-y-4">
-          <PageHeader title="Quản lý GPM" subtitle="Hồ sơ và nhóm trình duyệt" icon={UserPlus} />
+          <PageHeader title={t('gpm.page.title')} subtitle={t('gpm.page.subtitle')} icon={UserPlus} />
           <PageTabs
             variant="pill"
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as 'profiles' | 'groups')}
             items={[
-              { id: 'profiles', label: 'Hồ sơ' },
-              { id: 'groups', label: 'Nhóm' },
+              { id: 'profiles', label: t('gpm.tab.profiles') },
+              { id: 'groups', label: t('gpm.tab.groups') },
             ]}
           />
         </div>
@@ -388,7 +392,7 @@ export function GpmManagerPage() {
         usedEmails={usedEmails}
         onClose={() => setShowAddProfileModal(false)}
         onSuccess={() => {
-          toast.success('Đã tạo GPM profile');
+          toast.success(t('gpm.toast.created'));
           handleRefresh();
         }}
       />
@@ -397,7 +401,7 @@ export function GpmManagerPage() {
         open={showAddGroupModal}
         onClose={() => setShowAddGroupModal(false)}
         onSuccess={() => {
-          toast.success('Đã tạo nhóm GPM');
+          toast.success(t('gpm.toast.groupCreated'));
           handleRefresh();
         }}
       />
@@ -410,7 +414,7 @@ export function GpmManagerPage() {
           setSelectedGroup(null);
         }}
         onSuccess={() => {
-          toast.success('Đã cập nhật nhóm GPM');
+          toast.success(t('gpm.toast.groupUpdated'));
           handleRefresh();
         }}
       />
@@ -422,7 +426,7 @@ export function GpmManagerPage() {
         usedEmails={usedEmails}
         onClose={() => setShowEditProfileModal(false)}
         onSuccess={() => {
-          toast.success('Đã cập nhật GPM profile');
+          toast.success(t('gpm.toast.updated'));
           handleRefresh();
         }}
       />
@@ -433,7 +437,7 @@ export function GpmManagerPage() {
           setShowTestResultModal(false);
           setTestResult(null);
         }}
-        title="Kết quả kiểm tra Gemini"
+        title={t('gpm.test.title')}
         footer={
           <Button
             size="sm"
@@ -443,28 +447,28 @@ export function GpmManagerPage() {
               setTestResult(null);
             }}
           >
-            Đóng
+            {t('common:actions.close')}
           </Button>
         }
       >
         {testResult ? (
           <div className="space-y-4 text-sm">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Profile</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{t('gpm.test.profile')}</p>
               <p className="mt-1 text-neutral-200">{selectedProfile?.name ?? testResult.profileId}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Prompt</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{t('gpm.test.prompt')}</p>
               <p className="mt-1 text-neutral-300">{testResult.prompt}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Phản hồi</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{t('gpm.test.response')}</p>
               <pre className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-surface-elevated p-3 text-neutral-200">
-                {testResult.content || '(phản hồi trống)'}
+                {testResult.content || t('gpm.test.emptyResponse')}
               </pre>
             </div>
             <p className="text-xs text-neutral-500">
-              Hoàn thành trong {(testResult.elapsedMs / 1000).toFixed(1)}s — profile vẫn đang mở.
+              {t('gpm.test.done', { seconds: (testResult.elapsedMs / 1000).toFixed(1) })}
             </p>
           </div>
         ) : null}
@@ -477,7 +481,7 @@ export function GpmManagerPage() {
           setShowDeleteProfileModal(false);
           setDeleteHardMode(false);
         }}
-        title="Xóa GPM Profile"
+        title={t('gpm.deleteProfile.title')}
         footer={
           <>
             <Button
@@ -490,7 +494,7 @@ export function GpmManagerPage() {
               }}
               disabled={deletingProfile}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               size="sm"
@@ -498,13 +502,17 @@ export function GpmManagerPage() {
               onClick={handleConfirmDeleteProfile}
               disabled={deletingProfile}
             >
-              {deletingProfile ? 'Đang xóa…' : deleteHardMode ? 'Xóa vĩnh viễn' : 'Xóa'}
+              {deletingProfile
+                ? t('common:actions.deleting')
+                : deleteHardMode
+                  ? t('gpm.deleteProfile.hard')
+                  : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Xóa profile &quot;{selectedProfile?.name ?? selectedProfileId}&quot;?
+          {t('gpm.deleteProfile.body', { name: selectedProfile?.name ?? selectedProfileId })}
         </p>
         <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-neutral-400">
           <input
@@ -514,11 +522,9 @@ export function GpmManagerPage() {
             disabled={deletingProfile}
             className="size-3.5 rounded border-border bg-surface accent-primary-500"
           />
-          Xóa vĩnh viễn (mode 2 — database + storage)
+          {t('gpm.deleteProfile.hardLabel')}
         </label>
-        <p className="mt-2 text-xs text-neutral-500">
-          Bỏ chọn sẽ dùng mode 1 (chỉ database).
-        </p>
+        <p className="mt-2 text-xs text-neutral-500">{t('gpm.deleteProfile.softHint')}</p>
       </Modal>
 
       <Modal
@@ -528,7 +534,7 @@ export function GpmManagerPage() {
           setShowDeleteGroupModal(false);
           setSelectedGroup(null);
         }}
-        title="Xóa nhóm GPM"
+        title={t('gpm.deleteGroup.title')}
         footer={
           <>
             <Button
@@ -541,7 +547,7 @@ export function GpmManagerPage() {
               }}
               disabled={deletingGroup}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               size="sm"
@@ -549,13 +555,13 @@ export function GpmManagerPage() {
               onClick={handleConfirmDeleteGroup}
               disabled={deletingGroup}
             >
-              {deletingGroup ? 'Đang xóa…' : 'Xóa'}
+              {deletingGroup ? t('common:actions.deleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Xóa nhóm &quot;{selectedGroup?.name}&quot;? Các profile đang thuộc nhóm này sẽ bị gỡ khỏi nhóm.
+          {t('gpm.deleteGroup.body', { name: selectedGroup?.name })}
         </p>
       </Modal>
     </PageShell>

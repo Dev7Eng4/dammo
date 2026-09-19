@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { fetchRecreateMetadataContent } from '../../api/youtubeChannels';
-import { useTaskQueue } from '../../hooks';
-import type { YoutubeVideoContent } from '../../types/youtubeChannel';
-import type { CreateVideoTaskPayload } from '../../types/taskQueue';
-import { canonicalizeYoutubeVideoUrl, extractYoutubeVideoId } from '../../utils/youtubeVideoUrl';
-import { Button, Image, Input, Modal, Textarea, useToast } from '../ui';
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { fetchRecreateMetadataContent } from '../../api/youtubeChannels'
+import { useTaskQueue } from '../../hooks'
+import type { YoutubeVideoContent } from '../../types/youtubeChannel'
+import type { CreateVideoTaskPayload } from '../../types/taskQueue'
+import { canonicalizeYoutubeVideoUrl, extractYoutubeVideoId } from '../../utils/youtubeVideoUrl'
+import { Button, Image, Input, Modal, Textarea, useToast } from '../ui'
 
 interface RecreateMetadataModalProps {
-  open: boolean;
-  channelId: string;
-  onClose: () => void;
+  open: boolean
+  channelId: string
+  onClose: () => void
 }
 
 function FieldCopyButton({
@@ -17,17 +18,18 @@ function FieldCopyButton({
   label,
   onClick,
 }: {
-  disabled?: boolean;
-  label: string;
-  onClick: () => void;
+  disabled?: boolean
+  label: string
+  onClick: () => void
 }) {
+  const { t } = useTranslation('youtube')
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={`Sao chép ${label}`}
-      aria-label={`Sao chép ${label}`}
+      title={t('metadata.copyLabel', { label })}
+      aria-label={t('metadata.copyLabel', { label })}
       className="inline-flex size-6 items-center justify-center rounded text-neutral-500 transition hover:text-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
@@ -35,7 +37,7 @@ function FieldCopyButton({
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
       </svg>
     </button>
-  );
+  )
 }
 
 function isRecreateMetadataJob(
@@ -43,111 +45,113 @@ function isRecreateMetadataJob(
   channelId: string,
   videoUrl: string,
 ): boolean {
-  if (!payload || payload.recreateMetadataFromUrl !== true) return false;
-  if (payload.channelId !== channelId) return false;
-  return payload.videoUrl?.trim() === videoUrl.trim();
+  if (!payload || payload.recreateMetadataFromUrl !== true) return false
+  if (payload.channelId !== channelId) return false
+  return payload.videoUrl?.trim() === videoUrl.trim()
 }
 
 export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMetadataModalProps) {
-  const { toast } = useToast();
-  const { enqueueTask, jobs } = useTaskQueue();
-  const [videoUrl, setVideoUrl] = useState('');
-  const [content, setContent] = useState<YoutubeVideoContent | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [loadingContent, setLoadingContent] = useState(false);
-  const [enqueueing, setEnqueueing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [contentCacheBust, setContentCacheBust] = useState(0);
-  const mountedRef = useRef(true);
-  const activeVideoIdRef = useRef<string | null>(null);
+  const { t } = useTranslation('youtube')
+  const { t: tCommon } = useTranslation('common')
+  const { toast } = useToast()
+  const { enqueueTask, jobs } = useTaskQueue()
+  const [videoUrl, setVideoUrl] = useState('')
+  const [content, setContent] = useState<YoutubeVideoContent | null>(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [loadingContent, setLoadingContent] = useState(false)
+  const [enqueueing, setEnqueueing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [contentCacheBust, setContentCacheBust] = useState(0)
+  const mountedRef = useRef(true)
+  const activeVideoIdRef = useRef<string | null>(null)
 
   useEffect(() => {
-    mountedRef.current = true;
+    mountedRef.current = true
     return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+      mountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
-    if (!open) return;
-    setVideoUrl('');
-    setContent(null);
-    setTitle('');
-    setDescription('');
-    setTags([]);
-    setError(null);
-    setLoadingContent(false);
-    setEnqueueing(false);
-    setContentCacheBust(0);
-    activeVideoIdRef.current = null;
-  }, [open]);
+    if (!open) return
+    setVideoUrl('')
+    setContent(null)
+    setTitle('')
+    setDescription('')
+    setTags([])
+    setError(null)
+    setLoadingContent(false)
+    setEnqueueing(false)
+    setContentCacheBust(0)
+    activeVideoIdRef.current = null
+  }, [open])
 
-  const trimmedUrl = videoUrl.trim();
+  const trimmedUrl = videoUrl.trim()
   const recreateInProgress = jobs.some(
     job =>
       (job.status === 'queued' || job.status === 'running') &&
       isRecreateMetadataJob(job.payload as CreateVideoTaskPayload, channelId, trimmedUrl),
-  );
-  const busy = enqueueing || recreateInProgress || loadingContent;
+  )
+  const busy = enqueueing || recreateInProgress || loadingContent
 
   function applyContent(data: YoutubeVideoContent) {
-    setContent(data);
-    setTitle(data.title);
-    setDescription(data.description);
-    setTags(data.tags);
+    setContent(data)
+    setTitle(data.title)
+    setDescription(data.description)
+    setTags(data.tags)
   }
 
   async function reloadContent() {
-    setLoadingContent(true);
+    setLoadingContent(true)
     try {
-      const data = await fetchRecreateMetadataContent(channelId);
-      if (!mountedRef.current) return data;
-      setContentCacheBust(value => value + 1);
-      applyContent(data);
-      return data;
+      const data = await fetchRecreateMetadataContent(channelId)
+      if (!mountedRef.current) return data
+      setContentCacheBust(value => value + 1)
+      applyContent(data)
+      return data
     } finally {
-      if (mountedRef.current) setLoadingContent(false);
+      if (mountedRef.current) setLoadingContent(false)
     }
   }
 
   async function handleCreateMetadata() {
-    if (busy) return;
+    if (busy) return
 
     if (!trimmedUrl) {
-      setError('Link video là bắt buộc');
-      return;
+      setError(t('metadata.linkRequired'))
+      return
     }
 
-    let url: string;
+    let url: string
     try {
-      url = canonicalizeYoutubeVideoUrl(trimmedUrl);
+      url = canonicalizeYoutubeVideoUrl(trimmedUrl)
     } catch {
-      setError('URL YouTube không hợp lệ');
-      return;
+      setError(t('metadata.invalidUrl'))
+      return
     }
 
-    setVideoUrl(url);
-    const youtubeVideoId = extractYoutubeVideoId(url);
+    setVideoUrl(url)
+    const youtubeVideoId = extractYoutubeVideoId(url)
     if (!youtubeVideoId) {
-      setError('URL YouTube không hợp lệ');
-      return;
+      setError(t('metadata.invalidUrl'))
+      return
     }
 
-    activeVideoIdRef.current = youtubeVideoId;
-    setEnqueueing(true);
-    setError(null);
-    setContent(null);
-    setTitle('');
-    setDescription('');
-    setTags([]);
+    activeVideoIdRef.current = youtubeVideoId
+    setEnqueueing(true)
+    setError(null)
+    setContent(null)
+    setTitle('')
+    setDescription('')
+    setTags([])
 
     try {
       await enqueueTask(
         {
           type: 'create_video',
-          title: 'Tạo metadata từ link video',
+          title: t('metadata.fromLinkJobTitle'),
           subtitle: youtubeVideoId,
           payload: {
             channelId,
@@ -159,65 +163,65 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
           onComplete: () => {
             void reloadContent()
               .then(() => {
-                if (mountedRef.current) toast.success('Đã tạo metadata');
+                if (mountedRef.current) toast.success(t('metadata.success'))
               })
               .catch(err => {
                 const message =
-                  err instanceof Error ? err.message : 'Không thể tải nội dung metadata sau khi tạo';
-                if (mountedRef.current) setError(message);
-                toast.error(message);
-              });
+                  err instanceof Error ? err.message : t('metadata.reloadError')
+                if (mountedRef.current) setError(message)
+                toast.error(message)
+              })
           },
           onFail: job => {
-            const message = job.error ?? 'Tạo metadata thất bại';
-            if (mountedRef.current) setError(message);
-            toast.error(message);
+            const message = job.error ?? t('metadata.failed')
+            if (mountedRef.current) setError(message)
+            toast.error(message)
           },
         },
-      );
-      toast.success('Đã thêm vào hàng đợi tạo metadata');
+      )
+      toast.success(t('metadata.queued'))
     } catch {
       // enqueueTask already toasts
     } finally {
-      if (mountedRef.current) setEnqueueing(false);
+      if (mountedRef.current) setEnqueueing(false)
     }
   }
 
   function handleClose() {
-    if (busy) return;
-    onClose();
+    if (busy) return
+    onClose()
   }
 
   async function copyText(text: string, label: string) {
-    const value = text.trim();
-    if (!value || busy) return;
+    const value = text.trim()
+    if (!value || busy) return
 
     try {
-      await navigator.clipboard.writeText(value);
-      toast.success(`Đã sao chép ${label}`);
+      await navigator.clipboard.writeText(value)
+      toast.success(t('metadata.copySuccess', { label }))
     } catch {
-      toast.error(`Không thể sao chép ${label}`);
+      toast.error(t('metadata.copyError', { label }))
     }
   }
 
   async function handleCopyFolderPath() {
-    if (!content?.videoFolderPath) return;
-    await copyText(content.videoFolderPath, 'đường dẫn folder');
+    if (!content?.videoFolderPath) return
+    await copyText(content.videoFolderPath, t('metadata.folderPathLabel'))
   }
 
   const withCacheBust = (url: string | null | undefined) => {
-    if (!url) return null;
-    if (contentCacheBust <= 0) return url;
-    const sep = url.includes('?') ? '&' : '?';
-    return `${url}${sep}v=${contentCacheBust}`;
-  };
-  const thumbnailSrc = withCacheBust(content?.thumbnailUrl) ?? null;
+    if (!url) return null
+    if (contentCacheBust <= 0) return url
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}v=${contentCacheBust}`
+  }
+  const thumbnailSrc = withCacheBust(content?.thumbnailUrl) ?? null
 
   return (
     <Modal
       open={open}
       onClose={handleClose}
-      title="Tạo Metadata"
+      title={t('metadata.title')}
       className="max-w-5xl"
       bodyClassName="max-h-[calc(100svh-10rem)] overflow-y-auto"
       footer={
@@ -227,15 +231,15 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
             className="mr-auto"
             onClick={() => void handleCopyFolderPath()}
             disabled={!content?.videoFolderPath || busy}
-            title="Sao chép đường dẫn folder"
+            title={t('metadata.copyFolderPath')}
           >
-            Copy path
+            {t('metadata.copyFolderPath')}
           </Button>
           <Button variant="secondary" onClick={handleClose} disabled={busy}>
-            Hủy
+            {tCommon('actions.cancel')}
           </Button>
           <Button onClick={() => void handleCreateMetadata()} disabled={busy || !trimmedUrl}>
-            {recreateInProgress || enqueueing ? 'Đang tạo…' : 'Tạo Metadata'}
+            {recreateInProgress || enqueueing ? t('metadata.creating') : t('metadata.create')}
           </Button>
         </>
       }
@@ -249,20 +253,20 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
 
         <div>
           <label htmlFor="recreate-metadata-video-url" className="mb-1.5 block text-sm font-medium text-neutral-200">
-            Link Video
+            {t('metadata.videoLink')}
           </label>
           <Input
             id="recreate-metadata-video-url"
             value={videoUrl}
             onChange={event => setVideoUrl(event.target.value)}
-            placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
+            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
             className="h-10 rounded-lg font-mono text-sm"
             disabled={busy}
           />
         </div>
 
         {loadingContent ? (
-          <div className="space-y-4" aria-label="Đang tải metadata">
+          <div className="space-y-4" aria-label={t('metadata.loadingAria')}>
             <div className="h-10 animate-pulse rounded-lg bg-neutral-800" />
             <div className="h-28 animate-pulse rounded-xl bg-neutral-800" />
             <div className="aspect-video animate-pulse rounded-xl bg-neutral-800" />
@@ -272,53 +276,46 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
             <div>
               <div className="mb-1.5 flex items-center gap-2">
                 <label htmlFor="recreate-metadata-title" className="text-sm font-medium text-neutral-200">
-                  Tiêu đề
+                  {t('metadata.fieldTitle')}
                 </label>
                 <FieldCopyButton
-                  label="tiêu đề"
+                  label={t('metadata.fieldTitle')}
                   disabled={!title.trim() || busy}
-                  onClick={() => void copyText(title, 'tiêu đề')}
+                  onClick={() => void copyText(title, t('metadata.fieldTitle'))}
                 />
               </div>
-              <Input
-                id="recreate-metadata-title"
-                value={title}
-                readOnly
-                className="h-10 rounded-lg"
-              />
+              <Input id="recreate-metadata-title" value={title} readOnly className="h-10 rounded-lg" />
             </div>
 
             <div>
               <div className="mb-1.5 flex items-center gap-2">
-                <label htmlFor="recreate-metadata-description" className="text-sm font-medium text-neutral-200">
-                  Mô tả
+                <label
+                  htmlFor="recreate-metadata-description"
+                  className="text-sm font-medium text-neutral-200"
+                >
+                  {t('metadata.fieldDescription')}
                 </label>
                 <FieldCopyButton
-                  label="mô tả"
+                  label={t('metadata.fieldDescription')}
                   disabled={!description.trim() || busy}
-                  onClick={() => void copyText(description, 'mô tả')}
+                  onClick={() => void copyText(description, t('metadata.fieldDescription'))}
                 />
               </div>
-              <Textarea
-                id="recreate-metadata-description"
-                value={description}
-                readOnly
-                rows={6}
-              />
+              <Textarea id="recreate-metadata-description" value={description} readOnly rows={6} />
             </div>
 
             <div>
               <div className="mb-1.5 flex items-center gap-2">
-                <span className="text-sm font-medium text-neutral-200">Tags</span>
+                <span className="text-sm font-medium text-neutral-200">{t('metadata.fieldTags')}</span>
                 <FieldCopyButton
-                  label="tags"
+                  label={t('metadata.fieldTags')}
                   disabled={tags.length === 0 || busy}
-                  onClick={() => void copyText(tags.join(', '), 'tags')}
+                  onClick={() => void copyText(tags.join(', '), t('metadata.fieldTags'))}
                 />
               </div>
               <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-elevated px-3 py-2">
                 {tags.length === 0 ? (
-                  <span className="text-sm text-neutral-500">Không có tag</span>
+                  <span className="text-sm text-neutral-500">{t('metadata.noTags')}</span>
                 ) : (
                   tags.map(tag => (
                     <span
@@ -334,20 +331,22 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
 
             <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
               <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">Thumbnail</h3>
+                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldThumbnail')}</h3>
                 {thumbnailSrc ? (
                   <Image
                     key={thumbnailSrc}
                     src={thumbnailSrc}
-                    alt={`Thumbnail ${title || activeVideoIdRef.current || 'video'}`}
+                    alt={`${t('metadata.fieldThumbnail')} ${title || activeVideoIdRef.current || 'video'}`}
                     aspectRatio="video"
                     fit="contain"
                     className="border border-border"
-                    fallback={<span className="px-4 text-center text-sm">Không thể hiển thị thumbnail</span>}
+                    fallback={
+                      <span className="px-4 text-center text-sm">{t('metadata.thumbnailError')}</span>
+                    }
                   />
                 ) : (
                   <div className="flex aspect-video items-center justify-center rounded-xl border border-border bg-neutral-900 px-4 text-center text-sm text-neutral-500">
-                    Chưa có thumbnail
+                    {t('metadata.noThumbnail')}
                   </div>
                 )}
               </section>
@@ -356,5 +355,5 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
         ) : null}
       </div>
     </Modal>
-  );
+  )
 }

@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { useTranslation } from 'react-i18next'
 import type { RecentProject } from '../../types/dashboard'
 import { Badge, DataTable } from '../ui'
 
@@ -8,28 +9,30 @@ interface RecentProjectsTableProps {
 }
 
 export function RecentProjectsTable({ projects, loading }: RecentProjectsTableProps) {
+  const { t } = useTranslation('dashboard')
+
   const columns: ColumnDef<RecentProject, unknown>[] = [
     {
       accessorKey: 'name',
-      header: 'Tên dự án',
+      header: t('recent.col.name'),
       cell: ({ getValue }) => <span className="text-foreground">{getValue<string>()}</span>,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
     {
       accessorKey: 'format',
-      header: 'Định dạng',
+      header: t('recent.col.format'),
       cell: ({ getValue }) => <span className="text-muted-foreground">{getValue<string>()}</span>,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
     {
       accessorKey: 'target',
-      header: 'Đích',
+      header: t('recent.col.destination'),
       cell: ({ getValue }) => <span className="text-muted-foreground">{getValue<string>()}</span>,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
     {
       accessorKey: 'status',
-      header: 'Trạng thái',
+      header: t('recent.col.status'),
       cell: ({ row }) => <Badge status={row.original.status} />,
       meta: { cellClassName: 'py-2.5', headerClassName: 'pb-2' },
     },
@@ -38,9 +41,9 @@ export function RecentProjectsTable({ projects, loading }: RecentProjectsTablePr
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">Dự án gần đây</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('recent.title')}</p>
         <button type="button" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
-          Xem tất cả
+          {t('recent.viewAll')}
         </button>
       </div>
       <DataTable
@@ -48,7 +51,7 @@ export function RecentProjectsTable({ projects, loading }: RecentProjectsTablePr
         columns={columns}
         getRowId={(project) => project.id}
         loading={loading}
-        emptyMessage="Chưa có dự án gần đây."
+        emptyMessage={t('recent.empty')}
       />
     </div>
   )

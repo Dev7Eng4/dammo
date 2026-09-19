@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type { SourceChannel } from '../types/sourceChannel';
 import type { ReupAudioVideoType, YoutubeChannel } from '../types/youtubeChannel';
 import { fetchVisualStyles } from '../api/visualStyles';
@@ -113,13 +114,13 @@ export function getReupAudioVideoStylePlaceholder(
   optionCount: number,
 ): string {
   if (loading) {
-    return 'Đang tải kiểu hình ảnh...';
+    return i18n.t('form.videoStyleLoading', { ns: 'youtube' });
   }
   if (!videoType) {
-    return 'Hãy chọn loại video trước';
+    return i18n.t('form.videoStyleNeedType', { ns: 'youtube' });
   }
   if (optionCount === 0) {
-    return 'Không có kiểu hình ảnh nào';
+    return i18n.t('form.videoStyleEmpty', { ns: 'youtube' });
   }
-  return 'Chọn kiểu video';
+  return i18n.t('form.videoStylePlaceholder', { ns: 'youtube' });
 }

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   celebrityMediaUrl,
   deleteCelebrity,
@@ -43,6 +44,7 @@ function TrashIcon({ className }: { className?: string }) {
 const MEDIA_ACCEPT = '.jpg,.jpeg,.png,.webp,.mp4,.mov,image/jpeg,image/png,image/webp,video/mp4,video/quicktime';
 
 export function CelebritiesPanel() {
+  const { t, i18n } = useTranslation(['content', 'common']);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<CelebrityListItem[]>([]);
@@ -109,9 +111,9 @@ export function CelebritiesPanel() {
       await uploadCelebrityMedia(selected.id, file);
       refreshMedia();
       refreshList();
-      toast.success(`Đã thêm ${file.name}`);
+      toast.success(t('assets.celebrities.toast.mediaAdded', { name: file.name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể tải lên file');
+      toast.error(err instanceof Error ? err.message : t('assets.celebrities.toast.uploadError'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -126,9 +128,9 @@ export function CelebritiesPanel() {
       if (selected?.id === celebrityPendingDelete.id) setSelected(null);
       setCelebrityPendingDelete(null);
       refreshList();
-      toast.success('Đã xóa người nổi tiếng');
+      toast.success(t('assets.celebrities.toast.deleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa');
+      toast.error(err instanceof Error ? err.message : t('assets.celebrities.toast.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -142,9 +144,9 @@ export function CelebritiesPanel() {
       setMediaPendingDelete(null);
       refreshMedia();
       refreshList();
-      toast.success('Đã xóa 1 file');
+      toast.success(t('assets.celebrities.toast.mediaDeleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa file');
+      toast.error(err instanceof Error ? err.message : t('assets.celebrities.toast.mediaDeleteError'));
     } finally {
       setDeleting(false);
     }
@@ -160,7 +162,7 @@ export function CelebritiesPanel() {
               onClick={() => setSelected(null)}
               className="mb-1 text-xs font-medium text-primary-400 hover:text-primary-300"
             >
-              ← Quay lại danh sách
+              {t('assets.celebrities.backToList')}
             </button>
             <h2 className="truncate text-base font-semibold text-neutral-100">{selected.name}</h2>
             {selected.note ? <p className="mt-0.5 text-xs text-neutral-500">{selected.note}</p> : null}
@@ -182,17 +184,17 @@ export function CelebritiesPanel() {
               disabled={uploading || deleting}
               onClick={() => fileInputRef.current?.click()}
             >
-              {uploading ? 'Đang tải lên…' : 'Thêm ảnh / video'}
+              {uploading ? t('assets.uploading') : t('assets.celebrities.addMedia')}
             </Button>
           </div>
         </div>
 
         <div className="card-surface space-y-4 p-5">
           {mediaLoading ? (
-            <p className="py-10 text-center text-sm text-neutral-500">Đang tải media…</p>
+            <p className="py-10 text-center text-sm text-neutral-500">{t('assets.celebrities.loadingMedia')}</p>
           ) : media.length === 0 ? (
             <p className="py-10 text-center text-sm text-neutral-500">
-              Chưa có ảnh hoặc video. Bấm &quot;Thêm ảnh / video&quot; để tải lên.
+              {t('assets.celebrities.emptyMedia')}
             </p>
           ) : (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
@@ -219,7 +221,7 @@ export function CelebritiesPanel() {
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100">
                         <button
                           type="button"
-                          title="Xem"
+                          title={t('assets.view')}
                           className="rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800"
                           onClick={() => setPreview({ url: src, kind: item.kind })}
                         >
@@ -227,7 +229,7 @@ export function CelebritiesPanel() {
                         </button>
                         <button
                           type="button"
-                          title="Xóa"
+                          title={t('common:actions.delete')}
                           className="rounded-full bg-rose-600/90 p-2 text-white hover:bg-rose-500"
                           onClick={() => setMediaPendingDelete(item.name)}
                         >
@@ -238,7 +240,10 @@ export function CelebritiesPanel() {
                     <div className="min-w-0 border-t border-neutral-800 bg-surface px-2 py-2">
                       <p className="truncate text-[11px] font-medium text-neutral-200">{item.name}</p>
                       <p className="text-[10px] text-neutral-500">
-                        {item.kind === 'image' ? 'Ảnh' : 'Video'} · {formatBytes(item.size)}
+                        {item.kind === 'image'
+                          ? t('assets.celebrities.kindImage')
+                          : t('assets.celebrities.kindVideo')}{' '}
+                        · {formatBytes(item.size)}
                       </p>
                     </div>
                   </div>
@@ -251,7 +256,7 @@ export function CelebritiesPanel() {
         <Modal
           open={Boolean(mediaPendingDelete)}
           onClose={deleting ? () => undefined : () => setMediaPendingDelete(null)}
-          title="Xóa file?"
+          title={t('assets.celebrities.deleteMediaTitle')}
           footer={
             <>
               <Button
@@ -261,16 +266,16 @@ export function CelebritiesPanel() {
                 onClick={() => setMediaPendingDelete(null)}
                 disabled={deleting}
               >
-                Hủy
+                {t('common:actions.cancel')}
               </Button>
               <Button size="sm" className="rounded-lg" disabled={deleting} onClick={() => void handleConfirmDeleteMedia()}>
-                {deleting ? 'Đang xóa…' : 'Xóa'}
+                {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
               </Button>
             </>
           }
         >
           <p className="text-sm text-neutral-300">
-            Bạn có chắc muốn xóa file {mediaPendingDelete ?? ''}?
+            {t('assets.celebrities.deleteMediaBody', { name: mediaPendingDelete ?? '' })}
           </p>
         </Modal>
 
@@ -278,7 +283,7 @@ export function CelebritiesPanel() {
           <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
             <button
               type="button"
-              aria-label="Đóng xem media"
+              aria-label={t('assets.celebrities.closePreview')}
               className="absolute inset-0 bg-black/80"
               onClick={() => setPreview(null)}
             />
@@ -299,7 +304,7 @@ export function CelebritiesPanel() {
                 className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black"
                 onClick={() => setPreview(null)}
               >
-                Đóng
+                {t('common:actions.close')}
               </button>
             </div>
           </div>
@@ -312,19 +317,21 @@ export function CelebritiesPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-neutral-400">
-          {items.length.toLocaleString('vi-VN')} người nổi tiếng
+          {t('assets.celebrities.count', {
+            count: items.length.toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN'),
+          })}
         </span>
         <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-          + Thêm người nổi tiếng
+          {t('assets.celebrities.add')}
         </Button>
       </div>
 
       <div className="card-surface p-5">
         {loading ? (
-          <p className="py-10 text-center text-sm text-neutral-500">Đang tải danh sách…</p>
+          <p className="py-10 text-center text-sm text-neutral-500">{t('assets.celebrities.loading')}</p>
         ) : items.length === 0 ? (
           <p className="py-10 text-center text-sm text-neutral-500">
-            Chưa có người nổi tiếng. Bấm &quot;Thêm người nổi tiếng&quot; để bắt đầu.
+            {t('assets.celebrities.empty')}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -343,12 +350,12 @@ export function CelebritiesPanel() {
                     <p className="mt-0.5 truncate text-xs text-neutral-500">{item.note}</p>
                   ) : null}
                   <p className="mt-1 text-[11px] text-neutral-500">
-                    {item.mediaCount} file media
+                    {t('assets.celebrities.mediaCount', { count: item.mediaCount })}
                   </p>
                 </button>
                 <button
                   type="button"
-                  title="Xóa"
+                  title={t('common:actions.delete')}
                   className="shrink-0 rounded-md p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-rose-400"
                   onClick={() => setCelebrityPendingDelete(item)}
                 >
@@ -365,14 +372,14 @@ export function CelebritiesPanel() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           refreshList();
-          toast.success('Đã thêm người nổi tiếng');
+          toast.success(t('assets.celebrities.toast.added'));
         }}
       />
 
       <Modal
         open={Boolean(celebrityPendingDelete)}
         onClose={deleting ? () => undefined : () => setCelebrityPendingDelete(null)}
-        title="Xóa người nổi tiếng?"
+        title={t('assets.celebrities.deleteTitle')}
         footer={
           <>
             <Button
@@ -382,7 +389,7 @@ export function CelebritiesPanel() {
               onClick={() => setCelebrityPendingDelete(null)}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               size="sm"
@@ -390,13 +397,13 @@ export function CelebritiesPanel() {
               disabled={deleting}
               onClick={() => void handleConfirmDeleteCelebrity()}
             >
-              {deleting ? 'Đang xóa…' : 'Xóa'}
+              {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Bạn có chắc muốn xóa {celebrityPendingDelete?.name ?? ''} và toàn bộ ảnh/video đi kèm?
+          {t('assets.celebrities.deleteBody', { name: celebrityPendingDelete?.name ?? '' })}
         </p>
       </Modal>
     </div>

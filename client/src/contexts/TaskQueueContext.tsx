@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   cancelTask,
   clearFinishedTasks,
@@ -19,7 +20,6 @@ import type {
   TaskJob,
   TaskJobListItem,
   TaskLogEntry,
-  TaskStatus,
 } from '../types/taskQueue';
 import { isActiveTaskStatus, isTerminalTaskStatus, mergeTaskJob } from '../types/taskQueue';
 
@@ -79,6 +79,7 @@ function getListIntervalMs(jobs: TaskJobListItem[], liveJobId: string | null): n
 }
 
 export function TaskQueueProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('factory');
   const { toast } = useToast();
   const [jobs, setJobs] = useState<TaskJobListItem[]>([]);
   const [paused, setPaused] = useState(false);
@@ -99,10 +100,12 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   const jobsRef = useRef(jobs);
   const liveJobIdRef = useRef(liveJobId);
   const toastRef = useRef(toast);
+  const tRef = useRef(t);
 
   jobsRef.current = jobs;
   liveJobIdRef.current = liveJobId;
   toastRef.current = toast;
+  tRef.current = t;
 
   const bumpDetail = useCallback(() => setDetailVersion(v => v + 1), []);
 
@@ -121,7 +124,7 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
     if (job.status !== 'running') return;
     if (startedNotifiedRef.current.has(job.id)) return;
     startedNotifiedRef.current.add(job.id);
-    toastRef.current.success(`Đã bắt đầu: ${job.title}`);
+    toastRef.current.success(tRef.current('queue.toast.started', { title: job.title }));
   }, []);
 
   const seedInitialJobs = useCallback((items: TaskJobListItem[]) => {
@@ -478,11 +481,11 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
         void refresh();
         return item;
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to enqueue task');
+        toast.error(err instanceof Error ? err.message : t('queue.toast.enqueueError'));
         throw err;
       }
     },
-    [applyFullJob, refresh, toast],
+    [applyFullJob, refresh, t, toast],
   );
 
   const retryJob = useCallback(
@@ -524,23 +527,23 @@ export function TaskQueueProvider({ children }: { children: ReactNode }) {
   const togglePause = useCallback(async () => {
     const result = paused ? await resumeTaskQueue() : await pauseTaskQueue();
     setPaused(result.paused);
-    toast.success(result.paused ? 'Đã tạm dừng hàng đợi' : 'Đã tiếp tục hàng đợi');
+    toast.success(result.paused ? t('queue.toast.paused') : t('queue.toast.resumed'));
     await refresh();
-  }, [paused, refresh, toast]);
+  }, [paused, refresh, t, toast]);
 
   const clearFinishedJobs = useCallback(async () => {
     try {
       const { removed, ids } = await clearFinishedTasks();
       removeJobsByIds(ids);
       if (removed > 0) {
-        toast.success(`Đã xóa ${removed} công việc đã xong`);
+        toast.success(t('queue.toast.cleared', { count: removed }));
       }
       return removed;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to clear finished jobs');
+      toast.error(err instanceof Error ? err.message : t('queue.toast.clearError'));
       throw err;
     }
-  }, [removeJobsByIds, toast]);
+  }, [removeJobsByIds, t, toast]);
 
   const summary = useMemo(
     () => ({

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Input, Button } from '../ui'
 import { ListToolbar } from '../layout'
 import type { GpmProfileSort } from '../../types/gpm'
@@ -49,16 +50,17 @@ export function GpmProfilesToolbar({
   onEdit,
   onDelete,
 }: GpmProfilesToolbarProps) {
+  const { t } = useTranslation(['browser', 'common'])
   const busy = loading || starting || stopping || testing || deleting
 
   return (
     <ListToolbar
-      countLabel={<span>{count.toLocaleString()} profile</span>}
+      countLabel={<span>{t('gpm.profiles.count', { count: count.toLocaleString() })}</span>}
       filters={
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Tìm profile…"
+          placeholder={t('gpm.profiles.search')}
           className="h-9 w-48 text-sm"
           disabled={busy}
         />
@@ -66,7 +68,7 @@ export function GpmProfilesToolbar({
       extraActions={
         <>
           <Button variant="outlined" size="sm" onClick={onRefresh} disabled={busy}>
-            Làm mới
+            {t('common:actions.refresh')}
           </Button>
           <Button
             variant="outlined"
@@ -75,16 +77,16 @@ export function GpmProfilesToolbar({
             onClick={onStart}
             disabled={!canStart || starting || busy}
           >
-            {starting ? 'Đang khởi động…' : 'Khởi động'}
+            {starting ? t('gpm.profiles.starting') : t('gpm.profiles.start')}
           </Button>
           <Button variant="danger" size="sm" onClick={onStop} disabled={!canStop || stopping || busy}>
-            {stopping ? 'Đang dừng…' : 'Dừng'}
+            {stopping ? t('gpm.profiles.stopping') : t('gpm.profiles.stop')}
           </Button>
           <Button variant="outlined" size="sm" onClick={onTest} disabled={!canTest || testing || busy}>
-            {testing ? 'Đang kiểm tra…' : 'Kiểm tra'}
+            {testing ? t('gpm.profiles.testing') : t('gpm.profiles.test')}
           </Button>
           <Button variant="outlined" size="sm" onClick={onEdit} disabled={!canEdit || busy}>
-            Sửa
+            {t('gpm.profiles.edit')}
           </Button>
           <Button
             variant="outlined"
@@ -93,11 +95,11 @@ export function GpmProfilesToolbar({
             onClick={onDelete}
             disabled={!canDelete || deleting || busy}
           >
-            {deleting ? 'Đang xóa…' : 'Xóa'}
+            {deleting ? t('common:actions.deleting') : t('gpm.profiles.delete')}
           </Button>
         </>
       }
-      primaryAction={{ label: 'Thêm Profile', onClick: onAddProfile, disabled: busy }}
+      primaryAction={{ label: t('gpm.profiles.add'), onClick: onAddProfile, disabled: busy }}
     />
   )
 }

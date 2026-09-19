@@ -1,0 +1,25 @@
+{
+  "section": {
+    "accounts": "TÀI KHOẢN",
+    "browser": "TRÌNH DUYỆT",
+    "sources": "NGUỒN",
+    "content": "NỘI DUNG",
+    "videoFactory": "NHÀ MÁY VIDEO"
+  },
+  "item": {
+    "mail": "Email",
+    "youtube": "YouTube",
+    "tiktok": "TikTok",
+    "facebook": "Facebook",
+    "chromeProfiles": "Hồ sơ Chrome",
+    "gpmManager": "Quản lý GPM",
+    "proxies": "Proxy",
+    "source": "Kênh nguồn",
+    "prompts": "Prompt",
+    "visualStyles": "Phong cách hình ảnh",
+    "assets": "Tài nguyên",
+    "taskQueue": "Công việc đang chạy",
+    "videoProduction": "Sản xuất video",
+    "settings": "Cài đặt"
+  }
+}

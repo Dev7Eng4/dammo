@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import { isAbortError } from '../../api/http';
-import { fetchYoutubeVideoComments } from '../../api/youtubeChannels';
-import { Drawer } from '../ui';
-import { CommentThread } from './CommentThread';
-import { useAbortableEffect } from '../../hooks';
-import type { YoutubeChannelVideo, YoutubeVideoComment } from '../../types/youtubeChannel';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { isAbortError } from '../../api/http'
+import { fetchYoutubeVideoComments } from '../../api/youtubeChannels'
+import { Drawer } from '../ui'
+import { CommentThread } from './CommentThread'
+import { useAbortableEffect } from '../../hooks'
+import type { YoutubeChannelVideo, YoutubeVideoComment } from '../../types/youtubeChannel'
 
 interface VideoCommentsDrawerProps {
-  open: boolean;
-  channelId: string;
-  video: YoutubeChannelVideo | null;
-  onClose: () => void;
+  open: boolean
+  channelId: string
+  video: YoutubeChannelVideo | null
+  onClose: () => void
 }
 
 function countAllComments(comments: YoutubeVideoComment[]): number {
   return comments.reduce(
     (total, comment) => total + 1 + (comment.replies ? countAllComments(comment.replies) : 0),
     0,
-  );
+  )
 }
 
 function CommentsSkeleton() {
@@ -34,54 +35,52 @@ function CommentsSkeleton() {
         </div>
       ))}
     </div>
-  );
+  )
 }
 
 export function VideoCommentsDrawer({ open, channelId, video, onClose }: VideoCommentsDrawerProps) {
-  const [comments, setComments] = useState<YoutubeVideoComment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { t, i18n } = useTranslation('youtube')
+  const [comments, setComments] = useState<YoutubeVideoComment[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useAbortableEffect(
-    async (signal) => {
-      if (!video) return;
+    async signal => {
+      if (!video) return
 
-      setLoading(true);
-      setError(null);
-      setComments([]);
+      setLoading(true)
+      setError(null)
+      setComments([])
 
       try {
-        const data = await fetchYoutubeVideoComments(channelId, video.id, { signal });
-        setComments(data.items);
+        const data = await fetchYoutubeVideoComments(channelId, video.id, { signal })
+        setComments(data.items)
       } catch (err) {
-        if (isAbortError(err)) return;
-        setComments([]);
-        setError(err instanceof Error ? err.message : 'Không thể tải bình luận');
+        if (isAbortError(err)) return
+        setComments([])
+        setError(err instanceof Error ? err.message : t('comments.loadError'))
       } finally {
-        if (!signal.aborted) setLoading(false);
+        if (!signal.aborted) setLoading(false)
       }
     },
-    [channelId, video?.id],
+    [channelId, video?.id, t],
     { enabled: open && Boolean(video) },
-  );
+  )
 
-  if (!video) return null;
+  if (!video) return null
 
-  const totalComments = countAllComments(comments);
+  const totalComments = countAllComments(comments)
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      title="Bình luận"
-      subtitle={video.title}
-    >
+    <Drawer open={open} onClose={onClose} title={t('comments.title')} subtitle={video.title}>
       <div className="p-4">
         {!loading && !error ? (
           <p className="mb-4 text-xs text-neutral-500">
             {totalComments > 0
-              ? `${totalComments.toLocaleString('vi-VN')} bình luận`
-              : 'Video này chưa có bình luận'}
+              ? t('comments.count', {
+                  count: totalComments.toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN'),
+                })
+              : t('comments.empty')}
           </p>
         ) : null}
 
@@ -95,18 +94,18 @@ export function VideoCommentsDrawer({ open, channelId, video, onClose }: VideoCo
 
         {!loading && !error && comments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm text-neutral-400">Không tìm thấy bình luận nào.</p>
+            <p className="text-sm text-neutral-400">{t('comments.noneFound')}</p>
           </div>
         ) : null}
 
         {!loading && !error && comments.length > 0 ? (
           <div className="space-y-5">
-            {comments.map((comment) => (
+            {comments.map(comment => (
               <CommentThread key={comment.id} comment={comment} />
             ))}
           </div>
         ) : null}
       </div>
     </Drawer>
-  );
+  )
 }

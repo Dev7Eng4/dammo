@@ -1,0 +1,25 @@
+{
+  "section": {
+    "accounts": "ACCOUNTS",
+    "browser": "BROWSER",
+    "sources": "SOURCES",
+    "content": "CONTENT",
+    "videoFactory": "VIDEO FACTORY"
+  },
+  "item": {
+    "mail": "Email",
+    "youtube": "YouTube",
+    "tiktok": "TikTok",
+    "facebook": "Facebook",
+    "chromeProfiles": "Chrome profiles",
+    "gpmManager": "GPM manager",
+    "proxies": "Proxies",
+    "source": "Source channels",
+    "prompts": "Prompts",
+    "visualStyles": "Visual styles",
+    "assets": "Assets",
+    "taskQueue": "Running tasks",
+    "videoProduction": "Video production",
+    "settings": "Settings"
+  }
+}

@@ -1,28 +1,30 @@
-import { useState } from 'react';
-import { Input } from '../ui';
-import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm';
-import type { Niche } from '../../types/niche';
-import { formatChannelLanguageLabel, type YoutubeChannel } from '../../types/youtubeChannel';
-import { resolveNicheLabel } from '../../utils/niche';
-import { ChannelStatusPill } from './ChannelStatusPill';
-import { MonetizationPill } from './MonetizationPill';
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Input } from '../ui'
+import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm'
+import type { Niche } from '../../types/niche'
+import { type YoutubeChannel, type YoutubeChannelLanguage } from '../../types/youtubeChannel'
+import { resolveNicheLabel } from '../../utils/niche'
+import { ChannelStatusPill } from './ChannelStatusPill'
+import { MonetizationPill } from './MonetizationPill'
 
 interface YoutubeChannelDetailPanelProps {
-  channel: YoutubeChannel | null;
-  niches?: Niche[];
-  loading?: boolean;
-  onClose: () => void;
+  channel: YoutubeChannel | null
+  niches?: Niche[]
+  loading?: boolean
+  onClose: () => void
 }
 
 function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
+  const { t: tCommon } = useTranslation('common')
+  const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
-    if (!value) return;
+    if (!value) return
     try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
     } catch {
       /* clipboard unavailable */
     }
@@ -32,7 +34,7 @@ function CopyButton({ value }: { value: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      title={copied ? 'Copied!' : 'Copy'}
+      title={copied ? tCommon('actions.copied') : tCommon('actions.copy')}
       className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
     >
       {copied ? (
@@ -46,7 +48,7 @@ function CopyButton({ value }: { value: string }) {
         </svg>
       )}
     </button>
-  );
+  )
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -54,17 +56,24 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-neutral-500">
       {children}
     </label>
-  );
+  )
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">{children}</h3>
-  );
+  )
 }
 
-export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClose }: YoutubeChannelDetailPanelProps) {
-  if (!channel && !loading) return null;
+export function YoutubeChannelDetailPanel({
+  channel,
+  niches = [],
+  loading,
+  onClose,
+}: YoutubeChannelDetailPanelProps) {
+  const { t } = useTranslation('youtube')
+
+  if (!channel && !loading) return null
 
   if (loading) {
     return (
@@ -77,12 +86,14 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
           <div className="h-20 rounded bg-neutral-800" />
         </div>
       </aside>
-    );
+    )
   }
 
-  if (!channel) return null;
+  if (!channel) return null
 
-  const initial = channel.name.charAt(0).toUpperCase();
+  const initial = channel.name.charAt(0).toUpperCase()
+  const languageKey = `language.${channel.language as YoutubeChannelLanguage}` as const
+  const languageLabel = t(languageKey, { defaultValue: channel.language })
 
   return (
     <aside className="flex h-full w-full flex-col border-l border-border bg-surface shadow-xl lg:w-80 lg:shadow-none xl:w-96">
@@ -100,7 +111,7 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-0.5 inline-block truncate text-xs text-secondary-400 hover:underline"
-                onClick={(e) => e.stopPropagation()}
+                onClick={e => e.stopPropagation()}
               >
                 {channel.youtubeUrl.replace('https://', '')}
               </a>
@@ -125,10 +136,10 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
 
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
           <div>
-            <SectionTitle>Cấu hình</SectionTitle>
+            <SectionTitle>{t('detail.config')}</SectionTitle>
             <div className="space-y-3">
               <div>
-                <FieldLabel>Email liên kết</FieldLabel>
+                <FieldLabel>{t('detail.linkedEmail')}</FieldLabel>
                 <div className="relative">
                   <Input
                     readOnly
@@ -139,7 +150,7 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
                 </div>
               </div>
               <div>
-                <FieldLabel>Niche</FieldLabel>
+                <FieldLabel>{t('form.niche')}</FieldLabel>
                 <Input
                   readOnly
                   value={resolveNicheLabel(channel.niche, niches) || '—'}
@@ -147,21 +158,25 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
                 />
               </div>
               <div>
-                <FieldLabel>Ngôn ngữ</FieldLabel>
-                <Input readOnly value={formatChannelLanguageLabel(channel.language)} className="h-9 rounded-lg text-sm" />
+                <FieldLabel>{t('detail.language')}</FieldLabel>
+                <Input readOnly value={languageLabel} className="h-9 rounded-lg text-sm" />
               </div>
             </div>
           </div>
 
           <div>
-            <SectionTitle>Vận hành</SectionTitle>
+            <SectionTitle>{t('detail.ops')}</SectionTitle>
             <div className="space-y-3">
               <div>
-                <FieldLabel>Lịch tải lên</FieldLabel>
-                <Input readOnly value={formatChannelUploadSchedule(channel)} className="h-9 rounded-lg text-sm" />
+                <FieldLabel>{t('detail.uploadSchedule')}</FieldLabel>
+                <Input
+                  readOnly
+                  value={formatChannelUploadSchedule(channel)}
+                  className="h-9 rounded-lg text-sm"
+                />
               </div>
               <div>
-                <FieldLabel>Kênh nguồn</FieldLabel>
+                <FieldLabel>{t('detail.sourceChannels')}</FieldLabel>
                 <Input
                   readOnly
                   value={
@@ -175,17 +190,21 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
                 />
               </div>
               <div>
-                <FieldLabel>Dự án nội dung</FieldLabel>
-                <Input readOnly value={channel.contentProjectId} className="h-9 rounded-lg text-sm font-mono" />
+                <FieldLabel>{t('detail.contentProject')}</FieldLabel>
+                <Input
+                  readOnly
+                  value={channel.contentProjectId}
+                  className="h-9 rounded-lg text-sm font-mono"
+                />
               </div>
             </div>
           </div>
 
           {channel.notes ? (
             <div>
-              <SectionTitle>Ghi chú</SectionTitle>
+              <SectionTitle>{t('detail.notes')}</SectionTitle>
               <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">
-                <p className="text-xs font-medium text-warning">Cảnh báo bản quyền</p>
+                <p className="text-xs font-medium text-warning">{t('detail.copyrightWarning')}</p>
                 <p className="mt-1 text-xs text-neutral-300">{channel.notes}</p>
               </div>
             </div>
@@ -193,5 +212,5 @@ export function YoutubeChannelDetailPanel({ channel, niches = [], loading, onClo
         </div>
       </div>
     </aside>
-  );
+  )
 }

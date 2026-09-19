@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import {
   formatTaskTimestamp,
@@ -80,6 +81,8 @@ function progressBarClass(status: TaskJobListItem['status']): string {
 }
 
 export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopyPath }: TaskJobCardProps) {
+  const { t, i18n } = useTranslation('factory');
+  void i18n.language;
   const detail = getTaskDetailLine(job);
   const progress = getTaskProgressValue(job);
   const outputPath = getTaskOutputPath(job);
@@ -93,6 +96,12 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
   function handleCardClick() {
     if (isSelectable) onSelect?.(job);
   }
+
+  const progressLabel =
+    job.status === 'failed'
+      ? t('queue.job.stepLabel', { label: job.progressLabel ?? t('queue.job.processing') })
+      : job.progressLabel ??
+        (job.status === 'completed' ? t('queue.job.completed') : t('queue.job.processing'));
 
   return (
     <article
@@ -145,11 +154,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
             ) : (
               <div className="mt-3">
                 <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-500">
-                  <span className="truncate">
-                    {job.status === 'failed'
-                    ? `Bước: ${job.progressLabel ?? 'Đang xử lý'}`
-                    : job.progressLabel ?? (job.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý')}
-                  </span>
+                  <span className="truncate">{progressLabel}</span>
                   <span className="shrink-0">{progress}%</span>
                 </div>
                 {job.status === 'failed' ? (
@@ -187,7 +192,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                   onCancel(job.id);
                 }}
                 className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
-                aria-label="Hủy công việc"
+                aria-label={t('queue.job.cancelAria')}
               >
                 <svg viewBox="0 0 20 20" className="size-4" fill="currentColor">
                   <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
@@ -212,7 +217,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                     clipRule="evenodd"
                   />
                 </svg>
-                Thử lại
+                {t('queue.job.retry')}
               </Button>
             ) : null}
 
@@ -229,7 +234,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                 <svg viewBox="0 0 20 20" className="mr-1 size-3.5" fill="currentColor" aria-hidden>
                   <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                 </svg>
-                Đường dẫn
+                {t('queue.job.path')}
               </Button>
             ) : null}
 
@@ -239,7 +244,7 @@ export function TaskJobCard({ job, selected, onSelect, onCancel, onRetry, onCopy
                 onClick={(event) => event.stopPropagation()}
                 className="inline-flex h-8 items-center rounded-lg border border-border px-2.5 text-xs font-medium text-neutral-300 hover:bg-surface-elevated"
               >
-                Xem
+                {t('queue.job.view')}
               </Link>
             ) : null}
           </div>

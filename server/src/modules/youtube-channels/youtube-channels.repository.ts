@@ -2,7 +2,11 @@ import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { isUuid } from '../../shared/id.js';
 import { normalizeChannelLanguage } from './channel-language.js';
-import { normalizeYoutubeChannel, channelNeedsMigration } from './youtube-channel-migration.js';
+import {
+  normalizeChannelStatus,
+  normalizeYoutubeChannel,
+  channelNeedsMigration,
+} from './youtube-channel-migration.js';
 import type { YoutubeChannel, YoutubeChannelsStore } from './youtube-channels.types.js';
 
 const EMPTY_STORE: YoutubeChannelsStore = { channels: [] };
@@ -28,6 +32,14 @@ function migrateStore(raw: LegacyYoutubeChannelsStore): YoutubeChannelsStore {
   return store;
 }
 
+function hydrateChannel(channel: YoutubeChannel): YoutubeChannel {
+  return {
+    ...channel,
+    language: normalizeChannelLanguage(channel.language),
+    status: normalizeChannelStatus(channel.status),
+  };
+}
+
 function loadStore(): YoutubeChannelsStore {
   const raw = readJson<LegacyYoutubeChannelsStore>(paths.youtubeChannels);
   if (!raw || !Array.isArray(raw.channels)) return EMPTY_STORE;
@@ -36,20 +48,16 @@ function loadStore(): YoutubeChannelsStore {
 }
 
 export class YoutubeChannelsRepository {
-  findAll(): YoutubeChannel[] {
-    return loadStore().channels.map((channel) => ({
-      ...channel,
-      language: normalizeChannelLanguage(channel.language),
-    }));
+  findAll(options?: { includeDeleted?: boolean }): YoutubeChannel[] {
+    const channels = loadStore().channels.map(hydrateChannel);
+    if (options?.includeDeleted) return channels;
+    return channels.filter((channel) => channel.status !== 'deleted');
   }
 
   findById(id: string): YoutubeChannel | null {
     const channel = loadStore().channels.find((c) => c.id === id) ?? null;
     if (!channel) return null;
-    return {
-      ...channel,
-      language: normalizeChannelLanguage(channel.language),
-    };
+    return hydrateChannel(channel);
   }
 
   prepend(channel: YoutubeChannel): YoutubeChannel {
@@ -72,7 +80,7 @@ export class YoutubeChannelsRepository {
         const index = store.channels.findIndex((c) => c.id === id);
         if (index === -1) return store;
 
-        updated = updater(store.channels[index]);
+        updated = updater(hydrateChannel(store.channels[index]));
         const channels = [...store.channels];
         channels[index] = updated;
         return { channels };
@@ -83,24 +91,13 @@ export class YoutubeChannelsRepository {
     return updated;
   }
 
+  /** Soft-delete: mark status deleted (keeps row in store). */
   remove(id: string): boolean {
-    let removed = false;
-
-    updateJson(
-      paths.youtubeChannels,
-      (store) => {
-        const index = store.channels.findIndex((c) => c.id === id);
-        if (index === -1) return store;
-
-        removed = true;
-        const channels = [...store.channels];
-        channels.splice(index, 1);
-        return { channels };
-      },
-      loadStore(),
-    );
-
-    return removed;
+    const updated = this.update(id, (channel) => ({
+      ...channel,
+      status: 'deleted',
+    }));
+    return updated != null;
   }
 }
 

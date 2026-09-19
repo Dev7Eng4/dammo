@@ -1,12 +1,13 @@
+import { useTranslation } from 'react-i18next'
 import { StatusBadge, type StatusTone } from '../ui/StatusBadge'
 import type { TaskStatus } from '../../types/taskQueue'
 
-const statusConfig: Record<TaskStatus, { label: string; tone: StatusTone }> = {
-  running: { label: 'Đang chạy', tone: 'primary' },
-  completed: { label: 'Thành công', tone: 'success' },
-  failed: { label: 'Thất bại', tone: 'danger' },
-  queued: { label: 'Đang chờ', tone: 'neutral' },
-  cancelled: { label: 'Đã hủy', tone: 'neutral' },
+const statusTone: Record<TaskStatus, StatusTone> = {
+  running: 'primary',
+  completed: 'success',
+  failed: 'danger',
+  queued: 'neutral',
+  cancelled: 'neutral',
 }
 
 interface TaskJobStatusBadgeProps {
@@ -14,6 +15,6 @@ interface TaskJobStatusBadgeProps {
 }
 
 export function TaskJobStatusBadge({ status }: TaskJobStatusBadgeProps) {
-  const config = statusConfig[status]
-  return <StatusBadge label={config.label} tone={config.tone} withDot />
+  const { t } = useTranslation('factory')
+  return <StatusBadge label={t(`queue.status.${status}`)} tone={statusTone[status]} withDot />
 }

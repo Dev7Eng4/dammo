@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { updateGpmProfile } from '../../api/gpm';
 import { fetchProxies, setProfileProxy } from '../../api/proxies';
 import { fetchMailAccounts } from '../../api/mailAccounts';
@@ -28,6 +29,7 @@ function findAssignedProxyId(proxies: Proxy[], profileId: string): string {
 }
 
 export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose, onSuccess }: EditGpmProfileModalProps) {
+  const { t } = useTranslation(['browser', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const [proxies, setProxies] = useState<Proxy[]>([]);
   const [proxiesLoading, setProxiesLoading] = useState(false);
@@ -41,21 +43,21 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
 
   const groupOptions = useMemo(
     () => [
-      { value: '', label: 'Không nhóm' },
+      { value: '', label: t('gpm.addProfile.noGroup') },
       ...groups.map((group) => ({ value: group.id, label: group.name })),
     ],
-    [groups],
+    [groups, t],
   );
 
   const proxyOptions = useMemo(
     () => [
-      { value: '', label: 'Không proxy' },
+      { value: '', label: t('gpm.addProfile.noProxy') },
       ...proxies.map((proxy) => ({
         value: proxy.id,
         label: formatProxyOptionLabel(proxy),
       })),
     ],
-    [proxies],
+    [proxies, t],
   );
 
   const currentEmail = profile?.name?.trim() ?? '';
@@ -77,7 +79,6 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       options.push({ value: email, label: email });
     }
 
-    // Ensure current email always exists in options so the Select always shows a label.
     if (currentEmail && !normalizedSeen.has(currentEmailNormalized)) {
       options.unshift({ value: currentEmail, label: currentEmail });
     }
@@ -109,7 +110,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       .catch((err) => {
         if (!controller.signal.aborted) {
           setProxies([]);
-          setApiError(err instanceof Error ? err.message : 'Không tải được danh sách proxy');
+          setApiError(err instanceof Error ? err.message : t('gpm.addProfile.proxiesLoadError'));
         }
       })
       .finally(() => {
@@ -117,7 +118,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       });
 
     return () => controller.abort();
-  }, [open]);
+  }, [open, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +131,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       .catch((err) => {
         if (!controller.signal.aborted) {
           setMailAccounts([]);
-          setApiError(err instanceof Error ? err.message : 'Không tải được danh sách email');
+          setApiError(err instanceof Error ? err.message : t('gpm.addProfile.emailsLoadError'));
         }
       })
       .finally(() => {
@@ -138,7 +139,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       });
 
     return () => controller.abort();
-  }, [open]);
+  }, [open, t]);
 
   useEffect(() => {
     if (!open || !profile || proxiesLoading) return;
@@ -180,7 +181,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Cập nhật profile thất bại');
+      setApiError(err instanceof Error ? err.message : t('gpm.editProfile.error'));
     }
   }
 
@@ -190,11 +191,11 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
     <Modal
       open={open}
       onClose={handleClose}
-      title="Sửa GPM Profile"
+      title={t('gpm.editProfile.title')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button
             size="sm"
@@ -203,7 +204,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
             form="edit-gpm-profile-form"
             type="submit"
           >
-            {isSubmitting ? 'Đang lưu…' : 'Lưu thay đổi'}
+            {isSubmitting ? t('gpm.editProfile.saving') : t('gpm.editProfile.save')}
           </Button>
         </>
       }
@@ -211,12 +212,12 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
       <form id="edit-gpm-profile-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="edit-gpm-profile-email" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Email
+            {t('gpm.addProfile.email')}
           </label>
           <Controller
             name="name"
             control={control}
-            rules={{ required: 'Email là bắt buộc' }}
+            rules={{ required: t('gpm.addProfile.emailRequired') }}
             render={({ field }) => (
               <Select
                 id="edit-gpm-profile-email"
@@ -224,9 +225,9 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder={mailAccountsLoading ? 'Đang tải email...' : 'Chọn email'}
+                placeholder={mailAccountsLoading ? t('gpm.addProfile.loadingEmails') : t('gpm.addProfile.selectEmail')}
                 searchable
-                searchPlaceholder="Tìm kiếm email..."
+                searchPlaceholder={t('gpm.addProfile.searchEmail')}
                 disabled={isSubmitting || mailAccountsLoading || emailOptions.length === 0}
                 triggerClassName="h-10 rounded-lg text-sm"
               />
@@ -237,7 +238,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
 
         <div>
           <label htmlFor="edit-gpm-profile-group" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Nhóm
+            {t('gpm.addProfile.group')}
           </label>
           <Select
             id="edit-gpm-profile-group"
@@ -251,7 +252,7 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
 
         <div>
           <label htmlFor="edit-gpm-profile-proxy" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Proxy
+            {t('gpm.addProfile.proxy')}
           </label>
           <Select
             id="edit-gpm-profile-proxy"
@@ -262,13 +263,13 @@ export function EditGpmProfileModal({ open, profile, groups, usedEmails, onClose
             triggerClassName="h-10 rounded-lg font-mono text-sm"
           />
           {proxiesLoading ? (
-            <p className="mt-1 text-xs text-neutral-500">Đang tải proxy…</p>
+            <p className="mt-1 text-xs text-neutral-500">{t('gpm.addProfile.loadingProxies')}</p>
           ) : null}
         </div>
 
         <div>
           <label htmlFor="edit-gpm-profile-note" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ghi chú
+            {t('gpm.addProfile.note')}
           </label>
           <Textarea
             id="edit-gpm-profile-note"

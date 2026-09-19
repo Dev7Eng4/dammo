@@ -1,5 +1,6 @@
 import { MoreHorizontal, Plus } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../ui/Button'
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ export function ListToolbar({
   extraActions,
   className,
 }: ListToolbarProps) {
+  const { t } = useTranslation('common')
   return (
     <div className={cn('flex flex-wrap items-center justify-between gap-3', className)}>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
@@ -51,7 +53,7 @@ export function ListToolbar({
         {secondaryActions && secondaryActions.length > 0 ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outlined" size="sm" aria-label="Thêm thao tác">
+              <Button variant="outlined" size="sm" aria-label={t('aria.moreActions')}>
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>

@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createVisualStyle } from '../../api/visualStyles';
 import { Button, Input, Modal, Textarea } from '../ui';
 import type { VisualStyleFormValues } from '../../types/visualStyle';
@@ -11,6 +12,7 @@ interface AddVisualStyleModalProps {
 }
 
 export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyleModalProps) {
+  const { t } = useTranslation(['content', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -43,7 +45,7 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Không thể tạo phong cách hình ảnh');
+      setApiError(err instanceof Error ? err.message : t('visual.createError'));
     }
   }
 
@@ -51,14 +53,14 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
     <Modal
       open={open}
       onClose={handleClose}
-      title="Thêm phong cách hình ảnh"
+      title={t('visual.addTitle')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-visual-style-form" type="submit">
-            {isSubmitting ? 'Đang lưu...' : 'Thêm phong cách'}
+            {isSubmitting ? t('common:actions.saving') : t('visual.addSubmit')}
           </Button>
         </>
       }
@@ -66,40 +68,40 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
       <form id="add-visual-style-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="style-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên
+            {t('visual.form.name')}
           </label>
           <Input
             id="style-name"
             placeholder="Anime"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Vui lòng nhập tên' })}
+            {...register('name', { required: t('visual.form.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="style-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Chủ đề
+            {t('visual.form.niche')}
           </label>
           <Input
             id="style-niche"
             placeholder="horror, comedy, slice-of-life..."
             className="h-10 rounded-lg"
-            {...register('niche', { required: 'Vui lòng nhập chủ đề' })}
+            {...register('niche', { required: t('visual.form.nicheRequired') })}
           />
           {errors.niche ? <p className="mt-1 text-xs text-danger">{errors.niche.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="style-rule" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Quy tắc
+            {t('visual.form.rule')}
           </label>
           <Textarea
             id="style-rule"
             rows={6}
-            placeholder="Mô tả quy tắc phong cách hình ảnh..."
+            placeholder={t('visual.form.rulePlaceholder')}
             className="text-sm"
-            {...register('rule', { required: 'Vui lòng nhập quy tắc' })}
+            {...register('rule', { required: t('visual.form.ruleRequired') })}
           />
           {errors.rule ? <p className="mt-1 text-xs text-danger">{errors.rule.message}</p> : null}
         </div>

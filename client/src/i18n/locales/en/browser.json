@@ -1,0 +1,405 @@
+{
+  "chrome": {
+    "page": {
+      "title": "Chrome Profiles",
+      "subtitle": "Manage and open Chrome browser profiles"
+    },
+    "toolbar": {
+      "count": "{{count}} profile",
+      "editName": "Rename",
+      "open": "Open",
+      "opening": "Opening…",
+      "setMain": "Set as main",
+      "settingMain": "Setting…",
+      "resetSecondary": "Reset secondary profiles",
+      "resetting": "Resetting…",
+      "add": "Add profile"
+    },
+    "table": {
+      "col": {
+        "role": "ROLE",
+        "name": "NAME",
+        "order": "ORDER",
+        "profileId": "PROFILE ID",
+        "createdAt": "CREATED"
+      },
+      "roleMain": "Main",
+      "roleSecondary": "Secondary",
+      "empty": "No Chrome profiles yet. Add a profile to get started."
+    },
+    "add": {
+      "title": "Add Chrome profile",
+      "name": "Profile name",
+      "namePlaceholder": "e.g. Channel A",
+      "nameRequired": "Please enter a name",
+      "submit": "Add profile",
+      "submitting": "Creating...",
+      "hint": "A Playwright Chromium profile will be initialized on the server with its own user data directory.",
+      "error": "Could not create profile"
+    },
+    "edit": {
+      "title": "Rename Chrome profile",
+      "save": "Save changes",
+      "error": "Could not update profile name"
+    },
+    "toast": {
+      "created": "Chrome profile created successfully",
+      "renamed": "Chrome profile name updated",
+      "setMain": "\"{{name}}\" set as main profile",
+      "setSecondary": "\"{{name}}\" set as secondary profile",
+      "roleError": "Could not update profile role",
+      "resetDone": "Deleted {{count}} secondary profiles and created 8 new ones.",
+      "resetCreatedOnly": "Created 8 new secondary profiles.",
+      "resetError": "Could not reset secondary profiles",
+      "opened": "Opened Chrome profile \"{{name}}\"",
+      "openError": "Could not open profile",
+      "loadError": "Could not load profiles"
+    }
+  },
+  "gpm": {
+    "page": {
+      "title": "GPM Manager",
+      "subtitle": "Browser profiles and groups"
+    },
+    "tab": {
+      "profiles": "Profiles",
+      "groups": "Groups"
+    },
+    "profiles": {
+      "count": "{{count}} profile",
+      "search": "Search profiles…",
+      "start": "Start",
+      "starting": "Starting…",
+      "stop": "Stop",
+      "stopping": "Stopping…",
+      "test": "Test",
+      "testing": "Testing…",
+      "edit": "Edit",
+      "delete": "Delete",
+      "add": "Add profile",
+      "table": {
+        "name": "NAME",
+        "group": "GROUP",
+        "proxy": "PROXY",
+        "actions": "ACTIONS"
+      },
+      "empty": "No GPM profiles found."
+    },
+    "groups": {
+      "count": "{{count}} groups",
+      "search": "Search groups…",
+      "readonly": "Read-only (GPM API v3)",
+      "create": "Create",
+      "table": {
+        "name": "NAME",
+        "order": "ORDER",
+        "createdAt": "CREATED",
+        "actions": "ACTIONS"
+      },
+      "empty": "No GPM groups found."
+    },
+    "addProfile": {
+      "title": "Add GPM profile",
+      "email": "Email",
+      "emailRequired": "Email is required",
+      "loadingEmails": "Loading emails...",
+      "noEmails": "No unused emails left",
+      "selectEmail": "Select email",
+      "searchEmail": "Search email...",
+      "group": "Group",
+      "noGroup": "No group",
+      "proxy": "Proxy",
+      "noProxy": "No proxy",
+      "loadingProxies": "Loading proxies…",
+      "note": "Note",
+      "notePlaceholder": "Optional note",
+      "submit": "Add profile",
+      "submitting": "Creating…",
+      "error": "Failed to create profile",
+      "proxiesLoadError": "Could not load proxies",
+      "emailsLoadError": "Could not load emails"
+    },
+    "editProfile": {
+      "title": "Edit GPM profile",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "error": "Failed to update profile"
+    },
+    "addGroup": {
+      "title": "Create GPM group",
+      "name": "Name",
+      "namePlaceholder": "Group name",
+      "nameRequired": "Name is required",
+      "submit": "Create",
+      "submitting": "Creating…",
+      "error": "Failed to create group"
+    },
+    "editGroup": {
+      "title": "Edit GPM group",
+      "name": "Name",
+      "nameRequired": "Name is required",
+      "sortOrder": "Sort order",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "error": "Failed to update group"
+    },
+    "toast": {
+      "started": "Started profile \"{{name}}\"",
+      "startedDebug": "Started \"{{name}}\" — debug {{debug}}",
+      "stopped": "Stopped profile \"{{name}}\"",
+      "startError": "Failed to start profile",
+      "stopError": "Failed to stop profile",
+      "testError": "Gemini test failed",
+      "deleted": "Deleted \"{{name}}\"",
+      "deletedHard": "Permanently deleted \"{{name}}\"",
+      "deleteError": "Failed to delete profile",
+      "groupDeleted": "Deleted group \"{{name}}\"",
+      "groupDeleteError": "Failed to delete group",
+      "created": "GPM profile created",
+      "groupCreated": "GPM group created",
+      "updated": "GPM profile updated",
+      "groupUpdated": "GPM group updated",
+      "profilesLoadError": "Could not load profiles",
+      "groupsLoadError": "Could not load groups"
+    },
+    "test": {
+      "title": "Gemini test result",
+      "profile": "Profile",
+      "prompt": "Prompt",
+      "response": "Response",
+      "emptyResponse": "(empty response)",
+      "done": "Finished in {{seconds}}s — profile is still open."
+    },
+    "deleteProfile": {
+      "title": "Delete GPM profile",
+      "body": "Delete profile \"{{name}}\"?",
+      "hard": "Delete permanently",
+      "hardLabel": "Delete permanently (mode 2 — database + storage)",
+      "softHint": "Leave unchecked to use mode 1 (database only)."
+    },
+    "deleteGroup": {
+      "title": "Delete GPM group",
+      "body": "Delete group \"{{name}}\"? Profiles in this group will be unassigned."
+    }
+  },
+  "proxy": {
+    "page": {
+      "title": "Proxy Manager",
+      "subtitle": "Proxy monitoring and providers"
+    },
+    "tab": {
+      "monitoring": "Monitoring",
+      "providers": "Providers"
+    },
+    "toolbar": {
+      "count": "{{count}} proxy",
+      "filterPrefix": "Filter",
+      "add": "Add proxy",
+      "import": "Import Excel",
+      "importing": "Importing...",
+      "export": "Export Excel",
+      "exporting": "Exporting...",
+      "deleteSelected": "Delete selected",
+      "deleting": "Deleting...",
+      "removeFailed": "Remove failed"
+    },
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "failed": "Failed",
+      "slow": "Slow",
+      "expired": "Expired",
+      "inUse": "In use"
+    },
+    "table": {
+      "col": {
+        "type": "TYPE",
+        "host": "HOST",
+        "port": "PORT",
+        "country": "COUNTRY",
+        "provider": "PROVIDER",
+        "expires": "EXPIRES",
+        "profiles": "PROFILE",
+        "lastUsed": "LAST USED",
+        "status": "STATUS",
+        "actions": "ACTIONS"
+      },
+      "ping": "Ping",
+      "pinging": "Pinging…",
+      "renew": "Renew",
+      "empty": "No proxies match the filter.",
+      "emptyDesc": "Add a proxy or import from Excel to get started."
+    },
+    "status": {
+      "active": "Active",
+      "failed": "Failed",
+      "slow": "Slow",
+      "expired": "Expired",
+      "inUse": "In use"
+    },
+    "stats": {
+      "total": "Total proxies",
+      "active": "Active",
+      "failed": "Failed",
+      "assigned": "Assigned",
+      "unassigned": "Unassigned",
+      "avgLatency": "Avg latency"
+    },
+    "add": {
+      "title": "Add proxy",
+      "type": "Type",
+      "provider": "Provider",
+      "noProvider": "— None —",
+      "rawProxy": "Raw proxy",
+      "rawProxyHint": "(host:port or host:port:user:pass)",
+      "rawProxyRequired": "Raw proxy is required",
+      "rawProxyInvalid": "Invalid proxy format. Use host:port or host:port:user:pass",
+      "portInvalid": "Invalid port. Must be between 1 and 65535",
+      "countryCode": "Country code",
+      "expiresAt": "Expiry date",
+      "expiresOptional": "(optional)",
+      "submit": "Add proxy",
+      "error": "Failed to create proxy"
+    },
+    "edit": {
+      "title": "Edit proxy",
+      "name": "Proxy name",
+      "nameRequired": "Name is required",
+      "type": "Type",
+      "host": "Host",
+      "hostRequired": "Host is required",
+      "port": "Port",
+      "portRequired": "Port is required",
+      "portInvalid": "Invalid port",
+      "username": "Username",
+      "password": "Password",
+      "location": "Location",
+      "countryCode": "Country code",
+      "provider": "Provider",
+      "tags": "Tags",
+      "tagsHint": "(comma-separated)",
+      "save": "Save changes",
+      "error": "Failed to update proxy"
+    },
+    "extend": {
+      "title": "Extend proxy",
+      "body": "Extend for",
+      "currentExpiry": "(current: {{date}})",
+      "noExpiry": "(no expiry date set)",
+      "daysLabel": "Days to extend",
+      "daysPlaceholder": "e.g. 30",
+      "daysInvalid": "Enter a valid number of days (minimum 1)",
+      "success": "Extended until {{date}}",
+      "successFallback": "new date",
+      "error": "Failed to extend proxy"
+    },
+    "deleteSelected": {
+      "title": "Delete selected proxies",
+      "body": "Archive {{count}} selected proxies (unassigned or already expired)? This cannot be undone from the UI.",
+      "confirm": "Delete {{count}} proxies"
+    },
+    "removeFailedModal": {
+      "title": "Remove failed proxies",
+      "body": "Archive all proxies with Failed status? This cannot be undone from the UI.",
+      "confirm": "Remove all failed"
+    },
+    "detail": {
+      "lastChecked": "Last checked: {{time}}",
+      "neverChecked": "Never checked",
+      "justNow": "Just now",
+      "minutesAgo": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hours ago",
+      "daysAgo": "{{count}} days ago",
+      "connection": "Connection",
+      "hostPort": "Host:Port",
+      "auth": "Auth",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "meta": "Meta",
+      "location": "Location",
+      "provider": "Provider",
+      "tags": "Tags",
+      "assignedProfiles": "Assigned profiles ({{count}})",
+      "noAssigned": "No profiles assigned",
+      "performance": "Performance",
+      "latencyHint": "Latency from last check",
+      "testConnection": "Test connection",
+      "testing": "Testing...",
+      "archive": "Archive",
+      "archiveDisabled": "Cannot archive while {{count}} profiles are assigned"
+    },
+    "expiry": {
+      "title": "Proxies expiring soon (<= 5 days)",
+      "body": "There are {{count}} proxies expiring soon or already expired. Please review and renew before they expire.",
+      "expired": "Expired",
+      "daysLeft": "{{count}} days left",
+      "expiresLabel": "EXPIRES {{date}}",
+      "noExpiryDate": "No expiry",
+      "showingFirst": "Showing first {{count}} proxies.",
+      "empty": "No proxies expiring soon.",
+      "ack": "Got it"
+    },
+    "providers": {
+      "count": "{{count}} providers",
+      "add": "+ Add provider",
+      "table": {
+        "name": "NAME",
+        "loginUrl": "LOGIN URL",
+        "username": "USERNAME",
+        "password": "PASSWORD",
+        "actions": "ACTIONS"
+      },
+      "empty": "No providers yet.",
+      "emptyDesc": "Add a login URL, username, and password to get started.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "addModal": {
+        "title": "Add provider",
+        "name": "Provider name",
+        "nameRequired": "Name is required",
+        "loginUrl": "Login URL",
+        "loginUrlOptional": "(optional)",
+        "loginUrlInvalid": "URL must start with http:// or https://",
+        "username": "Username",
+        "usernameRequired": "Username is required",
+        "password": "Password",
+        "passwordRequired": "Password is required",
+        "notes": "Notes",
+        "notesOptional": "(optional)",
+        "submit": "Add provider",
+        "error": "Failed to create provider"
+      },
+      "editModal": {
+        "title": "Edit provider",
+        "newPassword": "New password",
+        "passwordKeep": "Leave blank to keep current",
+        "save": "Save changes",
+        "error": "Failed to update provider"
+      },
+      "deleteModal": {
+        "title": "Delete provider",
+        "body": "Delete provider {{name}}?"
+      },
+      "toast": {
+        "deleted": "Provider deleted",
+        "added": "Provider added",
+        "updated": "Provider updated",
+        "deleteError": "Delete failed"
+      }
+    },
+    "toast": {
+      "addSuccess": "Proxy added successfully",
+      "exportSuccess": "Excel export succeeded",
+      "exportError": "Excel export failed",
+      "importSuccess": "Imported {{created}} proxies (skipped {{skipped}})",
+      "importPartial": "Some rows were skipped",
+      "importError": "Excel import failed",
+      "removeFailedSuccess": "Removed {{count}} failed proxies",
+      "removeFailedError": "Failed to remove",
+      "deleteSuccess": "Deleted {{count}} proxies",
+      "deletePartial": "Some proxies could not be deleted",
+      "pingOk": "Ping OK — {{ms}}ms",
+      "pingFailed": "Ping failed"
+    }
+  }
+}

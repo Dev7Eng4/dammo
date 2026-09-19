@@ -36,7 +36,7 @@ import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video
 import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
-import { resolveYoutubeChannelVideoDir, youtubeChannelDir, youtubeChannelUploadsDir } from '../../config/paths.js';
+import { resolveYoutubeChannelVideoDir, youtubeChannelUploadsDir } from '../../config/paths.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
@@ -514,6 +514,10 @@ export class YoutubeChannelsService {
   deleteChannel(id: string): void {
     const channel = this.getById(id);
 
+    if (channel.status === 'deleted') {
+      throw new AppError('Channel already deleted', 400, 'ALREADY_DELETED');
+    }
+
     if (!isDefaultLinkedEmail(channel.linkedEmail)) {
       mailAccountsService.markYoutubeDeleted(channel.linkedEmail);
     }
@@ -522,11 +526,50 @@ export class YoutubeChannelsService {
     if (!removed) {
       throw new AppError('Channel not found', 404, 'NOT_FOUND');
     }
+  }
 
-    const channelDir = youtubeChannelDir(id);
-    if (fs.existsSync(channelDir)) {
-      fs.rmSync(channelDir, { recursive: true, force: true });
+  pauseChannel(id: string): YoutubeChannel {
+    const channel = this.getById(id);
+
+    if (channel.status === 'deleted') {
+      throw new AppError('Channel is deleted', 400, 'CHANNEL_DELETED');
     }
+
+    if (channel.status === 'paused') {
+      return channel;
+    }
+
+    const updated = youtubeChannelsRepository.update(id, (current) => ({
+      ...current,
+      status: 'paused',
+    }));
+    if (!updated) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    return this.getById(id);
+  }
+
+  resumeChannel(id: string): YoutubeChannel {
+    const channel = this.getById(id);
+
+    if (channel.status === 'deleted') {
+      throw new AppError('Channel is deleted', 400, 'CHANNEL_DELETED');
+    }
+
+    if (channel.status !== 'paused') {
+      throw new AppError('Channel is not paused', 400, 'CHANNEL_NOT_PAUSED');
+    }
+
+    const updated = youtubeChannelsRepository.update(id, (current) => ({
+      ...current,
+      status: 'active',
+    }));
+    if (!updated) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    return this.getById(id);
   }
 
   async getLiveById(id: string): Promise<YoutubeChannel> {
@@ -832,6 +875,8 @@ export class YoutubeChannelsService {
       name = emailPrefix;
     }
 
+    const hasChannelUrl = Boolean(input.channelUrl?.trim());
+
     const channel: YoutubeChannel = {
       id: generateId(),
       name,
@@ -843,7 +888,7 @@ export class YoutubeChannelsService {
       language: input.language,
       monetizationStatus: 'in_review',
       healthScore: 'medium',
-      status: 'active',
+      status: hasChannelUrl ? 'created' : 'init',
       linkedEmail: config.linkedEmail,
       uploadSchedule: config.uploadSchedule,
       sourceChannels: config.sourceChannels,
@@ -986,6 +1031,9 @@ export class YoutubeChannelsService {
         next.handle = identityUpdate.handle;
         next.youtubeUrl = identityUpdate.youtubeUrl;
         delete next.channelId;
+        if (existing.status === 'init') {
+          next.status = 'created';
+        }
       }
 
       if (config.videoCreationOrder) {

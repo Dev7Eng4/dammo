@@ -1,16 +1,15 @@
+import i18n from '../i18n';
 import type { TaskJobListItem, TaskType } from '../types/taskQueue';
 
+const TASK_TYPE_KEYS: Record<TaskType, string> = {
+  add_source: 'queue.type.importSource',
+  create_video: 'queue.type.createVideo',
+  upload_video: 'queue.type.uploadVideo',
+  download_source: 'queue.type.downloadSource',
+};
+
 export function getTaskTypeLabel(type: TaskType): string {
-  switch (type) {
-    case 'add_source':
-      return 'NHẬP NGUỒN';
-    case 'create_video':
-      return 'TẠO VIDEO';
-    case 'upload_video':
-      return 'UPLOAD YOUTUBE';
-    case 'download_source':
-      return 'TẢI NGUỒN';
-  }
+  return i18n.t(TASK_TYPE_KEYS[type], { ns: 'factory' });
 }
 
 export function getTaskDetailLine(job: TaskJobListItem): string {
@@ -23,13 +22,13 @@ export function getTaskDetailLine(job: TaskJobListItem): string {
     const outputPath = getTaskOutputPath(job);
     if (outputPath) return outputPath;
     const sourceId = getTaskSourceId(job);
-    if (sourceId) return `Đã lưu nguồn · ${sourceId}`;
-    return job.progressLabel ?? 'Hoàn thành';
+    if (sourceId) return i18n.t('queue.job.savedSource', { ns: 'factory', id: sourceId });
+    return job.progressLabel ?? i18n.t('queue.job.completed', { ns: 'factory' });
   }
-  if (job.status === 'queued') return 'Đang chờ worker';
+  if (job.status === 'queued') return i18n.t('queue.job.waitingWorker', { ns: 'factory' });
   const doing = job.stages?.find((stage) => stage.status === 'doing');
-  if (doing) return `${doing.label} — đang làm`;
-  return job.progressLabel ?? 'Đang xử lý';
+  if (doing) return i18n.t('queue.job.doingLabel', { ns: 'factory', label: doing.label });
+  return job.progressLabel ?? i18n.t('queue.job.processing', { ns: 'factory' });
 }
 
 export function getTaskOutputPath(job: TaskJobListItem): string | null {

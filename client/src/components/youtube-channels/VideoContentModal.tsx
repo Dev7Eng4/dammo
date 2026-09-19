@@ -6,6 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   fetchYoutubeVideoContent,
   markYoutubeVideoUploaded,
@@ -45,13 +46,14 @@ function FieldCopyButton({
   label: string;
   onClick: () => void;
 }) {
+  const { t } = useTranslation('youtube');
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={`Sao chép ${label}`}
-      aria-label={`Sao chép ${label}`}
+      title={t('metadata.copyLabel', { label })}
+      aria-label={t('metadata.copyLabel', { label })}
       className="inline-flex size-6 items-center justify-center rounded text-neutral-500 transition hover:text-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
@@ -92,6 +94,8 @@ export function VideoContentModal({
   onMarkedUploaded,
   onVideoCreated,
 }: VideoContentModalProps) {
+  const { t } = useTranslation('youtube');
+  const { t: tCommon } = useTranslation('common');
   const { toast } = useToast();
   const { enqueueTask, jobs } = useTaskQueue();
   const [content, setContent] = useState<YoutubeVideoContent | null>(null);
@@ -171,7 +175,7 @@ export function VideoContentModal({
       })
       .catch(err => {
         if (isAbortError(err)) return;
-        setError(err instanceof Error ? err.message : 'Không thể tải nội dung video');
+        setError(err instanceof Error ? err.message : t('videoContent.loadError'));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -243,7 +247,7 @@ export function VideoContentModal({
       onSaved(updated);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể lưu nội dung video');
+      setError(err instanceof Error ? err.message : t('videoContent.saveError'));
     } finally {
       setSaving(false);
     }
@@ -270,12 +274,12 @@ export function VideoContentModal({
     setError(null);
     try {
       await markYoutubeVideoUploaded(channelId, video.id);
-      toast.success('Đã đánh dấu video là đã upload');
+      toast.success(t('videoContent.markSuccess'));
       onMarkedUploaded(video.id);
       clearSelectedThumbnail();
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Không thể đánh dấu video đã upload';
+      const message = err instanceof Error ? err.message : t('videoContent.markError');
       setError(message);
       toast.error(message);
     } finally {
@@ -292,7 +296,7 @@ export function VideoContentModal({
       await enqueueTask(
         {
           type: 'create_video',
-          title: `Tạo lại metadata: ${video.title || video.id}`,
+          title: t('videoContent.regenJobTitle', { title: video.title || video.id }),
           subtitle: video.id,
           payload: {
             channelId,
@@ -304,24 +308,24 @@ export function VideoContentModal({
           onComplete: () => {
             void reloadContent()
               .then(() => {
-                if (mountedRef.current) toast.success('Đã tạo lại metadata và thumbnail');
+                if (mountedRef.current) toast.success(t('videoContent.regenSuccess'));
               })
               .catch(err => {
                 const message =
-                  err instanceof Error ? err.message : 'Không thể tải lại nội dung sau khi tạo metadata';
+                  err instanceof Error ? err.message : t('videoContent.regenReloadError');
                 if (mountedRef.current) setError(message);
                 toast.error(message);
               });
           },
           onFail: job => {
-            const message = job.error ?? 'Tạo lại metadata thất bại';
+            const message = job.error ?? t('videoContent.regenFailed');
             if (mountedRef.current) setError(message);
             toast.error(message);
           },
         },
       );
       setConfirmRegenerateOpen(false);
-      toast.success('Đã thêm vào hàng đợi tạo lại metadata');
+      toast.success(t('videoContent.regenQueued'));
     } catch {
       // enqueueTask already toasts
     } finally {
@@ -338,7 +342,7 @@ export function VideoContentModal({
       await enqueueTask(
         {
           type: 'create_video',
-          title: `Tạo video: ${video.title || video.id}`,
+          title: t('videoContent.assembleJobTitle', { title: video.title || video.id }),
           subtitle: video.id,
           payload: {
             channelId,
@@ -351,23 +355,23 @@ export function VideoContentModal({
             onVideoCreated?.(video.id);
             void reloadContent()
               .then(() => {
-                if (mountedRef.current) toast.success('Đã tạo video');
+                if (mountedRef.current) toast.success(t('videoContent.assembleSuccess'));
               })
               .catch(err => {
                 const message =
-                  err instanceof Error ? err.message : 'Không thể tải lại nội dung sau khi tạo video';
+                  err instanceof Error ? err.message : t('videoContent.assembleReloadError');
                 if (mountedRef.current) setError(message);
                 toast.error(message);
               });
           },
           onFail: job => {
-            const message = job.error ?? 'Tạo video thất bại';
+            const message = job.error ?? t('videoContent.assembleFailed');
             if (mountedRef.current) setError(message);
             toast.error(message);
           },
         },
       );
-      toast.success('Đã thêm vào hàng đợi tạo video');
+      toast.success(t('videoContent.assembleQueued'));
     } catch {
       // enqueueTask already toasts
     } finally {
@@ -381,11 +385,11 @@ export function VideoContentModal({
     if (!file) return;
 
     if (!THUMBNAIL_ACCEPT.split(',').includes(file.type)) {
-      toast.error('Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP');
+      toast.error(t('videoContent.thumbFormatError'));
       return;
     }
     if (file.size > THUMBNAIL_MAX_SIZE_BYTES) {
-      toast.error('Ảnh thumbnail không được vượt quá 10 MB');
+      toast.error(t('videoContent.thumbSizeError'));
       return;
     }
 
@@ -403,9 +407,9 @@ export function VideoContentModal({
 
     try {
       await navigator.clipboard.writeText(content.videoFolderPath);
-      toast.success('Đã sao chép đường dẫn folder video');
+      toast.success(t('videoContent.copyFolderSuccess'));
     } catch {
-      toast.error('Không thể sao chép đường dẫn folder video');
+      toast.error(t('videoContent.copyFolderError'));
     }
   }
 
@@ -415,9 +419,9 @@ export function VideoContentModal({
 
     try {
       await navigator.clipboard.writeText(value);
-      toast.success(`Đã sao chép ${label}`);
+      toast.success(t('metadata.copySuccess', { label }));
     } catch {
-      toast.error(`Không thể sao chép ${label}`);
+      toast.error(t('metadata.copyError', { label }));
     }
   }
 
@@ -443,7 +447,7 @@ export function VideoContentModal({
       <Modal
         open={open}
         onClose={handleClose}
-        title="Nội dung video"
+        title={t('videoContent.title')}
         className="max-w-5xl"
         bodyClassName="max-h-[calc(100svh-10rem)] overflow-y-auto"
         footer={
@@ -453,7 +457,7 @@ export function VideoContentModal({
               className="mr-auto"
               onClick={() => void handleCopyVideoFolderPath()}
               disabled={!content?.videoFolderPath || busy}
-              title="Sao chép đường dẫn folder video"
+              title={t('videoContent.copyFolderTitle')}
             >
               Copy path
             </Button>
@@ -463,7 +467,7 @@ export function VideoContentModal({
                 onClick={() => setConfirmRegenerateOpen(true)}
                 disabled={loading || busy || !content}
               >
-                {regenerateInProgress ? 'Đang tạo lại…' : 'Tạo lại Metadata'}
+                {regenerateInProgress ? t('videoContent.regenerating') : t('videoContent.regenerate')}
               </Button>
             ) : null}
             {video.status === 'Prepared' ? (
@@ -472,7 +476,7 @@ export function VideoContentModal({
                 onClick={() => void handleAssembleVideo()}
                 disabled={loading || busy || !content}
               >
-                {assembleInProgress || enqueueingAssemble ? 'Đang tạo…' : 'Tạo Video'}
+                {assembleInProgress || enqueueingAssemble ? t('videoContent.creating') : t('videoContent.createVideo')}
               </Button>
             ) : null}
             {video.status === 'Created' ? (
@@ -481,7 +485,7 @@ export function VideoContentModal({
                 onClick={() => void handleMarkUploaded()}
                 disabled={loading || busy || !content}
               >
-                {marking ? 'Đang xử lý...' : 'Đã Upload'}
+                {marking ? t('videoContent.marking') : t('videoContent.markUploaded')}
               </Button>
             ) : null}
             <Button
@@ -489,20 +493,20 @@ export function VideoContentModal({
               onClick={handleClose}
               disabled={saving || marking || enqueueingRegenerate || enqueueingAssemble}
             >
-              Hủy
+              {tCommon('actions.cancel')}
             </Button>
             <Button
               type="submit"
               form="video-content-form"
               disabled={loading || busy || !content || !title.trim()}
             >
-              {saving ? 'Đang lưu...' : 'Lưu'}
+              {saving ? tCommon('actions.saving') : tCommon('actions.save')}
             </Button>
           </>
         }
       >
         {loading ? (
-          <div className="space-y-4" aria-label="Đang tải nội dung video">
+          <div className="space-y-4" aria-label={t('videoContent.loadingAria')}>
             <div className="h-10 animate-pulse rounded-lg bg-neutral-800" />
             <div className="h-28 animate-pulse rounded-xl bg-neutral-800" />
             <div className="aspect-video animate-pulse rounded-xl bg-neutral-800" />
@@ -522,12 +526,12 @@ export function VideoContentModal({
             <div>
               <div className="mb-1.5 flex items-center gap-2">
                 <label htmlFor="video-content-title" className="text-sm font-medium text-neutral-200">
-                  Tiêu đề
+                  {t('metadata.fieldTitle')}
                 </label>
                 <FieldCopyButton
-                  label="tiêu đề"
+                  label={t('metadata.fieldTitle')}
                   disabled={!title.trim() || busy}
-                  onClick={() => void copyText(title, 'tiêu đề')}
+                  onClick={() => void copyText(title, t('metadata.fieldTitle'))}
                 />
               </div>
               <Input
@@ -544,12 +548,12 @@ export function VideoContentModal({
             <div>
               <div className="mb-1.5 flex items-center gap-2">
                 <label htmlFor="video-content-description" className="text-sm font-medium text-neutral-200">
-                  Mô tả
+                  {t('metadata.fieldDescription')}
                 </label>
                 <FieldCopyButton
-                  label="mô tả"
+                  label={t('metadata.fieldDescription')}
                   disabled={!description.trim() || busy}
-                  onClick={() => void copyText(description, 'mô tả')}
+                  onClick={() => void copyText(description, t('metadata.fieldDescription'))}
                 />
               </div>
               <Textarea
@@ -565,12 +569,12 @@ export function VideoContentModal({
             <div>
               <div className="mb-1.5 flex items-center gap-2">
                 <label htmlFor="video-content-tags" className="text-sm font-medium text-neutral-200">
-                  Tags
+                  {t('metadata.fieldTags')}
                 </label>
                 <FieldCopyButton
-                  label="tags"
+                  label={t('metadata.fieldTags')}
                   disabled={!getTagsCopyText() || busy}
-                  onClick={() => void copyText(getTagsCopyText(), 'tags')}
+                  onClick={() => void copyText(getTagsCopyText(), t('metadata.fieldTags'))}
                 />
               </div>
               <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-elevated px-3 py-2 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-400/30">
@@ -584,7 +588,7 @@ export function VideoContentModal({
                       type="button"
                       onClick={() => setTags(current => current.filter(item => item !== tag))}
                       className="rounded text-neutral-500 hover:text-neutral-100"
-                      aria-label={`Xóa tag ${tag}`}
+                      aria-label={t('videoContent.tagDeleteAria', { tag })}
                       disabled={busy}
                     >
                       ×
@@ -597,7 +601,7 @@ export function VideoContentModal({
                   onChange={event => setTagDraft(event.target.value)}
                   onKeyDown={handleTagKeyDown}
                   onBlur={() => addTag()}
-                  placeholder={tags.length === 0 ? 'Nhập tag rồi nhấn Enter hoặc dấu phẩy' : 'Thêm tag'}
+                  placeholder={tags.length === 0 ? t('videoContent.tagPlaceholderEmpty') : t('videoContent.tagPlaceholderAdd')}
                   className="min-w-48 flex-1 bg-transparent py-1 text-sm text-neutral-100 outline-none placeholder:text-neutral-500"
                   disabled={busy}
                   maxLength={100}
@@ -607,7 +611,7 @@ export function VideoContentModal({
 
             <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
               <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">Thumbnail</h3>
+                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldThumbnail')}</h3>
                 <input
                   ref={thumbnailInputRef}
                   type="file"
@@ -625,15 +629,15 @@ export function VideoContentModal({
                       aspectRatio="video"
                       fit="contain"
                       className="border border-border"
-                      fallback={<span className="px-4 text-center text-sm">Không thể hiển thị thumbnail</span>}
+                      fallback={<span className="px-4 text-center text-sm">{t('metadata.thumbnailError')}</span>}
                     />
                     <button
                       type="button"
                       onClick={() => thumbnailInputRef.current?.click()}
                       disabled={busy}
                       className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg border border-white/15 bg-black/70 text-white opacity-0 shadow-lg backdrop-blur-sm transition hover:bg-black/85 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100 group-focus-within:opacity-100"
-                      title="Thay đổi thumbnail"
-                      aria-label="Thay đổi thumbnail"
+                      title={t('videoContent.changeThumb')}
+                      aria-label={t('videoContent.changeThumb')}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -654,7 +658,7 @@ export function VideoContentModal({
                     onClick={() => thumbnailInputRef.current?.click()}
                     disabled={busy}
                     className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-neutral-900 text-neutral-500 transition hover:border-primary-400/60 hover:bg-surface-elevated hover:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Tải thumbnail lên"
+                    aria-label={t('videoContent.uploadThumb')}
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -667,25 +671,25 @@ export function VideoContentModal({
                       <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" />
                       <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
                     </svg>
-                    <span className="text-sm font-medium">Tải thumbnail lên</span>
+                    <span className="text-sm font-medium">{t('videoContent.uploadThumb')}</span>
                   </button>
                 )}
               </section>
 
               <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">Thumbnail cũ</h3>
+                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('videoContent.oldThumb')}</h3>
                 <Image
                   src={withCacheBust(content.oldThumbnailUrl)}
-                  alt={`Thumbnail cũ ${title || video.title}`}
+                  alt={`${t('videoContent.oldThumb')} ${title || video.title}`}
                   aspectRatio="video"
                   fit="contain"
                   className="border border-border"
-                  fallback={<span className="px-4 text-center text-sm">Không tìm thấy old-thumbnail</span>}
+                  fallback={<span className="px-4 text-center text-sm">{t('videoContent.oldThumbMissing')}</span>}
                 />
               </section>
 
               <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">Video</h3>
+                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldVideo')}</h3>
                 {content.videoUrl ? (
                   <video
                     ref={videoRef}
@@ -695,11 +699,11 @@ export function VideoContentModal({
                     preload="metadata"
                     className="aspect-video w-full rounded-xl border border-border bg-black object-contain"
                   >
-                    Trình duyệt không hỗ trợ phát video.
+                    {t('videoContent.noVideoSupport')}
                   </video>
                 ) : (
                   <div className="flex aspect-video items-center justify-center rounded-xl border border-border bg-neutral-900 px-4 text-center text-sm text-neutral-500">
-                    Không tìm thấy video
+                    {t('videoContent.videoMissing')}
                   </div>
                 )}
               </section>

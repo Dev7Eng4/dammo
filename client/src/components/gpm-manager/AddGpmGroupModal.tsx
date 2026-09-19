@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { createGpmGroup } from '../../api/gpm';
 import type { AddGpmGroupFormValues } from '../../types/gpm';
 import { Button, Input, Modal } from '../ui';
@@ -15,6 +16,7 @@ const defaultValues: AddGpmGroupFormValues = {
 };
 
 export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalProps) {
+  const { t } = useTranslation(['browser', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const {
@@ -48,7 +50,7 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Tạo nhóm thất bại');
+      setApiError(err instanceof Error ? err.message : t('gpm.addGroup.error'));
     }
   }
 
@@ -56,11 +58,11 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
     <Modal
       open={open}
       onClose={handleClose}
-      title="Tạo nhóm GPM"
+      title={t('gpm.addGroup.title')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button
             size="sm"
@@ -69,7 +71,7 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
             form="add-gpm-group-form"
             type="submit"
           >
-            {isSubmitting ? 'Đang tạo…' : 'Tạo'}
+            {isSubmitting ? t('gpm.addGroup.submitting') : t('gpm.addGroup.submit')}
           </Button>
         </>
       }
@@ -77,14 +79,14 @@ export function AddGpmGroupModal({ open, onClose, onSuccess }: AddGpmGroupModalP
       <form id="add-gpm-group-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="gpm-group-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên
+            {t('gpm.addGroup.name')}
           </label>
           <Input
             id="gpm-group-name"
-            placeholder="Tên nhóm"
+            placeholder={t('gpm.addGroup.namePlaceholder')}
             className="h-10 rounded-lg text-sm"
             disabled={isSubmitting}
-            {...register('name', { required: 'Tên là bắt buộc' })}
+            {...register('name', { required: t('gpm.addGroup.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>

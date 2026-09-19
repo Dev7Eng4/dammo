@@ -1,0 +1,78 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "saving": "Saving...",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "edit": "Edit",
+    "add": "Add",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "reset": "Reset",
+    "select": "Select",
+    "deselect": "Deselect",
+    "auto": "Auto",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "copiedShort": "Copied",
+    "loading": "Loading...",
+    "opening": "Opening…",
+    "optional": "(optional)"
+  },
+  "aria": {
+    "close": "Close",
+    "closePanel": "Close panel",
+    "closeDetailPanel": "Close detail panel",
+    "moreActions": "More actions"
+  },
+  "search": {
+    "placeholder": "Search"
+  },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "perPage": "Per page",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page"
+  },
+  "status": {
+    "success": "Success",
+    "failed": "Failed",
+    "rendering": "Rendering",
+    "active": "Active",
+    "needVerify": "Needs verification",
+    "suspended": "Suspended"
+  },
+  "theme": {
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme",
+    "light": "Light theme",
+    "dark": "Dark theme"
+  },
+  "sidebar": {
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
+  },
+  "lang": {
+    "vi": "VI",
+    "en": "EN",
+    "switchTo": "Language: {{lang}}"
+  },
+  "filter": {
+    "all": "All"
+  },
+  "errors": {
+    "generic": "Something went wrong"
+  },
+  "placeholder": {
+    "fallbackTitle": "Module",
+    "subtitle": "Feature under development. This module will be available in a future version.",
+    "body": "Module content will appear here."
+  }
+}
+

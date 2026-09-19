@@ -83,6 +83,18 @@ export async function deleteYoutubeChannel(id: string) {
   }
 }
 
+export function pauseYoutubeChannel(id: string) {
+  return fetchJson<{ item: YoutubeChannel }>(`${API_V1}/youtube-channels/${id}/pause`, {
+    method: 'POST',
+  });
+}
+
+export function resumeYoutubeChannel(id: string) {
+  return fetchJson<{ item: YoutubeChannel }>(`${API_V1}/youtube-channels/${id}/resume`, {
+    method: 'POST',
+  });
+}
+
 export function fetchYoutubeChannelVideos(id: string, options?: FetchOptions) {
   return fetchJson<YoutubeChannelVideosResponse>(
     `${API_V1}/youtube-channels/${id}/videos`,

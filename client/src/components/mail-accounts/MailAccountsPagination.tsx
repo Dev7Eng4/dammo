@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, DropdownSelect } from '../ui';
 import { cn } from '../../lib/cn';
 
@@ -25,26 +26,27 @@ export function MailAccountsPagination({
   totalPages,
   onPageChange,
   onLimitChange,
-  locale = 'en',
+  locale,
 }: MailAccountsPaginationProps) {
+  const { t, i18n } = useTranslation('common');
+
   if (total === 0) return null;
 
+  const lang = locale ?? (i18n.language.startsWith('vi') ? 'vi' : 'en');
+  const numberLocale = lang === 'vi' ? 'vi-VN' : 'en-US';
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
-  const numberLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-sm text-neutral-400">
-          {locale === 'vi' ? 'Hiển thị' : 'Showing'} {start.toLocaleString(numberLocale)}–
-          {end.toLocaleString(numberLocale)} {locale === 'vi' ? 'trên' : 'of'}{' '}
+          {t('pagination.showing')} {start.toLocaleString(numberLocale)}–
+          {end.toLocaleString(numberLocale)} {t('pagination.of')}{' '}
           {total.toLocaleString(numberLocale)}
         </p>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-neutral-400">
-            {locale === 'vi' ? 'Mỗi trang' : 'Per page'}
-          </span>
+          <span className="text-sm text-neutral-400">{t('pagination.perPage')}</span>
           <DropdownSelect
             options={PAGE_SIZE_SELECT_OPTIONS}
             value={String(limit)}
@@ -64,10 +66,10 @@ export function MailAccountsPagination({
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          {locale === 'vi' ? 'Trước' : 'Previous'}
+          {t('pagination.prev')}
         </Button>
         <span className="text-sm text-neutral-400">
-          {locale === 'vi' ? 'Trang' : 'Page'} {page} {locale === 'vi' ? 'trên' : 'of'} {totalPages}
+          {t('pagination.page')} {page} {t('pagination.of')} {totalPages}
         </span>
         <Button
           variant="outlined"
@@ -76,7 +78,7 @@ export function MailAccountsPagination({
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          {locale === 'vi' ? 'Sau' : 'Next'}
+          {t('pagination.next')}
         </Button>
       </div>
     </div>

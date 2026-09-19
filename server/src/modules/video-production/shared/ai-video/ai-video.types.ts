@@ -115,6 +115,11 @@ export interface GenerateAiSceneSlideImagesInput {
   workDir: string;
   youtubeVideoId: string;
   scenes: AiVideoScenePrompt[];
+  /**
+   * 0-based scene indexes to regenerate even when the slide image already exists.
+   * Existing files for these indexes are deleted before generation.
+   */
+  forceIndexes?: number[];
   /** Persisted audio speed from ai-render-config.json. Required when Ken Burns is enabled. */
   audioSpeed?: number;
   audioPath?: string;

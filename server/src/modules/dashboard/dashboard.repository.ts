@@ -114,13 +114,13 @@ function buildPipelineSteps(renderJobs: RenderJob[]): DashboardData['pipelineSte
 
 function buildHealthAlerts(): DashboardData['healthAlerts'] {
   const alerts: DashboardData['healthAlerts'] = [];
-  const suspendedChannels = youtubeChannelsRepository.findAll().filter(channel => channel.status === 'suspended').length;
+  const pausedChannels = youtubeChannelsRepository.findAll().filter(channel => channel.status === 'paused').length;
 
-  if (suspendedChannels > 0) {
+  if (pausedChannels > 0) {
     alerts.push({
-      id: 'youtube-suspended',
-      title: `Suspended channels (${suspendedChannels})`,
-      description: 'YouTube channels are suspended and should not receive uploads.',
+      id: 'youtube-paused',
+      title: `Paused channels (${pausedChannels})`,
+      description: 'YouTube channels are paused and should not receive uploads.',
       severity: 'danger',
     });
   }

@@ -1,4 +1,6 @@
 import { Clapperboard, Upload } from 'lucide-react'
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ListToolbar } from '../layout'
 import { Button, DropdownSelect, SearchInput } from '../ui'
 import { type YoutubeChannelTypeFilter, type YoutubeMonetizationFilter } from '../../types/youtubeChannel'
@@ -24,21 +26,6 @@ interface YoutubeChannelsToolbarProps {
   onDeleteUploadedVideos?: () => void
 }
 
-const typeOptions: { value: YoutubeChannelTypeFilter; label: string }[] = [
-  { value: 'all', label: 'Tất cả loại kênh' },
-  { value: 'content', label: 'Nội dung' },
-  { value: 'reup_audio', label: 'Reup âm thanh' },
-  { value: 'reup_video', label: 'Reup video' },
-]
-
-const monetizationOptions: { value: YoutubeMonetizationFilter; label: string }[] = [
-  { value: 'all', label: 'Kiếm tiền: Tất cả' },
-  { value: 'monetized', label: 'Đã bật kiếm tiền' },
-  { value: 'in_review', label: 'Đang xét duyệt' },
-  { value: 'demonetized', label: 'Đã tắt kiếm tiền' },
-  { value: 'limited', label: 'Bị hạn chế' },
-]
-
 export function YoutubeChannelsToolbar({
   typeFilter,
   monetizationFilter,
@@ -59,11 +46,34 @@ export function YoutubeChannelsToolbar({
   onUpload,
   onDeleteUploadedVideos,
 }: YoutubeChannelsToolbarProps) {
+  const { t } = useTranslation('youtube')
+
+  const typeOptions = useMemo(
+    () => [
+      { value: 'all' as const, label: t('filter.typeAll') },
+      { value: 'content' as const, label: t('filter.typeContent') },
+      { value: 'reup_audio' as const, label: t('filter.typeReupAudio') },
+      { value: 'reup_video' as const, label: t('filter.typeReupVideo') },
+    ],
+    [t],
+  )
+
+  const monetizationOptions = useMemo(
+    () => [
+      { value: 'all' as const, label: t('filter.monetizationAll') },
+      { value: 'monetized' as const, label: t('filter.monetized') },
+      { value: 'in_review' as const, label: t('filter.inReview') },
+      { value: 'demonetized' as const, label: t('filter.demonetized') },
+      { value: 'limited' as const, label: t('filter.limited') },
+    ],
+    [t],
+  )
+
   const secondaryActions = [
     onPrepareVideo
       ? {
           id: 'prepare',
-          label: 'Chuẩn bị video',
+          label: t('toolbar.prepareVideo'),
           onSelect: onPrepareVideo,
           disabled: creatingVideo || !canCreateVideo,
         }
@@ -71,7 +81,9 @@ export function YoutubeChannelsToolbar({
     onDeleteUploadedVideos
       ? {
           id: 'delete-uploaded',
-          label: deletingUploadedVideos ? 'Đang xóa…' : 'Xóa video đã tải lên',
+          label: deletingUploadedVideos
+            ? t('toolbar.deleteUploadedDeleting')
+            : t('toolbar.deleteUploaded'),
           onSelect: onDeleteUploadedVideos,
           disabled: deletingUploadedVideos,
           destructive: true,
@@ -106,8 +118,8 @@ export function YoutubeChannelsToolbar({
           <div className="w-48 lg:w-56">
             <SearchInput
               value={typeof search === 'string' ? search : ''}
-              onChange={(e) => onSearchChange(e.currentTarget.value)}
-              placeholder="Lọc kênh..."
+              onChange={e => onSearchChange(e.currentTarget.value)}
+              placeholder={t('toolbar.filterPlaceholder')}
               className="h-9"
             />
           </div>
@@ -124,7 +136,7 @@ export function YoutubeChannelsToolbar({
               title={!creatingVideo ? createVideoDisabledReason : undefined}
             >
               <Clapperboard className="size-3.5" />
-              {creatingVideo ? 'Đang tạo…' : 'Tạo video'}
+              {creatingVideo ? t('toolbar.creatingVideo') : t('toolbar.createVideo')}
             </Button>
           ) : null}
           {onUpload ? (
@@ -136,13 +148,13 @@ export function YoutubeChannelsToolbar({
               title={!uploading ? uploadDisabledReason : undefined}
             >
               <Upload className="size-3.5" />
-              {uploading ? 'Đang tải lên…' : 'Tải lên'}
+              {uploading ? t('toolbar.uploading') : t('toolbar.upload')}
             </Button>
           ) : null}
         </>
       }
       secondaryActions={secondaryActions}
-      primaryAction={{ label: 'Thêm kênh', onClick: onAddChannel }}
+      primaryAction={{ label: t('toolbar.addChannel'), onClick: onAddChannel }}
     />
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchChromeProfiles, openChromeProfile, resetSubChromeProfiles, setMainChromeProfile, setSubChromeProfile } from '../api/chromeProfiles';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddChromeProfileModal } from '../components/chrome-profiles/AddChromeProfileModal';
@@ -11,6 +12,7 @@ import type { ChromeProfile, ChromeProfileRole } from '../types/chromeProfile';
 import { Globe } from 'lucide-react';
 
 export function ChromeProfilesPage() {
+  const { t } = useTranslation('browser');
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<ChromeProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export function ChromeProfilesPage() {
       } catch (err) {
         if (signal.aborted) return;
         setProfiles([]);
-        setError(err instanceof Error ? err.message : 'Không thể tải profile');
+        setError(err instanceof Error ? err.message : t('chrome.toast.loadError'));
       } finally {
         if (!signal.aborted) setLoading(false);
       }
@@ -52,12 +54,12 @@ export function ChromeProfilesPage() {
   }
 
   function handleAddSuccess() {
-    toast.success('Đã tạo Chrome profile thành công');
+    toast.success(t('chrome.toast.created'));
     handleRefresh();
   }
 
   function handleEditSuccess() {
-    toast.success('Đã cập nhật tên Chrome profile');
+    toast.success(t('chrome.toast.renamed'));
     handleRefresh();
   }
 
@@ -71,14 +73,14 @@ export function ChromeProfilesPage() {
     try {
       if (role === 'main') {
         await setMainChromeProfile(id);
-        toast.success(`"${target.name}" đã đặt làm profile chính`);
+        toast.success(t('chrome.toast.setMain', { name: target.name }));
       } else {
         await setSubChromeProfile(id);
-        toast.success(`"${target.name}" đã đặt làm profile phụ`);
+        toast.success(t('chrome.toast.setSecondary', { name: target.name }));
       }
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể cập nhật vai trò profile');
+      toast.error(err instanceof Error ? err.message : t('chrome.toast.roleError'));
     } finally {
       setSettingRole(false);
     }
@@ -100,14 +102,14 @@ export function ChromeProfilesPage() {
 
     try {
       const result = await resetSubChromeProfiles();
-      const deletedMessage =
+      toast.success(
         result.deletedCount > 0
-          ? `Đã xóa ${result.deletedCount} profile phụ và tạo 8 profile mới.`
-          : 'Đã tạo 8 profile phụ mới.';
-      toast.success(deletedMessage);
+          ? t('chrome.toast.resetDone', { count: result.deletedCount })
+          : t('chrome.toast.resetCreatedOnly'),
+      );
       handleRefresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể đặt lại profile phụ');
+      toast.error(err instanceof Error ? err.message : t('chrome.toast.resetError'));
     } finally {
       setResettingSub(false);
     }
@@ -119,9 +121,9 @@ export function ChromeProfilesPage() {
     setOpening(true);
     try {
       const { item } = await openChromeProfile(selectedId);
-      toast.success(`Đã mở Chrome profile "${item.name}"`);
+      toast.success(t('chrome.toast.opened', { name: item.name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể mở profile');
+      toast.error(err instanceof Error ? err.message : t('chrome.toast.openError'));
     } finally {
       setOpening(false);
     }
@@ -132,8 +134,8 @@ export function ChromeProfilesPage() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="shrink-0">
           <PageHeader
-            title="Hồ sơ Chrome"
-            subtitle="Quản lý và mở hồ sơ trình duyệt Chrome"
+            title={t('chrome.page.title')}
+            subtitle={t('chrome.page.subtitle')}
             icon={Globe}
             className="mb-4"
           />

@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import type { Proxy } from '../../types/proxy';
 import { Button, DataTable } from '../ui';
 import { ProxyStatusPill } from './ProxyStatusPill';
@@ -24,12 +25,6 @@ function countryFlag(code?: string) {
   return String.fromCodePoint(...[...upper].map(char => 0x1f1e6 + char.charCodeAt(0) - 65));
 }
 
-function formatDate(value?: string): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
-}
-
 function isExpirySoon(expiresAt?: string, nowMs = Date.now()): boolean {
   const end = expiresAt ? new Date(`${expiresAt}T23:59:59.999`).getTime() : NaN;
   if (Number.isNaN(end)) return false;
@@ -47,29 +42,38 @@ export function ProxiesTable({
   onPing,
   onExtend,
 }: ProxiesTableProps) {
+  const { t, i18n } = useTranslation('browser');
+  const dateLocale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
+
+  function formatDate(value?: string): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(dateLocale);
+  }
+
   const columns: ColumnDef<Proxy, unknown>[] = [
     {
       accessorKey: 'type',
-      header: 'LOẠI',
+      header: t('proxy.table.col.type'),
       cell: ({ getValue }) => (
         <span className="uppercase text-neutral-400">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'host',
-      header: 'HOST',
+      header: t('proxy.table.col.host'),
       cell: ({ getValue }) => (
         <span className="font-mono text-xs text-neutral-300">{getValue<string>()}</span>
       ),
     },
     {
       accessorKey: 'port',
-      header: 'PORT',
+      header: t('proxy.table.col.port'),
       cell: ({ getValue }) => <span className="text-neutral-300">{getValue<number>()}</span>,
     },
     {
       id: 'country',
-      header: 'QUỐC GIA',
+      header: t('proxy.table.col.country'),
       cell: ({ row }) => (
         <span className="text-lg" title={row.original.countryCode}>
           {countryFlag(row.original.countryCode)}
@@ -78,14 +82,14 @@ export function ProxiesTable({
     },
     {
       accessorKey: 'provider',
-      header: 'NHÀ CUNG CẤP',
+      header: t('proxy.table.col.provider'),
       cell: ({ getValue }) => (
         <span className="text-neutral-400">{getValue<string | undefined>() ?? '—'}</span>
       ),
     },
     {
       accessorKey: 'expiresAt',
-      header: 'HẾT HẠN',
+      header: t('proxy.table.col.expires'),
       cell: ({ getValue }) => {
         const raw = getValue<string | undefined>();
         const soon = isExpirySoon(raw);
@@ -96,26 +100,26 @@ export function ProxiesTable({
     },
     {
       id: 'profiles',
-      header: 'PROFILE',
+      header: t('proxy.table.col.profiles'),
       cell: ({ row }) => (
         <span className="text-neutral-300">{row.original.assignedProfileIds.length}</span>
       ),
     },
     {
       accessorKey: 'lastUsed',
-      header: 'DÙNG GẦN NHẤT',
+      header: t('proxy.table.col.lastUsed'),
       cell: ({ getValue }) => (
         <span className="text-neutral-400">{formatDate(getValue<string | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'TRẠNG THÁI',
+      header: t('proxy.table.col.status'),
       cell: ({ row }) => <ProxyStatusPill status={row.original.status} />,
     },
     {
       id: 'actions',
-      header: 'HÀNH ĐỘNG',
+      header: t('proxy.table.col.actions'),
       cell: ({ row }) => {
         const proxy = row.original;
         return (
@@ -127,10 +131,10 @@ export function ProxiesTable({
               disabled={pingingIds.has(proxy.id)}
               onClick={() => onPing(proxy.id)}
             >
-              {pingingIds.has(proxy.id) ? 'Đang ping…' : 'Ping'}
+              {pingingIds.has(proxy.id) ? t('proxy.table.pinging') : t('proxy.table.ping')}
             </Button>
             <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onExtend(proxy.id)}>
-              Gia hạn
+              {t('proxy.table.renew')}
             </Button>
           </div>
         );
@@ -150,8 +154,8 @@ export function ProxiesTable({
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
       onRowClick={proxy => onToggleRow(proxy.id)}
-      emptyMessage="Không có proxy khớp bộ lọc."
-      emptyDescription="Thêm proxy hoặc nhập từ Excel để bắt đầu."
+      emptyMessage={t('proxy.table.empty')}
+      emptyDescription={t('proxy.table.emptyDesc')}
     />
   );
 }

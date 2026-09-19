@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import type { TaskErrorDetails, TaskStage } from '../../types/taskQueue';
 
@@ -9,14 +10,6 @@ function stageMarker(status: TaskStage['status']): string {
   return '○';
 }
 
-function stageStatusLabel(status: TaskStage['status']): string {
-  if (status === 'done') return 'xong';
-  if (status === 'doing') return 'đang làm';
-  if (status === 'failed') return 'lỗi';
-  if (status === 'skipped') return 'bỏ qua';
-  return '';
-}
-
 export function TaskErrorDetailsBlock({
   error,
   errorDetails,
@@ -26,6 +19,8 @@ export function TaskErrorDetailsBlock({
   errorDetails?: TaskErrorDetails;
   compact?: boolean;
 }) {
+  const { t } = useTranslation('factory');
+
   if (!error && !errorDetails) return null;
 
   return (
@@ -36,13 +31,17 @@ export function TaskErrorDetailsBlock({
         </p>
       ) : null}
       {errorDetails?.reason ? (
-        <p className="text-[11px] text-danger/90">Lý do: {errorDetails.reason}</p>
+        <p className="text-[11px] text-danger/90">{t('queue.stage.reason', { reason: errorDetails.reason })}</p>
       ) : null}
       {errorDetails?.missingFields?.length ? (
-        <p className="text-[11px] text-danger/90">Thiếu: {errorDetails.missingFields.join(', ')}</p>
+        <p className="text-[11px] text-danger/90">
+          {t('queue.stage.missing', { fields: errorDetails.missingFields.join(', ') })}
+        </p>
       ) : null}
       {errorDetails?.context ? (
-        <p className="text-[11px] text-neutral-400">Ngữ cảnh: {errorDetails.context}</p>
+        <p className="text-[11px] text-neutral-400">
+          {t('queue.stage.context', { context: errorDetails.context })}
+        </p>
       ) : null}
       {errorDetails?.snippet && !compact ? (
         <pre className="max-h-40 overflow-auto rounded-md border border-border/60 bg-neutral-950 p-2 text-[10px] leading-relaxed text-neutral-300 whitespace-pre-wrap break-all">
@@ -62,11 +61,21 @@ export function TaskStageChecklist({
   compact?: boolean;
   showFailedDetails?: boolean;
 }) {
+  const { t } = useTranslation('factory');
+
   const visible = compact
     ? stages.filter(stage => stage.status === 'done' || stage.status === 'doing' || stage.status === 'failed')
     : stages.filter(stage => stage.status !== 'skipped');
 
   if (visible.length === 0) return null;
+
+  function stageStatusLabel(status: TaskStage['status']): string {
+    if (status === 'done') return t('queue.stage.done');
+    if (status === 'doing') return t('queue.stage.doing');
+    if (status === 'failed') return t('queue.stage.failed');
+    if (status === 'skipped') return t('queue.stage.skipped');
+    return '';
+  }
 
   return (
     <ul className={cn('space-y-1', compact ? 'mt-2' : 'mt-3')}>

@@ -89,7 +89,19 @@ function buildSceneVisualJobs(scenes: AiVideoScenePrompt[], slidesDir: string): 
   });
 }
 
-async function resolvePendingJobs(jobs: SceneVisualJob[]): Promise<{
+async function unlinkIfExists(filePath: string): Promise<void> {
+  try {
+    await fs.unlink(filePath);
+  } catch (err) {
+    const code = err && typeof err === 'object' && 'code' in err ? (err as { code?: string }).code : undefined;
+    if (code !== 'ENOENT') throw err;
+  }
+}
+
+async function resolvePendingJobs(
+  jobs: SceneVisualJob[],
+  forceIndexes?: ReadonlySet<number>,
+): Promise<{
   pending: SceneVisualJob[];
   skippedCount: number;
 }> {
@@ -97,7 +109,12 @@ async function resolvePendingJobs(jobs: SceneVisualJob[]): Promise<{
   let skippedCount = 0;
 
   for (const job of jobs) {
-    if (await fileExists(job.outputPath)) {
+    const force = forceIndexes?.has(job.index) === true;
+    if (force && (await fileExists(job.outputPath))) {
+      await unlinkIfExists(job.outputPath);
+    }
+
+    if (!force && (await fileExists(job.outputPath))) {
       skippedCount += 1;
       continue;
     }
@@ -319,7 +336,11 @@ export async function generateAiSceneSlideImages(
   await fs.mkdir(slidesDir, { recursive: true });
 
   const jobs = buildSceneVisualJobs(input.scenes, slidesDir);
-  const { pending, skippedCount } = await resolvePendingJobs(jobs);
+  const forceIndexes =
+    input.forceIndexes && input.forceIndexes.length > 0
+      ? new Set(input.forceIndexes.filter((index) => Number.isInteger(index) && index >= 0))
+      : undefined;
+  const { pending, skippedCount } = await resolvePendingJobs(jobs, forceIndexes);
 
   const kenBurnsPrebake = clipPrebakeEnabled(input);
   const prebakePool = kenBurnsPrebake

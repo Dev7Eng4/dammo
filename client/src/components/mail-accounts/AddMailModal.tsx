@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { createMailAccount, updateMailAccount } from '../../api/mailAccounts';
 import { Button, Input, Modal } from '../ui';
 import type { AddMailFormValues, MailAccount } from '../../types/mailAccount';
@@ -28,6 +29,7 @@ function toFormValues(account?: MailAccount | null): AddMailFormValues {
 }
 
 export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMailModalProps) {
+  const { t } = useTranslation(['mail', 'common']);
   const isEdit = Boolean(account);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
@@ -63,7 +65,13 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : isEdit ? 'Không thể cập nhật tài khoản' : 'Không thể tạo tài khoản');
+      setApiError(
+        err instanceof Error
+          ? err.message
+          : isEdit
+            ? t('form.updateError')
+            : t('form.createError'),
+      );
     }
   }
 
@@ -71,14 +79,18 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
     <Modal
       open={open}
       onClose={handleClose}
-      title={isEdit ? 'Sửa tài khoản email' : 'Thêm tài khoản email'}
+      title={isEdit ? t('form.editTitle') : t('form.addTitle')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-mail-form" type="submit">
-            {isSubmitting ? 'Đang lưu...' : isEdit ? 'Lưu' : 'Thêm email'}
+            {isSubmitting
+              ? t('common:actions.saving')
+              : isEdit
+                ? t('common:actions.save')
+                : t('form.add')}
           </Button>
         </>
       }
@@ -94,8 +106,8 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
             placeholder="name@example.com"
             className="h-10 rounded-lg"
             {...register('email', {
-              required: 'Vui lòng nhập email',
-              pattern: { value: EMAIL_PATTERN, message: 'Email không hợp lệ' },
+              required: t('form.emailRequired'),
+              pattern: { value: EMAIL_PATTERN, message: t('form.emailInvalid') },
             })}
           />
           {errors.email ? (
@@ -105,7 +117,7 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
 
         <div>
           <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Mật khẩu <span className="text-neutral-500">(tuỳ chọn)</span>
+            {t('form.password')} <span className="text-neutral-500">{t('common:actions.optional')}</span>
           </label>
           <Input
             id="password"
@@ -113,7 +125,7 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
             placeholder="••••••••"
             className="h-10 rounded-lg"
             {...register('password', {
-              minLength: { value: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
+              minLength: { value: 6, message: t('form.passwordMin') },
             })}
           />
           {errors.password ? (
@@ -123,12 +135,12 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
 
         <div>
           <label htmlFor="twoFactorAuth" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            2FA <span className="text-neutral-500">(tuỳ chọn)</span>
+            {t('form.twoFa')} <span className="text-neutral-500">{t('common:actions.optional')}</span>
           </label>
           <Input
             id="twoFactorAuth"
             type="text"
-            placeholder="Mã dự phòng hoặc secret"
+            placeholder={t('form.twoFaPlaceholder')}
             className="h-10 rounded-lg"
             {...register('twoFactorAuth')}
           />
@@ -136,7 +148,7 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
 
         <div>
           <label htmlFor="recoveryEmail" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Email khôi phục <span className="text-neutral-500">(tuỳ chọn)</span>
+            {t('form.recovery')} <span className="text-neutral-500">{t('common:actions.optional')}</span>
           </label>
           <Input
             id="recoveryEmail"
@@ -144,7 +156,7 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
             placeholder="recovery@example.com"
             className="h-10 rounded-lg"
             {...register('recoveryEmail', {
-              pattern: { value: EMAIL_PATTERN, message: 'Email không hợp lệ' },
+              pattern: { value: EMAIL_PATTERN, message: t('form.emailInvalid') },
             })}
           />
           {errors.recoveryEmail ? (
@@ -154,7 +166,7 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
 
         <div>
           <label htmlFor="phone" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Số điện thoại <span className="text-neutral-500">(tuỳ chọn)</span>
+            {t('form.phone')} <span className="text-neutral-500">{t('common:actions.optional')}</span>
           </label>
           <Input
             id="phone"

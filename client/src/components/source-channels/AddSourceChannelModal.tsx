@@ -1,7 +1,8 @@
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchNiches } from '../../api/niches';
-import { SOURCE_PURPOSE_SELECT_OPTIONS } from './PurposePill';
+import { getSourcePurposeSelectOptions } from './PurposePill';
 import { Button, Modal, Select } from '../ui';
 import type { Niche } from '../../types/niche';
 import type {
@@ -29,6 +30,7 @@ const defaultValues: AddSourceChannelFormValues = {
 };
 
 export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannelModalProps) {
+  const { t } = useTranslation(['source', 'common']);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nichesError, setNichesError] = useState<string | null>(null);
 
@@ -54,13 +56,14 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
-        setNichesError(err instanceof Error ? err.message : 'Không thể tải niches');
+        setNichesError(err instanceof Error ? err.message : t('add.nichesLoadError'));
       });
 
     return () => controller.abort();
-  }, [open]);
+  }, [open, t]);
 
   const nichesLoading = open && niches.length === 0 && nichesError === null;
+  const purposeOptions = getSourcePurposeSelectOptions(t);
 
   function handleClose() {
     setNiches([]);
@@ -102,14 +105,14 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     <Modal
       open={open}
       onClose={handleClose}
-      title="Thêm kênh nguồn"
+      title={t('add.title')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" form="add-source-form" type="submit">
-            Thêm nguồn
+            {t('add.submit')}
           </Button>
         </>
       }
@@ -117,35 +120,35 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
       <form id="add-source-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="source-url" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            URL / Handle
-            <span className="ml-1 font-normal text-neutral-500">(mỗi dòng một link)</span>
+            {t('add.urlsLabel')}
+            <span className="ml-1 font-normal text-neutral-500">{t('add.urlsHint')}</span>
           </label>
           <textarea
             id="source-url"
             rows={5}
             placeholder={`https://youtube.com/@channel1\nhttps://youtube.com/@channel2\n@handle`}
             className="w-full resize-y rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 font-mono text-sm text-neutral-100 placeholder-neutral-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            {...register('url', { required: 'Nhập ít nhất một URL' })}
+            {...register('url', { required: t('add.urlsRequired') })}
           />
           {errors.url ? <p className="mt-1 text-xs text-danger">{errors.url.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="source-purpose" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Mục đích
+            {t('add.purpose')}
           </label>
           <Controller
             name="purpose"
             control={control}
-            rules={{ required: 'Mục đích là bắt buộc' }}
+            rules={{ required: t('add.purposeRequired') }}
             render={({ field }) => (
               <Select
                 id="source-purpose"
-                options={SOURCE_PURPOSE_SELECT_OPTIONS}
+                options={purposeOptions}
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Chọn mục đích"
+                placeholder={t('add.purposePlaceholder')}
                 className="w-full"
                 triggerClassName="h-10 w-full min-w-0 rounded-lg px-3 py-0"
               />
@@ -156,12 +159,12 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
 
         <div>
           <label htmlFor="source-language" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ngôn ngữ
+            {t('add.language')}
           </label>
           <Controller
             name="language"
             control={control}
-            rules={{ required: 'Ngôn ngữ là bắt buộc' }}
+            rules={{ required: t('add.languageRequired') }}
             render={({ field }) => (
               <Select
                 id="source-language"
@@ -169,7 +172,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Chọn ngôn ngữ"
+                placeholder={t('add.languagePlaceholder')}
                 className="w-full"
                 triggerClassName="h-10 w-full min-w-0 rounded-lg px-3 py-0"
               />
@@ -181,7 +184,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
         <div>
           <label htmlFor="source-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
             Niche
-            <span className="ml-1 font-normal text-neutral-500">(tùy chọn)</span>
+            <span className="ml-1 font-normal text-neutral-500">{t('add.nicheOptional')}</span>
           </label>
           <Controller
             name="niche"
@@ -195,10 +198,10 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
                 onBlur={field.onBlur}
                 placeholder={
                   nichesLoading
-                    ? 'Đang tải niches...'
+                    ? t('add.nicheLoading')
                     : nicheOptions.length === 0
-                      ? 'Chưa có niche'
-                      : 'Chọn niche'
+                      ? t('add.nicheEmpty')
+                      : t('add.nichePlaceholder')
                 }
                 disabled={nichesLoading || nicheOptions.length === 0}
                 className="w-full"
@@ -210,9 +213,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
           {nichesError ? <p className="mt-1 text-xs text-danger">{nichesError}</p> : null}
         </div>
 
-        <p className="text-xs text-neutral-500">
-          Nền tảng được nhận diện tự động. Kênh YouTube sẽ lấy metadata và video ở nền sau khi thêm.
-        </p>
+        <p className="text-xs text-neutral-500">{t('add.hint')}</p>
       </form>
     </Modal>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Modal } from '../ui';
 import type { SourceChannel, SourceChannelUsage, SourceUsagePlatform } from '../../types/sourceChannel';
 
@@ -52,6 +53,7 @@ export function DeleteSourceChannelModal({
   onClose,
   onConfirmDelete,
 }: DeleteSourceChannelModalProps) {
+  const { t } = useTranslation(['source', 'common']);
   const blockedEntries = sources
     .map((source, index) => ({ source, usage: usages[index] }))
     .filter((entry): entry is { source: SourceChannel; usage: SourceChannelUsage } =>
@@ -67,11 +69,11 @@ export function DeleteSourceChannelModal({
         if (deleting) return;
         onClose();
       }}
-      title={blocked ? 'Không thể xóa nguồn' : isBulk ? 'Xóa kênh nguồn' : 'Xóa kênh nguồn'}
+      title={blocked ? t('delete.blockedTitle') : t('delete.title')}
       footer={
         blocked ? (
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose}>
-            Đóng
+            {t('delete.close')}
           </Button>
         ) : (
           <>
@@ -82,7 +84,7 @@ export function DeleteSourceChannelModal({
               onClick={onClose}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -91,7 +93,7 @@ export function DeleteSourceChannelModal({
               onClick={onConfirmDelete}
               disabled={deleting}
             >
-              {deleting ? 'Đang xóa…' : 'Xóa'}
+              {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
             </Button>
           </>
         )
@@ -100,15 +102,13 @@ export function DeleteSourceChannelModal({
       {blocked ? (
         <div className="space-y-4">
           {isBulk ? (
-            <p className="text-sm text-neutral-300">
-              Một hoặc nhiều nguồn đang được sử dụng. Không nguồn nào được xóa.
-            </p>
+            <p className="text-sm text-neutral-300">{t('delete.blockedBulk')}</p>
           ) : null}
 
           {blockedEntries.map(({ source, usage }) => (
             <div key={source.id} className="space-y-3 rounded-lg border border-border/60 p-3">
               <p className="text-sm text-neutral-300">
-                Nguồn &quot;{source.name}&quot; đang được sử dụng bởi các kênh sau:
+                {t('delete.blockedOne', { name: source.name })}
               </p>
               <UsageChannelsList usage={usage} />
             </div>
@@ -116,11 +116,11 @@ export function DeleteSourceChannelModal({
         </div>
       ) : isBulk ? (
         <p className="text-sm text-neutral-300">
-          Xóa {sources.length} kênh nguồn? Hành động này không thể hoàn tác.
+          {t('delete.bulkBody', { count: sources.length })}
         </p>
       ) : (
         <p className="text-sm text-neutral-300">
-          Xóa nguồn &quot;{sources[0]?.name ?? ''}&quot;? Hành động này không thể hoàn tác.
+          {t('delete.oneBody', { name: sources[0]?.name ?? '' })}
         </p>
       )}
     </Modal>

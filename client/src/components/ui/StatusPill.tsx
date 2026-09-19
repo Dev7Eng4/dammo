@@ -1,14 +1,18 @@
+import { useTranslation } from 'react-i18next'
 import { StatusBadge } from './StatusBadge'
 
 type MailAccountStatus = 'active' | 'need_verify' | 'suspended'
 
-const statusConfig: Record<
-  MailAccountStatus,
-  { label: string; tone: 'success' | 'warning' | 'danger' }
-> = {
-  active: { label: 'Hoạt động', tone: 'success' },
-  need_verify: { label: 'Cần xác minh', tone: 'warning' },
-  suspended: { label: 'Đã khóa', tone: 'danger' },
+const statusTone: Record<MailAccountStatus, 'success' | 'warning' | 'danger'> = {
+  active: 'success',
+  need_verify: 'warning',
+  suspended: 'danger',
+}
+
+const statusKey: Record<MailAccountStatus, string> = {
+  active: 'status.active',
+  need_verify: 'status.needVerify',
+  suspended: 'status.suspended',
 }
 
 export interface StatusPillProps {
@@ -17,6 +21,8 @@ export interface StatusPillProps {
 }
 
 export function StatusPill({ status, className }: StatusPillProps) {
-  const config = statusConfig[status]
-  return <StatusBadge label={config.label} tone={config.tone} withDot className={className} />
+  const { t } = useTranslation('common')
+  return (
+    <StatusBadge label={t(statusKey[status])} tone={statusTone[status]} withDot className={className} />
+  )
 }

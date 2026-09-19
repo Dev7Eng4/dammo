@@ -1,0 +1,240 @@
+{
+  "production": {
+    "page": {
+      "title": "Video Production",
+      "subtitle": "Select channel → select video → view render scenes"
+    },
+    "loadVideosError": "Could not load video list",
+    "loadScenesError": "Could not load scenes",
+    "loadTranscriptError": "Could not load transcript",
+    "loadCharactersError": "Could not load characters",
+    "loadMetadataError": "Could not load metadata",
+    "closePanel": "Close panel",
+    "tabs": {
+      "metadata": "Metadata",
+      "transcript": "Script",
+      "scenes": "Scenes",
+      "characters": "Characters"
+    },
+    "toolbar": {
+      "step1": "1. Select channel",
+      "step2": "2. Find video",
+      "channelLoading": "Loading channels...",
+      "channelPlaceholder": "Select YouTube channel",
+      "channelSearch": "Search channels...",
+      "videoSearch": "Search by video title...",
+      "selectChannelFirst": "Select a channel first",
+      "filterAll": "All",
+      "count": "{{total}} videos",
+      "noChannel": "No channel selected"
+    },
+    "list": {
+      "loading": "Loading videos...",
+      "selectChannel": "Select a channel above to see the video list.",
+      "empty": "This channel has no Prepared or Created videos.",
+      "sceneCount": "{{count}} scenes",
+      "noThumbnail": "No thumbnail"
+    },
+    "detail": {
+      "selectVideo": "Select a video from the list to view its scenes and images.",
+      "loadingScenes": "Loading scenes...",
+      "noScenes": "No ai-scene-prompts.json for this video yet."
+    },
+    "metadata": {
+      "loading": "Loading metadata...",
+      "empty": "No video-meta.json for this video yet.",
+      "title": "Title",
+      "description": "Description",
+      "tags": "Tags",
+      "noTitle": "No title",
+      "noDescription": "No description",
+      "noTags": "No tags",
+      "noThumbnail": "No thumbnail",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Metadata saved",
+      "saveError": "Could not save metadata",
+      "changeThumb": "Change thumbnail",
+      "thumbFormatError": "Thumbnail must be JPEG, PNG, or WebP",
+      "thumbSizeError": "Thumbnail must be 10MB or smaller",
+      "tagPlaceholderEmpty": "Add a tag and press Enter",
+      "tagPlaceholderAdd": "Add another tag",
+      "tagDeleteAria": "Remove tag {{tag}}",
+      "regenerate": "Regenerate metadata",
+      "regenerating": "Regenerating…",
+      "regenQueued": "Queued metadata regeneration",
+      "regenSuccess": "Regenerated metadata and thumbnail",
+      "regenFailed": "Metadata regeneration failed",
+      "regenReloadError": "Could not reload metadata after regeneration",
+      "regenJobTitle": "Regenerate metadata: {{title}}"
+    },
+    "transcript": {
+      "loading": "Loading transcript...",
+      "empty": "No transcript.srt or transcript-updated.srt for this video yet.",
+      "col": {
+        "index": "#",
+        "timeline": "Timeline",
+        "text": "Text"
+      }
+    },
+    "characters": {
+      "loading": "Loading characters...",
+      "empty": "No character-references.json for this video yet.",
+      "noImage": "No image yet",
+      "noPrompt": "No prompt"
+    },
+    "scene": {
+      "noImage": "No image yet",
+      "noPrompt": "No prompt",
+      "expand": "Show more",
+      "collapse": "Show less",
+      "regenerate": "Regenerate",
+      "regenerating": "Regenerating…",
+      "regenerateError": "Could not regenerate scene image"
+    },
+    "table": {
+      "col": {
+        "index": "#",
+        "timeline": "Timeline",
+        "prompt": "Prompt",
+        "image": "Image"
+      }
+    },
+    "status": {
+      "prepared": "Prepared",
+      "created": "Created"
+    }
+  },
+  "queue": {
+    "page": {
+      "headerTitle": "Task queue",
+      "title": "Running Jobs",
+      "subtitle": "Track and manage running jobs",
+      "count": "{{active}} jobs in queue",
+      "totalSuffix": " · {{total}} total",
+      "empty": "No jobs yet",
+      "noMatch": "No jobs match your search"
+    },
+    "toolbar": {
+      "search": "Search jobs...",
+      "refresh": "Refresh",
+      "clear": "Clear",
+      "clearing": "Clearing..."
+    },
+    "popup": {
+      "title": "Job queue",
+      "empty": "No jobs yet",
+      "openFull": "Open full queue →",
+      "minimize": "Minimize",
+      "expand": "Expand",
+      "close": "Close"
+    },
+    "fab": {
+      "open": "Open job queue",
+      "openWithActive": "Open job queue, {{count}} running"
+    },
+    "summary": "{{running}} Running · {{queued}} Queued · {{failed}} Failed",
+    "status": {
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "queued": "Queued",
+      "cancelled": "Cancelled"
+    },
+    "stage": {
+      "done": "done",
+      "doing": "in progress",
+      "failed": "failed",
+      "skipped": "skipped",
+      "reason": "Reason: {{reason}}",
+      "missing": "Missing: {{fields}}",
+      "context": "Context: {{context}}",
+      "snippet": "Snippet:\n{{snippet}}"
+    },
+    "job": {
+      "cancel": "Cancel",
+      "cancelAria": "Cancel job",
+      "retry": "Retry",
+      "path": "Path",
+      "view": "View",
+      "copy": "Copy",
+      "copied": "Copied",
+      "detailLive": "Live log",
+      "detail": "Job details",
+      "steps": "Steps",
+      "error": "Error",
+      "processing": "Processing",
+      "completed": "Completed",
+      "waitingWorker": "Waiting for worker",
+      "noData": "No data yet",
+      "failed": "Job failed",
+      "doingLabel": "{{label}} — in progress",
+      "stepLabel": "Step: {{label}}",
+      "progressPct": "{{label}} ({{progress}}%)",
+      "savedSource": "Saved source · {{id}}"
+    },
+    "type": {
+      "importSource": "IMPORT SOURCE",
+      "createVideo": "CREATE VIDEO",
+      "downloadSource": "DOWNLOAD SOURCE",
+      "uploadVideo": "UPLOAD YOUTUBE"
+    },
+    "toast": {
+      "started": "Started: {{title}}",
+      "paused": "Queue paused",
+      "resumed": "Queue resumed",
+      "cleared": "Cleared {{count}} finished jobs",
+      "pathCopied": "Path copied",
+      "pathCopyError": "Could not copy path",
+      "enqueueError": "Failed to enqueue task",
+      "clearError": "Failed to clear finished jobs"
+    }
+  },
+  "settings": {
+    "page": {
+      "title": "Settings",
+      "subtitle": "Configure AI video, Chrome, scene density, and the task queue."
+    },
+    "tab": {
+      "videoAi": "AI Video",
+      "chrome": "Chrome",
+      "video": "Video",
+      "taskQueue": "Queue"
+    },
+    "videoAi": {
+      "hint": "Image effects for AI video (slideshow)."
+    },
+    "kenBurns": "Ken Burns (pan/zoom)",
+    "kenBurnsDesc": "Enable pan/zoom on each image in the slideshow.",
+    "transitions": "Transitions between images",
+    "transitionsDesc": "Enable xfade transitions between images; off uses hard cuts.",
+    "chrome": {
+      "hint": "How to keep Chrome windows in the background during automation."
+    },
+    "chromeOffscreen": "Move background Chrome windows off-screen",
+    "chromeOffscreenDesc": "On: park windows off-screen when running in the background. Off: keep windows visible normally.",
+    "sceneDensity": "Max duration per scene (seconds) — system default. YouTube channels can still override per channel.",
+    "sceneStart": "Start of video",
+    "sceneMiddle": "Middle of video",
+    "sceneEnd": "End of video",
+    "concurrencyHint": "Number of queue jobs that can run at once. Value 1 = sequential (next job waits for the previous to finish).",
+    "concurrency": "Concurrent jobs",
+    "verboseLogs": "Show detailed logs",
+    "verboseLogsDesc": "On: log ffmpeg/progress/each clip as today. Off: only step names and durations.",
+    "save": "Save",
+    "saving": "Saving...",
+    "reset": "Reset",
+    "toast": {
+      "loadError": "Could not load settings",
+      "saved": "Settings saved",
+      "saveError": "Failed to save settings"
+    }
+  },
+  "videoFactory": {
+    "page": {
+      "title": "Video Factory",
+      "subtitle": "Configure a new render job and add it to the queue",
+      "queued": "Video queued for render"
+    }
+  }
+}

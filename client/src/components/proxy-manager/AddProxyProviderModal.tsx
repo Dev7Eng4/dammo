@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createProxyProvider } from '../../api/proxies';
 import { Button, Input, Modal, Textarea } from '../ui';
 import type { ProxyProviderFormValues } from '../../types/proxy';
@@ -11,6 +12,7 @@ interface AddProxyProviderModalProps {
 }
 
 export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProviderModalProps) {
+  const { t } = useTranslation(['browser', 'common']);
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
@@ -47,7 +49,7 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
       onSuccess();
       onClose();
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Tạo nhà cung cấp thất bại');
+      setApiError(err instanceof Error ? err.message : t('proxy.providers.addModal.error'));
     }
   }
 
@@ -55,14 +57,14 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
     <Modal
       open={open}
       onClose={handleClose}
-      title="Thêm nhà cung cấp"
+      title={t('proxy.providers.addModal.title')}
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={handleClose} disabled={isSubmitting}>
-            Hủy
+            {t('common:actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" disabled={isSubmitting} form="add-provider-form" type="submit">
-            {isSubmitting ? 'Đang lưu...' : 'Thêm nhà cung cấp'}
+            {isSubmitting ? t('common:actions.saving') : t('proxy.providers.addModal.submit')}
           </Button>
         </>
       }
@@ -70,20 +72,21 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
       <form id="add-provider-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="provider-name" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Tên nhà cung cấp
+            {t('proxy.providers.addModal.name')}
           </label>
           <Input
             id="provider-name"
             placeholder="Luminati Network"
             className="h-10 rounded-lg"
-            {...register('name', { required: 'Tên là bắt buộc' })}
+            {...register('name', { required: t('proxy.providers.addModal.nameRequired') })}
           />
           {errors.name ? <p className="mt-1 text-xs text-danger">{errors.name.message}</p> : null}
         </div>
 
         <div>
           <label htmlFor="provider-url" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            URL đăng nhập <span className="text-neutral-500">(tùy chọn)</span>
+            {t('proxy.providers.addModal.loginUrl')}{' '}
+            <span className="text-neutral-500">{t('proxy.providers.addModal.loginUrlOptional')}</span>
           </label>
           <Input
             id="provider-url"
@@ -93,7 +96,7 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
             {...register('loginUrl', {
               pattern: {
                 value: /^$|^https?:\/\/.+/i,
-                message: 'URL phải bắt đầu bằng http:// hoặc https://',
+                message: t('proxy.providers.addModal.loginUrlInvalid'),
               },
             })}
           />
@@ -103,12 +106,12 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="provider-username" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Tên đăng nhập
+              {t('proxy.providers.addModal.username')}
             </label>
             <Input
               id="provider-username"
               className="h-10 rounded-lg"
-              {...register('username', { required: 'Tên đăng nhập là bắt buộc' })}
+              {...register('username', { required: t('proxy.providers.addModal.usernameRequired') })}
             />
             {errors.username ? (
               <p className="mt-1 text-xs text-danger">{errors.username.message}</p>
@@ -116,13 +119,13 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
           </div>
           <div>
             <label htmlFor="provider-password" className="mb-1.5 block text-xs font-medium text-neutral-400">
-              Mật khẩu
+              {t('proxy.providers.addModal.password')}
             </label>
             <Input
               id="provider-password"
               type="password"
               className="h-10 rounded-lg"
-              {...register('password', { required: 'Mật khẩu là bắt buộc' })}
+              {...register('password', { required: t('proxy.providers.addModal.passwordRequired') })}
             />
             {errors.password ? (
               <p className="mt-1 text-xs text-danger">{errors.password.message}</p>
@@ -132,7 +135,8 @@ export function AddProxyProviderModal({ open, onClose, onSuccess }: AddProxyProv
 
         <div>
           <label htmlFor="provider-notes" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Ghi chú <span className="text-neutral-500">(tùy chọn)</span>
+            {t('proxy.providers.addModal.notes')}{' '}
+            <span className="text-neutral-500">{t('proxy.providers.addModal.notesOptional')}</span>
           </label>
           <Textarea id="provider-notes" rows={3} className="text-sm" {...register('notes')} />
         </div>

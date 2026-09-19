@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import { resolveNicheLabel } from '../../utils/niche';
@@ -44,16 +45,18 @@ export function SourceChannelsTable({
   onNotesChange,
   onDelete: _onDelete,
 }: SourceChannelsTableProps) {
+  const { t } = useTranslation('source');
+
   const columns: ColumnDef<SourceChannel, unknown>[] = [
     {
       id: 'platform',
-      header: 'NỀN TẢNG',
+      header: t('table.col.platform'),
       meta: { headerClassName: 'w-12' },
       cell: ({ row }) => <PlatformIcon platform={row.original.platform} className="text-neutral-400" />,
     },
     {
       accessorKey: 'name',
-      header: 'TÊN NGUỒN',
+      header: t('table.col.name'),
       cell: ({ row }) => (
         <span
           className="font-medium text-green-600"
@@ -68,26 +71,26 @@ export function SourceChannelsTable({
     },
     {
       accessorKey: 'url',
-      header: 'URL (ID)',
+      header: t('table.col.url'),
       cell: ({ getValue }) => (
         <span className="font-mono text-xs text-neutral-500">{truncateUrl(getValue<string>())}</span>
       ),
     },
     {
       accessorKey: 'niche',
-      header: 'NICHE',
+      header: t('table.col.niche'),
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{resolveNicheLabel(getValue<string>(), niches)}</span>
       ),
     },
     {
       accessorKey: 'purpose',
-      header: 'MỤC ĐÍCH',
+      header: t('table.col.purpose'),
       cell: ({ row }) => <PurposePill purpose={row.original.purpose} />,
     },
     {
       id: 'notes',
-      header: 'GHI CHÚ',
+      header: t('table.col.notes'),
       cell: ({ row }) => {
         const source = row.original;
         const isSavingNotes = savingNotesId === source.id;
@@ -98,7 +101,7 @@ export function SourceChannelsTable({
                 key={`${source.id}-${source.notes ?? ''}`}
                 type="text"
                 defaultValue={source.notes ?? ''}
-                placeholder="Thêm ghi chú..."
+                placeholder={t('table.notesPlaceholder')}
                 disabled={isSavingNotes}
                 onBlur={e => onNotesChange(source.id, e.currentTarget.value)}
                 className="h-8 w-full min-w-[10rem] rounded-lg border border-border bg-surface-elevated px-2.5 text-xs text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 disabled:opacity-60"
@@ -124,7 +127,7 @@ export function SourceChannelsTable({
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
       onRowClick={source => onToggleRow(source.id)}
-      emptyMessage="Không có kênh nguồn khớp bộ lọc."
+      emptyMessage={t('table.empty')}
     />
   );
 }

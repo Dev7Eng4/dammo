@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useTaskQueue } from '../../hooks/useTaskQueue';
 import { TaskQueueItem } from './TaskQueueItem';
@@ -5,6 +6,7 @@ import { TaskQueueMinimizedFab } from './TaskQueueMinimizedFab';
 import { TaskQueueSummary } from './TaskQueueSummary';
 
 export function TaskQueuePopup() {
+  const { t } = useTranslation('factory');
   const {
     jobs,
     summary,
@@ -34,7 +36,7 @@ export function TaskQueuePopup() {
       <div className="border-b border-border px-4 py-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-neutral-100">Hàng đợi công việc</h2>
+            <h2 className="text-sm font-semibold text-neutral-100">{t('queue.popup.title')}</h2>
             <TaskQueueSummary
               running={summary.running}
               queued={summary.queued}
@@ -46,7 +48,7 @@ export function TaskQueuePopup() {
               type="button"
               className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
               onClick={() => setPopupView('minimized')}
-              aria-label="Thu nhỏ"
+              aria-label={t('queue.popup.minimize')}
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
                 <path d="M4 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H4.75A.75.75 0 014 10z" />
@@ -56,7 +58,7 @@ export function TaskQueuePopup() {
               type="button"
               className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
               onClick={openFullQueue}
-              aria-label="Mở rộng"
+              aria-label={t('queue.popup.expand')}
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
                 <path d="M3.75 3A1.75 1.75 0 002 4.75v3.5a.75.75 0 001.5 0V5.56l4.97 4.97a.75.75 0 101.06-1.06L4.56 4.5h2.69a.75.75 0 000-1.5h-3.5zM16.25 17A1.75 1.75 0 0018 15.25v-3.5a.75.75 0 00-1.5 0v2.69l-4.97-4.97a.75.75 0 00-1.06 1.06l4.97 4.97h-2.69a.75.75 0 000 1.5h3.5z" />
@@ -66,7 +68,7 @@ export function TaskQueuePopup() {
               type="button"
               className="rounded-md p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
               onClick={() => setPopupView('closed')}
-              aria-label="Đóng"
+              aria-label={t('queue.popup.close')}
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
                 <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
@@ -78,7 +80,7 @@ export function TaskQueuePopup() {
 
       <div className="max-h-[320px] overflow-y-auto scrollbar-thin">
         {jobs.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-neutral-500">Chưa có công việc</p>
+          <p className="px-4 py-8 text-center text-sm text-neutral-500">{t('queue.popup.empty')}</p>
         ) : (
           jobs.slice(0, 8).map((job) => (
             <TaskQueueItem
@@ -96,7 +98,7 @@ export function TaskQueuePopup() {
           onClick={openFullQueue}
           className="text-xs font-medium text-primary-400 hover:text-primary-300"
         >
-          Mở hàng đợi đầy đủ →
+          {t('queue.popup.openFull')}
         </button>
       </div>
     </div>

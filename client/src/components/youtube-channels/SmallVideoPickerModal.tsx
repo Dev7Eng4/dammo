@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { assetFileUrl, fetchAssets } from '../../api/assets';
 import {
   fetchSmallVideoGroupMedia,
@@ -70,6 +71,8 @@ function tabButtonClass(active: boolean): string {
 }
 
 export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }: SmallVideoPickerModalProps) {
+  const { t } = useTranslation('youtube');
+  const { t: tCommon } = useTranslation('common');
   const [items, setItems] = useState<AssetFileItem[]>([]);
   const [groups, setGroups] = useState<SmallVideoGroupListItem[]>([]);
   const [groupChannelUsage, setGroupChannelUsage] = useState<Map<string, number>>(() => new Map());
@@ -127,7 +130,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
           setGroups([]);
           setGroupChannelUsage(new Map());
           setUngroupedChannelCount(0);
-          setError(err instanceof Error ? err.message : 'Không thể tải danh sách video nhỏ');
+          setError(err instanceof Error ? err.message : t('picker.smallVideoLoadError'));
         }
       })
       .finally(() => {
@@ -139,7 +142,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
     };
     // Only re-init when modal opens; selectedFile is read once for initial tab.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional on open
-  }, [open]);
+  }, [open, t]);
 
   useEffect(() => {
     if (!open || activeTab === 'ungrouped') {
@@ -161,7 +164,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
       .catch(err => {
         if (!cancelled) {
           setGroupMedia([]);
-          setGroupMediaError(err instanceof Error ? err.message : 'Không thể tải video trong nhóm');
+          setGroupMediaError(err instanceof Error ? err.message : t('picker.groupMediaLoadError'));
         }
       })
       .finally(() => {
@@ -171,7 +174,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
     return () => {
       cancelled = true;
     };
-  }, [open, activeTab]);
+  }, [open, activeTab, t]);
 
   function handleToggleSelect(filename: string) {
     onSelect(selectedFile === filename ? '' : filename);
@@ -205,7 +208,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
       <Modal
         open={open}
         onClose={onClose}
-        title='Chọn video nhỏ'
+        title={t('picker.smallVideoTitle')}
         className='max-w-4xl'
         bodyClassName='min-h-[50vh] max-h-[75vh] overflow-y-auto'
         footer={
@@ -220,7 +223,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
               }`}
               onClick={handleSelectAuto}
             >
-              Tự động
+              {tCommon('actions.auto')}
             </Button>
             <Button
               variant='outlined'
@@ -233,19 +236,19 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
               disabled={!canSelectGroup}
               title={
                 !isFolderTab
-                  ? 'Chọn tab folder rồi bấm Chọn nhóm'
+                  ? t('picker.groupNeedTab')
                   : !canSelectGroup
-                    ? 'Nhóm chưa có video'
+                    ? t('picker.groupEmpty')
                     : groupSelectedOnTab
-                      ? 'Bỏ chọn nhóm'
-                      : `Chọn cả nhóm "${activeGroup?.name ?? ''}" (random video mỗi lần)`
+                      ? t('picker.deselectGroup')
+                      : t('picker.groupSelectHint', { name: activeGroup?.name ?? '' })
               }
               onClick={handleSelectGroup}
             >
-              {groupSelectedOnTab ? 'Bỏ chọn nhóm' : 'Chọn nhóm'}
+              {groupSelectedOnTab ? t('picker.deselectGroup') : t('picker.selectGroup')}
             </Button>
             <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose}>
-              Đóng
+              {tCommon('actions.close')}
             </Button>
           </div>
         }
@@ -258,17 +261,17 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
           ) : null}
 
           {loading ? (
-            <p className='text-center text-xs text-neutral-500'>Đang tải danh sách video...</p>
+            <p className='text-center text-xs text-neutral-500'>{t('picker.loadingList')}</p>
           ) : (
             <div className='space-y-4'>
               <div className='flex flex-wrap items-center gap-2'>
                 <button
                   type='button'
                   onClick={() => setActiveTab('ungrouped')}
-                  title={`Không có nhóm — ${ungroupedChannelCount} kênh đang dùng`}
+                  title={t('picker.ungroupedUsageTitle', { count: ungroupedChannelCount })}
                   className={tabButtonClass(activeTab === 'ungrouped')}
                 >
-                  Không có nhóm ({ungroupedChannelCount})
+                  {t('picker.ungrouped', { count: ungroupedChannelCount })}
                 </button>
                 {groups.map(group => {
                   const channelCount = groupChannelUsage.get(group.id) ?? 0;
@@ -276,7 +279,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                     <button
                       key={group.id}
                       type='button'
-                      title={`${group.name} — ${channelCount} kênh đang dùng`}
+                      title={t('picker.groupUsageTitle', { name: group.name, count: channelCount })}
                       onClick={() => setActiveTab(group.id)}
                       className={`max-w-48 truncate ${tabButtonClass(activeTab === group.id)}`}
                     >
@@ -311,7 +314,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                           <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-1.5 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
                             <button
                               type='button'
-                              title='Xem'
+                              title={t('picker.view')}
                               className='rounded-full bg-neutral-900/90 p-1.5 text-neutral-100 hover:bg-neutral-800'
                               onClick={() => setPreviewUrl(src)}
                             >
@@ -319,7 +322,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                             </button>
                             <button
                               type='button'
-                              title={selected ? 'Bỏ chọn' : 'Chọn'}
+                              title={selected ? tCommon('actions.deselect') : tCommon('actions.select')}
                               className={`rounded-full p-1.5 text-white ${
                                 selected
                                   ? 'bg-neutral-600/90 hover:bg-neutral-500'
@@ -343,10 +346,10 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                     })}
                   </div>
                 ) : (
-                  <p className='text-center text-xs text-neutral-500'>Chưa có video không thuộc nhóm</p>
+                  <p className='text-center text-xs text-neutral-500'>{t('picker.noUngroupedVideos')}</p>
                 )
               ) : groupMediaLoading ? (
-                <p className='text-center text-xs text-neutral-500'>Đang tải video trong nhóm...</p>
+                <p className='text-center text-xs text-neutral-500'>{t('picker.loadingGroup')}</p>
               ) : groupMediaError ? (
                 <p className='rounded-lg border border-red-900/60 bg-red-950/40 px-3 py-2 text-xs text-red-300'>
                   {groupMediaError}
@@ -355,8 +358,8 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                 <div className='space-y-3'>
                   <p className='text-xs text-neutral-400'>
                     {groupSelectedOnTab
-                      ? `Đã chọn cả nhóm "${activeGroup?.name ?? ''}" — mỗi lần render sẽ random 1 video trong folder.`
-                      : `Xem trước video trong folder. Bấm "Chọn nhóm" bên dưới để dùng cả folder (không chọn từng video).`}
+                      ? t('picker.groupSelectedHint', { name: activeGroup?.name ?? '' })
+                      : t('picker.groupPreviewHint')}
                   </p>
                   <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
                     {groupMedia.map(item => {
@@ -380,7 +383,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                           <div className='pointer-events-none absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
                             <button
                               type='button'
-                              title='Xem trước'
+                              title={t('picker.preview')}
                               className='rounded-full bg-neutral-900/90 p-1.5 text-neutral-100 hover:bg-neutral-800'
                               onClick={() => setPreviewUrl(src)}
                             >
@@ -401,13 +404,13 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
                   </div>
                 </div>
               ) : (
-                <p className='text-center text-xs text-neutral-500'>Nhóm chưa có video</p>
+                <p className='text-center text-xs text-neutral-500'>{t('picker.groupEmpty')}</p>
               )}
             </div>
           )}
 
           {showEmpty ? (
-            <p className='text-center text-xs text-neutral-500'>Chưa có video nhỏ trong assets</p>
+            <p className='text-center text-xs text-neutral-500'>{t('picker.smallVideoEmpty')}</p>
           ) : null}
         </div>
       </Modal>
@@ -416,7 +419,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
         <div className='fixed inset-0 z-60 flex items-center justify-center p-4'>
           <button
             type='button'
-            aria-label='Đóng xem video'
+            aria-label={t('picker.closePreview')}
             className='absolute inset-0 bg-black/80'
             onClick={() => setPreviewUrl(null)}
           />
@@ -433,7 +436,7 @@ export function SmallVideoPickerModal({ open, onClose, selectedFile, onSelect }:
               className='absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black'
               onClick={() => setPreviewUrl(null)}
             >
-              Đóng
+              {tCommon('actions.close')}
             </button>
           </div>
         </div>

@@ -1,11 +1,12 @@
-import { Button, Modal } from '../ui';
+import { useTranslation } from 'react-i18next'
+import { Button, Modal } from '../ui'
 
 interface DeleteYoutubeChannelConfirmModalProps {
-  open: boolean;
-  channelName: string;
-  deleting?: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  open: boolean
+  channelName: string
+  deleting?: boolean
+  onClose: () => void
+  onConfirm: () => void
 }
 
 export function DeleteYoutubeChannelConfirmModal({
@@ -15,27 +16,27 @@ export function DeleteYoutubeChannelConfirmModal({
   onClose,
   onConfirm,
 }: DeleteYoutubeChannelConfirmModalProps) {
+  const { t } = useTranslation('youtube')
+  const { t: tCommon } = useTranslation('common')
+
   return (
     <Modal
       open={open}
       onClose={deleting ? () => undefined : onClose}
-      title='Xóa kênh?'
-      className='max-w-sm'
+      title={t('delete.modalTitle')}
+      className="max-w-sm"
       footer={
         <>
-          <Button variant='outlined' size='sm' className='rounded-lg' onClick={onClose} disabled={deleting}>
-            Hủy
+          <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose} disabled={deleting}>
+            {tCommon('actions.cancel')}
           </Button>
-          <Button variant='danger' size='sm' className='rounded-lg' onClick={onConfirm} disabled={deleting}>
-            {deleting ? 'Đang xóa…' : 'Xóa'}
+          <Button variant="danger" size="sm" className="rounded-lg" onClick={onConfirm} disabled={deleting}>
+            {deleting ? tCommon('actions.deleting') : tCommon('actions.delete')}
           </Button>
         </>
       }
     >
-      <p className='text-sm text-neutral-300'>
-        Bạn có chắc muốn xóa kênh <span className='font-medium text-neutral-100'>{channelName}</span>? Thao tác
-        này sẽ xóa thông tin kênh và toàn bộ dữ liệu liên quan. Không thể hoàn tác.
-      </p>
+      <p className="text-sm text-neutral-300">{t('delete.body', { name: channelName })}</p>
     </Modal>
-  );
+  )
 }

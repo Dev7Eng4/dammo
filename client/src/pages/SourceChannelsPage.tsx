@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { fetchNiches } from '../api/niches';
 import {
@@ -31,6 +32,7 @@ import type {
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function SourceChannelsPage() {
+  const { t, i18n } = useTranslation('source');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
@@ -93,11 +95,11 @@ export function SourceChannelsPage() {
 
   const downloadDisabledReason =
     selectedIds.size === 0
-      ? 'Chọn nguồn để tải xuống'
+      ? t('hint.selectToDownload')
       : !canDownload
         ? selectedSources.some(source => source.platform !== 'youtube')
-          ? 'Chỉ hỗ trợ tải xuống cho nguồn YouTube'
-          : 'Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền'
+          ? t('hint.youtubeOnly')
+          : t('hint.reupOrBgOnly')
         : undefined;
 
   function clearSelection() {
@@ -179,8 +181,8 @@ export function SourceChannelsPage() {
     if (selectedIds.size > 1) {
       void enqueueTask({
         type: 'download_source',
-        title: `Đang tải video cho ${selectedIds.size} nguồn`,
-        subtitle: `${selectedIds.size} nguồn đã chọn`,
+        title: t('job.downloadSelected', { count: selectedIds.size }),
+        subtitle: t('job.downloadSelectedSub', { count: selectedIds.size }),
         payload: { sourceIds: Array.from(selectedIds) },
       });
       return;
@@ -191,7 +193,7 @@ export function SourceChannelsPage() {
 
     void enqueueTask({
       type: 'download_source',
-      title: `Đang tải: ${selectedSource.name}`,
+      title: t('job.downloadOne', { name: selectedSource.name }),
       subtitle: selectedSource.url,
       payload: {
         sourceId: selectedSource.id,
@@ -205,7 +207,7 @@ export function SourceChannelsPage() {
       void enqueueTask(
         {
           type: 'add_source',
-          title: `Đang nhập: ${payload.url}`,
+          title: t('job.import', { url: payload.url }),
           subtitle: payload.purpose,
           payload: {
             url: payload.url,
@@ -223,9 +225,9 @@ export function SourceChannelsPage() {
           onFail: (job) => {
             const err = job.error ?? '';
             if (err.includes('already exists')) {
-              toast.error(`Đã tồn tại: ${payload.url}`);
+              toast.error(t('toast.exists', { url: payload.url }));
             } else {
-              toast.error(err || `Không thể thêm: ${payload.url}`);
+              toast.error(err || t('toast.addError', { url: payload.url }));
             }
           },
         },
@@ -253,7 +255,7 @@ export function SourceChannelsPage() {
       await updateSourceChannel(id, { bumpRisk: true });
       list.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể tăng mức rủi ro');
+      toast.error(err instanceof Error ? err.message : t('toast.riskError'));
     } finally {
       setBumpingRiskId(null);
     }
@@ -268,7 +270,7 @@ export function SourceChannelsPage() {
       await updateSourceChannel(id, { notes });
       list.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể lưu ghi chú');
+      toast.error(err instanceof Error ? err.message : t('toast.notesError'));
     } finally {
       setSavingNotesId(null);
     }
@@ -289,7 +291,7 @@ export function SourceChannelsPage() {
       setDeleteModalSources(sources);
       setDeleteModalUsages(usages);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể kiểm tra nguồn đang được sử dụng');
+      toast.error(err instanceof Error ? err.message : t('toast.inUseCheckError'));
     } finally {
       setCheckingDelete(false);
     }
@@ -325,14 +327,14 @@ export function SourceChannelsPage() {
       const count = deleteModalSources.length;
       toast.success(
         count === 1
-          ? `Đã xóa nguồn "${deleteModalSources[0]?.name ?? ''}"`
-          : `Đã xóa ${count} kênh nguồn`,
+          ? t('toast.deleteOne', { name: deleteModalSources[0]?.name ?? '' })
+          : t('toast.deleteMany', { count }),
       );
       closeDeleteModal();
       list.refresh();
       clearSelection();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa nguồn');
+      toast.error(err instanceof Error ? err.message : t('toast.deleteError'));
     } finally {
       setConfirmDeleting(false);
     }
@@ -343,8 +345,8 @@ export function SourceChannelsPage() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="shrink-0">
           <PageHeader
-            title="Kênh nguồn"
-            subtitle="Nguồn nội dung theo nền tảng và niche"
+            title={t('page.title')}
+            subtitle={t('page.subtitle')}
             icon={BookOpen}
             className="mb-4"
           />
@@ -399,7 +401,7 @@ export function SourceChannelsPage() {
               totalPages={list.totalPages}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
-              locale="vi"
+              locale={i18n.language === 'en' ? 'en' : 'vi'}
             />
           </div>
         </div>
@@ -416,9 +418,9 @@ export function SourceChannelsPage() {
         onClose={() => setShowAddNicheModal(false)}
         onSuccess={(action) => {
           void refreshNiches();
-          if (action === 'create') toast.success('Đã thêm niche');
-          else if (action === 'update') toast.success('Đã cập nhật niche');
-          else toast.success('Đã xóa niche');
+          if (action === 'create') toast.success(t('toast.nicheCreated'));
+          else if (action === 'update') toast.success(t('toast.nicheUpdated'));
+          else toast.success(t('toast.nicheDeleted'));
         }}
       />
 

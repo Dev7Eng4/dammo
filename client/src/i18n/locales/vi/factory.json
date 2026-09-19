@@ -1,0 +1,240 @@
+{
+  "production": {
+    "page": {
+      "title": "Sản xuất video",
+      "subtitle": "Chọn kênh → chọn video → xem scene render"
+    },
+    "loadVideosError": "Không tải được danh sách video",
+    "loadScenesError": "Không tải được scene",
+    "loadTranscriptError": "Không tải được kịch bản",
+    "loadCharactersError": "Không tải được characters",
+    "loadMetadataError": "Không tải được metadata",
+    "closePanel": "Đóng panel",
+    "tabs": {
+      "metadata": "Metadata",
+      "transcript": "Kịch bản",
+      "scenes": "Scene",
+      "characters": "Characters"
+    },
+    "toolbar": {
+      "step1": "1. Chọn kênh",
+      "step2": "2. Tìm video",
+      "channelLoading": "Đang tải kênh...",
+      "channelPlaceholder": "Chọn kênh YouTube",
+      "channelSearch": "Tìm kênh...",
+      "videoSearch": "Tìm theo tiêu đề video...",
+      "selectChannelFirst": "Chọn kênh trước",
+      "filterAll": "Tất cả",
+      "count": "{{total}} video",
+      "noChannel": "Chưa chọn kênh"
+    },
+    "list": {
+      "loading": "Đang tải video...",
+      "selectChannel": "Chọn kênh ở trên để xem danh sách video.",
+      "empty": "Kênh này không có video Prepared hoặc Created.",
+      "sceneCount": "{{count}} scene",
+      "noThumbnail": "Chưa có thumbnail"
+    },
+    "detail": {
+      "selectVideo": "Chọn một video trong danh sách để xem scene và ảnh.",
+      "loadingScenes": "Đang tải scene...",
+      "noScenes": "Chưa có ai-scene-prompts.json cho video này."
+    },
+    "metadata": {
+      "loading": "Đang tải metadata...",
+      "empty": "Chưa có video-meta.json cho video này.",
+      "title": "Tiêu đề",
+      "description": "Mô tả",
+      "tags": "Tags",
+      "noTitle": "Chưa có tiêu đề",
+      "noDescription": "Chưa có mô tả",
+      "noTags": "Chưa có tags",
+      "noThumbnail": "Chưa có thumbnail",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "saved": "Đã lưu metadata",
+      "saveError": "Không lưu được metadata",
+      "changeThumb": "Đổi thumbnail",
+      "thumbFormatError": "Thumbnail phải là JPEG, PNG hoặc WebP",
+      "thumbSizeError": "Thumbnail tối đa 10MB",
+      "tagPlaceholderEmpty": "Thêm tag rồi nhấn Enter",
+      "tagPlaceholderAdd": "Thêm tag khác",
+      "tagDeleteAria": "Xóa tag {{tag}}",
+      "regenerate": "Tạo lại metadata",
+      "regenerating": "Đang tạo lại…",
+      "regenQueued": "Đã thêm vào hàng đợi tạo lại metadata",
+      "regenSuccess": "Đã tạo lại metadata và thumbnail",
+      "regenFailed": "Tạo lại metadata thất bại",
+      "regenReloadError": "Không tải lại được metadata sau khi tạo lại",
+      "regenJobTitle": "Tạo lại metadata: {{title}}"
+    },
+    "transcript": {
+      "loading": "Đang tải kịch bản...",
+      "empty": "Chưa có transcript.srt hoặc transcript-updated.srt cho video này.",
+      "col": {
+        "index": "#",
+        "timeline": "Timeline",
+        "text": "Nội dung"
+      }
+    },
+    "characters": {
+      "loading": "Đang tải characters...",
+      "empty": "Chưa có character-references.json cho video này.",
+      "noImage": "Chưa có ảnh",
+      "noPrompt": "Không có prompt"
+    },
+    "scene": {
+      "noImage": "Chưa có ảnh",
+      "noPrompt": "Không có prompt",
+      "expand": "Xem thêm",
+      "collapse": "Thu gọn",
+      "regenerate": "Tạo lại",
+      "regenerating": "Đang tạo lại…",
+      "regenerateError": "Không tạo lại được ảnh scene"
+    },
+    "table": {
+      "col": {
+        "index": "#",
+        "timeline": "Timeline",
+        "prompt": "Prompt",
+        "image": "Ảnh"
+      }
+    },
+    "status": {
+      "prepared": "Prepared",
+      "created": "Created"
+    }
+  },
+  "queue": {
+    "page": {
+      "headerTitle": "Hàng đợi task",
+      "title": "Công việc đang chạy",
+      "subtitle": "Theo dõi và quản lý các công việc đang chạy",
+      "count": "{{active}} công việc trong hàng đợi",
+      "totalSuffix": " · {{total}} tổng",
+      "empty": "Chưa có công việc nào",
+      "noMatch": "Không có công việc khớp tìm kiếm"
+    },
+    "toolbar": {
+      "search": "Tìm công việc...",
+      "refresh": "Làm mới",
+      "clear": "Xóa",
+      "clearing": "Đang xóa..."
+    },
+    "popup": {
+      "title": "Hàng đợi công việc",
+      "empty": "Chưa có công việc",
+      "openFull": "Mở hàng đợi đầy đủ →",
+      "minimize": "Thu nhỏ",
+      "expand": "Mở rộng",
+      "close": "Đóng"
+    },
+    "fab": {
+      "open": "Mở hàng đợi công việc",
+      "openWithActive": "Mở hàng đợi công việc, {{count}} đang chạy"
+    },
+    "summary": "{{running}} Đang chạy · {{queued}} Đang chờ · {{failed}} Thất bại",
+    "status": {
+      "running": "Đang chạy",
+      "completed": "Thành công",
+      "failed": "Thất bại",
+      "queued": "Đang chờ",
+      "cancelled": "Đã hủy"
+    },
+    "stage": {
+      "done": "xong",
+      "doing": "đang làm",
+      "failed": "lỗi",
+      "skipped": "bỏ qua",
+      "reason": "Lý do: {{reason}}",
+      "missing": "Thiếu: {{fields}}",
+      "context": "Ngữ cảnh: {{context}}",
+      "snippet": "Snippet:\n{{snippet}}"
+    },
+    "job": {
+      "cancel": "Hủy",
+      "cancelAria": "Hủy công việc",
+      "retry": "Thử lại",
+      "path": "Đường dẫn",
+      "view": "Xem",
+      "copy": "Sao chép",
+      "copied": "Đã chép",
+      "detailLive": "Nhật ký trực tiếp",
+      "detail": "Chi tiết công việc",
+      "steps": "Các bước",
+      "error": "Lỗi",
+      "processing": "Đang xử lý",
+      "completed": "Hoàn thành",
+      "waitingWorker": "Đang chờ worker",
+      "noData": "Chưa có dữ liệu",
+      "failed": "Công việc thất bại",
+      "doingLabel": "{{label}} — đang làm",
+      "stepLabel": "Bước: {{label}}",
+      "progressPct": "{{label}} ({{progress}}%)",
+      "savedSource": "Đã lưu nguồn · {{id}}"
+    },
+    "type": {
+      "importSource": "NHẬP NGUỒN",
+      "createVideo": "TẠO VIDEO",
+      "downloadSource": "TẢI NGUỒN",
+      "uploadVideo": "UPLOAD YOUTUBE"
+    },
+    "toast": {
+      "started": "Đã bắt đầu: {{title}}",
+      "paused": "Đã tạm dừng hàng đợi",
+      "resumed": "Đã tiếp tục hàng đợi",
+      "cleared": "Đã xóa {{count}} công việc đã xong",
+      "pathCopied": "Đã sao chép đường dẫn",
+      "pathCopyError": "Không sao chép được đường dẫn",
+      "enqueueError": "Không thêm được task vào hàng đợi",
+      "clearError": "Không xóa được công việc đã xong"
+    }
+  },
+  "settings": {
+    "page": {
+      "title": "Cài đặt",
+      "subtitle": "Cấu hình video AI, Chrome, mật độ cảnh và hàng đợi task."
+    },
+    "tab": {
+      "videoAi": "Video AI",
+      "chrome": "Chrome",
+      "video": "Video",
+      "taskQueue": "Hàng đợi"
+    },
+    "videoAi": {
+      "hint": "Hiệu ứng ảnh cho dạng video AI (slideshow)."
+    },
+    "kenBurns": "Ken Burns (pan/zoom)",
+    "kenBurnsDesc": "Bật hiệu ứng pan/zoom trên từng ảnh trong slideshow.",
+    "transitions": "Chuyển cảnh giữa ảnh",
+    "transitionsDesc": "Bật transition (xfade) giữa các ảnh; tắt thì cắt cứng.",
+    "chrome": {
+      "hint": "Cách giữ cửa sổ Chrome chạy nền khi automation."
+    },
+    "chromeOffscreen": "Đưa cửa sổ Chrome nền ra ngoài màn hình",
+    "chromeOffscreenDesc": "Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường.",
+    "sceneDensity": "Thời lượng tối đa mỗi cảnh (giây) — mặc định toàn hệ thống. Kênh YouTube vẫn có thể ghi đè riêng.",
+    "sceneStart": "Đầu video",
+    "sceneMiddle": "Giữa video",
+    "sceneEnd": "Cuối video",
+    "concurrencyHint": "Số công việc trong hàng đợi được chạy đồng thời. Giá trị 1 = tuần tự (job sau chờ job trước xong).",
+    "concurrency": "Số job chạy đồng thời",
+    "verboseLogs": "Hiển thị log chi tiết",
+    "verboseLogsDesc": "Bật: log ffmpeg/progress/từng clip như hiện tại. Tắt: chỉ tên bước và thời gian thực hiện.",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "reset": "Đặt lại",
+    "toast": {
+      "loadError": "Không tải được cài đặt",
+      "saved": "Đã lưu cài đặt",
+      "saveError": "Lưu cài đặt thất bại"
+    }
+  },
+  "videoFactory": {
+    "page": {
+      "title": "Video Factory",
+      "subtitle": "Cấu hình job render mới và thêm vào hàng đợi",
+      "queued": "Đã thêm video vào hàng đợi render"
+    }
+  }
+}

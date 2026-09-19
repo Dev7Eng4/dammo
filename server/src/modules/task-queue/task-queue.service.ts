@@ -26,7 +26,7 @@ function buildEnqueueInput(body: EnqueueBody): EnqueueTaskInput {
   if (body.type === 'upload_video') {
     const count = body.payload.channelIds?.length;
     const defaultTitle = body.payload.allReupChannels
-      ? 'Uploading videos for all reup channels'
+      ? 'Uploading videos for all active reup channels'
       : count
         ? `Uploading videos for ${count} channels`
         : `Uploading videos: ${body.payload.channelId}`;

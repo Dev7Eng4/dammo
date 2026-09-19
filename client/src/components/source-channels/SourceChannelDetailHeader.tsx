@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import { resolveNicheLabel } from '../../utils/niche';
@@ -22,13 +23,15 @@ export function SourceChannelDetailHeader({
   refreshError,
   onRefresh,
 }: SourceChannelDetailHeaderProps) {
+  const { t } = useTranslation('source');
+
   return (
     <div className='space-y-4'>
       <Link to='/source-channels' className='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200'>
         <svg className='size-4' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
           <path d='m15 18-6-6 6-6' />
         </svg>
-        Quay lại nguồn
+        {t('page.back')}
       </Link>
 
       <div className='flex flex-wrap items-start justify-between gap-4'>
@@ -53,7 +56,7 @@ export function SourceChannelDetailHeader({
         {source.platform === 'youtube' && onRefresh ? (
           <div className='shrink-0'>
             <Button className='rounded-lg' disabled={refreshing} onClick={onRefresh}>
-              {refreshing ? 'Đang cập nhật nguồn...' : 'Cập nhật nguồn'}
+              {refreshing ? t('detail.refreshing') : t('detail.refresh')}
             </Button>
             {refreshError ? <p className='mt-2 text-xs text-danger'>{refreshError}</p> : null}
           </div>
@@ -62,26 +65,26 @@ export function SourceChannelDetailHeader({
 
       <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         <div className='card-surface px-4 py-3'>
-          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Mục đích</p>
+          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.purpose')}</p>
           <div className='mt-2'>
             <PurposePill purpose={source.purpose} />
           </div>
         </div>
         <div className='card-surface px-4 py-3'>
-          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Mức rủi ro</p>
+          <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.risk')}</p>
           <div className='mt-2'>
             <RiskPill risk={source.riskLevel} />
           </div>
         </div>
         {source.subscriberCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
-            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Người đăng ký</p>
+            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.subscribers')}</p>
             <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.subscriberCount.toLocaleString()}</p>
           </div>
         ) : null}
         {source.videoCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
-            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>Video</p>
+            <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.videos')}</p>
             <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.videoCount.toLocaleString()}</p>
           </div>
         ) : null}

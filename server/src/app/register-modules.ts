@@ -21,6 +21,7 @@ import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube
 import { createAssetsRoutes } from '../modules/assets/assets.routes.js';
 import { createCelebritiesRoutes } from '../modules/celebrities/celebrities.routes.js';
 import { createSmallVideoGroupsRoutes } from '../modules/small-video-groups/small-video-groups.routes.js';
+import { createVideoProductionUiRoutes } from '../modules/video-production-ui/video-production-ui.routes.js';
 
 function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/dashboard`, createDashboardRoutes());
@@ -30,6 +31,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/youtube-channels`, createYoutubeChannelsRoutes());
   app.route(`${prefix}/source-channels`, createSourceChannelsRoutes());
   app.route(`${prefix}/render-queue`, createRenderQueueRoutes());
+  app.route(`${prefix}/video-production`, createVideoProductionUiRoutes());
   app.route(`${prefix}/task-queue`, createTaskQueueRoutes());
   app.route(`${prefix}/chrome-profiles`, createChromeProfilesRoutes());
   app.route(`${prefix}/llm-browser`, createLlmBrowserRoutes());

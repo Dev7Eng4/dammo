@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { AlertCard } from '../ui/AlertCard'
 import type { HealthAlert } from '../../types/dashboard'
 
@@ -8,11 +9,13 @@ interface HealthAlertsProps {
 }
 
 export function HealthAlerts({ alerts, loading }: HealthAlertsProps) {
+  const { t } = useTranslation('dashboard')
+
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <AlertTriangle className="size-4 text-warning" />
-        <p className="text-sm font-medium text-muted-foreground">Cảnh báo sức khỏe</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('health.title')}</p>
       </div>
       <div className="space-y-2">
         {loading

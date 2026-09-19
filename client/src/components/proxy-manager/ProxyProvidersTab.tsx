@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { deleteProxyProvider, fetchProxyProviders } from '../../api/proxies';
 import { AddProxyProviderModal } from './AddProxyProviderModal';
 import { EditProxyProviderModal } from './EditProxyProviderModal';
@@ -8,6 +9,7 @@ import { useAbortableEffect } from '../../hooks';
 import type { ProxyProvider } from '../../types/proxy';
 
 export function ProxyProvidersTab() {
+  const { t } = useTranslation(['browser', 'common']);
   const { toast } = useToast();
   const [providers, setProviders] = useState<ProxyProvider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,9 +57,9 @@ export function ProxyProvidersTab() {
       setShowDeleteModal(false);
       setSelectedProvider(null);
       refresh();
-      toast.success('Đã xóa nhà cung cấp');
+      toast.success(t('proxy.providers.toast.deleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xóa thất bại');
+      toast.error(err instanceof Error ? err.message : t('proxy.providers.toast.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -67,10 +69,10 @@ export function ProxyProvidersTab() {
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <span className="text-sm text-neutral-400">
-          {providers.length.toLocaleString()} nhà cung cấp
+          {t('proxy.providers.count', { count: providers.length.toLocaleString() })}
         </span>
         <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-          + Thêm nhà cung cấp
+          {t('proxy.providers.add')}
         </Button>
       </div>
 
@@ -90,7 +92,7 @@ export function ProxyProvidersTab() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           refresh();
-          toast.success('Đã thêm nhà cung cấp');
+          toast.success(t('proxy.providers.toast.added'));
         }}
       />
 
@@ -103,14 +105,14 @@ export function ProxyProvidersTab() {
         }}
         onSuccess={() => {
           refresh();
-          toast.success('Đã cập nhật nhà cung cấp');
+          toast.success(t('proxy.providers.toast.updated'));
         }}
       />
 
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Xóa nhà cung cấp"
+        title={t('proxy.providers.deleteModal.title')}
         footer={
           <>
             <Button
@@ -120,16 +122,16 @@ export function ProxyProvidersTab() {
               onClick={() => setShowDeleteModal(false)}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size="sm" className="rounded-lg" disabled={deleting} onClick={handleConfirmDelete}>
-              {deleting ? 'Đang xóa...' : 'Xóa'}
+              {deleting ? t('proxy.toolbar.deleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Xóa nhà cung cấp <strong className="text-neutral-100">{selectedProvider?.name}</strong>?
+          {t('proxy.providers.deleteModal.body', { name: selectedProvider?.name })}
         </p>
       </Modal>
     </div>

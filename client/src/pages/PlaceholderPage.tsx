@@ -8,7 +8,6 @@ import {
   FileSpreadsheet,
   FolderKanban,
   Globe,
-  HelpCircle,
   Image,
   LayoutDashboard,
   LayoutTemplate,
@@ -23,6 +22,7 @@ import {
   UserPlus,
   type LucideIcon,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { PageHeader, PageShell } from '../components/layout'
 import { flattenNavItems, type NavIcon } from '../config/navigation'
@@ -49,23 +49,23 @@ const iconMap: Record<NavIcon, LucideIcon> = {
   factory: Factory,
   queue: ListTodo,
   'task-queue': ListTodo,
-  support: HelpCircle,
   logs: FileCode2,
   settings: Settings,
 }
 
 export function PlaceholderPage() {
   const { pathname } = useLocation()
+  const { t } = useTranslation(['nav', 'common'])
 
   const match = flattenNavItems().find((item) => item.path === pathname)
-  const title = match?.label ?? 'Module'
+  const title = match ? t(match.labelKey) : t('common:placeholder.fallbackTitle')
   const Icon = match ? iconMap[match.icon] : Construction
 
   return (
     <PageShell>
       <PageHeader
         title={title}
-        subtitle="Tính năng đang phát triển. Module này sẽ có sẵn trong phiên bản tiếp theo."
+        subtitle={t('common:placeholder.subtitle')}
         icon={Icon}
         className="mb-6"
       />
@@ -73,7 +73,7 @@ export function PlaceholderPage() {
         <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-surface-elevated text-muted-foreground">
           <Icon className="size-8" />
         </div>
-        <p className="max-w-md text-sm text-muted-foreground">Nội dung module sẽ xuất hiện tại đây.</p>
+        <p className="max-w-md text-sm text-muted-foreground">{t('common:placeholder.body')}</p>
       </div>
     </PageShell>
   )

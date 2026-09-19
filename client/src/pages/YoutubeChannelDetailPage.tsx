@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { isAbortError } from '../api/http';
@@ -29,6 +30,7 @@ function isDeletableVideoStatus(status: YoutubeChannelVideo['status']): boolean 
 }
 
 export function YoutubeChannelDetailPage() {
+  const { t, i18n } = useTranslation('youtube');
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
@@ -60,6 +62,7 @@ export function YoutubeChannelDetailPage() {
   const isPendingFilter = statusFilter === 'Pending';
   const canRecreateMetadata =
     channel != null && channel.language === 'ja' && isStoredReupChannelType(channel.type);
+  const paginationLocale = i18n.language === 'vi' ? 'vi' : 'en';
 
   const filteredVideos = useMemo(() => {
     if (isPendingFilter) return pendingVideos;
@@ -71,7 +74,8 @@ export function YoutubeChannelDetailPage() {
     resetKey: `${isPendingFilter ? pendingResetKey : videoResetKey}:${statusFilter}`,
   });
 
-  const videosEmptyMessage = statusFilter !== 'all' ? 'Không có video nào khớp với trạng thái đã chọn.' : 'Không tìm thấy video nào.';
+  const videosEmptyMessage =
+    statusFilter !== 'all' ? t('videos.emptyFiltered') : t('videos.empty');
   const tableLoading = isPendingFilter ? pendingLoading : videosLoading;
   const tableError = isPendingFilter ? pendingError : videosError;
 
@@ -96,13 +100,13 @@ export function YoutubeChannelDetailPage() {
     selectedVideos.every(video => video.status === 'Created');
   const uploadDisabledReason =
     isPendingFilter
-      ? 'Chuyển sang bộ lọc khác để tải video lên'
+      ? t('hint.uploadSwitchFilter')
       : channel != null && !isStoredReupChannelType(channel.type)
-        ? 'Chỉ kênh Reup âm thanh hoặc Reup video mới có thể tải video lên'
+        ? t('hint.uploadNeedReup')
         : selectedVideoIds.size === 0
-          ? 'Chọn video trạng thái Đã tạo để tải lên'
+          ? t('hint.uploadSelectCreated')
           : selectedVideos.some(video => video.status !== 'Created')
-            ? 'Chỉ video trạng thái Đã tạo mới có thể tải lên'
+            ? t('hint.uploadOnlyCreated')
             : undefined;
 
   useAbortableEffect(
@@ -142,7 +146,7 @@ export function YoutubeChannelDetailPage() {
       } catch (err) {
         if (isAbortError(err)) return;
         setAllVideos([]);
-        setVideosError(err instanceof Error ? err.message : 'Không thể tải video');
+        setVideosError(err instanceof Error ? err.message : t('videos.loadError'));
       } finally {
         if (!signal.aborted) setVideosLoading(false);
       }
@@ -165,7 +169,7 @@ export function YoutubeChannelDetailPage() {
       } catch (err) {
         if (isAbortError(err)) return;
         setPendingVideos([]);
-        setPendingError(err instanceof Error ? err.message : 'Không thể tải video chưa xử lý');
+        setPendingError(err instanceof Error ? err.message : t('videos.pendingLoadError'));
       } finally {
         if (!signal.aborted) setPendingLoading(false);
       }
@@ -181,9 +185,9 @@ export function YoutubeChannelDetailPage() {
     void enqueueTask({
       type: 'create_video',
       title: prepareOnly
-        ? `Đang chuẩn bị video: ${channel.name}`
-        : `Đang tạo video: ${channel.name}`,
-      subtitle: `${channel.handle} · ${videoIds.length} video đã chọn`,
+        ? t('job.prepareOne', { name: channel.name })
+        : t('job.createOne', { name: channel.name }),
+      subtitle: t('job.detailSelected', { handle: channel.handle, count: videoIds.length }),
       payload: {
         channelId: id,
         channelName: channel.name,
@@ -201,8 +205,8 @@ export function YoutubeChannelDetailPage() {
     const videoIds = Array.from(selectedVideoIds);
     void enqueueTask({
       type: 'upload_video',
-      title: `Đang tải lên: ${channel.name}`,
-      subtitle: `${channel.handle} · ${videoIds.length} video đã chọn`,
+      title: t('job.uploadOne', { name: channel.name }),
+      subtitle: t('job.detailSelected', { handle: channel.handle, count: videoIds.length }),
       payload: { channelId: id, videoIds },
     });
     setSelectedVideoIds(new Set());
@@ -223,7 +227,7 @@ export function YoutubeChannelDetailPage() {
       setVideosFetchedAt(fetchedAt);
       setVideoResetKey(key => key + 1);
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : 'Không thể đồng bộ video');
+      setSyncError(err instanceof Error ? err.message : t('sync.error'));
     } finally {
       setSyncing(false);
       setVideosLoading(false);
@@ -241,11 +245,11 @@ export function YoutubeChannelDetailPage() {
         (item.remote_debugging_port ? `127.0.0.1:${item.remote_debugging_port}` : null);
       toast.success(
         debugInfo
-          ? `Đã mở profile GPM cho ${channel.linkedEmail} — debug ${debugInfo}`
-          : `Đã mở profile GPM cho ${channel.linkedEmail}`,
+          ? t('gpm.openSuccessDebug', { email: channel.linkedEmail, debug: debugInfo })
+          : t('gpm.openSuccess', { email: channel.linkedEmail }),
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể mở profile GPM');
+      toast.error(err instanceof Error ? err.message : t('gpm.openError'));
     } finally {
       setOpeningProfile(false);
     }
@@ -284,9 +288,13 @@ export function YoutubeChannelDetailPage() {
       setAllVideos(current => current.filter(video => !deletedSet.has(video.id)));
       setSelectedVideoIds(new Set());
       setShowDeleteConfirm(false);
-      toast.success(deleted.length === 1 ? 'Đã xóa 1 video' : `Đã xóa ${deleted.length} video`);
+      toast.success(
+        deleted.length === 1
+          ? t('deleteVideos.toastSuccessOne')
+          : t('deleteVideos.toastSuccessMany', { count: deleted.length }),
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa video');
+      toast.error(err instanceof Error ? err.message : t('deleteVideos.toastError'));
     } finally {
       setDeletingVideos(false);
     }
@@ -296,9 +304,9 @@ export function YoutubeChannelDetailPage() {
     return (
       <PageShell fullBleed>
         <div className='flex flex-1 flex-col items-center justify-center text-center'>
-          <p className='text-sm text-neutral-400'>Không tìm thấy kênh YouTube.</p>
+          <p className='text-sm text-neutral-400'>{t('page.notFound')}</p>
           <Link to='/youtube-channels' className='mt-3 text-sm text-secondary-400 hover:text-secondary-300'>
-            Quay lại danh sách kênh YouTube
+            {t('page.backToList')}
           </Link>
         </div>
       </PageShell>
@@ -386,7 +394,7 @@ export function YoutubeChannelDetailPage() {
               totalPages={videos.totalPages}
               onPageChange={videos.setPage}
               onLimitChange={setLimit}
-              locale='vi'
+              locale={paginationLocale}
             />
           </div>
         </div>

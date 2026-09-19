@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 function TaskQueueStackIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -20,6 +22,8 @@ interface TaskQueueMinimizedFabProps {
 }
 
 export function TaskQueueMinimizedFab({ activeCount, onClick }: TaskQueueMinimizedFabProps) {
+  const { t } = useTranslation('factory');
+
   return (
     <button
       type="button"
@@ -27,8 +31,8 @@ export function TaskQueueMinimizedFab({ activeCount, onClick }: TaskQueueMinimiz
       className="fixed bottom-6 right-6 z-50 flex size-12 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground shadow-lg transition-colors hover:bg-muted"
       aria-label={
         activeCount > 0
-          ? `Mở hàng đợi công việc, ${activeCount} đang chạy`
-          : 'Mở hàng đợi công việc'
+          ? t('queue.fab.openWithActive', { count: activeCount })
+          : t('queue.fab.open')
       }
     >
       <TaskQueueStackIcon className="size-5" />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ListTodo } from 'lucide-react';
 import { PageHeader, PageShell } from '../components/layout';
 import { TaskJobCard } from '../components/task-queue/TaskJobCard';
@@ -13,6 +14,7 @@ import type { TaskJobListItem } from '../types/taskQueue';
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function TaskQueuePage() {
+  const { t } = useTranslation('factory');
   const { toast } = useToast();
   const {
     jobs,
@@ -67,9 +69,9 @@ export function TaskQueuePage() {
   async function handleCopyPath(path: string) {
     try {
       await navigator.clipboard.writeText(path);
-      toast.success('Đã sao chép đường dẫn');
+      toast.success(t('queue.toast.pathCopied'));
     } catch {
-      toast.error('Không sao chép được đường dẫn');
+      toast.error(t('queue.toast.pathCopyError'));
     }
   }
 
@@ -104,8 +106,8 @@ export function TaskQueuePage() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="shrink-0">
           <PageHeader
-            title="Hàng đợi task"
-            subtitle="Theo dõi và quản lý các công việc đang chạy"
+            title={t('queue.page.headerTitle')}
+            subtitle={t('queue.page.subtitle')}
             icon={ListTodo}
             className="mb-4"
           />
@@ -125,7 +127,7 @@ export function TaskQueuePage() {
           {filteredJobs.length === 0 ? (
             <div className="card-surface rounded-2xl px-5 py-12 text-center">
               <p className="text-sm text-neutral-500">
-                {jobs.length === 0 ? 'Chưa có công việc nào' : 'Không có công việc khớp tìm kiếm'}
+                {jobs.length === 0 ? t('queue.page.empty') : t('queue.page.noMatch')}
               </p>
             </div>
           ) : (

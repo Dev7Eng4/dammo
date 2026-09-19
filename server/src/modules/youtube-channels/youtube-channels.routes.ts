@@ -163,6 +163,16 @@ export function createYoutubeChannelsRoutes() {
     return c.body(null, 204);
   });
 
+  app.post('/:id/pause', (c) => {
+    const item = youtubeChannelsService.pauseChannel(c.req.param('id'));
+    return c.json({ item });
+  });
+
+  app.post('/:id/resume', (c) => {
+    const item = youtubeChannelsService.resumeChannel(c.req.param('id'));
+    return c.json({ item });
+  });
+
   app.get('/', zValidator('query', listYoutubeChannelsQuerySchema), (c) => {
     const { type, monetization, q, page, limit } = c.req.valid('query');
     return c.json(youtubeChannelsService.listPaginated(type, monetization, q, page, limit));

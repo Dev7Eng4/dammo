@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { assetFileUrl, deleteAssets, fetchAssets, uploadAsset } from '../../api/assets';
 import {
   deleteSmallVideoGroup,
@@ -45,6 +46,7 @@ function TrashIcon({ className }: { className?: string }) {
 const VIDEO_ACCEPT = '.mp4,.mov,video/mp4,video/quicktime';
 
 export function SmallVideoPanel() {
+  const { t, i18n } = useTranslation(['content', 'common']);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ungroupedInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +65,8 @@ export function SmallVideoPanel() {
   const [mediaPendingDelete, setMediaPendingDelete] = useState<string | null>(null);
   const [ungroupedPendingDelete, setUngroupedPendingDelete] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const locale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
 
   useAbortableEffect(
     async (signal) => {
@@ -119,9 +123,9 @@ export function SmallVideoPanel() {
       await uploadSmallVideoGroupMedia(selected.id, file);
       refreshMedia();
       refreshList();
-      toast.success(`Đã thêm ${file.name}`);
+      toast.success(t('assets.smallVideo.toast.fileAdded', { name: file.name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể tải lên file');
+      toast.error(err instanceof Error ? err.message : t('assets.smallVideo.toast.uploadError'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -136,9 +140,9 @@ export function SmallVideoPanel() {
     try {
       await uploadAsset('smallVideo', file);
       refreshList();
-      toast.success(`Đã thêm ${file.name}`);
+      toast.success(t('assets.smallVideo.toast.fileAdded', { name: file.name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể tải lên file');
+      toast.error(err instanceof Error ? err.message : t('assets.smallVideo.toast.uploadError'));
     } finally {
       setUploading(false);
       if (ungroupedInputRef.current) ungroupedInputRef.current.value = '';
@@ -153,9 +157,9 @@ export function SmallVideoPanel() {
       if (selected?.id === groupPendingDelete.id) setSelected(null);
       setGroupPendingDelete(null);
       refreshList();
-      toast.success('Đã xóa nhóm');
+      toast.success(t('assets.smallVideo.toast.groupDeleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa nhóm');
+      toast.error(err instanceof Error ? err.message : t('assets.smallVideo.toast.groupDeleteError'));
     } finally {
       setDeleting(false);
     }
@@ -169,9 +173,9 @@ export function SmallVideoPanel() {
       setMediaPendingDelete(null);
       refreshMedia();
       refreshList();
-      toast.success('Đã xóa 1 file');
+      toast.success(t('assets.smallVideo.toast.fileDeleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa file');
+      toast.error(err instanceof Error ? err.message : t('assets.smallVideo.toast.fileDeleteError'));
     } finally {
       setDeleting(false);
     }
@@ -184,9 +188,9 @@ export function SmallVideoPanel() {
       await deleteAssets('smallVideo', [ungroupedPendingDelete]);
       setUngroupedPendingDelete(null);
       refreshList();
-      toast.success('Đã xóa 1 file');
+      toast.success(t('assets.smallVideo.toast.fileDeleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa file');
+      toast.error(err instanceof Error ? err.message : t('assets.smallVideo.toast.fileDeleteError'));
     } finally {
       setDeleting(false);
     }
@@ -202,7 +206,7 @@ export function SmallVideoPanel() {
               onClick={() => setSelected(null)}
               className="mb-1 text-xs font-medium text-primary-400 hover:text-primary-300"
             >
-              ← Quay lại danh sách
+              {t('assets.smallVideo.backToList')}
             </button>
             <h2 className="truncate text-base font-semibold text-neutral-100">{selected.name}</h2>
             {selected.note ? <p className="mt-0.5 text-xs text-neutral-500">{selected.note}</p> : null}
@@ -224,17 +228,17 @@ export function SmallVideoPanel() {
               disabled={uploading || deleting}
               onClick={() => fileInputRef.current?.click()}
             >
-              {uploading ? 'Đang tải lên…' : 'Thêm video'}
+              {uploading ? t('assets.uploading') : t('assets.smallVideo.addVideo')}
             </Button>
           </div>
         </div>
 
         <div className="card-surface space-y-4 p-5">
           {mediaLoading ? (
-            <p className="py-10 text-center text-sm text-neutral-500">Đang tải video…</p>
+            <p className="py-10 text-center text-sm text-neutral-500">{t('assets.smallVideo.loadingVideos')}</p>
           ) : media.length === 0 ? (
             <p className="py-10 text-center text-sm text-neutral-500">
-              Chưa có video. Bấm &quot;Thêm video&quot; để tải lên.
+              {t('assets.smallVideo.emptyVideos')}
             </p>
           ) : (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
@@ -257,7 +261,7 @@ export function SmallVideoPanel() {
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100">
                         <button
                           type="button"
-                          title="Xem"
+                          title={t('assets.view')}
                           className="rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800"
                           onClick={() => setPreviewUrl(src)}
                         >
@@ -265,7 +269,7 @@ export function SmallVideoPanel() {
                         </button>
                         <button
                           type="button"
-                          title="Xóa"
+                          title={t('common:actions.delete')}
                           className="rounded-full bg-rose-600/90 p-2 text-white hover:bg-rose-500"
                           onClick={() => setMediaPendingDelete(item.name)}
                         >
@@ -287,7 +291,7 @@ export function SmallVideoPanel() {
         <Modal
           open={Boolean(mediaPendingDelete)}
           onClose={deleting ? () => undefined : () => setMediaPendingDelete(null)}
-          title="Xóa file?"
+          title={t('assets.smallVideo.deleteFileTitle')}
           footer={
             <>
               <Button
@@ -297,16 +301,16 @@ export function SmallVideoPanel() {
                 onClick={() => setMediaPendingDelete(null)}
                 disabled={deleting}
               >
-                Hủy
+                {t('common:actions.cancel')}
               </Button>
               <Button size="sm" className="rounded-lg" disabled={deleting} onClick={() => void handleConfirmDeleteMedia()}>
-                {deleting ? 'Đang xóa…' : 'Xóa'}
+                {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
               </Button>
             </>
           }
         >
           <p className="text-sm text-neutral-300">
-            Bạn có chắc muốn xóa file {mediaPendingDelete ?? ''}?
+            {t('assets.smallVideo.deleteFileBody', { name: mediaPendingDelete ?? '' })}
           </p>
         </Modal>
 
@@ -314,7 +318,7 @@ export function SmallVideoPanel() {
           <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
             <button
               type="button"
-              aria-label="Đóng xem video"
+              aria-label={t('assets.smallVideo.closePreview')}
               className="absolute inset-0 bg-black/80"
               onClick={() => setPreviewUrl(null)}
             />
@@ -331,7 +335,7 @@ export function SmallVideoPanel() {
                 className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black"
                 onClick={() => setPreviewUrl(null)}
               >
-                Đóng
+                {t('common:actions.close')}
               </button>
             </div>
           </div>
@@ -344,7 +348,10 @@ export function SmallVideoPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-neutral-400">
-          {groups.length.toLocaleString('vi-VN')} nhóm · {ungrouped.length.toLocaleString('vi-VN')} video không thuộc nhóm
+          {t('assets.smallVideo.summary', {
+            groups: groups.length.toLocaleString(locale),
+            ungrouped: ungrouped.length.toLocaleString(locale),
+          })}
         </span>
         <div className="flex items-center gap-2">
           <input
@@ -363,24 +370,26 @@ export function SmallVideoPanel() {
             disabled={uploading || deleting}
             onClick={() => ungroupedInputRef.current?.click()}
           >
-            {uploading ? 'Đang tải lên…' : 'Thêm video'}
+            {uploading ? t('assets.uploading') : t('assets.smallVideo.addVideo')}
           </Button>
           <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-            + Thêm nhóm
+            {t('assets.smallVideo.addGroup')}
           </Button>
         </div>
       </div>
 
       <div className="card-surface space-y-6 p-5">
         {loading ? (
-          <p className="py-10 text-center text-sm text-neutral-500">Đang tải danh sách…</p>
+          <p className="py-10 text-center text-sm text-neutral-500">{t('assets.smallVideo.loading')}</p>
         ) : (
           <>
             <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-neutral-500">Nhóm</h3>
+              <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                {t('assets.smallVideo.groupsHeading')}
+              </h3>
               {groups.length === 0 ? (
                 <p className="text-sm text-neutral-500">
-                  Chưa có nhóm. Bấm &quot;Thêm nhóm&quot; để tạo folder mới.
+                  {t('assets.smallVideo.emptyGroups')}
                 </p>
               ) : (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -392,11 +401,13 @@ export function SmallVideoPanel() {
                       <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelected(item)}>
                         <p className="truncate text-sm font-medium text-neutral-100">{item.name}</p>
                         {item.note ? <p className="mt-0.5 truncate text-xs text-neutral-500">{item.note}</p> : null}
-                        <p className="mt-1 text-[11px] text-neutral-500">{item.mediaCount} video</p>
+                        <p className="mt-1 text-[11px] text-neutral-500">
+                          {t('assets.smallVideo.videoCount', { count: item.mediaCount })}
+                        </p>
                       </button>
                       <button
                         type="button"
-                        title="Xóa"
+                        title={t('common:actions.delete')}
                         className="shrink-0 rounded-md p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-rose-400"
                         onClick={() => setGroupPendingDelete(item)}
                       >
@@ -410,11 +421,11 @@ export function SmallVideoPanel() {
 
             <div>
               <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Video không thuộc nhóm
+                {t('assets.smallVideo.ungroupedHeading')}
               </h3>
               {ungrouped.length === 0 ? (
                 <p className="text-sm text-neutral-500">
-                  Chưa có video ngoài nhóm. Bấm &quot;Thêm video&quot; để tải lên.
+                  {t('assets.smallVideo.emptyUngrouped')}
                 </p>
               ) : (
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
@@ -437,7 +448,7 @@ export function SmallVideoPanel() {
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100">
                             <button
                               type="button"
-                              title="Xem"
+                              title={t('assets.view')}
                               className="rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800"
                               onClick={() => setPreviewUrl(src)}
                             >
@@ -445,7 +456,7 @@ export function SmallVideoPanel() {
                             </button>
                             <button
                               type="button"
-                              title="Xóa"
+                              title={t('common:actions.delete')}
                               className="rounded-full bg-rose-600/90 p-2 text-white hover:bg-rose-500"
                               onClick={() => setUngroupedPendingDelete(item.name)}
                             >
@@ -472,14 +483,14 @@ export function SmallVideoPanel() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           refreshList();
-          toast.success('Đã thêm nhóm');
+          toast.success(t('assets.smallVideo.toast.added'));
         }}
       />
 
       <Modal
         open={Boolean(groupPendingDelete)}
         onClose={deleting ? () => undefined : () => setGroupPendingDelete(null)}
-        title="Xóa nhóm?"
+        title={t('assets.smallVideo.deleteGroupTitle')}
         footer={
           <>
             <Button
@@ -489,23 +500,23 @@ export function SmallVideoPanel() {
               onClick={() => setGroupPendingDelete(null)}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size="sm" className="rounded-lg" disabled={deleting} onClick={() => void handleConfirmDeleteGroup()}>
-              {deleting ? 'Đang xóa…' : 'Xóa'}
+              {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Bạn có chắc muốn xóa nhóm {groupPendingDelete?.name ?? ''} và toàn bộ video trong nhóm?
+          {t('assets.smallVideo.deleteGroupBody', { name: groupPendingDelete?.name ?? '' })}
         </p>
       </Modal>
 
       <Modal
         open={Boolean(ungroupedPendingDelete)}
         onClose={deleting ? () => undefined : () => setUngroupedPendingDelete(null)}
-        title="Xóa file?"
+        title={t('assets.smallVideo.deleteFileTitle')}
         footer={
           <>
             <Button
@@ -515,7 +526,7 @@ export function SmallVideoPanel() {
               onClick={() => setUngroupedPendingDelete(null)}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               size="sm"
@@ -523,13 +534,13 @@ export function SmallVideoPanel() {
               disabled={deleting}
               onClick={() => void handleConfirmDeleteUngrouped()}
             >
-              {deleting ? 'Đang xóa…' : 'Xóa'}
+              {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Bạn có chắc muốn xóa file {ungroupedPendingDelete ?? ''}?
+          {t('assets.smallVideo.deleteFileBody', { name: ungroupedPendingDelete ?? '' })}
         </p>
       </Modal>
 
@@ -537,7 +548,7 @@ export function SmallVideoPanel() {
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <button
             type="button"
-            aria-label="Đóng xem video"
+            aria-label={t('assets.smallVideo.closePreview')}
             className="absolute inset-0 bg-black/80"
             onClick={() => setPreviewUrl(null)}
           />
@@ -554,7 +565,7 @@ export function SmallVideoPanel() {
               className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black"
               onClick={() => setPreviewUrl(null)}
             >
-              Đóng
+              {t('common:actions.close')}
             </button>
           </div>
         </div>

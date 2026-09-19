@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset, type PrepareKeyColor } from '../api/assets';
 import { PageHeader, PageShell } from '../components/layout';
@@ -9,16 +10,12 @@ import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
 import { Image } from 'lucide-react';
 
-const TABS: { kind: AssetKind; label: string; accept: string }[] = [
-  { kind: 'audioBar', label: 'Phổ âm thanh', accept: '.mp4,.mov,video/mp4,video/quicktime' },
-  { kind: 'subscribe', label: 'Subscribe', accept: '.mp4,.mov,video/mp4,video/quicktime' },
-  { kind: 'fonts', label: 'Phông chữ', accept: '.ttf,.otf,.woff,.woff2' },
-  { kind: 'smallVideo', label: 'Video stock nhỏ', accept: '.mp4,.mov,video/mp4,video/quicktime' },
-  {
-    kind: 'siLocalStock',
-    label: 'Video background footage',
-    accept: '.mp4,.mov,video/mp4,video/quicktime',
-  },
+const TAB_KINDS: { kind: AssetKind; accept: string }[] = [
+  { kind: 'audioBar', accept: '.mp4,.mov,video/mp4,video/quicktime' },
+  { kind: 'subscribe', accept: '.mp4,.mov,video/mp4,video/quicktime' },
+  { kind: 'fonts', accept: '.ttf,.otf,.woff,.woff2' },
+  { kind: 'smallVideo', accept: '.mp4,.mov,video/mp4,video/quicktime' },
+  { kind: 'siLocalStock', accept: '.mp4,.mov,video/mp4,video/quicktime' },
 ];
 
 type AssetsPageTab = AssetKind | 'celebrities';
@@ -32,15 +29,6 @@ function formatBytes(size: number): string {
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-function formatUpdatedAt(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('vi-VN');
-}
-
-function keyColorLabel(keyColor: PrepareKeyColor): string {
-  return keyColor === 'black' ? 'màu đen' : 'màu xanh';
 }
 
 function EyeIcon({ className }: { className?: string }) {
@@ -77,6 +65,7 @@ function PaletteIcon({ className }: { className?: string }) {
 }
 
 export function AssetsPage() {
+  const { t, i18n } = useTranslation(['content', 'common']);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTabId, setActiveTabId] = useState<AssetsPageTab>('audioBar');
@@ -98,6 +87,17 @@ export function AssetsPage() {
   const activeKind: AssetKind = isCelebritiesTab ? 'audioBar' : activeTabId;
   const showPrepareColor = !isCelebritiesTab && !isSmallVideoTab && (activeKind === 'audioBar' || activeKind === 'subscribe');
 
+  const tabLabel = (kind: AssetKind) => t(`assets.tab.${kind}`);
+
+  function formatUpdatedAt(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN');
+  }
+
+  function keyColorLabel(keyColor: PrepareKeyColor): string {
+    return keyColor === 'black' ? t('assets.colorBlackLabel') : t('assets.colorGreenLabel');
+  }
+
   async function handlePrepareColor(name: string, keyColor: PrepareKeyColor) {
     setPrepareColorTarget(null);
     setPreparingItems(prev => new Set(prev).add(name));
@@ -106,12 +106,12 @@ export function AssetsPage() {
       const colorLabel = keyColorLabel(result.keyColor);
       toast.success(
         result.cached
-          ? `${name} đã được xử lý ${colorLabel} trước đó`
-          : `Đã xử lý ${colorLabel}: ${name}`,
+          ? t('assets.toast.colorAlready', { name, color: colorLabel })
+          : t('assets.toast.colorDone', { name, color: colorLabel }),
       );
       setItems(prev => prev.map(it => (it.name === name ? { ...it, prepared: true } : it)));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xử lý màu');
+      toast.error(err instanceof Error ? err.message : t('assets.toast.colorError'));
     } finally {
       setPreparingItems(prev => {
         const next = new Set(prev);
@@ -121,7 +121,8 @@ export function AssetsPage() {
     }
   }
 
-  const activeTab = TABS.find(tab => tab.kind === activeKind) ?? TABS[0];
+  const activeTabMeta = TAB_KINDS.find(tab => tab.kind === activeKind) ?? TAB_KINDS[0];
+  const activeTabLabel = tabLabel(activeKind);
   const showVideoGrid = !isCelebritiesTab && !isSmallVideoTab && isVideoKind(activeKind);
 
   useAbortableEffect(
@@ -150,25 +151,25 @@ export function AssetsPage() {
     () => [
       {
         accessorKey: 'name',
-        header: 'TÊN FILE',
+        header: t('assets.table.col.name'),
         cell: ({ getValue }) => <span className='font-medium text-neutral-100'>{getValue<string>()}</span>,
       },
       {
         accessorKey: 'size',
-        header: 'KÍCH THƯỚC',
+        header: t('assets.table.col.size'),
         cell: ({ getValue }) => (
           <span className='text-neutral-300'>{formatBytes(getValue<number>())}</span>
         ),
       },
       {
         accessorKey: 'updatedAt',
-        header: 'CẬP NHẬT',
+        header: t('assets.table.col.updated'),
         cell: ({ getValue }) => (
           <span className='text-neutral-300'>{formatUpdatedAt(getValue<string>())}</span>
         ),
       },
     ],
-    [],
+    [t, i18n.language],
   );
 
   function handleToggleRow(id: string) {
@@ -196,9 +197,9 @@ export function AssetsPage() {
     try {
       await uploadAsset(activeKind, file);
       setRefreshKey(key => key + 1);
-      toast.success(`Đã thêm ${file.name}`);
+      toast.success(t('assets.toast.added', { name: file.name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể tải lên file');
+      toast.error(err instanceof Error ? err.message : t('assets.toast.uploadError'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -214,9 +215,9 @@ export function AssetsPage() {
         setShowDeleteConfirm(false);
         setItemPendingDelete(null);
         setRefreshKey(key => key + 1);
-        toast.success('Đã xóa 1 file');
+        toast.success(t('assets.toast.deletedOne'));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Không thể xóa file');
+        toast.error(err instanceof Error ? err.message : t('assets.toast.deleteError'));
       } finally {
         setDeleting(false);
       }
@@ -230,9 +231,13 @@ export function AssetsPage() {
       setShowDeleteConfirm(false);
       setSelectedIds(new Set());
       setRefreshKey(key => key + 1);
-      toast.success(deleted.length === 1 ? 'Đã xóa 1 file' : `Đã xóa ${deleted.length} file`);
+      toast.success(
+        deleted.length === 1
+          ? t('assets.toast.deletedOne')
+          : t('assets.toast.deletedMany', { count: deleted.length }),
+      );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Không thể xóa file');
+      toast.error(err instanceof Error ? err.message : t('assets.toast.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -243,8 +248,8 @@ export function AssetsPage() {
       <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
       <div className='shrink-0 space-y-4'>
       <PageHeader
-        title="Tài nguyên"
-        subtitle="Quản lý file phổ âm thanh, phông chữ, video stock, background footage và người nổi tiếng."
+        title={t('assets.page.title')}
+        subtitle={t('assets.page.subtitle')}
         icon={Image}
       />
 
@@ -253,8 +258,8 @@ export function AssetsPage() {
         value={activeTabId}
         onValueChange={(value) => setActiveTabId(value as AssetsPageTab)}
         items={[
-          ...TABS.map((tab) => ({ id: tab.kind, label: tab.label })),
-          { id: 'celebrities', label: 'Người nổi tiếng' },
+          ...TAB_KINDS.map((tab) => ({ id: tab.kind, label: tabLabel(tab.kind) })),
+          { id: 'celebrities', label: t('assets.tab.celebrities') },
         ]}
       />
       </div>
@@ -271,13 +276,16 @@ export function AssetsPage() {
         <>
       <div className='mt-4 shrink-0 flex flex-wrap items-center justify-between gap-3'>
         <span className='text-sm text-neutral-400'>
-          {items.length.toLocaleString('vi-VN')} file · {activeTab.label}
+          {t('assets.fileCount', {
+            count: items.length.toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN'),
+            tab: activeTabLabel,
+          })}
         </span>
         <div className='flex items-center gap-2'>
           <input
             ref={fileInputRef}
             type='file'
-            accept={activeTab.accept}
+            accept={activeTabMeta.accept}
             className='hidden'
             onChange={e => {
               void handleUpload(e.target.files);
@@ -290,7 +298,7 @@ export function AssetsPage() {
             disabled={uploading || deleting}
             onClick={() => fileInputRef.current?.click()}
           >
-            {uploading ? 'Đang tải lên…' : 'Thêm mới'}
+            {uploading ? t('assets.uploading') : t('assets.add')}
           </Button>
           {!showVideoGrid ? (
             <Button
@@ -300,7 +308,7 @@ export function AssetsPage() {
               disabled={selectedIds.size === 0 || uploading || deleting}
               onClick={() => setShowDeleteConfirm(true)}
             >
-              Xóa
+              {t('assets.delete')}
             </Button>
           ) : null}
         </div>
@@ -309,9 +317,9 @@ export function AssetsPage() {
       {showVideoGrid ? (
         <div className='mt-4 min-h-0 flex-1 overflow-auto card-surface space-y-4 p-5'>
           {loading ? (
-            <p className='py-10 text-center text-sm text-neutral-500'>Đang tải danh sách…</p>
+            <p className='py-10 text-center text-sm text-neutral-500'>{t('assets.loading')}</p>
           ) : items.length === 0 ? (
-            <p className='py-10 text-center text-sm text-neutral-500'>Chưa có file nào trong mục này.</p>
+            <p className='py-10 text-center text-sm text-neutral-500'>{t('assets.empty')}</p>
           ) : (
             <div className='grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8'>
               {items.map(item => {
@@ -330,7 +338,7 @@ export function AssetsPage() {
                       <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
                         <button
                           type='button'
-                          title='Xem'
+                          title={t('assets.view')}
                           className='rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800'
                           onClick={() => setPreviewUrl(src)}
                         >
@@ -339,7 +347,7 @@ export function AssetsPage() {
                         {showPrepareColor && !item.prepared && (
                           <button
                             type='button'
-                            title='Xử lý màu'
+                            title={t('assets.prepareColor')}
                             className='rounded-full bg-emerald-600/90 p-2 text-white hover:bg-emerald-500 disabled:opacity-50'
                             disabled={preparingItems.has(item.name)}
                             onClick={() => {
@@ -356,7 +364,7 @@ export function AssetsPage() {
                         )}
                         <button
                           type='button'
-                          title='Xóa'
+                          title={t('assets.delete')}
                           className='rounded-full bg-rose-600/90 p-2 text-white hover:bg-rose-500'
                           onClick={() => {
                             setItemPendingDelete(item.name);
@@ -385,7 +393,7 @@ export function AssetsPage() {
               columns={columns}
               getRowId={item => item.name}
               loading={loading}
-              emptyMessage='Chưa có file nào trong mục này.'
+              emptyMessage={t('assets.empty')}
               enableRowSelection
               selectedIds={selectedIds}
               onToggleRow={handleToggleRow}
@@ -398,7 +406,7 @@ export function AssetsPage() {
       <Modal
         open={prepareColorTarget != null}
         onClose={() => setPrepareColorTarget(null)}
-        title='Xử lý màu'
+        title={t('assets.prepareColorTitle')}
         footer={
           <>
             <Button
@@ -407,7 +415,7 @@ export function AssetsPage() {
               className='rounded-lg'
               onClick={() => setPrepareColorTarget(null)}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button
               size='sm'
@@ -418,13 +426,13 @@ export function AssetsPage() {
                 void handlePrepareColor(prepareColorTarget, prepareKeyColor);
               }}
             >
-              Xử lý
+              {t('assets.process')}
             </Button>
           </>
         }
       >
         <p className='mb-3 text-sm text-neutral-300'>
-          Chọn màu nền cần loại bỏ cho <span className='font-medium text-neutral-100'>{prepareColorTarget}</span>
+          {t('assets.prepareColorBody', { name: prepareColorTarget ?? '' })}
         </p>
         <div className='flex flex-col gap-2'>
           <label className='flex cursor-pointer items-center gap-3 rounded-lg border border-neutral-700 px-3 py-2.5 hover:border-neutral-500 has-checked:border-emerald-500'>
@@ -437,7 +445,7 @@ export function AssetsPage() {
             />
             <span className='flex items-center gap-2 text-sm text-neutral-200'>
               <span className='size-3.5 rounded-sm bg-[#00FF00]' aria-hidden />
-              Màu xanh
+              {t('assets.colorGreen')}
             </span>
           </label>
           <label className='flex cursor-pointer items-center gap-3 rounded-lg border border-neutral-700 px-3 py-2.5 hover:border-neutral-500 has-checked:border-neutral-400'>
@@ -450,7 +458,7 @@ export function AssetsPage() {
             />
             <span className='flex items-center gap-2 text-sm text-neutral-200'>
               <span className='size-3.5 rounded-sm border border-neutral-600 bg-black' aria-hidden />
-              Màu đen
+              {t('assets.colorBlack')}
             </span>
           </label>
         </div>
@@ -466,7 +474,7 @@ export function AssetsPage() {
                 if (showVideoGrid) setItemPendingDelete(null);
               }
         }
-        title='Xóa file?'
+        title={t('assets.deleteTitle')}
         footer={
           <>
             <Button
@@ -479,18 +487,18 @@ export function AssetsPage() {
               }}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size='sm' className='rounded-lg' disabled={deleting} onClick={() => void handleConfirmDelete()}>
-              {deleting ? 'Đang xóa…' : 'Xóa'}
+              {deleting ? t('common:actions.deleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className='text-sm text-neutral-300'>
           {showVideoGrid
-            ? `Bạn có chắc muốn xóa file ${itemPendingDelete ?? ''} trong mục ${activeTab.label}?`
-            : `Bạn có chắc muốn xóa ${selectedIds.size} file đã chọn trong mục ${activeTab.label}?`}
+            ? t('assets.deleteOneBody', { name: itemPendingDelete ?? '', tab: activeTabLabel })
+            : t('assets.deleteManyBody', { count: selectedIds.size, tab: activeTabLabel })}
         </p>
       </Modal>
 
@@ -498,7 +506,7 @@ export function AssetsPage() {
         <div className='fixed inset-0 z-60 flex items-center justify-center p-4'>
           <button
             type='button'
-            aria-label='Đóng xem video'
+            aria-label={t('assets.closePreview')}
             className='absolute inset-0 bg-black/80'
             onClick={() => setPreviewUrl(null)}
           />
@@ -515,7 +523,7 @@ export function AssetsPage() {
               className='absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black'
               onClick={() => setPreviewUrl(null)}
             >
-              Đóng
+              {t('common:actions.close')}
             </button>
           </div>
         </div>

@@ -1,0 +1,47 @@
+{
+  "page": {
+    "title": "Tổng quan",
+    "subtitle": "Theo dõi pipeline và trạng thái vận hành",
+    "loadError": "Không thể tải tổng quan",
+    "retry": "Thử lại"
+  },
+  "quickActions": {
+    "title": "Thao tác nhanh",
+    "addEmail": "Thêm email",
+    "addYt": "Thêm kênh YT",
+    "videoFactory": "Video Factory",
+    "assets": "Tài nguyên",
+    "videoProduction": "Sản xuất video"
+  },
+  "stats": {
+    "youtubeChannels": "Kênh YouTube",
+    "tiktokAccounts": "Tài khoản TikTok",
+    "facebookAssets": "Tài nguyên Facebook",
+    "sourceChannels": "Kênh nguồn"
+  },
+  "recent": {
+    "title": "Dự án gần đây",
+    "viewAll": "Xem tất cả",
+    "col": {
+      "name": "Tên dự án",
+      "format": "Định dạng",
+      "destination": "Đích",
+      "status": "Trạng thái"
+    },
+    "empty": "Chưa có dự án gần đây."
+  },
+  "accountSummary": {
+    "title": "Tóm tắt tài khoản",
+    "emailTotal": "Tổng số tài khoản email"
+  },
+  "pipeline": {
+    "title": "Luồng nội dung"
+  },
+  "activeRender": {
+    "title": "Đang render",
+    "eta": "Còn lại {{eta}}"
+  },
+  "health": {
+    "title": "Cảnh báo sức khỏe"
+  }
+}

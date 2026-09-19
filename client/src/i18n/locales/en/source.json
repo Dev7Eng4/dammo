@@ -1,0 +1,156 @@
+{
+  "page": {
+    "title": "Source Channels",
+    "subtitle": "Content sources by platform and niche",
+    "notFound": "Source channel not found.",
+    "back": "Back to sources"
+  },
+  "toolbar": {
+    "filterName": "Name",
+    "filterNamePlaceholder": "Filter by name...",
+    "language": "Language",
+    "purpose": "Purpose",
+    "platform": "Platform",
+    "delete": "Delete",
+    "download": "Download",
+    "niche": "Niche",
+    "addNiche": "Add niche",
+    "addSource": "Add source"
+  },
+  "filter": {
+    "platformAll": "All platforms",
+    "purposeAll": "All purposes",
+    "purposeBg": "Background footage",
+    "langAll": "All languages",
+    "nicheAll": "All niches",
+    "durationAll": "All durations",
+    "durationUnder8m": "Under 8 minutes",
+    "duration8to30": "8 – 30 minutes",
+    "duration30to60": "30 – 60 minutes",
+    "durationOver60": "Over 60 minutes"
+  },
+  "videos": {
+    "duration": "Duration",
+    "download": "Download",
+    "col": {
+      "title": "TITLE",
+      "link": "LINK",
+      "views": "VIEWS",
+      "duration": "DURATION",
+      "status": "STATUS"
+    },
+    "downloaded": "Downloaded",
+    "empty": "No videos found.",
+    "youtubeOnly": "Video list is only available for YouTube sources."
+  },
+  "table": {
+    "col": {
+      "platform": "PLATFORM",
+      "name": "SOURCE NAME",
+      "url": "URL (ID)",
+      "niche": "NICHE",
+      "purpose": "PURPOSE",
+      "notes": "NOTES"
+    },
+    "notesPlaceholder": "Add a note...",
+    "empty": "No source channels match the filters."
+  },
+  "detail": {
+    "purpose": "Purpose",
+    "risk": "Risk level",
+    "subscribers": "Subscribers",
+    "videos": "Videos",
+    "refresh": "Refresh source",
+    "refreshing": "Refreshing source..."
+  },
+  "purpose": {
+    "trend": "Trend tracking",
+    "idea": "Idea research",
+    "licensed": "Licensed source",
+    "competitor": "Competitor tracking",
+    "reup": "Reup",
+    "background": "Background footage"
+  },
+  "risk": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "hint": {
+    "selectToDownload": "Select a source to download",
+    "selectVideos": "Select videos to download",
+    "youtubeOnly": "Downloads are only supported for YouTube sources",
+    "reupOrBgOnly": "Downloads are only supported for Reup or Background footage sources"
+  },
+  "job": {
+    "downloadSelected": "Downloading videos for {{count}} sources",
+    "downloadSelectedSub": "{{count}} sources selected",
+    "downloadOne": "Downloading: {{name}}",
+    "downloadOneSub": "{{count}} videos selected",
+    "import": "Importing: {{url}}"
+  },
+  "add": {
+    "title": "Add source channel",
+    "submit": "Add source",
+    "urlsLabel": "URL / Handle",
+    "urlsHint": "(one link per line)",
+    "urlsRequired": "Enter at least one URL",
+    "purpose": "Purpose",
+    "purposeRequired": "Purpose is required",
+    "purposePlaceholder": "Select purpose",
+    "language": "Language",
+    "languageRequired": "Language is required",
+    "languagePlaceholder": "Select language",
+    "nicheOptional": "(optional)",
+    "nicheLoading": "Loading niches...",
+    "nicheEmpty": "No niches yet",
+    "nichePlaceholder": "Select niche",
+    "hint": "Platform is detected automatically. YouTube channels will fetch metadata and videos in the background after adding.",
+    "nichesLoadError": "Could not load niches"
+  },
+  "niche": {
+    "modalTitle": "Add niche",
+    "name": "Niche name",
+    "nameRequired": "Niche name is required",
+    "existing": "Existing niches",
+    "loading": "Loading...",
+    "empty": "No niches yet",
+    "add": "Add niche",
+    "saveAria": "Save",
+    "cancelAria": "Cancel",
+    "editAria": "Edit {{label}}",
+    "deleteAria": "Delete {{label}}",
+    "createError": "Could not create niche",
+    "updateError": "Could not update niche",
+    "deleteError": "Could not delete niche",
+    "inUseTitle": "Cannot delete niche",
+    "inUseBody": "Niche \"{{label}}\" is currently used in:",
+    "ok": "OK",
+    "usagePrompts": "Prompt",
+    "usageSourceChannels": "Source channel",
+    "usageYoutubeChannels": "YouTube channel"
+  },
+  "delete": {
+    "title": "Delete source channel",
+    "blockedTitle": "Cannot delete source",
+    "close": "Close",
+    "blockedBulk": "One or more sources are in use. No sources were deleted.",
+    "blockedOne": "Source \"{{name}}\" is used by the following channels:",
+    "bulkBody": "Delete {{count}} source channels? This cannot be undone.",
+    "oneBody": "Delete source \"{{name}}\"? This cannot be undone."
+  },
+  "toast": {
+    "exists": "Already exists: {{url}}",
+    "addError": "Could not add: {{url}}",
+    "riskError": "Could not increase risk level",
+    "notesError": "Could not save notes",
+    "inUseCheckError": "Could not check whether the source is in use",
+    "deleteOne": "Deleted source \"{{name}}\"",
+    "deleteMany": "Deleted {{count}} source channels",
+    "deleteError": "Could not delete source",
+    "refreshError": "Could not refresh source",
+    "nicheCreated": "Niche added",
+    "nicheUpdated": "Niche updated",
+    "nicheDeleted": "Niche deleted"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Email",
+    "subtitle": "Manage mail accounts and platform links"
+  },
+  "toolbar": {
+    "count": "{{count}} accounts",
+    "search": "Search by email...",
+    "add": "Add email",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "export": "Export Excel",
+    "exporting": "Exporting..."
+  },
+  "hint": {
+    "selectOne": "Select one email",
+    "selectOnlyOne": "Select only one email"
+  },
+  "table": {
+    "col": {
+      "email": "EMAIL",
+      "password": "PASSWORD",
+      "twoFa": "2FA",
+      "recovery": "RECOVERY EMAIL",
+      "phone": "PHONE",
+      "youtube": "YOUTUBE",
+      "tiktok": "TIKTOK",
+      "facebook": "FACEBOOK"
+    },
+    "empty": "No email accounts found."
+  },
+  "detail": {
+    "purpose": "Purpose",
+    "recoveryEmail": "Recovery email",
+    "phone": "Phone number",
+    "platforms": "Platforms",
+    "notes": "Notes",
+    "unlink": "Remove"
+  },
+  "form": {
+    "addTitle": "Add email account",
+    "editTitle": "Edit email account",
+    "add": "Add email",
+    "emailRequired": "Please enter an email",
+    "emailInvalid": "Invalid email",
+    "password": "Password",
+    "passwordMin": "Password must be at least 6 characters",
+    "twoFa": "2FA",
+    "twoFaPlaceholder": "Backup code or secret",
+    "recovery": "Recovery email",
+    "phone": "Phone number",
+    "createError": "Could not create account",
+    "updateError": "Could not update account"
+  },
+  "delete": {
+    "title": "Delete email?",
+    "body": "Are you sure you want to delete email <email>{{email}}</email>? This cannot be undone."
+  },
+  "toast": {
+    "deleteSuccess": "Deleted email \"{{email}}\"",
+    "deleteError": "Could not delete email",
+    "exportError": "Export failed"
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Progress } from '../ui';
 import type { TaskJobListItem } from '../../types/taskQueue';
 import { TaskStageChecklist } from './TaskStageChecklist';
@@ -80,6 +81,7 @@ function TaskIcon({ job }: { job: TaskJobListItem }) {
 }
 
 export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
+  const { t } = useTranslation('factory');
   const isFailed = job.status === 'failed';
   const isRunning = job.status === 'running';
   const isQueued = job.status === 'queued';
@@ -108,7 +110,7 @@ export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
               ) : null}
             </div>
             {isQueued ? (
-              <span className="shrink-0 text-neutral-500" title="Queued">
+              <span className="shrink-0 text-neutral-500" title={t('queue.status.queued')}>
                 <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
                   <path
                     fillRule="evenodd"
@@ -125,7 +127,7 @@ export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
                 className="h-7 shrink-0 rounded-md px-2 text-xs"
                 onClick={() => onCancel(job.id)}
               >
-                Hủy
+                {t('queue.job.cancel')}
               </Button>
             ) : null}
           </div>
@@ -135,7 +137,7 @@ export function TaskQueueItem({ job, onCancel }: TaskQueueItemProps) {
             ) : isRunning ? (
               <div className="mt-2">
                 <div className="mb-1 flex items-center justify-between gap-2 text-xs text-neutral-500">
-                  <span className="truncate">{job.progressLabel ?? 'Processing'}</span>
+                  <span className="truncate">{job.progressLabel ?? t('queue.job.processing')}</span>
                   <span className="shrink-0">{job.progress}%</span>
                 </div>
                 <Progress value={job.progress} tone="primary" />

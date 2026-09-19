@@ -1,10 +1,11 @@
-import { Button, Modal } from '../ui';
+import { useTranslation } from 'react-i18next'
+import { Button, Modal } from '../ui'
 
 interface RegenerateMetadataConfirmModalProps {
-  open: boolean;
-  regenerating?: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  open: boolean
+  regenerating?: boolean
+  onClose: () => void
+  onConfirm: () => void
 }
 
 export function RegenerateMetadataConfirmModal({
@@ -13,24 +14,27 @@ export function RegenerateMetadataConfirmModal({
   onClose,
   onConfirm,
 }: RegenerateMetadataConfirmModalProps) {
+  const { t } = useTranslation('youtube')
+  const { t: tCommon } = useTranslation('common')
+
   return (
     <Modal
       open={open}
       onClose={regenerating ? () => undefined : onClose}
-      title="Tạo lại metadata?"
+      title={t('regenerate.title')}
       className="max-w-sm"
       footer={
         <>
           <Button variant="outlined" size="sm" className="rounded-lg" onClick={onClose} disabled={regenerating}>
-            Hủy
+            {tCommon('actions.cancel')}
           </Button>
           <Button size="sm" className="rounded-lg" onClick={onConfirm} disabled={regenerating}>
-            {regenerating ? 'Đang gửi…' : 'Có'}
+            {regenerating ? t('regenerate.sending') : tCommon('actions.yes')}
           </Button>
         </>
       }
     >
-      <p className="text-sm text-neutral-300">Bạn có muốn tạo lại metadata và thumbnail không?</p>
+      <p className="text-sm text-neutral-300">{t('regenerate.body')}</p>
     </Modal>
-  );
+  )
 }

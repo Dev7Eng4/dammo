@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Email",
+    "subtitle": "Quản lý tài khoản mail và liên kết nền tảng"
+  },
+  "toolbar": {
+    "count": "{{count}} tài khoản",
+    "search": "Tìm theo email...",
+    "add": "Thêm email",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "deleting": "Đang xóa…",
+    "export": "Xuất Excel",
+    "exporting": "Đang xuất..."
+  },
+  "hint": {
+    "selectOne": "Chọn một email",
+    "selectOnlyOne": "Chỉ chọn một email"
+  },
+  "table": {
+    "col": {
+      "email": "EMAIL",
+      "password": "MẬT KHẨU",
+      "twoFa": "2FA",
+      "recovery": "EMAIL KHÔI PHỤC",
+      "phone": "SỐ ĐIỆN THOẠI",
+      "youtube": "YOUTUBE",
+      "tiktok": "TIKTOK",
+      "facebook": "FACEBOOK"
+    },
+    "empty": "Không tìm thấy tài khoản email."
+  },
+  "detail": {
+    "purpose": "Mục đích",
+    "recoveryEmail": "Email khôi phục",
+    "phone": "Số điện thoại",
+    "platforms": "Nền tảng",
+    "notes": "Ghi chú",
+    "unlink": "Xóa"
+  },
+  "form": {
+    "addTitle": "Thêm tài khoản email",
+    "editTitle": "Sửa tài khoản email",
+    "add": "Thêm email",
+    "emailRequired": "Vui lòng nhập email",
+    "emailInvalid": "Email không hợp lệ",
+    "password": "Mật khẩu",
+    "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự",
+    "twoFa": "2FA",
+    "twoFaPlaceholder": "Mã dự phòng hoặc secret",
+    "recovery": "Email khôi phục",
+    "phone": "Số điện thoại",
+    "createError": "Không thể tạo tài khoản",
+    "updateError": "Không thể cập nhật tài khoản"
+  },
+  "delete": {
+    "title": "Xóa email?",
+    "body": "Bạn có chắc muốn xóa email <email>{{email}}</email>? Thao tác này không thể hoàn tác."
+  },
+  "toast": {
+    "deleteSuccess": "Đã xóa email \"{{email}}\"",
+    "deleteError": "Không thể xóa email",
+    "exportError": "Xuất file thất bại"
+  }
+}

@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ListToolbar } from '../layout'
 import { DropdownSelect } from '../ui'
 import type { ProxyFilter } from '../../types/proxy'
@@ -20,15 +21,6 @@ interface ProxiesToolbarProps {
   removingFailed?: boolean
 }
 
-const filterOptions: { value: ProxyFilter; label: string }[] = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'active', label: 'Hoạt động' },
-  { value: 'failed', label: 'Thất bại' },
-  { value: 'slow', label: 'Chậm' },
-  { value: 'expired', label: 'Hết hạn' },
-  { value: 'in_use', label: 'Đang dùng' },
-]
-
 export function ProxiesToolbar({
   total,
   filter,
@@ -44,7 +36,17 @@ export function ProxiesToolbar({
   importing = false,
   removingFailed = false,
 }: ProxiesToolbarProps) {
+  const { t } = useTranslation('browser')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const filterOptions: { value: ProxyFilter; label: string }[] = [
+    { value: 'all', label: t('proxy.filter.all') },
+    { value: 'active', label: t('proxy.filter.active') },
+    { value: 'failed', label: t('proxy.filter.failed') },
+    { value: 'slow', label: t('proxy.filter.slow') },
+    { value: 'expired', label: t('proxy.filter.expired') },
+    { value: 'in_use', label: t('proxy.filter.inUse') },
+  ]
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -58,34 +60,34 @@ export function ProxiesToolbar({
     <div className="mt-5 border-b border-border pb-4">
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
       <ListToolbar
-        countLabel={<span>{total.toLocaleString()} proxy</span>}
+        countLabel={<span>{t('proxy.toolbar.count', { count: total.toLocaleString() })}</span>}
         filters={
           <DropdownSelect
             options={filterOptions}
             value={filter}
             onChange={onFilterChange}
-            prefix="Lọc"
+            prefix={t('proxy.toolbar.filterPrefix')}
             leadingIcon={<Filter className="size-4" />}
             menuClassName="w-40"
           />
         }
-        primaryAction={{ label: 'Thêm Proxy', onClick: onAddProxy }}
+        primaryAction={{ label: t('proxy.toolbar.add'), onClick: onAddProxy }}
         secondaryActions={[
           {
             id: 'import',
-            label: importing ? 'Đang nhập...' : 'Nhập Excel',
+            label: importing ? t('proxy.toolbar.importing') : t('proxy.toolbar.import'),
             onSelect: () => fileInputRef.current?.click(),
             disabled: importing,
           },
           {
             id: 'export',
-            label: exporting ? 'Đang xuất...' : 'Xuất Excel',
+            label: exporting ? t('proxy.toolbar.exporting') : t('proxy.toolbar.export'),
             onSelect: onExportExcel,
             disabled: exporting,
           },
           {
             id: 'delete',
-            label: deletingSelected ? 'Đang xóa...' : 'Xóa đã chọn',
+            label: deletingSelected ? t('proxy.toolbar.deleting') : t('proxy.toolbar.deleteSelected'),
             onSelect: onDeleteSelected,
             disabled: !canDeleteSelected || deletingSelected,
             destructive: true,
@@ -93,7 +95,7 @@ export function ProxiesToolbar({
           },
           {
             id: 'remove-failed',
-            label: removingFailed ? 'Đang xóa...' : 'Xóa thất bại',
+            label: removingFailed ? t('proxy.toolbar.deleting') : t('proxy.toolbar.removeFailed'),
             onSelect: onRemoveFailed,
             disabled: removingFailed,
             destructive: true,

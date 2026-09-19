@@ -129,7 +129,7 @@ export type VideoCreationOrder =
   | 'shortest_duration_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
-export type YoutubeChannelStatus = 'active' | 'suspended';
+export type YoutubeChannelStatus = 'init' | 'created' | 'active' | 'paused' | 'deleted';
 
 export interface YoutubeChannel {
   id: string;
@@ -218,15 +218,15 @@ export type YoutubeChannelVideoStatusFilter = 'all' | YoutubeChannelVideoStatus 
 
 export const YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS: {
   value: YoutubeChannelVideoStatusFilter;
-  label: string;
+  labelKey: string;
 }[] = [
-    { value: 'all', label: 'Tất cả trạng thái' },
-    { value: 'Pending', label: 'Chưa xử lý' },
-    { value: 'Published', label: 'Đã xuất bản' },
-    { value: 'Prepared', label: 'Đã chuẩn bị' },
-    { value: 'Created', label: 'Đã tạo' },
-    { value: 'Draft', label: 'Bản nháp' },
-  ];
+  { value: 'all', labelKey: 'filter.statusAll' },
+  { value: 'Pending', labelKey: 'filter.statusPending' },
+  { value: 'Published', labelKey: 'filter.statusPublished' },
+  { value: 'Prepared', labelKey: 'filter.statusPrepared' },
+  { value: 'Created', labelKey: 'filter.statusCreated' },
+  { value: 'Draft', labelKey: 'filter.statusDraft' },
+];
 
 export interface YoutubeChannelVideo {
   id: string;

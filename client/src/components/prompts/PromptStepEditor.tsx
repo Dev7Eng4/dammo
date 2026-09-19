@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Button, DropdownSelect, Input, Textarea } from '../ui';
 import { PROMPT_OUTPUT_TYPE_OPTIONS } from '../../constants/promptForm';
 import {
@@ -19,10 +20,11 @@ export interface PromptStepEditorProps {
 }
 
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+  const { t } = useTranslation('common');
   return (
     <span className="text-xs font-medium text-neutral-400">
       {children}
-      {optional ? <span className="text-neutral-500"> (tuỳ chọn)</span> : null}
+      {optional ? <span className="text-neutral-500"> {t('actions.optional')}</span> : null}
     </span>
   );
 }
@@ -36,6 +38,7 @@ export function PromptStepEditor({
   onChange,
   onRemove,
 }: PromptStepEditorProps) {
+  const { t } = useTranslation('content');
   const [insertVarName, setInsertVarName] = useState('');
   const tokenEstimate = estimateTokens(step.template);
   const userFunctionTemplate = isUserFunctionTemplate(step.template);
@@ -62,20 +65,22 @@ export function PromptStepEditor({
     <div className="card-surface space-y-4 rounded-xl p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-sm font-medium text-neutral-100">Bước {index + 1}</h2>
+          <h2 className="text-sm font-medium text-neutral-100">
+            {t('prompts.step.title', { n: index + 1 })}
+          </h2>
           {step.key ? (
             <p className="mt-0.5 font-mono text-[10px] text-neutral-500">{step.key}</p>
           ) : null}
         </div>
         {canRemove && !readOnly ? (
           <Button variant="danger" size="sm" onClick={onRemove}>
-            Xóa step
+            {t('prompts.step.deleteStep')}
           </Button>
         ) : null}
       </div>
 
       <label className="block space-y-1.5">
-        <FieldLabel>Loại</FieldLabel>
+        <FieldLabel>{t('prompts.step.type')}</FieldLabel>
         <DropdownSelect
           value={step.outputType}
           onChange={(outputType) => onChange({ outputType })}
@@ -84,16 +89,14 @@ export function PromptStepEditor({
           className="w-full"
           triggerClassName="h-10 w-full rounded-lg"
         />
-        <p className="text-[10px] text-neutral-500">
-          Văn bản → LLM · Hình ảnh → Flow/Meta · Video → Meta AI
-        </p>
+        <p className="text-[10px] text-neutral-500">{t('prompts.step.typeHint')}</p>
       </label>
 
       {showReferenceImageOption ? (
         <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
           <div>
-            <p className="text-xs font-medium text-neutral-300">Dùng ảnh tham chiếu</p>
-            <p className="text-[10px] text-neutral-500">Đính kèm ảnh tham chiếu khi tạo</p>
+            <p className="text-xs font-medium text-neutral-300">{t('prompts.step.useReferenceImage')}</p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.step.useReferenceImageDesc')}</p>
           </div>
           <input
             type="checkbox"
@@ -108,8 +111,8 @@ export function PromptStepEditor({
       {category === 'thumbnail' ? (
         <div className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5">
           <div>
-            <p className="text-xs font-medium text-neutral-300">Dùng ảnh nền của kênh</p>
-            <p className="text-[10px] text-neutral-500">Dùng ảnh nền kênh YouTube khi tạo thumbnail</p>
+            <p className="text-xs font-medium text-neutral-300">{t('prompts.step.useChannelBg')}</p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.step.useChannelBgDesc')}</p>
           </div>
           <input
             type="checkbox"
@@ -122,11 +125,11 @@ export function PromptStepEditor({
       ) : null}
 
       <label className="block space-y-1.5">
-        <FieldLabel optional>Mô tả</FieldLabel>
+        <FieldLabel optional>{t('prompts.step.description')}</FieldLabel>
         <Input
           value={step.description}
           onChange={(e) => onChange({ description: e.target.value })}
-          placeholder="Mô tả ngắn"
+          placeholder={t('prompts.step.descriptionPlaceholder')}
           className="h-10 rounded-lg"
           readOnly={readOnly}
           disabled={readOnly}
@@ -136,15 +139,20 @@ export function PromptStepEditor({
       <div className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h3 className="text-sm font-medium text-neutral-100">Mẫu User Prompt</h3>
+            <h3 className="text-sm font-medium text-neutral-100">{t('prompts.step.userPromptTemplate')}</h3>
             <p className="mt-0.5 text-xs text-neutral-500">
               {userFunctionTemplate ? (
-                <>Mẫu function — không dùng biến</>
+                t('prompts.step.functionNoVars')
               ) : (
-                <>
-                  Lưu dạng <code className="text-neutral-400">{exportDefaultPreview}</code> · dùng{' '}
-                  <code className="text-neutral-400">${'{param}'}</code> trong nội dung
-                </>
+                <Trans
+                  i18nKey="prompts.step.saveAsFunction"
+                  ns="content"
+                  values={{ preview: exportDefaultPreview }}
+                  components={{
+                    code: <code className="text-neutral-400" />,
+                    token: <code className="text-neutral-400" />,
+                  }}
+                />
               )}
             </p>
           </div>
@@ -157,7 +165,7 @@ export function PromptStepEditor({
           onChange={(e) => onChange({ template: e.target.value })}
           rows={12}
           className="min-h-[240px] font-mono text-xs leading-relaxed"
-          placeholder="Viết nội dung mẫu prompt..."
+          placeholder={t('prompts.step.templatePlaceholder')}
           readOnly={readOnly}
           disabled={readOnly}
         />
@@ -177,7 +185,7 @@ export function PromptStepEditor({
                 className="h-9 min-w-0 flex-1 rounded-lg font-mono text-xs"
               />
               <Button variant="secondary" size="sm" className="shrink-0" onClick={handleInsertVariable}>
-                Thêm biến
+                {t('prompts.step.addVariable')}
               </Button>
             </div>
             {step.templateParams.length > 0 ? (
@@ -192,7 +200,7 @@ export function PromptStepEditor({
                       type="button"
                       onClick={() => handleRemoveVariable(name)}
                       className="rounded-full px-1 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-                      aria-label={`Xóa ${name}`}
+                      aria-label={t('prompts.step.removeVariable', { name })}
                     >
                       ×
                     </button>

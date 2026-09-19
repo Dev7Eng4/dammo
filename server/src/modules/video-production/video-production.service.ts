@@ -226,11 +226,11 @@ export class VideoProductionService {
   async createVideosForAllReupChannels(options?: CreateVideosOptions): Promise<CreateReupVideosBatchResult> {
     const reupChannelIds = youtubeChannelsRepository
       .findAll()
-      .filter(channel => isReupChannelType(channel.type))
+      .filter(channel => isReupChannelType(channel.type) && channel.status === 'active')
       .map(channel => channel.id);
 
     if (reupChannelIds.length === 0) {
-      throw new AppError('No reup channels found', 400, 'NO_REUP_CHANNELS');
+      throw new AppError('No active reup channels found', 400, 'NO_ACTIVE_REUP_CHANNELS');
     }
 
     return this.createVideosForChannels(reupChannelIds, options);

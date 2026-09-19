@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { deleteVisualStyle, fetchVisualStyles } from '../api/visualStyles';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddVisualStyleModal } from '../components/visual-styles/AddVisualStyleModal';
@@ -10,6 +11,7 @@ import type { VisualStyle } from '../types/visualStyle';
 import { Palette } from 'lucide-react';
 
 export function VisualStylesPage() {
+  const { t } = useTranslation(['content', 'common']);
   const { toast } = useToast();
   const [styles, setStyles] = useState<VisualStyle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +59,9 @@ export function VisualStylesPage() {
       setShowDeleteModal(false);
       setSelectedStyle(null);
       refresh();
-      toast.success('Đã xóa phong cách hình ảnh');
+      toast.success(t('visual.toast.deleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xóa thất bại');
+      toast.error(err instanceof Error ? err.message : t('visual.toast.deleteError'));
     } finally {
       setDeleting(false);
     }
@@ -70,17 +72,17 @@ export function VisualStylesPage() {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="shrink-0 space-y-4">
           <PageHeader
-            title="Phong cách hình ảnh"
-            subtitle="Quản lý preset phong cách hình ảnh (anime, chibi, cinematic, ...)."
+            title={t('visual.page.title')}
+            subtitle={t('visual.page.subtitle')}
             icon={Palette}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
             <span className="text-sm text-neutral-400">
-              {styles.length.toLocaleString()} phong cách
+              {t('visual.count', { count: styles.length.toLocaleString() })}
             </span>
             <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
-              + Thêm phong cách
+              {t('visual.add')}
             </Button>
           </div>
         </div>
@@ -102,7 +104,7 @@ export function VisualStylesPage() {
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           refresh();
-          toast.success('Đã thêm phong cách hình ảnh');
+          toast.success(t('visual.toast.added'));
         }}
       />
 
@@ -115,14 +117,14 @@ export function VisualStylesPage() {
         }}
         onSuccess={() => {
           refresh();
-          toast.success('Đã cập nhật phong cách hình ảnh');
+          toast.success(t('visual.toast.updated'));
         }}
       />
 
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Xóa phong cách hình ảnh"
+        title={t('visual.deleteTitle')}
         footer={
           <>
             <Button
@@ -132,16 +134,16 @@ export function VisualStylesPage() {
               onClick={() => setShowDeleteModal(false)}
               disabled={deleting}
             >
-              Hủy
+              {t('common:actions.cancel')}
             </Button>
             <Button size="sm" className="rounded-lg" disabled={deleting} onClick={handleConfirmDelete}>
-              {deleting ? 'Đang xóa...' : 'Xóa'}
+              {deleting ? t('visual.deleteDeleting') : t('common:actions.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-neutral-300">
-          Xóa phong cách hình ảnh <strong className="text-neutral-100">{selectedStyle?.name}</strong>?
+          {t('visual.deleteBody', { name: selectedStyle?.name })}
         </p>
       </Modal>
     </PageShell>

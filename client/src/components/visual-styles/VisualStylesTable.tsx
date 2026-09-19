@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import type { VisualStyle } from '../../types/visualStyle';
 import { Button, DataTable } from '../ui';
@@ -21,57 +23,62 @@ export function VisualStylesTable({
   onEdit,
   onDelete,
 }: VisualStylesTableProps) {
-  const columns: ColumnDef<VisualStyle, unknown>[] = [
-    {
-      accessorKey: 'name',
-      header: 'TÊN',
-      cell: ({ getValue }) => (
-        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
-      ),
-    },
-    {
-      accessorKey: 'niche',
-      header: 'CHỦ ĐỀ',
-      cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
-    },
-    {
-      accessorKey: 'rule',
-      header: 'QUY TẮC',
-      cell: ({ row }) => (
-        <span className="text-neutral-400" title={row.original.rule}>
-          {truncateRule(row.original.rule)}
-        </span>
-      ),
-    },
-    {
-      id: 'actions',
-      header: 'THAO TÁC',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
-            Sửa
-          </Button>
-          <Button
-            variant="outlined"
-            size="sm"
-            className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
-            onClick={() => onDelete(row.original)}
-          >
-            Xóa
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  const { t } = useTranslation(['content', 'common']);
+
+  const columns = useMemo<ColumnDef<VisualStyle, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: t('visual.table.col.name'),
+        cell: ({ getValue }) => (
+          <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: 'niche',
+        header: t('visual.table.col.theme'),
+        cell: ({ getValue }) => <span className="text-neutral-300">{getValue<string>()}</span>,
+      },
+      {
+        accessorKey: 'rule',
+        header: t('visual.table.col.rules'),
+        cell: ({ row }) => (
+          <span className="text-neutral-400" title={row.original.rule}>
+            {truncateRule(row.original.rule)}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: t('visual.table.col.actions'),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Button variant="outlined" size="sm" className="rounded-lg" onClick={() => onEdit(row.original)}>
+              {t('visual.table.edit')}
+            </Button>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="rounded-lg border-danger/30 text-danger hover:bg-danger/10"
+              onClick={() => onDelete(row.original)}
+            >
+              {t('visual.table.delete')}
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [t, onEdit, onDelete],
+  );
 
   return (
     <DataTable
       data={styles}
       columns={columns}
-      getRowId={style => style.id}
+      getRowId={(style) => style.id}
       loading={loading}
-      emptyMessage="Chưa có phong cách hình ảnh nào."
-      emptyDescription="Thêm phong cách đầu tiên (anime, chibi, cinematic, ...) để bắt đầu."
+      emptyMessage={t('visual.table.empty')}
+      emptyDescription={t('visual.table.emptyDesc')}
     />
   );
 }

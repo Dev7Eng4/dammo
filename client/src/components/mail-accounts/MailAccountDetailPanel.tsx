@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input, Textarea } from '../ui';
 import { PlatformLinkCell } from './PlatformLinkCell';
 import type { MailAccount, PlatformLinkStatus } from '../../types/mailAccount';
@@ -10,6 +11,7 @@ interface MailAccountDetailPanelProps {
 }
 
 function CopyButton({ value }: { value: string }) {
+  const { t } = useTranslation('common');
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -27,7 +29,7 @@ function CopyButton({ value }: { value: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      title={copied ? 'Đã sao chép!' : 'Sao chép'}
+      title={copied ? t('actions.copied') : t('actions.copy')}
       className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
     >
       {copied ? (
@@ -62,6 +64,8 @@ function PlatformRow({ label, status }: { label: string; status: PlatformLinkSta
 }
 
 export function MailAccountDetailPanel({ account, loading, onClose }: MailAccountDetailPanelProps) {
+  const { t } = useTranslation(['mail', 'common']);
+
   if (!account && !loading) return null;
 
   if (loading) {
@@ -96,6 +100,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           <button
             type="button"
             onClick={onClose}
+            aria-label={t('common:aria.close')}
             className="shrink-0 text-neutral-500 hover:text-neutral-200"
           >
             <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -107,7 +112,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div>
-            <FieldLabel>Mục đích</FieldLabel>
+            <FieldLabel>{t('detail.purpose')}</FieldLabel>
             <Input
               readOnly
               value={account.purpose}
@@ -116,7 +121,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           </div>
 
           <div>
-            <FieldLabel>Email khôi phục</FieldLabel>
+            <FieldLabel>{t('detail.recoveryEmail')}</FieldLabel>
             <div className="relative">
               <Input
                 readOnly
@@ -128,7 +133,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           </div>
 
           <div>
-            <FieldLabel>Số điện thoại</FieldLabel>
+            <FieldLabel>{t('detail.phone')}</FieldLabel>
             <div className="relative">
               <Input
                 readOnly
@@ -142,7 +147,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
 
           {account.twoFactorAuth ? (
             <div>
-              <FieldLabel>2FA</FieldLabel>
+              <FieldLabel>{t('form.twoFa')}</FieldLabel>
               <div className="relative">
                 <Input
                   readOnly
@@ -155,7 +160,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           ) : null}
 
           <div>
-            <FieldLabel>Nền tảng</FieldLabel>
+            <FieldLabel>{t('detail.platforms')}</FieldLabel>
             <div className="space-y-2 rounded-lg border border-border bg-surface-elevated/50 p-3">
               <PlatformRow label="Youtube" status={account.platformLinks.youtube} />
               <PlatformRow label="TikTok" status={account.platformLinks.tiktok} />
@@ -164,7 +169,7 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
           </div>
 
           <div>
-            <FieldLabel>Ghi chú</FieldLabel>
+            <FieldLabel>{t('detail.notes')}</FieldLabel>
             <Textarea
               readOnly
               rows={4}
