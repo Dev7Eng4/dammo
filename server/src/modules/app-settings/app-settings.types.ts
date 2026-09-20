@@ -4,6 +4,9 @@ export interface AiSceneDensityMaxSecSettings {
   low: number;
 }
 
+/** Chrome profile role used for AI scene prompt + character-reference LLM chat. */
+export type AiScenePromptChromeProfileRole = 'main' | 'sub';
+
 export interface AppSettings {
   enableKenBurns: boolean;
   enableImageTransitions: boolean;
@@ -13,6 +16,11 @@ export interface AppSettings {
   taskQueueConcurrency: number;
   /** When true, emit ffmpeg progress / per-clip detail logs. When false, only timedStep summaries. */
   verboseVideoLogs: boolean;
+  /**
+   * Which Chrome profile to open for scene-prompt LLM (and character reference design).
+   * Does not affect image generation or metadata.
+   */
+  aiScenePromptChromeProfileRole: AiScenePromptChromeProfileRole;
 }
 
 export type UpdateAppSettingsInput = Partial<

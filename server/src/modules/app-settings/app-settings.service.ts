@@ -1,6 +1,10 @@
 import { paths } from '../../config/paths.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
-import type { AppSettings, UpdateAppSettingsInput } from './app-settings.types.js';
+import type {
+  AiScenePromptChromeProfileRole,
+  AppSettings,
+  UpdateAppSettingsInput,
+} from './app-settings.types.js';
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   enableKenBurns: true,
@@ -13,7 +17,15 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
+  aiScenePromptChromeProfileRole: 'main',
 };
+
+function resolveScenePromptChromeProfileRole(
+  value: unknown,
+  fallback: AiScenePromptChromeProfileRole,
+): AiScenePromptChromeProfileRole {
+  return value === 'main' || value === 'sub' ? value : fallback;
+}
 
 function clampSceneSec(value: number | undefined, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
@@ -46,6 +58,10 @@ function loadSettings(): AppSettings {
       DEFAULT_APP_SETTINGS.taskQueueConcurrency,
     ),
     verboseVideoLogs: stored?.verboseVideoLogs ?? DEFAULT_APP_SETTINGS.verboseVideoLogs,
+    aiScenePromptChromeProfileRole: resolveScenePromptChromeProfileRole(
+      stored?.aiScenePromptChromeProfileRole,
+      DEFAULT_APP_SETTINGS.aiScenePromptChromeProfileRole,
+    ),
   };
 }
 
@@ -77,6 +93,10 @@ export class AppSettingsService {
         current.taskQueueConcurrency,
       ),
       verboseVideoLogs: input.verboseVideoLogs ?? current.verboseVideoLogs,
+      aiScenePromptChromeProfileRole: resolveScenePromptChromeProfileRole(
+        input.aiScenePromptChromeProfileRole ?? current.aiScenePromptChromeProfileRole,
+        current.aiScenePromptChromeProfileRole,
+      ),
     };
     writeJson(paths.appSettings, next);
     return next;

@@ -7,6 +7,7 @@ import { AppError } from '../../shared/http/errors.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import {
   IMAGE_REFERENCES_DIRNAME,
+  findOverlappingScenes,
   generateAiSceneSlideImages,
   resolveAiScenePromptsFilePath,
   resolveCharacterReferencesFilePath,
@@ -102,6 +103,14 @@ function readScenePromptsFile(workDir: string): AiVideoScenePromptsFile | null {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.scenes)) {
     return null;
   }
+
+  const overlaps = findOverlappingScenes(raw.scenes);
+  if (overlaps.length > 0) {
+    console.warn(
+      `[video-production-ui] ${filePath}: ${overlaps.length} scene overlap — possible duplicate prompts (scene #${overlaps[0].index + 1} starts ${overlaps[0].startTime} < ${overlaps[0].previousEndTime})`,
+    );
+  }
+
   return raw;
 }
 
@@ -169,7 +178,7 @@ function findCharacterImagePath(
 }
 
 function statusRank(status: ProductionVideoStatus): number {
-  return status === 'Created' ? 0 : 1;
+  return status === 'Prepared' ? 0 : 1;
 }
 
 function normalizeMetaText(value: unknown): string {

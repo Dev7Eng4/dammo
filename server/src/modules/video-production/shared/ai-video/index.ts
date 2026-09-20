@@ -1,6 +1,11 @@
 export * from './ai-video.constants.js';
 export * from './ai-video.types.js';
 export {
+  DEFAULT_AI_SCENE_PROMPT_CHROME_PROFILE_ROLE,
+  pickAiScenePromptChromeProfile,
+  type AiScenePromptChromeProfileRole,
+} from './ai-video-chrome-profile.js';
+export {
   generateAiVideoImages,
   generateAiVideoImagesWithReference,
   generateAiScenePromptsForPipeline,
@@ -34,7 +39,11 @@ export {
   tryParseAiVideoSceneResponse,
   tryParseAiVideoCharacterResponse,
 } from './ai-video-scene-response.js';
-export { persistAiScenePromptsFile, resolveAiScenePromptsFilePath } from './ai-video-scene-prompts-store.js';
+export {
+  findOverlappingScenes,
+  persistAiScenePromptsFile,
+  resolveAiScenePromptsFilePath,
+} from './ai-video-scene-prompts-store.js';
 export {
   attachSceneImagePaths,
   redistributeMissingSceneTimes,

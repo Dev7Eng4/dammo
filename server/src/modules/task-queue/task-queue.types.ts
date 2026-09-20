@@ -57,6 +57,8 @@ export interface CreateVideoTaskPayload {
   videoUrl?: string;
   /** Assemble final mp4 only for existing Prepared videos (skip transcript/metadata/thumbnail) */
   assembleOnly?: boolean;
+  /** Re-run scene prompts + images for existing Prepared/Created AI (or SI multi_image) videos */
+  regenerateScenes?: boolean;
 }
 
 export interface UploadVideoTaskPayload {

@@ -68,6 +68,18 @@
       "regenReloadError": "Không tải lại được metadata sau khi tạo lại",
       "regenJobTitle": "Tạo lại metadata: {{title}}"
     },
+    "scenes": {
+      "regenerate": "Tạo lại scenes",
+      "regenerating": "Đang tạo lại scenes…",
+      "regenQueued": "Đã thêm vào hàng đợi tạo lại scenes",
+      "regenSuccess": "Đã tạo lại scene prompts và images",
+      "regenFailed": "Tạo lại scenes thất bại",
+      "regenReloadError": "Không tải lại được scenes sau khi tạo lại",
+      "regenJobTitle": "Tạo lại scenes: {{title}}",
+      "regenConfirmTitle": "Tạo lại scenes?",
+      "regenConfirmBody": "Sẽ tạo lại toàn bộ scene prompts và images cho video đang chọn. Video cuối sẽ không được ghép lại.",
+      "regenConfirmSending": "Đang xếp hàng…"
+    },
     "transcript": {
       "loading": "Đang tải kịch bản...",
       "empty": "Chưa có transcript.srt hoặc transcript-updated.srt cho video này.",
@@ -213,6 +225,10 @@
     },
     "chromeOffscreen": "Đưa cửa sổ Chrome nền ra ngoài màn hình",
     "chromeOffscreenDesc": "Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường.",
+    "scenePromptProfile": "Chrome profile cho scene prompt",
+    "scenePromptProfileDesc": "Dùng khi tạo scene prompt và character reference (LLM text). Không ảnh hưởng bước tạo ảnh.",
+    "scenePromptProfileMain": "Main profile",
+    "scenePromptProfileSub": "Sub profile",
     "sceneDensity": "Thời lượng tối đa mỗi cảnh (giây) — mặc định toàn hệ thống. Kênh YouTube vẫn có thể ghi đè riêng.",
     "sceneStart": "Đầu video",
     "sceneMiddle": "Giữa video",

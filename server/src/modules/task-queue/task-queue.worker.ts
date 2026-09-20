@@ -89,6 +89,17 @@ async function processCreateVideo(job: TaskJob): Promise<unknown> {
     return result;
   }
 
+  if (payload.regenerateScenes === true) {
+    updateProgress(job.id, 5, 'Đang tạo lại scene prompts và images');
+    const result = await videoProductionService.regenerateSceneAssets(
+      payload.channelId!,
+      payload.videoIds!,
+      { taskJobId: job.id },
+    );
+    updateProgress(job.id, 100, 'Hoàn thành');
+    return result;
+  }
+
   if (payload.assembleOnly === true) {
     updateProgress(job.id, 5, 'Đang ghép video');
     const result = await videoProductionService.assemblePreparedVideos(

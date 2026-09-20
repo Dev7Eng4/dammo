@@ -4,6 +4,8 @@ export interface AiSceneDensityMaxSecSettings {
   low: number;
 }
 
+export type AiScenePromptChromeProfileRole = 'main' | 'sub';
+
 export interface AppSettings {
   enableKenBurns: boolean;
   enableImageTransitions: boolean;
@@ -13,6 +15,8 @@ export interface AppSettings {
   taskQueueConcurrency: number;
   /** When true, emit ffmpeg progress / per-clip detail logs. When false, only step summaries. */
   verboseVideoLogs: boolean;
+  /** Chrome profile for scene-prompt + character-reference LLM. */
+  aiScenePromptChromeProfileRole: AiScenePromptChromeProfileRole;
 }
 
 export type UpdateAppSettingsPayload = Partial<

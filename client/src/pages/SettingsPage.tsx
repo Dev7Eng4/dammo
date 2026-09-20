@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Settings } from 'lucide-react'
 import { fetchAppSettings, updateAppSettings } from '../api/appSettings'
 import { PageHeader, PageShell } from '../components/layout'
-import { Button, Input, PageTabs, Switch, useToast } from '../components/ui'
+import { Button, Input, PageTabs, Select, Switch, useToast } from '../components/ui'
 import { useAbortableEffect } from '../hooks'
-import type { AppSettings, SettingsTab } from '../types/appSettings'
+import type { AppSettings, AiScenePromptChromeProfileRole, SettingsTab } from '../types/appSettings'
 
 const EMPTY_SETTINGS: AppSettings = {
   enableKenBurns: true,
@@ -14,6 +14,7 @@ const EMPTY_SETTINGS: AppSettings = {
   aiSceneDensityMaxSec: { high: 8, medium: 30, low: 60 },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
+  aiScenePromptChromeProfileRole: 'main',
 }
 
 function SettingSwitch({
@@ -64,7 +65,18 @@ export function SettingsPage() {
     setLoading(true)
     try {
       const { item } = await fetchAppSettings({ signal })
-      if (!signal.aborted) setSettings(item)
+      if (!signal.aborted) {
+        setSettings({
+          ...EMPTY_SETTINGS,
+          ...item,
+          aiSceneDensityMaxSec: {
+            ...EMPTY_SETTINGS.aiSceneDensityMaxSec,
+            ...item.aiSceneDensityMaxSec,
+          },
+          aiScenePromptChromeProfileRole:
+            item.aiScenePromptChromeProfileRole === 'sub' ? 'sub' : 'main',
+        })
+      }
     } catch (err) {
       if (!signal.aborted) {
         toast.error(err instanceof Error ? err.message : t('settings.toast.loadError'))
@@ -91,6 +103,7 @@ export function SettingsPage() {
           Math.max(1, Math.round(Number(settings.taskQueueConcurrency)) || 1),
         ),
         verboseVideoLogs: settings.verboseVideoLogs,
+        aiScenePromptChromeProfileRole: settings.aiScenePromptChromeProfileRole,
       })
       setSettings(item)
       toast.success(t('settings.toast.saved'))
@@ -172,6 +185,27 @@ export function SettingsPage() {
                 }
                 disabled={saving}
               />
+              <div className="space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
+                <label htmlFor="scene-prompt-chrome-profile" className="text-sm font-medium text-foreground">
+                  {t('settings.scenePromptProfile')}
+                </label>
+                <p className="text-xs text-muted-foreground">{t('settings.scenePromptProfileDesc')}</p>
+                <Select
+                  id="scene-prompt-chrome-profile"
+                  disabled={saving}
+                  value={settings.aiScenePromptChromeProfileRole}
+                  onChange={(value) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      aiScenePromptChromeProfileRole: value as AiScenePromptChromeProfileRole,
+                    }))
+                  }
+                  options={[
+                    { value: 'main', label: t('settings.scenePromptProfileMain') },
+                    { value: 'sub', label: t('settings.scenePromptProfileSub') },
+                  ]}
+                />
+              </div>
             </section>
           ) : null}
 

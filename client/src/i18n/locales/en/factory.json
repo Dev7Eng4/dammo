@@ -68,6 +68,18 @@
       "regenReloadError": "Could not reload metadata after regeneration",
       "regenJobTitle": "Regenerate metadata: {{title}}"
     },
+    "scenes": {
+      "regenerate": "Regenerate scenes",
+      "regenerating": "Regenerating scenes…",
+      "regenQueued": "Queued scene regeneration",
+      "regenSuccess": "Regenerated scene prompts and images",
+      "regenFailed": "Scene regeneration failed",
+      "regenReloadError": "Could not reload scenes after regeneration",
+      "regenJobTitle": "Regenerate scenes: {{title}}",
+      "regenConfirmTitle": "Regenerate scenes?",
+      "regenConfirmBody": "This will recreate all scene prompts and images for the selected video. The final video will not be reassembled.",
+      "regenConfirmSending": "Queuing…"
+    },
     "transcript": {
       "loading": "Loading transcript...",
       "empty": "No transcript.srt or transcript-updated.srt for this video yet.",
@@ -213,6 +225,10 @@
     },
     "chromeOffscreen": "Move background Chrome windows off-screen",
     "chromeOffscreenDesc": "On: park windows off-screen when running in the background. Off: keep windows visible normally.",
+    "scenePromptProfile": "Chrome profile for scene prompts",
+    "scenePromptProfileDesc": "Used when generating scene prompts and character references (LLM text). Does not affect image generation.",
+    "scenePromptProfileMain": "Main profile",
+    "scenePromptProfileSub": "Sub profile",
     "sceneDensity": "Max duration per scene (seconds) — system default. YouTube channels can still override per channel.",
     "sceneStart": "Start of video",
     "sceneMiddle": "Middle of video",

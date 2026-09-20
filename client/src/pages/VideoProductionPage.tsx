@@ -16,9 +16,10 @@ import { PRODUCTION_METADATA_FORM_ID } from '../components/video-production/Meta
 import {
   VideoProductionToolbar,
 } from '../components/video-production/VideoProductionToolbar';
+import { RegenerateScenesConfirmModal } from '../components/video-production/RegenerateScenesConfirmModal';
 import { RegenerateMetadataConfirmModal } from '../components/youtube-channels/RegenerateMetadataConfirmModal';
 import { Button, useToast } from '../components/ui';
-import { useAbortableEffect, useDebouncedValue, useTaskQueue } from '../hooks';
+import { useAbortableEffect, useTaskQueue } from '../hooks';
 import type { CreateVideoTaskPayload } from '../types/taskQueue';
 import {
   productionVideoKey,
@@ -28,8 +29,6 @@ import {
   type ProductionTranscriptResponse,
   type ProductionVideoListItem,
 } from '../types/videoProductionScenes';
-
-const SEARCH_DEBOUNCE_MS = 250;
 
 function isRegenerateMetadataJobForVideo(
   payload: CreateVideoTaskPayload | undefined,
@@ -41,10 +40,31 @@ function isRegenerateMetadataJobForVideo(
   return Boolean(payload.videoIds?.includes(videoId));
 }
 
+function isRegenerateScenesJobForVideo(
+  payload: CreateVideoTaskPayload | undefined,
+  channelId: string,
+  videoId: string,
+): boolean {
+  if (!payload || payload.regenerateScenes !== true) return false;
+  if (payload.channelId !== channelId) return false;
+  return Boolean(payload.videoIds?.includes(videoId));
+}
+
 function withCacheBust(url: string | null, version: number): string | null {
   if (!url) return null;
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}v=${version}`;
+}
+
+function withSceneCacheBust(data: ProductionScenesResponse): ProductionScenesResponse {
+  const bust = Date.now();
+  return {
+    ...data,
+    scenes: data.scenes.map((scene) => ({
+      ...scene,
+      imageUrl: withCacheBust(scene.imageUrl, bust),
+    })),
+  };
 }
 
 export function VideoProductionPage() {
@@ -59,7 +79,6 @@ export function VideoProductionPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
   const [scenesData, setScenesData] = useState<ProductionScenesResponse | null>(null);
   const [scenesLoading, setScenesLoading] = useState(false);
   const [scenesError, setScenesError] = useState<string | null>(null);
@@ -77,8 +96,8 @@ export function VideoProductionPage() {
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null);
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [enqueueingRegenerate, setEnqueueingRegenerate] = useState(false);
-
-  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+  const [confirmRegenerateScenesOpen, setConfirmRegenerateScenesOpen] = useState(false);
+  const [enqueueingRegenerateScenes, setEnqueueingRegenerateScenes] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -139,7 +158,6 @@ export function VideoProductionPage() {
     if (channels.some((channel) => channel.id === channelIdFromQuery)) {
       setSelectedChannelId(channelIdFromQuery);
       setSelectedKey(null);
-      setSearch('');
     }
 
     const nextParams = new URLSearchParams(searchParams);
@@ -149,17 +167,8 @@ export function VideoProductionPage() {
 
   const filteredVideos = useMemo(() => {
     if (!selectedChannelId) return [];
-
-    const query = debouncedSearch.trim().toLowerCase();
-    return videos.filter((video) => {
-      if (video.channelId !== selectedChannelId) return false;
-      if (!query) return true;
-      return (
-        video.title.toLowerCase().includes(query) ||
-        video.videoId.toLowerCase().includes(query)
-      );
-    });
-  }, [videos, selectedChannelId, debouncedSearch]);
+    return videos.filter((video) => video.channelId === selectedChannelId);
+  }, [videos, selectedChannelId]);
 
   const selectedVideo = useMemo(
     () => videos.find((video) => productionVideoKey(video) === selectedKey) ?? null,
@@ -179,8 +188,26 @@ export function VideoProductionPage() {
       ),
   );
 
-  const metadataBusy =
-    metadataLoading || metadataSaving || enqueueingRegenerate || regenerateInProgress;
+  const regenerateScenesInProgress = Boolean(
+    selectedVideo &&
+      jobs.some(
+        (job) =>
+          (job.status === 'queued' || job.status === 'running') &&
+          isRegenerateScenesJobForVideo(
+            job.payload as CreateVideoTaskPayload,
+            selectedVideo.channelId,
+            selectedVideo.videoId,
+          ),
+      ),
+  );
+
+  const toolbarBusy =
+    metadataLoading ||
+    metadataSaving ||
+    enqueueingRegenerate ||
+    regenerateInProgress ||
+    enqueueingRegenerateScenes ||
+    regenerateScenesInProgress;
 
   useAbortableEffect(
     async (signal) => {
@@ -291,7 +318,6 @@ export function VideoProductionPage() {
 
   function handleChannelChange(channelId: string | null) {
     setSelectedChannelId(channelId);
-    setSearch('');
     setSelectedKey(null);
     clearDetailState();
   }
@@ -336,7 +362,7 @@ export function VideoProductionPage() {
   }
 
   async function handleConfirmRegenerate() {
-    if (!selectedVideo || metadataBusy) return;
+    if (!selectedVideo || toolbarBusy) return;
 
     const { channelId, videoId, title } = selectedVideo;
     setEnqueueingRegenerate(true);
@@ -378,6 +404,63 @@ export function VideoProductionPage() {
     }
   }
 
+  async function reloadScenesAfterRegen(channelId: string, videoId: string) {
+    const [scenes, characters] = await Promise.all([
+      fetchProductionScenes(channelId, videoId),
+      fetchProductionCharacters(channelId, videoId),
+    ]);
+    if (!mountedRef.current) return;
+    const busted = withSceneCacheBust(scenes);
+    setScenesData(busted);
+    setScenesError(null);
+    setSelectedSceneIndex(busted.scenes[0]?.index ?? null);
+    setCharactersData(characters);
+    setCharactersError(null);
+  }
+
+  async function handleConfirmRegenerateScenes() {
+    if (!selectedVideo || toolbarBusy) return;
+
+    const { channelId, videoId, title } = selectedVideo;
+    setEnqueueingRegenerateScenes(true);
+    try {
+      await enqueueTask(
+        {
+          type: 'create_video',
+          title: t('production.scenes.regenJobTitle', { title: title || videoId }),
+          subtitle: videoId,
+          payload: {
+            channelId,
+            videoIds: [videoId],
+            regenerateScenes: true,
+          },
+        },
+        {
+          onComplete: () => {
+            void reloadScenesAfterRegen(channelId, videoId)
+              .then(() => {
+                if (mountedRef.current) toast.success(t('production.scenes.regenSuccess'));
+              })
+              .catch((err) => {
+                const message =
+                  err instanceof Error ? err.message : t('production.scenes.regenReloadError');
+                toast.error(message);
+              });
+          },
+          onFail: (job) => {
+            toast.error(job.error ?? t('production.scenes.regenFailed'));
+          },
+        },
+      );
+      setConfirmRegenerateScenesOpen(false);
+      toast.success(t('production.scenes.regenQueued'));
+    } catch {
+      // enqueueTask already toasts
+    } finally {
+      setEnqueueingRegenerateScenes(false);
+    }
+  }
+
   if (error) {
     return (
       <PageShell>
@@ -402,16 +485,24 @@ export function VideoProductionPage() {
             channels={channels}
             selectedChannelId={selectedChannelId}
             onChannelChange={handleChannelChange}
-            search={search}
             total={filteredVideos.length}
             channelLoading={loading}
-            onSearchChange={setSearch}
             trailing={
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="outlined"
-                  disabled={!selectedVideo || metadataBusy || !metadataData}
+                  disabled={!selectedVideo || toolbarBusy}
+                  onClick={() => setConfirmRegenerateScenesOpen(true)}
+                >
+                  {regenerateScenesInProgress
+                    ? t('production.scenes.regenerating')
+                    : t('production.scenes.regenerate')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  disabled={!selectedVideo || toolbarBusy || !metadataData}
                   onClick={() => setConfirmRegenerateOpen(true)}
                 >
                   {regenerateInProgress
@@ -421,7 +512,7 @@ export function VideoProductionPage() {
                 <Button
                   type="submit"
                   form={PRODUCTION_METADATA_FORM_ID}
-                  disabled={!selectedVideo || !metadataCanSave || metadataBusy}
+                  disabled={!selectedVideo || !metadataCanSave || toolbarBusy}
                 >
                   {metadataSaving ? t('production.metadata.saving') : t('production.metadata.save')}
                 </Button>
@@ -473,6 +564,12 @@ export function VideoProductionPage() {
         regenerating={enqueueingRegenerate}
         onClose={() => setConfirmRegenerateOpen(false)}
         onConfirm={() => void handleConfirmRegenerate()}
+      />
+      <RegenerateScenesConfirmModal
+        open={confirmRegenerateScenesOpen}
+        regenerating={enqueueingRegenerateScenes}
+        onClose={() => setConfirmRegenerateScenesOpen(false)}
+        onConfirm={() => void handleConfirmRegenerateScenes()}
       />
     </PageShell>
   );

@@ -1,3 +1,4 @@
+import { srtTimestampToMs } from '../../../../infrastructure/subtitle/srt-utils.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
@@ -8,13 +9,15 @@ import { generateCharacterReferences } from './ai-video-character-references.js'
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
+  AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS,
   resolveAiSceneDensityMaxSec,
   VIDEO_IMAGE_PROMPT_KEY,
   VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
   type AiSceneDensityMaxSec,
   type AiVideoDensityLevel,
 } from './ai-video.constants.js';
-import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
+import { findOverlappingScenes, persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
+import { pickAiScenePromptChromeProfile } from './ai-video-chrome-profile.js';
 import { emitDetailLog } from '../video-log.js';
 import type {
   AiVideoCharacterReference,
@@ -63,6 +66,27 @@ function buildDensityChunkJobs(
   return jobs;
 }
 
+/** Tolerance for LLM rounding scene boundaries slightly past the chunk edges. */
+const SCENE_RANGE_TOLERANCE_MS = 2_000;
+
+/**
+ * Detect a response that belongs to a different chunk — the signature of the browser
+ * layer handing back a previous turn's answer, which parses as valid but duplicates scenes.
+ */
+function scenesOutsideChunkRange(
+  scenes: AiVideoScenePrompt[],
+  chunkStartMs: number,
+  chunkEndMs: number,
+): boolean {
+  return scenes.some(scene => {
+    const startMs = srtTimestampToMs(scene.startTime);
+    return (
+      startMs < chunkStartMs - SCENE_RANGE_TOLERANCE_MS ||
+      startMs > chunkEndMs + SCENE_RANGE_TOLERANCE_MS
+    );
+  });
+}
+
 async function executeScenePromptChunk(
   profileId: string,
   input: GenerateAiVideoImagesInput,
@@ -88,6 +112,9 @@ async function executeScenePromptChunk(
 
   const userPrompt = await executePromptTemplate(input.language, promptKey, args);
 
+  const chunkStartMs = srtTimestampToMs(job.transcriptChunk[0].startTime);
+  const chunkEndMs = srtTimestampToMs(job.transcriptChunk[job.transcriptChunk.length - 1].endTime);
+
   let lastReason = 'unknown error';
   let lastResponsePath: string | undefined;
 
@@ -108,17 +135,21 @@ async function executeScenePromptChunk(
         {
           submitWith: 'enter',
           pasteStrategy: 'human',
+          timeoutMs: AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS,
         },
       );
 
       const parsed = tryParseAiVideoSceneResponse(response, {
         requireReferences: options?.requireReferences === true,
       });
-      if (parsed) {
+
+      if (parsed && !scenesOutsideChunkRange(parsed, chunkStartMs, chunkEndMs)) {
         return parsed;
       }
 
-      lastReason = 'invalid JSON or schema mismatch';
+      lastReason = parsed
+        ? 'scene timestamps outside chunk range (stale LLM response?)'
+        : 'invalid JSON or schema mismatch';
       lastResponsePath = await persistLlmParseFailure({
         outputDir: input.workDir,
         label: `ai-scene-${job.density}-${job.chunkIndex}`,
@@ -152,7 +183,7 @@ async function generateScenePromptsFromJobs(
     requireReferences?: boolean;
   },
 ): Promise<GenerateAiVideoImagesResult> {
-  const profile = chromeProfilesService.pickSubProfile();
+  const profile = pickAiScenePromptChromeProfile();
   const allScenes: AiVideoScenePrompt[] = [];
 
   log(`[ai-video] Mở Chrome profile ${profile.name} cho scene prompts...`);
@@ -168,6 +199,14 @@ async function generateScenePromptsFromJobs(
       const scenes = await executeScenePromptChunk(profile.id, input, job, options);
       allScenes.push(...scenes);
       log(`[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`);
+
+      const overlaps = findOverlappingScenes(allScenes);
+      if (overlaps.length > 0) {
+        const first = overlaps[0];
+        log(
+          `[ai-video] WARNING: ${overlaps.length} scene overlap sau ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} — scene #${first.index + 1} bắt đầu ${first.startTime} < ${first.previousEndTime} (nghi duplicate prompt)`,
+        );
+      }
 
       const savedPath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
       log(`[ai-video] Scene prompts checkpoint → ${savedPath} (${allScenes.length} scene(s))`);

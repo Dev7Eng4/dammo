@@ -147,19 +147,24 @@ async function waitUntilNotGenerating(page: Page, config: LlmProviderConfig, dea
   }
 }
 
-async function extractResponse(page: Page, config: LlmProviderConfig): Promise<{ content: string; codeBlocks: string[] }> {
+async function extractResponse(
+  page: Page,
+  config: LlmProviderConfig,
+  blockIndex?: number,
+): Promise<{ content: string; codeBlocks: string[] }> {
   const blocks = page.locator(config.selectors.responseBlocks);
   const count = await blocks.count();
   if (count === 0) {
     return { content: '', codeBlocks: [] };
   }
 
-  const lastBlock = blocks.nth(count - 1);
-  const content = ((await lastBlock.innerText().catch(() => '')) ?? '').trim();
+  const index = blockIndex != null && blockIndex < count ? blockIndex : count - 1;
+  const target = blocks.nth(index);
+  const content = ((await target.innerText().catch(() => '')) ?? '').trim();
 
   const codeBlocks: string[] = [];
   if (config.selectors.responseCodeBlocks) {
-    const codes = lastBlock.locator(config.selectors.responseCodeBlocks);
+    const codes = target.locator(config.selectors.responseCodeBlocks);
     const codeCount = await codes.count();
     for (let i = 0; i < codeCount; i += 1) {
       const text = (
@@ -274,7 +279,11 @@ export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserP
       const stableMs = options?.stableMs ?? 2_000;
       const deadline = startedAt + timeoutMs;
 
-      const baselineBlockCount = options?.baselineBlockCount ?? (await countResponseBlocks(page, config));
+      const providedBaseline = options?.baselineBlockCount;
+      const baselineBlockCount = providedBaseline ?? (await countResponseBlocks(page, config));
+      // Chỉ tin baseline đến từ sendPrompt; baseline tự suy đoán không phân biệt được block cũ/mới.
+      const enforceNewBlock = providedBaseline != null;
+      const targetBlockIndex = enforceNewBlock ? baselineBlockCount : undefined;
 
       await randomDelay(1_500, 1_500);
       await scrollConversationContainer(page, config, randomInt(80, 200));
@@ -285,8 +294,13 @@ export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserP
       let stableSince = 0;
 
       while (Date.now() < deadline) {
+        if (enforceNewBlock && (await countResponseBlocks(page, config)) <= baselineBlockCount) {
+          await randomDelay(300, 600);
+          continue;
+        }
+
         const generating = await isGenerating(page, config);
-        const { content, codeBlocks } = await extractResponse(page, config);
+        const { content, codeBlocks } = await extractResponse(page, config, targetBlockIndex);
 
         if (generating) {
           await scrollConversationContainer(page, config, randomInt(80, 200));
@@ -315,7 +329,18 @@ export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserP
       }
 
       await waitUntilNotGenerating(page, config, deadline);
-      const { content, codeBlocks } = await extractResponse(page, config);
+
+      if (enforceNewBlock) {
+        const finalBlockCount = await countResponseBlocks(page, config);
+        if (finalBlockCount <= baselineBlockCount) {
+          throw domTimeoutError(
+            provider,
+            `No new response block (baseline=${baselineBlockCount}, current=${finalBlockCount}) - stale response guard`,
+          );
+        }
+      }
+
+      const { content, codeBlocks } = await extractResponse(page, config, targetBlockIndex);
       if (content) {
         await randomDelay(400, 800);
         await readLatestResponseIfAny(page, config);

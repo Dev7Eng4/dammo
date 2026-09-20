@@ -108,6 +108,9 @@ export const AI_VIDEO_TRANSCRIPT_CHUNK_MAX_SEC = 300;
 /** SI multi_image / shared scene prompt window (20 minutes). */
 export const AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC = 20 * 60;
 
+/** Scene prompt output is long (~11 scenes per chunk), needs more than the 180s default. */
+export const AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS = 300_000;
+
 /**
  * Max character length of the fully rendered character-design prompt
  * (template + visualStyle + niche + transcript JSON).

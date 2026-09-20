@@ -28,6 +28,7 @@ const createVideoPayloadSchema = z
     recreateMetadataFromUrl: z.boolean().optional(),
     videoUrl: z.string().min(1).optional(),
     assembleOnly: z.boolean().optional(),
+    regenerateScenes: z.boolean().optional(),
   })
   .refine(
     (data) => {
@@ -58,6 +59,14 @@ const createVideoPayloadSchema = z
   )
   .refine(
     (data) =>
+      data.regenerateScenes !== true ||
+      (Boolean(data.channelId) && Boolean(data.videoIds?.length) && !data.allReupChannels && !data.channelIds?.length),
+    {
+      message: 'regenerateScenes requires channelId and videoIds',
+    },
+  )
+  .refine(
+    (data) =>
       data.recreateMetadataFromUrl !== true ||
       (Boolean(data.channelId) &&
         Boolean(data.videoUrl?.trim()) &&
@@ -65,7 +74,8 @@ const createVideoPayloadSchema = z
         !data.channelIds?.length &&
         !data.videoIds?.length &&
         data.regenerateMetadata !== true &&
-        data.assembleOnly !== true),
+        data.assembleOnly !== true &&
+        data.regenerateScenes !== true),
     {
       message: 'recreateMetadataFromUrl requires channelId and videoUrl',
     },
@@ -86,6 +96,24 @@ const createVideoPayloadSchema = z
     (data) => !(data.regenerateMetadata === true && data.recreateMetadataFromUrl === true),
     {
       message: 'regenerateMetadata and recreateMetadataFromUrl cannot both be true',
+    },
+  )
+  .refine(
+    (data) => !(data.regenerateScenes === true && data.regenerateMetadata === true),
+    {
+      message: 'regenerateScenes and regenerateMetadata cannot both be true',
+    },
+  )
+  .refine(
+    (data) => !(data.regenerateScenes === true && data.assembleOnly === true),
+    {
+      message: 'regenerateScenes and assembleOnly cannot both be true',
+    },
+  )
+  .refine(
+    (data) => !(data.regenerateScenes === true && data.recreateMetadataFromUrl === true),
+    {
+      message: 'regenerateScenes and recreateMetadataFromUrl cannot both be true',
     },
   );
 

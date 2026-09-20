@@ -54,6 +54,8 @@ export interface CreateVideoTaskPayload {
   videoUrl?: string;
   /** Assemble final mp4 only for existing Prepared videos */
   assembleOnly?: boolean;
+  /** Re-run scene prompts + images for existing Prepared/Created videos */
+  regenerateScenes?: boolean;
 }
 
 export interface UploadVideoTaskPayload {

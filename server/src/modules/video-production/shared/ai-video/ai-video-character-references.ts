@@ -22,6 +22,7 @@ import {
   CREATE_CHARACTERS_DESIGN_PROMPT_KEY,
   IMAGE_REFERENCES_DIRNAME,
 } from './ai-video.constants.js';
+import { pickAiScenePromptChromeProfile } from './ai-video-chrome-profile.js';
 import { tryParseAiVideoCharacterResponse } from './ai-video-scene-response.js';
 import {
   clipTranscriptCuesToMaxChars,
@@ -159,7 +160,7 @@ async function generateCharacterPromptsViaLlm(
     input.detectedNiche ?? '',
   ]);
 
-  const profile = chromeProfilesService.pickSubProfile();
+  const profile = pickAiScenePromptChromeProfile();
   log(`[ai-video] Mở Chrome profile ${profile.name} cho character design...`);
 
   let lastReason = 'unknown error';

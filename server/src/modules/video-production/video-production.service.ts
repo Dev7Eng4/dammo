@@ -80,6 +80,31 @@ export class VideoProductionService {
     });
   }
 
+  async regenerateSceneAssets(
+    channelId: string,
+    videoIds: string[],
+    options?: { taskJobId?: string },
+  ): Promise<CreateReupVideosResult> {
+    const channel = youtubeChannelsRepository.findById(channelId);
+    if (!channel) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+
+    if (!isReupChannelType(channel.type)) {
+      throw new AppError(
+        'Only reup audio or reup video channels can regenerate scenes',
+        400,
+        'INVALID_CHANNEL_TYPE',
+      );
+    }
+
+    const destination = await createYoutubeProductionDestination(channel);
+    return resolvePipeline(destination.pipelineType).regenerateSceneAssets(destination, {
+      videoIds,
+      ...(options?.taskJobId ? { taskJobId: options.taskJobId } : {}),
+    });
+  }
+
   async recreateMetadataFromUrl(
     channelId: string,
     videoUrl: string,
