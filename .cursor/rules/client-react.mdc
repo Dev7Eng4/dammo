@@ -1,0 +1,25 @@
+---
+description: React client patterns — API, UI kit, state, pages
+globs: "client/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Client (React)
+
+## API
+
+- Thin wrappers over `fetchJson` in `client/src/api/*`
+- Call `/api/v1/...` (Vite proxies `/api` to the server)
+- Colocate request types with the API module or `client/src/types/`
+
+## UI & layout
+
+- Pages: `client/src/pages/` (PascalCase)
+- Feature UI: `client/src/components/<domain-kebab>/`
+- Primitives: extend `client/src/components/ui` (Radix + CVA + `cn`) — do not scaffold a second shadcn CLI system
+
+## State & forms
+
+- Prefer local state and existing contexts (`TaskQueueContext`, theme, toast)
+- Do **not** add Redux, Zustand, or React Query unless the user asks
+- Use react-hook-form when the surrounding domain already does

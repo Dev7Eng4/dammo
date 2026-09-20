@@ -359,7 +359,7 @@ export async function generateCharacterReferenceImagesFromList(
   const metaConcurrency: MetaImageConcurrencyMode = input.metaConcurrency ?? 'single';
 
   if (characters.length > 0) {
-    const imageProvider = promptsSettingsService.get().defaultImageProvider;
+    const imageProvider = promptsSettingsService.get().defaultReferenceImageProvider;
     const pendingCount = characters.length - skippedCount;
     log(
       `[ai-video] Generating ${pendingCount} character image(s) via ${imageProvider}` +

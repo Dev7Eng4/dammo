@@ -219,7 +219,7 @@ export class PromptPlaygroundService {
 
     try {
       if (outputType === 'image') {
-        const imageProvider = input.imageProvider ?? settings.defaultImageProvider;
+        const imageProvider = input.imageProvider ?? settings.defaultSceneImageProvider;
         return await runImagePlayground(input, imageProvider);
       }
 

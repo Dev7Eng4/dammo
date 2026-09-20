@@ -21,8 +21,17 @@ import type {
   LlmSendPromptOptions,
   LlmSetupConfig,
 } from '../llm-browser.types.js';
-import { humanClick, humanPaste, humanPressEnter, humanWander, randomDelay, setupClick } from '../human-interaction.js';
+import {
+  humanClick,
+  humanPaste,
+  humanPressEnter,
+  humanWander,
+  isPromptFillAcceptable,
+  randomDelay,
+  setupClick,
+} from '../human-interaction.js';
 import { resolveReferenceImagePaths } from '../resolve-reference-image-paths.js';
+import { appSettingsService } from '../../../modules/app-settings/app-settings.service.js';
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'flow' as const;
@@ -521,6 +530,8 @@ async function resolveEditableLocator(locator: Locator): Promise<Locator> {
 }
 
 async function assertPromptFilled(locator: Locator, prompt: string): Promise<void> {
+  if (!appSettingsService.get().checkPromptFillLength) return;
+
   const expectedLength = prompt.trim().length;
   const length = await locator.evaluate(el => {
     const target = el as HTMLElement;
@@ -537,7 +548,7 @@ async function assertPromptFilled(locator: Locator, prompt: string): Promise<voi
     }
     return (nested.textContent ?? '').trim().length;
   });
-  if (length < expectedLength) {
+  if (!isPromptFillAcceptable(length, expectedLength)) {
     throw domTimeoutError(`Prompt not filled before submit: expected ${expectedLength}, got ${length}`);
   }
 }

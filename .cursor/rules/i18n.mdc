@@ -1,0 +1,20 @@
+---
+description: i18n — all UI copy via en+vi namespaces
+globs: "client/src/**/*.{ts,tsx,json}"
+alwaysApply: false
+---
+
+# i18n
+
+- User-facing strings go through `useTranslation` and a namespace (`content`, `factory`, etc.)
+- Add every new key to **both** `client/src/i18n/locales/en/` and `.../vi/`
+- Do not hardcode Vietnamese or English UI copy in JSX
+
+```tsx
+// ✅
+const { t } = useTranslation('content');
+return <p>{t('prompts.saveError')}</p>;
+
+// ❌
+return <p>Failed to save</p>;
+```

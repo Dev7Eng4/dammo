@@ -2,7 +2,11 @@ export * from './ai-video.constants.js';
 export * from './ai-video.types.js';
 export {
   DEFAULT_AI_SCENE_PROMPT_CHROME_PROFILE_ROLE,
+  AI_SCENE_PROMPT_CONCURRENCY_MIN,
+  AI_SCENE_PROMPT_CONCURRENCY_MAX,
   pickAiScenePromptChromeProfile,
+  clampAiScenePromptConcurrency,
+  resolveAiScenePromptProfiles,
   type AiScenePromptChromeProfileRole,
 } from './ai-video-chrome-profile.js';
 export {

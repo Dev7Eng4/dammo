@@ -81,7 +81,7 @@ export async function runSceneAssetsStep(
   }
 
   log.info(
-    `Generating ${options.label} scene images via ${promptsSettingsService.get().defaultImageProvider}...`,
+    `Generating ${options.label} scene images via ${promptsSettingsService.get().defaultSceneImageProvider}...`,
   );
 
   let audioSpeed: number | undefined;

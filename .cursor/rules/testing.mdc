@@ -1,0 +1,15 @@
+---
+description: Unit tests — colocate *.test.ts with node:test style
+globs: "**/*.test.ts"
+alwaysApply: false
+---
+
+# Testing
+
+Curated from unit-testing Cursor packs; match dammo’s existing style.
+
+- **Colocate** — `foo.bar.test.ts` next to `foo.bar.ts` (see `prompts.file-store.test.ts`).
+- **Runner** — prefer `node:test` + `node:assert/strict` like nearby tests. Do **not** add Jest/Vitest/Cypress unless the user asks.
+- **Focus** — test public behavior of helpers/services/pure functions, not incidental implementation details.
+- **Coverage targets** — when changing Zod parsing, merge logic, or pure transforms, add cases for invalid input and important edges.
+- **Imports** — server tests use relative imports with `.js` extensions (NodeNext ESM).

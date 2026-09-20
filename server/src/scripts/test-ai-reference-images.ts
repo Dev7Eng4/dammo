@@ -255,7 +255,9 @@ async function main() {
 
   const options = parseArgs(process.argv.slice(2));
   const fixture = await loadFixture(options.inputPath);
-  const imageProvider = promptsSettingsService.get().defaultImageProvider;
+  const settings = promptsSettingsService.get();
+  const referenceImageProvider = settings.defaultReferenceImageProvider;
+  const sceneImageProvider = settings.defaultSceneImageProvider;
 
   await fs.mkdir(options.workDir, { recursive: true });
 
@@ -263,7 +265,8 @@ async function main() {
   console.log(`Work dir: ${options.workDir}`);
   console.log(`Video id: ${options.videoId}`);
   console.log(`Phase: ${options.phase}`);
-  console.log(`Image provider: ${imageProvider}`);
+  console.log(`Reference image provider: ${referenceImageProvider}`);
+  console.log(`Scene image provider: ${sceneImageProvider}`);
   console.log(`Characters: ${fixture.characters.length} (metaConcurrency=single)`);
   console.log(`Scenes: ${fixture.scenes.length} (metaConcurrency=batch)`);
   if (options.inputPath) {
@@ -272,9 +275,9 @@ async function main() {
     console.log('Input: CHARACTERS_REFERENCES_FIXTURE + SCENES_FIXTURE');
   }
 
-  if (imageProvider !== 'meta' && (options.phase === 'all' || options.phase === 'scenes')) {
+  if (sceneImageProvider !== 'meta' && (options.phase === 'all' || options.phase === 'scenes')) {
     console.warn(
-      '\n[warn] defaultImageProvider is not "meta". Scene generation will not attach local character reference images (Meta only).\n',
+      '\n[warn] defaultSceneImageProvider is not "meta". Scene generation will not attach local character reference images (Meta only).\n',
     );
   }
 

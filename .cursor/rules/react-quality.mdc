@@ -1,0 +1,16 @@
+---
+description: React quality — hooks, lists, state, UI kit (no Redux/Query push)
+globs: "client/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# React quality
+
+Curated from common React Cursor rule packs; aligned with dammo client conventions.
+
+- **Rules of Hooks** — only call hooks at top level; correct `useEffect` dependencies; cleanup abort controllers, timers, and listeners.
+- **Lists** — stable `key`s (avoid index keys when items reorder/insert).
+- **State** — local state + existing contexts; do **not** introduce Redux, Zustand, or React Query unless the user asks.
+- **Forms** — follow react-hook-form when the surrounding domain already uses it.
+- **Memo** — do not add `useMemo`/`useCallback` by default; only when matching nearby code or a measured bottleneck.
+- **UI** — extend `components/ui` (Radix + CVA + `cn`); do not scaffold a second component system.

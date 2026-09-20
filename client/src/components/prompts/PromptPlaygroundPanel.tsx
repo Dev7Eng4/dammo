@@ -22,15 +22,18 @@ export interface PromptPlaygroundPanelProps {
   activeStepIndex: number;
   onActiveStepChange: (index: number) => void;
   provider: PlaygroundProvider;
-  imageProvider: ImageBrowserProvider;
+  referenceImageProvider: ImageBrowserProvider;
+  sceneImageProvider: ImageBrowserProvider;
   thumbnailProvider: ImageBrowserProvider;
   videoProvider: VideoBrowserProvider;
   providerSaving?: boolean;
-  imageProviderSaving?: boolean;
+  referenceImageProviderSaving?: boolean;
+  sceneImageProviderSaving?: boolean;
   thumbnailProviderSaving?: boolean;
   videoProviderSaving?: boolean;
   providerSettingsError?: string | null;
-  imageProviderSettingsError?: string | null;
+  referenceImageProviderSettingsError?: string | null;
+  sceneImageProviderSettingsError?: string | null;
   thumbnailProviderSettingsError?: string | null;
   videoProviderSettingsError?: string | null;
   variableValues: Record<string, string>;
@@ -38,7 +41,8 @@ export interface PromptPlaygroundPanelProps {
   result: PromptPlaygroundResult | null;
   error: string | null;
   onProviderChange: (provider: PlaygroundProvider) => void;
-  onImageProviderChange: (provider: ImageBrowserProvider) => void;
+  onReferenceImageProviderChange: (provider: ImageBrowserProvider) => void;
+  onSceneImageProviderChange: (provider: ImageBrowserProvider) => void;
   onThumbnailProviderChange: (provider: ImageBrowserProvider) => void;
   onVideoProviderChange: (provider: VideoBrowserProvider) => void;
   onVariableChange: (name: string, value: string) => void;
@@ -52,15 +56,18 @@ export function PromptPlaygroundPanel({
   activeStepIndex,
   onActiveStepChange,
   provider,
-  imageProvider,
+  referenceImageProvider,
+  sceneImageProvider,
   thumbnailProvider,
   videoProvider,
   providerSaving = false,
-  imageProviderSaving = false,
+  referenceImageProviderSaving = false,
+  sceneImageProviderSaving = false,
   thumbnailProviderSaving = false,
   videoProviderSaving = false,
   providerSettingsError = null,
-  imageProviderSettingsError = null,
+  referenceImageProviderSettingsError = null,
+  sceneImageProviderSettingsError = null,
   thumbnailProviderSettingsError = null,
   videoProviderSettingsError = null,
   variableValues,
@@ -68,7 +75,8 @@ export function PromptPlaygroundPanel({
   result,
   error,
   onProviderChange,
-  onImageProviderChange,
+  onReferenceImageProviderChange,
+  onSceneImageProviderChange,
   onThumbnailProviderChange,
   onVideoProviderChange,
   onVariableChange,
@@ -138,23 +146,45 @@ export function PromptPlaygroundPanel({
 
         <label className="block space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.imageGen')}</span>
-            {imageProviderSaving ? (
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.referenceImageGen')}</span>
+            {referenceImageProviderSaving ? (
               <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
             ) : null}
           </div>
           <DropdownSelect
-            value={imageProvider}
-            onChange={onImageProviderChange}
+            value={referenceImageProvider}
+            onChange={onReferenceImageProviderChange}
             options={IMAGE_PROVIDER_OPTIONS}
-            disabled={imageProviderSaving}
+            disabled={referenceImageProviderSaving}
             className="w-full"
             triggerClassName="h-9 w-full rounded-lg text-sm"
           />
-          {imageProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{imageProviderSettingsError}</p>
+          {referenceImageProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{referenceImageProviderSettingsError}</p>
           ) : (
-            <p className="text-[10px] text-neutral-500">{t('prompts.playground.imageHint')}</p>
+            <p className="text-[10px] text-neutral-500">{t('prompts.playground.referenceImageHint')}</p>
+          )}
+        </label>
+
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.sceneImageGen')}</span>
+            {sceneImageProviderSaving ? (
+              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
+            ) : null}
+          </div>
+          <DropdownSelect
+            value={sceneImageProvider}
+            onChange={onSceneImageProviderChange}
+            options={IMAGE_PROVIDER_OPTIONS}
+            disabled={sceneImageProviderSaving}
+            className="w-full"
+            triggerClassName="h-9 w-full rounded-lg text-sm"
+          />
+          {sceneImageProviderSettingsError ? (
+            <p className="text-[10px] text-danger">{sceneImageProviderSettingsError}</p>
+          ) : (
+            <p className="text-[10px] text-neutral-500">{t('prompts.playground.sceneImageHint')}</p>
           )}
         </label>
 

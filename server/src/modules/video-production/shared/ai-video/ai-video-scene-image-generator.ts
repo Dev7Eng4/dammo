@@ -361,7 +361,7 @@ export async function generateAiSceneSlideImages(
     enqueuePrebake(job.name);
   }
 
-  const imageProvider = promptsSettingsService.get().defaultImageProvider;
+  const imageProvider = promptsSettingsService.get().defaultSceneImageProvider;
   const metaConcurrency: MetaImageConcurrencyMode = input.metaConcurrency ?? 'batch';
 
   if (pending.length === 0) {

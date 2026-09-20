@@ -1,4 +1,5 @@
 import type { BrowserContext, Locator, Page } from 'playwright';
+import { appSettingsService } from '../../modules/app-settings/app-settings.service.js';
 
 export type PasteStrategy = 'human' | 'direct' | 'insertText';
 
@@ -171,6 +172,19 @@ export async function waitForInputText(locator: Locator, minLength: number, time
   return length;
 }
 
+/** Accept fills that are short by at most this many characters (long prompts only). */
+export const PROMPT_FILL_LENGTH_TOLERANCE = 20;
+
+export function minAcceptablePromptLength(promptLength: number): number {
+  return promptLength <= PROMPT_FILL_LENGTH_TOLERANCE
+    ? promptLength
+    : promptLength - PROMPT_FILL_LENGTH_TOLERANCE;
+}
+
+export function isPromptFillAcceptable(inputLength: number, promptLength: number): boolean {
+  return inputLength >= minAcceptablePromptLength(promptLength);
+}
+
 function logPasteResult(method: string, promptLength: number, inputLength: number): void {
   console.log(`[human-paste] method=${method} promptLength=${promptLength} inputLength=${inputLength}`);
 }
@@ -220,12 +234,14 @@ export async function humanPaste(
   const strategy = options?.pasteStrategy ?? 'human';
   const skipClear = options?.skipClear === true;
   const promptLength = text.length;
+  const checkLength = appSettingsService.get().checkPromptFillLength;
+  const minAcceptable = minAcceptablePromptLength(promptLength);
 
   if (strategy === 'direct') {
     await setInputTextDirect(page, locator, text, { skipClear });
     const inputLength = await getInputTextLength(locator);
     logPasteResult('direct', promptLength, inputLength);
-    if (inputLength < promptLength) {
+    if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
       throw new Error(`Direct fill incomplete: expected ${promptLength}, got ${inputLength}`);
     }
     return;
@@ -241,19 +257,26 @@ export async function humanPaste(
       }
       await randomDelay(80, 180);
       await page.keyboard.insertText(text);
-      let inputLength = await waitForInputText(locator, promptLength);
+
+      let inputLength: number;
+      if (checkLength) {
+        inputLength = await waitForInputText(locator, minAcceptable);
+      } else {
+        await randomDelay(150, 350);
+        inputLength = await getInputTextLength(locator);
+      }
       logPasteResult('insertText', promptLength, inputLength);
 
-      if (inputLength < promptLength) {
+      if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
         if (!skipClear) {
           await humanClearInput(page);
         }
         await pasteViaClipboard(page, text);
-        inputLength = await waitForInputText(locator, promptLength);
+        inputLength = await waitForInputText(locator, minAcceptable);
         logPasteResult('insertText-fallback-clipboard', promptLength, inputLength);
       }
 
-      if (inputLength < promptLength) {
+      if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
         throw new Error(`InsertText incomplete: expected ${promptLength}, got ${inputLength}`);
       }
     } catch {
@@ -278,14 +301,21 @@ export async function humanPaste(
       await humanClearInput(page);
     }
     await pasteViaClipboard(page, text);
-    const inputLength = await waitForInputText(locator, promptLength);
+
+    let inputLength: number;
+    if (checkLength) {
+      inputLength = await waitForInputText(locator, minAcceptable);
+    } else {
+      await randomDelay(150, 350);
+      inputLength = await getInputTextLength(locator);
+    }
     logPasteResult('clipboard', promptLength, inputLength);
 
-    if (inputLength < promptLength) {
+    if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
       await setInputTextDirect(page, locator, text, { skipClear });
       const finalLength = await getInputTextLength(locator);
       logPasteResult('clipboard-fallback-direct', promptLength, finalLength);
-      if (finalLength < promptLength) {
+      if (!isPromptFillAcceptable(finalLength, promptLength)) {
         throw new Error(`Paste incomplete after fallback: expected ${promptLength}, got ${finalLength}`);
       }
     }

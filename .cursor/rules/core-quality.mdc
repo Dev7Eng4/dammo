@@ -1,0 +1,14 @@
+---
+description: Core quality bar — clean, minimal, maintainable changes for dammo
+alwaysApply: true
+---
+
+# Core quality
+
+- **Minimal diff**: change only files needed for the task. No drive-by refactors, unrelated renames, or cleanup in untouched areas.
+- **Match existing patterns**: before inventing structure, read a nearby module/page and mirror naming, layers, and API shape.
+- **Small, clear units**: prefer focused functions/components with descriptive names over early abstractions or “utils” dumping grounds.
+- **Comments**: only when the *why* is non-obvious. No narrating what the code does.
+- **Types & errors**: prefer safe typing; surface failures with clear messages (and server `code` when using AppError). Do not swallow errors.
+- **Scope discipline**: do not commit, push, or add dependencies unless the user asks.
+- **Readability**: prefer obvious control flow over cleverness; delete dead code you introduce; avoid duplicating helpers that already live in `shared/` or existing modules.

@@ -1,0 +1,33 @@
+---
+description: Hono + Zod server module layering and API conventions
+globs: server/**/*.ts
+alwaysApply: false
+---
+
+# Server (Hono + Zod)
+
+Stack is **Hono + Zod**, not NestJS. Follow the module recipe under `server/src/modules/` (e.g. `prompts/`).
+
+## Layers
+
+`routes` (Hono + `@hono/zod-validator`) → `schema` (Zod) → `service` → `repository` / `file-store`
+
+- Keep business logic out of routes; validate input with Zod schemas.
+- Reuse `server/src/shared/` for errors, ids, pagination — do not copy-paste.
+
+## API shape
+
+```typescript
+// ✅ Success
+return c.json({ item });
+return c.json({ items });
+
+// ✅ Errors via isAppError → { error, code }
+// Mount new modules in register-modules.ts on BOTH /api/v1 and /api
+```
+
+## Domain boundaries
+
+- `video-production` — pipelines, steps, ports/adapters (no HTTP UI concerns)
+- `video-production-ui` — HTTP API for the console
+- `llm-browser` — infrastructure + module routes; do not mix browser automation into UI pages

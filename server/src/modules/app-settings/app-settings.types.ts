@@ -19,8 +19,19 @@ export interface AppSettings {
   /**
    * Which Chrome profile to open for scene-prompt LLM (and character reference design).
    * Does not affect image generation or metadata.
+   * When aiScenePromptConcurrency > 1, scene chunks use sub profiles instead.
    */
   aiScenePromptChromeProfileRole: AiScenePromptChromeProfileRole;
+  /**
+   * Max parallel Chrome profiles for AI scene-prompt LLM chunks (1–8).
+   * 1 = sequential (uses aiScenePromptChromeProfileRole). >1 uses that many sub profiles.
+   */
+  aiScenePromptConcurrency: number;
+  /**
+   * When true, verify prompt input length after paste (tolerance + clear/retry if short).
+   * When false, skip length checks and length-based fallbacks.
+   */
+  checkPromptFillLength: boolean;
 }
 
 export type UpdateAppSettingsInput = Partial<

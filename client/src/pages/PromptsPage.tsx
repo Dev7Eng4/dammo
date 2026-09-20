@@ -157,15 +157,20 @@ export function PromptsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [provider, setProvider] = useState<PlaygroundProvider>('gpt');
-  const [imageProvider, setImageProvider] = useState<ImageBrowserProvider>('flow');
+  const [referenceImageProvider, setReferenceImageProvider] = useState<ImageBrowserProvider>('flow');
+  const [sceneImageProvider, setSceneImageProvider] = useState<ImageBrowserProvider>('flow');
   const [thumbnailProvider, setThumbnailProvider] = useState<ImageBrowserProvider>('flow');
   const [videoProvider, setVideoProvider] = useState<VideoBrowserProvider>('meta');
   const [providerSaving, setProviderSaving] = useState(false);
-  const [imageProviderSaving, setImageProviderSaving] = useState(false);
+  const [referenceImageProviderSaving, setReferenceImageProviderSaving] = useState(false);
+  const [sceneImageProviderSaving, setSceneImageProviderSaving] = useState(false);
   const [thumbnailProviderSaving, setThumbnailProviderSaving] = useState(false);
   const [videoProviderSaving, setVideoProviderSaving] = useState(false);
   const [providerSettingsError, setProviderSettingsError] = useState<string | null>(null);
-  const [imageProviderSettingsError, setImageProviderSettingsError] = useState<string | null>(null);
+  const [referenceImageProviderSettingsError, setReferenceImageProviderSettingsError] = useState<string | null>(
+    null,
+  );
+  const [sceneImageProviderSettingsError, setSceneImageProviderSettingsError] = useState<string | null>(null);
   const [thumbnailProviderSettingsError, setThumbnailProviderSettingsError] = useState<string | null>(null);
   const [videoProviderSettingsError, setVideoProviderSettingsError] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
@@ -219,7 +224,8 @@ export function PromptsPage() {
     try {
       const { item } = await fetchPromptSettings({ signal });
       setProvider(item.defaultLlmProvider);
-      setImageProvider(item.defaultImageProvider);
+      setReferenceImageProvider(item.defaultReferenceImageProvider);
+      setSceneImageProvider(item.defaultSceneImageProvider);
       setThumbnailProvider(item.defaultThumbnailProvider ?? 'flow');
       setVideoProvider(item.defaultVideoProvider);
     } catch (err) {
@@ -244,20 +250,41 @@ export function PromptsPage() {
     }
   }
 
-  async function handleImageProviderChange(next: ImageBrowserProvider) {
-    const previous = imageProvider;
-    setImageProvider(next);
-    setImageProviderSettingsError(null);
-    setImageProviderSaving(true);
+  async function handleReferenceImageProviderChange(next: ImageBrowserProvider) {
+    const previous = referenceImageProvider;
+    setReferenceImageProvider(next);
+    setReferenceImageProviderSettingsError(null);
+    setReferenceImageProviderSaving(true);
 
     try {
-      const { item } = await updatePromptSettings({ defaultImageProvider: next });
-      setImageProvider(item.defaultImageProvider);
+      const { item } = await updatePromptSettings({ defaultReferenceImageProvider: next });
+      setReferenceImageProvider(item.defaultReferenceImageProvider);
     } catch (err) {
-      setImageProvider(previous);
-      setImageProviderSettingsError(err instanceof Error ? err.message : t('prompts.imageProviderError'));
+      setReferenceImageProvider(previous);
+      setReferenceImageProviderSettingsError(
+        err instanceof Error ? err.message : t('prompts.referenceImageProviderError'),
+      );
     } finally {
-      setImageProviderSaving(false);
+      setReferenceImageProviderSaving(false);
+    }
+  }
+
+  async function handleSceneImageProviderChange(next: ImageBrowserProvider) {
+    const previous = sceneImageProvider;
+    setSceneImageProvider(next);
+    setSceneImageProviderSettingsError(null);
+    setSceneImageProviderSaving(true);
+
+    try {
+      const { item } = await updatePromptSettings({ defaultSceneImageProvider: next });
+      setSceneImageProvider(item.defaultSceneImageProvider);
+    } catch (err) {
+      setSceneImageProvider(previous);
+      setSceneImageProviderSettingsError(
+        err instanceof Error ? err.message : t('prompts.sceneImageProviderError'),
+      );
+    } finally {
+      setSceneImageProviderSaving(false);
     }
   }
 
@@ -687,7 +714,7 @@ export function PromptsPage() {
       const { item } = await runPromptPlayground({
         outputType: activeStep.outputType,
         provider,
-        imageProvider,
+        imageProvider: sceneImageProvider,
         videoProvider,
         userPrompt,
         promptId: activeStep.id ?? undefined,
@@ -746,15 +773,18 @@ export function PromptsPage() {
         activeStepIndex={activeStepIndex}
         onActiveStepChange={handleActiveStepChange}
         provider={provider}
-        imageProvider={imageProvider}
+        referenceImageProvider={referenceImageProvider}
+        sceneImageProvider={sceneImageProvider}
         thumbnailProvider={thumbnailProvider}
         videoProvider={videoProvider}
         providerSaving={providerSaving}
-        imageProviderSaving={imageProviderSaving}
+        referenceImageProviderSaving={referenceImageProviderSaving}
+        sceneImageProviderSaving={sceneImageProviderSaving}
         thumbnailProviderSaving={thumbnailProviderSaving}
         videoProviderSaving={videoProviderSaving}
         providerSettingsError={providerSettingsError}
-        imageProviderSettingsError={imageProviderSettingsError}
+        referenceImageProviderSettingsError={referenceImageProviderSettingsError}
+        sceneImageProviderSettingsError={sceneImageProviderSettingsError}
         thumbnailProviderSettingsError={thumbnailProviderSettingsError}
         videoProviderSettingsError={videoProviderSettingsError}
         variableValues={variableValues}
@@ -762,7 +792,8 @@ export function PromptsPage() {
         result={playgroundResult}
         error={playgroundError}
         onProviderChange={handleProviderChange}
-        onImageProviderChange={handleImageProviderChange}
+        onReferenceImageProviderChange={handleReferenceImageProviderChange}
+        onSceneImageProviderChange={handleSceneImageProviderChange}
         onThumbnailProviderChange={handleThumbnailProviderChange}
         onVideoProviderChange={handleVideoProviderChange}
         onVariableChange={(name, value) => {

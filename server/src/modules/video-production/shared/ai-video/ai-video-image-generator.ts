@@ -1,5 +1,7 @@
 import { srtTimestampToMs } from '../../../../infrastructure/subtitle/srt-utils.js';
+import { mapPool } from '../../../../shared/async/map-pool.js';
 import { AppError } from '../../../../shared/http/errors.js';
+import { appSettingsService } from '../../../app-settings/app-settings.service.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
@@ -17,7 +19,10 @@ import {
   type AiVideoDensityLevel,
 } from './ai-video.constants.js';
 import { findOverlappingScenes, persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
-import { pickAiScenePromptChromeProfile } from './ai-video-chrome-profile.js';
+import {
+  clampAiScenePromptConcurrency,
+  resolveAiScenePromptProfiles,
+} from './ai-video-chrome-profile.js';
 import { emitDetailLog } from '../video-log.js';
 import type {
   AiVideoCharacterReference,
@@ -36,6 +41,30 @@ interface DensityChunkJob {
   totalChunks: number;
   maxDurationSec: number;
   transcriptChunk: TranscriptCue[];
+}
+
+function createProfileBorrowPool(profileIds: string[]) {
+  const free = [...profileIds];
+  const waiters: Array<(id: string) => void> = [];
+
+  async function acquire(): Promise<string> {
+    const id = free.pop();
+    if (id) return id;
+    return new Promise(resolve => {
+      waiters.push(resolve);
+    });
+  }
+
+  function release(id: string): void {
+    const next = waiters.shift();
+    if (next) {
+      next(id);
+      return;
+    }
+    free.push(id);
+  }
+
+  return { acquire, release };
 }
 
 function buildDensityChunkJobs(
@@ -183,24 +212,36 @@ async function generateScenePromptsFromJobs(
     requireReferences?: boolean;
   },
 ): Promise<GenerateAiVideoImagesResult> {
-  const profile = pickAiScenePromptChromeProfile();
-  const allScenes: AiVideoScenePrompt[] = [];
+  const requestedConcurrency = clampAiScenePromptConcurrency(
+    appSettingsService.get().aiScenePromptConcurrency,
+    1,
+  );
+  const profiles = resolveAiScenePromptProfiles(requestedConcurrency);
+  const profileIds = profiles.map(profile => profile.id);
+  const provider = promptsSettingsService.get().defaultLlmProvider;
 
-  log(`[ai-video] Mở Chrome profile ${profile.name} cho scene prompts...`);
+  if (profiles.length < requestedConcurrency) {
+    log(
+      `[ai-video] Scene prompt concurrency clamped ${requestedConcurrency} → ${profiles.length} (available sub profiles)`,
+    );
+  }
 
-  try {
-    await llmBrowserService.open(profile.id, promptsSettingsService.get().defaultLlmProvider);
+  log(
+    `[ai-video] Mở ${profiles.length} Chrome profile(s) cho scene prompts: ${profiles.map(p => p.name).join(', ')}...`,
+  );
 
-    for (const job of jobs) {
-      log(
-        `[ai-video] LLM ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} (${job.transcriptChunk.length} cue(s), maxDuration=${job.maxDurationSec}s)...`,
-      );
+  const completedSlots: Array<AiVideoScenePrompt[] | undefined> = new Array(jobs.length);
+  let checkpointChain: Promise<void> = Promise.resolve();
 
-      const scenes = await executeScenePromptChunk(profile.id, input, job, options);
-      allScenes.push(...scenes);
-      log(`[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`);
+  const scheduleCheckpoint = (jobIndex: number, scenes: AiVideoScenePrompt[], job: DensityChunkJob) => {
+    completedSlots[jobIndex] = scenes;
+    checkpointChain = checkpointChain.then(async () => {
+      const merged: AiVideoScenePrompt[] = [];
+      for (const slot of completedSlots) {
+        if (slot) merged.push(...slot);
+      }
 
-      const overlaps = findOverlappingScenes(allScenes);
+      const overlaps = findOverlappingScenes(merged);
       if (overlaps.length > 0) {
         const first = overlaps[0];
         log(
@@ -208,17 +249,45 @@ async function generateScenePromptsFromJobs(
         );
       }
 
-      const savedPath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
-      log(`[ai-video] Scene prompts checkpoint → ${savedPath} (${allScenes.length} scene(s))`);
-    }
+      const savedPath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, merged);
+      log(`[ai-video] Scene prompts checkpoint → ${savedPath} (${merged.length} scene(s))`);
+    });
+    return checkpointChain;
+  };
+
+  const { acquire, release } = createProfileBorrowPool(profileIds);
+
+  try {
+    await Promise.all(profileIds.map(id => llmBrowserService.open(id, provider)));
+
+    const chunkResults = await mapPool(jobs, profiles.length, async (job, jobIndex) => {
+      log(
+        `[ai-video] LLM ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} (${job.transcriptChunk.length} cue(s), maxDuration=${job.maxDurationSec}s)...`,
+      );
+
+      const profileId = await acquire();
+      try {
+        const scenes = await executeScenePromptChunk(profileId, input, job, options);
+        log(
+          `[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} → ${scenes.length} scene(s)`,
+        );
+        await scheduleCheckpoint(jobIndex, scenes, job);
+        return scenes;
+      } finally {
+        release(profileId);
+      }
+    });
+
+    await checkpointChain;
+
+    const allScenes = chunkResults.flat();
+    const filePath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
+    log(`[ai-video] Scene prompts saved → ${filePath} (${allScenes.length} scene(s))`);
+
+    return { scenes: allScenes, filePath };
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeSubProfiles(profileIds);
   }
-
-  const filePath = await persistAiScenePromptsFile(input.workDir, input.youtubeVideoId, allScenes);
-  log(`[ai-video] Scene prompts saved → ${filePath} (${allScenes.length} scene(s))`);
-
-  return { scenes: allScenes, filePath };
 }
 
 export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesResult> {

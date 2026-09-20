@@ -1,0 +1,16 @@
+---
+description: AppSec baselines — secrets, validation, safe logging for dammo
+alwaysApply: true
+---
+
+# Security
+
+Inspired by common AppSec / DevSecOps Cursor rule packs; adapted for dammo (Hono + Zod, llm-browser, chrome/GPM).
+
+- **No hardcoded secrets** — API keys, tokens, passwords, proxy credentials belong in env or existing stores, never in source.
+- **Do not log secrets** — tokens, cookies, passwords, Chrome/LLM session data, mail credentials.
+- **Untrusted input** — validate HTTP bodies/params/query with Zod in `*.schema.ts` before use.
+- **No `eval` / `new Function`**. Avoid `dangerouslySetInnerHTML` unless content is intentionally sanitized.
+- **Do not commit** `.env`, credential JSON, or secret-bearing exports.
+- **Safe client errors** — return AppError messages/`code` to clients; keep stack/internal detail in server logs only.
+- **Dammo domains** — `llm-browser`, chrome profiles, GPM, mail-accounts: never expose profile paths, cookies, or credentials in API responses.

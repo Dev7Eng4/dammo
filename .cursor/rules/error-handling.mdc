@@ -1,0 +1,32 @@
+---
+description: Error handling — AppError, no silent catch, client abort/i18n
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Error handling
+
+Curated from TS/JS code-quality rule packs; use dammo patterns.
+
+## Server
+
+```typescript
+// ✅ Throw AppError; createApp() maps isAppError → { error, code }
+throw new AppError('Not found', 404, 'NOT_FOUND');
+
+// ❌ Empty catch or swallowing errors
+try { await work(); } catch {}
+```
+
+- Prefer `AppError` from `server/src/shared/http/errors.ts` for expected failures.
+- Log unexpected errors server-side; do not leak stacks to JSON responses.
+
+## Client
+
+```typescript
+if (isAbortError(err)) return;
+setError(err instanceof Error ? err.message : t('…fallbackKey'));
+```
+
+- Use `isAbortError` from `client/src/api/http.ts` when requests pass `signal`.
+- User-facing fallbacks go through i18n (`t(...)`), not hardcoded strings.

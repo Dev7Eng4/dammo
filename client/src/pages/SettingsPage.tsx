@@ -15,6 +15,8 @@ const EMPTY_SETTINGS: AppSettings = {
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
+  aiScenePromptConcurrency: 1,
+  checkPromptFillLength: true,
 }
 
 function SettingSwitch({
@@ -75,6 +77,10 @@ export function SettingsPage() {
           },
           aiScenePromptChromeProfileRole:
             item.aiScenePromptChromeProfileRole === 'sub' ? 'sub' : 'main',
+          aiScenePromptConcurrency: Math.min(
+            8,
+            Math.max(1, Math.round(Number(item.aiScenePromptConcurrency)) || 1),
+          ),
         })
       }
     } catch (err) {
@@ -104,6 +110,11 @@ export function SettingsPage() {
         ),
         verboseVideoLogs: settings.verboseVideoLogs,
         aiScenePromptChromeProfileRole: settings.aiScenePromptChromeProfileRole,
+        aiScenePromptConcurrency: Math.min(
+          8,
+          Math.max(1, Math.round(Number(settings.aiScenePromptConcurrency)) || 1),
+        ),
+        checkPromptFillLength: settings.checkPromptFillLength,
       })
       setSettings(item)
       toast.success(t('settings.toast.saved'))
@@ -185,6 +196,16 @@ export function SettingsPage() {
                 }
                 disabled={saving}
               />
+              <SettingSwitch
+                id="check-prompt-fill-length"
+                label={t('settings.checkPromptFillLength')}
+                description={t('settings.checkPromptFillLengthDesc')}
+                checked={settings.checkPromptFillLength}
+                onChange={(checkPromptFillLength) =>
+                  setSettings((prev) => ({ ...prev, checkPromptFillLength }))
+                }
+                disabled={saving}
+              />
               <div className="space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
                 <label htmlFor="scene-prompt-chrome-profile" className="text-sm font-medium text-foreground">
                   {t('settings.scenePromptProfile')}
@@ -192,7 +213,7 @@ export function SettingsPage() {
                 <p className="text-xs text-muted-foreground">{t('settings.scenePromptProfileDesc')}</p>
                 <Select
                   id="scene-prompt-chrome-profile"
-                  disabled={saving}
+                  disabled={saving || settings.aiScenePromptConcurrency > 1}
                   value={settings.aiScenePromptChromeProfileRole}
                   onChange={(value) =>
                     setSettings((prev) => ({
@@ -205,7 +226,34 @@ export function SettingsPage() {
                     { value: 'sub', label: t('settings.scenePromptProfileSub') },
                   ]}
                 />
+                {settings.aiScenePromptConcurrency > 1 ? (
+                  <p className="text-xs text-muted-foreground">{t('settings.scenePromptProfileParallelHint')}</p>
+                ) : null}
               </div>
+              <label className="block max-w-xs space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
+                <span className="text-sm font-medium text-foreground">
+                  {t('settings.scenePromptConcurrency')}
+                </span>
+                <p className="text-xs text-muted-foreground">{t('settings.scenePromptConcurrencyDesc')}</p>
+                <Input
+                  id="scene-prompt-concurrency"
+                  type="number"
+                  min={1}
+                  max={8}
+                  className="h-10"
+                  disabled={saving}
+                  value={settings.aiScenePromptConcurrency}
+                  onChange={(e) => {
+                    const parsed = Number(e.target.value)
+                    setSettings((prev) => ({
+                      ...prev,
+                      aiScenePromptConcurrency: Number.isFinite(parsed)
+                        ? parsed
+                        : prev.aiScenePromptConcurrency,
+                    }))
+                  }}
+                />
+              </label>
             </section>
           ) : null}
 
