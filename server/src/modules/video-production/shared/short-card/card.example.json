@@ -1,0 +1,17 @@
+{
+  "backgroundPath": "./background.jpg",
+  "audioPath": "./audio.mp3",
+  "outputPath": "./short-card-out.mp4",
+  "kenBurns": false,
+  "content": {
+    "title": "「またか…」と思ってたのに、\n気づいたら変わってた。",
+    "body": "「また同じようなこと言ってるな」\nって、正直うんざりしてた時期があった。\n\nでも、ある日ふと気づいた。\n同じ言葉でも、\n受け取る側の自分が変わってた。",
+    "footer": "「またか…」と思ったその先に、\n小さな変化が待ってるかもしれない🤔🌱",
+    "engagement": {
+      "likes": "3.2万",
+      "comments": "385",
+      "reposts": "106",
+      "shares": "0"
+    }
+  }
+}

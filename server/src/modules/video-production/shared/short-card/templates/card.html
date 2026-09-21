@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: 'ShortCardJP';
+        src: url('__FONT_URL__') format('truetype');
+        font-weight: 900;
+        font-style: normal;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: __CANVAS_W__px;
+        height: __CANVAS_H__px;
+        background: transparent;
+        overflow: hidden;
+        font-family: 'ShortCardJP', 'Noto Sans JP', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .stage {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: __STACK_TOP__px __MARGIN_X__px __STACK_BOTTOM__px;
+        gap: __GAP_Y__px;
+      }
+
+      .card {
+        width: 100%;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+      }
+
+      .header {
+        background: __HEADER_BG__;
+        color: __HEADER_TEXT__;
+        border-radius: __HEADER_RADIUS__px;
+        padding: 28px 32px;
+        max-height: __HEADER_MAX_H__px;
+        overflow: hidden;
+      }
+
+      .header p {
+        font-size: 40px;
+        font-weight: 900;
+        line-height: 1.35;
+        letter-spacing: 0.02em;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .body {
+        background: __BODY_BG__;
+        color: __BODY_TEXT__;
+        border-radius: 4px;
+        padding: 36px 36px 28px;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .body-text {
+        flex: 1 1 auto;
+        font-size: 36px;
+        font-weight: 700;
+        line-height: 1.55;
+        letter-spacing: 0.01em;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow: hidden;
+      }
+
+      .engagement {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 28px;
+        padding-top: 18px;
+        border-top: 1px solid #eff3f4;
+        color: __ENGAGEMENT_TEXT__;
+        font-size: 26px;
+        font-weight: 700;
+      }
+
+      .engagement-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .engagement-item img {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      .footer {
+        background: __FOOTER_BG__;
+        color: __FOOTER_TEXT__;
+        border-radius: __FOOTER_RADIUS__px;
+        padding: 28px 32px;
+        max-height: __FOOTER_MAX_H__px;
+        overflow: hidden;
+      }
+
+      .footer p {
+        font-size: 34px;
+        font-weight: 800;
+        line-height: 1.4;
+        letter-spacing: 0.02em;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <section class="card header">
+        <p id="title"></p>
+      </section>
+      <section class="card body">
+        <div class="body-text" id="body"></div>
+        <div class="engagement __ENGAGEMENT_CLASS__" id="engagement">
+          <div class="engagement-item">
+            <img src="__ICON_LIKE__" alt="" />
+            <span id="likes"></span>
+          </div>
+          <div class="engagement-item">
+            <img src="__ICON_COMMENT__" alt="" />
+            <span id="comments"></span>
+          </div>
+          <div class="engagement-item">
+            <img src="__ICON_REPOST__" alt="" />
+            <span id="reposts"></span>
+          </div>
+          <div class="engagement-item">
+            <img src="__ICON_SHARE__" alt="" />
+            <span id="shares"></span>
+          </div>
+        </div>
+      </section>
+      <section class="card footer">
+        <p id="footer"></p>
+      </section>
+    </div>
+    <script>
+      const content = __CONTENT_JSON__;
+      document.getElementById('title').textContent = content.title;
+      document.getElementById('body').textContent = content.body;
+      document.getElementById('footer').textContent = content.footer;
+      const eng = content.engagement || {};
+      document.getElementById('likes').textContent = eng.likes || '';
+      document.getElementById('comments').textContent = eng.comments || '';
+      document.getElementById('reposts').textContent = eng.reposts || '';
+      document.getElementById('shares').textContent = eng.shares || '';
+    </script>
+  </body>
+</html>

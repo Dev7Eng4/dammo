@@ -31,8 +31,6 @@ export default function App() {
               <Route path="mail-accounts" element={<MailAccountsPage />} />
               <Route path="youtube-channels" element={<YoutubeChannelsPage />} />
               <Route path="youtube-channels/:id" element={<YoutubeChannelDetailPage />} />
-              <Route path="tiktok-accounts" element={<PlaceholderPage />} />
-              <Route path="facebook-assets" element={<PlaceholderPage />} />
               <Route path="source-channels" element={<SourceChannelsPage />} />
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
               <Route path="prompts" element={<PromptsPage />} />

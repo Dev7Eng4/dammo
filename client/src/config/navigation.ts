@@ -2,8 +2,6 @@ export type NavIcon =
   | 'dashboard'
   | 'mail'
   | 'youtube'
-  | 'tiktok'
-  | 'facebook'
   | 'source'
   | 'prompt'
   | 'visual-styles'
@@ -45,8 +43,6 @@ export const navSections: NavSection[] = [
     items: [
       { id: 'mail', labelKey: 'item.mail', path: '/mail-accounts', icon: 'mail' },
       { id: 'youtube', labelKey: 'item.youtube', path: '/youtube-channels', icon: 'youtube' },
-      { id: 'tiktok', labelKey: 'item.tiktok', path: '/tiktok-accounts', icon: 'tiktok' },
-      { id: 'facebook', labelKey: 'item.facebook', path: '/facebook-assets', icon: 'facebook' },
     ],
   },
   {
