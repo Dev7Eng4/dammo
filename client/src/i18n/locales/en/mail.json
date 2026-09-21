@@ -11,7 +11,9 @@
     "delete": "Delete",
     "deleting": "Deleting…",
     "export": "Export Excel",
-    "exporting": "Exporting..."
+    "exporting": "Exporting...",
+    "gmailLogin": "Login Gmail",
+    "gmailLoginWorking": "Logging in…"
   },
   "hint": {
     "selectOne": "Select one email",
@@ -36,7 +38,10 @@
     "phone": "Phone number",
     "platforms": "Platforms",
     "notes": "Notes",
-    "unlink": "Remove"
+    "unlink": "Remove",
+    "gmailLogin": "Login Gmail",
+    "gmailLoginWorking": "Logging in…",
+    "gmailLoginNeedsPassword": "Add a password to this account first"
   },
   "form": {
     "addTitle": "Add email account",
@@ -60,6 +65,8 @@
   "toast": {
     "deleteSuccess": "Deleted email \"{{email}}\"",
     "deleteError": "Could not delete email",
-    "exportError": "Export failed"
+    "exportError": "Export failed",
+    "gmailLoginSuccess": "Created GPM profile and logged in \"{{email}}\" (profile left open)",
+    "gmailLoginError": "Gmail login failed"
   }
 }

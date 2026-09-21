@@ -1,7 +1,14 @@
+import { createGpmProfile } from '../../infrastructure/gpm/gpm-api.client.js';
+import {
+  connectPlaywrightToGpmProfile,
+  detachGpmPlaywright,
+  type GpmPlaywrightConnection,
+} from '../../infrastructure/gpm/gpm-playwright.connector.js';
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
 import { paginate } from '../../shared/types/pagination.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import { runGmailLogin } from './gmail-login/gmail-login.flow.js';
 import { mailAccountsRepository } from './mail-accounts.repository.js';
 import type {
   CreateMailAccountInput,
@@ -10,6 +17,12 @@ import type {
   PlatformLinks,
   UpdateMailAccountInput,
 } from './mail-accounts.types.js';
+
+export interface GmailLoginResult {
+  ok: true;
+  email: string;
+  gpmProfileId: string;
+}
 
 function normalizeOptionalString(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
@@ -171,6 +184,41 @@ export class MailAccountsService {
   isYoutubeDeleted(email: string): boolean {
     const account = mailAccountsRepository.findByEmail(email);
     return Boolean(account?.youtubeDeletedAt);
+  }
+
+  async loginGmail(id: string): Promise<GmailLoginResult> {
+    const account = mailAccountsRepository.findById(id);
+    if (!account) {
+      throw new AppError('Account not found', 404, 'NOT_FOUND');
+    }
+
+    const email = account.email.trim();
+    const password = account.password?.trim();
+    if (!email) {
+      throw new AppError('Email is required', 400, 'MISSING_EMAIL');
+    }
+    if (!password) {
+      throw new AppError('Password is required for Gmail login', 400, 'MISSING_PASSWORD');
+    }
+
+    const profile = await createGpmProfile({
+      name: email,
+      raw_proxy: '',
+    });
+    const gpmProfileId = profile.id;
+    let connection: GpmPlaywrightConnection | undefined;
+
+    try {
+      connection = await connectPlaywrightToGpmProfile(gpmProfileId, { foreground: true });
+      await runGmailLogin(connection.page, connection.context, { email, password });
+      console.log(`[mail-accounts] Gmail login ok for ${email} (GPM ${gpmProfileId})`);
+      return { ok: true, email, gpmProfileId };
+    } finally {
+      if (connection) {
+        // Detach CDP only — leave the GPM profile running so the session persists.
+        await detachGpmPlaywright(connection);
+      }
+    }
   }
 }
 

@@ -11,7 +11,9 @@
     "delete": "Xóa",
     "deleting": "Đang xóa…",
     "export": "Xuất Excel",
-    "exporting": "Đang xuất..."
+    "exporting": "Đang xuất...",
+    "gmailLogin": "Đăng nhập Gmail",
+    "gmailLoginWorking": "Đang đăng nhập…"
   },
   "hint": {
     "selectOne": "Chọn một email",
@@ -36,7 +38,10 @@
     "phone": "Số điện thoại",
     "platforms": "Nền tảng",
     "notes": "Ghi chú",
-    "unlink": "Xóa"
+    "unlink": "Xóa",
+    "gmailLogin": "Đăng nhập Gmail",
+    "gmailLoginWorking": "Đang đăng nhập…",
+    "gmailLoginNeedsPassword": "Cần thêm mật khẩu cho tài khoản trước"
   },
   "form": {
     "addTitle": "Thêm tài khoản email",
@@ -60,6 +65,8 @@
   "toast": {
     "deleteSuccess": "Đã xóa email \"{{email}}\"",
     "deleteError": "Không thể xóa email",
-    "exportError": "Xuất file thất bại"
+    "exportError": "Xuất file thất bại",
+    "gmailLoginSuccess": "Đã tạo GPM và đăng nhập \"{{email}}\" (giữ profile đang mở)",
+    "gmailLoginError": "Đăng nhập Gmail thất bại"
   }
 }

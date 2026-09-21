@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input, Textarea } from '../ui';
+import { loginGmailAccount } from '../../api/mailAccounts';
+import { Button, Input, Textarea, useToast } from '../ui';
 import { PlatformLinkCell } from './PlatformLinkCell';
 import type { MailAccount, PlatformLinkStatus } from '../../types/mailAccount';
 
@@ -65,6 +66,8 @@ function PlatformRow({ label, status }: { label: string; status: PlatformLinkSta
 
 export function MailAccountDetailPanel({ account, loading, onClose }: MailAccountDetailPanelProps) {
   const { t } = useTranslation(['mail', 'common']);
+  const { toast } = useToast();
+  const [loggingIn, setLoggingIn] = useState(false);
 
   if (!account && !loading) return null;
 
@@ -83,6 +86,21 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
   }
 
   if (!account) return null;
+
+  const hasPassword = Boolean(account.password?.trim());
+
+  async function handleGmailLogin() {
+    if (!account || !hasPassword || loggingIn) return;
+    setLoggingIn(true);
+    try {
+      await loginGmailAccount(account.id);
+      toast.success(t('toast.gmailLoginSuccess', { email: account.email }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.gmailLoginError'));
+    } finally {
+      setLoggingIn(false);
+    }
+  }
 
   return (
     <aside className="flex h-full w-full flex-col border-l border-border bg-surface shadow-xl lg:w-80 lg:shadow-none xl:w-96">
@@ -111,6 +129,18 @@ export function MailAccountDetailPanel({ account, loading, onClose }: MailAccoun
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div>
+            <Button
+              size="sm"
+              className="w-full rounded-lg"
+              disabled={!hasPassword || loggingIn}
+              title={!hasPassword ? t('detail.gmailLoginNeedsPassword') : undefined}
+              onClick={() => void handleGmailLogin()}
+            >
+              {loggingIn ? t('detail.gmailLoginWorking') : t('detail.gmailLogin')}
+            </Button>
+          </div>
+
           <div>
             <FieldLabel>{t('detail.purpose')}</FieldLabel>
             <Input

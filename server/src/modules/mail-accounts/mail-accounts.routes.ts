@@ -35,6 +35,11 @@ export function createMailAccountsRoutes() {
     return c.json(account);
   });
 
+  app.post('/:id/gmail-login', async (c) => {
+    const result = await mailAccountsService.loginGmail(c.req.param('id'));
+    return c.json(result);
+  });
+
   app.post('/', zValidator('json', createMailAccountSchema), (c) => {
     const body = c.req.valid('json');
     const item = mailAccountsService.create(body);

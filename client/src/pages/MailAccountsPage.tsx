@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { deleteMailAccount, exportMailAccountsExcel, fetchMailAccount, fetchMailAccounts } from '../api/mailAccounts';
+import {
+  deleteMailAccount,
+  exportMailAccountsExcel,
+  fetchMailAccount,
+  fetchMailAccounts,
+  loginGmailAccount,
+} from '../api/mailAccounts';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddMailModal } from '../components/mail-accounts/AddMailModal';
 import { DeleteMailAccountConfirmModal } from '../components/mail-accounts/DeleteMailAccountConfirmModal';
@@ -25,6 +31,7 @@ export function MailAccountsPage() {
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [gmailLoggingIn, setGmailLoggingIn] = useState(false);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
 
@@ -43,12 +50,19 @@ export function MailAccountsPage() {
     selectedIds.size === 1 ? list.items.find((account) => selectedIds.has(account.id)) ?? null : null;
   const canEdit = selectedIds.size === 1;
   const canDelete = selectedIds.size === 1;
+  const hasPassword = Boolean(selectedAccount?.password?.trim());
+  const canGmailLogin = canEdit && hasPassword;
   const selectionDisabledReason =
     selectedIds.size === 0
       ? t('hint.selectOne')
       : selectedIds.size > 1
         ? t('hint.selectOnlyOne')
         : undefined;
+  const gmailLoginDisabledReason = !canEdit
+    ? selectionDisabledReason
+    : !hasPassword
+      ? t('detail.gmailLoginNeedsPassword')
+      : undefined;
 
   function clearSelection() {
     setSelectedId(null);
@@ -147,6 +161,19 @@ export function MailAccountsPage() {
     }
   }
 
+  async function handleGmailLogin() {
+    if (!selectedAccount || !canGmailLogin || gmailLoggingIn) return;
+    setGmailLoggingIn(true);
+    try {
+      await loginGmailAccount(selectedAccount.id);
+      toast.success(t('toast.gmailLoginSuccess', { email: selectedAccount.email }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.gmailLoginError'));
+    } finally {
+      setGmailLoggingIn(false);
+    }
+  }
+
   return (
     <PageShell fullBleed className="lg:flex-row">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -165,10 +192,14 @@ export function MailAccountsPage() {
             canDelete={canDelete}
             deleteDisabledReason={selectionDisabledReason}
             deleting={deleting}
+            canGmailLogin={canGmailLogin}
+            gmailLoginDisabledReason={gmailLoginDisabledReason}
+            gmailLoggingIn={gmailLoggingIn}
             onSearchChange={handleSearchChange}
             onAddMail={() => setShowAddModal(true)}
             onEdit={() => setShowEditModal(true)}
             onDelete={() => setShowDeleteModal(true)}
+            onGmailLogin={() => void handleGmailLogin()}
             onExportExcel={handleExportExcel}
             exporting={exporting}
           />

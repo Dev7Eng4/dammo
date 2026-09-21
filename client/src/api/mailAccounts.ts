@@ -58,6 +58,18 @@ export async function deleteMailAccount(id: string) {
   }
 }
 
+export interface GmailLoginResult {
+  ok: true;
+  email: string;
+  gpmProfileId: string;
+}
+
+export function loginGmailAccount(id: string) {
+  return fetchJson<GmailLoginResult>(`${API_V1}/mail-accounts/${id}/gmail-login`, {
+    method: 'POST',
+  });
+}
+
 export async function exportMailAccountsExcel(
   query = '',
   ids?: string[],

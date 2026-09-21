@@ -137,8 +137,10 @@ function buildGpmBackgroundStartOptions(): GpmStartProfileOptions {
   };
 }
 
-async function openGpmBrowserSession(profileId: string): Promise<{ browser: Browser; start: GpmStartResult }> {
-  const startOptions = buildGpmBackgroundStartOptions();
+async function openGpmBrowserSession(
+  profileId: string,
+  startOptions: GpmStartProfileOptions = buildGpmBackgroundStartOptions(),
+): Promise<{ browser: Browser; start: GpmStartResult }> {
   const start = await startGpmProfile(profileId, startOptions);
   const httpEndpoint = resolveCdpHttpEndpoint(start);
   console.log(
@@ -168,8 +170,20 @@ async function openGpmBrowserSession(profileId: string): Promise<{ browser: Brow
   }
 }
 
-export async function connectPlaywrightToGpmProfile(profileId: string): Promise<GpmPlaywrightConnection> {
-  const { browser, start } = await openGpmBrowserSession(profileId);
+export interface ConnectGpmPlaywrightOptions {
+  /** When true, start the profile visible (no --start-minimized). Needed for interactive forms like Google sign-in. */
+  foreground?: boolean;
+  startOptions?: GpmStartProfileOptions;
+}
+
+export async function connectPlaywrightToGpmProfile(
+  profileId: string,
+  options?: ConnectGpmPlaywrightOptions,
+): Promise<GpmPlaywrightConnection> {
+  const startOptions =
+    options?.startOptions ??
+    (options?.foreground ? {} : buildGpmBackgroundStartOptions());
+  const { browser, start } = await openGpmBrowserSession(profileId, startOptions);
   const context = browser.contexts()[0] ?? (await browser.newContext());
   await installMouseTracking(context);
   const page = await waitForInitialPage(context);

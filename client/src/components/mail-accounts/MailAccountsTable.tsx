@@ -21,7 +21,7 @@ export function MailAccountsTable({
   selectedIds,
   loading,
   rowNumberStart,
-  onSelect: _onSelect,
+  onSelect,
   onToggleRow,
   onToggleAll,
 }: MailAccountsTableProps) {
@@ -92,7 +92,7 @@ export function MailAccountsTable({
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
       activeRowId={selectedId}
-      onRowClick={account => onToggleRow(account.id)}
+      onRowClick={account => onSelect(account.id)}
       emptyMessage={t('table.empty')}
     />
   );

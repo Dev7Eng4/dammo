@@ -11,10 +11,14 @@ interface MailAccountsToolbarProps {
   canDelete?: boolean
   deleteDisabledReason?: string
   deleting?: boolean
+  canGmailLogin?: boolean
+  gmailLoginDisabledReason?: string
+  gmailLoggingIn?: boolean
   onSearchChange?: (value: string) => void
   onAddMail: () => void
   onEdit?: () => void
   onDelete?: () => void
+  onGmailLogin?: () => void
   onExportExcel: () => void
   exporting?: boolean
 }
@@ -27,10 +31,14 @@ export function MailAccountsToolbar({
   canDelete = false,
   deleteDisabledReason,
   deleting = false,
+  canGmailLogin = false,
+  gmailLoginDisabledReason,
+  gmailLoggingIn = false,
   onSearchChange,
   onAddMail,
   onEdit,
   onDelete,
+  onGmailLogin,
   onExportExcel,
   exporting = false,
 }: MailAccountsToolbarProps) {
@@ -55,6 +63,17 @@ export function MailAccountsToolbar({
         }
         extraActions={
           <>
+            {onGmailLogin ? (
+              <Button
+                variant="outlined"
+                size="sm"
+                disabled={!canGmailLogin || gmailLoggingIn}
+                title={!canGmailLogin ? gmailLoginDisabledReason : undefined}
+                onClick={onGmailLogin}
+              >
+                {gmailLoggingIn ? t('toolbar.gmailLoginWorking') : t('toolbar.gmailLogin')}
+              </Button>
+            ) : null}
             {onEdit ? (
               <Button
                 variant="outlined"
