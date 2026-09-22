@@ -43,3 +43,24 @@ export interface AddMailFormValues {
   recoveryEmail?: string;
   phone?: string;
 }
+
+export interface MailImportPreviewRow {
+  rowIndex: number;
+  email: string;
+  password: string;
+  twoFactorAuth: string;
+  recoveryEmail: string;
+  phone: string;
+  valid: boolean;
+  error?: string;
+}
+
+export interface MailImportPreviewResult {
+  rows: MailImportPreviewRow[];
+}
+
+export interface MailImportResult {
+  created: number;
+  skipped: number;
+  errors: string[];
+}

@@ -10,6 +10,14 @@ export const createMailAccountSchema = z.object({
 
 export const updateMailAccountSchema = createMailAccountSchema;
 
+export const importMailAccountsSchema = z.object({
+  rows: z.array(createMailAccountSchema).min(1),
+});
+
+export const previewMailAccountsTextSchema = z.object({
+  text: z.string().min(1),
+});
+
 export const listMailAccountsQuerySchema = z.object({
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

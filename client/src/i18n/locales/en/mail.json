@@ -7,6 +7,7 @@
     "count": "{{count}} accounts",
     "search": "Search by email...",
     "add": "Add email",
+    "addBatch": "Add batch",
     "edit": "Edit",
     "delete": "Delete",
     "deleting": "Deleting…",
@@ -14,6 +15,22 @@
     "exporting": "Exporting...",
     "gmailLogin": "Login Gmail",
     "gmailLoginWorking": "Logging in…"
+  },
+  "batch": {
+    "title": "Add emails in batch",
+    "hint": "Paste one account per line, columns separated by Tab: email, password, then either 2FA (8 groups of 4) or recovery email. Preview, review, then save.",
+    "placeholder": "email\tpassword\tjj7b vdal pe57 uld3 d53p ip7p y7mg gxfe\nemail\tpassword\trecovery@example.com",
+    "preview": "Preview",
+    "previewing": "Parsing…",
+    "selectAll": "Select all valid rows",
+    "status": "Status",
+    "ok": "OK",
+    "invalid": "Invalid",
+    "empty": "No rows found in the paste.",
+    "save": "Save {{count}} emails",
+    "previewError": "Could not parse pasted text",
+    "importError": "Could not import emails",
+    "importPartial": "Some rows could not be imported"
   },
   "hint": {
     "selectOne": "Select one email",
@@ -51,6 +68,8 @@
     "emailInvalid": "Invalid email",
     "password": "Password",
     "passwordMin": "Password must be at least 6 characters",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "twoFa": "2FA",
     "twoFaPlaceholder": "Backup code or secret",
     "recovery": "Recovery email",
@@ -66,6 +85,8 @@
     "deleteSuccess": "Deleted email \"{{email}}\"",
     "deleteError": "Could not delete email",
     "exportError": "Export failed",
+    "importSuccess": "Imported {{count}} emails",
+    "importPartial": "{{skipped}} rows were skipped",
     "gmailLoginSuccess": "Created GPM profile and logged in \"{{email}}\" (profile left open)",
     "gmailLoginError": "Gmail login failed"
   }

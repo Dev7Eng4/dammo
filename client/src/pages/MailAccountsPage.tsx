@@ -3,19 +3,18 @@ import { useTranslation } from 'react-i18next';
 import {
   deleteMailAccount,
   exportMailAccountsExcel,
-  fetchMailAccount,
   fetchMailAccounts,
   loginGmailAccount,
 } from '../api/mailAccounts';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddMailModal } from '../components/mail-accounts/AddMailModal';
 import { DeleteMailAccountConfirmModal } from '../components/mail-accounts/DeleteMailAccountConfirmModal';
-import { MailAccountDetailPanel } from '../components/mail-accounts/MailAccountDetailPanel';
+import { ImportMailBatchModal } from '../components/mail-accounts/ImportMailBatchModal';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { MailAccountsTable } from '../components/mail-accounts/MailAccountsTable';
 import { MailAccountsToolbar } from '../components/mail-accounts/MailAccountsToolbar';
 import { useToast } from '../components/ui';
-import { useDebouncedValue, useFetchedItem, usePaginatedList } from '../hooks';
+import { useDebouncedValue, usePaginatedList } from '../hooks';
 import { Mail } from 'lucide-react';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -23,9 +22,9 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function MailAccountsPage() {
   const { t } = useTranslation(['mail', 'common']);
   const { toast } = useToast();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -45,7 +44,6 @@ export function MailAccountsPage() {
     onFetched: () => setSelectedIds(new Set()),
   });
 
-  const detail = useFetchedItem((id, signal) => fetchMailAccount(id, { signal }));
   const selectedAccount =
     selectedIds.size === 1 ? list.items.find((account) => selectedIds.has(account.id)) ?? null : null;
   const canEdit = selectedIds.size === 1;
@@ -65,8 +63,7 @@ export function MailAccountsPage() {
       : undefined;
 
   function clearSelection() {
-    setSelectedId(null);
-    detail.clear();
+    setSelectedIds(new Set());
   }
 
   function handlePageChange(nextPage: number) {
@@ -95,21 +92,21 @@ export function MailAccountsPage() {
     list.refresh();
   }
 
-  function handleEditSuccess() {
+  function handleBatchSuccess(result: { created: number; skipped: number; errors: string[] }) {
     list.markLoading();
+    list.resetPage();
     list.refresh();
-    if (selectedAccount && selectedId === selectedAccount.id) {
-      detail.load(selectedAccount.id);
+    if (result.created > 0) {
+      toast.success(t('toast.importSuccess', { count: result.created }));
+    }
+    if (result.skipped > 0 || result.errors.length > 0) {
+      toast.error(result.errors[0] ?? t('toast.importPartial', { skipped: result.skipped }));
     }
   }
 
-  function handleSelect(id: string) {
-    setSelectedId(id);
-    detail.load(id);
-  }
-
-  function handleClosePanel() {
-    clearSelection();
+  function handleEditSuccess() {
+    list.markLoading();
+    list.refresh();
   }
 
   function handleToggleRow(id: string) {
@@ -153,7 +150,6 @@ export function MailAccountsPage() {
       list.markLoading();
       list.refresh();
       clearSelection();
-      setSelectedIds(new Set());
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('toast.deleteError'));
     } finally {
@@ -175,8 +171,8 @@ export function MailAccountsPage() {
   }
 
   return (
-    <PageShell fullBleed className="lg:flex-row">
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <PageShell fullBleed>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="shrink-0">
           <PageHeader
             title={t('page.title')}
@@ -197,6 +193,7 @@ export function MailAccountsPage() {
             gmailLoggingIn={gmailLoggingIn}
             onSearchChange={handleSearchChange}
             onAddMail={() => setShowAddModal(true)}
+            onAddBatch={() => setShowBatchModal(true)}
             onEdit={() => setShowEditModal(true)}
             onDelete={() => setShowDeleteModal(true)}
             onGmailLogin={() => void handleGmailLogin()}
@@ -214,11 +211,9 @@ export function MailAccountsPage() {
           <div className="min-h-0 flex-1 overflow-auto">
             <MailAccountsTable
               accounts={list.items}
-              selectedId={selectedId}
               selectedIds={selectedIds}
               loading={list.loading}
               rowNumberStart={(list.page - 1) * list.limit + 1}
-              onSelect={handleSelect}
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
             />
@@ -236,28 +231,16 @@ export function MailAccountsPage() {
         </div>
       </div>
 
-      {(selectedId || detail.loading) ? (
-        <>
-          <button
-            type="button"
-            aria-label={t('common:aria.closeDetailPanel')}
-            onClick={handleClosePanel}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm lg:static lg:z-auto lg:max-w-none">
-            <MailAccountDetailPanel
-              account={detail.item}
-              loading={detail.loading}
-              onClose={handleClosePanel}
-            />
-          </div>
-        </>
-      ) : null}
-
       <AddMailModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      <ImportMailBatchModal
+        open={showBatchModal}
+        onClose={() => setShowBatchModal(false)}
+        onSuccess={handleBatchSuccess}
       />
 
       {selectedAccount ? (

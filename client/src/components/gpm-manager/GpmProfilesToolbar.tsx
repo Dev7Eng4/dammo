@@ -8,12 +8,8 @@ interface GpmProfilesToolbarProps {
   search: string
   sort: GpmProfileSort
   loading?: boolean
-  starting?: boolean
-  stopping?: boolean
   testing?: boolean
   deleting?: boolean
-  canStart?: boolean
-  canStop?: boolean
   canTest?: boolean
   canEdit?: boolean
   canDelete?: boolean
@@ -21,8 +17,6 @@ interface GpmProfilesToolbarProps {
   onSortChange: (value: GpmProfileSort) => void
   onRefresh: () => void
   onAddProfile: () => void
-  onStart: () => void
-  onStop: () => void
   onTest: () => void
   onEdit: () => void
   onDelete: () => void
@@ -32,26 +26,20 @@ export function GpmProfilesToolbar({
   count,
   search,
   loading,
-  starting,
-  stopping,
   testing,
   deleting,
-  canStart,
-  canStop,
   canTest,
   canEdit,
   canDelete,
   onSearchChange,
   onRefresh,
   onAddProfile,
-  onStart,
-  onStop,
   onTest,
   onEdit,
   onDelete,
 }: GpmProfilesToolbarProps) {
   const { t } = useTranslation(['browser', 'common'])
-  const busy = loading || starting || stopping || testing || deleting
+  const busy = loading || testing || deleting
 
   return (
     <ListToolbar
@@ -69,18 +57,6 @@ export function GpmProfilesToolbar({
         <>
           <Button variant="outlined" size="sm" onClick={onRefresh} disabled={busy}>
             {t('common:actions.refresh')}
-          </Button>
-          <Button
-            variant="outlined"
-            size="sm"
-            className="border-success/30 text-success hover:border-success/50 hover:bg-success/10"
-            onClick={onStart}
-            disabled={!canStart || starting || busy}
-          >
-            {starting ? t('gpm.profiles.starting') : t('gpm.profiles.start')}
-          </Button>
-          <Button variant="danger" size="sm" onClick={onStop} disabled={!canStop || stopping || busy}>
-            {stopping ? t('gpm.profiles.stopping') : t('gpm.profiles.stop')}
           </Button>
           <Button variant="outlined" size="sm" onClick={onTest} disabled={!canTest || testing || busy}>
             {testing ? t('gpm.profiles.testing') : t('gpm.profiles.test')}

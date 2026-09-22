@@ -7,11 +7,12 @@ import { Button, DataTable } from '../ui';
 interface GpmProfilesTableProps {
   profiles: GpmProfile[];
   groups: GpmGroup[];
-  selectedId: string | null;
+  selectedIds: Set<string>;
   runningProfileIds: Set<string>;
   actionBusyIds: Set<string>;
   loading?: boolean;
-  onSelect: (id: string) => void;
+  onToggleRow: (id: string) => void;
+  onToggleAll: () => void;
   onStart: (id: string) => void;
   onStop: (id: string) => void;
 }
@@ -23,11 +24,12 @@ function groupName(groups: GpmGroup[], groupId: string): string {
 export function GpmProfilesTable({
   profiles,
   groups,
-  selectedId,
+  selectedIds,
   runningProfileIds,
   actionBusyIds,
   loading,
-  onSelect,
+  onToggleRow,
+  onToggleAll,
   onStart,
   onStop,
 }: GpmProfilesTableProps) {
@@ -99,8 +101,11 @@ export function GpmProfilesTable({
       columns={columns}
       getRowId={profile => profile.id}
       loading={loading}
-      activeRowId={selectedId}
-      onRowClick={profile => onSelect(profile.id)}
+      enableRowSelection
+      selectedIds={selectedIds}
+      onToggleRow={onToggleRow}
+      onToggleAll={onToggleAll}
+      onRowClick={profile => onToggleRow(profile.id)}
       emptyMessage={t('gpm.profiles.empty')}
     />
   );

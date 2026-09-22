@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ListToolbar } from '../layout'
-import { DropdownSelect } from '../ui'
-import type { ProxyFilter } from '../../types/proxy'
 import { Filter } from 'lucide-react'
+import { ListToolbar } from '../layout'
+import { Button, DropdownSelect } from '../ui'
+import type { ProxyFilter } from '../../types/proxy'
 
 interface ProxiesToolbarProps {
   total: number
@@ -71,36 +71,33 @@ export function ProxiesToolbar({
             menuClassName="w-40"
           />
         }
+        extraActions={
+          <>
+            <Button
+              variant="outlined"
+              size="sm"
+              disabled={importing}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {importing ? t('proxy.toolbar.importing') : t('proxy.toolbar.import')}
+            </Button>
+            <Button variant="outlined" size="sm" disabled={exporting} onClick={onExportExcel}>
+              {exporting ? t('proxy.toolbar.exporting') : t('proxy.toolbar.export')}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={!canDeleteSelected || deletingSelected}
+              onClick={onDeleteSelected}
+            >
+              {deletingSelected ? t('proxy.toolbar.deleting') : t('proxy.toolbar.deleteSelected')}
+            </Button>
+            <Button variant="danger" size="sm" disabled={removingFailed} onClick={onRemoveFailed}>
+              {removingFailed ? t('proxy.toolbar.deleting') : t('proxy.toolbar.removeFailed')}
+            </Button>
+          </>
+        }
         primaryAction={{ label: t('proxy.toolbar.add'), onClick: onAddProxy }}
-        secondaryActions={[
-          {
-            id: 'import',
-            label: importing ? t('proxy.toolbar.importing') : t('proxy.toolbar.import'),
-            onSelect: () => fileInputRef.current?.click(),
-            disabled: importing,
-          },
-          {
-            id: 'export',
-            label: exporting ? t('proxy.toolbar.exporting') : t('proxy.toolbar.export'),
-            onSelect: onExportExcel,
-            disabled: exporting,
-          },
-          {
-            id: 'delete',
-            label: deletingSelected ? t('proxy.toolbar.deleting') : t('proxy.toolbar.deleteSelected'),
-            onSelect: onDeleteSelected,
-            disabled: !canDeleteSelected || deletingSelected,
-            destructive: true,
-            separatorBefore: true,
-          },
-          {
-            id: 'remove-failed',
-            label: removingFailed ? t('proxy.toolbar.deleting') : t('proxy.toolbar.removeFailed'),
-            onSelect: onRemoveFailed,
-            disabled: removingFailed,
-            destructive: true,
-          },
-        ]}
       />
     </div>
   )

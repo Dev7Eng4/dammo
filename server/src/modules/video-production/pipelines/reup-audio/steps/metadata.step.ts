@@ -1,7 +1,12 @@
 import path from 'node:path';
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
+import { runCelebrityWisdomMetadata } from '../../../shared/meta/celebrity-wisdom/run-celebrity-wisdom-metadata.js';
 import { runDramaMetadata } from '../../../shared/meta/drama/run-drama-metadata.js';
-import { isDramaNiche, type VideoMetaOutput } from '../../../shared/meta/metadata.types.js';
+import {
+  isCelebrityWisdomNiche,
+  isDramaNiche,
+  type VideoMetaOutput,
+} from '../../../shared/meta/metadata.types.js';
 import { runMetadata } from '../../../shared/meta/run-metadata.js';
 import { runTwoStepNicheMetadata } from '../../../shared/meta/two-step/run-two-step-metadata.js';
 import { isTwoStepNicheMetadata } from '../../../shared/meta/two-step/two-step-niche.config.js';
@@ -45,6 +50,16 @@ export async function runMetadataStep(ctx: VideoTaskContext): Promise<VideoMetaO
   const videoMetaOutput = await timedStep(
     'Metadata',
     () => {
+      if (isCelebrityWisdomNiche(destination.niche)) {
+        return runCelebrityWisdomMetadata(
+          task.sourceTitle,
+          subtitlePath,
+          destination.language,
+          downloaded.youtubeVideoId,
+          metaOptions,
+        );
+      }
+
       if (isDramaNiche(destination.niche)) {
         return runDramaMetadata(
           task.sourceTitle,

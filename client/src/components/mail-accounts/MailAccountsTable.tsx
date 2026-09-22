@@ -6,22 +6,18 @@ import type { MailAccount } from '../../types/mailAccount';
 
 interface MailAccountsTableProps {
   accounts: MailAccount[];
-  selectedId: string | null;
   selectedIds: Set<string>;
   loading?: boolean;
   rowNumberStart?: number;
-  onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
 }
 
 export function MailAccountsTable({
   accounts,
-  selectedId,
   selectedIds,
   loading,
   rowNumberStart,
-  onSelect,
   onToggleRow,
   onToggleAll,
 }: MailAccountsTableProps) {
@@ -91,8 +87,7 @@ export function MailAccountsTable({
       selectedIds={selectedIds}
       onToggleRow={onToggleRow}
       onToggleAll={onToggleAll}
-      activeRowId={selectedId}
-      onRowClick={account => onSelect(account.id)}
+      onRowClick={account => onToggleRow(account.id)}
       emptyMessage={t('table.empty')}
     />
   );

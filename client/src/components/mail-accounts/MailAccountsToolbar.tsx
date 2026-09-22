@@ -16,6 +16,7 @@ interface MailAccountsToolbarProps {
   gmailLoggingIn?: boolean
   onSearchChange?: (value: string) => void
   onAddMail: () => void
+  onAddBatch?: () => void
   onEdit?: () => void
   onDelete?: () => void
   onGmailLogin?: () => void
@@ -36,6 +37,7 @@ export function MailAccountsToolbar({
   gmailLoggingIn = false,
   onSearchChange,
   onAddMail,
+  onAddBatch,
   onEdit,
   onDelete,
   onGmailLogin,
@@ -63,6 +65,11 @@ export function MailAccountsToolbar({
         }
         extraActions={
           <>
+            {onAddBatch ? (
+              <Button variant="outlined" size="sm" onClick={onAddBatch}>
+                {t('toolbar.addBatch')}
+              </Button>
+            ) : null}
             {onGmailLogin ? (
               <Button
                 variant="outlined"

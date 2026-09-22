@@ -7,6 +7,7 @@
     "count": "{{count}} tài khoản",
     "search": "Tìm theo email...",
     "add": "Thêm email",
+    "addBatch": "Thêm hàng loạt",
     "edit": "Sửa",
     "delete": "Xóa",
     "deleting": "Đang xóa…",
@@ -14,6 +15,22 @@
     "exporting": "Đang xuất...",
     "gmailLogin": "Đăng nhập Gmail",
     "gmailLoginWorking": "Đang đăng nhập…"
+  },
+  "batch": {
+    "title": "Thêm email hàng loạt",
+    "hint": "Dán mỗi tài khoản một dòng, các cột cách nhau bằng Tab: email, mật khẩu, rồi 2FA (8 cụm 4 ký tự) hoặc email khôi phục. Xem trước, kiểm tra, rồi lưu.",
+    "placeholder": "email\tpassword\tjj7b vdal pe57 uld3 d53p ip7p y7mg gxfe\nemail\tpassword\trecovery@example.com",
+    "preview": "Xem trước",
+    "previewing": "Đang phân tích…",
+    "selectAll": "Chọn tất cả dòng hợp lệ",
+    "status": "Trạng thái",
+    "ok": "OK",
+    "invalid": "Lỗi",
+    "empty": "Không có dòng nào trong nội dung dán.",
+    "save": "Lưu {{count}} email",
+    "previewError": "Không phân tích được nội dung dán",
+    "importError": "Không thể import email",
+    "importPartial": "Một số dòng không import được"
   },
   "hint": {
     "selectOne": "Chọn một email",
@@ -51,6 +68,8 @@
     "emailInvalid": "Email không hợp lệ",
     "password": "Mật khẩu",
     "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu",
     "twoFa": "2FA",
     "twoFaPlaceholder": "Mã dự phòng hoặc secret",
     "recovery": "Email khôi phục",
@@ -66,6 +85,8 @@
     "deleteSuccess": "Đã xóa email \"{{email}}\"",
     "deleteError": "Không thể xóa email",
     "exportError": "Xuất file thất bại",
+    "importSuccess": "Đã import {{count}} email",
+    "importPartial": "Đã bỏ qua {{skipped}} dòng",
     "gmailLoginSuccess": "Đã tạo GPM và đăng nhập \"{{email}}\" (giữ profile đang mở)",
     "gmailLoginError": "Đăng nhập Gmail thất bại"
   }

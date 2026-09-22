@@ -1,6 +1,30 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_loi_day_nguoi_noi_tieng",
+      "baseKey": "metadata_loi_day_nguoi_noi_tieng",
+      "language": "ja",
+      "name": "MetaData Lời dạy người nổi tiếng",
+      "category": "meta",
+      "niche": "a073ce74-07d7-4386-b59a-cb15a4fb2d99",
+      "createdAt": "2026-08-06T09:37:41.621Z",
+      "updatedAt": "2026-09-21T15:50:27.421Z",
+      "steps": [
+        {
+          "id": "6fae7f83-723c-415a-8fd4-e6b0eb553766",
+          "key": "metadata_loi_day_nguoi_noi_tieng_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "2be1d23e-b48d-431b-93d6-5f7bf162afbe",
+          "key": "metadata_loi_day_nguoi_noi_tieng_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_test",
       "baseKey": "metadata_test",
       "language": "ja",
@@ -281,24 +305,6 @@
           "id": "9f745f43-ef40-4be6-9f6f-e1d5b425147c",
           "key": "metadata_drama_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_loi_day_nguoi_noi_tieng",
-      "baseKey": "metadata_loi_day_nguoi_noi_tieng",
-      "language": "ja",
-      "name": "MetaData Lời dạy người nổi tiếng",
-      "category": "meta",
-      "niche": "a073ce74-07d7-4386-b59a-cb15a4fb2d99",
-      "createdAt": "2026-08-06T09:37:41.621Z",
-      "updatedAt": "2026-08-10T17:03:07.520Z",
-      "steps": [
-        {
-          "id": "c91e9c4a-0fd2-4805-9839-03e9c786da07",
-          "key": "metadata_loi_day_nguoi_noi_tieng",
-          "step": 1,
           "outputType": "text"
         }
       ]

@@ -17,13 +17,6 @@ function isActive(proxy: Proxy): boolean {
   return !proxy.archivedAt;
 }
 
-function isProxyExpired(proxy: Proxy): boolean {
-  if (proxy.status === 'expired') return true;
-  if (!proxy.expiresAt) return false;
-  const end = new Date(`${proxy.expiresAt}T23:59:59.999`).getTime();
-  return !Number.isNaN(end) && end < Date.now();
-}
-
 function filterProxies(
   proxies: Proxy[],
   status?: ProxyStatus,
@@ -221,15 +214,6 @@ export class ProxiesService {
 
   async archive(id: string): Promise<void> {
     const existing = this.getById(id);
-    const expired = isProxyExpired(existing);
-    if (existing.assignedProfileIds.length > 0 && !expired) {
-      throw new AppError(
-        `Cannot archive proxy: it has ${existing.assignedProfileIds.length} assigned GPM profile(s). Unassign profiles first.`,
-        409,
-        'PROXY_HAS_PROFILES',
-      );
-    }
-
     const profileIds = [...existing.assignedProfileIds];
     const now = new Date().toISOString();
     proxiesRepository.update(existing.id, (proxy) => ({
@@ -239,7 +223,7 @@ export class ProxiesService {
       assignedProfileIds: [],
     }));
 
-    // Expired proxies may still have profile bindings — clear GPM raw_proxy best-effort.
+    // Clear GPM raw_proxy for any previously assigned profiles (best-effort).
     for (const profileId of profileIds) {
       try {
         await updateGpmProfile(profileId, { raw_proxy: '' });

@@ -21,24 +21,6 @@ import { Button, Input, Modal, useToast } from '../components/ui';
 import { usePaginatedList } from '../hooks';
 import type { Proxy, ProxyFilter, ProxyTab } from '../types/proxy';
 
-function getExpiryEndMs(expiresAt?: string): number | null {
-  if (!expiresAt) return null;
-  const end = new Date(`${expiresAt}T23:59:59.999`);
-  const ms = end.getTime();
-  return Number.isNaN(ms) ? null : ms;
-}
-
-function isProxyExpired(proxy: Proxy, nowMs = Date.now()): boolean {
-  if (proxy.status === 'expired') return true;
-  const expireEndMs = getExpiryEndMs(proxy.expiresAt);
-  return expireEndMs != null && expireEndMs < nowMs;
-}
-
-/** Deletable when unassigned, or already past expiry (even if still bound to profiles). */
-function canDeleteProxy(proxy: Proxy, nowMs = Date.now()): boolean {
-  return proxy.assignedProfileIds.length === 0 || isProxyExpired(proxy, nowMs);
-}
-
 export function ProxiesPage() {
   const { t, i18n } = useTranslation(['browser', 'common']);
   const { toast } = useToast();
@@ -159,7 +141,7 @@ export function ProxiesPage() {
   }
 
   async function handleDeleteSelected() {
-    const targets = list.items.filter(proxy => selectedIds.has(proxy.id) && canDeleteProxy(proxy));
+    const targets = list.items.filter(proxy => selectedIds.has(proxy.id));
     if (targets.length === 0 || deletingSelected) return;
 
     setDeletingSelected(true);
@@ -248,8 +230,13 @@ export function ProxiesPage() {
 
   const extendTarget = list.items.find(proxy => proxy.id === extendTargetId) ?? null;
   const selectedProxies = list.items.filter(proxy => selectedIds.has(proxy.id));
-  const canDeleteSelected =
-    selectedProxies.length > 0 && selectedProxies.every(proxy => canDeleteProxy(proxy));
+  const canDeleteSelected = selectedProxies.length > 0;
+  const inUseProxies = selectedProxies.filter(proxy => proxy.assignedProfileIds.length > 0);
+  const assignedProfileTotal = inUseProxies.reduce(
+    (sum, proxy) => sum + proxy.assignedProfileIds.length,
+    0,
+  );
+  const deleteHasInUse = inUseProxies.length > 0;
 
   function handleTabChange(tab: ProxyTab) {
     setActiveTab(tab);
@@ -391,13 +378,21 @@ export function ProxiesPage() {
             <Button size='sm' className='rounded-lg' disabled={deletingSelected} onClick={handleDeleteSelected}>
               {deletingSelected
                 ? t('proxy.toolbar.deleting')
-                : t('proxy.deleteSelected.confirm', { count: selectedProxies.length })}
+                : deleteHasInUse
+                  ? t('proxy.deleteSelected.confirmInUse')
+                  : t('proxy.deleteSelected.confirm', { count: selectedProxies.length })}
             </Button>
           </>
         }
       >
         <p className='text-sm text-neutral-300'>
-          {t('proxy.deleteSelected.body', { count: selectedProxies.length })}
+          {deleteHasInUse
+            ? t('proxy.deleteSelected.bodyInUse', {
+                count: selectedProxies.length,
+                inUseCount: inUseProxies.length,
+                profileCount: assignedProfileTotal,
+              })
+            : t('proxy.deleteSelected.body', { count: selectedProxies.length })}
         </p>
       </Modal>
 

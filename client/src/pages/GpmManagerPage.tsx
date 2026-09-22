@@ -49,29 +49,30 @@ export function GpmManagerPage() {
   const [debouncedProfileSearch, setDebouncedProfileSearch] = useState('');
   const [groupSearch, setGroupSearch] = useState('');
 
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [runningProfileIds, setRunningProfileIds] = useState<Set<string>>(() => new Set());
 
   const [showAddProfileModal, setShowAddProfileModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showDeleteProfileModal, setShowDeleteProfileModal] = useState(false);
-  const [deleteHardMode, setDeleteHardMode] = useState(false);
+  const [deleteHardMode, setDeleteHardMode] = useState(true);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [showEditGroupModal, setShowEditGroupModal] = useState(false);
   const [showDeleteGroupModal, setShowDeleteGroupModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GpmGroup | null>(null);
   const [deletingGroup, setDeletingGroup] = useState(false);
 
-  const [starting, setStarting] = useState(false);
-  const [stopping, setStopping] = useState(false);
   const [actionBusyIds, setActionBusyIds] = useState<Set<string>>(() => new Set());
   const [testing, setTesting] = useState(false);
   const [deletingProfile, setDeletingProfile] = useState(false);
   const [testResult, setTestResult] = useState<GpmTestResult | null>(null);
   const [showTestResultModal, setShowTestResultModal] = useState(false);
 
-  const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
-  const isSelectedRunning = selectedProfileId ? runningProfileIds.has(selectedProfileId) : false;
+  const selectedProfileId =
+    selectedIds.size === 1 ? (Array.from(selectedIds)[0] ?? null) : null;
+  const selectedProfile = selectedProfileId
+    ? (profiles.find((profile) => profile.id === selectedProfileId) ?? null)
+    : null;
 
   const usedEmails = useMemo(
     () => Array.from(new Set(profiles.map((profile) => profile.name.trim().toLowerCase()).filter(Boolean))),
@@ -104,9 +105,13 @@ export function GpmManagerPage() {
           { signal },
         );
         setProfiles(item.data);
-        setSelectedProfileId((current) =>
-          current && item.data.some((profile) => profile.id === current) ? current : null,
-        );
+        setSelectedIds((current) => {
+          const next = new Set<string>();
+          for (const id of current) {
+            if (item.data.some((profile) => profile.id === id)) next.add(id);
+          }
+          return next;
+        });
       } catch (err) {
         if (signal.aborted) return;
         setProfiles([]);
@@ -140,6 +145,22 @@ export function GpmManagerPage() {
     setRefreshKey((key) => key + 1);
   }, []);
 
+  function handleToggleRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleToggleAll() {
+    setSelectedIds((prev) => {
+      if (prev.size === profiles.length) return new Set();
+      return new Set(profiles.map((profile) => profile.id));
+    });
+  }
+
   async function startProfileById(id: string) {
     const profile = profiles.find((item) => item.id === id);
     const { item } = await startGpmProfile(id);
@@ -164,30 +185,6 @@ export function GpmManagerPage() {
       return next;
     });
     toast.success(t('gpm.toast.stopped', { name: profile?.name ?? id }));
-  }
-
-  async function handleStartProfile() {
-    if (!selectedProfileId || starting) return;
-    setStarting(true);
-    try {
-      await startProfileById(selectedProfileId);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('gpm.toast.startError'));
-    } finally {
-      setStarting(false);
-    }
-  }
-
-  async function handleStopProfile() {
-    if (!selectedProfileId || stopping) return;
-    setStopping(true);
-    try {
-      await stopProfileById(selectedProfileId);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('gpm.toast.stopError'));
-    } finally {
-      setStopping(false);
-    }
   }
 
   async function handleStartRow(id: string) {
@@ -256,8 +253,8 @@ export function GpmManagerPage() {
           : t('gpm.toast.deleted', { name: selectedProfile?.name ?? selectedProfileId }),
       );
       setShowDeleteProfileModal(false);
-      setDeleteHardMode(false);
-      setSelectedProfileId(null);
+      setDeleteHardMode(true);
+      setSelectedIds(new Set());
       handleRefresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('gpm.toast.deleteError'));
@@ -316,12 +313,8 @@ export function GpmManagerPage() {
                 search={profileSearch}
                 sort={profileSort}
                 loading={profilesLoading}
-                starting={starting}
-                stopping={stopping}
                 testing={testing}
                 deleting={deletingProfile}
-                canStart={selectedProfileId !== null && !isSelectedRunning}
-                canStop={selectedProfileId !== null && isSelectedRunning}
                 canTest={selectedProfileId !== null}
                 canEdit={selectedProfileId !== null}
                 canDelete={selectedProfileId !== null}
@@ -329,8 +322,6 @@ export function GpmManagerPage() {
                 onSortChange={setProfileSort}
                 onRefresh={handleRefresh}
                 onAddProfile={() => setShowAddProfileModal(true)}
-                onStart={handleStartProfile}
-                onStop={handleStopProfile}
                 onTest={handleTestProfile}
                 onEdit={() => setShowEditProfileModal(true)}
                 onDelete={() => setShowDeleteProfileModal(true)}
@@ -344,11 +335,12 @@ export function GpmManagerPage() {
                 <GpmProfilesTable
                   profiles={profiles}
                   groups={groups}
-                  selectedId={selectedProfileId}
+                  selectedIds={selectedIds}
                   runningProfileIds={runningProfileIds}
                   actionBusyIds={actionBusyIds}
                   loading={profilesLoading}
-                  onSelect={setSelectedProfileId}
+                  onToggleRow={handleToggleRow}
+                  onToggleAll={handleToggleAll}
                   onStart={handleStartRow}
                   onStop={handleStopRow}
                 />
@@ -479,7 +471,7 @@ export function GpmManagerPage() {
         onClose={() => {
           if (deletingProfile) return;
           setShowDeleteProfileModal(false);
-          setDeleteHardMode(false);
+          setDeleteHardMode(true);
         }}
         title={t('gpm.deleteProfile.title')}
         footer={
@@ -490,7 +482,7 @@ export function GpmManagerPage() {
               className="rounded-lg"
               onClick={() => {
                 setShowDeleteProfileModal(false);
-                setDeleteHardMode(false);
+                setDeleteHardMode(true);
               }}
               disabled={deletingProfile}
             >

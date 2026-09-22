@@ -295,8 +295,10 @@
     },
     "deleteSelected": {
       "title": "Xóa proxy đã chọn",
-      "body": "Lưu trữ {{count}} proxy đã chọn (không gắn profile hoặc đã hết hạn)? Không thể hoàn tác thao tác này từ giao diện.",
-      "confirm": "Xóa {{count}} proxy"
+      "body": "Lưu trữ {{count}} proxy đã chọn? Không thể hoàn tác thao tác này từ giao diện.",
+      "bodyInUse": "{{inUseCount}}/{{count}} proxy đang được {{profileCount}} profile sử dụng. Xóa sẽ gỡ gán khỏi các profile đó. Bạn vẫn muốn xóa?",
+      "confirm": "Xóa {{count}} proxy",
+      "confirmInUse": "Vẫn muốn xóa"
     },
     "removeFailedModal": {
       "title": "Xóa proxy thất bại",

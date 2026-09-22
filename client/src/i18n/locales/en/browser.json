@@ -295,8 +295,10 @@
     },
     "deleteSelected": {
       "title": "Delete selected proxies",
-      "body": "Archive {{count}} selected proxies (unassigned or already expired)? This cannot be undone from the UI.",
-      "confirm": "Delete {{count}} proxies"
+      "body": "Archive {{count}} selected proxies? This cannot be undone from the UI.",
+      "bodyInUse": "{{inUseCount}} of {{count}} selected proxies are assigned to {{profileCount}} profile(s). Deleting will unassign them. Do you still want to delete?",
+      "confirm": "Delete {{count}} proxies",
+      "confirmInUse": "Delete anyway"
     },
     "removeFailedModal": {
       "title": "Remove failed proxies",

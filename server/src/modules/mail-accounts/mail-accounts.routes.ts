@@ -4,7 +4,9 @@ import { isAppError } from '../../shared/http/errors.js';
 import {
   createMailAccountSchema,
   exportMailAccountsQuerySchema,
+  importMailAccountsSchema,
   listMailAccountsQuerySchema,
+  previewMailAccountsTextSchema,
   updateMailAccountSchema,
 } from './mail-accounts.schema.js';
 import { buildExportFilename, buildMailAccountsExcel } from './mail-accounts.exporter.js';
@@ -22,6 +24,18 @@ export function createMailAccountsRoutes() {
     c.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     c.header('Content-Disposition', `attachment; filename="${filename}"`);
     return c.newResponse(new Uint8Array(buffer), 200);
+  });
+
+  app.post('/import/preview', zValidator('json', previewMailAccountsTextSchema), (c) => {
+    const { text } = c.req.valid('json');
+    const result = mailAccountsService.previewImportFromText(text);
+    return c.json(result);
+  });
+
+  app.post('/import', zValidator('json', importMailAccountsSchema), (c) => {
+    const { rows } = c.req.valid('json');
+    const result = mailAccountsService.importRows(rows);
+    return c.json(result);
   });
 
   app.get('/', zValidator('query', listMailAccountsQuerySchema), (c) => {

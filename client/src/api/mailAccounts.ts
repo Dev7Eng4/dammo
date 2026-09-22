@@ -4,6 +4,8 @@ import type {
   CreateMailAccountPayload,
   MailAccount,
   MailAccountsResponse,
+  MailImportPreviewResult,
+  MailImportResult,
   UpdateMailAccountPayload,
 } from '../types/mailAccount';
 
@@ -95,4 +97,20 @@ export async function exportMailAccountsExcel(
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+export async function previewMailAccountsText(text: string): Promise<MailImportPreviewResult> {
+  return fetchJson<MailImportPreviewResult>(`${API_V1}/mail-accounts/import/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function importMailAccounts(rows: CreateMailAccountPayload[]) {
+  return fetchJson<MailImportResult>(`${API_V1}/mail-accounts/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rows }),
+  });
 }

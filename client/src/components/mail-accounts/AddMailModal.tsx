@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { Eye, EyeOff } from 'lucide-react';
 import { createMailAccount, updateMailAccount } from '../../api/mailAccounts';
 import { Button, Input, Modal } from '../ui';
 import type { AddMailFormValues, MailAccount } from '../../types/mailAccount';
@@ -32,6 +33,7 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
   const { t } = useTranslation(['mail', 'common']);
   const isEdit = Boolean(account);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -45,11 +47,13 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
     if (!open) return;
     reset(toFormValues(account));
     setApiError(null);
+    setShowPassword(false);
   }, [open, account, reset]);
 
   function handleClose() {
     reset(toFormValues());
     setApiError(null);
+    setShowPassword(false);
     onClose();
   }
 
@@ -119,15 +123,26 @@ export function AddMailModal({ open, account = null, onClose, onSuccess }: AddMa
           <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-neutral-400">
             {t('form.password')} <span className="text-neutral-500">{t('common:actions.optional')}</span>
           </label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="h-10 rounded-lg"
-            {...register('password', {
-              minLength: { value: 6, message: t('form.passwordMin') },
-            })}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              className="h-10 rounded-lg pr-10"
+              {...register('password', {
+                minLength: { value: 6, message: t('form.passwordMin') },
+              })}
+            />
+            <button
+              type="button"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+              title={showPassword ? t('form.hidePassword') : t('form.showPassword')}
+              aria-label={showPassword ? t('form.hidePassword') : t('form.showPassword')}
+              onClick={() => setShowPassword(visible => !visible)}
+            >
+              {showPassword ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+            </button>
+          </div>
           {errors.password ? (
             <p className="mt-1 text-xs text-danger">{errors.password.message}</p>
           ) : null}

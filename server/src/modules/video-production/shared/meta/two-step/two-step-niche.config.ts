@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { promptTemplateFile } from '../../../../../config/paths.js';
 import { promptsRepository } from '../../../../prompts/prompts.repository.js';
 import type { PromptLanguage, PromptSet } from '../../../../prompts/prompts.types.js';
-import { isDramaNiche } from '../metadata.types.js';
+import { isDramaNiche, isCelebrityWisdomNiche } from '../metadata.types.js';
 
 export interface TwoStepNicheConfig {
   nicheId: string;
@@ -52,7 +52,7 @@ function logLabelFromBaseKey(baseKey: string): string {
 
 /**
  * Resolve shared 2-step meta config from the prompts catalog.
- * Drama keeps a dedicated runner and is excluded here.
+ * Drama and celebrity wisdom keep dedicated runners and are excluded here.
  */
 export function getTwoStepNicheConfig(
   language: PromptLanguage,
@@ -61,6 +61,7 @@ export function getTwoStepNicheConfig(
   const nicheId = niche?.trim() || '';
   if (!nicheId || nicheId === 'all') return undefined;
   if (isDramaNiche(nicheId)) return undefined;
+  if (isCelebrityWisdomNiche(nicheId)) return undefined;
 
   const set = promptsRepository.findMetaSetForNiche(language, nicheId);
   if (!set || set.steps.length !== 2) return undefined;
