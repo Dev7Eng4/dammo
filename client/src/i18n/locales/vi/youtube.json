@@ -129,6 +129,8 @@
     "createVideo": "Tạo video",
     "creating": "Đang tạo…",
     "upload": "Tải lên",
+    "move": "Di chuyển",
+    "movingVideos": "Đang di chuyển…",
     "deleteVideos": "Xóa video",
     "deletingVideos": "Đang xóa…",
     "deleteVideosDisabled": "Chọn video không phải Đã xuất bản để xóa",
@@ -172,6 +174,19 @@
     "toastSuccessOne": "Đã xóa 1 video",
     "toastSuccessMany": "Đã xóa {{count}} video",
     "toastError": "Không thể xóa video"
+  },
+  "moveVideos": {
+    "selectModalTitle": "Di chuyển video sang kênh",
+    "selectBody": "Chọn kênh YouTube để di chuyển {{count}} video Prepared/Created.",
+    "selectPlaceholder": "Chọn kênh",
+    "searchPlaceholder": "Tìm kênh…",
+    "confirmModalTitle": "Xác nhận di chuyển?",
+    "confirmBody": "Di chuyển {{count}} video sang kênh \"{{channel}}\"? Thư mục video và mục trong video-prepare.json sẽ được chuyển sang.",
+    "emptyChannels": "Không có kênh YouTube nào khác.",
+    "loadError": "Không thể tải danh sách kênh YouTube",
+    "toastSuccessOne": "Đã di chuyển 1 video",
+    "toastSuccessMany": "Đã di chuyển {{count}} video",
+    "toastError": "Không thể di chuyển video"
   },
   "deleteUploaded": {
     "modalTitle": "Xóa video Đã tạo?",

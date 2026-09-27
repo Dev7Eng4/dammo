@@ -110,16 +110,7 @@ function pickOptionalAlternativeTitles(value: unknown): string[] {
 }
 
 function pickDetectedNiche(parsed: Record<string, unknown>): string {
-  if (typeof parsed.detected_sub_niche === 'string' && parsed.detected_sub_niche.trim()) {
-    return parsed.detected_sub_niche.trim();
-  }
-  if (typeof parsed.detected_focus === 'string' && parsed.detected_focus.trim()) {
-    return parsed.detected_focus.trim();
-  }
-  if (typeof parsed.detected_niche === 'string' && parsed.detected_niche.trim()) {
-    return parsed.detected_niche.trim();
-  }
-  return '';
+  return typeof parsed.detected_niche === 'string' ? parsed.detected_niche.trim() : '';
 }
 
 /** Step 1: niche extraction — any parseable JSON object (schemas vary by niche). */

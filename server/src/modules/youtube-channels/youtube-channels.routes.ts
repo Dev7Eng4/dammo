@@ -9,6 +9,7 @@ import {
   deleteUploadedVideosSchema,
   deleteYoutubeVideosSchema,
   listYoutubeChannelsQuerySchema,
+  moveYoutubeVideosSchema,
   updateYoutubeVideoContentSchema,
   updateYoutubeChannelSchema,
 } from './youtube-channels.schema.js';
@@ -428,6 +429,16 @@ export function createYoutubeChannelsRoutes() {
   app.delete('/:id/videos', zValidator('json', deleteYoutubeVideosSchema), (c) => {
     const body = c.req.valid('json');
     const result = youtubeChannelsService.deleteVideos(c.req.param('id'), body.videoIds);
+    return c.json(result);
+  });
+
+  app.post('/:id/videos/move', zValidator('json', moveYoutubeVideosSchema), async (c) => {
+    const body = c.req.valid('json');
+    const result = await youtubeChannelsService.moveVideos(
+      c.req.param('id'),
+      body.targetChannelId,
+      body.videoIds,
+    );
     return c.json(result);
   });
 

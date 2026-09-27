@@ -36,7 +36,13 @@ import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video
 import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
 import { validateReupAudioVisualStyleId } from './reup-audio-visual-style.js';
 import { getNextYoutubePublishSlot } from '../youtube-upload/publish-schedule.js';
-import { resolveYoutubeChannelVideoDir, youtubeChannelUploadsDir } from '../../config/paths.js';
+import {
+  moveYoutubeChannelVideoBetweenChannels,
+  resolveYoutubeChannelVideoDir,
+  youtubeChannelUploadsDir,
+  youtubeChannelVideoDir,
+} from '../../config/paths.js';
+import type { VideoPrepareItem } from './video-prepare.types.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
@@ -716,6 +722,85 @@ export class YoutubeChannelsService {
 
     const deleted = videoPrepareRepository.removeByVideoIds(id, deletable);
     return { deleted };
+  }
+
+  async moveVideos(
+    sourceChannelId: string,
+    targetChannelId: string,
+    videoIds: string[],
+  ): Promise<{ moved: string[] }> {
+    this.getById(sourceChannelId);
+    this.getById(targetChannelId);
+
+    const normalizedTarget = targetChannelId.trim();
+    if (sourceChannelId.trim() === normalizedTarget) {
+      throw new AppError('Cannot move videos to the same channel', 400, 'SAME_CHANNEL');
+    }
+
+    const requested = [...new Set(videoIds.map(videoId => videoId.trim()).filter(Boolean))];
+    if (requested.length === 0) {
+      throw new AppError('No video IDs provided', 400, 'VALIDATION_ERROR');
+    }
+
+    const requestedSet = new Set(requested);
+    const movableStatuses = new Set(['Prepared', 'Created']);
+    const movableItems: VideoPrepareItem[] = videoPrepareRepository
+      .read(sourceChannelId)
+      .filter(item => {
+        const videoId = item.videoId.trim();
+        return videoId && requestedSet.has(videoId) && movableStatuses.has(item.status);
+      });
+
+    if (movableItems.length === 0) {
+      throw new AppError(
+        'No movable videos found (only Prepared and Created can be moved)',
+        400,
+        'NO_MOVABLE_VIDEOS',
+      );
+    }
+
+    const targetPrepareIds = videoPrepareRepository.getPreparedVideoIds(normalizedTarget);
+    for (const item of movableItems) {
+      const videoId = item.videoId.trim();
+      if (targetPrepareIds.has(videoId)) {
+        throw new AppError(
+          `Video «${videoId}» already exists on the target channel`,
+          409,
+          'VIDEO_ALREADY_EXISTS',
+        );
+      }
+      const destDir = youtubeChannelVideoDir(normalizedTarget, videoId);
+      if (fs.existsSync(destDir)) {
+        throw new AppError(
+          `Video folder «${videoId}» already exists on the target channel`,
+          409,
+          'VIDEO_ALREADY_EXISTS',
+        );
+      }
+    }
+
+    const movedIds: string[] = [];
+    for (const item of movableItems) {
+      const videoId = item.videoId.trim();
+      try {
+        await moveYoutubeChannelVideoBetweenChannels(sourceChannelId, normalizedTarget, videoId);
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new AppError(`Failed to move video folder: ${detail}`, 500, 'MOVE_FOLDER_FAILED');
+      }
+      movedIds.push(videoId);
+    }
+
+    videoPrepareRepository.removeByVideoIds(sourceChannelId, movedIds);
+    videoPrepareRepository.appendItems(
+      normalizedTarget,
+      movableItems.map(item => ({
+        ...item,
+        videoId: item.videoId.trim(),
+      })),
+    );
+
+    return { moved: movedIds };
   }
 
   deleteAllUploadedVideoFolders(options?: {

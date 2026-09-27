@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { fetchNiches } from '../api/niches';
 import { fetchSourceChannels } from '../api/sourceChannels';
@@ -24,6 +24,29 @@ import { isStoredReupChannelType } from '../types/youtubeChannel';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+const TYPE_FILTERS: readonly YoutubeChannelTypeFilter[] = [
+  'all',
+  'content',
+  'reup_audio',
+  'reup_video',
+  'content_sale',
+];
+const MONETIZATION_FILTERS: readonly YoutubeMonetizationFilter[] = [
+  'all',
+  'monetized',
+  'in_review',
+  'demonetized',
+  'limited',
+];
+
+function readFilter<T extends string>(
+  value: string | null,
+  allowed: readonly T[],
+  fallback: T,
+): T {
+  return value !== null && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
 function canOpenGpmProfile(linkedEmail: string): boolean {
   const normalized = linkedEmail.trim().toLowerCase();
   return normalized.length > 0 && normalized !== 'default';
@@ -32,12 +55,18 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
 export function YoutubeChannelsPage() {
   const { t, i18n } = useTranslation('youtube');
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [typeFilter, setTypeFilter] = useState<YoutubeChannelTypeFilter>('all');
-  const [monetizationFilter, setMonetizationFilter] = useState<YoutubeMonetizationFilter>('all');
-  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<YoutubeChannelTypeFilter>(() =>
+    readFilter(searchParams.get('type'), TYPE_FILTERS, 'all'),
+  );
+  const [monetizationFilter, setMonetizationFilter] = useState<YoutubeMonetizationFilter>(() =>
+    readFilter(searchParams.get('monetization'), MONETIZATION_FILTERS, 'all'),
+  );
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
   const [channelsRefreshKey, setChannelsRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -60,6 +89,16 @@ export function YoutubeChannelsPage() {
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const paginationLocale = i18n.language === 'vi' ? 'vi' : 'en';
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    const query = search.trim();
+    if (query) next.set('q', query);
+    if (typeFilter !== 'all') next.set('type', typeFilter);
+    if (monetizationFilter !== 'all') next.set('monetization', monetizationFilter);
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [search, typeFilter, monetizationFilter, searchParams, setSearchParams]);
 
   const list = usePaginatedList({
     fetcher: ({ type, monetization, query, page, limit: pageLimit, signal }) =>
@@ -165,7 +204,9 @@ export function YoutubeChannelsPage() {
   }
 
   function handleSelect(id: string) {
-    navigate(`/youtube-channels/${id}`);
+    navigate(`/youtube-channels/${id}`, {
+      state: { returnTo: `/youtube-channels${location.search}` },
+    });
   }
 
   function handleToggleRow(id: string) {

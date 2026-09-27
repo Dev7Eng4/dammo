@@ -10,7 +10,6 @@
     "filterNamePlaceholder": "Lọc theo tên...",
     "language": "Ngôn ngữ",
     "purpose": "Mục đích",
-    "platform": "Nền tảng",
     "delete": "Xóa",
     "download": "Tải xuống",
     "niche": "Niche",
@@ -18,7 +17,6 @@
     "addSource": "Thêm nguồn"
   },
   "filter": {
-    "platformAll": "Tất cả nền tảng",
     "purposeAll": "Mọi mục đích",
     "purposeBg": "Footage nền",
     "langAll": "Tất cả ngôn ngữ",
@@ -32,6 +30,7 @@
   "videos": {
     "duration": "Thời lượng",
     "download": "Tải xuống",
+    "delete": "Xóa",
     "col": {
       "title": "TIÊU ĐỀ",
       "link": "LIÊN KẾT",
@@ -80,7 +79,14 @@
     "selectToDownload": "Chọn nguồn để tải xuống",
     "selectVideos": "Chọn video để tải xuống",
     "youtubeOnly": "Chỉ hỗ trợ tải xuống cho nguồn YouTube",
-    "reupOrBgOnly": "Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền"
+    "reupOrBgOnly": "Chỉ hỗ trợ tải cho nguồn Reup hoặc Footage nền",
+    "selectDownloaded": "Chọn video đã tải xuống để xóa"
+  },
+  "deleteVideos": {
+    "title": "Xóa video đã tải xuống",
+    "body": "Xóa file đã tải xuống của {{count}} video? Video vẫn còn trong danh sách và có thể tải lại.",
+    "toastSuccess": "Đã xóa file đã tải xuống của {{count}} video",
+    "toastError": "Không thể xóa video đã tải xuống"
   },
   "job": {
     "downloadSelected": "Đang tải video cho {{count}} nguồn",

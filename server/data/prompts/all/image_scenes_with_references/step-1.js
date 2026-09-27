@@ -57,6 +57,7 @@ Prompt phải:
 - Là một dòng duy nhất (không xuống dòng).
 - Không có markdown, tiêu đề, giải thích, ghi chú, dấu ngoặc.
 - Ưu tiên tính nhất quán của nhân vật hơn tính nghệ thuật. Mục tiêu là tạo ra một ảnh nhân vật chuẩn để tái sử dụng.
+- Chỉ trả một bản duy nhất.
 
 ---
 # OUTPUT
@@ -65,7 +66,7 @@ Chỉ trả về JSON hợp lệ.
   {
     "id": "ID nhân vật theo tên",
     "name": "Tên nhân vật",
-    "description": "Mô tả nhân vật ngắn gọn",
+    "description": "Mô tả nhân vật chi tiết, đầy đủ thông tin về nhân vật: tên, độ tuổi, giới tính, quốc tịch, nghề nghiệp, bối cảnh, tính cách, vẻ ngoài,...",
     "prompt": "English image generation prompt"
   }
 ]

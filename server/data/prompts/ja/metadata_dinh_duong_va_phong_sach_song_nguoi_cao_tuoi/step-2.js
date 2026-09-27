@@ -59,6 +59,7 @@ ${JSON.stringify(extractedHealthJson, null, 2)}
 Chỉ xuất JSON hợp lệ duy nhất, không dùng Markdown, không giải thích:
 
 {
+  "detected_niche": "Sức khỏe, Dinh dưỡng, Thực phẩm & Đời sống Người cao tuổi (健康・栄養・シニアライフ・予防医学)",
   "detected_focus": "Dinh dưỡng & Thực phẩm / Sức khỏe đời sống cao tuổi",
   "metadata": {
     "title": "Title tiếng Nhật có CTR cao nhất (36-56 ký tự, hook mạnh, không nói quá y tế)",

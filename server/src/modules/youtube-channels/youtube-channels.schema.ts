@@ -188,6 +188,11 @@ export const deleteYoutubeVideosSchema = z.object({
   videoIds: z.array(z.string().min(1)).min(1),
 });
 
+export const moveYoutubeVideosSchema = z.object({
+  targetChannelId: z.string().min(1),
+  videoIds: z.array(z.string().min(1)).min(1),
+});
+
 export const deleteUploadedVideosSchema = z.object({
   deletePreparedVideos: z.boolean().optional().default(false),
 });

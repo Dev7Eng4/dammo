@@ -10,7 +10,6 @@
     "filterNamePlaceholder": "Filter by name...",
     "language": "Language",
     "purpose": "Purpose",
-    "platform": "Platform",
     "delete": "Delete",
     "download": "Download",
     "niche": "Niche",
@@ -18,7 +17,6 @@
     "addSource": "Add source"
   },
   "filter": {
-    "platformAll": "All platforms",
     "purposeAll": "All purposes",
     "purposeBg": "Background footage",
     "langAll": "All languages",
@@ -32,6 +30,7 @@
   "videos": {
     "duration": "Duration",
     "download": "Download",
+    "delete": "Delete",
     "col": {
       "title": "TITLE",
       "link": "LINK",
@@ -80,7 +79,14 @@
     "selectToDownload": "Select a source to download",
     "selectVideos": "Select videos to download",
     "youtubeOnly": "Downloads are only supported for YouTube sources",
-    "reupOrBgOnly": "Downloads are only supported for Reup or Background footage sources"
+    "reupOrBgOnly": "Downloads are only supported for Reup or Background footage sources",
+    "selectDownloaded": "Select downloaded videos to delete"
+  },
+  "deleteVideos": {
+    "title": "Delete downloaded videos",
+    "body": "Delete downloaded files for {{count}} video(s)? The videos stay in the list and can be downloaded again.",
+    "toastSuccess": "Deleted downloaded files for {{count}} video(s)",
+    "toastError": "Could not delete downloaded videos"
   },
   "job": {
     "downloadSelected": "Downloading videos for {{count}} sources",

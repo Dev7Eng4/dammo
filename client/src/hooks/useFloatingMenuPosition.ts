@@ -60,7 +60,9 @@ export function useFloatingMenuPosition(
   useEffect(() => {
     if (!open) return;
 
-    const onScroll = () => {
+    const onScroll = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Node && menuRef.current?.contains(target)) return;
       updatePosition();
     };
 
@@ -72,6 +74,22 @@ export function useFloatingMenuPosition(
       window.removeEventListener('scroll', onScroll, true);
     };
   }, [open, updatePosition]);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+    if (!open || !menu) return;
+
+    // Modal scroll lock (react-remove-scroll) cancels wheel events that reach
+    // document from outside the dialog; portaled menus live outside it.
+    const stop = (event: Event) => event.stopPropagation();
+    menu.addEventListener('wheel', stop);
+    menu.addEventListener('touchmove', stop);
+
+    return () => {
+      menu.removeEventListener('wheel', stop);
+      menu.removeEventListener('touchmove', stop);
+    };
+  }, [open, menuRef]);
 
   return { menuStyle, isPositioned };
 }

@@ -7,7 +7,12 @@ import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { persistLlmParseFailure } from '../meta/persist-llm-failure.js';
-import { generateCharacterReferences } from './ai-video-character-references.js';
+import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
+import {
+  generateCharacterPrompts,
+  generateCharacterReferenceImagesFromList,
+  type GenerateCharacterReferencesResult,
+} from './ai-video-character-references.js';
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
@@ -22,6 +27,7 @@ import { findOverlappingScenes, persistAiScenePromptsFile } from './ai-video-sce
 import {
   clampAiScenePromptConcurrency,
   resolveAiScenePromptProfiles,
+  resolveParallelScenePromptProfiles,
 } from './ai-video-chrome-profile.js';
 import { emitDetailLog } from '../video-log.js';
 import type {
@@ -210,13 +216,14 @@ async function generateScenePromptsFromJobs(
     promptKey?: string;
     charactersJson?: string;
     requireReferences?: boolean;
+    profiles?: ChromeProfile[];
   },
 ): Promise<GenerateAiVideoImagesResult> {
   const requestedConcurrency = clampAiScenePromptConcurrency(
     appSettingsService.get().aiScenePromptConcurrency,
     1,
   );
-  const profiles = resolveAiScenePromptProfiles(requestedConcurrency);
+  const profiles = options?.profiles ?? resolveAiScenePromptProfiles(requestedConcurrency);
   const profileIds = profiles.map(profile => profile.id);
   const provider = promptsSettingsService.get().defaultLlmProvider;
 
@@ -326,7 +333,7 @@ export async function generateAiVideoImagesWithReference(
 
   log('[ai-video] useReferenceImage=true → image_scenes_with_references_step_1 + step_2');
 
-  const characterResult = await generateCharacterReferences({
+  const characters = await generateCharacterPrompts({
     workDir: input.workDir,
     youtubeVideoId: input.youtubeVideoId,
     visualStyle: input.visualStyle,
@@ -357,19 +364,54 @@ export async function generateAiVideoImagesWithReference(
   );
 
   const charactersJson = JSON.stringify(
-    characterResult.characters.map((character: AiVideoCharacterReference) => ({
+    characters.map((character: AiVideoCharacterReference) => ({
       id: character.id,
       name: character.name,
       description: character.description,
-      prompt: character.prompt,
     })),
   );
 
-  const sceneResult = await generateScenePromptsFromJobs(input, jobs, log, {
-    promptKey: VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
-    charactersJson,
-    requireReferences: true,
-  });
+  const parallelProfiles = resolveParallelScenePromptProfiles(appSettingsService.get().aiScenePromptConcurrency);
+  const excludeMainProfileIds = parallelProfiles?.reservedMainProfileId
+    ? [parallelProfiles.reservedMainProfileId]
+    : [];
+
+  const runCharacterImages = () =>
+    generateCharacterReferenceImagesFromList({
+      workDir: input.workDir,
+      youtubeVideoId: input.youtubeVideoId,
+      characters,
+      excludeMainProfileIds,
+      onLog: input.onLog,
+    });
+  const runScenePrompts = () =>
+    generateScenePromptsFromJobs(input, jobs, log, {
+      promptKey: VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
+      charactersJson,
+      requireReferences: true,
+      ...(parallelProfiles ? { profiles: parallelProfiles.profiles } : {}),
+    });
+
+  let characterResult: GenerateCharacterReferencesResult;
+  let sceneResult: GenerateAiVideoImagesResult;
+
+  if (parallelProfiles) {
+    log(
+      `[ai-video] Character images + scene prompts running in parallel ` +
+        `(scene profile(s): ${parallelProfiles.profiles.map(p => p.name).join(', ')}` +
+        (parallelProfiles.reservedMainProfileId ? ', reserved from character images' : '') +
+        ')',
+    );
+    const [characterSettled, sceneSettled] = await Promise.allSettled([runCharacterImages(), runScenePrompts()]);
+    if (sceneSettled.status === 'rejected') throw sceneSettled.reason;
+    if (characterSettled.status === 'rejected') throw characterSettled.reason;
+    characterResult = characterSettled.value;
+    sceneResult = sceneSettled.value;
+  } else {
+    log('[ai-video] Only one main Chrome profile — character images then scene prompts (sequential)');
+    characterResult = await runCharacterImages();
+    sceneResult = await runScenePrompts();
+  }
 
   log(
     '[ai-video] Character design + scene prompts ready (useReferenceImage=true). Continuing to scene image generation.',

@@ -73,7 +73,7 @@ Chữ là lớp phủ (superimposed) in đè trực tiếp lên mép trên và m
 Chỉ xuất một JSON hợp lệ duy nhất, không bọc Markdown, không giải thích:
 
 {
-  "detected_sub_niche": "Tên phân nhánh Drama (VD: Trả thù hả dạ / Bi kịch lấy nước mắt)",
+  "detected_niche": "Tên phân nhánh Drama (VD: Trả thù hả dạ / Bi kịch lấy nước mắt)",
   "metadata": {
     "title": "Title tiếng Nhật có CTR cao nhất (38-58 ký tự, hook mạnh, giữ cliffhanger)",
     "description": "Description tiếng Nhật 2-4 câu chuẩn văn phong Drama, kèm 1 CTA tự nhiên",

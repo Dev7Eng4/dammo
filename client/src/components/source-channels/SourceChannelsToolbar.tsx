@@ -3,13 +3,11 @@ import { Button, DropdownSelect } from '../ui';
 import type { Niche } from '../../types/niche';
 import type {
   SourceLanguageFilter,
-  SourcePlatformFilter,
   SourcePurposeFilter,
 } from '../../types/sourceChannel';
 import { SOURCE_CHANNEL_LANGUAGE_LABELS } from '../../types/sourceChannel';
 
 interface SourceChannelsToolbarProps {
-  platformFilter: SourcePlatformFilter;
   purposeFilter: SourcePurposeFilter;
   languageFilter: SourceLanguageFilter;
   nicheFilter: string;
@@ -18,7 +16,6 @@ interface SourceChannelsToolbarProps {
   canDownload?: boolean;
   downloadDisabledReason?: string;
   canDelete?: boolean;
-  onPlatformFilterChange: (value: SourcePlatformFilter) => void;
   onPurposeFilterChange: (value: SourcePurposeFilter) => void;
   onLanguageFilterChange: (value: SourceLanguageFilter) => void;
   onNicheFilterChange: (value: string) => void;
@@ -30,7 +27,6 @@ interface SourceChannelsToolbarProps {
 }
 
 export function SourceChannelsToolbar({
-  platformFilter,
   purposeFilter,
   languageFilter,
   nicheFilter,
@@ -39,7 +35,6 @@ export function SourceChannelsToolbar({
   canDownload = true,
   downloadDisabledReason,
   canDelete = false,
-  onPlatformFilterChange,
   onPurposeFilterChange,
   onLanguageFilterChange,
   onNicheFilterChange,
@@ -50,13 +45,6 @@ export function SourceChannelsToolbar({
   onDelete,
 }: SourceChannelsToolbarProps) {
   const { t } = useTranslation('source');
-
-  const platformOptions: { value: SourcePlatformFilter; label: string }[] = [
-    { value: 'all', label: t('filter.platformAll') },
-    { value: 'youtube', label: 'YouTube' },
-    { value: 'tiktok', label: 'TikTok' },
-    { value: 'facebook', label: 'Facebook' },
-  ];
 
   const purposeOptions: { value: SourcePurposeFilter; label: string }[] = [
     { value: 'all', label: t('filter.purposeAll') },
@@ -78,8 +66,7 @@ export function SourceChannelsToolbar({
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-wrap items-end gap-4">
           <div>
             <span className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-neutral-500">
               {t('toolbar.filterName')}
@@ -117,21 +104,12 @@ export function SourceChannelsToolbar({
             value={languageFilter}
             onChange={onLanguageFilterChange}
           />
-        </div>
-        <div className="flex flex-wrap items-end gap-4">
           <DropdownSelect
             label={t('toolbar.purpose')}
             options={purposeOptions}
             value={purposeFilter}
             onChange={onPurposeFilterChange}
           />
-          <DropdownSelect
-            label={t('toolbar.platform')}
-            options={platformOptions}
-            value={platformFilter}
-            onChange={onPlatformFilterChange}
-          />
-        </div>
       </div>
 
       <div className="flex items-center gap-3">

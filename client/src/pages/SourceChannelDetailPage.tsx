@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { fetchNiches } from '../api/niches';
 import {
+  deleteSourceChannelVideos,
   fetchSourceChannel,
   fetchSourceChannelVideos,
   refreshSourceChannel,
 } from '../api/sourceChannels';
 import { PageShell } from '../components/layout';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
+import { DeleteSourceVideosModal } from '../components/source-channels/DeleteSourceVideosModal';
 import {
   SourceChannelDetailHeader,
   SourceChannelDetailHeaderSkeleton,
 } from '../components/source-channels/SourceChannelDetailHeader';
 import { SourceChannelVideosTable } from '../components/source-channels/SourceChannelVideosTable';
 import { SourceChannelVideosToolbar } from '../components/source-channels/SourceChannelVideosToolbar';
+import { useToast } from '../components/ui';
 import { useAbortableEffect, usePaginatedList } from '../hooks';
 import { useTaskQueue } from '../hooks/useTaskQueue';
 import type { Niche } from '../types/niche';
@@ -23,7 +26,17 @@ import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceCh
 export function SourceChannelDetailPage() {
   const { t, i18n } = useTranslation('source');
   const { id } = useParams<{ id: string }>();
+  const { state } = useLocation();
+  const requestedReturn =
+    state && typeof state === 'object' && 'returnTo' in state && typeof state.returnTo === 'string'
+      ? state.returnTo
+      : '';
+  const returnTo =
+    requestedReturn === '/source-channels' || requestedReturn.startsWith('/source-channels?')
+      ? requestedReturn
+      : '/source-channels';
   const { enqueueTask } = useTaskQueue();
+  const { toast } = useToast();
   const [source, setSource] = useState<SourceChannel | null>(null);
   const [niches, setNiches] = useState<Niche[]>([]);
   const [durationFilter, setDurationFilter] = useState<SourceVideoDurationFilter>('all');
@@ -33,6 +46,8 @@ export function SourceChannelDetailPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [limit, setLimit] = useState(20);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingVideos, setDeletingVideos] = useState(false);
 
   const videos = usePaginatedList({
     fetcher: ({ page, limit: pageLimit, duration, signal }) =>
@@ -91,8 +106,29 @@ export function SourceChannelDetailPage() {
             ? t('hint.reupOrBgOnly')
             : undefined;
 
+  const selectedDownloadedIds = videos.items
+    .filter(video => selectedIds.has(video.id) && video.status === 'Downloaded')
+    .map(video => video.id);
+
   function clearSelection() {
     setSelectedIds(new Set());
+  }
+
+  async function handleConfirmDeleteVideos() {
+    if (!id || selectedDownloadedIds.length === 0 || deletingVideos) return;
+
+    setDeletingVideos(true);
+    try {
+      const { deleted } = await deleteSourceChannelVideos(id, selectedDownloadedIds);
+      setShowDeleteConfirm(false);
+      clearSelection();
+      videos.refresh();
+      toast.success(t('deleteVideos.toastSuccess', { count: deleted.length }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('deleteVideos.toastError'));
+    } finally {
+      setDeletingVideos(false);
+    }
   }
 
   async function handleRefreshSource() {
@@ -159,7 +195,7 @@ export function SourceChannelDetailPage() {
       <PageShell fullBleed>
         <div className="flex flex-1 flex-col items-center justify-center text-center">
           <p className="text-sm text-neutral-400">{t('page.notFound')}</p>
-          <Link to="/source-channels" className="mt-3 text-sm text-secondary-400 hover:text-secondary-300">
+          <Link to={returnTo} className="mt-3 text-sm text-secondary-400 hover:text-secondary-300">
             {t('page.back')}
           </Link>
         </div>
@@ -194,6 +230,8 @@ export function SourceChannelDetailPage() {
                   canDownload={canDownload}
                   downloadDisabledReason={downloadDisabledReason}
                   onDownload={handleDownload}
+                  canDelete={selectedDownloadedIds.length > 0 && !deletingVideos}
+                  onDelete={() => setShowDeleteConfirm(true)}
                 />
               </div>
               <div className="min-h-0 flex-1 overflow-auto">
@@ -235,6 +273,16 @@ export function SourceChannelDetailPage() {
           )}
         </div>
       </div>
+
+      <DeleteSourceVideosModal
+        open={showDeleteConfirm}
+        count={selectedDownloadedIds.length}
+        deleting={deletingVideos}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          void handleConfirmDeleteVideos();
+        }}
+      />
     </PageShell>
   );
 }

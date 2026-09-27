@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import { resolveSourceChannelVideoDir } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
 import {
@@ -197,6 +199,29 @@ export class SourceChannelsService {
 
     const filtered = filterVideosByDuration(store.videos, duration);
     return paginate(filtered, page, limit);
+  }
+
+  deleteDownloadedVideos(id: string, videoIds: string[]): { deleted: string[] } {
+    this.getById(id);
+
+    const requested = new Set(videoIds.map(videoId => videoId.trim()).filter(Boolean));
+    const downloaded = (sourceVideosRepository.read(id)?.videos ?? [])
+      .filter(video => requested.has(video.id) && video.status === 'Downloaded')
+      .map(video => video.id);
+
+    if (downloaded.length === 0) {
+      throw new AppError('No downloaded videos selected', 400, 'NO_DOWNLOADED_VIDEOS');
+    }
+
+    for (const videoId of downloaded) {
+      const folder = resolveSourceChannelVideoDir(id, videoId);
+      if (folder) {
+        fs.rmSync(folder, { recursive: true, force: true });
+      }
+    }
+
+    const deleted = sourceVideosRepository.clearDownloadedStatus(id, downloaded);
+    return { deleted };
   }
 
   async refresh(id: string): Promise<{ item: SourceChannel; videos: SourceVideoRecord[] }> {

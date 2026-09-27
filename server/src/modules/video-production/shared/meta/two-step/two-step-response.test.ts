@@ -103,6 +103,26 @@ describe('parseTwoStepStep2Response', () => {
     if (result.ok) assert.equal(result.value.metadata.tags.length, 13);
   });
 
+  test('reads detected_niche as the niche', () => {
+    const payload = { ...step2Payload(['tag1']), detected_niche: '  Sức khỏe  ' };
+    const result = parseTwoStepStep2Response(makeResponse(JSON.stringify(payload)), false);
+
+    assert.equal(result.ok, true);
+    if (result.ok) assert.equal(result.value.detected_niche, 'Sức khỏe');
+  });
+
+  test('ignores detected_sub_niche and detected_focus', () => {
+    const payload = {
+      ...step2Payload(['tag1']),
+      detected_sub_niche: 'sub',
+      detected_focus: 'focus',
+    };
+    const result = parseTwoStepStep2Response(makeResponse(JSON.stringify(payload)), false);
+
+    assert.equal(result.ok, true);
+    if (result.ok) assert.equal(result.value.detected_niche, '');
+  });
+
   test('rejects empty tags array', () => {
     const result = parseTwoStepStep2Response(makeResponse(JSON.stringify(step2Payload([]))), false);
 

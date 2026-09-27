@@ -59,7 +59,7 @@ Dựa vào tình tiết tài chính, hãy tự chọn ngầm 1 trong 3 bố cụ
 Chỉ xuất một JSON hợp lệ duy nhất, không bọc Markdown, không giải thích:
 
 {
-  "detected_sub_niche": "Tên phân nhánh tài chính/lương hưu tiếng Việt",
+  "detected_niche": "Tên phân nhánh tài chính/lương hưu tiếng Việt",
   "metadata": {
     "title": "Title tiếng Nhật có CTR cao nhất (36-56 ký tự, hook mạnh, không spoil giải pháp)",
     "description": "Description tiếng Nhật 2-4 câu chuẩn văn phong tài chính, kèm 1 CTA tự nhiên",

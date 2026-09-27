@@ -129,6 +129,8 @@
     "createVideo": "Create video",
     "creating": "Creating…",
     "upload": "Upload",
+    "move": "Move",
+    "movingVideos": "Moving…",
     "deleteVideos": "Delete videos",
     "deletingVideos": "Deleting…",
     "deleteVideosDisabled": "Select non-Published videos to delete",
@@ -172,6 +174,19 @@
     "toastSuccessOne": "Deleted 1 video",
     "toastSuccessMany": "Deleted {{count}} videos",
     "toastError": "Could not delete videos"
+  },
+  "moveVideos": {
+    "selectModalTitle": "Move videos to channel",
+    "selectBody": "Choose the YouTube channel to move {{count}} Prepared/Created video(s) to.",
+    "selectPlaceholder": "Select a channel",
+    "searchPlaceholder": "Search channels…",
+    "confirmModalTitle": "Confirm move?",
+    "confirmBody": "Move {{count}} video(s) to channel \"{{channel}}\"? Video folders and video-prepare.json entries will be transferred.",
+    "emptyChannels": "No other YouTube channels available.",
+    "loadError": "Could not load YouTube channels",
+    "toastSuccessOne": "Moved 1 video",
+    "toastSuccessMany": "Moved {{count}} videos",
+    "toastError": "Could not move videos"
   },
   "deleteUploaded": {
     "modalTitle": "Delete Created videos?",

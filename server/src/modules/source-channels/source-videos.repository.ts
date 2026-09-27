@@ -70,6 +70,24 @@ export class SourceVideosRepository {
     this.write(sourceId, store);
   }
 
+  clearDownloadedStatus(sourceId: string, videoIds: string[]): string[] {
+    const store = this.read(sourceId);
+    if (!store) return [];
+
+    const targets = new Set(videoIds);
+    const cleared: string[] = [];
+    for (const video of store.videos) {
+      if (!targets.has(video.id) || video.status !== 'Downloaded') continue;
+      delete video.status;
+      cleared.push(video.id);
+    }
+
+    if (cleared.length > 0) {
+      this.write(sourceId, store);
+    }
+    return cleared;
+  }
+
   mergeVideosOnRefresh(
     sourceId: string,
     freshVideos: YoutubeChannelVideo[],

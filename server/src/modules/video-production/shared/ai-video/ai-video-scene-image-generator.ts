@@ -5,6 +5,8 @@ import type {
   MetaConcurrencyMode,
   MetaMediaBatchJob,
 } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import { resizeImageFileInPlaceToFit } from '../../../../infrastructure/ffmpeg/image-resize.js';
+import { META_IMAGE_HEIGHT, META_IMAGE_WIDTH } from '../../../../infrastructure/llm-browser/meta-media.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
@@ -226,7 +228,15 @@ async function generateFlowSceneImages(
       await generateImagesViaToolWithFailover(visuals, {
         outputDir: slidesDir,
         timeoutMs: FLOW_TOOL_TIMEOUT_MS,
-        onImageSaved: saved => {
+        onImageSaved: async saved => {
+          try {
+            await resizeImageFileInPlaceToFit(saved.outputPath, META_IMAGE_WIDTH, META_IMAGE_HEIGHT);
+          } catch (err) {
+            const reason = err instanceof Error ? err.message : String(err);
+            log(
+              `[ai-video] ${saved.name}: resize to ${META_IMAGE_WIDTH}x${META_IMAGE_HEIGHT} failed, keeping original — ${reason}`,
+            );
+          }
           onImageSaved?.(saved.name);
         },
       }, {

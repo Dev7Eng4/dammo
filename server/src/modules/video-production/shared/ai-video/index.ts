@@ -26,7 +26,7 @@ export {
 } from './ai-video-slide-spec.js';
 export { AiClipPrebakePool } from './ai-video-clip-prebake.js';
 export {
-  generateCharacterReferences,
+  generateCharacterPrompts,
   generateCharacterReferenceImagesFromList,
   persistCharacterReferencesFile,
   resolveCharacterReferencesFilePath,

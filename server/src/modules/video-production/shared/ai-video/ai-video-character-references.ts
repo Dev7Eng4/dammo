@@ -218,6 +218,7 @@ async function generateCharacterImagesViaFlow(
   characters: AiVideoCharacterReference[],
   imageReferencesDir: string,
   log: (msg: string) => void,
+  excludeProfileIds: string[],
 ): Promise<{ generatedCount: number; failedCount: number }> {
   let generatedCount = 0;
   let failedCount = 0;
@@ -233,10 +234,14 @@ async function generateCharacterImagesViaFlow(
     log(`[ai-video] Flow character image → ${name}`);
 
     try {
-      await generateImagesViaToolWithFailover(visuals, {
-        outputDir: imageReferencesDir,
-        timeoutMs: FLOW_TOOL_TIMEOUT_MS,
-      });
+      await generateImagesViaToolWithFailover(
+        visuals,
+        {
+          outputDir: imageReferencesDir,
+          timeoutMs: FLOW_TOOL_TIMEOUT_MS,
+        },
+        { excludeProfileIds },
+      );
       if (await fileExists(outputPath)) {
         generatedCount += 1;
       } else {
@@ -319,6 +324,8 @@ export interface GenerateCharacterReferenceImagesFromListInput {
   }>;
   /** Meta only. Default `single`. */
   metaConcurrency?: MetaImageConcurrencyMode;
+  /** Flow only. Main profiles in use by concurrent work (e.g. scene prompts); not used or closed here. */
+  excludeMainProfileIds?: string[];
   onLog?: (msg: string) => void;
 }
 
@@ -369,10 +376,18 @@ export async function generateCharacterReferenceImagesFromList(
 
     if (pendingCount > 0) {
       if (imageProvider === 'flow') {
-        const mains = chromeProfilesService.listMainProfiles();
+        const excludeProfileIds = input.excludeMainProfileIds ?? [];
+        const mains = chromeProfilesService
+          .listMainProfiles()
+          .filter(profile => !excludeProfileIds.includes(profile.id));
         log(`[ai-video] Flow character images via main profile(s): ${mains.map(p => p.name).join(', ')}`);
         try {
-          const flowResult = await generateCharacterImagesViaFlow(characters, imageReferencesDir, log);
+          const flowResult = await generateCharacterImagesViaFlow(
+            characters,
+            imageReferencesDir,
+            log,
+            excludeProfileIds,
+          );
           generatedCount = flowResult.generatedCount;
           failedCount = flowResult.failedCount;
         } finally {
@@ -407,9 +422,10 @@ export async function generateCharacterReferenceImagesFromList(
   };
 }
 
-export async function generateCharacterReferences(
+/** Step 1: character design prompts via LLM (no image generation). */
+export async function generateCharacterPrompts(
   input: GenerateCharacterReferencesInput,
-): Promise<GenerateCharacterReferencesResult> {
+): Promise<AiVideoCharacterReference[]> {
   const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
   const allCues = await loadTranscriptCuesFromSrt(input.subtitlePath);
@@ -455,11 +471,5 @@ export async function generateCharacterReferences(
 
   const characters = await generateCharacterPromptsViaLlm(input, transcriptJson, log);
   log(`[ai-video] Character design → ${characters.length} character(s)`);
-
-  return generateCharacterReferenceImagesFromList({
-    workDir: input.workDir,
-    youtubeVideoId: input.youtubeVideoId,
-    characters,
-    onLog: input.onLog,
-  });
+  return characters;
 }

@@ -61,6 +61,14 @@ export function fetchSourceChannelVideos(
   );
 }
 
+export function deleteSourceChannelVideos(id: string, videoIds: string[]) {
+  return fetchJson<{ deleted: string[] }>(`${API_V1}/source-channels/${id}/videos`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ videoIds }),
+  });
+}
+
 export function createSourceChannel(payload: CreateSourceChannelPayload) {
   return fetchJson<{ item: SourceChannel }>(`${API_V1}/source-channels`, {
     method: 'POST',

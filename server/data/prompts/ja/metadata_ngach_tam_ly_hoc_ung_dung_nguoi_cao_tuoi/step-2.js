@@ -70,7 +70,7 @@ Dựa vào sắc thái nội dung, hãy tự chọn ngầm 1 trong 3 bố cục 
 Chỉ xuất một JSON hợp lệ duy nhất, không bọc Markdown, không giải thích:
 
 {
-  "detected_sub_niche": "Tên phân nhánh tâm lý học người cao tuổi tiếng Việt",
+  "detected_niche": "Tên phân nhánh tâm lý học người cao tuổi tiếng Việt",
   "metadata": {
     "title": "Title tiếng Nhật có CTR cao nhất (32-50 ký tự, gần gũi, hook tâm lý học)",
     "description": "Description tiếng Nhật 2-4 câu chuẩn văn phong gần gũi ấm áp, kèm 1 CTA tự nhiên",

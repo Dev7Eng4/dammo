@@ -445,7 +445,7 @@ XI. OUTPUT FORMAT
 Chỉ xuất JSON hợp lệ duy nhất, không bọc Markdown, không giải thích:
 
 {
-  "detected_sub_niche": "Tên phân nhánh",
+  "detected_niche": "Tên phân nhánh",
 
   "metadata": {
     "title": "Title tiếng Nhật CTR cao nhất",

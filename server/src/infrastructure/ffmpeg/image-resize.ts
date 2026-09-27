@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { runFfmpeg } from './ffmpeg-runner.js';
 
 /**
@@ -34,6 +35,28 @@ export async function resizeImageToFit(
     ['-y', '-i', inputPath, '-vf', vf, '-frames:v', '1', '-q:v', '2', outputPath],
     { onLog, label: 'image-resize', encoderFallback: false },
   );
+}
+
+/**
+ * `resizeImageToFit` on a single file. ffmpeg cannot read and write the same path,
+ * so the source moves to a temp file first; on failure the original is restored.
+ */
+export async function resizeImageFileInPlaceToFit(
+  filePath: string,
+  width: number,
+  height: number,
+  onLog?: (msg: string) => void,
+): Promise<void> {
+  const tmpPath = `${filePath}.resize.tmp${path.extname(filePath)}`;
+  await fs.rename(filePath, tmpPath);
+  try {
+    await resizeImageToFit(tmpPath, filePath, width, height, onLog);
+  } catch (err) {
+    await fs.rename(tmpPath, filePath).catch(() => undefined);
+    throw err;
+  } finally {
+    await fs.unlink(tmpPath).catch(() => undefined);
+  }
 }
 
 /**

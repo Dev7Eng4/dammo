@@ -22,6 +22,10 @@ export const sourceChannelVideosQuerySchema = z.object({
   duration: z.enum(['all', 'under_8m', '8m_30m', '30m_60m', 'over_60m']).default('all'),
 });
 
+export const deleteSourceVideosSchema = z.object({
+  videoIds: z.array(z.string().min(1)).min(1),
+});
+
 export const listSourceChannelsQuerySchema = z.object({
   platform: z.enum(['youtube', 'tiktok', 'facebook']).optional(),
   purpose: z

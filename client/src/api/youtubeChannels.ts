@@ -187,6 +187,20 @@ export function deleteYoutubeChannelVideos(channelId: string, videoIds: string[]
   );
 }
 
+export function moveYoutubeChannelVideos(
+  channelId: string,
+  payload: { targetChannelId: string; videoIds: string[] },
+) {
+  return fetchJson<{ moved: string[] }>(
+    `${API_V1}/youtube-channels/${channelId}/videos/move`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
 export function deleteAllUploadedVideos(options?: { deletePreparedVideos?: boolean }) {
   return fetchJson<{
     channelsProcessed: number;

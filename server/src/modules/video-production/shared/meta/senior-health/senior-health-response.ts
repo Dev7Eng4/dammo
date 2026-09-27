@@ -108,15 +108,8 @@ export function parseSeniorHealthStep2Response(
 
   const metadata = parsed.metadata as Record<string, unknown>;
   const thumbnail = parsed.thumbnail as Record<string, unknown>;
-  const detectedFocus =
-    typeof parsed.detected_focus === 'string'
-      ? parsed.detected_focus.trim()
-      : typeof parsed.detected_niche === 'string'
-        ? parsed.detected_niche.trim()
-        : '';
-
   const output: MetadataLlmOutput = {
-    detected_niche: detectedFocus,
+    detected_niche: typeof parsed.detected_niche === 'string' ? parsed.detected_niche.trim() : '',
     metadata: {
       title: String(metadata.title).trim(),
       description: String(metadata.description).trim(),

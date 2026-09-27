@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchNiches } from '../api/niches';
 import {
   fetchSourceChannels,
@@ -25,22 +25,45 @@ import type {
   SourceChannel,
   SourceChannelUsage,
   SourceLanguageFilter,
-  SourcePlatformFilter,
   SourcePurposeFilter,
 } from '../types/sourceChannel';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+const PURPOSE_FILTERS: readonly SourcePurposeFilter[] = [
+  'all',
+  'trend_tracking',
+  'idea_reference',
+  'licensed_source',
+  'competitor_tracking',
+  'reup',
+  'background_footage',
+];
+const LANGUAGE_FILTERS: readonly SourceLanguageFilter[] = ['all', 'en', 'ko', 'ja', 'es'];
+
+function readFilter<T extends string>(
+  value: string | null,
+  allowed: readonly T[],
+  fallback: T,
+): T {
+  return value !== null && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
 export function SourceChannelsPage() {
   const { t, i18n } = useTranslation('source');
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
-  const [platformFilter, setPlatformFilter] = useState<SourcePlatformFilter>('all');
-  const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>('reup');
-  const [languageFilter, setLanguageFilter] = useState<SourceLanguageFilter>('all');
-  const [nicheFilter, setNicheFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const [purposeFilter, setPurposeFilter] = useState<SourcePurposeFilter>(() =>
+    readFilter(searchParams.get('purpose'), PURPOSE_FILTERS, 'reup'),
+  );
+  const [languageFilter, setLanguageFilter] = useState<SourceLanguageFilter>(() =>
+    readFilter(searchParams.get('language'), LANGUAGE_FILTERS, 'all'),
+  );
+  const [nicheFilter, setNicheFilter] = useState(() => searchParams.get('niche')?.trim() || 'all');
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddNicheModal, setShowAddNicheModal] = useState(false);
@@ -56,15 +79,25 @@ export function SourceChannelsPage() {
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
+  useEffect(() => {
+    const next = new URLSearchParams();
+    const query = search.trim();
+    if (query) next.set('q', query);
+    if (purposeFilter !== 'reup') next.set('purpose', purposeFilter);
+    if (languageFilter !== 'all') next.set('language', languageFilter);
+    if (nicheFilter !== 'all') next.set('niche', nicheFilter);
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [search, purposeFilter, languageFilter, nicheFilter, searchParams, setSearchParams]);
+
   const list = usePaginatedList({
-    fetcher: ({ platform, purpose, language, niche, query, page, limit: pageLimit, signal }) =>
-      fetchSourceChannels(platform, purpose, language, page, pageLimit, {
+    fetcher: ({ purpose, language, niche, query, page, limit: pageLimit, signal }) =>
+      fetchSourceChannels('all', purpose, language, page, pageLimit, {
         signal,
         ...(niche !== 'all' ? { niche } : {}),
         ...(query.trim() ? { q: query } : {}),
       }),
     query: {
-      platform: platformFilter,
       purpose: purposeFilter,
       language: languageFilter,
       niche: nicheFilter,
@@ -104,13 +137,6 @@ export function SourceChannelsPage() {
 
   function clearSelection() {
     setSelectedIds(new Set());
-  }
-
-  function handlePlatformFilterChange(next: SourcePlatformFilter) {
-    list.markLoading();
-    setPlatformFilter(next);
-    list.resetPage();
-    clearSelection();
   }
 
   function handlePurposeFilterChange(next: SourcePurposeFilter) {
@@ -155,7 +181,9 @@ export function SourceChannelsPage() {
   }
 
   function handleSelect(id: string) {
-    navigate(`/source-channels/${id}`);
+    navigate(`/source-channels/${id}`, {
+      state: { returnTo: `/source-channels${location.search}` },
+    });
   }
 
   function handleToggleRow(id: string) {
@@ -351,7 +379,6 @@ export function SourceChannelsPage() {
             className="mb-4"
           />
           <SourceChannelsToolbar
-            platformFilter={platformFilter}
             purposeFilter={purposeFilter}
             languageFilter={languageFilter}
             nicheFilter={nicheFilter}
@@ -359,7 +386,6 @@ export function SourceChannelsPage() {
             niches={niches}
             canDownload={canDownload}
             downloadDisabledReason={downloadDisabledReason}
-            onPlatformFilterChange={handlePlatformFilterChange}
             onPurposeFilterChange={handlePurposeFilterChange}
             onLanguageFilterChange={handleLanguageFilterChange}
             onNicheFilterChange={handleNicheFilterChange}

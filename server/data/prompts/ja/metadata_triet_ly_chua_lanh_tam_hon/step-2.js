@@ -70,7 +70,7 @@ Dựa vào sắc thái chữa lành, hãy tự chọn ngầm 1 trong 3 bố cụ
 Chỉ xuất một JSON hợp lệ duy nhất, không bọc Markdown, không giải thích:
 
 {
-  "detected_sub_niche": "Tên phân nhánh triết lý/chữa lành tiếng Việt",
+  "detected_niche": "Tên phân nhánh triết lý/chữa lành tiếng Việt",
   "metadata": {
     "title": "Title tiếng Nhật có CTR cao nhất (36-56 ký tự, sâu sắc, hook chữa lành)",
     "description": "Description tiếng Nhật 2-4 câu chuẩn văn phong thiền tịnh, kèm 1 CTA tự nhiên",

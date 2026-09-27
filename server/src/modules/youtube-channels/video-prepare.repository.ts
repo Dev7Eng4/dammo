@@ -25,8 +25,15 @@ export class VideoPrepareRepository {
   }
 
   appendCreated(channelId: string, item: VideoPrepareItem): VideoPrepareItem[] {
+    return this.appendItems(channelId, [item]);
+  }
+
+  appendItems(channelId: string, newItems: VideoPrepareItem[]): VideoPrepareItem[] {
     this.ensureStore(channelId);
-    const items = [...this.read(channelId), item];
+    if (newItems.length === 0) {
+      return this.read(channelId);
+    }
+    const items = [...this.read(channelId), ...newItems];
     writeJson(youtubeChannelVideoPrepareFile(channelId), items);
     return items;
   }

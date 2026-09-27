@@ -16,6 +16,8 @@ import { flowBrowserService } from './flow-browser.service.js';
 
 export interface FlowProfileFailoverOptions {
   startProfileId?: string;
+  /** Main profiles reserved by other concurrent work; never picked or failed over to. */
+  excludeProfileIds?: string[];
   /** Collects every main profile ID used during failover (for batch cleanup). */
   openedProfileIds?: Set<string>;
   onProfileSwitch?: (from: ChromeProfile, to: ChromeProfile, remainingCount: number) => void;
@@ -89,7 +91,7 @@ export async function generateImagesViaToolWithFailover(
   }
 
   const outputDir = path.resolve(options.outputDir);
-  const exhausted = new Set<string>();
+  const exhausted = new Set<string>(failoverOpts?.excludeProfileIds ?? []);
   let profile = pickStartProfile(failoverOpts?.startProfileId, exhausted);
   const startedAt = Date.now();
   const triedNames: string[] = [];

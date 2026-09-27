@@ -196,6 +196,63 @@ function isRetriableMoveError(err: unknown): boolean {
 }
 
 /**
+ * Move a Prepared/Created video folder from one YouTube channel to another
+ * (`videos/{videoId}/`). Throws on failure. No-op when source folder is missing.
+ */
+export async function moveYoutubeChannelVideoBetweenChannels(
+  sourceChannelId: string,
+  targetChannelId: string,
+  videoId: string,
+): Promise<void> {
+  const normalizedVideoId = videoId.trim();
+  if (!normalizedVideoId) {
+    throw new Error('videoId is required');
+  }
+
+  const source = resolveYoutubeChannelVideoDir(sourceChannelId, normalizedVideoId);
+  if (!source) {
+    return;
+  }
+
+  const dest = youtubeChannelVideoDir(targetChannelId, normalizedVideoId);
+  if (path.resolve(source) === path.resolve(dest)) {
+    return;
+  }
+
+  if (isDirectory(dest)) {
+    throw new Error(`Destination folder already exists for videoId «${normalizedVideoId}»`);
+  }
+
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MOVE_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      fs.renameSync(source, dest);
+      return;
+    } catch (err) {
+      lastError = err;
+      if (!isRetriableMoveError(err)) break;
+      if (attempt < MOVE_RETRY_DELAYS_MS.length) {
+        await sleep(MOVE_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+  }
+
+  try {
+    fs.cpSync(source, dest, { recursive: true });
+    fs.rmSync(source, { recursive: true, force: true });
+  } catch (err) {
+    fs.rmSync(dest, { recursive: true, force: true });
+    const message = err instanceof Error ? err.message : String(err);
+    const renameMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    throw new Error(
+      `Failed to move video folder «${normalizedVideoId}»: rename: ${renameMessage}; copy: ${message}`,
+    );
+  }
+}
+
+/**
  * Move a prepared video folder into `uploads/{videoId}` after YouTube upload.
  * Never throws; returns true when the folder is (or already was) in uploads.
  * Retries rename on Windows file locks (EPERM/EBUSY) and falls back to copy+delete.

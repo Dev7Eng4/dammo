@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import {
   createSourceChannelSchema,
+  deleteSourceVideosSchema,
   listSourceChannelsQuerySchema,
   sourceChannelVideosQuerySchema,
   updateSourceChannelSchema,
@@ -33,6 +34,12 @@ export function createSourceChannelsRoutes() {
   app.get('/:id/videos', zValidator('query', sourceChannelVideosQuerySchema), (c) => {
     const { page, limit, duration } = c.req.valid('query');
     const result = sourceChannelsService.getVideos(c.req.param('id'), page, limit, duration);
+    return c.json(result);
+  });
+
+  app.delete('/:id/videos', zValidator('json', deleteSourceVideosSchema), (c) => {
+    const { videoIds } = c.req.valid('json');
+    const result = sourceChannelsService.deleteDownloadedVideos(c.req.param('id'), videoIds);
     return c.json(result);
   });
 

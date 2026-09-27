@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../ui'
 import { type YoutubeChannel } from '../../types/youtubeChannel'
@@ -16,11 +16,14 @@ interface YoutubeChannelDetailHeaderProps {
   deletingVideos?: boolean
   canUploadVideos?: boolean
   uploadDisabledReason?: string
+  canMoveVideos?: boolean
+  movingVideos?: boolean
   onSync?: () => void
   onEdit?: () => void
   onCreateVideo?: () => void
   onPrepareVideo?: () => void
   onUploadVideos?: () => void
+  onMoveVideos?: () => void
   onDeleteVideos?: () => void
   onOpenProfile?: () => void
   onRecreateMetadata?: () => void
@@ -54,15 +57,27 @@ export function YoutubeChannelDetailHeader({
   deletingVideos,
   canUploadVideos,
   uploadDisabledReason,
+  canMoveVideos,
+  movingVideos,
   onSync,
   onCreateVideo,
   onPrepareVideo,
   onUploadVideos,
+  onMoveVideos,
   onDeleteVideos,
   onOpenProfile,
   onRecreateMetadata,
 }: YoutubeChannelDetailHeaderProps) {
   const { t, i18n } = useTranslation('youtube')
+  const { state } = useLocation()
+  const requestedReturn =
+    state && typeof state === 'object' && 'returnTo' in state && typeof state.returnTo === 'string'
+      ? state.returnTo
+      : ''
+  const returnTo =
+    requestedReturn === '/youtube-channels' || requestedReturn.startsWith('/youtube-channels?')
+      ? requestedReturn
+      : '/youtube-channels'
   const initial = channel.name.charAt(0).toUpperCase()
   const canOpenProfile = canOpenGpmProfile(channel.linkedEmail)
   const canRunCreateActions = canCreateFromSelection ?? canCreateVideo
@@ -70,7 +85,7 @@ export function YoutubeChannelDetailHeader({
   return (
     <div className="space-y-4">
       <Link
-        to="/youtube-channels"
+        to={returnTo}
         className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200"
       >
         <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -158,6 +173,16 @@ export function YoutubeChannelDetailHeader({
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               {t('actions.upload')}
+            </Button>
+          ) : null}
+          {onMoveVideos ? (
+            <Button
+              variant="outlined"
+              className="rounded-lg"
+              disabled={!canMoveVideos || movingVideos}
+              onClick={onMoveVideos}
+            >
+              {movingVideos ? t('actions.movingVideos') : t('actions.move')}
             </Button>
           ) : null}
           {onDeleteVideos ? (

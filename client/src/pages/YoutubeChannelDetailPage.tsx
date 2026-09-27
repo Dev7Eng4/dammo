@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { startGpmProfileByEmail } from '../api/gpm';
 import { isAbortError } from '../api/http';
-import { fetchYoutubeChannel, fetchYoutubeChannelVideos, fetchYoutubeChannelPendingVideos, syncYoutubeChannelVideos, deleteYoutubeChannelVideos } from '../api/youtubeChannels';
+import { fetchYoutubeChannel, fetchYoutubeChannelVideos, fetchYoutubeChannelPendingVideos, syncYoutubeChannelVideos, deleteYoutubeChannelVideos, moveYoutubeChannelVideos } from '../api/youtubeChannels';
 import { PageShell } from '../components/layout';
 import { MailAccountsPagination } from '../components/mail-accounts/MailAccountsPagination';
 import { AddYoutubeChannelModal } from '../components/youtube-channels/AddYoutubeChannelModal';
 import { DeleteVideosConfirmModal } from '../components/youtube-channels/DeleteVideosConfirmModal';
+import { MoveVideosChannelModal } from '../components/youtube-channels/MoveVideosChannelModal';
+import { MoveVideosConfirmModal } from '../components/youtube-channels/MoveVideosConfirmModal';
 import { YoutubeChannelDetailHeader, YoutubeChannelDetailHeaderSkeleton } from '../components/youtube-channels/YoutubeChannelDetailHeader';
 import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
 import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
@@ -29,9 +31,22 @@ function isDeletableVideoStatus(status: YoutubeChannelVideo['status']): boolean 
   return status != null && status !== 'Published' && status !== 'Pending';
 }
 
+function isMovableVideoStatus(status: YoutubeChannelVideo['status']): boolean {
+  return status === 'Prepared' || status === 'Created';
+}
+
 export function YoutubeChannelDetailPage() {
   const { t, i18n } = useTranslation('youtube');
   const { id } = useParams<{ id: string }>();
+  const { state } = useLocation();
+  const requestedReturn =
+    state && typeof state === 'object' && 'returnTo' in state && typeof state.returnTo === 'string'
+      ? state.returnTo
+      : '';
+  const returnTo =
+    requestedReturn === '/youtube-channels' || requestedReturn.startsWith('/youtube-channels?')
+      ? requestedReturn
+      : '/youtube-channels';
   const { toast } = useToast();
   const { enqueueTask } = useTaskQueue();
   const [channel, setChannel] = useState<YoutubeChannel | null>(null);
@@ -52,6 +67,11 @@ export function YoutubeChannelDetailPage() {
   const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(() => new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingVideos, setDeletingVideos] = useState(false);
+  const [showMoveChannelModal, setShowMoveChannelModal] = useState(false);
+  const [showMoveConfirm, setShowMoveConfirm] = useState(false);
+  const [movingVideos, setMovingVideos] = useState(false);
+  const [moveVideoIds, setMoveVideoIds] = useState<string[]>([]);
+  const [moveTargetChannel, setMoveTargetChannel] = useState<YoutubeChannel | null>(null);
   const [pendingVideos, setPendingVideos] = useState<YoutubeChannelVideo[]>([]);
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingError, setPendingError] = useState<string | null>(null);
@@ -98,6 +118,15 @@ export function YoutubeChannelDetailPage() {
     channel != null &&
     isStoredReupChannelType(channel.type) &&
     selectedVideos.every(video => video.status === 'Created');
+  const movableVideos = useMemo(
+    () => allVideos.filter(video => isMovableVideoStatus(video.status)),
+    [allVideos],
+  );
+  const selectedMovableVideos = useMemo(
+    () => selectedVideos.filter(video => isMovableVideoStatus(video.status)),
+    [selectedVideos],
+  );
+  const canMoveVideos = !isPendingFilter && movableVideos.length > 0;
   const uploadDisabledReason =
     isPendingFilter
       ? t('hint.uploadSwitchFilter')
@@ -300,12 +329,59 @@ export function YoutubeChannelDetailPage() {
     }
   }
 
+  function handleOpenMoveVideos() {
+    if (!canMoveVideos) return;
+    const ids =
+      selectedMovableVideos.length > 0
+        ? selectedMovableVideos.map(video => video.id)
+        : movableVideos.map(video => video.id);
+    if (ids.length === 0) return;
+    setMoveVideoIds(ids);
+    setMoveTargetChannel(null);
+    setShowMoveConfirm(false);
+    setShowMoveChannelModal(true);
+  }
+
+  function handleMoveChannelSelected(target: YoutubeChannel) {
+    setMoveTargetChannel(target);
+    setShowMoveChannelModal(false);
+    setShowMoveConfirm(true);
+  }
+
+  async function handleConfirmMoveVideos() {
+    if (!id || !moveTargetChannel || moveVideoIds.length === 0 || movingVideos) return;
+
+    setMovingVideos(true);
+    try {
+      const { moved } = await moveYoutubeChannelVideos(id, {
+        targetChannelId: moveTargetChannel.id,
+        videoIds: moveVideoIds,
+      });
+      const movedSet = new Set(moved);
+      setAllVideos(current => current.filter(video => !movedSet.has(video.id)));
+      setSelectedVideoIds(new Set());
+      setShowMoveConfirm(false);
+      setMoveTargetChannel(null);
+      setMoveVideoIds([]);
+      setVideoResetKey(key => key + 1);
+      toast.success(
+        moved.length === 1
+          ? t('moveVideos.toastSuccessOne')
+          : t('moveVideos.toastSuccessMany', { count: moved.length }),
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('moveVideos.toastError'));
+    } finally {
+      setMovingVideos(false);
+    }
+  }
+
   if (!id || notFound) {
     return (
       <PageShell fullBleed>
         <div className='flex flex-1 flex-col items-center justify-center text-center'>
           <p className='text-sm text-neutral-400'>{t('page.notFound')}</p>
-          <Link to='/youtube-channels' className='mt-3 text-sm text-secondary-400 hover:text-secondary-300'>
+          <Link to={returnTo} className='mt-3 text-sm text-secondary-400 hover:text-secondary-300'>
             {t('page.backToList')}
           </Link>
         </div>
@@ -331,11 +407,14 @@ export function YoutubeChannelDetailPage() {
               deletingVideos={deletingVideos}
               canUploadVideos={canUploadFromSelection}
               uploadDisabledReason={uploadDisabledReason}
+              canMoveVideos={canMoveVideos}
+              movingVideos={movingVideos}
               onSync={handleSyncVideos}
               onEdit={() => setEditOpen(true)}
               onCreateVideo={() => enqueueSelectedVideos(false)}
               onPrepareVideo={() => enqueueSelectedVideos(true)}
               onUploadVideos={handleUploadSelected}
+              onMoveVideos={handleOpenMoveVideos}
               onDeleteVideos={() => setShowDeleteConfirm(true)}
               onOpenProfile={handleOpenProfile}
               onRecreateMetadata={canRecreateMetadata ? () => setRecreateMetadataOpen(true) : undefined}
@@ -407,6 +486,35 @@ export function YoutubeChannelDetailPage() {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={() => {
           void handleConfirmDeleteVideos();
+        }}
+      />
+
+      {id ? (
+        <MoveVideosChannelModal
+          open={showMoveChannelModal}
+          currentChannelId={id}
+          videoCount={moveVideoIds.length}
+          onClose={() => {
+            setShowMoveChannelModal(false);
+            setMoveVideoIds([]);
+          }}
+          onSave={handleMoveChannelSelected}
+        />
+      ) : null}
+
+      <MoveVideosConfirmModal
+        open={showMoveConfirm}
+        count={moveVideoIds.length}
+        channelName={moveTargetChannel?.name ?? ''}
+        moving={movingVideos}
+        onClose={() => {
+          if (movingVideos) return;
+          setShowMoveConfirm(false);
+          setMoveTargetChannel(null);
+          setMoveVideoIds([]);
+        }}
+        onConfirm={() => {
+          void handleConfirmMoveVideos();
         }}
       />
 

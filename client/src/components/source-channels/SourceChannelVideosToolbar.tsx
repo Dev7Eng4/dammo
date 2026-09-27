@@ -8,6 +8,8 @@ interface SourceChannelVideosToolbarProps {
   canDownload?: boolean;
   downloadDisabledReason?: string;
   onDownload?: () => void;
+  canDelete?: boolean;
+  onDelete?: () => void;
 }
 
 export function SourceChannelVideosToolbar({
@@ -16,6 +18,8 @@ export function SourceChannelVideosToolbar({
   canDownload = true,
   downloadDisabledReason,
   onDownload,
+  canDelete = false,
+  onDelete,
 }: SourceChannelVideosToolbarProps) {
   const { t } = useTranslation('source');
 
@@ -35,23 +39,37 @@ export function SourceChannelVideosToolbar({
         value={durationFilter}
         onChange={onDurationFilterChange}
       />
-      {onDownload ? (
-        <Button
-          size="sm"
-          variant="secondary"
-          className="rounded-lg"
-          disabled={!canDownload}
-          title={downloadDisabledReason}
-          onClick={onDownload}
-        >
-          <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 3v12" />
-            <path d="M8 11l4 4 4-4" />
-            <path d="M4 19h16" />
-          </svg>
-          {t('videos.download')}
-        </Button>
-      ) : null}
+      <div className="flex items-center gap-2">
+        {onDelete ? (
+          <Button
+            size="sm"
+            variant="outlined"
+            className="rounded-lg"
+            disabled={!canDelete}
+            title={canDelete ? undefined : t('hint.selectDownloaded')}
+            onClick={onDelete}
+          >
+            {t('videos.delete')}
+          </Button>
+        ) : null}
+        {onDownload ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="rounded-lg"
+            disabled={!canDownload}
+            title={downloadDisabledReason}
+            onClick={onDownload}
+          >
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 3v12" />
+              <path d="M8 11l4 4 4-4" />
+              <path d="M4 19h16" />
+            </svg>
+            {t('videos.download')}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

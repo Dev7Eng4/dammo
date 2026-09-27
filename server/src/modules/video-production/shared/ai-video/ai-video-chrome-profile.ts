@@ -58,3 +58,33 @@ export function resolveAiScenePromptProfiles(concurrency: number): ChromeProfile
   const count = Math.min(requested, subs.length);
   return chromeProfilesService.pickSubProfiles(count);
 }
+
+export interface ParallelScenePromptProfiles {
+  profiles: ChromeProfile[];
+  /** Main profile held by scene prompts; character images must not use it. */
+  reservedMainProfileId?: string;
+}
+
+/**
+ * Scene-prompt profiles that can run alongside character images (which always use main profiles).
+ * A single-main scene-prompt setup gets the second main so the first stays free for images.
+ * Returns undefined when only one main exists, so the caller must run the two tasks sequentially.
+ */
+export function resolveParallelScenePromptProfiles(
+  concurrency: number,
+): ParallelScenePromptProfiles | undefined {
+  const requested = clampAiScenePromptConcurrency(concurrency, 1);
+  const role =
+    appSettingsService.get().aiScenePromptChromeProfileRole ??
+    DEFAULT_AI_SCENE_PROMPT_CHROME_PROFILE_ROLE;
+
+  if (requested > 1 || role !== 'main') {
+    return { profiles: resolveAiScenePromptProfiles(requested) };
+  }
+
+  const mains = chromeProfilesService.listMainProfiles();
+  const reserved = mains[1];
+  if (!reserved) return undefined;
+
+  return { profiles: [reserved], reservedMainProfileId: reserved.id };
+}
