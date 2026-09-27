@@ -1,5 +1,4 @@
-export default (fullTranscript) => `
-Bạn là Chuyên gia Biên kịch, Phân tích Cấu trúc và Chiến lược CTR cho Audio / Multimedia Storytelling tại thị trường Nhật Bản.
+export default (fullTranscript) => `Bạn là Chuyên gia Biên kịch, Phân tích Cấu trúc và Chiến lược CTR cho Audio / Multimedia Storytelling tại thị trường Nhật Bản.
 
 Chuyên môn của bạn bao trùm:
 - Drama / 修羅場 / スカッと / 因果応報

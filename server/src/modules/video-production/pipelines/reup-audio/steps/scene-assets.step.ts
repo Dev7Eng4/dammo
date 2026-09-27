@@ -1,3 +1,4 @@
+import { appSettingsService } from '../../../../app-settings/app-settings.service.js';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
 import { promptsSettingsService } from '../../../../prompts/prompts-settings.service.js';
@@ -6,13 +7,8 @@ import {
   generateAiSceneSlideImages,
 } from '../../../shared/ai-video/index.js';
 import { resolveAiRenderConfig } from '../../../shared/ai-video/ai-render-config.js';
-import {
-  buildAssumedFinalAiSlides,
-  buildAssumedFinalSlidesByName,
-} from '../../../shared/ai-video/ai-video-slide-spec.js';
 import type { AiVideoScenePrompt } from '../../../shared/ai-video/ai-video.types.js';
 import { isKenBurnsEnabled } from '../../../shared/slideshow/slideshow.constants.js';
-import type { SlideSpec } from '../../../shared/slideshow/slideshow.types.js';
 import { toOnLog, type VideoTaskContext } from '../video-task.context.js';
 
 export interface SceneAssetsResult {
@@ -84,23 +80,15 @@ export async function runSceneAssetsStep(
     `Generating ${options.label} scene images via ${promptsSettingsService.get().defaultSceneImageProvider}...`,
   );
 
-  let audioSpeed: number | undefined;
-  let assumedFinalSlidesByName: Map<string, SlideSpec> | undefined;
-
-  if (isKenBurnsEnabled()) {
-    const renderConfig = await resolveAiRenderConfig(workDir);
-    audioSpeed = renderConfig.audioSpeed;
-    log.info(`${options.label} audio speed locked early → ${audioSpeed.toFixed(3)} (ai-render-config.json)`);
-
-    const assumedSlides = await buildAssumedFinalAiSlides(
-      workDir,
-      promptResult.scenes,
-      audioSpeed,
-      downloaded.audioPath,
-      toOnLog(log),
-    );
-    assumedFinalSlidesByName = buildAssumedFinalSlidesByName(assumedSlides);
-    log.info(`${options.label} Ken Burns incremental prebake enabled (max 4 concurrent, ${assumedSlides.length} slide(s))`);
+  const renderConfig = await resolveAiRenderConfig(workDir, { kenBurns: isKenBurnsEnabled() });
+  const audioSpeed = renderConfig.audioSpeed;
+  const settings = appSettingsService.get();
+  const kenBurns = settings.kenBurnsOnPrepare && settings.enableKenBurns;
+  log.info(
+    `${options.label} audio speed locked → ${audioSpeed.toFixed(3)}, kenBurns=${kenBurns ? 'on' : 'off'} (ai-render-config.json)`,
+  );
+  if (kenBurns) {
+    log.info(`${options.label} Ken Burns prebake uses each saved image's own duration (max 4 concurrent)`);
   }
 
   const aiSlideResult = await timedStep(
@@ -110,9 +98,8 @@ export async function runSceneAssetsStep(
         workDir,
         youtubeVideoId: downloaded.youtubeVideoId,
         scenes: promptResult.scenes,
-        ...(audioSpeed != null ? { audioSpeed } : {}),
-        audioPath: downloaded.audioPath,
-        ...(assumedFinalSlidesByName ? { assumedFinalSlidesByName } : {}),
+        audioSpeed,
+        kenBurns,
         onLog: toOnLog(log),
         onProgress: log.enabled
           ? progress => {

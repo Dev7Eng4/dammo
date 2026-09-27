@@ -15,6 +15,7 @@ import type {
   MetaMediaBatchResult,
 } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
+import { emitDetailLog } from '../video-production/shared/video-log.js';
 import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import {
@@ -150,8 +151,7 @@ export class MetaBrowserService {
     }
 
     const log = (msg: string) => {
-      console.log(msg);
-      options?.onLog?.(msg);
+      emitDetailLog(msg, options?.onLog);
     };
     const concurrency = options?.concurrency ?? 'batch';
     const timeoutMs = options?.timeoutMs ?? META_MEDIA_DEFAULT_TIMEOUT_MS;

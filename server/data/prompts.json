@@ -32,7 +32,7 @@
       "category": "meta",
       "niche": "b26f9182-9962-4749-9e00-ef0c2d6c8eae",
       "createdAt": "2026-09-06T08:46:59.691Z",
-      "updatedAt": "2026-09-06T08:46:59.711Z",
+      "updatedAt": "2026-09-27T11:21:16.835Z",
       "steps": [
         {
           "id": "4fd21a4c-c3fe-4012-b8af-839336ba4cb0",
@@ -56,7 +56,7 @@
       "category": "meta",
       "niche": "e3f2ca32-964f-47a0-b0a9-3730b082d424",
       "createdAt": "2026-09-05T18:12:31.466Z",
-      "updatedAt": "2026-09-06T07:42:20.594Z",
+      "updatedAt": "2026-09-27T11:20:46.776Z",
       "steps": [
         {
           "id": "791b6879-7053-43b9-95e6-08f329b267cd",
@@ -104,7 +104,7 @@
       "category": "meta",
       "niche": "5b1354ab-37cb-4e0e-94ad-3a515d97eecc",
       "createdAt": "2026-09-01T20:39:21.099Z",
-      "updatedAt": "2026-09-01T20:39:21.116Z",
+      "updatedAt": "2026-09-27T11:21:30.762Z",
       "steps": [
         {
           "id": "ceccf887-b569-4f02-b38a-bb16f59d8c3f",
@@ -128,7 +128,7 @@
       "category": "meta",
       "niche": "3d637eb2-a255-4741-b885-ce46ec54aa70",
       "createdAt": "2026-08-25T08:48:08.984Z",
-      "updatedAt": "2026-08-25T08:48:08.998Z",
+      "updatedAt": "2026-09-27T11:21:09.251Z",
       "steps": [
         {
           "id": "9794ca0e-2f6a-4646-bd92-0298a9e80333",
@@ -152,7 +152,7 @@
       "category": "meta",
       "niche": "all",
       "createdAt": "2026-08-22T07:46:10.535Z",
-      "updatedAt": "2026-08-22T07:46:10.552Z",
+      "updatedAt": "2026-09-27T11:20:42.193Z",
       "steps": [
         {
           "id": "a9a67dfe-161d-453e-a73c-1ff5ec971383",
@@ -293,7 +293,7 @@
       "category": "meta",
       "niche": "9577910e-042c-423b-9d06-5f2028655434",
       "createdAt": "2026-08-10T17:52:32.900Z",
-      "updatedAt": "2026-08-15T06:34:17.044Z",
+      "updatedAt": "2026-09-27T11:20:58.171Z",
       "steps": [
         {
           "id": "363b7c5c-ae97-4832-9bec-888f234e8b6e",
@@ -310,33 +310,13 @@
       ]
     },
     {
-      "id": "ja:change_background_channel",
-      "baseKey": "change_background_channel",
-      "language": "ja",
-      "name": "Change Background Channel",
-      "category": "thumbnail",
-      "createdAt": "2026-07-27T16:24:41.606Z",
-      "updatedAt": "2026-08-03T06:54:20.470Z",
-      "steps": [
-        {
-          "id": "03556dd5-1601-4a1b-be57-b8193f4f9dae",
-          "key": "change_background_channel",
-          "step": 1,
-          "outputType": "image",
-          "useReferenceImage": true,
-          "useChannelBackgroundImage": true
-        }
-      ],
-      "niche": "all"
-    },
-    {
       "id": "all:image_scenes_with_references",
       "baseKey": "image_scenes_with_references",
       "language": "all",
       "name": "Ảnh Theo Cảnh Có Tham Chiếu Nhân Vật",
       "category": "image",
       "createdAt": "2026-07-27T08:44:32.880Z",
-      "updatedAt": "2026-07-28T08:33:36.091Z",
+      "updatedAt": "2026-09-27T11:20:14.115Z",
       "steps": [
         {
           "id": "595e4082-7af6-4091-9a0b-9f5295a8bfb8",
@@ -395,64 +375,6 @@
       "niche": "all"
     },
     {
-      "id": "ja:remove_logo",
-      "baseKey": "remove_logo",
-      "language": "ja",
-      "name": "Remove Logo",
-      "category": "thumbnail",
-      "createdAt": "2026-07-18T09:05:10.245Z",
-      "updatedAt": "2026-07-18T09:05:10.245Z",
-      "steps": [
-        {
-          "id": "71e34378-0029-40dc-94ee-9aa4a38f477b",
-          "key": "remove_logo",
-          "step": 1,
-          "outputType": "image",
-          "useReferenceImage": true
-        }
-      ],
-      "niche": "all"
-    },
-    {
-      "id": "ja:remove_logo_and_change_background",
-      "baseKey": "remove_logo_and_change_background",
-      "language": "ja",
-      "name": "Remove Logo & Change Background",
-      "category": "thumbnail",
-      "createdAt": "2026-07-18T06:38:33.017Z",
-      "updatedAt": "2026-07-18T09:03:49.519Z",
-      "steps": [
-        {
-          "id": "75430371-6312-4a17-8cf6-f51a29a787c5",
-          "key": "remove_logo_and_change_background",
-          "step": 1,
-          "outputType": "image",
-          "useReferenceImage": true
-        }
-      ],
-      "niche": "all"
-    },
-    {
-      "id": "ja:recreate",
-      "baseKey": "recreate",
-      "language": "ja",
-      "name": "Recreate",
-      "category": "thumbnail",
-      "isSystem": true,
-      "createdAt": "2026-07-05T15:08:56.521Z",
-      "updatedAt": "2026-07-05T15:11:58.798Z",
-      "steps": [
-        {
-          "id": "a55b6634-4968-4940-8acb-233c98880d1e",
-          "key": "recreate",
-          "step": 1,
-          "outputType": "image",
-          "useReferenceImage": true
-        }
-      ],
-      "niche": "all"
-    },
-    {
       "id": "ja:metadata",
       "baseKey": "metadata",
       "language": "ja",
@@ -467,24 +389,6 @@
           "key": "metadata",
           "step": 1,
           "outputType": "text"
-        }
-      ],
-      "niche": "all"
-    },
-    {
-      "id": "ja:love_story",
-      "baseKey": "love_story",
-      "language": "ja",
-      "name": "Love Story",
-      "category": "thumbnail",
-      "createdAt": "2026-06-21T17:49:09.082Z",
-      "updatedAt": "2026-06-21T17:49:09.082Z",
-      "steps": [
-        {
-          "id": "7fb1c27b-0e96-403c-997c-9cf20bd69174",
-          "key": "love_story",
-          "step": 1,
-          "outputType": "image"
         }
       ],
       "niche": "all"

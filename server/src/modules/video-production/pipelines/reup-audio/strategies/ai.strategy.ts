@@ -42,6 +42,7 @@ export const aiStrategy: VideoTypeStrategy = {
   async assemble(ctx: AssembleContext, assets) {
     const { destination, log, outputBasename } = ctx;
     const timedScenes = timedScenesOf(assets);
+    const allScenes = assets.aiScenePrompts ?? [];
 
     ctx.beginRenderPhase?.();
     log.info(`Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`);
@@ -51,7 +52,7 @@ export const aiStrategy: VideoTypeStrategy = {
       () =>
         assembleReupAiSlideshowVideo({
           workDir: ctx.workDir,
-          scenes: timedScenes,
+          scenes: allScenes,
           audioPath: ctx.audioPath,
           subtitlePath: ctx.subtitlePath,
           language: destination.language,

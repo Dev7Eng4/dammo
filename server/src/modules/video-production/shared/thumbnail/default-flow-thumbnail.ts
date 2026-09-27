@@ -10,7 +10,6 @@ import {
   type HeroImageProgress,
 } from './hero-image.js';
 
-const DEFAULT_PROMPT_KEY = 'recreate';
 const OLD_THUMBNAIL_FILENAME = 'old-thumbnail.jpg';
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
@@ -64,7 +63,10 @@ export async function runDefaultFlowThumbnail(
   language: ChannelLanguage,
   options?: RunDefaultFlowThumbnailOptions,
 ): Promise<DefaultFlowThumbnailResult> {
-  const promptKey = options?.promptKey?.trim() || DEFAULT_PROMPT_KEY;
+  const promptKey = options?.promptKey?.trim();
+  if (!promptKey) {
+    throw new AppError('Thumbnail prompt key is required', 400, 'INVALID_INPUT');
+  }
   const referenceImagePaths =
     options?.referenceImagePaths !== undefined
       ? options.referenceImagePaths

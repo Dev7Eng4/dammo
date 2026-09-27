@@ -54,6 +54,14 @@ export function createVideoProductionUiRoutes() {
     return c.json({ items: videoProductionUiService.listVideos(basePath) });
   });
 
+  app.get('/videos/:channelId/:videoId/video', (c) => {
+    const asset = videoProductionUiService.getOutputVideo(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+    );
+    return streamFileAsset(c.req.raw, asset);
+  });
+
   app.get('/videos/:channelId/:videoId/thumbnail', (c) => {
     const asset = videoProductionUiService.getThumbnail(
       c.req.param('channelId'),

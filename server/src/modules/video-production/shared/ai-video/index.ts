@@ -16,7 +16,7 @@ export {
 } from './ai-video-image-generator.js';
 export { generateAiSceneSlideImages } from './ai-video-scene-image-generator.js';
 export { assembleReupAiSlideshowVideo } from './ai-video-assembler.js';
-export { resolveAiRenderConfig, loadAiRenderConfig } from './ai-render-config.js';
+export { resolveAiRenderConfig, loadAiRenderConfig, resolveSavedKenBurns } from './ai-render-config.js';
 export {
   buildAiTimedSlides,
   buildAssumedFinalAiSlides,

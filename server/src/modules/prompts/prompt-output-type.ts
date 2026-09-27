@@ -5,7 +5,7 @@ export function resolvePromptOutputType(prompt: Pick<Prompt, 'outputType' | 'cat
     return prompt.outputType;
   }
 
-  if (prompt.category === 'image' || prompt.key === 'love_story') {
+  if (prompt.category === 'image') {
     return 'image';
   }
 

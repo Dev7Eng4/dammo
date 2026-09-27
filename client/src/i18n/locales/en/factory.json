@@ -12,9 +12,14 @@
     "closePanel": "Close panel",
     "tabs": {
       "metadata": "Metadata",
+      "video": "Video",
       "transcript": "Script",
       "scenes": "Scenes",
       "characters": "Characters"
+    },
+    "outputVideo": {
+      "missing": "No video yet",
+      "unsupported": "Your browser does not support video playback."
     },
     "toolbar": {
       "step1": "1. Select channel",
@@ -79,6 +84,22 @@
       "regenConfirmTitle": "Regenerate scenes?",
       "regenConfirmBody": "This will recreate all scene prompts and images for the selected video. The final video will not be reassembled.",
       "regenConfirmSending": "Queuing…"
+    },
+    "createVideo": {
+      "button": "Create video",
+      "creating": "Creating video…",
+      "confirmTitle": "Recreate the video?",
+      "confirmBody": "This will assemble the video again from the current scene images.",
+      "confirmSending": "Queuing…",
+      "errorTitle": "Cannot create the video",
+      "scenesLoading": "Scene list is still loading.",
+      "scenesLoadError": "Could not load the scene list.",
+      "noScenes": "This video has no scenes.",
+      "missingImages": "Missing images for scenes {{scenes}}.",
+      "queued": "Queued video assembly",
+      "success": "Video assembled",
+      "failed": "Video assembly failed",
+      "jobTitle": "Create video: {{title}}"
     },
     "transcript": {
       "loading": "Loading transcript...",
@@ -218,6 +239,8 @@
     },
     "kenBurns": "Ken Burns (pan/zoom)",
     "kenBurnsDesc": "Enable pan/zoom on each image in the slideshow.",
+    "kenBurnsOnPrepare": "Ken Burns while preparing",
+    "kenBurnsOnPrepareDesc": "Applies only while preparing. On: prebake a Ken Burns clip as each image is saved, when Ken Burns is also on. Off: prepare only saves images; creating the video still follows the Ken Burns option.",
     "transitions": "Transitions between images",
     "transitionsDesc": "Enable xfade transitions between images; off uses hard cuts.",
     "chrome": {

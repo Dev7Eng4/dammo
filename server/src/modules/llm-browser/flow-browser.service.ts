@@ -46,6 +46,7 @@ import type {
   LlmBrowserSession,
 } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
+import { emitDetailLog } from '../video-production/shared/video-log.js';
 import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { recordFlowProjectUsage, resolveFlowProjectId } from './flow-project.service.js';
@@ -175,7 +176,7 @@ export class FlowBrowserService {
         onMatch: async match => {
           const outputPath = path.join(outputDir, `${match.name}.jpg`);
           const asset = await downloadAndSaveFlowImage(page, match.imageUrl, outputPath);
-          console.log(`[flow-tool] saved image → ${outputPath}`);
+          emitDetailLog(`[flow-tool] saved image → ${outputPath}`);
           mediaAssets.push(asset);
           await options.onImageSaved?.({ name: match.name, outputPath });
         },
@@ -224,20 +225,20 @@ export class FlowBrowserService {
     const startedAt = Date.now();
     const handler = getFlowBrowserHandler();
 
-    console.log('[flow-browser] ensure Chrome session...');
+    emitDetailLog('[flow-browser] ensure Chrome session...');
     const page = await ensureFlowChromeSession(profileId);
-    console.log('[flow-browser] Chrome session ready');
+    emitDetailLog('[flow-browser] Chrome session ready');
 
-    console.log('[flow-browser] resolve projectId...');
+    emitDetailLog('[flow-browser] resolve projectId...');
     const projectId = await resolveFlowProjectId(profileId, page, {
       explicitProjectId: options?.projectId,
     });
-    console.log(`[flow-browser] projectId=${projectId}`);
+    emitDetailLog(`[flow-browser] projectId=${projectId}`);
 
     if (options?.projectId) {
-      console.log(`[flow-browser] open project page ${projectId}...`);
+      emitDetailLog(`[flow-browser] open project page ${projectId}...`);
       await handler.open(page, { projectId });
-      console.log('[flow-browser] project page open done');
+      emitDetailLog('[flow-browser] project page open done');
     }
 
     const timeoutMs = options?.timeoutMs ?? 300_000;
@@ -246,21 +247,21 @@ export class FlowBrowserService {
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
     try {
-      console.log('[flow-browser] sendPrompt...');
+      emitDetailLog('[flow-browser] sendPrompt...');
       await handler.sendPrompt(page, prompt, {
         pasteStrategy: options?.pasteStrategy ?? 'human',
         submitWith: 'enter',
         referenceImagePath: options?.referenceImagePath,
         referenceImagePaths: options?.referenceImagePaths,
       });
-      console.log('[flow-browser] sendPrompt done');
+      emitDetailLog('[flow-browser] sendPrompt done');
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
       // Start after sendPrompt so attach-reference CDN hits are not mistaken for generate.
-      console.log(`[flow-browser] start flow-content image wait (timeout=${timeoutMs}ms)...`);
+      emitDetailLog(`[flow-browser] start flow-content image wait (timeout=${timeoutMs}ms)...`);
       const batchResponsePromise = beginFlowContentImageWait(page, timeoutMs);
 
-      console.log('[flow-browser] receiveResponse...');
+      emitDetailLog('[flow-browser] receiveResponse...');
       const response = await handler.receiveResponse(page, {
         projectId,
         batchResponsePromise,
@@ -268,11 +269,11 @@ export class FlowBrowserService {
         debugScreenshotPath: options?.debugScreenshotPath,
         timeoutMs,
       });
-      console.log(`[flow-browser] receiveResponse done (elapsed=${Date.now() - startedAt}ms)`);
+      emitDetailLog(`[flow-browser] receiveResponse done (elapsed=${Date.now() - startedAt}ms)`);
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
       recordFlowProjectUsage(profileId, options?.projectId);
-      console.log(`[flow-browser] done in ${Date.now() - startedAt}ms`);
+      emitDetailLog(`[flow-browser] done in ${Date.now() - startedAt}ms`);
       return response;
     } catch (err) {
       console.error(
@@ -310,7 +311,7 @@ export class FlowBrowserService {
         }
       }
 
-      console.log('[flow-api] waiting for project page ready...');
+      emitDetailLog('[flow-api] waiting for project page ready...');
       await waitForFlowProjectReady(page);
 
       let accessToken = '';
@@ -345,7 +346,7 @@ export class FlowBrowserService {
       const referencePaths = resolveReferenceImagePaths(options);
 
       if (referencePaths.length > 0) {
-        console.log(`[flow-api] uploading ${referencePaths.length} reference image(s)...`);
+        emitDetailLog(`[flow-api] uploading ${referencePaths.length} reference image(s)...`);
         for (const imagePath of referencePaths) {
           try {
             const mediaId = await uploadReferenceImageViaApi(accessToken, imagePath, projectId);
@@ -357,7 +358,7 @@ export class FlowBrowserService {
               );
             }
             referenceMediaIds.push(mediaId);
-            console.log(`[flow-api] reference mediaId: ${mediaId} ← ${imagePath}`);
+            emitDetailLog(`[flow-api] reference mediaId: ${mediaId} ← ${imagePath}`);
           } catch (err) {
             if (err instanceof AppError) {
               throw err;
@@ -371,12 +372,12 @@ export class FlowBrowserService {
         }
       }
 
-      console.log(`[flow-api] delay ${FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS}ms after accessToken`);
+      emitDetailLog(`[flow-api] delay ${FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS}ms after accessToken`);
       await sleep(FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS);
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
-      console.log('[flow-api] calling batchGenerateImages (browser fetch + reCAPTCHA)...');
+      emitDetailLog('[flow-api] calling batchGenerateImages (browser fetch + reCAPTCHA)...');
       const apiResponse = await callBatchGenerateImagesOnPage(page, accessToken, {
         prompt,
         projectId,
@@ -386,7 +387,7 @@ export class FlowBrowserService {
         recaptchaTimeoutMs: timeoutMs,
       });
 
-      console.log(`[flow-api] status: ${apiResponse.status} ${apiResponse.statusText}`);
+      emitDetailLog(`[flow-api] status: ${apiResponse.status} ${apiResponse.statusText}`);
 
       let imageUrl: string;
       try {
@@ -399,7 +400,7 @@ export class FlowBrowserService {
         );
       }
 
-      console.log(`[flow-api] extracted image url: ${imageUrl.slice(0, 80)}...`);
+      emitDetailLog(`[flow-api] extracted image url: ${imageUrl.slice(0, 80)}...`);
 
       let mediaAsset;
       try {

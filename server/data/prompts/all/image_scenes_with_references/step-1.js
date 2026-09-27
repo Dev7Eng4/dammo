@@ -1,5 +1,4 @@
-export default (transcript, visualStyle, niche) => `
-# VAI TRÒ
+export default (transcript, visualStyle, niche) => `# VAI TRÒ
 Bạn là một Character Designer chuyên thiết kế nhân vật cho AI Image Generation.
 Nhiệm vụ của bạn là phân tích transcript, xác định các nhân vật xuất hiện và tạo ra một "Master Character Prompt" cho từng nhân vật để sử dụng xuyên suốt toàn bộ video.
 Mục tiêu là tạo ra những prompt có thể sinh ra ảnh nhân vật chất lượng cao, nhất quán và dùng làm ảnh tham chiếu (reference) cho tất cả các cảnh tiếp theo.

@@ -9,15 +9,18 @@ import {
   IMAGE_REFERENCES_DIRNAME,
   findOverlappingScenes,
   generateAiSceneSlideImages,
+  loadAiRenderConfig,
   resolveAiScenePromptsFilePath,
   resolveCharacterReferencesFilePath,
   sanitizeCharacterId,
   sceneDurationSec,
 } from '../video-production/shared/ai-video/index.js';
+import { isKenBurnsEnabled } from '../video-production/shared/slideshow/slideshow.constants.js';
 import type {
   AiVideoCharacterReferencesFile,
   AiVideoScenePromptsFile,
 } from '../video-production/shared/ai-video/ai-video.types.js';
+import { findFinalVideoMp4 } from '../video-production/shared/render-core/video-output-file.js';
 import { findThumbnailPath } from '../youtube-upload/upload-assets.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
@@ -373,11 +376,23 @@ export class VideoProductionUiService {
       throw new AppError('Scene has an empty prompt', 400, 'AI_SCENE_IMAGE_EMPTY_PROMPT');
     }
 
+    let audioSpeed: number | undefined;
+    let kenBurns = false;
+    try {
+      const renderConfig = await loadAiRenderConfig(workDir);
+      audioSpeed = renderConfig.audioSpeed;
+      kenBurns = isKenBurnsEnabled();
+    } catch {
+      kenBurns = false;
+    }
+
     const result = await generateAiSceneSlideImages({
       workDir,
       youtubeVideoId: safeVideoId,
       scenes: file.scenes,
       forceIndexes: [sceneIndex],
+      ...(audioSpeed != null ? { audioSpeed } : {}),
+      kenBurns,
     });
 
     const regenerated = result.scenes[sceneIndex];
@@ -514,6 +529,20 @@ export class VideoProductionUiService {
     return {
       filePath,
       contentType: imageContentType(filePath),
+      size: fs.statSync(filePath).size,
+    };
+  }
+
+  getOutputVideo(channelId: string, videoId: string): ProductionSceneImageAsset {
+    const workDir = resolveProductionVideoFolder(channelId, videoId);
+    const filePath = findFinalVideoMp4(workDir);
+    if (!filePath) {
+      throw new AppError('Output video not found', 404, 'OUTPUT_VIDEO_NOT_FOUND');
+    }
+
+    return {
+      filePath,
+      contentType: 'video/mp4',
       size: fs.statSync(filePath).size,
     };
   }

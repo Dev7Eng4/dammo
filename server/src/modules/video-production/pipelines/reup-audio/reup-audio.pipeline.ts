@@ -781,7 +781,7 @@ export class ReupAudioPipeline {
   }
 
   /**
-   * Assemble final mp4 only for existing Prepared videos.
+   * Assemble final mp4 only for existing Prepared or Created videos.
    * Skips download, transcript, metadata, and thumbnail.
    */
   async assemblePreparedVideos(
@@ -819,9 +819,13 @@ export class ReupAudioPipeline {
       try {
         const prepareItem = videoPrepareRepository
           .read(destination.id)
-          .find(item => item.videoId.trim() === videoId && item.status === 'Prepared');
+          .find(
+            item =>
+              item.videoId.trim() === videoId &&
+              (item.status === 'Prepared' || item.status === 'Created'),
+          );
         if (!prepareItem) {
-          throw new AppError('Video is not in Prepared status', 409, 'VIDEO_NOT_PREPARED');
+          throw new AppError('Video is not in Prepared or Created status', 409, 'VIDEO_NOT_PREPARED');
         }
 
         const workDir = resolveYoutubeChannelVideoDir(destination.id, videoId);

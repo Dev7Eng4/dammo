@@ -10,14 +10,19 @@ const DEFAULT_MAX_CONCURRENCY = 4;
 export class AiClipPrebakePool {
   private readonly workDir: string;
   private readonly maxConcurrency: number;
+  private readonly enableKenBurns: boolean;
   private readonly onLog?: (msg: string) => void;
   private readonly queue: SlideSpec[] = [];
   private active = 0;
   private readonly tasks = new Set<Promise<void>>();
 
-  constructor(workDir: string, options?: { maxConcurrency?: number; onLog?: (msg: string) => void }) {
+  constructor(
+    workDir: string,
+    options?: { maxConcurrency?: number; onLog?: (msg: string) => void; enableKenBurns?: boolean },
+  ) {
     this.workDir = workDir;
     this.maxConcurrency = options?.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY;
+    this.enableKenBurns = options?.enableKenBurns ?? true;
     this.onLog = options?.onLog;
   }
 
@@ -48,7 +53,7 @@ export class AiClipPrebakePool {
   private async renderOne(slide: SlideSpec): Promise<void> {
     try {
       const opts = resolveAiSlideRenderOptions(this.workDir, this.onLog);
-      await renderSlideClip(slide, opts);
+      await renderSlideClip(slide, { ...opts, enableKenBurns: this.enableKenBurns });
       emitDetailLog(
         `[ai-video] Prebaked Ken Burns clip → ${path.basename(slide.imagePath)} (${slide.durationSec.toFixed(1)}s)`,
         this.onLog,

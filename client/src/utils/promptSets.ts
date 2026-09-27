@@ -140,6 +140,6 @@ export function resolveDraftOutputType(item: {
   if (item.outputType === 'text' || item.outputType === 'image' || item.outputType === 'video') {
     return item.outputType;
   }
-  if (item.category === 'image' || item.key === 'love_story') return 'image';
+  if (item.category === 'image') return 'image';
   return 'text';
 }

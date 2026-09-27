@@ -2,8 +2,6 @@ import type { AiSceneDensityMaxSec, AiVideoDensityLevel } from './ai-video.const
 import type { MetaConcurrencyMode } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import type { CaptionStyleKey } from '../render-core/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
-import type { SlideSpec } from '../slideshow/slideshow.types.js';
-
 export type { MetaConcurrencyMode };
 
 /** @deprecated Use MetaConcurrencyMode — alias kept for existing ai-video callers. */
@@ -120,11 +118,11 @@ export interface GenerateAiSceneSlideImagesInput {
    * Existing files for these indexes are deleted before generation.
    */
   forceIndexes?: number[];
-  /** Persisted audio speed from ai-render-config.json. Required when Ken Burns is enabled. */
+  /** Persisted audio speed from ai-render-config.json. */
   audioSpeed?: number;
   audioPath?: string;
-  /** Precomputed final SlideSpec per scene name (scene-001, …) for incremental Ken Burns prebake. */
-  assumedFinalSlidesByName?: ReadonlyMap<string, SlideSpec>;
+  /** Saved Ken Burns flag from ai-render-config.json. Prebake runs only when this is true. */
+  kenBurns?: boolean;
   /** Meta only. Default `batch`. */
   metaConcurrency?: MetaImageConcurrencyMode;
   onLog?: (msg: string) => void;

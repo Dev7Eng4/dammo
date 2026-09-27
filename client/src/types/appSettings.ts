@@ -8,6 +8,8 @@ export type AiScenePromptChromeProfileRole = 'main' | 'sub';
 
 export interface AppSettings {
   enableKenBurns: boolean;
+  /** When true, prepare prebakes Ken Burns clips if enableKenBurns is also on. */
+  kenBurnsOnPrepare: boolean;
   enableImageTransitions: boolean;
   chromeBackgroundUseOffscreen: boolean;
   aiSceneDensityMaxSec: AiSceneDensityMaxSecSettings;

@@ -13,6 +13,7 @@ import { closeChromeProfile } from '../chrome-profiles/chrome-profile.runner.js'
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../chrome-profiles/chrome-profiles.types.js';
 import { flowBrowserService } from './flow-browser.service.js';
+import { emitDetailLog } from '../video-production/shared/video-log.js';
 
 export interface FlowProfileFailoverOptions {
   startProfileId?: string;
@@ -111,7 +112,7 @@ export async function generateImagesViaToolWithFailover(
 
     failoverOpts?.openedProfileIds?.add(profile.id);
 
-    console.log(
+    emitDetailLog(
       `[flow-quota] using profile ${profile.name} (${profile.id}), ${pending.length} image(s) remaining`,
     );
 
@@ -161,7 +162,7 @@ export async function generateImagesViaToolWithFailover(
       const from = profile;
       profile = nextProfiles[0];
       const remaining = (await resolvePendingVisuals(visuals, outputDir)).length;
-      console.log(
+      emitDetailLog(
         `[flow-quota] switching to profile ${profile.name}, ${remaining} image(s) remaining`,
       );
       failoverOpts?.onProfileSwitch?.(from, profile, remaining);
@@ -185,7 +186,7 @@ export async function generateImageWithFailover(
   while (true) {
     failoverOpts?.openedProfileIds?.add(profile.id);
 
-    console.log(`[flow-quota] using profile ${profile.name} (${profile.id}) for single image`);
+    emitDetailLog(`[flow-quota] using profile ${profile.name} (${profile.id}) for single image`);
 
     try {
       const response = await flowBrowserService.generateImage(profile.id, prompt, options);
@@ -226,7 +227,7 @@ export async function generateImageWithFailover(
 
       const from = profile;
       profile = nextProfiles[0];
-      console.log(`[flow-quota] switching to profile ${profile.name}, 1 image remaining`);
+      emitDetailLog(`[flow-quota] switching to profile ${profile.name}, 1 image remaining`);
       failoverOpts?.onProfileSwitch?.(from, profile, 1);
     }
   }

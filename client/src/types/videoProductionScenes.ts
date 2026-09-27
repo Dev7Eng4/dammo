@@ -71,7 +71,7 @@ export interface ProductionMetadataResponse {
   thumbnailUrl: string | null;
 }
 
-export type ProductionDetailTab = 'metadata' | 'transcript' | 'scenes' | 'characters';
+export type ProductionDetailTab = 'metadata' | 'video' | 'transcript' | 'scenes' | 'characters';
 
 export function productionVideoKey(video: Pick<ProductionVideoListItem, 'channelId' | 'videoId'>): string {
   return `${video.channelId}:${video.videoId}`;

@@ -9,6 +9,7 @@ import type { AppSettings, AiScenePromptChromeProfileRole, SettingsTab } from '.
 
 const EMPTY_SETTINGS: AppSettings = {
   enableKenBurns: true,
+  kenBurnsOnPrepare: false,
   enableImageTransitions: true,
   chromeBackgroundUseOffscreen: true,
   aiSceneDensityMaxSec: { high: 8, medium: 30, low: 60 },
@@ -97,6 +98,7 @@ export function SettingsPage() {
     try {
       const { item } = await updateAppSettings({
         enableKenBurns: settings.enableKenBurns,
+        kenBurnsOnPrepare: settings.kenBurnsOnPrepare,
         enableImageTransitions: settings.enableImageTransitions,
         chromeBackgroundUseOffscreen: settings.chromeBackgroundUseOffscreen,
         aiSceneDensityMaxSec: {
@@ -168,6 +170,16 @@ export function SettingsPage() {
                 description={t('settings.kenBurnsDesc')}
                 checked={settings.enableKenBurns}
                 onChange={(enableKenBurns) => setSettings((prev) => ({ ...prev, enableKenBurns }))}
+                disabled={saving}
+              />
+              <SettingSwitch
+                id="ken-burns-on-prepare"
+                label={t('settings.kenBurnsOnPrepare')}
+                description={t('settings.kenBurnsOnPrepareDesc')}
+                checked={settings.kenBurnsOnPrepare}
+                onChange={(kenBurnsOnPrepare) =>
+                  setSettings((prev) => ({ ...prev, kenBurnsOnPrepare }))
+                }
                 disabled={saving}
               />
               <SettingSwitch

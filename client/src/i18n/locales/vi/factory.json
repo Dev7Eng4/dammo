@@ -12,9 +12,14 @@
     "closePanel": "Đóng panel",
     "tabs": {
       "metadata": "Metadata",
+      "video": "Video",
       "transcript": "Kịch bản",
       "scenes": "Scene",
       "characters": "Characters"
+    },
+    "outputVideo": {
+      "missing": "Chưa có video",
+      "unsupported": "Trình duyệt không hỗ trợ phát video."
     },
     "toolbar": {
       "step1": "1. Chọn kênh",
@@ -79,6 +84,22 @@
       "regenConfirmTitle": "Tạo lại scenes?",
       "regenConfirmBody": "Sẽ tạo lại toàn bộ scene prompts và images cho video đang chọn. Video cuối sẽ không được ghép lại.",
       "regenConfirmSending": "Đang xếp hàng…"
+    },
+    "createVideo": {
+      "button": "Tạo video",
+      "creating": "Đang tạo video…",
+      "confirmTitle": "Tạo lại video?",
+      "confirmBody": "Sẽ ghép lại file video từ ảnh scene hiện có.",
+      "confirmSending": "Đang xếp hàng…",
+      "errorTitle": "Không tạo được video",
+      "scenesLoading": "Chưa tải xong danh sách scene.",
+      "scenesLoadError": "Không tải được danh sách scene.",
+      "noScenes": "Chưa có scene.",
+      "missingImages": "Thiếu ảnh scene {{scenes}}.",
+      "queued": "Đã thêm vào hàng đợi tạo video",
+      "success": "Đã ghép lại video",
+      "failed": "Tạo video thất bại",
+      "jobTitle": "Tạo video: {{title}}"
     },
     "transcript": {
       "loading": "Đang tải kịch bản...",
@@ -218,6 +239,8 @@
     },
     "kenBurns": "Ken Burns (pan/zoom)",
     "kenBurnsDesc": "Bật hiệu ứng pan/zoom trên từng ảnh trong slideshow.",
+    "kenBurnsOnPrepare": "Ken Burns khi chuẩn bị video",
+    "kenBurnsOnPrepareDesc": "Chỉ áp dụng lúc chuẩn bị. Bật thì tạo clip Ken Burns ngay khi có ảnh, nếu Ken Burns đang bật. Tắt thì chuẩn bị chỉ lưu ảnh; lúc tạo video vẫn theo option Ken Burns.",
     "transitions": "Chuyển cảnh giữa ảnh",
     "transitionsDesc": "Bật transition (xfade) giữa các ảnh; tắt thì cắt cứng.",
     "chrome": {

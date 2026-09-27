@@ -39,6 +39,8 @@ export interface BuildXfadeChainParams {
   durations: number[];
   /** Transitions between consecutive clips (length === clipCount - 1). */
   transitions: ChainTransition[];
+  /** Filter labels for each clip. Defaults to `0:v`, `1:v`, … */
+  inputLabels?: string[];
 }
 
 export interface XfadeChainResult {
@@ -51,7 +53,11 @@ export interface XfadeChainResult {
 }
 
 /** Joins clips without overlap or visual transition. */
-export function buildHardCutChain(clipCount: number, durations: number[]): XfadeChainResult {
+export function buildHardCutChain(
+  clipCount: number,
+  durations: number[],
+  inputLabels?: string[],
+): XfadeChainResult {
   if (clipCount <= 0) {
     throw new Error('buildHardCutChain requires at least one clip');
   }
@@ -59,12 +65,13 @@ export function buildHardCutChain(clipCount: number, durations: number[]): Xfade
     throw new Error('durations length must equal clipCount');
   }
 
+  const labels = resolveInputLabels(clipCount, inputLabels);
   const totalDuration = sumRange(durations, 0, clipCount - 1);
   if (clipCount === 1) {
-    return { filter: '', outLabel: '0:v', totalDuration };
+    return { filter: '', outLabel: labels[0]!, totalDuration };
   }
 
-  const inputs = Array.from({ length: clipCount }, (_, index) => `[${index}:v]`).join('');
+  const inputs = labels.map(label => `[${label}]`).join('');
   return {
     filter: `${inputs}concat=n=${clipCount}:v=1:a=0[concatout]`,
     outLabel: 'concatout',
@@ -94,12 +101,14 @@ export function buildXfadeChain(params: BuildXfadeChainParams): XfadeChainResult
     throw new Error('transitions length must equal clipCount - 1');
   }
 
+  const labels = resolveInputLabels(clipCount, params.inputLabels);
+
   if (clipCount === 1) {
-    return { filter: '', outLabel: '0:v', totalDuration: durations[0] };
+    return { filter: '', outLabel: labels[0]!, totalDuration: durations[0] };
   }
 
   const parts: string[] = [];
-  let prevLabel = '0:v';
+  let prevLabel = labels[0]!;
 
   for (let i = 0; i < transitions.length; i++) {
     // Clamp transition so it never exceeds either neighbouring clip.
@@ -111,7 +120,7 @@ export function buildXfadeChain(params: BuildXfadeChainParams): XfadeChainResult
     const outLabel = i === transitions.length - 1 ? 'xfout' : `xf${i}`;
 
     parts.push(
-      `[${prevLabel}][${i + 1}:v]xfade=transition=${transitions[i].type}:` +
+      `[${prevLabel}][${labels[i + 1]!}]xfade=transition=${transitions[i].type}:` +
         `duration=${transDur.toFixed(4)}:offset=${offsetSec.toFixed(4)}[${outLabel}]`,
     );
     prevLabel = outLabel;
@@ -120,6 +129,16 @@ export function buildXfadeChain(params: BuildXfadeChainParams): XfadeChainResult
   const totalDuration = sumRange(durations, 0, clipCount - 1) - sumAllTransitions(transitions, durations);
 
   return { filter: parts.join(';'), outLabel: prevLabel, totalDuration };
+}
+
+function resolveInputLabels(clipCount: number, inputLabels: string[] | undefined): string[] {
+  if (!inputLabels) {
+    return Array.from({ length: clipCount }, (_, index) => `${index}:v`);
+  }
+  if (inputLabels.length !== clipCount) {
+    throw new Error('inputLabels length must equal clipCount');
+  }
+  return inputLabels;
 }
 
 /** Sum of durations[from..to] inclusive. */

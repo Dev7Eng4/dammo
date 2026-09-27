@@ -110,6 +110,77 @@ export function padAiSlidesToAudio(
   return padded;
 }
 
+/**
+ * Give time from scenes that have no image to a neighbor, without changing
+ * that neighbor's Ken Burns duration. A leading gap freezes the next image's
+ * first frame. Every other gap freezes the previous image's last frame.
+ * `scaledScenes` must already be scaled by audio speed.
+ */
+export function assignHoldsForMissingScenes(
+  scaledScenes: AiVideoScenePrompt[],
+  slides: SlideSpec[],
+): SlideSpec[] {
+  const next = slides.map(slide => ({ ...slide }));
+  const imageIndexes: number[] = [];
+  scaledScenes.forEach((scene, index) => {
+    if (scene.path?.trim()) imageIndexes.push(index);
+  });
+  if (imageIndexes.length === 0 || imageIndexes.length !== next.length) {
+    return next;
+  }
+
+  const durationOf = (index: number): number => sceneDurationSec(scaledScenes[index]!);
+
+  const firstImage = imageIndexes[0]!;
+  if (firstImage > 0) {
+    let hold = 0;
+    for (let index = 0; index < firstImage; index += 1) hold += durationOf(index);
+    next[0] = { ...next[0]!, holdBeforeSec: (next[0]!.holdBeforeSec ?? 0) + hold };
+  }
+
+  for (let slideIndex = 0; slideIndex < imageIndexes.length; slideIndex += 1) {
+    const sceneIndex = imageIndexes[slideIndex]!;
+    const followingImage = imageIndexes[slideIndex + 1];
+    const gapEnd = followingImage ?? scaledScenes.length;
+    let hold = 0;
+    for (let index = sceneIndex + 1; index < gapEnd; index += 1) hold += durationOf(index);
+    if (hold > 0) {
+      const slide = next[slideIndex]!;
+      next[slideIndex] = { ...slide, holdAfterSec: (slide.holdAfterSec ?? 0) + hold };
+    }
+  }
+
+  return next;
+}
+
+/** Extend the last slide with a still hold so the slideshow covers the audio. */
+export function addAudioDeficitHold(
+  slides: SlideSpec[],
+  audioDurationSec: number,
+  log?: (msg: string) => void,
+): SlideSpec[] {
+  if (slides.length === 0) return slides;
+
+  const transitionSum = slides
+    .slice(0, -1)
+    .reduce((sum, slide) => sum + (slide.transitionDurationSec ?? 0), 0);
+  const visible = slides.reduce(
+    (sum, slide) => sum + slide.durationSec + (slide.holdBeforeSec ?? 0) + (slide.holdAfterSec ?? 0),
+    0,
+  );
+  const deficit = audioDurationSec - (visible - transitionSum);
+  if (deficit <= 0.05) return slides;
+
+  const padded = slides.map(slide => ({ ...slide }));
+  const last = padded[padded.length - 1]!;
+  last.holdAfterSec = (last.holdAfterSec ?? 0) + deficit;
+  log?.(
+    `[ai-video] Holding the last slide an extra ${deficit.toFixed(1)}s ` +
+      `so the slideshow matches audio ${audioDurationSec.toFixed(1)}s`,
+  );
+  return padded;
+}
+
 export function buildProvisionalAiSlideSpec(
   workDir: string,
   scene: AiVideoScenePrompt,

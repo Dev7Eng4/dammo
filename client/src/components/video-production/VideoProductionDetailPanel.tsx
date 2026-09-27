@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clapperboard } from 'lucide-react';
+import { productionOutputVideoUrl } from '../../api/videoProduction';
 import { PageTabs } from '../ui';
 import type {
   ProductionCharactersResponse,
@@ -14,6 +15,48 @@ import { CharactersPanel } from './CharactersPanel';
 import { MetadataPanel } from './MetadataPanel';
 import { SceneTable } from './SceneTable';
 import { TranscriptPanel } from './TranscriptPanel';
+
+function OutputVideoPanel({
+  channelId,
+  videoId,
+  playbackVersion,
+}: {
+  channelId: string;
+  videoId: string;
+  playbackVersion: number;
+}) {
+  const { t } = useTranslation('factory');
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [channelId, videoId, playbackVersion]);
+
+  if (failed) {
+    return (
+      <div className="px-4 py-6">
+        <div className="flex aspect-video items-center justify-center rounded-xl border border-border bg-black px-4 text-center text-sm text-muted-foreground">
+          {t('production.outputVideo.missing')}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-6">
+      <video
+        key={`${channelId}:${videoId}:${playbackVersion}`}
+        src={`${productionOutputVideoUrl(channelId, videoId)}?v=${playbackVersion}`}
+        controls
+        preload="metadata"
+        className="aspect-video w-full rounded-xl border border-border bg-black object-contain"
+        onError={() => setFailed(true)}
+      >
+        {t('production.outputVideo.unsupported')}
+      </video>
+    </div>
+  );
+}
 
 interface VideoProductionDetailPanelProps {
   video: ProductionVideoListItem | null;
@@ -30,6 +73,9 @@ interface VideoProductionDetailPanelProps {
   metadataLoading: boolean;
   metadataError: string | null;
   selectedSceneIndex: number | null;
+  activeTab: ProductionDetailTab;
+  onActiveTabChange: (tab: ProductionDetailTab) => void;
+  playbackVersion: number;
   onSelectScene: (index: number) => void;
   onScenesUpdated: (data: ProductionScenesResponse) => void;
   onMetadataSaved: (metadata: ProductionMetadataResponse) => void;
@@ -51,17 +97,15 @@ export function VideoProductionDetailPanel({
   metadataLoading,
   metadataError,
   selectedSceneIndex,
+  activeTab,
+  onActiveTabChange,
+  playbackVersion,
   onSelectScene,
   onScenesUpdated,
   onMetadataSaved,
   onMetadataSaveStateChange,
 }: VideoProductionDetailPanelProps) {
   const { t } = useTranslation('factory');
-  const [activeTab, setActiveTab] = useState<ProductionDetailTab>('metadata');
-
-  useEffect(() => {
-    setActiveTab('metadata');
-  }, [video?.channelId, video?.videoId]);
 
   const handleSaveStateChange = useCallback(
     (state: { canSave: boolean; saving: boolean }) => {
@@ -97,8 +141,9 @@ export function VideoProductionDetailPanel({
         <PageTabs
           variant="underline"
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as ProductionDetailTab)}
+          onValueChange={(value) => onActiveTabChange(value as ProductionDetailTab)}
           items={[
+            { id: 'video', label: t('production.tabs.video') },
             { id: 'metadata', label: t('production.tabs.metadata') },
             { id: 'transcript', label: t('production.tabs.transcript') },
             { id: 'scenes', label: t('production.tabs.scenes') },
@@ -119,6 +164,14 @@ export function VideoProductionDetailPanel({
             onSaveStateChange={handleSaveStateChange}
           />
         </div>
+
+        {activeTab === 'video' ? (
+          <OutputVideoPanel
+            channelId={video.channelId}
+            videoId={video.videoId}
+            playbackVersion={playbackVersion}
+          />
+        ) : null}
 
         {activeTab === 'transcript' ? (
           <TranscriptPanel cues={cues} loading={transcriptLoading} error={transcriptError} />

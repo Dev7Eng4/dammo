@@ -1,5 +1,4 @@
-export default fullTranscript => `
-Bạn là Chuyên gia Phân tích Kịch bản & Story Editor cho các kênh YouTube "Đời sống người cao tuổi Nhật Bản" (Drama gia đình, Tài chính xế chiều, Sức khỏe, Tận hưởng cô đơn).
+export default (fullTranscript) => `Bạn là Chuyên gia Phân tích Kịch bản & Story Editor cho các kênh YouTube "Đời sống người cao tuổi Nhật Bản" (Drama gia đình, Tài chính xế chiều, Sức khỏe, Tận hưởng cô đơn).
  
 Nhiệm vụ: Đọc transcript, TỰ ĐỘNG nhận diện ngách, bóc tách "Story DNA" hoặc "Tips/Life DNA" và thiết lập Visual DNA cố định.
  

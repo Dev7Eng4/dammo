@@ -27,7 +27,7 @@ import {
   buildXfadeChain,
   type ChainTransition,
 } from './slideshow-transitions.js';
-import type { SlideshowOutputConfig, SlideshowSpec } from './slideshow.types.js';
+import type { SlideSpec, SlideshowOutputConfig, SlideshowSpec } from './slideshow.types.js';
 
 export interface PreparedSlideshow {
   clipPaths: string[];
@@ -39,6 +39,37 @@ export interface PreparedSlideshow {
 }
 
 export type SlideshowPreparationSpec = Omit<SlideshowSpec, 'outputPath'> & { outputPath?: string };
+
+export function slideVisibleDuration(slide: SlideSpec): number {
+  return slide.durationSec + (slide.holdBeforeSec ?? 0) + (slide.holdAfterSec ?? 0);
+}
+
+function buildClipHoldPads(slides: SlideSpec[]): { filter: string; labels: string[] } {
+  const labels: string[] = [];
+  const parts: string[] = [];
+
+  slides.forEach((slide, index) => {
+    const before = slide.holdBeforeSec ?? 0;
+    const after = slide.holdAfterSec ?? 0;
+    if (before <= 0 && after <= 0) {
+      labels.push(`${index}:v`);
+      return;
+    }
+
+    const label = `hold${index}`;
+    const options: string[] = [];
+    if (before > 0) {
+      options.push(`start_mode=clone:start_duration=${before.toFixed(4)}`);
+    }
+    if (after > 0) {
+      options.push(`stop_mode=clone:stop_duration=${after.toFixed(4)}`);
+    }
+    parts.push(`[${index}:v]tpad=${options.join(':')}[${label}]`);
+    labels.push(label);
+  });
+
+  return { filter: parts.join(';'), labels };
+}
 
 export function resolveSlideshowOutputConfig(output?: Partial<SlideshowOutputConfig>): SlideshowOutputConfig {
   return {
@@ -69,11 +100,15 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
   const cacheDir = path.join(workDir, SS_CACHE_DIRNAME);
   await fs.mkdir(cacheDir, { recursive: true });
 
+  const clipPads = buildClipHoldPads(slides);
+  const visibleDurations = slides.map(slideVisibleDuration);
+
   const concurrency = resolveSlideshowClipConcurrency();
   const encoder = resolveFfmpegHwEncoder();
+  const kenBurnsOn = spec.enableKenBurns ?? isKenBurnsEnabled();
   log(
     `[slideshow] rendering ${slides.length} slide clip(s) @ ${cfg.width}x${cfg.height} ${cfg.fps}fps ` +
-      `(kenBurns=${isKenBurnsEnabled() ? 'on' : 'off'}, ` +
+      `(kenBurns=${kenBurnsOn ? 'on' : 'off'}, ` +
       `transitions=${isImageTransitionsEnabled() ? 'on' : 'off'}, ` +
       `concurrency=${concurrency}, encoder=${encoder})`,
   );
@@ -87,6 +122,7 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
       tempScaleFactor: cfg.tempScaleFactor,
       cacheDir,
       ...(cfg.kenBurnsAdapt ? { kenBurnsAdapt: cfg.kenBurnsAdapt } : {}),
+      ...(spec.enableKenBurns != null ? { enableKenBurns: spec.enableKenBurns } : {}),
       onLog: msg => spec.onLog?.(`[slideshow] [${index + 1}/${slides.length}] ${msg}`),
     }),
   );
@@ -95,18 +131,23 @@ export async function prepareSlideshow(spec: SlideshowPreparationSpec): Promise<
       `wall=${((performance.now() - clipsStartedAt) / 1000).toFixed(1)}s | concurrency=${concurrency}`,
   );
 
-  const durations = slides.map(s => s.durationSec);
   const transitions: ChainTransition[] = slides.slice(0, -1).map(s => ({
     type: s.transitionToNext ?? 'fade',
     durationSec: s.transitionDurationSec ?? SS_DEFAULT_TRANSITION_DURATION,
   }));
   const chain = isImageTransitionsEnabled()
-    ? buildXfadeChain({ clipCount: clipPaths.length, durations, transitions })
-    : buildHardCutChain(clipPaths.length, durations);
+    ? buildXfadeChain({
+        clipCount: clipPaths.length,
+        durations: visibleDurations,
+        transitions,
+        inputLabels: clipPads.labels,
+      })
+    : buildHardCutChain(clipPaths.length, visibleDurations, clipPads.labels);
+  const filter = [clipPads.filter, chain.filter].filter(part => part.length > 0).join(';');
 
   return {
     clipPaths,
-    filter: chain.filter,
+    filter,
     outLabel: chain.outLabel,
     totalDuration: chain.totalDuration,
     config: cfg,

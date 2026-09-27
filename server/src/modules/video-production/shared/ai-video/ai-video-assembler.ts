@@ -8,7 +8,7 @@ import {
 } from '../../../../infrastructure/ffmpeg/ffmpeg-encoder.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { prepareSlideshow } from '../slideshow/slideshow-assembler.js';
-import { SS_MAX_KEN_BURNS_ANIMATION_SEC } from '../slideshow/slideshow.constants.js';
+import { isKenBurnsEnabled, SS_MAX_KEN_BURNS_ANIMATION_SEC } from '../slideshow/slideshow.constants.js';
 import { pruneSlideshowCache } from '../slideshow/slideshow-cache.js';
 import {
   getCaptionStylePreset,
@@ -50,8 +50,9 @@ import {
 import { ensurePrebakedAiSmallVideo } from './ai-small-video-prepare.js';
 import { loadAiRenderConfig } from './ai-render-config.js';
 import {
+  addAudioDeficitHold,
+  assignHoldsForMissingScenes,
   buildAiTimedSlides,
-  padAiSlidesToAudio,
 } from './ai-video-slide-spec.js';
 import {
   scaleSceneTimestamps,
@@ -60,11 +61,16 @@ import {
 import { emitDetailLog } from '../video-log.js';
 import type { AssembleReupAiSlideshowVideoInput } from './ai-video.types.js';
 
-async function resolveAudioSpeedForAssemble(workDir: string): Promise<number> {
+async function resolveAssembleRender(workDir: string): Promise<{ audioSpeed: number; kenBurns: boolean }> {
+  const kenBurns = isKenBurnsEnabled();
   try {
-    return (await loadAiRenderConfig(workDir)).audioSpeed;
+    const config = await loadAiRenderConfig(workDir);
+    return {
+      audioSpeed: config.audioSpeed,
+      kenBurns,
+    };
   } catch {
-    return resolveRandomAudioSpeed();
+    return { audioSpeed: resolveRandomAudioSpeed(), kenBurns };
   }
 }
 
@@ -95,12 +101,14 @@ export async function assembleReupAiSlideshowVideo(
   }
 
   const assets = resolveCaptionFont(captionStyleKey);
-  const speed = await resolveAudioSpeedForAssemble(workDir);
+  const { audioSpeed: speed, kenBurns } = await resolveAssembleRender(workDir);
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
-  const scaledScenes = scaleSceneTimestamps(usableScenes, speed);
+  const scaledScenes = scaleSceneTimestamps(scenes, speed);
 
   let slides = buildAiTimedSlides(workDir, scaledScenes);
+  slides = assignHoldsForMissingScenes(scaledScenes, slides);
+  slides = addAudioDeficitHold(slides, audioDurationAfterTempo, log);
   const imagePaths = slides.map(slide => slide.imagePath);
 
   for (const requiredPath of [audioPath, subtitlePath, ...imagePaths, ...(channelAvatarPath ? [channelAvatarPath] : [])]) {
@@ -123,10 +131,9 @@ export async function assembleReupAiSlideshowVideo(
     activeSubtitlePath = scaledSrtPath;
   }
 
-  slides = padAiSlidesToAudio(slides, audioDurationAfterTempo, log);
-
   log(
-    `[ai-video] ${slides.length} timed slides (Ken Burns max ${SS_MAX_KEN_BURNS_ANIMATION_SEC}s then hold, no shuffle) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
+    `[ai-video] ${slides.length} timed slides (Ken Burns max ${SS_MAX_KEN_BURNS_ANIMATION_SEC}s then hold, ` +
+      `kenBurns=${kenBurns ? 'on' : 'off'}) spanning ~${audioDurationAfterTempo.toFixed(1)}s`,
   );
 
   if (channelAvatarPath) {
@@ -165,6 +172,7 @@ export async function assembleReupAiSlideshowVideo(
   const preparedSlideshow = await prepareSlideshow({
     slides,
     workDir,
+    enableKenBurns: kenBurns,
     onLog,
     output: {
       width: CANVAS_W,

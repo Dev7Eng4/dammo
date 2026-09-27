@@ -12,6 +12,7 @@ interface CliOptions {
   workDir: string;
   referenceImagePaths: string[];
   language: ChannelLanguage;
+  promptKey: string;
   profileId?: string;
 }
 
@@ -22,6 +23,7 @@ function parseArgs(argv: string[]): CliOptions {
     workDir: defaultWorkDir,
     referenceImagePaths: [path.join(defaultWorkDir, OLD_THUMBNAIL_FILE)],
     language: DEFAULT_LANGUAGE,
+    promptKey: '',
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -48,6 +50,14 @@ function parseArgs(argv: string[]): CliOptions {
       const value = argv[index + 1]?.trim() ?? '';
       if (!value) throw new Error('--language requires a value');
       options.language = value as ChannelLanguage;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--prompt-key') {
+      const value = argv[index + 1]?.trim() ?? '';
+      if (!value) throw new Error('--prompt-key requires a value');
+      options.promptKey = value;
       index += 1;
       continue;
     }
@@ -93,9 +103,14 @@ async function main() {
   if (options.profileId) {
     console.log(`Flow profile id: ${options.profileId}`);
   }
-  console.log('\nGenerating thumbnail via Flow (recreate)...\n');
+  if (!options.promptKey) {
+    throw new Error('--prompt-key is required');
+  }
+
+  console.log(`\nGenerating thumbnail via Flow (${options.promptKey})...\n`);
 
   const result = await runDefaultFlowThumbnail(options.workDir, options.language, {
+    promptKey: options.promptKey,
     referenceImagePaths: options.referenceImagePaths,
     profileId: options.profileId,
     onProgress: progress => {

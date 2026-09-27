@@ -3,9 +3,7 @@ import path from 'node:path';
 import { ensureDataDirs, resolveYoutubeChannelVideoDir } from '../config/paths.js';
 import {
   attachSceneImagePaths,
-  redistributeMissingSceneTimes,
   resolveAiScenePromptsFilePath,
-  scenesWithImagePaths,
 } from '../modules/video-production/shared/ai-video/index.js';
 import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../modules/video-production/shared/ai-video/ai-video.types.js';
 import { OUTPUT_VIDEO_BASENAME } from '../modules/video-production/shared/render-core/output-artifacts.constants.js';
@@ -66,8 +64,7 @@ async function loadAiScenes(workDir: string): Promise<AiVideoScenePrompt[]> {
   if (!Array.isArray(parsed.scenes) || parsed.scenes.length === 0) {
     throw new Error('ai-scene-prompts.json không có scene nào');
   }
-  const withPaths = await attachSceneImagePaths(parsed.scenes, workDir);
-  return scenesWithImagePaths(redistributeMissingSceneTimes(withPaths));
+  return attachSceneImagePaths(parsed.scenes, workDir);
 }
 
 async function main() {

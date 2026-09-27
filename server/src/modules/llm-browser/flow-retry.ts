@@ -7,6 +7,7 @@ import {
 import { isFlowDailyQuotaError, isFlowPolicyViolationError } from '../../infrastructure/llm-browser/flow-api-errors.js';
 import type { FlowGenerateImageOptions, LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
 import { AppError } from '../../shared/http/errors.js';
+import { emitDetailLog } from '../video-production/shared/video-log.js';
 import { generateImageWithFailover } from './flow-profile-failover.js';
 
 export { FLOW_MAX_RETRIES };
@@ -127,7 +128,7 @@ export async function runWithFlowRetries(options: RunWithFlowRetriesOptions): Pr
 
     if (attempt < FLOW_MAX_RETRIES && !hitDailyQuota) {
       const delayMs = getFlowRetryDelayMs(attempt, lastError);
-      console.log(`${logPrefix} waiting ${delayMs}ms before retry...`);
+      emitDetailLog(`${logPrefix} waiting ${delayMs}ms before retry...`);
       await sleep(delayMs);
     }
   }

@@ -16,6 +16,10 @@ import { PRODUCTION_METADATA_FORM_ID } from '../components/video-production/Meta
 import {
   VideoProductionToolbar,
 } from '../components/video-production/VideoProductionToolbar';
+import {
+  CreateVideoConfirmModal,
+  CreateVideoErrorModal,
+} from '../components/video-production/CreateVideoModals';
 import { RegenerateScenesConfirmModal } from '../components/video-production/RegenerateScenesConfirmModal';
 import { RegenerateMetadataConfirmModal } from '../components/youtube-channels/RegenerateMetadataConfirmModal';
 import { Button, useToast } from '../components/ui';
@@ -27,6 +31,7 @@ import {
   type ProductionMetadataResponse,
   type ProductionScenesResponse,
   type ProductionTranscriptResponse,
+  type ProductionDetailTab,
   type ProductionVideoListItem,
 } from '../types/videoProductionScenes';
 
@@ -36,6 +41,16 @@ function isRegenerateMetadataJobForVideo(
   videoId: string,
 ): boolean {
   if (!payload || payload.regenerateMetadata !== true) return false;
+  if (payload.channelId !== channelId) return false;
+  return Boolean(payload.videoIds?.includes(videoId));
+}
+
+function isAssembleJobForVideo(
+  payload: CreateVideoTaskPayload | undefined,
+  channelId: string,
+  videoId: string,
+): boolean {
+  if (!payload || payload.assembleOnly !== true) return false;
   if (payload.channelId !== channelId) return false;
   return Boolean(payload.videoIds?.includes(videoId));
 }
@@ -98,6 +113,11 @@ export function VideoProductionPage() {
   const [enqueueingRegenerate, setEnqueueingRegenerate] = useState(false);
   const [confirmRegenerateScenesOpen, setConfirmRegenerateScenesOpen] = useState(false);
   const [enqueueingRegenerateScenes, setEnqueueingRegenerateScenes] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProductionDetailTab>('scenes');
+  const [confirmCreateVideoOpen, setConfirmCreateVideoOpen] = useState(false);
+  const [enqueueingCreateVideo, setEnqueueingCreateVideo] = useState(false);
+  const [createVideoError, setCreateVideoError] = useState<string | null>(null);
+  const [playbackVersion, setPlaybackVersion] = useState(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -201,13 +221,28 @@ export function VideoProductionPage() {
       ),
   );
 
+  const assembleInProgress = Boolean(
+    selectedVideo &&
+      jobs.some(
+        (job) =>
+          (job.status === 'queued' || job.status === 'running') &&
+          isAssembleJobForVideo(
+            job.payload as CreateVideoTaskPayload,
+            selectedVideo.channelId,
+            selectedVideo.videoId,
+          ),
+      ),
+  );
+
   const toolbarBusy =
     metadataLoading ||
     metadataSaving ||
     enqueueingRegenerate ||
     regenerateInProgress ||
     enqueueingRegenerateScenes ||
-    regenerateScenesInProgress;
+    regenerateScenesInProgress ||
+    enqueueingCreateVideo ||
+    assembleInProgress;
 
   useAbortableEffect(
     async (signal) => {
@@ -324,6 +359,28 @@ export function VideoProductionPage() {
 
   function handleSelectVideo(video: ProductionVideoListItem) {
     setSelectedKey(productionVideoKey(video));
+    setActiveTab('scenes');
+  }
+
+  function createVideoBlockReason(): string | null {
+    if (scenesLoading) return t('production.createVideo.scenesLoading');
+    if (scenesError || !scenesData) return t('production.createVideo.scenesLoadError');
+    if (scenesData.scenes.length === 0) return t('production.createVideo.noScenes');
+    const missing = scenesData.scenes.filter((scene) => !scene.imageUrl).map((scene) => scene.index + 1);
+    if (missing.length > 0) {
+      return t('production.createVideo.missingImages', { scenes: missing.join(', ') });
+    }
+    return null;
+  }
+
+  function handleCreateVideoClick() {
+    if (!selectedVideo || toolbarBusy) return;
+    const reason = createVideoBlockReason();
+    if (reason) {
+      setCreateVideoError(reason);
+      return;
+    }
+    setConfirmCreateVideoOpen(true);
   }
 
   function handleMetadataSaved(metadata: ProductionMetadataResponse) {
@@ -461,6 +518,50 @@ export function VideoProductionPage() {
     }
   }
 
+  async function handleConfirmCreateVideo() {
+    if (!selectedVideo || toolbarBusy) return;
+
+    const { channelId, videoId, title } = selectedVideo;
+    setEnqueueingCreateVideo(true);
+    try {
+      await enqueueTask(
+        {
+          type: 'create_video',
+          title: t('production.createVideo.jobTitle', { title: title || videoId }),
+          subtitle: videoId,
+          payload: {
+            channelId,
+            videoIds: [videoId],
+            assembleOnly: true,
+          },
+        },
+        {
+          onComplete: () => {
+            if (!mountedRef.current) return;
+            setPlaybackVersion((current) => current + 1);
+            setVideos((current) =>
+              current.map((video) =>
+                video.channelId === channelId && video.videoId === videoId
+                  ? { ...video, status: 'Created' }
+                  : video,
+              ),
+            );
+            toast.success(t('production.createVideo.success'));
+          },
+          onFail: (job) => {
+            toast.error(job.error ?? t('production.createVideo.failed'));
+          },
+        },
+      );
+      setConfirmCreateVideoOpen(false);
+      toast.success(t('production.createVideo.queued'));
+    } catch {
+      // enqueueTask already toasts
+    } finally {
+      setEnqueueingCreateVideo(false);
+    }
+  }
+
   if (error) {
     return (
       <PageShell>
@@ -488,35 +589,44 @@ export function VideoProductionPage() {
             total={filteredVideos.length}
             channelLoading={loading}
             trailing={
-              <div className="flex flex-wrap items-center gap-2">
+              selectedVideo && (activeTab === 'scenes' || activeTab === 'characters') ? (
                 <Button
                   type="button"
                   variant="outlined"
-                  disabled={!selectedVideo || toolbarBusy}
+                  disabled={toolbarBusy}
                   onClick={() => setConfirmRegenerateScenesOpen(true)}
                 >
                   {regenerateScenesInProgress
                     ? t('production.scenes.regenerating')
                     : t('production.scenes.regenerate')}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  disabled={!selectedVideo || toolbarBusy || !metadataData}
-                  onClick={() => setConfirmRegenerateOpen(true)}
-                >
-                  {regenerateInProgress
-                    ? t('production.metadata.regenerating')
-                    : t('production.metadata.regenerate')}
+              ) : selectedVideo && activeTab === 'metadata' ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    disabled={toolbarBusy || !metadataData}
+                    onClick={() => setConfirmRegenerateOpen(true)}
+                  >
+                    {regenerateInProgress
+                      ? t('production.metadata.regenerating')
+                      : t('production.metadata.regenerate')}
+                  </Button>
+                  <Button
+                    type="submit"
+                    form={PRODUCTION_METADATA_FORM_ID}
+                    disabled={!metadataCanSave || toolbarBusy}
+                  >
+                    {metadataSaving ? t('production.metadata.saving') : t('production.metadata.save')}
+                  </Button>
+                </div>
+              ) : selectedVideo && activeTab === 'video' ? (
+                <Button type="button" disabled={toolbarBusy} onClick={handleCreateVideoClick}>
+                  {assembleInProgress || enqueueingCreateVideo
+                    ? t('production.createVideo.creating')
+                    : t('production.createVideo.button')}
                 </Button>
-                <Button
-                  type="submit"
-                  form={PRODUCTION_METADATA_FORM_ID}
-                  disabled={!selectedVideo || !metadataCanSave || toolbarBusy}
-                >
-                  {metadataSaving ? t('production.metadata.saving') : t('production.metadata.save')}
-                </Button>
-              </div>
+              ) : null
             }
           />
         </div>
@@ -551,6 +661,9 @@ export function VideoProductionPage() {
             metadataLoading={metadataLoading}
             metadataError={metadataError}
             selectedSceneIndex={selectedSceneIndex}
+            activeTab={activeTab}
+            onActiveTabChange={setActiveTab}
+            playbackVersion={playbackVersion}
             onSelectScene={setSelectedSceneIndex}
             onScenesUpdated={handleScenesUpdated}
             onMetadataSaved={handleMetadataSaved}
@@ -570,6 +683,16 @@ export function VideoProductionPage() {
         regenerating={enqueueingRegenerateScenes}
         onClose={() => setConfirmRegenerateScenesOpen(false)}
         onConfirm={() => void handleConfirmRegenerateScenes()}
+      />
+      <CreateVideoConfirmModal
+        open={confirmCreateVideoOpen}
+        creating={enqueueingCreateVideo}
+        onClose={() => setConfirmCreateVideoOpen(false)}
+        onConfirm={() => void handleConfirmCreateVideo()}
+      />
+      <CreateVideoErrorModal
+        message={createVideoError}
+        onClose={() => setCreateVideoError(null)}
       />
     </PageShell>
   );

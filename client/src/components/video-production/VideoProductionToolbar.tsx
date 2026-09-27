@@ -36,11 +36,8 @@ export function VideoProductionToolbar({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <label className="block min-w-0 space-y-1.5">
-          <span className="text-xs font-medium text-muted-foreground">
-            {t('production.toolbar.step1')}
-          </span>
+      <div className="flex items-center gap-3">
+        <div className="w-1/2 min-w-0">
           <Select
             options={channelOptions}
             value={selectedChannelId ?? ''}
@@ -55,9 +52,9 @@ export function VideoProductionToolbar({
             clearable
             disabled={channelLoading || channels.length === 0}
           />
-        </label>
+        </div>
 
-        {trailing ? <div className="flex shrink-0 items-end">{trailing}</div> : null}
+        {trailing ? <div className="flex min-w-0 flex-1 items-center justify-end">{trailing}</div> : null}
       </div>
 
       <div className="flex justify-end">

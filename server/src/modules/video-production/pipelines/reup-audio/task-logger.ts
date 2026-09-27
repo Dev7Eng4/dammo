@@ -1,4 +1,5 @@
 import { taskQueueRepository } from '../../../task-queue/task-queue.repository.js';
+import { isVerboseVideoLogsEnabled } from '../../shared/video-log.js';
 
 /**
  * Thin wrapper over task-queue logging so steps never have to branch on whether
@@ -24,8 +25,14 @@ export function createTaskLogger(taskJobId?: string): TaskLogger {
 
   return {
     enabled: true,
-    info: msg => taskQueueRepository.appendLogMessage(taskJobId, 'info', msg),
-    ok: msg => taskQueueRepository.appendLogMessage(taskJobId, 'ok', msg),
+    info: msg => {
+      if (!isVerboseVideoLogsEnabled()) return;
+      taskQueueRepository.appendLogMessage(taskJobId, 'info', msg);
+    },
+    ok: msg => {
+      if (!isVerboseVideoLogsEnabled()) return;
+      taskQueueRepository.appendLogMessage(taskJobId, 'ok', msg);
+    },
     err: msg => taskQueueRepository.appendLogMessage(taskJobId, 'err', msg),
   };
 }

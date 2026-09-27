@@ -70,8 +70,15 @@ export interface KenBurnsAdaptConfig {
 /** Specification of one slide (one source image). */
 export interface SlideSpec {
   imagePath: string;
-  /** Visible duration of this slide in seconds (before transition overlap). */
+  /**
+   * Ken Burns (or static) duration in seconds. Holds are extra still time and
+   * are not part of this value, so a longer hold does not re-encode the zoom.
+   */
   durationSec: number;
+  /** Freeze the first frame before `durationSec`. */
+  holdBeforeSec?: number;
+  /** Freeze the last frame after `durationSec`. */
+  holdAfterSec?: number;
   /** Ken Burns animation; omit for a static frame. */
   kenBurns?: KenBurnsEffect;
   /** How the image fills the frame. Defaults to 'cover'. */
@@ -108,5 +115,7 @@ export interface SlideshowSpec {
   outputPath: string;
   /** Output config; sensible defaults applied when omitted. */
   output?: Partial<SlideshowOutputConfig>;
+  /** When set, clip render uses this instead of the live Ken Burns app setting. */
+  enableKenBurns?: boolean;
   onLog?: (msg: string) => void;
 }

@@ -55,7 +55,7 @@ export interface CreateVideoTaskPayload {
   /** Download transcript from URL and recreate metadata into ephemeral folder */
   recreateMetadataFromUrl?: boolean;
   videoUrl?: string;
-  /** Assemble final mp4 only for existing Prepared videos (skip transcript/metadata/thumbnail) */
+  /** Assemble final mp4 only for existing Prepared or Created videos (skip transcript/metadata/thumbnail) */
   assembleOnly?: boolean;
   /** Re-run scene prompts + images for existing Prepared/Created AI (or SI multi_image) videos */
   regenerateScenes?: boolean;

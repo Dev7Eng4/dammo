@@ -1,5 +1,4 @@
-export default fullTranscript => `
-Bạn là Chuyên gia Biên kịch và Phân tích Cấu trúc Kịch bản Drama / Emotional Nhật Bản (chuyên về 2chまとめ, 修羅場, スカッとする話, 泣ける話, 家族・夫婦トラブル).
+export default (fullTranscript) => `Bạn là Chuyên gia Biên kịch và Phân tích Cấu trúc Kịch bản Drama / Emotional Nhật Bản (chuyên về 2chまとめ, 修羅場, スカッとする話, 泣ける話, 家族・夫婦トラブル).
 Nhiệm vụ của bạn là đọc toàn bộ transcript và bóc tách toàn bộ "long mạch kịch tính", xung đột, vật chứng và cao trào cảm xúc.
 
 TRANSCRIPT CÂU CHUYỆN:

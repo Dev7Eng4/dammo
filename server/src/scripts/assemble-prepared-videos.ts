@@ -4,7 +4,6 @@ import { ensureDataDirs, resolveYoutubeChannelVideoDir } from '../config/paths.j
 import { assertMediaFileComplete } from '../infrastructure/ffmpeg/ffmpeg-probe.js';
 import {
   attachSceneImagePaths,
-  redistributeMissingSceneTimes,
   resolveAiScenePromptsFilePath,
   scenesWithImagePaths,
 } from '../modules/video-production/shared/ai-video/index.js';
@@ -90,7 +89,7 @@ async function loadAiScenesForAssemble(workDir: string): Promise<AiVideoScenePro
     const parsed = JSON.parse(raw) as AiVideoScenePromptsFile;
     if (Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
       const withPaths = await attachSceneImagePaths(parsed.scenes, workDir);
-      return redistributeMissingSceneTimes(withPaths);
+      return withPaths;
     }
   } catch {
     // fall through to folder-only fallback
@@ -132,8 +131,8 @@ async function collectVisualAssetsFromDisk(
   const missingFiles: string[] = [];
 
   if (videoType === 'ai') {
-    const scenes = scenesWithImagePaths(await loadAiScenesForAssemble(workDir));
-    if (scenes.length === 0) {
+    const scenes = await loadAiScenesForAssemble(workDir);
+    if (scenesWithImagePaths(scenes).length === 0) {
       missingFiles.push(`${AI_SLIDES_DIRNAME}/*.jpg`);
     } else {
       assets.aiScenePrompts = scenes;

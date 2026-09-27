@@ -8,6 +8,7 @@ import type {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   enableKenBurns: true,
+  kenBurnsOnPrepare: false,
   enableImageTransitions: true,
   chromeBackgroundUseOffscreen: true,
   aiSceneDensityMaxSec: {
@@ -46,6 +47,7 @@ function loadSettings(): AppSettings {
   const density = stored?.aiSceneDensityMaxSec;
   return {
     enableKenBurns: stored?.enableKenBurns ?? DEFAULT_APP_SETTINGS.enableKenBurns,
+    kenBurnsOnPrepare: stored?.kenBurnsOnPrepare ?? DEFAULT_APP_SETTINGS.kenBurnsOnPrepare,
     enableImageTransitions:
       stored?.enableImageTransitions ?? DEFAULT_APP_SETTINGS.enableImageTransitions,
     chromeBackgroundUseOffscreen:
@@ -82,6 +84,7 @@ export class AppSettingsService {
     const current = loadSettings();
     const next: AppSettings = {
       enableKenBurns: input.enableKenBurns ?? current.enableKenBurns,
+      kenBurnsOnPrepare: input.kenBurnsOnPrepare ?? current.kenBurnsOnPrepare,
       enableImageTransitions: input.enableImageTransitions ?? current.enableImageTransitions,
       chromeBackgroundUseOffscreen:
         input.chromeBackgroundUseOffscreen ?? current.chromeBackgroundUseOffscreen,

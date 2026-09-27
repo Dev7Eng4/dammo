@@ -10,6 +10,7 @@ import {
   ensureInitialProjectSetup,
   openFlowProjectPage,
 } from '../../infrastructure/llm-browser/providers/flow-llm.provider.js';
+import { emitDetailLog } from '../video-production/shared/video-log.js';
 
 export interface ResolveFlowProjectOptions {
   explicitProjectId?: string;
@@ -17,10 +18,10 @@ export interface ResolveFlowProjectOptions {
 }
 
 async function createAndSaveFlowProject(profileId: string, page: Page, reason: string): Promise<string> {
-  console.log(`[flow-project] profile ${profileId}: ${reason}`);
+  emitDetailLog(`[flow-project] profile ${profileId}: ${reason}`);
   const projectId = await createNewFlowProject(page);
   saveFlowProject(profileId, projectId, 0);
-  console.log(`[flow-project] profile ${profileId}: saved new project ${projectId} (usage 0)`);
+  emitDetailLog(`[flow-project] profile ${profileId}: saved new project ${projectId} (usage 0)`);
   return projectId;
 }
 
@@ -47,7 +48,7 @@ export async function resolveFlowProjectId(
     );
   }
 
-  console.log(`[flow-project] profile ${profileId}: using project ${saved.projectId} (usage ${saved.usageCount})`);
+  emitDetailLog(`[flow-project] profile ${profileId}: using project ${saved.projectId} (usage ${saved.usageCount})`);
 
   const valid = await openFlowProjectPage(page, saved.projectId);
   if (!valid) {
@@ -70,6 +71,6 @@ export function recordFlowProjectUsage(profileId: string, explicitProjectId?: st
 
   const updated = incrementFlowProjectUsage(profileId);
   if (updated) {
-    console.log(`[flow-project] profile ${profileId}: usage now ${updated.usageCount}`);
+    emitDetailLog(`[flow-project] profile ${profileId}: usage now ${updated.usageCount}`);
   }
 }

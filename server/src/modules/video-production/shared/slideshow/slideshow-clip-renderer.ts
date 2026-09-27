@@ -30,7 +30,37 @@ export interface RenderClipOptions {
   crf?: number;
   preset?: string;
   kenBurnsAdapt?: KenBurnsAdaptConfig;
+  /** When set, overrides the live app Ken Burns switch for this render. */
+  enableKenBurns?: boolean;
   onLog?: (msg: string) => void;
+}
+
+function slideClipFilter(slide: SlideSpec, opts: RenderClipOptions): string {
+  const fit = slide.fit ?? 'cover';
+  const maxAnimSec = slide.maxKenBurnsAnimationSec ?? SS_MAX_KEN_BURNS_ANIMATION_SEC;
+  const animSec = resolveKenBurnsAnimationSec(slide.durationSec, maxAnimSec);
+  const kenBurnsOn = opts.enableKenBurns ?? isKenBurnsEnabled();
+  const kenBurns = kenBurnsOn && slide.kenBurns
+    ? adaptKenBurnsForDuration(slide.kenBurns, animSec, {
+        width: opts.width,
+        height: opts.height,
+        fps: opts.fps,
+        tempScaleFactor: opts.tempScaleFactor,
+        ...opts.kenBurnsAdapt,
+      })
+    : undefined;
+
+  return appendPixelFormatToVideoFilter(
+    buildSlideVideoFilter(kenBurns, {
+      width: opts.width,
+      height: opts.height,
+      fps: opts.fps,
+      durationSec: slide.durationSec,
+      tempScaleFactor: opts.tempScaleFactor,
+      maxKenBurnsAnimationSec: maxAnimSec,
+      fit,
+    }),
+  );
 }
 
 function cacheKeyFor(slide: SlideSpec, opts: RenderClipOptions, filter: string): string {
@@ -55,6 +85,16 @@ function cacheKeyFor(slide: SlideSpec, opts: RenderClipOptions, filter: string):
   return crypto.createHash('sha1').update(payload).digest('hex').slice(0, 16);
 }
 
+function clipCachePath(slide: SlideSpec, opts: RenderClipOptions, filter: string): string {
+  const key = cacheKeyFor(slide, opts, filter);
+  return path.join(opts.cacheDir, `clip_${key}.mp4`);
+}
+
+/** Cache path for this image and these render settings. Does not encode. */
+export function resolveSlideClipCachePath(slide: SlideSpec, opts: RenderClipOptions): string {
+  return clipCachePath(slide, opts, slideClipFilter(slide, opts));
+}
+
 /**
  * Renders a single slide (one image) to a high-quality intermediate mp4 with its
  * Ken Burns animation. Results are cached by a hash of the source image and all
@@ -65,33 +105,8 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
     throw new Error(`Slideshow image not found: ${slide.imagePath}`);
   }
 
-  const fit = slide.fit ?? 'cover';
-  const maxAnimSec = slide.maxKenBurnsAnimationSec ?? SS_MAX_KEN_BURNS_ANIMATION_SEC;
-  const animSec = resolveKenBurnsAnimationSec(slide.durationSec, maxAnimSec);
-  const kenBurns = isKenBurnsEnabled() && slide.kenBurns
-    ? adaptKenBurnsForDuration(slide.kenBurns, animSec, {
-        width: opts.width,
-        height: opts.height,
-        fps: opts.fps,
-        tempScaleFactor: opts.tempScaleFactor,
-        ...opts.kenBurnsAdapt,
-      })
-    : undefined;
-
-  const filter = appendPixelFormatToVideoFilter(
-    buildSlideVideoFilter(kenBurns, {
-      width: opts.width,
-      height: opts.height,
-      fps: opts.fps,
-      durationSec: slide.durationSec,
-      tempScaleFactor: opts.tempScaleFactor,
-      maxKenBurnsAnimationSec: maxAnimSec,
-      fit,
-    }),
-  );
-
-  const key = cacheKeyFor(slide, opts, filter);
-  const clipPath = path.join(opts.cacheDir, `clip_${key}.mp4`);
+  const filter = slideClipFilter(slide, opts);
+  const clipPath = clipCachePath(slide, opts, filter);
 
   if (fs.existsSync(clipPath)) {
     emitDetailLog(

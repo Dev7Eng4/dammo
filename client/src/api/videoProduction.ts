@@ -75,6 +75,10 @@ export function fetchProductionMetadata(
   );
 }
 
+export function productionOutputVideoUrl(channelId: string, videoId: string): string {
+  return `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/video`;
+}
+
 export function productionSceneImageUrl(
   channelId: string,
   videoId: string,

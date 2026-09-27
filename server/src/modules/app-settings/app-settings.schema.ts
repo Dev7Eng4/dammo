@@ -4,6 +4,7 @@ const sceneDensitySecSchema = z.number().int().min(1).max(300);
 
 export const updateAppSettingsSchema = z.object({
   enableKenBurns: z.boolean().optional(),
+  kenBurnsOnPrepare: z.boolean().optional(),
   enableImageTransitions: z.boolean().optional(),
   chromeBackgroundUseOffscreen: z.boolean().optional(),
   aiSceneDensityMaxSec: z
