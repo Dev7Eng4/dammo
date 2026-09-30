@@ -149,6 +149,13 @@ export function PromptsListPanel({
                           {t('prompts.stepCount', { count: set.stepCount })}
                         </span>
                       ) : null}
+                      {set.category === 'image' && set.language === 'all' ? (
+                        <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-300">
+                          {set.usesReferenceImage
+                            ? t('prompts.editor.imageFlowBadgeReference')
+                            : t('prompts.editor.imageFlowBadgePlain')}
+                        </span>
+                      ) : null}
                       {set.isSystem ? (
                         <span className="inline-flex rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
                           {t('prompts.system')}

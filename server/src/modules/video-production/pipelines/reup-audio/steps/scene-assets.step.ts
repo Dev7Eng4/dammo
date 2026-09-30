@@ -1,6 +1,7 @@
 import { appSettingsService } from '../../../../app-settings/app-settings.service.js';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
+import { promptsRepository } from '../../../../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../../../../prompts/prompts-settings.service.js';
 import {
   generateAiScenePromptsForPipeline,
@@ -36,6 +37,20 @@ export async function runSceneAssetsStep(
   }
 
   const useReferenceImage = destination.useReferenceImage === true;
+  const flowMode = useReferenceImage ? 'có ảnh tham chiếu' : 'không ảnh tham chiếu';
+  const sceneImageFlow = promptsRepository.findImageSceneFlow(destination.niche, useReferenceImage);
+  if (!sceneImageFlow) {
+    throw new AppError(
+      `Không tìm thấy luồng prompt tạo ảnh ${flowMode} cho niche "${destination.niche}" và niche "all"`,
+      400,
+      'IMAGE_SCENE_FLOW_NOT_FOUND',
+    );
+  }
+  const fellBack = destination.niche !== 'all' && sceneImageFlow.niche === 'all';
+  log.info(
+    `${options.label} image flow (${flowMode}): "${sceneImageFlow.setName}"` +
+      (fellBack ? ` — niche "${destination.niche}" chưa có luồng riêng, dùng luồng all` : ''),
+  );
 
   log.info(
     useReferenceImage
@@ -57,6 +72,7 @@ export async function runSceneAssetsStep(
         maxTranscriptSec: options.maxTranscriptSec,
         densityMaxSceneSec: destination.aiSceneDensityMaxSec,
         useReferenceImage,
+        sceneImageFlow,
         onLog: toOnLog(log),
         onProgress: log.enabled
           ? progress =>

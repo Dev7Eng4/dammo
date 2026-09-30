@@ -355,26 +355,6 @@
       "niche": "all"
     },
     {
-      "id": "ja:general",
-      "baseKey": "general",
-      "language": "ja",
-      "name": "Ảnh Chung Cho Video",
-      "category": "image",
-      "isSystem": false,
-      "createdAt": "2026-07-05T16:27:13.427Z",
-      "updatedAt": "2026-07-28T07:58:38.510Z",
-      "steps": [
-        {
-          "id": "b672e1d0-7d69-46c0-b81d-d11856c38b32",
-          "key": "general",
-          "step": 1,
-          "outputType": "image",
-          "useReferenceImage": true
-        }
-      ],
-      "niche": "all"
-    },
-    {
       "id": "ja:metadata",
       "baseKey": "metadata",
       "language": "ja",

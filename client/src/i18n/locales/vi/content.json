@@ -44,7 +44,16 @@
       "willSaveWithKey": "Sẽ lưu với key <mono>{{key}}</mono>",
       "language": "Ngôn ngữ",
       "category": "Danh mục",
-      "niche": "Ngách"
+      "niche": "Ngách",
+      "imageFlowMode": "Luồng tạo ảnh scene",
+      "imageFlowReference": "Có ảnh tham chiếu (2 bước)",
+      "imageFlowReferenceDesc": "Bước 1 thiết kế nhân vật · Bước 2 tạo scene prompt có references",
+      "imageFlowPlain": "Không ảnh tham chiếu (1 bước)",
+      "imageFlowPlainDesc": "Một prompt duy nhất tạo scene prompt",
+      "imageFlowHint": "Mỗi ngách chỉ có 1 luồng không tham chiếu và 1 luồng có tham chiếu. Kênh không có luồng riêng sẽ dùng luồng của ngách Tất cả.",
+      "imageFlowStepCountInvalid": "Luồng tạo ảnh {{mode}} cần đúng {{count}} step",
+      "imageFlowBadgeReference": "Có tham chiếu",
+      "imageFlowBadgePlain": "Không tham chiếu"
     },
     "step": {
       "title": "Bước {{n}}",

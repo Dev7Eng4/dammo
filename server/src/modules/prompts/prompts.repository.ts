@@ -1,5 +1,11 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
+import {
+  findConflictingImageSceneFlowSet,
+  findMalformedImageSceneFlowSets,
+  selectImageSceneFlow,
+  type ImageSceneFlow,
+} from './image-scene-flow.js';
 import type { Prompt, PromptLanguage, PromptSet, PromptStep, PromptsStore } from './prompts.types.js';
 
 const EMPTY_STORE: PromptsStore = { promptSets: [] };
@@ -185,6 +191,30 @@ export class PromptsRepository {
 
     const twoStep = matches.find((set) => set.steps.length === 2);
     return twoStep ?? matches[0] ?? null;
+  }
+
+  /** Scene-image flow for a channel niche + reference mode, falling back to the `all` flow. */
+  findImageSceneFlow(niche: string | undefined, useReferenceImage: boolean | undefined): ImageSceneFlow | null {
+    const sets = this.findAllSets();
+    for (const set of findMalformedImageSceneFlowSets(sets)) {
+      console.warn(
+        `[prompts] Image set "${set.name}" (${set.id}) skipped: needs 1 step without reference image or 2 steps with reference image`,
+      );
+    }
+    return selectImageSceneFlow(sets, niche, useReferenceImage);
+  }
+
+  /** Another image set already owning this niche + reference mode (the set of `key` itself excluded). */
+  findConflictingImageSceneFlow(
+    key: string,
+    niche: string,
+    useReferenceImage: boolean | undefined,
+  ): PromptSet | null {
+    return findConflictingImageSceneFlowSet(this.findAllSets(), {
+      baseKey: parsePromptKey(key).baseKey,
+      niche,
+      useReferenceImage,
+    });
   }
 
   findById(id: string): Prompt | null {

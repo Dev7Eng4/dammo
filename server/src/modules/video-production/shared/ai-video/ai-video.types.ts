@@ -2,6 +2,7 @@ import type { AiSceneDensityMaxSec, AiVideoDensityLevel } from './ai-video.const
 import type { MetaConcurrencyMode } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
 import type { CaptionStyleKey } from '../render-core/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
+import type { ImageSceneFlow } from '../../../prompts/image-scene-flow.js';
 export type { MetaConcurrencyMode };
 
 /** @deprecated Use MetaConcurrencyMode — alias kept for existing ai-video callers. */
@@ -69,8 +70,13 @@ export interface GenerateAiVideoImagesInput {
   maxTranscriptSec?: number;
   /** Per-density max scene duration override (defaults 8 / 30 / 60). */
   densityMaxSceneSec?: AiSceneDensityMaxSec;
-  /** Use image_scenes_with_references_step_1 + step_2; pause before scene images. */
+  /** Use the 2-step reference flow (character design + scene prompts). */
   useReferenceImage?: boolean;
+  /**
+   * Scene-image prompt flow resolved for the channel niche (see `promptsRepository.findImageSceneFlow`).
+   * When omitted, the default `all` keys (`image_scenes` / `image_scenes_with_references_step_*`) are used.
+   */
+  sceneImageFlow?: ImageSceneFlow;
   onLog?: (msg: string) => void;
   onProgress?: (progress: {
     density: AiVideoDensityLevel;

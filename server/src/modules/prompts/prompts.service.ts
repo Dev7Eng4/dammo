@@ -8,6 +8,7 @@ import {
   readPromptSource,
   writePromptFile,
 } from './prompts.file-store.js';
+import { IMAGE_SCENE_FLOW_LANGUAGE } from './image-scene-flow.js';
 import { resolveUniquePromptKey } from './prompt-key.js';
 import { promptsRepository } from './prompts.repository.js';
 import type {
@@ -102,6 +103,29 @@ function assertUniqueKeyLanguage(key: string, language: PromptLanguage, excludeI
   }
 }
 
+/** One plain + one reference scene-image flow per niche (shared `all` language). */
+function assertUniqueImageSceneFlow(prompt: {
+  key: string;
+  language: PromptLanguage;
+  category: PromptCategory;
+  niche: string;
+  useReferenceImage?: boolean;
+}): void {
+  if (prompt.category !== 'image' || prompt.language !== IMAGE_SCENE_FLOW_LANGUAGE) return;
+  const conflict = promptsRepository.findConflictingImageSceneFlow(
+    prompt.key,
+    prompt.niche,
+    prompt.useReferenceImage,
+  );
+  if (!conflict) return;
+  const mode = prompt.useReferenceImage ? 'có ảnh tham chiếu' : 'không ảnh tham chiếu';
+  throw new AppError(
+    `Niche này đã có luồng tạo ảnh ${mode}: "${conflict.name}"`,
+    400,
+    'DUPLICATE_IMAGE_FLOW',
+  );
+}
+
 export class PromptsService {
   listPaginated(
     category: PromptCategory | undefined,
@@ -150,8 +174,6 @@ export class PromptsService {
       : resolveUniquePromptKey(name, language);
     assertUniqueKeyLanguage(key, language);
 
-    await writePromptFile(language, key, input.template);
-
     const category = input.category ?? 'meta';
     const niche = normalizePromptNiche(input.niche);
     const now = new Date().toISOString();
@@ -175,7 +197,9 @@ export class PromptsService {
       createdAt: now,
       updatedAt: now,
     };
+    assertUniqueImageSceneFlow(prompt);
 
+    await writePromptFile(language, key, input.template);
     return promptsRepository.prepend(prompt);
   }
 
@@ -186,6 +210,18 @@ export class PromptsService {
     const nextLanguage = input.language ?? current.language;
 
     assertUniqueKeyLanguage(nextKey, nextLanguage, id);
+
+    const nextCategory = input.category ?? current.category;
+    assertUniqueImageSceneFlow({
+      key: nextKey,
+      language: nextLanguage,
+      category: nextCategory,
+      niche: input.niche !== undefined ? normalizePromptNiche(input.niche) : current.niche,
+      useReferenceImage: resolveUseReferenceImage(
+        nextCategory,
+        input.useReferenceImage !== undefined ? input.useReferenceImage : current.useReferenceImage,
+      ),
+    });
 
     const keyChanged = nextKey !== current.key;
     const languageChanged = nextLanguage !== current.language;

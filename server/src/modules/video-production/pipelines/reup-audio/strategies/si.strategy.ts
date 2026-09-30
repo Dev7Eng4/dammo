@@ -9,7 +9,6 @@ import {
   resolveThumbnailImageProvider,
   runBrowserImageGeneration,
 } from '../../../shared/thumbnail/hero-image.js';
-import { runGeneralImage } from '../../../shared/thumbnail/run-general-image.js';
 import { runSiOneImageFlowBatch } from '../../../shared/thumbnail/run-si-one-image-flow-batch.js';
 import type { ReupAudioBackgroundImage } from '../../../../youtube-channels/youtube-channels.types.js';
 import type { ProductionDestination } from '../../../ports/production-destination.port.js';
@@ -71,14 +70,13 @@ async function runOneImageBatch(
 
 /**
  * Background image for SI `one_image` when the thumbnail step did not already
- * produce one. Uses `video_visual_prompt` when metadata carries one, otherwise
- * falls back to a general image seeded with the source thumbnail.
+ * produce one. Generated from the `video_visual_prompt` that comes with metadata.
  */
 async function generateBackgroundImage(ctx: VideoTaskContext): Promise<string> {
-  const { destination, downloaded, workDir, log, stepTimer } = ctx;
+  const { workDir, log, stepTimer } = ctx;
 
   if (!ctx.videoMeta) {
-    throw new AppError('Metadata is required for SI general image', 400, 'INVALID_INPUT');
+    throw new AppError('Metadata is required for SI background image', 400, 'INVALID_INPUT');
   }
 
   const videoVisualPrompt = ctx.videoMeta.video_visual_prompt?.trim() ?? '';
@@ -91,46 +89,27 @@ async function generateBackgroundImage(ctx: VideoTaskContext): Promise<string> {
         }
       : undefined;
 
-  if (videoVisualPrompt) {
-    log.info(
-      `Creating background image via ${resolveThumbnailImageProvider()} (video_visual_prompt, no reference)...`,
-    );
-
-    const heroResult = await timedStep(
-      `Background image (${resolveThumbnailImageProvider()} video_visual_prompt)`,
-      () =>
-        runBrowserImageGeneration(videoVisualPrompt, workDir, {
-          fileName: DEFAULT_HERO_IMAGE_FILENAME,
-          onProgress: onProgress('Background image'),
-        }),
-      stepTimer,
-    );
-
-    await cleanupImageDebugArtifacts(workDir);
-    log.ok('Background image saved → background.jpg (video_visual_prompt)');
-    return heroResult.imagePath;
+  if (!videoVisualPrompt) {
+    throw new AppError('video_visual_prompt is required for SI one_image background', 400, 'INVALID_INPUT');
   }
 
-  const generalImageTitle = String(ctx.videoMeta.metadata.title ?? '').trim();
-  if (!generalImageTitle) {
-    throw new AppError('Metadata title is required for general image', 400, 'INVALID_INPUT');
-  }
-
-  log.info(`Creating general image via ${resolveThumbnailImageProvider()} (general + reference)...`);
+  log.info(
+    `Creating background image via ${resolveThumbnailImageProvider()} (video_visual_prompt, no reference)...`,
+  );
 
   const heroResult = await timedStep(
-    `General image (${resolveThumbnailImageProvider()} + reference)`,
+    `Background image (${resolveThumbnailImageProvider()} video_visual_prompt)`,
     () =>
-      runGeneralImage(generalImageTitle, destination.language, workDir, {
-        referenceImagePaths: downloaded.thumbnailPath ? [downloaded.thumbnailPath] : [],
-        onProgress: onProgress('General image'),
+      runBrowserImageGeneration(videoVisualPrompt, workDir, {
+        fileName: DEFAULT_HERO_IMAGE_FILENAME,
+        onProgress: onProgress('Background image'),
       }),
     stepTimer,
   );
 
   await cleanupImageDebugArtifacts(workDir);
-  log.ok('General image saved → background.jpg');
-  return heroResult.heroImagePath;
+  log.ok('Background image saved → background.jpg (video_visual_prompt)');
+  return heroResult.imagePath;
 }
 
 export const siStrategy: VideoTypeStrategy = {

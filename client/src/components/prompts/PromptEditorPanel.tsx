@@ -10,7 +10,7 @@ import {
 } from '../../constants/promptForm';
 import { useAbortableEffect } from '../../hooks';
 import { derivePromptKeyFromName } from '../../utils/promptVariables';
-import { planStepKeys, resolveDraftBaseKey } from '../../utils/promptSets';
+import { isImageSceneFlowDraft, planStepKeys, resolveDraftBaseKey } from '../../utils/promptSets';
 import type { Niche } from '../../types/niche';
 import type { PromptFormDraft, PromptStepDraft } from '../../types/prompt';
 import { PromptStepEditor } from './PromptStepEditor';
@@ -26,6 +26,8 @@ export interface PromptEditorPanelProps {
   onStepChange: (index: number, patch: Partial<PromptStepDraft>) => void;
   onAddStep: () => void;
   onRemoveStep: (index: number) => void;
+  /** Category `image` + language `all`: switch between the 1-step and 2-step scene-image flow. */
+  onImageFlowModeChange: (useReferenceImage: boolean) => void;
   onSave: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -52,6 +54,7 @@ export function PromptEditorPanel({
   onStepChange,
   onAddStep,
   onRemoveStep,
+  onImageFlowModeChange,
   onSave,
   onDuplicate,
   onDelete,
@@ -123,6 +126,20 @@ export function PromptEditorPanel({
     ? t('prompts.editor.newPrompt')
     : draft.name || t('prompts.editor.untitled');
   const nicheValue = draft.niche || PROMPT_NICHE_ALL;
+  const imageSceneFlow = isImageSceneFlowDraft(draft);
+  const imageFlowUsesReference = draft.steps[0]?.useReferenceImage === true;
+  const imageFlowModes = [
+    {
+      value: false,
+      label: t('prompts.editor.imageFlowPlain'),
+      desc: t('prompts.editor.imageFlowPlainDesc'),
+    },
+    {
+      value: true,
+      label: t('prompts.editor.imageFlowReference'),
+      desc: t('prompts.editor.imageFlowReferenceDesc'),
+    },
+  ];
 
   return (
     <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
@@ -147,7 +164,7 @@ export function PromptEditorPanel({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {!readOnly ? (
+          {!readOnly && !imageSceneFlow ? (
             <Button variant="outlined" size="sm" onClick={onAddStep} disabled={saving}>
               {t('prompts.editor.addStep')}
             </Button>
@@ -238,6 +255,35 @@ export function PromptEditorPanel({
               />
             </label>
           </div>
+
+          {imageSceneFlow ? (
+            <div className="space-y-2">
+              <FieldLabel>{t('prompts.editor.imageFlowMode')}</FieldLabel>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {imageFlowModes.map((mode) => {
+                  const selected = imageFlowUsesReference === mode.value;
+                  return (
+                    <button
+                      key={String(mode.value)}
+                      type="button"
+                      onClick={() => onImageFlowModeChange(mode.value)}
+                      disabled={readOnly || saving}
+                      aria-pressed={selected}
+                      className={
+                        selected
+                          ? 'rounded-lg border border-primary-400/60 bg-primary-400/10 px-3 py-2.5 text-left'
+                          : 'rounded-lg border border-border bg-surface-elevated/50 px-3 py-2.5 text-left hover:bg-surface-elevated disabled:cursor-not-allowed disabled:opacity-50'
+                      }
+                    >
+                      <p className="text-xs font-medium text-neutral-200">{mode.label}</p>
+                      <p className="mt-0.5 text-[10px] text-neutral-500">{mode.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-neutral-500">{t('prompts.editor.imageFlowHint')}</p>
+            </div>
+          ) : null}
         </div>
 
         {draft.steps.map((step, index) => (
@@ -247,7 +293,8 @@ export function PromptEditorPanel({
             index={index}
             category={draft.category}
             readOnly={readOnly}
-            canRemove={draft.steps.length > 1}
+            canRemove={draft.steps.length > 1 && !imageSceneFlow}
+            hideReferenceImageOption={imageSceneFlow}
             onChange={(patch) => onStepChange(index, patch)}
             onRemove={() => onRemoveStep(index)}
           />

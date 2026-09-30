@@ -38,8 +38,11 @@ import {
   parseManagedTemplate,
 } from '../utils/promptVariables';
 import {
+  applyImageSceneFlowMode,
   createEmptyStepDraft,
   createStepLocalId,
+  imageSceneFlowStepCount,
+  isImageSceneFlowDraft,
   getPromptSetSiblings,
   planStepKeys,
   resolveDraftBaseKey,
@@ -416,7 +419,25 @@ export function PromptsPage() {
         next.steps = next.steps.map((step) => clampStepFlags(patch.category!, step));
       }
 
+      // Image flow: every step shares step 1's reference mode (step count checked on save).
+      if (isImageSceneFlowDraft(next) && (patch.category !== undefined || patch.language !== undefined)) {
+        const useReferenceImage = next.steps[0]?.useReferenceImage === true;
+        next.steps = next.steps.map((step) => ({ ...step, useReferenceImage }));
+      }
+
       return next;
+    });
+  }
+
+  function handleImageFlowModeChange(useReferenceImage: boolean) {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const steps = applyImageSceneFlowMode(prev.steps, useReferenceImage);
+      setActiveStepIndex((current) => Math.min(current, steps.length - 1));
+      setVariableValuesByStep((current) =>
+        Object.fromEntries(steps.map((step) => [step.localId, current[step.localId] ?? {}])),
+      );
+      return { ...prev, steps };
     });
   }
 
@@ -611,6 +632,21 @@ export function PromptsPage() {
       setSaveError(t('prompts.stepTemplateRequired'));
       return;
     }
+    if (isImageSceneFlowDraft(draft)) {
+      const useReferenceImage = draft.steps[0]?.useReferenceImage === true;
+      const expected = imageSceneFlowStepCount(useReferenceImage);
+      if (draft.steps.length !== expected) {
+        setSaveError(
+          t('prompts.editor.imageFlowStepCountInvalid', {
+            mode: useReferenceImage
+              ? t('prompts.editor.imageFlowBadgeReference')
+              : t('prompts.editor.imageFlowBadgePlain'),
+            count: expected,
+          }),
+        );
+        return;
+      }
+    }
 
     const isExisting = draft.steps.some((step) => step.id);
     const name = draft.name.trim();
@@ -761,6 +797,7 @@ export function PromptsPage() {
         onStepChange={handleStepChange}
         onAddStep={handleAddStep}
         onRemoveStep={handleRemoveStep}
+        onImageFlowModeChange={handleImageFlowModeChange}
         onSave={handleSave}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}

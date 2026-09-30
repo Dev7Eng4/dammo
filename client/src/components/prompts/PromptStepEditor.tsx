@@ -15,6 +15,8 @@ export interface PromptStepEditorProps {
   category: PromptCategory;
   readOnly?: boolean;
   canRemove: boolean;
+  /** Reference flag managed at set level (image scene flows). */
+  hideReferenceImageOption?: boolean;
   onChange: (patch: Partial<PromptStepDraft>) => void;
   onRemove: () => void;
 }
@@ -35,6 +37,7 @@ export function PromptStepEditor({
   category,
   readOnly = false,
   canRemove,
+  hideReferenceImageOption = false,
   onChange,
   onRemove,
 }: PromptStepEditorProps) {
@@ -42,7 +45,8 @@ export function PromptStepEditor({
   const [insertVarName, setInsertVarName] = useState('');
   const tokenEstimate = estimateTokens(step.template);
   const userFunctionTemplate = isUserFunctionTemplate(step.template);
-  const showReferenceImageOption = category === 'thumbnail' || category === 'image';
+  const showReferenceImageOption =
+    !hideReferenceImageOption && (category === 'thumbnail' || category === 'image');
   const exportDefaultPreview =
     step.templateParams.length > 0
       ? `export default (${step.templateParams.join(', ')}) => \`...\``

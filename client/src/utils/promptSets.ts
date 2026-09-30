@@ -97,6 +97,7 @@ export function groupPromptSets(prompts: Prompt[]): PromptSetListItem[] {
         niche: primary.niche || 'all',
         key: resolveCanonicalSetKey(sorted),
         stepCount: sorted.length,
+        usesReferenceImage: sorted.some((item) => item.useReferenceImage === true),
         isSystem: sorted.some((item) => item.isSystem),
         memberIds: sorted.map((item) => item.id),
       };
@@ -122,6 +123,29 @@ export function resolveDraftBaseKey(draft: PromptFormDraft): string {
 
   if (existingKeys.length === 1) return existingKeys[0]!;
   return fromName;
+}
+
+/**
+ * Scene-image flow sets (category `image`, language `all`): each niche owns at most one
+ * 1-step flow without reference image and one 2-step flow with reference image.
+ */
+export function isImageSceneFlowDraft(draft: Pick<PromptFormDraft, 'category' | 'language'>): boolean {
+  return draft.category === 'image' && draft.language === 'all';
+}
+
+export function imageSceneFlowStepCount(useReferenceImage: boolean): number {
+  return useReferenceImage ? 2 : 1;
+}
+
+/** Steps reshaped for a flow mode: plain keeps step 1, reference pads to 2; flags follow the mode. */
+export function applyImageSceneFlowMode(
+  steps: PromptStepDraft[],
+  useReferenceImage: boolean,
+): PromptStepDraft[] {
+  const count = imageSceneFlowStepCount(useReferenceImage);
+  const next = steps.slice(0, count);
+  while (next.length < count) next.push(createEmptyStepDraft());
+  return next.map((step) => ({ ...step, useReferenceImage }));
 }
 
 export function supportsReferenceImage(category: PromptCategory): boolean {

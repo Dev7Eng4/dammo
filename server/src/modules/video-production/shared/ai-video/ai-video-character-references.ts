@@ -47,6 +47,8 @@ export interface GenerateCharacterReferencesInput {
   language: PromptLanguage;
   /** Human-readable niche from metadata (`detected_niche`); passed into character prompt template. */
   detectedNiche?: string;
+  /** Character design template key (step 1 of the reference flow); defaults to the `all` flow key. */
+  promptKey?: string;
   onLog?: (msg: string) => void;
 }
 
@@ -154,7 +156,7 @@ async function generateCharacterPromptsViaLlm(
   transcriptJson: string,
   log: (msg: string) => void,
 ): Promise<AiVideoCharacterReference[]> {
-  const userPrompt = await executePromptTemplate(input.language, CREATE_CHARACTERS_DESIGN_PROMPT_KEY, [
+  const userPrompt = await executePromptTemplate(input.language, input.promptKey ?? CREATE_CHARACTERS_DESIGN_PROMPT_KEY, [
     transcriptJson,
     input.visualStyle.rule,
     input.detectedNiche ?? '',
@@ -434,7 +436,7 @@ export async function generateCharacterPrompts(
   }
 
   const niche = input.detectedNiche ?? '';
-  const overheadPrompt = await executePromptTemplate(input.language, CREATE_CHARACTERS_DESIGN_PROMPT_KEY, [
+  const overheadPrompt = await executePromptTemplate(input.language, input.promptKey ?? CREATE_CHARACTERS_DESIGN_PROMPT_KEY, [
     '',
     input.visualStyle.rule,
     niche,

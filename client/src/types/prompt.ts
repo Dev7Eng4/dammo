@@ -142,6 +142,7 @@ export interface PromptSetListItem {
   niche: string;
   key: string;
   stepCount: number;
+  usesReferenceImage?: boolean;
   isSystem?: boolean;
   memberIds: string[];
 }

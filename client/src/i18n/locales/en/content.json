@@ -44,7 +44,16 @@
       "willSaveWithKey": "Will save with key <mono>{{key}}</mono>",
       "language": "Language",
       "category": "Category",
-      "niche": "Niche"
+      "niche": "Niche",
+      "imageFlowMode": "Scene image flow",
+      "imageFlowReference": "With reference image (2 steps)",
+      "imageFlowReferenceDesc": "Step 1 character design · Step 2 scene prompts with references",
+      "imageFlowPlain": "Without reference image (1 step)",
+      "imageFlowPlainDesc": "A single prompt generates scene prompts",
+      "imageFlowHint": "Each niche has at most one flow without and one flow with reference image. Channels whose niche has no flow use the All niche flow.",
+      "imageFlowStepCountInvalid": "Image flow {{mode}} needs exactly {{count}} step(s)",
+      "imageFlowBadgeReference": "With reference",
+      "imageFlowBadgePlain": "No reference"
     },
     "step": {
       "title": "Step {{n}}",

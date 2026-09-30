@@ -18,6 +18,7 @@ import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
   AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS,
   resolveAiSceneDensityMaxSec,
+  CREATE_CHARACTERS_DESIGN_PROMPT_KEY,
   VIDEO_IMAGE_PROMPT_KEY,
   VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
   type AiSceneDensityMaxSec,
@@ -122,6 +123,24 @@ function scenesOutsideChunkRange(
   });
 }
 
+function resolvePlainScenePromptKey(input: GenerateAiVideoImagesInput): string {
+  const flow = input.sceneImageFlow;
+  return flow?.mode === 'plain' ? flow.stepKeys[0]! : VIDEO_IMAGE_PROMPT_KEY;
+}
+
+/** [character design key, scene-with-references key] for the reference flow. */
+function resolveReferenceFlowPromptKeys(input: GenerateAiVideoImagesInput): [string, string] {
+  const flow = input.sceneImageFlow;
+  if (flow?.mode === 'reference') return [flow.stepKeys[0]!, flow.stepKeys[1]!];
+  return [CREATE_CHARACTERS_DESIGN_PROMPT_KEY, VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY];
+}
+
+function describeSceneImageFlow(input: GenerateAiVideoImagesInput, keys: string[]): string {
+  const flow = input.sceneImageFlow;
+  const label = flow ? `"${flow.setName}" (niche ${flow.niche})` : 'default';
+  return `${label} → ${keys.join(' + ')}`;
+}
+
 async function executeScenePromptChunk(
   profileId: string,
   input: GenerateAiVideoImagesInput,
@@ -132,10 +151,10 @@ async function executeScenePromptChunk(
     requireReferences?: boolean;
   },
 ): Promise<AiVideoScenePrompt[]> {
-  const promptKey = options?.promptKey ?? VIDEO_IMAGE_PROMPT_KEY;
+  const promptKey = options?.promptKey ?? resolvePlainScenePromptKey(input);
   const niche = input.detectedNiche ?? '';
   const args: unknown[] =
-    promptKey === VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY
+    options?.charactersJson !== undefined
       ? [
           JSON.stringify(job.transcriptChunk),
           input.visualStyle.rule,
@@ -300,6 +319,8 @@ async function generateScenePromptsFromJobs(
 export async function generateAiVideoImages(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesResult> {
   const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
+  log(`[ai-video] useReferenceImage=false → flow ${describeSceneImageFlow(input, [resolvePlainScenePromptKey(input)])}`);
+
   const prepared = await prepareTranscriptDensityChunks(input.subtitlePath, input.audioPath, {
     maxTranscriptSec: input.maxTranscriptSec,
   });
@@ -331,9 +352,13 @@ export async function generateAiVideoImagesWithReference(
 ): Promise<GenerateAiVideoImagesWithCharactersResult> {
   const log = (msg: string) => emitDetailLog(msg, input.onLog);
 
-  log('[ai-video] useReferenceImage=true → image_scenes_with_references_step_1 + step_2');
+  const [characterDesignPromptKey, scenePromptKey] = resolveReferenceFlowPromptKeys(input);
+  log(
+    `[ai-video] useReferenceImage=true → flow ${describeSceneImageFlow(input, [characterDesignPromptKey, scenePromptKey])}`,
+  );
 
   const characters = await generateCharacterPrompts({
+    promptKey: characterDesignPromptKey,
     workDir: input.workDir,
     youtubeVideoId: input.youtubeVideoId,
     visualStyle: input.visualStyle,
@@ -386,7 +411,7 @@ export async function generateAiVideoImagesWithReference(
     });
   const runScenePrompts = () =>
     generateScenePromptsFromJobs(input, jobs, log, {
-      promptKey: VIDEO_IMAGE_WITH_REFERENCE_PROMPT_KEY,
+      promptKey: scenePromptKey,
       charactersJson,
       requireReferences: true,
       ...(parallelProfiles ? { profiles: parallelProfiles.profiles } : {}),
