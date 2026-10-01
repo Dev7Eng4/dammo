@@ -110,6 +110,12 @@ async function resolvePendingJobs(
 
   for (const job of jobs) {
     const force = forceIndexes?.has(job.index) === true;
+    // Targeted regeneration: only the forced scenes are generated, never other scenes
+    // that happen to be missing an image (they stay untouched).
+    if (forceIndexes && !force) {
+      skippedCount += 1;
+      continue;
+    }
     if (force) {
       job.writePath = path.join(path.dirname(job.outputPath), REGEN_TMP_DIRNAME, `${job.name}.jpg`);
       await unlinkIfExists(job.writePath);

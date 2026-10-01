@@ -32,11 +32,13 @@ function withCacheBust(url: string | null, version: number): string | null {
 function SceneImageCell({
   scene,
   regenerating,
+  disabled,
   error,
   onRegenerate,
 }: {
   scene: ProductionSceneItem;
   regenerating: boolean;
+  disabled: boolean;
   error: string | null;
   onRegenerate: () => void;
 }) {
@@ -66,7 +68,7 @@ function SceneImageCell({
         <div className="absolute inset-x-0 bottom-0 flex justify-end bg-gradient-to-t from-black/50 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
           <button
             type="button"
-            disabled={regenerating}
+            disabled={regenerating || disabled}
             onClick={(event) => {
               event.stopPropagation();
               onRegenerate();
@@ -124,13 +126,18 @@ export function SceneTable({
     try {
       const data = await regenerateProductionSceneImage(channelId, videoId, sceneIndex);
       const bust = Date.now();
+      const previousByIndex = new Map(scenes.map((scene) => [scene.index, scene]));
       onScenesUpdated({
         ...data,
-        scenes: data.scenes.map((scene) =>
-          scene.index === sceneIndex
-            ? { ...scene, imageUrl: withCacheBust(scene.imageUrl, bust) }
-            : scene,
-        ),
+        scenes: data.scenes.map((scene) => {
+          if (scene.index === sceneIndex) {
+            return { ...scene, imageUrl: withCacheBust(scene.imageUrl, bust) };
+          }
+          // Keep the already cache-busted URL of untouched scenes so their <img> does not
+          // remount and possibly fall back to a stale cached image.
+          const previousUrl = previousByIndex.get(scene.index)?.imageUrl;
+          return scene.imageUrl && previousUrl ? { ...scene, imageUrl: previousUrl } : scene;
+        }),
       });
     } catch (err) {
       setErrorsByIndex((prev) => ({
@@ -178,6 +185,7 @@ export function SceneTable({
                     key={scene.imageUrl ?? `scene-${scene.index}`}
                     scene={scene}
                     regenerating={regeneratingIndex === scene.index}
+                    disabled={regeneratingIndex !== null}
                     error={errorsByIndex[scene.index] ?? null}
                     onRegenerate={() => void handleRegenerate(scene.index)}
                   />
