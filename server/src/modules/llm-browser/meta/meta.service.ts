@@ -127,7 +127,6 @@ export class MetaBrowserService {
       debugScreenshotPath: options?.debugScreenshotPath,
       timeoutMs,
       baselineBlockCount: sent?.baselineBlockCount,
-      baselineImageSrcs: sent?.baselineImageSrcs,
     });
   }
 

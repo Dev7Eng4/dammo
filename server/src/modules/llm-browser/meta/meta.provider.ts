@@ -5,7 +5,7 @@ import { AppError } from '../../../shared/http/errors.js';
 import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from './meta.config.js';
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
 import { normalizeReferenceImagePaths } from '../core/reference-images.js';
-import { pickBestMetaImageUrlFromInputs, resolveMetaImageSourceUrl } from './meta-image-url.js';
+import { resolveMetaImageSourceUrl } from './meta-image-url.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
   LlmBrowserResponse,
@@ -40,11 +40,6 @@ const POST_SUBMIT_WAIT_MS = 60_000;
 /** Max wait after submit for Meta to accept the prompt (stop button or a new message). */
 const SUBMIT_CONFIRM_TIMEOUT_MS = 10_000;
 
-/** Rendered size (px) above which an <img> counts as a generated result, not an attachment thumbnail. */
-const LARGE_IMAGE_MIN_SIZE_PX = 200;
-/** How long a blob-only fallback image must stay the only candidate before we accept it. */
-const FALLBACK_BLOB_GRACE_MS = 6_000;
-
 const stepStartByPage = new WeakMap<Page, number>();
 
 function metaLog(page: Page, step: string, msg: string): void {
@@ -67,30 +62,6 @@ async function composerInputLength(page: Page): Promise<number> {
       return (t.textContent ?? '').length;
     })
     .catch(() => -1);
-}
-
-interface PageImage {
-  src: string;
-  srcset: string | null;
-  width: number;
-  height: number;
-}
-
-/** Images rendered large on the page (generated results, not attachment thumbnails). */
-async function collectLargePageImages(page: Page): Promise<PageImage[]> {
-  return page
-    .evaluate(minSize => {
-      const result: Array<{ src: string; srcset: string | null; width: number; height: number }> = [];
-      for (const img of Array.from(document.images)) {
-        const rect = img.getBoundingClientRect();
-        if (rect.width < minSize || rect.height < minSize) continue;
-        const src = img.currentSrc || img.src;
-        if (!src || src.includes('favicon')) continue;
-        result.push({ src, srcset: img.getAttribute('srcset'), width: Math.round(rect.width), height: Math.round(rect.height) });
-      }
-      return result;
-    }, LARGE_IMAGE_MIN_SIZE_PX)
-    .catch(() => []);
 }
 
 /** Dump DOM facts + screenshot so selector drift on meta.ai can be identified from the log. */
@@ -145,7 +116,6 @@ async function dumpMetaDiagnostics(page: Page, reason: string): Promise<void> {
 /** One-line composer/page state used to trace where a run goes wrong. */
 async function composerSnapshot(page: Page): Promise<string> {
   const inputLen = await composerInputLength(page);
-  const bigImages = (await collectLargePageImages(page)).length;
   let urlPath = '';
   try {
     urlPath = new URL(page.url()).pathname;
@@ -169,7 +139,7 @@ async function composerSnapshot(page: Page): Promise<string> {
     .first()
     .isVisible()
     .catch(() => false);
-  return `input=${inputLen}ch send=${sendVisible ? (sendEnabled ? 'enabled' : 'disabled') : 'hidden'} stop=${stopVisible ? 'visible' : 'hidden'} messages=${messages} bigImages=${bigImages} dialog=${dialog ? 'open' : 'none'} path=${urlPath}`;
+  return `input=${inputLen}ch send=${sendVisible ? (sendEnabled ? 'enabled' : 'disabled') : 'hidden'} stop=${stopVisible ? 'visible' : 'hidden'} messages=${messages} dialog=${dialog ? 'open' : 'none'} path=${urlPath}`;
 }
 
 function domTimeoutError(detail: string): AppError {
@@ -370,14 +340,12 @@ async function extractFirstAssistantImage(
   page: Page,
   timeoutMs: number,
   baseline: number,
-  knownImageSrcs: ReadonlySet<string>,
 ): Promise<{ assistant: Locator; sourceUrl: string }> {
   const startedAt = Date.now();
   const deadline = startedAt + timeoutMs;
   let pollCount = 0;
   let nextIdleAt = randomInt(3, 5);
   let lastStateLogAt = 0;
-  let fallbackSeenAt: number | null = null;
   metaLog(page, 'image', `polling for image (budget ${Math.round(timeoutMs / 1000)}s, baseline messages=${baseline})`);
 
   while (Date.now() < deadline) {
@@ -408,24 +376,6 @@ async function extractFirstAssistantImage(
 
     // Only look at messages created by this prompt — never reuse an older image in the chat.
     if ((await countMessageItems(page)) <= baseline) {
-      // Message selectors may have drifted (messages stays 0 although Meta is generating).
-      // Fall back to any NEW large image that was not on the page before submit.
-      const fresh = (await collectLargePageImages(page)).filter(img => !knownImageSrcs.has(img.src));
-      const best = pickBestMetaImageUrlFromInputs(fresh.map(img => ({ src: img.src, srcset: img.srcset })));
-      if (best) {
-        fallbackSeenAt ??= Date.now();
-        const settled = best.kind === 'http' || Date.now() - fallbackSeenAt >= FALLBACK_BLOB_GRACE_MS;
-        if (settled) {
-          metaLog(
-            page,
-            'image',
-            `FALLBACK: new large image found without message items (${best.kind}, ${fresh.length} new) ` +
-              `after ${Date.now() - startedAt}ms: ${best.url.slice(0, 120)}`,
-          );
-          const assistant = page.locator(`img[src=${JSON.stringify(best.url)}]`).first();
-          return { assistant, sourceUrl: best.url };
-        }
-      }
       await randomDelay(400, 800);
       continue;
     }
@@ -439,7 +389,6 @@ async function extractFirstAssistantImage(
         const remainingMs = Math.max(1_000, deadline - Date.now());
         const resolved = await resolveMetaImageSourceUrl(assistant, remainingMs, {
           pollDelayMs: 400,
-          blobGraceMs: ASSISTANT_IMAGE_POLL_MS,
         });
         metaLog(
           page,
@@ -616,7 +565,6 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
 
       const baseline = await countMessageItems(page);
       const inputLenBeforeSubmit = await composerInputLength(page);
-      const baselineImageSrcs = (await collectLargePageImages(page)).map(img => img.src);
       const submitWith = options?.submitWith ?? 'button';
       metaLog(page, 'submit', `submitting via ${submitWith}, baseline messages=${baseline} - ${await composerSnapshot(page)}`);
       await randomDelay(3_000, 1_500);
@@ -639,17 +587,17 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       // }
       // metaLog(page, 'post-submit-wait', 'done - start waiting for image');
 
-      return { baselineBlockCount: baseline, baselineImageSrcs };
+      return { baselineBlockCount: baseline };
     },
 
     async receiveResponse(page: Page, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
       const startedAt = Date.now();
       const metaOptions = resolveMetaOptions(options);
       const timeoutMs = resolveAssistantWaitTimeoutMs(metaOptions);
-      const { baselineBlockCount, baselineImageSrcs } = metaOptions;
-      if (baselineBlockCount === undefined || baselineImageSrcs === undefined) {
+      const { baselineBlockCount } = metaOptions;
+      if (baselineBlockCount === undefined) {
         throw new AppError(
-          'Meta receiveResponse requires baselineBlockCount and baselineImageSrcs from sendPrompt',
+          'Meta receiveResponse requires baselineBlockCount from sendPrompt',
           500,
           'META_MISSING_BASELINE',
         );
@@ -669,7 +617,7 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         // button is not always shown for image generation), so keep polling for the image with
         // the rest of the overall budget — at least ASSISTANT_IMAGE_POLL_MS.
         const remainingMs = Math.max(ASSISTANT_IMAGE_POLL_MS, timeoutMs - (Date.now() - startedAt));
-        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, remainingMs, baselineBlockCount, new Set(baselineImageSrcs)));
+        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, remainingMs, baselineBlockCount));
       } catch (err) {
         metaLog(page, 'receive', `FAILED before download: ${errText(err)}`);
         await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);

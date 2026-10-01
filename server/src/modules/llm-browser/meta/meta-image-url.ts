@@ -161,14 +161,12 @@ export async function collectAssistantImageInputs(
 
 export interface ResolveMetaImageSourceUrlOptions {
   pollDelayMs?: number;
-  /** Return the blob URL once it has been the best candidate for this long (no HTTP URL showed up). */
-  blobGraceMs?: number;
   onPoll?: (candidateCount: number, best: MetaImageUrlCandidate | null) => void;
 }
 
 /**
- * Poll assistant message images until an HTTP URL appears, or timeout and
- * fall back to the best blob URL if that is all Meta rendered.
+ * Poll assistant message images and return the best candidate as soon as one exists:
+ * an HTTP URL is preferred (higher priority), but a blob URL is accepted immediately too.
  */
 export async function resolveMetaImageSourceUrl(
   assistant: Locator,
@@ -177,9 +175,7 @@ export async function resolveMetaImageSourceUrl(
 ): Promise<ResolvedMetaImageUrl> {
   const deadline = Date.now() + timeoutMs;
   const pollDelayMs = options?.pollDelayMs ?? 400;
-  let lastBlob: MetaImageUrlCandidate | null = null;
   let lastCandidateCount = 0;
-  let firstBlobAt: number | null = null;
 
   while (Date.now() < deadline) {
     const inputs = await collectAssistantImageInputs(assistant);
@@ -190,23 +186,11 @@ export async function resolveMetaImageSourceUrl(
     );
     options?.onPoll?.(lastCandidateCount, best);
 
-    if (best?.kind === 'http') {
+    if (best) {
       return { url: best.url, kind: best.kind, candidateCount: lastCandidateCount };
     }
 
-    if (best?.kind === 'blob') {
-      lastBlob = best;
-      firstBlobAt ??= Date.now();
-      if (options?.blobGraceMs != null && Date.now() - firstBlobAt >= options.blobGraceMs) {
-        return { url: best.url, kind: best.kind, candidateCount: lastCandidateCount };
-      }
-    }
-
     await new Promise(resolve => setTimeout(resolve, pollDelayMs));
-  }
-
-  if (lastBlob) {
-    return { url: lastBlob.url, kind: lastBlob.kind, candidateCount: lastCandidateCount };
   }
 
   throw new Error('No downloadable image URL found in assistant message');
