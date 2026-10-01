@@ -161,6 +161,8 @@ export async function collectAssistantImageInputs(
 
 export interface ResolveMetaImageSourceUrlOptions {
   pollDelayMs?: number;
+  /** Return the blob URL once it has been the best candidate for this long (no HTTP URL showed up). */
+  blobGraceMs?: number;
   onPoll?: (candidateCount: number, best: MetaImageUrlCandidate | null) => void;
 }
 
@@ -177,6 +179,7 @@ export async function resolveMetaImageSourceUrl(
   const pollDelayMs = options?.pollDelayMs ?? 400;
   let lastBlob: MetaImageUrlCandidate | null = null;
   let lastCandidateCount = 0;
+  let firstBlobAt: number | null = null;
 
   while (Date.now() < deadline) {
     const inputs = await collectAssistantImageInputs(assistant);
@@ -193,6 +196,10 @@ export async function resolveMetaImageSourceUrl(
 
     if (best?.kind === 'blob') {
       lastBlob = best;
+      firstBlobAt ??= Date.now();
+      if (options?.blobGraceMs != null && Date.now() - firstBlobAt >= options.blobGraceMs) {
+        return { url: best.url, kind: best.kind, candidateCount: lastCandidateCount };
+      }
     }
 
     await new Promise(resolve => setTimeout(resolve, pollDelayMs));

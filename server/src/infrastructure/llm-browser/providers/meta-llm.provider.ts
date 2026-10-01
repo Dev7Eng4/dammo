@@ -241,6 +241,7 @@ async function extractFirstAssistantImage(
         const remainingMs = Math.max(1_000, deadline - Date.now());
         const resolved = await resolveMetaImageSourceUrl(assistant, remainingMs, {
           pollDelayMs: 400,
+          blobGraceMs: ASSISTANT_IMAGE_POLL_MS,
         });
         console.log(
           `[meta] resolved image url (${resolved.kind}, candidates=${resolved.candidateCount}): ${resolved.url.slice(0, 120)}`,
@@ -254,7 +255,15 @@ async function extractFirstAssistantImage(
     await randomDelay(400, 800);
   }
 
-  throw domTimeoutError('No image found in assistant-message of last message item');
+  const messageCount = await countMessageItems(page);
+  const lastMessage = page.locator(META_CONFIG.selectors.messageItem).last();
+  const assistantCount = await lastMessage.locator(META_CONFIG.selectors.assistantMessage).count().catch(() => 0);
+  const imgCount = await lastMessage.locator('img').count().catch(() => 0);
+  throw domTimeoutError(
+    `No image found in assistant-message of last message item ` +
+      `(waited ${Math.round(timeoutMs / 1000)}s, messages=${messageCount}, baseline=${baseline}, ` +
+      `assistantInLast=${assistantCount}, imgInLast=${imgCount})`,
+  );
 }
 
 function hasOutputConfig(options: MetaReceiveResponseOptions): boolean {
@@ -420,15 +429,18 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       const startedAt = Date.now();
       const metaOptions = resolveMetaOptions(options);
       const timeoutMs = resolveAssistantWaitTimeoutMs(metaOptions);
-      const imagePollTimeoutMs = Math.min(ASSISTANT_IMAGE_POLL_MS, timeoutMs);
 
       let assistant: Locator;
       let sourceUrl: string;
 
       try {
         await waitForComposerGenerationComplete(page, timeoutMs);
+        // The composer often returns to "send" long before the image is rendered (the stop
+        // button is not always shown for image generation), so keep polling for the image with
+        // the rest of the overall budget — at least ASSISTANT_IMAGE_POLL_MS.
+        const remainingMs = Math.max(ASSISTANT_IMAGE_POLL_MS, timeoutMs - (Date.now() - startedAt));
         const baseline = messageBaselineByPage.get(page) ?? 0;
-        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, imagePollTimeoutMs, baseline));
+        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, remainingMs, baseline));
       } catch (err) {
         await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
         throw err;
