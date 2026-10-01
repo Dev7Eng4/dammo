@@ -193,6 +193,11 @@ export class MetaBrowserService {
 
         for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
           try {
+            if (attempt > 1) {
+              // Reload Meta so the retry starts from an empty composer — otherwise the previous
+              // attachment(s) and text stay behind and get duplicated on every attempt.
+              await this.openOnPage(worker.page);
+            }
             const response = await this.generateMediaOnPage(worker.page, job.prompt, {
               mediaKind: job.mediaKind ?? 'image',
               aspectRatio: job.aspectRatio ?? '16:9',
