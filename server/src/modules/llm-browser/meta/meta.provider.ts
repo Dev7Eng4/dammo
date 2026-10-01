@@ -2,10 +2,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from '../meta.config.js';
-import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from '../meta-media.js';
-import { pickBestMetaImageUrlFromInputs, resolveMetaImageSourceUrl } from '../meta-image-url.js';
-import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
+import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from './meta.config.js';
+import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
+import { pickBestMetaImageUrlFromInputs, resolveMetaImageSourceUrl } from './meta-image-url.js';
+import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
   LlmBrowserResponse,
   LlmMediaAsset,
@@ -13,7 +13,7 @@ import type {
   LlmSendPromptOptions,
   LlmSetupConfig,
   MetaReceiveResponseOptions,
-} from '../llm-browser.types.js';
+} from '../core/types.js';
 import {
   humanClearInput,
   humanClick,
@@ -24,7 +24,7 @@ import {
   humanWander,
   randomDelay,
   randomInt,
-} from '../human-interaction.js';
+} from '../../../infrastructure/browser/human-interaction.js';
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'meta' as const;
@@ -281,6 +281,7 @@ async function waitForPromptSubmitted(
   baseline: number,
   timeoutMs: number,
   inputLenBeforeSubmit: number,
+  submittedAt: number,
 ): Promise<boolean> {
   const startedAt = Date.now();
   const deadline = startedAt + timeoutMs;
@@ -289,7 +290,7 @@ async function waitForPromptSubmitted(
     // the stop button / message-item selectors can drift, and Enter that is ignored leaves the text.
     const inputLen = await composerInputLength(page);
     if (inputLenBeforeSubmit > 1 && inputLen >= 0 && inputLen <= 1) {
-      metaLog(page, 'submit-confirm', `accepted: composer cleared (${inputLenBeforeSubmit} -> ${inputLen} chars) after ${Date.now() - startedAt}ms`);
+      metaLog(page, 'submit-confirm', `accepted: composer cleared (${inputLenBeforeSubmit} -> ${inputLen} chars), ${Date.now() - submittedAt}ms after submit (check began ${Date.now() - startedAt}ms ago) - ${await composerSnapshot(page)}`);
       return true;
     }
     if (await isComposerStopVisible(page)) {
@@ -633,17 +634,18 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       const submitWith = options?.submitWith ?? 'button';
       metaLog(page, 'submit', `submitting via ${submitWith}, baseline messages=${baseline} - ${await composerSnapshot(page)}`);
       await submitComposer(page, submitWith);
+      const submittedAt = Date.now();
       metaLog(page, 'submit', `submitted - ${await composerSnapshot(page)}`);
       await dismissDialogIfPresent(page);
 
-      if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS, inputLenBeforeSubmit))) {
+      if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS, inputLenBeforeSubmit, submittedAt))) {
         // Re-submit only while the prompt is still sitting in the composer (send enabled);
         // an empty composer means it was sent and the page is just slow to show it.
         if (await waitForSendReady(page, SEND_READY_TIMEOUT_MS)) {
           metaLog(page, 'submit', 'prompt still in composer after first submit - submitting again via button');
           await submitComposer(page, 'button');
           await dismissDialogIfPresent(page);
-          if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS, inputLenBeforeSubmit))) {
+          if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS, inputLenBeforeSubmit, submittedAt))) {
             metaLog(page, 'submit', 'FAILED: Meta did not accept the prompt after re-submit');
             throw new AppError('Meta did not accept the prompt (composer not submitted)', 502, 'META_PROMPT_NOT_SUBMITTED');
           }

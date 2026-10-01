@@ -1,4 +1,4 @@
-import { AppError } from '../../shared/http/errors.js';
+import { AppError } from '../../../../shared/http/errors.js';
 
 export const FLOW_DAILY_QUOTA_EXHAUSTED = 'FLOW_DAILY_QUOTA_EXHAUSTED';
 export const FLOW_API_RATE_LIMITED = 'FLOW_API_RATE_LIMITED';

@@ -4,8 +4,8 @@ import { ensureDataDirs, paths } from '../config/paths.js';
 import { AppError } from '../shared/http/errors.js';
 import { chromeProfilesService } from '../modules/chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../modules/chrome-profiles/chrome-profiles.types.js';
-import { flowBrowserService } from '../modules/llm-browser/flow-browser.service.js';
-import type { FlowToolVisual } from '../infrastructure/llm-browser/llm-browser.types.js';
+import { flowBrowserService } from '../modules/llm-browser/flow/flow.service.js';
+import type { FlowToolVisual } from '../modules/llm-browser/flow/flow.types.js';
 
 /**
  * Override project id for testing: npm run flow:generate-tool-images -- --project-id <id>

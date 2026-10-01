@@ -3,7 +3,7 @@ import path from 'node:path';
 import { extractTranscriptForMetadata } from '../../../../infrastructure/subtitle/srt-utils.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
+import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { executePromptTemplate, getPromptTemplateArity } from '../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';

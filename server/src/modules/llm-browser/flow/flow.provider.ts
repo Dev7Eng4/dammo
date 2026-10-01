@@ -9,18 +9,18 @@ import {
   MAVID_EDITOR_TOOL_ID,
   buildFlowProjectUrl,
   buildFlowToolUrl,
-} from '../flow.config.js';
-import { downloadAndSaveFlowImage } from '../flow-api-response.js';
-import { appErrorFromFlowErrorTileText } from '../flow-api-errors.js';
-import type { FlowOpenOptions } from '../llm-browser.types.js';
-import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
+} from './flow.config.js';
+import { downloadAndSaveFlowImage } from './api/flow-api-response.js';
+import { appErrorFromFlowErrorTileText } from './api/flow-api-errors.js';
+import type { FlowOpenOptions } from '../core/types.js';
+import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
   LlmBrowserResponse,
   LlmMediaAsset,
   LlmReceiveResponseOptions,
   LlmSendPromptOptions,
   LlmSetupConfig,
-} from '../llm-browser.types.js';
+} from '../core/types.js';
 import {
   humanClick,
   humanPaste,
@@ -29,9 +29,9 @@ import {
   isPromptFillAcceptable,
   randomDelay,
   setupClick,
-} from '../human-interaction.js';
-import { resolveReferenceImagePaths } from '../resolve-reference-image-paths.js';
-import { appSettingsService } from '../../../modules/app-settings/app-settings.service.js';
+} from '../../../infrastructure/browser/human-interaction.js';
+import { resolveReferenceImagePaths } from './flow-resolve-reference-images.js';
+import { appSettingsService } from '../../app-settings/app-settings.service.js';
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'flow' as const;

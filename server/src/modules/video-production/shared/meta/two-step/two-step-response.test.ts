@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import type { LlmBrowserResponse } from '../../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmBrowserResponse } from '../../../../llm-browser/core/types.js';
 import { parseTwoStepStep1Response, parseTwoStepStep2Response } from './two-step-response.js';
 
 function makeResponse(content: string, codeBlocks: string[] = []): LlmBrowserResponse {

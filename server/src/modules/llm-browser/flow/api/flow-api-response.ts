@@ -1,11 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page, Request, Response } from 'playwright';
-import { paths } from '../../config/paths.js';
-import { AppError } from '../../shared/http/errors.js';
+import { paths } from '../../../../config/paths.js';
+import { AppError } from '../../../../shared/http/errors.js';
 import { createFlowDailyQuotaError, isFlowDailyQuotaExhausted } from './flow-api-errors.js';
-import { FLOW_TOOL_IDLE_MS, isFlowContentImageUrl } from './flow.config.js';
-import type { FlowGenerateImageOptions, FlowToolVisual, LlmMediaAsset } from './llm-browser.types.js';
+import { FLOW_TOOL_IDLE_MS, isFlowContentImageUrl } from '../flow.config.js';
+import type { LlmMediaAsset } from '../../core/types.js';
+import type { FlowGenerateImageOptions, FlowToolVisual } from '../flow.types.js';
 
 const BATCH_GENERATE_IMAGES_PATH = 'flowMedia:batchGenerateImages';
 

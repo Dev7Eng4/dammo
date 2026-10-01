@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { getLlmProviderConfig } from '../llm-browser.config.js';
-import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
+import { getLlmProviderConfig } from './text.config.js';
+import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
   FlowOpenOptions,
   LlmBrowserProvider,
@@ -12,7 +12,7 @@ import type {
   LlmSendPromptOptions,
   LlmSendPromptResult,
   LlmSetupConfig,
-} from '../llm-browser.types.js';
+} from '../core/types.js';
 import {
   humanClick,
   humanPaste,
@@ -22,7 +22,7 @@ import {
   humanWander,
   randomDelay,
   randomInt,
-} from '../human-interaction.js';
+} from '../../../infrastructure/browser/human-interaction.js';
 
 const WARMUP_URL = 'https://www.google.com';
 

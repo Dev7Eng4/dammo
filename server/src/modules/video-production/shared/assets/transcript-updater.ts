@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { LlmBrowserResponse, LlmTextProvider } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmBrowserResponse, LlmTextProvider } from '../../../llm-browser/core/types.js';
 import {
   chunkSrtBlocks,
   parseIndexedTranscriptResponse,
@@ -17,7 +17,7 @@ import { promptsSettingsService } from '../../../prompts/prompts-settings.servic
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import { llmBrowserService } from '../../../llm-browser/llm-browser.service.js';
+import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
 

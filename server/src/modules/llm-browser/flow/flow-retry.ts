@@ -3,11 +3,12 @@ import {
   FLOW_MAX_RETRIES,
   FLOW_RETRY_BASE_DELAY_MS,
   FLOW_RETRY_RATE_LIMIT_DELAY_MS,
-} from '../../infrastructure/llm-browser/flow.config.js';
-import { isFlowDailyQuotaError, isFlowPolicyViolationError } from '../../infrastructure/llm-browser/flow-api-errors.js';
-import type { FlowGenerateImageOptions, LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
-import { AppError } from '../../shared/http/errors.js';
-import { emitDetailLog } from '../video-production/shared/video-log.js';
+} from './flow.config.js';
+import { isFlowDailyQuotaError, isFlowPolicyViolationError } from './api/flow-api-errors.js';
+import type { LlmBrowserResponse } from '../core/types.js';
+import type { FlowGenerateImageOptions } from './flow.types.js';
+import { AppError } from '../../../shared/http/errors.js';
+import { emitDetailLog } from '../../video-production/shared/video-log.js';
 import { generateImageWithFailover } from './flow-profile-failover.js';
 
 export { FLOW_MAX_RETRIES };

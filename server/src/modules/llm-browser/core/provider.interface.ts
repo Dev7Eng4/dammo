@@ -7,7 +7,7 @@ import type {
   LlmSendPromptOptions,
   LlmSendPromptResult,
   LlmSetupConfig,
-} from './llm-browser.types.js';
+} from './types.js';
 
 export interface LlmBrowserProviderHandler {
   readonly provider: LlmBrowserProvider;

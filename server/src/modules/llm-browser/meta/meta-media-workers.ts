@@ -3,20 +3,20 @@ import {
   connectPlaywrightToGpmProfile,
   disconnectGpmPlaywright,
   type GpmPlaywrightConnection,
-} from '../../infrastructure/gpm/gpm-playwright.connector.js';
-import type { GpmProfile } from '../../infrastructure/gpm/gpm-api.client.js';
-import { getMetaBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
-import type { MetaConcurrencyMode } from '../../infrastructure/llm-browser/llm-browser.types.js';
-import { AppError } from '../../shared/http/errors.js';
+} from '../../../infrastructure/gpm/gpm-playwright.connector.js';
+import type { GpmProfile } from '../../../infrastructure/gpm/gpm-api.client.js';
+import { getMetaBrowserHandler } from '../core/registry.js';
+import type { MetaConcurrencyMode } from './meta.types.js';
+import { AppError } from '../../../shared/http/errors.js';
 import {
   closeChromeProfiles,
   createChromeProfilePage,
   getChromeProfilePage,
   openChromeProfile,
-} from '../chrome-profiles/chrome-profile.runner.js';
-import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
-import type { ChromeProfile } from '../chrome-profiles/chrome-profiles.types.js';
-import { gpmManagerService } from '../gpm-manager/gpm-manager.service.js';
+} from '../../chrome-profiles/chrome-profile.runner.js';
+import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
+import type { ChromeProfile } from '../../chrome-profiles/chrome-profiles.types.js';
+import { gpmManagerService } from '../../gpm-manager/gpm-manager.service.js';
 
 export const META_MEDIA_TABS_PER_MAIN_PROFILE = 5;
 export const META_MEDIA_DEFAULT_TIMEOUT_MS = 300_000;

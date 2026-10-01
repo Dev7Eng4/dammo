@@ -1,5 +1,5 @@
-import { paths } from '../../config/paths.js';
-import { readJson, updateJson } from '../storage/json-store.js';
+import { paths } from '../../../config/paths.js';
+import { readJson, updateJson } from '../../../infrastructure/storage/json-store.js';
 
 export interface FlowProjectRecord {
   projectId: string;

@@ -11,7 +11,7 @@ import {
   type ChromeWorkArea,
 } from '../../infrastructure/chrome/chrome-window-placement.js';
 import { applyStealthInit, stealthChromium } from '../../infrastructure/chrome/stealth-init.js';
-import { clearLlmBrowserSessionsForProfile } from '../../infrastructure/llm-browser/llm-browser.session.js';
+import { clearLlmBrowserSessionsForProfile } from '../llm-browser/core/session.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
 

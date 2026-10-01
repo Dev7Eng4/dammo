@@ -1,6 +1,6 @@
 import { paths } from '../../config/paths.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
-import type { ImageBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { ImageBrowserProvider } from '../llm-browser/core/types.js';
 import type { PromptsSettings } from './prompts-settings.types.js';
 
 const DEFAULT_SETTINGS: PromptsSettings = {

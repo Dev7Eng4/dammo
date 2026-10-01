@@ -1,23 +1,16 @@
 import type { Page } from 'playwright';
-import { getMetaBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
+import { getMetaBrowserHandler } from '../core/registry.js';
 import {
   getLlmBrowserSession,
   setLlmBrowserSessionStatus,
   upsertLlmBrowserSession,
-} from '../../infrastructure/llm-browser/llm-browser.session.js';
-import type {
-  LlmBrowserResponse,
-  LlmBrowserSession,
-  MetaGenerateMediaBatchOptions,
-  MetaGenerateMediaOptions,
-  MetaMediaBatchJob,
-  MetaMediaBatchJobResult,
-  MetaMediaBatchResult,
-} from '../../infrastructure/llm-browser/llm-browser.types.js';
-import { AppError } from '../../shared/http/errors.js';
-import { emitDetailLog } from '../video-production/shared/video-log.js';
-import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
-import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
+} from '../core/session.js';
+import type { LlmBrowserResponse, LlmBrowserSession } from '../core/types.js';
+import type { MetaGenerateMediaBatchOptions, MetaGenerateMediaOptions, MetaMediaBatchJob, MetaMediaBatchJobResult, MetaMediaBatchResult } from './meta.types.js';
+import { AppError } from '../../../shared/http/errors.js';
+import { emitDetailLog } from '../../video-production/shared/video-log.js';
+import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
+import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 import {
   cleanupMetaWorkerPool,
   META_MEDIA_DEFAULT_MAX_RETRIES,

@@ -1,4 +1,4 @@
-import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmBrowserResponse } from '../../../llm-browser/core/types.js';
 
 const SNIPPET_MAX = 1800;
 

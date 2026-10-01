@@ -1,5 +1,5 @@
-import { getLlmTextBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
-import type { LlmBrowserResponse } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import { getLlmTextBrowserHandler } from '../llm-browser/core/registry.js';
+import type { LlmBrowserResponse } from '../llm-browser/core/types.js';
 import {
   connectPlaywrightToGpmProfile,
   detachGpmPlaywright,

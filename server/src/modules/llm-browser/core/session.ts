@@ -1,4 +1,4 @@
-import type { LlmBrowserProvider, LlmBrowserSession, LlmSessionStatus } from './llm-browser.types.js';
+import type { LlmBrowserProvider, LlmBrowserSession, LlmSessionStatus } from './types.js';
 
 const sessions = new Map<string, LlmBrowserSession>();
 

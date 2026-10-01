@@ -1,17 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type {
-  FlowToolVisual,
-  MetaConcurrencyMode,
-  MetaMediaBatchJob,
-} from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { FlowToolVisual } from '../../../llm-browser/flow/flow.types.js';
+import type { MetaConcurrencyMode, MetaMediaBatchJob } from '../../../llm-browser/meta/meta.types.js';
 import { resizeImageFileInPlaceToFit } from '../../../../infrastructure/ffmpeg/image-resize.js';
-import { META_IMAGE_HEIGHT, META_IMAGE_WIDTH } from '../../../../infrastructure/llm-browser/meta-media.js';
+import { META_IMAGE_HEIGHT, META_IMAGE_WIDTH } from '../../../llm-browser/meta/meta-media.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow-profile-failover.js';
-import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
+import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow/flow-profile-failover.js';
+import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { resolveSlideClipCachePath } from '../slideshow/slideshow-clip-renderer.js';
 import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';

@@ -1,4 +1,4 @@
-import type { LlmTextProvider, ImageBrowserProvider, VideoBrowserProvider } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmTextProvider, ImageBrowserProvider, VideoBrowserProvider } from '../llm-browser/core/types.js';
 
 export interface PromptsSettings {
   defaultLlmProvider: LlmTextProvider;

@@ -1,6 +1,6 @@
 import type { BrowserContext, Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { randomDelay } from '../../../infrastructure/llm-browser/human-interaction.js';
+import { randomDelay } from '../../../infrastructure/browser/human-interaction.js';
 import { GMAIL_LOGIN } from './gmail-selectors.js';
 
 const POPUP_TIMEOUT_MS = 30_000;

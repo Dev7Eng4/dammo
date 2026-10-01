@@ -1,4 +1,4 @@
-import type { LlmTextProvider, LlmProviderConfig } from './llm-browser.types.js';
+import type { LlmTextProvider, LlmProviderConfig } from '../core/types.js';
 
 export const LLM_PROVIDER_CONFIGS: Record<LlmTextProvider, LlmProviderConfig> = {
   gpt: {

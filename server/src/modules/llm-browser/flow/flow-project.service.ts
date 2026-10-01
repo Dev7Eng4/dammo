@@ -1,16 +1,16 @@
 import type { Page } from 'playwright';
-import { FLOW_PROJECT_MAX_USAGE_COUNT } from '../../infrastructure/llm-browser/flow.config.js';
+import { FLOW_PROJECT_MAX_USAGE_COUNT } from './flow.config.js';
 import {
   getFlowProject,
   incrementFlowProjectUsage,
   saveFlowProject,
-} from '../../infrastructure/llm-browser/flow-project.store.js';
+} from './flow-project.store.js';
 import {
   createNewFlowProject,
   ensureInitialProjectSetup,
   openFlowProjectPage,
-} from '../../infrastructure/llm-browser/providers/flow-llm.provider.js';
-import { emitDetailLog } from '../video-production/shared/video-log.js';
+} from './flow.provider.js';
+import { emitDetailLog } from '../../video-production/shared/video-log.js';
 
 export interface ResolveFlowProjectOptions {
   explicitProjectId?: string;

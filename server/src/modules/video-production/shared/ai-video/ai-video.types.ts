@@ -1,5 +1,5 @@
 import type { AiSceneDensityMaxSec, AiVideoDensityLevel } from './ai-video.constants.js';
-import type { MetaConcurrencyMode } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { MetaConcurrencyMode } from '../../../llm-browser/meta/meta.types.js';
 import type { CaptionStyleKey } from '../render-core/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { ImageSceneFlow } from '../../../prompts/image-scene-flow.js';

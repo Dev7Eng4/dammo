@@ -1,19 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { isFlowDailyQuotaError, isFlowPolicyViolationError, isFlowProfileSwitchError } from '../../infrastructure/llm-browser/flow-api-errors.js';
-import type {
-  FlowGenerateImageOptions,
-  FlowGenerateImagesViaToolOptions,
-  FlowToolVisual,
-  LlmBrowserResponse,
-  LlmMediaAsset,
-} from '../../infrastructure/llm-browser/llm-browser.types.js';
-import { AppError } from '../../shared/http/errors.js';
-import { closeChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
-import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
-import type { ChromeProfile } from '../chrome-profiles/chrome-profiles.types.js';
-import { flowBrowserService } from './flow-browser.service.js';
-import { emitDetailLog } from '../video-production/shared/video-log.js';
+import { isFlowDailyQuotaError, isFlowPolicyViolationError, isFlowProfileSwitchError } from './api/flow-api-errors.js';
+import type { LlmBrowserResponse, LlmMediaAsset } from '../core/types.js';
+import type { FlowGenerateImageOptions, FlowGenerateImagesViaToolOptions, FlowToolVisual } from './flow.types.js';
+import { AppError } from '../../../shared/http/errors.js';
+import { closeChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
+import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
+import type { ChromeProfile } from '../../chrome-profiles/chrome-profiles.types.js';
+import { flowBrowserService } from './flow.service.js';
+import { emitDetailLog } from '../../video-production/shared/video-log.js';
 
 export interface FlowProfileFailoverOptions {
   startProfileId?: string;

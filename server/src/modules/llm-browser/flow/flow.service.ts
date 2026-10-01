@@ -6,14 +6,14 @@ import {
   callBatchGenerateImagesOnPage,
   getAccessTokenFromPage,
   uploadReferenceImageViaApi,
-} from '../../infrastructure/llm-browser/flow-api.client.js';
+} from './api/flow-api.client.js';
 import {
   downloadAndSaveFlowImage,
   extractFifeUrl,
   beginFlowToolBatchImagesCollector,
   beginFlowContentImageWait,
   resolveFlowImageSavePath,
-} from '../../infrastructure/llm-browser/flow-api-response.js';
+} from './api/flow-api-response.js';
 import {
   FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS,
   FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS,
@@ -22,33 +22,26 @@ import {
   FLOW_RECAPTCHA_SITE_KEY,
   FLOW_TOOL_IDLE_MS,
   MAVID_EDITOR_TOOL_ID,
-} from '../../infrastructure/llm-browser/flow.config.js';
+} from './flow.config.js';
 import {
   openFlowProjectPage,
   openFlowToolPage,
   submitMavidEditorPrompt,
   waitForFlowProjectReady,
-} from '../../infrastructure/llm-browser/providers/flow-llm.provider.js';
-import { getFlowBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
+} from './flow.provider.js';
+import { getFlowBrowserHandler } from '../core/registry.js';
 import {
   getLlmBrowserSession,
   setLlmBrowserSessionStatus,
   upsertLlmBrowserSession,
-} from '../../infrastructure/llm-browser/llm-browser.session.js';
-import { resolveReferenceImagePaths } from '../../infrastructure/llm-browser/resolve-reference-image-paths.js';
-import type {
-  FlowGenerateImageOptions,
-  FlowGenerateImagesViaToolOptions,
-  FlowOpenOptions,
-  FlowToolVisual,
-  LlmBrowserResponse,
-  LlmMediaAsset,
-  LlmBrowserSession,
-} from '../../infrastructure/llm-browser/llm-browser.types.js';
-import { AppError } from '../../shared/http/errors.js';
-import { emitDetailLog } from '../video-production/shared/video-log.js';
-import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
-import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
+} from '../core/session.js';
+import { resolveReferenceImagePaths } from './flow-resolve-reference-images.js';
+import type { FlowOpenOptions, LlmBrowserResponse, LlmMediaAsset, LlmBrowserSession } from '../core/types.js';
+import type { FlowGenerateImageOptions, FlowGenerateImagesViaToolOptions, FlowToolVisual } from './flow.types.js';
+import { AppError } from '../../../shared/http/errors.js';
+import { emitDetailLog } from '../../video-production/shared/video-log.js';
+import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
+import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 import { recordFlowProjectUsage, resolveFlowProjectId } from './flow-project.service.js';
 
 const FLOW_PROVIDER = 'flow' as const;

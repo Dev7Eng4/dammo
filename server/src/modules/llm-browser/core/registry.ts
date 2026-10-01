@@ -1,8 +1,8 @@
-import type { ImageBrowserProvider, LlmBrowserProvider, LlmTextProvider } from './llm-browser.types.js';
-import type { LlmBrowserProviderHandler } from './llm-browser.provider.js';
-import { createFlowProviderHandler } from './providers/flow-llm.provider.js';
-import { createMetaProviderHandler } from './providers/meta-llm.provider.js';
-import { createLlmProviderHandler } from './providers/configurable-llm.provider.js';
+import type { ImageBrowserProvider, LlmBrowserProvider, LlmTextProvider } from './types.js';
+import type { LlmBrowserProviderHandler } from './provider.interface.js';
+import { createFlowProviderHandler } from '../flow/flow.provider.js';
+import { createMetaProviderHandler } from '../meta/meta.provider.js';
+import { createLlmProviderHandler } from '../text/text.provider.js';
 
 const textHandlers: Record<LlmTextProvider, LlmBrowserProviderHandler> = {
   gpt: createLlmProviderHandler('gpt'),

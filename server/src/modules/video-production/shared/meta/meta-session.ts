@@ -1,4 +1,4 @@
-import type { LlmTextProvider } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmTextProvider } from '../../../llm-browser/core/types.js';
 
 export interface MetaLlmSession {
   profileId: string;

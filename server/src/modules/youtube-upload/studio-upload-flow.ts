@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import type { Page } from 'playwright';
-import { humanScroll, randomInt } from '../../infrastructure/llm-browser/human-interaction.js';
+import { humanScroll, randomInt } from '../../infrastructure/browser/human-interaction.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import { clickElement, clearContent, delay, scrollUntilVisible } from './studio-dom.js';
 import { YOUTUBE_SELECTOR } from './studio-selectors.js';

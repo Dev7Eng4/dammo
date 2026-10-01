@@ -2,9 +2,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from 'playwright';
-import { AppError } from '../../shared/http/errors.js';
+import { AppError } from '../../../../shared/http/errors.js';
 import { FLOW_DAILY_QUOTA_EXHAUSTED, isFlowDailyQuotaExhausted } from './flow-api-errors.js';
-import { FLOW_API_REQUEST_HEADERS, FLOW_SESSION_URL, buildBatchGenerateImagesUrl, buildUploadImageUrl } from './flow.config.js';
+import { FLOW_API_REQUEST_HEADERS, FLOW_SESSION_URL, buildBatchGenerateImagesUrl, buildUploadImageUrl } from '../flow.config.js';
 
 function randomBatchId(): string {
   return crypto.randomUUID();

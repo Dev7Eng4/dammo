@@ -2,9 +2,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ensureDataDirs } from '../../config/paths.js';
-import type { MetaMediaBatchJob } from '../../infrastructure/llm-browser/llm-browser.types.js';
+import type { MetaMediaBatchJob } from '../../modules/llm-browser/meta/meta.types.js';
 import { AppError } from '../../shared/http/errors.js';
-import { metaBrowserService } from '../../modules/llm-browser/meta-browser.service.js';
+import { metaBrowserService } from '../../modules/llm-browser/meta/meta.service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_INPUT_PATH = path.join(__dirname, 'output', 'results.json');

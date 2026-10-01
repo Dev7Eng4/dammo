@@ -2,7 +2,7 @@ import playwright from 'playwright';
 import type { BrowserContext } from 'playwright';
 import { addExtra } from 'playwright-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { installMouseTracking } from '../llm-browser/human-interaction.js';
+import { installMouseTracking } from '../browser/human-interaction.js';
 
 export const stealthChromium = addExtra(playwright.chromium);
 stealthChromium.use(StealthPlugin());

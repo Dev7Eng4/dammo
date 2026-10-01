@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { LlmBrowserResponse } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { LlmBrowserResponse } from '../../../llm-browser/core/types.js';
 import { extractJsonText } from './llm-parse-result.js';
 
 export interface PersistLlmParseFailureInput {

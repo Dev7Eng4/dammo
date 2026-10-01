@@ -1,10 +1,10 @@
 import path from 'node:path';
-import type { ImageBrowserProvider } from '../../../../infrastructure/llm-browser/llm-browser.types.js';
+import type { ImageBrowserProvider } from '../../../llm-browser/core/types.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-import { FLOW_MAX_RETRIES, runWithFlowRetries, type FlowRetryProgress } from '../../../llm-browser/flow-retry.js';
-import { metaBrowserService } from '../../../llm-browser/meta-browser.service.js';
+import { FLOW_MAX_RETRIES, runWithFlowRetries, type FlowRetryProgress } from '../../../llm-browser/flow/flow-retry.js';
+import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 
 export const DEFAULT_HERO_IMAGE_FILENAME = 'background.jpg';

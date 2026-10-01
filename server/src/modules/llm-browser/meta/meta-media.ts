@@ -1,11 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from 'playwright';
-import { paths } from '../../config/paths.js';
-import { resizeImageToFit } from '../ffmpeg/image-resize.js';
-import { AppError } from '../../shared/http/errors.js';
+import { paths } from '../../../config/paths.js';
+import { resizeImageToFit } from '../../../infrastructure/ffmpeg/image-resize.js';
+import { AppError } from '../../../shared/http/errors.js';
 import { isBlobUrl, isHttpUrl } from './meta-image-url.js';
-import type { LlmMediaAsset, MetaGenerateMediaOptions } from './llm-browser.types.js';
+import type { LlmMediaAsset } from '../core/types.js';
+import type { MetaGenerateMediaOptions } from './meta.types.js';
 
 export const META_IMAGE_WIDTH = 1280;
 export const META_IMAGE_HEIGHT = 720;

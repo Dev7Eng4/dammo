@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
-import { runWithFlowRetries } from './flow-retry.js';
-import { metaBrowserService } from './meta-browser.service.js';
+import { runWithFlowRetries } from './flow/flow-retry.js';
+import { metaBrowserService } from './meta/meta.service.js';
 import {
   llmBrowserChatSchema,
   llmBrowserGenerateImageSchema,
@@ -13,7 +13,7 @@ import {
   llmBrowserSendSchema,
   llmBrowserSetupSchema,
 } from './llm-browser.schema.js';
-import { llmBrowserService } from './llm-browser.service.js';
+import { llmBrowserService } from './text/text.service.js';
 
 export function createLlmBrowserRoutes() {
   const app = new Hono();

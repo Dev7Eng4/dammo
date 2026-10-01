@@ -1,10 +1,10 @@
-import { getLlmTextBrowserHandler } from '../../infrastructure/llm-browser/llm-browser.registry.js';
+import { getLlmTextBrowserHandler } from '../core/registry.js';
 import {
   clearLlmBrowserSessionPendingBaseline,
   getLlmBrowserSession,
   setLlmBrowserSessionStatus,
   upsertLlmBrowserSession,
-} from '../../infrastructure/llm-browser/llm-browser.session.js';
+} from '../core/session.js';
 import type {
   LlmBrowserResponse,
   LlmBrowserSession,
@@ -13,10 +13,10 @@ import type {
   LlmTextChatOptions,
   LlmTextProvider,
   LlmTextReceiveResponseOptions,
-} from '../../infrastructure/llm-browser/llm-browser.types.js';
-import { AppError } from '../../shared/http/errors.js';
-import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../chrome-profiles/chrome-profile.runner.js';
-import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
+} from '../core/types.js';
+import { AppError } from '../../../shared/http/errors.js';
+import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
+import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 
 function assertProfileOpen(profileId: string): void {
   if (!isChromeProfileOpen(profileId)) {

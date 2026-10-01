@@ -1,5 +1,5 @@
 import type { Locator, Page } from 'playwright';
-import { humanClick, humanScroll, randomDelay, randomInt } from '../../infrastructure/llm-browser/human-interaction.js';
+import { humanClick, humanScroll, randomDelay, randomInt } from '../../infrastructure/browser/human-interaction.js';
 
 export async function delay(minMs: number, maxMs?: number): Promise<void> {
   const max = maxMs ?? minMs;

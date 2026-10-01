@@ -5,7 +5,7 @@ import { ensureDataDirs, paths } from '../config/paths.js';
 import { AppError } from '../shared/http/errors.js';
 import { chromeProfilesService } from '../modules/chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../modules/chrome-profiles/chrome-profiles.types.js';
-import { flowBrowserService } from '../modules/llm-browser/flow-browser.service.js';
+import { flowBrowserService } from '../modules/llm-browser/flow/flow.service.js';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 

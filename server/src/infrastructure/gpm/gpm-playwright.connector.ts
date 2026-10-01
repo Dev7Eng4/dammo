@@ -1,6 +1,6 @@
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { AppError } from '../../shared/http/errors.js';
-import { installMouseTracking, MOUSE_TRACKING_INIT_SCRIPT } from '../llm-browser/human-interaction.js';
+import { installMouseTracking, MOUSE_TRACKING_INIT_SCRIPT } from '../browser/human-interaction.js';
 import {
   listGpmProfiles,
   startGpmProfile,

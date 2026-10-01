@@ -4,7 +4,7 @@ import { ensureDataDirs, paths } from '../config/paths.js';
 import { AppError } from '../shared/http/errors.js';
 import { chromeProfilesService } from '../modules/chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../modules/chrome-profiles/chrome-profiles.types.js';
-import { metaBrowserService } from '../modules/llm-browser/meta-browser.service.js';
+import { metaBrowserService } from '../modules/llm-browser/meta/meta.service.js';
 
 /** Sửa danh sách prompt tại đây rồi chạy: npm run meta:generate-videos */
 const TEST_VIDEO_PROMPTS: Array<{ prompt: string; name: string }> = [
