@@ -12,6 +12,7 @@ import type {
   LlmMediaAsset,
   LlmReceiveResponseOptions,
   LlmSendPromptOptions,
+  LlmSendPromptResult,
   LlmSetupConfig,
   MetaReceiveResponseOptions,
 } from '../core/types.js';
@@ -39,10 +40,6 @@ const POST_SUBMIT_WAIT_MS = 40_000;
 /** Max wait after submit for Meta to accept the prompt (stop button or a new message). */
 const SUBMIT_CONFIRM_TIMEOUT_MS = 10_000;
 
-/** Message-item count captured right before a prompt is submitted, per page. */
-const messageBaselineByPage = new WeakMap<Page, number>();
-/** Large-image srcs already on the page right before submit (fallback when message selectors drift). */
-const imageBaselineByPage = new WeakMap<Page, Set<string>>();
 /** Rendered size (px) above which an <img> counts as a generated result, not an attachment thumbnail. */
 const LARGE_IMAGE_MIN_SIZE_PX = 200;
 /** How long a blob-only fallback image must stay the only candidate before we accept it. */
@@ -385,6 +382,7 @@ async function extractFirstAssistantImage(
   page: Page,
   timeoutMs: number,
   baseline: number,
+  knownImageSrcs: ReadonlySet<string>,
 ): Promise<{ assistant: Locator; sourceUrl: string }> {
   const startedAt = Date.now();
   const deadline = startedAt + timeoutMs;
@@ -418,8 +416,7 @@ async function extractFirstAssistantImage(
     if ((await countMessageItems(page)) <= baseline) {
       // Message selectors may have drifted (messages stays 0 although Meta is generating).
       // Fall back to any NEW large image that was not on the page before submit.
-      const known = imageBaselineByPage.get(page) ?? new Set<string>();
-      const fresh = (await collectLargePageImages(page)).filter(img => !known.has(img.src));
+      const fresh = (await collectLargePageImages(page)).filter(img => !knownImageSrcs.has(img.src));
       const best = pickBestMetaImageUrlFromInputs(fresh.map(img => ({ src: img.src, srcset: img.srcset })));
       if (best) {
         fallbackSeenAt ??= Date.now();
@@ -585,7 +582,7 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       // Meta media generation is stateless per prompt.
     },
 
-    async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
+    async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<LlmSendPromptResult> {
       stepStartByPage.set(page, Date.now());
       await humanIdleBrief(page);
 
@@ -622,7 +619,7 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
 
       const baseline = await countMessageItems(page);
       const inputLenBeforeSubmit = await composerInputLength(page);
-      imageBaselineByPage.set(page, new Set((await collectLargePageImages(page)).map(img => img.src)));
+      const baselineImageSrcs = (await collectLargePageImages(page)).map(img => img.src);
       const submitWith = options?.submitWith ?? 'button';
       metaLog(page, 'submit', `submitting via ${submitWith}, baseline messages=${baseline} - ${await composerSnapshot(page)}`);
       await submitComposer(page, submitWith);
@@ -644,7 +641,6 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         }
       }
 
-      messageBaselineByPage.set(page, baseline);
       await randomDelay(500, 1_000);
       metaLog(page, 'send', `done - ${await composerSnapshot(page)}`);
 
@@ -658,12 +654,22 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         metaLog(page, 'post-submit-wait', `${Math.round(remaining / 1000)}s left - ${await composerSnapshot(page)}`);
       }
       metaLog(page, 'post-submit-wait', 'done - start waiting for image');
+
+      return { baselineBlockCount: baseline, baselineImageSrcs };
     },
 
     async receiveResponse(page: Page, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
       const startedAt = Date.now();
       const metaOptions = resolveMetaOptions(options);
       const timeoutMs = resolveAssistantWaitTimeoutMs(metaOptions);
+      const { baselineBlockCount, baselineImageSrcs } = metaOptions;
+      if (baselineBlockCount === undefined || baselineImageSrcs === undefined) {
+        throw new AppError(
+          'Meta receiveResponse requires baselineBlockCount and baselineImageSrcs from sendPrompt',
+          500,
+          'META_MISSING_BASELINE',
+        );
+      }
       metaLog(page, 'receive', `start: timeout=${Math.round(timeoutMs / 1000)}s output=${metaOptions.outputPath ?? metaOptions.fileName ?? '(none)'}`);
 
       let assistant: Locator;
@@ -675,8 +681,12 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         // button is not always shown for image generation), so keep polling for the image with
         // the rest of the overall budget — at least ASSISTANT_IMAGE_POLL_MS.
         const remainingMs = Math.max(ASSISTANT_IMAGE_POLL_MS, timeoutMs - (Date.now() - startedAt));
-        const baseline = messageBaselineByPage.get(page) ?? 0;
-        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, remainingMs, baseline));
+        ({ assistant, sourceUrl } = await extractFirstAssistantImage(
+          page,
+          remainingMs,
+          baselineBlockCount,
+          new Set(baselineImageSrcs),
+        ));
       } catch (err) {
         metaLog(page, 'receive', `FAILED before download: ${errText(err)}`);
         await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);

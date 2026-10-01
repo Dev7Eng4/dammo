@@ -47,7 +47,8 @@ export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOption
   mediaKind?: 'image' | 'video' | 'auto';
   /** Image prompt aspect ratio prefix. Default: '16:9'. */
   aspectRatio?: '16:9' | '3:4';
-  baselineMediaCount?: number;
+  /** Large-image srcs already on the page before submit (from sendPrompt); needed by the image fallback. */
+  baselineImageSrcs?: string[];
 }
 export type LlmReceiveResponseOptions = FlowReceiveResponseOptions & MetaReceiveResponseOptions;
 export interface LlmSendPromptOptions {
@@ -57,7 +58,10 @@ export interface LlmSendPromptOptions {
 }
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}
 export interface LlmSendPromptResult {
+  /** Text: response blocks before submit. Meta: message items before submit. */
   baselineBlockCount: number;
+  /** Meta only: large-image srcs on the page before submit. */
+  baselineImageSrcs?: string[];
 }
 export interface LlmMediaAsset {
   kind: 'image' | 'video';

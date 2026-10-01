@@ -112,7 +112,7 @@ export class MetaBrowserService {
     const timeoutMs = options?.timeoutMs ?? META_MEDIA_DEFAULT_TIMEOUT_MS;
     const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind, aspectRatio);
 
-    await handler.sendPrompt(page, effectivePrompt, {
+    const sent = await handler.sendPrompt(page, effectivePrompt, {
       submitWith: 'enter',
       referenceImagePaths: options?.referenceImagePaths,
     });
@@ -126,6 +126,8 @@ export class MetaBrowserService {
       fileName: options?.fileName,
       debugScreenshotPath: options?.debugScreenshotPath,
       timeoutMs,
+      baselineBlockCount: sent?.baselineBlockCount,
+      baselineImageSrcs: sent?.baselineImageSrcs,
     });
   }
 
