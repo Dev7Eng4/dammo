@@ -4,7 +4,7 @@ import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
 import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from '../meta.config.js';
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from '../meta-media.js';
-import { resolveMetaImageSourceUrl } from '../meta-image-url.js';
+import { pickBestMetaImageUrlFromInputs, resolveMetaImageSourceUrl } from '../meta-image-url.js';
 import type { LlmBrowserProviderHandler } from '../llm-browser.provider.js';
 import type {
   LlmBrowserResponse,
@@ -33,11 +33,19 @@ const COMPOSER_STOP_GRACE_MS = 5_000;
 const ASSISTANT_IMAGE_POLL_MS = 15_000;
 /** Max wait for reference uploads to finish (send button enabled) before submitting. */
 const SEND_READY_TIMEOUT_MS = 60_000;
+/** Fixed idle time after the prompt is accepted, before polling for the generated image. */
+const POST_SUBMIT_WAIT_MS = 40_000;
 /** Max wait after submit for Meta to accept the prompt (stop button or a new message). */
 const SUBMIT_CONFIRM_TIMEOUT_MS = 10_000;
 
 /** Message-item count captured right before a prompt is submitted, per page. */
 const messageBaselineByPage = new WeakMap<Page, number>();
+/** Large-image srcs already on the page right before submit (fallback when message selectors drift). */
+const imageBaselineByPage = new WeakMap<Page, Set<string>>();
+/** Rendered size (px) above which an <img> counts as a generated result, not an attachment thumbnail. */
+const LARGE_IMAGE_MIN_SIZE_PX = 200;
+/** How long a blob-only fallback image must stay the only candidate before we accept it. */
+const FALLBACK_BLOB_GRACE_MS = 6_000;
 
 const stepStartByPage = new WeakMap<Page, number>();
 
@@ -51,9 +59,8 @@ function errText(err: unknown): string {
   return err instanceof Error ? (err.message.split('\n')[0] ?? '') : String(err);
 }
 
-/** One-line composer/page state used to trace where a run goes wrong. */
-async function composerSnapshot(page: Page): Promise<string> {
-  const inputLen = await page
+async function composerInputLength(page: Page): Promise<number> {
+  return page
     .locator(META_CONFIG.selectors.promptInput)
     .last()
     .evaluate(el => {
@@ -62,13 +69,98 @@ async function composerSnapshot(page: Page): Promise<string> {
       return (t.textContent ?? '').length;
     })
     .catch(() => -1);
+}
+
+interface PageImage {
+  src: string;
+  srcset: string | null;
+  width: number;
+  height: number;
+}
+
+/** Images rendered large on the page (generated results, not attachment thumbnails). */
+async function collectLargePageImages(page: Page): Promise<PageImage[]> {
+  return page
+    .evaluate(minSize => {
+      const result: Array<{ src: string; srcset: string | null; width: number; height: number }> = [];
+      for (const img of Array.from(document.images)) {
+        const rect = img.getBoundingClientRect();
+        if (rect.width < minSize || rect.height < minSize) continue;
+        const src = img.currentSrc || img.src;
+        if (!src || src.includes('favicon')) continue;
+        result.push({ src, srcset: img.getAttribute('srcset'), width: Math.round(rect.width), height: Math.round(rect.height) });
+      }
+      return result;
+    }, LARGE_IMAGE_MIN_SIZE_PX)
+    .catch(() => []);
+}
+
+/** Dump DOM facts + screenshot so selector drift on meta.ai can be identified from the log. */
+async function dumpMetaDiagnostics(page: Page, reason: string): Promise<void> {
+  try {
+    const info = await page.evaluate(() => {
+      const testIds: Record<string, number> = {};
+      for (const el of Array.from(document.querySelectorAll('[data-testid]'))) {
+        const id = el.getAttribute('data-testid') ?? '';
+        testIds[id] = (testIds[id] ?? 0) + 1;
+      }
+      const dataAttrs = new Set<string>();
+      for (const el of Array.from(document.querySelectorAll('*'))) {
+        for (const name of el.getAttributeNames()) {
+          if (name.startsWith('data-') && name !== 'data-testid') dataAttrs.add(name);
+        }
+      }
+      const imgs = Array.from(document.images).map(img => {
+        const r = img.getBoundingClientRect();
+        return `${Math.round(r.width)}x${Math.round(r.height)} ${(img.currentSrc || img.src).slice(0, 90)}`;
+      });
+      return {
+        url: location.href,
+        title: document.title,
+        testIds,
+        dataAttrs: Array.from(dataAttrs).slice(0, 40),
+        imgs: imgs.slice(0, 15),
+        bodyTail: (document.body.innerText ?? '').replace(/\s+/g, ' ').slice(-400),
+      };
+    });
+    metaLog(page, 'diag', `reason=${reason}`);
+    metaLog(page, 'diag', `url=${info.url} title=${JSON.stringify(info.title)}`);
+    metaLog(page, 'diag', `data-testid=${JSON.stringify(info.testIds)}`);
+    metaLog(page, 'diag', `other data-* attrs=${info.dataAttrs.join(',')}`);
+    metaLog(page, 'diag', `images(${info.imgs.length})=${JSON.stringify(info.imgs)}`);
+    metaLog(page, 'diag', `page text tail=${JSON.stringify(info.bodyTail)}`);
+  } catch (err) {
+    metaLog(page, 'diag', `dump failed: ${errText(err)}`);
+  }
+
+  try {
+    const dir = path.join(process.cwd(), 'data', 'meta-debug');
+    await fs.mkdir(dir, { recursive: true });
+    const file = path.join(dir, `meta-${reason}-${Date.now()}.png`);
+    await page.screenshot({ path: file, fullPage: true });
+    metaLog(page, 'diag', `screenshot -> ${file}`);
+  } catch (err) {
+    metaLog(page, 'diag', `screenshot failed: ${errText(err)}`);
+  }
+}
+
+/** One-line composer/page state used to trace where a run goes wrong. */
+async function composerSnapshot(page: Page): Promise<string> {
+  const inputLen = await composerInputLength(page);
+  const bigImages = (await collectLargePageImages(page)).length;
+  let urlPath = '';
+  try {
+    urlPath = new URL(page.url()).pathname;
+  } catch {
+    urlPath = page.url();
+  }
   const send = page.locator(META_CONFIG.selectors.composerSendButton).first();
   const sendVisible = await send.isVisible().catch(() => false);
   const sendEnabled = sendVisible ? await send.isEnabled().catch(() => false) : false;
   const stopVisible = await page.locator(META_CONFIG.selectors.composerStopButton).first().isVisible().catch(() => false);
   const messages = await page.locator(META_CONFIG.selectors.messageItem).count().catch(() => -1);
   const dialog = await page.locator(META_CONFIG.selectors.dialog).first().isVisible().catch(() => false);
-  return `input=${inputLen}ch send=${sendVisible ? (sendEnabled ? 'enabled' : 'disabled') : 'hidden'} stop=${stopVisible ? 'visible' : 'hidden'} messages=${messages} dialog=${dialog ? 'open' : 'none'}`;
+  return `input=${inputLen}ch send=${sendVisible ? (sendEnabled ? 'enabled' : 'disabled') : 'hidden'} stop=${stopVisible ? 'visible' : 'hidden'} messages=${messages} bigImages=${bigImages} dialog=${dialog ? 'open' : 'none'} path=${urlPath}`;
 }
 
 function domTimeoutError(detail: string): AppError {
@@ -184,10 +276,22 @@ async function waitForSendReady(page: Page, timeoutMs: number): Promise<boolean>
 }
 
 /** True once Meta accepted the prompt: generation started or a new message item appeared. */
-async function waitForPromptSubmitted(page: Page, baseline: number, timeoutMs: number): Promise<boolean> {
+async function waitForPromptSubmitted(
+  page: Page,
+  baseline: number,
+  timeoutMs: number,
+  inputLenBeforeSubmit: number,
+): Promise<boolean> {
   const startedAt = Date.now();
   const deadline = startedAt + timeoutMs;
   while (Date.now() < deadline) {
+    // Meta empties the composer once it accepts the prompt. This is the most reliable signal:
+    // the stop button / message-item selectors can drift, and Enter that is ignored leaves the text.
+    const inputLen = await composerInputLength(page);
+    if (inputLenBeforeSubmit > 1 && inputLen >= 0 && inputLen <= 1) {
+      metaLog(page, 'submit-confirm', `accepted: composer cleared (${inputLenBeforeSubmit} -> ${inputLen} chars) after ${Date.now() - startedAt}ms`);
+      return true;
+    }
     if (await isComposerStopVisible(page)) {
       metaLog(page, 'submit-confirm', `accepted: stop button visible after ${Date.now() - startedAt}ms`);
       return true;
@@ -200,6 +304,7 @@ async function waitForPromptSubmitted(page: Page, baseline: number, timeoutMs: n
     await randomDelay(250, 500);
   }
   metaLog(page, 'submit-confirm', `NOT accepted within ${timeoutMs}ms - ${await composerSnapshot(page)}`);
+  await dumpMetaDiagnostics(page, 'submit-not-accepted');
   return false;
 }
 
@@ -284,6 +389,7 @@ async function extractFirstAssistantImage(
   let pollCount = 0;
   let nextIdleAt = randomInt(3, 5);
   let lastStateLogAt = 0;
+  let fallbackSeenAt: number | null = null;
   metaLog(page, 'image', `polling for image (budget ${Math.round(timeoutMs / 1000)}s, baseline messages=${baseline})`);
 
   while (Date.now() < deadline) {
@@ -308,6 +414,25 @@ async function extractFirstAssistantImage(
 
     // Only look at messages created by this prompt — never reuse an older image in the chat.
     if ((await countMessageItems(page)) <= baseline) {
+      // Message selectors may have drifted (messages stays 0 although Meta is generating).
+      // Fall back to any NEW large image that was not on the page before submit.
+      const known = imageBaselineByPage.get(page) ?? new Set<string>();
+      const fresh = (await collectLargePageImages(page)).filter(img => !known.has(img.src));
+      const best = pickBestMetaImageUrlFromInputs(fresh.map(img => ({ src: img.src, srcset: img.srcset })));
+      if (best) {
+        fallbackSeenAt ??= Date.now();
+        const settled = best.kind === 'http' || Date.now() - fallbackSeenAt >= FALLBACK_BLOB_GRACE_MS;
+        if (settled) {
+          metaLog(
+            page,
+            'image',
+            `FALLBACK: new large image found without message items (${best.kind}, ${fresh.length} new) ` +
+              `after ${Date.now() - startedAt}ms: ${best.url.slice(0, 120)}`,
+          );
+          const assistant = page.locator(`img[src=${JSON.stringify(best.url)}]`).first();
+          return { assistant, sourceUrl: best.url };
+        }
+      }
       await randomDelay(400, 800);
       continue;
     }
@@ -343,6 +468,7 @@ async function extractFirstAssistantImage(
   const assistantCount = await lastMessage.locator(META_CONFIG.selectors.assistantMessage).count().catch(() => 0);
   const imgCount = await lastMessage.locator('img').count().catch(() => 0);
   metaLog(page, 'image', `TIMEOUT - ${await composerSnapshot(page)}`);
+  await dumpMetaDiagnostics(page, 'image-timeout');
   throw domTimeoutError(
     `No image found in assistant-message of last message item ` +
       `(waited ${Math.round(timeoutMs / 1000)}s, messages=${messageCount}, baseline=${baseline}, ` +
@@ -502,20 +628,22 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       }
 
       const baseline = await countMessageItems(page);
+      const inputLenBeforeSubmit = await composerInputLength(page);
+      imageBaselineByPage.set(page, new Set((await collectLargePageImages(page)).map(img => img.src)));
       const submitWith = options?.submitWith ?? 'button';
       metaLog(page, 'submit', `submitting via ${submitWith}, baseline messages=${baseline} - ${await composerSnapshot(page)}`);
       await submitComposer(page, submitWith);
       metaLog(page, 'submit', `submitted - ${await composerSnapshot(page)}`);
       await dismissDialogIfPresent(page);
 
-      if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS))) {
+      if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS, inputLenBeforeSubmit))) {
         // Re-submit only while the prompt is still sitting in the composer (send enabled);
         // an empty composer means it was sent and the page is just slow to show it.
         if (await waitForSendReady(page, SEND_READY_TIMEOUT_MS)) {
           metaLog(page, 'submit', 'prompt still in composer after first submit - submitting again via button');
           await submitComposer(page, 'button');
           await dismissDialogIfPresent(page);
-          if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS))) {
+          if (!(await waitForPromptSubmitted(page, baseline, SUBMIT_CONFIRM_TIMEOUT_MS, inputLenBeforeSubmit))) {
             metaLog(page, 'submit', 'FAILED: Meta did not accept the prompt after re-submit');
             throw new AppError('Meta did not accept the prompt (composer not submitted)', 502, 'META_PROMPT_NOT_SUBMITTED');
           }
@@ -525,6 +653,17 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       messageBaselineByPage.set(page, baseline);
       await randomDelay(500, 1_000);
       metaLog(page, 'send', `done - ${await composerSnapshot(page)}`);
+
+      // Give Meta time to generate before we start polling; do nothing on the page meanwhile.
+      metaLog(page, 'post-submit-wait', `idle ${POST_SUBMIT_WAIT_MS / 1000}s before waiting for the image`);
+      const waitStartedAt = Date.now();
+      while (Date.now() - waitStartedAt < POST_SUBMIT_WAIT_MS) {
+        const left = POST_SUBMIT_WAIT_MS - (Date.now() - waitStartedAt);
+        await new Promise(resolve => setTimeout(resolve, Math.min(10_000, left)));
+        const remaining = Math.max(0, POST_SUBMIT_WAIT_MS - (Date.now() - waitStartedAt));
+        metaLog(page, 'post-submit-wait', `${Math.round(remaining / 1000)}s left - ${await composerSnapshot(page)}`);
+      }
+      metaLog(page, 'post-submit-wait', 'done - start waiting for image');
     },
 
     async receiveResponse(page: Page, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
