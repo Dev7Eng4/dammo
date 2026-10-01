@@ -1,6 +1,24 @@
 {
   "promptSets": [
     {
+      "id": "ja:scene_image",
+      "baseKey": "scene_image",
+      "language": "ja",
+      "name": "Scene image",
+      "category": "image",
+      "niche": "5b1354ab-37cb-4e0e-94ad-3a515d97eecc",
+      "createdAt": "2026-09-30T14:46:30.347Z",
+      "updatedAt": "2026-09-30T14:46:30.347Z",
+      "steps": [
+        {
+          "id": "12eab423-ade7-4e4d-847c-2a54a3d8827b",
+          "key": "scene_image",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_loi_day_nguoi_noi_tieng",
       "baseKey": "metadata_loi_day_nguoi_noi_tieng",
       "language": "ja",
