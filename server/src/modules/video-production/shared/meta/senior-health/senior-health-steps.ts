@@ -79,7 +79,6 @@ async function runSeniorHealthLlmStep<T>(
 
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'human',
       });
 
       const parsed = parse(response);

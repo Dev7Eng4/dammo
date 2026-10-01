@@ -122,11 +122,11 @@ export class LlmBrowserService {
       await this.setup(profileId, provider, config);
     }
 
-    const { submitWith, pasteStrategy, timeoutMs, stableMs } = options ?? {};
+    const { submitWith, timeoutMs, stableMs } = options ?? {};
     const handler = getLlmTextBrowserHandler(provider);
     const page = await getChromeProfilePage(profileId);
     await handler.readConversationIfNeeded(page);
-    await this.send(profileId, provider, prompt, { submitWith, pasteStrategy });
+    await this.send(profileId, provider, prompt, { submitWith });
     return this.getResponse(profileId, provider, { timeoutMs, stableMs });
   }
 }

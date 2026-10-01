@@ -23,6 +23,7 @@ import type {
 } from '../core/types.js';
 import {
   humanClick,
+  humanFocusAndClear,
   humanPaste,
   humanPressEnter,
   humanWander,
@@ -30,7 +31,7 @@ import {
   randomDelay,
   setupClick,
 } from '../../../infrastructure/browser/human-interaction.js';
-import { resolveReferenceImagePaths } from './flow-resolve-reference-images.js';
+import { normalizeReferenceImagePaths } from '../core/reference-images.js';
 import { appSettingsService } from '../../app-settings/app-settings.service.js';
 
 const WARMUP_URL = 'https://www.google.com';
@@ -500,7 +501,8 @@ export async function openFlowToolPage(page: Page, projectId: string, toolId: st
 /** Fill the mavid editor prompt input with the given text (JSON) and submit via Enter. */
 export async function submitMavidEditorPrompt(page: Page, promptText: string): Promise<void> {
   const input = await waitForMavidEditorReady(page);
-  await humanPaste(page, input, promptText, { pasteStrategy: 'human' });
+  await humanFocusAndClear(page, input);
+  await humanPaste(page, input, promptText);
   await assertPromptFilled(input, promptText);
   await humanPressEnter(page);
   await randomDelay(500, 1_000);
@@ -643,7 +645,7 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
     },
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<void> {
-      const referencePaths = resolveReferenceImagePaths(options);
+      const referencePaths = normalizeReferenceImagePaths(options?.referenceImagePaths);
       if (referencePaths.length > 0) {
         console.log(`[flow] uploading ${referencePaths.length} reference image(s)...`);
       }
@@ -657,7 +659,8 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       const promptRoot = await waitForFirstVisible(page, FLOW_CONFIG.selectors.promptInput);
       const input = await resolveEditableLocator(promptRoot);
       console.log('[flow] promptInput visible, pasting...');
-      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy ?? 'human' });
+      await humanFocusAndClear(page, input);
+      await humanPaste(page, input, prompt);
       await assertPromptFilled(input, prompt);
       console.log('[flow] prompt filled, pressing Enter...');
       await humanPressEnter(page);

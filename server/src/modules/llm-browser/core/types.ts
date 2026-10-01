@@ -52,11 +52,7 @@ export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOption
 export type LlmReceiveResponseOptions = FlowReceiveResponseOptions & MetaReceiveResponseOptions;
 export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
-  /** Default/recommended: 'human' (clipboard, then sequential typing). 'direct' / 'insertText' still supported but unused by production. */
-  pasteStrategy?: 'human' | 'direct' | 'insertText';
-  /** Single reference image (Flow/Meta). Prefer referenceImagePaths for multiple. */
-  referenceImagePath?: string;
-  /** Multiple local reference images (Flow browser/API + Meta). */
+  /** Local reference images (Flow browser/API + Meta), attached in order. */
   referenceImagePaths?: string[];
 }
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
+import { normalizeReferenceImagePaths } from './core/reference-images.js';
 import { runWithFlowRetries } from './flow/flow-retry.js';
 import { metaBrowserService } from './meta/meta.service.js';
 import {
@@ -63,6 +64,11 @@ export function createLlmBrowserRoutes() {
   app.post('/:profileId/generate-image', zValidator('json', llmBrowserGenerateImageSchema), async (c) => {
     const body = c.req.valid('json');
     const profileId = c.req.param('profileId');
+    // API still accepts the legacy single `referenceImagePath`; everything below uses the array only.
+    const referenceImagePaths = normalizeReferenceImagePaths([
+      ...(body.referenceImagePaths ?? []),
+      ...(body.referenceImagePath ? [body.referenceImagePath] : []),
+    ]);
 
     if (body.provider === 'meta') {
       const item = await metaBrowserService.generateMedia(profileId, body.prompt, {
@@ -73,6 +79,7 @@ export function createLlmBrowserRoutes() {
         debugScreenshotPath: body.debugScreenshotPath,
         timeoutMs: body.timeoutMs,
         stableMs: body.stableMs,
+        referenceImagePaths,
       });
       return c.json({ item });
     }
@@ -91,12 +98,7 @@ export function createLlmBrowserRoutes() {
         debugScreenshotPath: body.debugScreenshotPath,
         stableMs: body.stableMs,
         generationMode: body.generationMode,
-        referenceImagePaths:
-          body.referenceImagePaths?.length
-            ? body.referenceImagePaths
-            : body.referenceImagePath
-              ? [body.referenceImagePath]
-              : undefined,
+        referenceImagePaths,
         projectId: body.projectId,
       },
     });

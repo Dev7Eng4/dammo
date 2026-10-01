@@ -178,7 +178,6 @@ async function generateCharacterPromptsViaLlm(
           undefined,
           {
             submitWith: 'enter',
-            pasteStrategy: 'human',
           },
         );
 

@@ -1,8 +1,6 @@
 import type { BrowserContext, Locator, Page } from 'playwright';
 import { appSettingsService } from '../../modules/app-settings/app-settings.service.js';
 
-export type PasteStrategy = 'human' | 'direct' | 'insertText';
-
 export const MOUSE_TRACKING_INIT_SCRIPT = `
 (() => {
   const update = (e) => {
@@ -85,10 +83,6 @@ export async function setupClick(locator: Locator): Promise<void> {
   await randomDelay(200, 400);
 }
 
-export async function humanType(page: Page, locator: Locator, text: string): Promise<void> {
-  await humanTypeSequential(page, locator, text);
-}
-
 async function getInputTextLength(locator: Locator): Promise<number> {
   return locator.evaluate(el => {
     const target = el as HTMLElement;
@@ -118,6 +112,14 @@ export async function humanClearInput(page: Page): Promise<void> {
   await randomDelay(80, 150);
 }
 
+/** Click + focus the input, then clear it (Ctrl/Meta+A, Backspace). Call before attaching files / pasting. */
+export async function humanFocusAndClear(page: Page, locator: Locator): Promise<void> {
+  await humanClick(page, locator);
+  await randomDelay(120, 300);
+  await locator.focus();
+  await humanClearInput(page);
+}
+
 async function pasteViaClipboard(page: Page, text: string): Promise<void> {
   await page.evaluate(async content => {
     await navigator.clipboard.writeText(content);
@@ -125,38 +127,6 @@ async function pasteViaClipboard(page: Page, text: string): Promise<void> {
   await randomDelay(80, 180);
   const modifier = keyboardModifier();
   await page.keyboard.press(`${modifier}+v`, { delay: randomInt(30, 90) });
-}
-
-async function clearInput(locator: Locator): Promise<void> {
-  await locator.evaluate(el => {
-    const target = el as HTMLElement;
-    target.focus();
-    if (target.isContentEditable) {
-      target.textContent = '';
-      target.dispatchEvent(new InputEvent('input', { bubbles: true }));
-      return;
-    }
-    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
-      target.value = '';
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  });
-}
-
-async function setInputTextContent(locator: Locator, text: string): Promise<void> {
-  await locator.evaluate((el, content) => {
-    const target = el as HTMLElement;
-    target.focus();
-    if (target.isContentEditable) {
-      target.textContent = content;
-      target.dispatchEvent(new InputEvent('input', { bubbles: true }));
-      return;
-    }
-    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
-      target.value = content;
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  }, text);
 }
 
 export async function waitForInputText(locator: Locator, minLength: number, timeoutMs = 15_000): Promise<number> {
@@ -189,140 +159,30 @@ function logPasteResult(method: string, promptLength: number, inputLength: numbe
   console.log(`[human-paste] method=${method} promptLength=${promptLength} inputLength=${inputLength}`);
 }
 
-export async function setInputTextDirect(
-  page: Page,
-  locator: Locator,
-  text: string,
-  options?: { skipClear?: boolean },
-): Promise<void> {
-  await humanClick(page, locator);
-  await randomDelay(120, 300);
-  if (!options?.skipClear) {
-    await clearInput(locator);
-  }
-  await setInputTextContent(locator, text);
-  await randomDelay(150, 350);
-}
-
-export async function humanTypeSequential(
-  page: Page,
-  locator: Locator,
-  text: string,
-  options?: { skipClear?: boolean },
-): Promise<void> {
-  await humanClick(page, locator);
-  await randomDelay(120, 300);
-  if (!options?.skipClear) {
-    await clearInput(locator);
-  }
-
-  try {
-    await locator.pressSequentially(text, { delay: randomInt(40, 120) });
-  } catch {
-    await setInputTextContent(locator, text);
-  }
-
-  await randomDelay(150, 350);
-}
-
-export async function humanPaste(
-  page: Page,
-  locator: Locator,
-  text: string,
-  options?: { pasteStrategy?: PasteStrategy; skipClear?: boolean },
-): Promise<void> {
-  const strategy = options?.pasteStrategy ?? 'human';
-  const skipClear = options?.skipClear === true;
-  const promptLength = text.length;
+/**
+ * Paste `text` into the input via the clipboard (Ctrl/Meta+V). Does NOT clear the input first —
+ * clear it beforehand with `humanFocusAndClear` at the call site, so attachments/state added after
+ * the clear are never wiped. Throws if the input ends up under-filled (when checkPromptFillLength is on).
+ */
+export async function humanPaste(page: Page, locator: Locator, text: string): Promise<void> {
   const checkLength = appSettingsService.get().checkPromptFillLength;
-  const minAcceptable = minAcceptablePromptLength(promptLength);
 
-  if (strategy === 'direct') {
-    await setInputTextDirect(page, locator, text, { skipClear });
-    const inputLength = await getInputTextLength(locator);
-    logPasteResult('direct', promptLength, inputLength);
-    if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
-      throw new Error(`Direct fill incomplete: expected ${promptLength}, got ${inputLength}`);
-    }
-    return;
+  await humanClick(page, locator);
+  await randomDelay(120, 300);
+  await locator.focus();
+  await pasteViaClipboard(page, text);
+
+  let inputLength: number;
+  if (checkLength) {
+    inputLength = await waitForInputText(locator, minAcceptablePromptLength(text.length));
+  } else {
+    await randomDelay(150, 350);
+    inputLength = await getInputTextLength(locator);
   }
+  logPasteResult('clipboard', text.length, inputLength);
 
-  if (strategy === 'insertText') {
-    try {
-      await humanClick(page, locator);
-      await randomDelay(120, 300);
-      await locator.focus();
-      if (!skipClear) {
-        await humanClearInput(page);
-      }
-      await randomDelay(80, 180);
-      await page.keyboard.insertText(text);
-
-      let inputLength: number;
-      if (checkLength) {
-        inputLength = await waitForInputText(locator, minAcceptable);
-      } else {
-        await randomDelay(150, 350);
-        inputLength = await getInputTextLength(locator);
-      }
-      logPasteResult('insertText', promptLength, inputLength);
-
-      if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
-        if (!skipClear) {
-          await humanClearInput(page);
-        }
-        await pasteViaClipboard(page, text);
-        inputLength = await waitForInputText(locator, minAcceptable);
-        logPasteResult('insertText-fallback-clipboard', promptLength, inputLength);
-      }
-
-      if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
-        throw new Error(`InsertText incomplete: expected ${promptLength}, got ${inputLength}`);
-      }
-    } catch {
-      await humanClick(page, locator);
-      await randomDelay(120, 300);
-      await locator.focus();
-      if (!skipClear) {
-        await humanClearInput(page);
-      }
-      await locator.pressSequentially(text, { delay: randomInt(40, 120) });
-      const inputLength = await getInputTextLength(locator);
-      logPasteResult('insertText-fallback-sequential', promptLength, inputLength);
-    }
-    return;
-  }
-
-  try {
-    await humanClick(page, locator);
-    await randomDelay(120, 300);
-    await locator.focus();
-    if (!skipClear) {
-      await humanClearInput(page);
-    }
-    await pasteViaClipboard(page, text);
-
-    let inputLength: number;
-    if (checkLength) {
-      inputLength = await waitForInputText(locator, minAcceptable);
-    } else {
-      await randomDelay(150, 350);
-      inputLength = await getInputTextLength(locator);
-    }
-    logPasteResult('clipboard', promptLength, inputLength);
-
-    if (checkLength && !isPromptFillAcceptable(inputLength, promptLength)) {
-      await setInputTextDirect(page, locator, text, { skipClear });
-      const finalLength = await getInputTextLength(locator);
-      logPasteResult('clipboard-fallback-direct', promptLength, finalLength);
-      if (!isPromptFillAcceptable(finalLength, promptLength)) {
-        throw new Error(`Paste incomplete after fallback: expected ${promptLength}, got ${finalLength}`);
-      }
-    }
-  } catch {
-    await humanTypeSequential(page, locator, text, { skipClear });
-    const inputLength = await getInputTextLength(locator);
-    logPasteResult('sequential', promptLength, inputLength);
+  if (checkLength && !isPromptFillAcceptable(inputLength, text.length)) {
+    throw new Error(`Paste incomplete: expected ${text.length}, got ${inputLength}`);
   }
 }
 

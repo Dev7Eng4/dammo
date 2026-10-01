@@ -225,7 +225,6 @@ export async function executeMetadata(
       const userPrompt = await executePromptTemplate(language, promptKey, templateArgs);
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'human',
       });
 
       const parseResult = parseMetadataResponse(response, { niche: parseNiche });

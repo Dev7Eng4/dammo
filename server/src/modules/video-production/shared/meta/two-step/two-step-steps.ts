@@ -96,7 +96,6 @@ async function runTwoStepLlmStep<T>(
 
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'human',
       });
 
       if (step === 2) {

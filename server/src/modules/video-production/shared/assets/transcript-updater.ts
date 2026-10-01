@@ -118,7 +118,6 @@ async function processBatchWithRetry(
     try {
       const response = await llmBrowserService.chat(profile.id, provider, userPrompt, undefined, {
         submitWith: 'enter',
-        pasteStrategy: 'human',
       });
       console.log('🚀 ~ processBatchWithRetry ~ response:');
 

@@ -35,7 +35,7 @@ import {
   setLlmBrowserSessionStatus,
   upsertLlmBrowserSession,
 } from '../core/session.js';
-import { resolveReferenceImagePaths } from './flow-resolve-reference-images.js';
+import { normalizeReferenceImagePaths } from '../core/reference-images.js';
 import type { FlowOpenOptions, LlmBrowserResponse, LlmMediaAsset, LlmBrowserSession } from '../core/types.js';
 import type { FlowGenerateImageOptions, FlowGenerateImagesViaToolOptions, FlowToolVisual } from './flow.types.js';
 import { AppError } from '../../../shared/http/errors.js';
@@ -242,9 +242,7 @@ export class FlowBrowserService {
     try {
       emitDetailLog('[flow-browser] sendPrompt...');
       await handler.sendPrompt(page, prompt, {
-        pasteStrategy: options?.pasteStrategy ?? 'human',
         submitWith: 'enter',
-        referenceImagePath: options?.referenceImagePath,
         referenceImagePaths: options?.referenceImagePaths,
       });
       emitDetailLog('[flow-browser] sendPrompt done');
@@ -336,7 +334,7 @@ export class FlowBrowserService {
       }
 
       const referenceMediaIds: string[] = [];
-      const referencePaths = resolveReferenceImagePaths(options);
+      const referencePaths = normalizeReferenceImagePaths(options?.referenceImagePaths);
 
       if (referencePaths.length > 0) {
         emitDetailLog(`[flow-api] uploading ${referencePaths.length} reference image(s)...`);

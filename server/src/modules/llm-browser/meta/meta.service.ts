@@ -113,7 +113,6 @@ export class MetaBrowserService {
     const effectivePrompt = prependMetaMediaPrefix(prompt, mediaKind, aspectRatio);
 
     await handler.sendPrompt(page, effectivePrompt, {
-      pasteStrategy: options?.pasteStrategy ?? 'human',
       submitWith: 'enter',
       referenceImagePaths: options?.referenceImagePaths,
     });
@@ -149,7 +148,6 @@ export class MetaBrowserService {
     const concurrency = options?.concurrency ?? 'batch';
     const timeoutMs = options?.timeoutMs ?? META_MEDIA_DEFAULT_TIMEOUT_MS;
     const maxRetries = options?.maxRetries ?? META_MEDIA_DEFAULT_MAX_RETRIES;
-    const pasteStrategy = options?.pasteStrategy ?? 'human';
 
     const pool = await openMetaWorkerPool(jobs.length, log, concurrency);
     const { workers } = pool;
@@ -197,7 +195,6 @@ export class MetaBrowserService {
               outputDir: job.outputDir,
               fileName: job.fileName,
               timeoutMs,
-              pasteStrategy,
               ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
             });
 

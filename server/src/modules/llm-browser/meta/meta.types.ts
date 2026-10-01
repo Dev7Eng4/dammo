@@ -7,7 +7,6 @@ export interface MetaGenerateMediaOptions {
   debugScreenshotPath?: string;
   timeoutMs?: number;
   stableMs?: number;
-  pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
   mediaKind?: 'image' | 'video' | 'auto';
   /** Image prompt aspect ratio prefix. Default: '16:9'. */
   aspectRatio?: '16:9' | '3:4';
@@ -35,7 +34,6 @@ export interface MetaGenerateMediaBatchOptions {
   timeoutMs?: number;
   /** Default 3. */
   maxRetries?: number;
-  pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
   onLog?: (msg: string) => void;
   onJobProgress?: (progress: {
     jobId: string;

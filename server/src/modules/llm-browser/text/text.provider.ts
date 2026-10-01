@@ -15,6 +15,7 @@ import type {
 } from '../core/types.js';
 import {
   humanClick,
+  humanFocusAndClear,
   humanPaste,
   humanPressEnter,
   humanReadLatestResponse,
@@ -243,7 +244,8 @@ export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserP
 
     async sendPrompt(page: Page, prompt: string, options?: LlmSendPromptOptions): Promise<LlmSendPromptResult> {
       const input = await waitForFirstVisible(page, provider, config.selectors.promptInput);
-      await humanPaste(page, input, prompt, { pasteStrategy: options?.pasteStrategy });
+      await humanFocusAndClear(page, input);
+      await humanPaste(page, input, prompt);
 
       const baselineBlockCount = await countResponseBlocks(page, config);
 

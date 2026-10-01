@@ -10,10 +10,7 @@ export interface FlowGenerateImageOptions {
   debugScreenshotPath?: string;
   timeoutMs?: number;
   stableMs?: number;
-  pasteStrategy?: LlmSendPromptOptions['pasteStrategy'];
-  /** Single reference image. Prefer referenceImagePaths for multiple. */
-  referenceImagePath?: string;
-  /** Multiple local reference images (uploaded/attached in order). */
+  /** Local reference images (uploaded/attached in order). */
   referenceImagePaths?: string[];
   /** Default: 'browser'. Use 'api' for direct Flow API calls. */
   generationMode?: FlowGenerationMode;

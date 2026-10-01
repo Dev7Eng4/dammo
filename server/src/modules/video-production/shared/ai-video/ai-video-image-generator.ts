@@ -188,7 +188,6 @@ async function executeScenePromptChunk(
         undefined,
         {
           submitWith: 'enter',
-          pasteStrategy: 'human',
           timeoutMs: AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS,
         },
       );

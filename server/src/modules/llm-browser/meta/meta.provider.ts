@@ -4,6 +4,7 @@ import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
 import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from './meta.config.js';
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
+import { normalizeReferenceImagePaths } from '../core/reference-images.js';
 import { pickBestMetaImageUrlFromInputs, resolveMetaImageSourceUrl } from './meta-image-url.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
@@ -15,7 +16,7 @@ import type {
   MetaReceiveResponseOptions,
 } from '../core/types.js';
 import {
-  humanClearInput,
+  humanFocusAndClear,
   humanClick,
   humanPaste,
   humanPressEnter,
@@ -588,25 +589,19 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
       stepStartByPage.set(page, Date.now());
       await humanIdleBrief(page);
 
-      const referencePaths = [
-        ...(options?.referenceImagePaths ?? []),
-        ...(options?.referenceImagePath ? [options.referenceImagePath] : []),
-      ];
+      const referencePaths = normalizeReferenceImagePaths(options?.referenceImagePaths);
       metaLog(
         page,
         'send',
         `start: promptLength=${prompt.length} refs=${referencePaths.length} submitWith=${options?.submitWith ?? 'button'} ` +
-          `paste=${options?.pasteStrategy ?? 'human'} url=${page.url()}`,
+          `url=${page.url()}`,
       );
       metaLog(page, 'send', `initial state - ${await composerSnapshot(page)}`);
 
       // Clear composer BEFORE attaching reference images so Ctrl+A/Backspace
       // does not remove already-uploaded attachments.
       const input = await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
-      await humanClick(page, input);
-      await randomDelay(150, 400);
-      await input.focus();
-      await humanClearInput(page);
+      await humanFocusAndClear(page, input);
       metaLog(page, 'clear', `composer cleared (Ctrl+A, Backspace) - ${await composerSnapshot(page)}`);
 
       if (referencePaths.length > 0) {
@@ -615,10 +610,7 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         metaLog(page, 'attach', `all ${referencePaths.length} reference(s) attached - ${await composerSnapshot(page)}`);
       }
 
-      await humanPaste(page, input, prompt, {
-        pasteStrategy: options?.pasteStrategy ?? 'human',
-        skipClear: true,
-      });
+      await humanPaste(page, input, prompt);
       await randomDelay(500, 1_200);
       metaLog(page, 'paste', `prompt pasted - ${await composerSnapshot(page)}`);
 
