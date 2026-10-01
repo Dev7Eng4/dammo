@@ -1,5 +1,4 @@
 import type { BrowserContext, Locator, Page } from 'playwright';
-import { appSettingsService } from '../../modules/app-settings/app-settings.service.js';
 
 export const MOUSE_TRACKING_INIT_SCRIPT = `
 (() => {
@@ -83,22 +82,6 @@ export async function setupClick(locator: Locator): Promise<void> {
   await randomDelay(200, 400);
 }
 
-async function getInputTextLength(locator: Locator): Promise<number> {
-  return locator.evaluate(el => {
-    const target = el as HTMLElement;
-    const nested =
-      target.isContentEditable ||
-      target.getAttribute('role') === 'textbox' ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLInputElement
-        ? target
-        : target.querySelector<HTMLElement>('[contenteditable="true"], [role="textbox"], textarea, input');
-    if (!nested) return 0;
-    if (nested instanceof HTMLTextAreaElement || nested instanceof HTMLInputElement) return nested.value.length;
-    return (nested.textContent ?? '').length;
-  });
-}
-
 function keyboardModifier(): string {
   return process.platform === 'darwin' ? 'Meta' : 'Control';
 }
@@ -129,61 +112,17 @@ async function pasteViaClipboard(page: Page, text: string): Promise<void> {
   await page.keyboard.press(`${modifier}+v`, { delay: randomInt(30, 90) });
 }
 
-export async function waitForInputText(locator: Locator, minLength: number, timeoutMs = 15_000): Promise<number> {
-  const deadline = Date.now() + timeoutMs;
-  let length = 0;
-
-  while (Date.now() < deadline) {
-    length = await getInputTextLength(locator);
-    if (length >= minLength) return length;
-    await randomDelay(100, 200);
-  }
-
-  return length;
-}
-
-/** Accept fills that are short by at most this many characters (long prompts only). */
-export const PROMPT_FILL_LENGTH_TOLERANCE = 20;
-
-export function minAcceptablePromptLength(promptLength: number): number {
-  return promptLength <= PROMPT_FILL_LENGTH_TOLERANCE
-    ? promptLength
-    : promptLength - PROMPT_FILL_LENGTH_TOLERANCE;
-}
-
-export function isPromptFillAcceptable(inputLength: number, promptLength: number): boolean {
-  return inputLength >= minAcceptablePromptLength(promptLength);
-}
-
-function logPasteResult(method: string, promptLength: number, inputLength: number): void {
-  console.log(`[human-paste] method=${method} promptLength=${promptLength} inputLength=${inputLength}`);
-}
-
 /**
  * Paste `text` into the input via the clipboard (Ctrl/Meta+V). Does NOT clear the input first —
  * clear it beforehand with `humanFocusAndClear` at the call site, so attachments/state added after
- * the clear are never wiped. Throws if the input ends up under-filled (when checkPromptFillLength is on).
+ * the clear are never wiped. No length verification is done.
  */
 export async function humanPaste(page: Page, locator: Locator, text: string): Promise<void> {
-  const checkLength = appSettingsService.get().checkPromptFillLength;
-
   await humanClick(page, locator);
   await randomDelay(120, 300);
   await locator.focus();
   await pasteViaClipboard(page, text);
-
-  let inputLength: number;
-  if (checkLength) {
-    inputLength = await waitForInputText(locator, minAcceptablePromptLength(text.length));
-  } else {
-    await randomDelay(150, 350);
-    inputLength = await getInputTextLength(locator);
-  }
-  logPasteResult('clipboard', text.length, inputLength);
-
-  if (checkLength && !isPromptFillAcceptable(inputLength, text.length)) {
-    throw new Error(`Paste incomplete: expected ${text.length}, got ${inputLength}`);
-  }
+  await randomDelay(150, 350);
 }
 
 export async function humanScroll(page: Page, deltaY: number): Promise<void> {

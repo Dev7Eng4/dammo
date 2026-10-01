@@ -17,7 +17,6 @@ const EMPTY_SETTINGS: AppSettings = {
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
   aiScenePromptConcurrency: 1,
-  checkPromptFillLength: true,
 }
 
 function SettingSwitch({
@@ -116,7 +115,6 @@ export function SettingsPage() {
           8,
           Math.max(1, Math.round(Number(settings.aiScenePromptConcurrency)) || 1),
         ),
-        checkPromptFillLength: settings.checkPromptFillLength,
       })
       setSettings(item)
       toast.success(t('settings.toast.saved'))
@@ -205,16 +203,6 @@ export function SettingsPage() {
                 checked={settings.chromeBackgroundUseOffscreen}
                 onChange={(chromeBackgroundUseOffscreen) =>
                   setSettings((prev) => ({ ...prev, chromeBackgroundUseOffscreen }))
-                }
-                disabled={saving}
-              />
-              <SettingSwitch
-                id="check-prompt-fill-length"
-                label={t('settings.checkPromptFillLength')}
-                description={t('settings.checkPromptFillLengthDesc')}
-                checked={settings.checkPromptFillLength}
-                onChange={(checkPromptFillLength) =>
-                  setSettings((prev) => ({ ...prev, checkPromptFillLength }))
                 }
                 disabled={saving}
               />

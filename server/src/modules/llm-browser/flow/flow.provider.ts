@@ -27,12 +27,10 @@ import {
   humanPaste,
   humanPressEnter,
   humanWander,
-  isPromptFillAcceptable,
   randomDelay,
   setupClick,
 } from '../../../infrastructure/browser/human-interaction.js';
 import { normalizeReferenceImagePaths } from '../core/reference-images.js';
-import { appSettingsService } from '../../app-settings/app-settings.service.js';
 
 const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'flow' as const;
@@ -503,7 +501,6 @@ export async function submitMavidEditorPrompt(page: Page, promptText: string): P
   const input = await waitForMavidEditorReady(page);
   await humanFocusAndClear(page, input);
   await humanPaste(page, input, promptText);
-  await assertPromptFilled(input, promptText);
   await humanPressEnter(page);
   await randomDelay(500, 1_000);
 }
@@ -529,30 +526,6 @@ async function resolveEditableLocator(locator: Locator): Promise<Locator> {
   }
 
   return locator;
-}
-
-async function assertPromptFilled(locator: Locator, prompt: string): Promise<void> {
-  if (!appSettingsService.get().checkPromptFillLength) return;
-
-  const expectedLength = prompt.trim().length;
-  const length = await locator.evaluate(el => {
-    const target = el as HTMLElement;
-    const nested =
-      target.isContentEditable ||
-      target.getAttribute('role') === 'textbox' ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLInputElement
-        ? target
-        : target.querySelector<HTMLElement>('[contenteditable="true"], [role="textbox"], textarea, input');
-    if (!nested) return 0;
-    if (nested instanceof HTMLTextAreaElement || nested instanceof HTMLInputElement) {
-      return nested.value.trim().length;
-    }
-    return (nested.textContent ?? '').trim().length;
-  });
-  if (!isPromptFillAcceptable(length, expectedLength)) {
-    throw domTimeoutError(`Prompt not filled before submit: expected ${expectedLength}, got ${length}`);
-  }
 }
 
 async function attachReferenceFile(page: Page, imagePath: string, _index: number): Promise<void> {
@@ -661,7 +634,6 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       console.log('[flow] promptInput visible, pasting...');
       await humanFocusAndClear(page, input);
       await humanPaste(page, input, prompt);
-      await assertPromptFilled(input, prompt);
       console.log('[flow] prompt filled, pressing Enter...');
       await humanPressEnter(page);
       await randomDelay(500, 1_000);

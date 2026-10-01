@@ -20,7 +20,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
   aiScenePromptConcurrency: 1,
-  checkPromptFillLength: true,
 };
 
 function resolveScenePromptChromeProfileRole(
@@ -70,8 +69,6 @@ function loadSettings(): AppSettings {
       stored?.aiScenePromptConcurrency,
       DEFAULT_APP_SETTINGS.aiScenePromptConcurrency,
     ),
-    checkPromptFillLength:
-      stored?.checkPromptFillLength ?? DEFAULT_APP_SETTINGS.checkPromptFillLength,
   };
 }
 
@@ -112,7 +109,6 @@ export class AppSettingsService {
         input.aiScenePromptConcurrency,
         current.aiScenePromptConcurrency,
       ),
-      checkPromptFillLength: input.checkPromptFillLength ?? current.checkPromptFillLength,
     };
     writeJson(paths.appSettings, next);
     return next;

@@ -32,11 +32,6 @@ export interface AppSettings {
    * 1 = sequential (uses aiScenePromptChromeProfileRole). >1 uses that many sub profiles.
    */
   aiScenePromptConcurrency: number;
-  /**
-   * When true, verify prompt input length after paste (tolerance + clear/retry if short).
-   * When false, skip length checks and length-based fallbacks.
-   */
-  checkPromptFillLength: boolean;
 }
 
 export type UpdateAppSettingsInput = Partial<

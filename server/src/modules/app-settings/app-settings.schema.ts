@@ -18,5 +18,4 @@ export const updateAppSettingsSchema = z.object({
   verboseVideoLogs: z.boolean().optional(),
   aiScenePromptChromeProfileRole: z.enum(['main', 'sub']).optional(),
   aiScenePromptConcurrency: z.number().int().min(1).max(8).optional(),
-  checkPromptFillLength: z.boolean().optional(),
 });

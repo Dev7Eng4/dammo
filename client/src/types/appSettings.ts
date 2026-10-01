@@ -21,11 +21,6 @@ export interface AppSettings {
   aiScenePromptChromeProfileRole: AiScenePromptChromeProfileRole;
   /** Max parallel Chrome profiles for scene-prompt LLM chunks (1–8). */
   aiScenePromptConcurrency: number;
-  /**
-   * When true, verify prompt input length after paste (tolerance + clear/retry if short).
-   * When false, skip length checks and length-based fallbacks.
-   */
-  checkPromptFillLength: boolean;
 }
 
 export type UpdateAppSettingsPayload = Partial<

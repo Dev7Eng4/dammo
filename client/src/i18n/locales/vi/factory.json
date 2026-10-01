@@ -248,8 +248,6 @@
     },
     "chromeOffscreen": "Đưa cửa sổ Chrome nền ra ngoài màn hình",
     "chromeOffscreenDesc": "Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường.",
-    "checkPromptFillLength": "Kiểm tra độ dài prompt sau khi paste",
-    "checkPromptFillLengthDesc": "Bật: kiểm tra độ dài và nhập lại nếu thiếu hơn 20 ký tự. Tắt: bỏ qua kiểm tra độ dài và retry theo length.",
     "scenePromptProfile": "Chrome profile cho scene prompt",
     "scenePromptProfileDesc": "Dùng khi tạo scene prompt và character reference (LLM text). Không ảnh hưởng bước tạo ảnh. Khi concurrency scene prompt > 1, các chunk dùng sub profile.",
     "scenePromptProfileMain": "Main profile",

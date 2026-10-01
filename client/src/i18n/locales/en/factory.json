@@ -248,8 +248,6 @@
     },
     "chromeOffscreen": "Move background Chrome windows off-screen",
     "chromeOffscreenDesc": "On: park windows off-screen when running in the background. Off: keep windows visible normally.",
-    "checkPromptFillLength": "Check prompt fill length after paste",
-    "checkPromptFillLengthDesc": "On: verify input length and retry if more than 20 characters short. Off: skip length checks and length-based retries.",
     "scenePromptProfile": "Chrome profile for scene prompts",
     "scenePromptProfileDesc": "Used when generating scene prompts and character references (LLM text). Does not affect image generation. When scene-prompt concurrency is greater than 1, scene chunks use sub profiles instead.",
     "scenePromptProfileMain": "Main profile",
