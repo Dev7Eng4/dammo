@@ -123,7 +123,11 @@
       "collapse": "Thu gọn",
       "regenerate": "Tạo lại",
       "regenerating": "Đang tạo lại…",
-      "regenerateError": "Không tạo lại được ảnh scene"
+      "regenerateError": "Không tạo lại được ảnh scene",
+      "missingCount": "{{count}} scene chưa có ảnh",
+      "generateMissing": "Tạo ảnh cho các scene chưa có",
+      "generatingMissing": "Đang tạo ảnh…",
+      "generateMissingError": "Không tạo được ảnh cho các scene còn thiếu"
     },
     "table": {
       "col": {

@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageOff, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/cn';
-import { regenerateProductionSceneImage } from '../../api/videoProduction';
+import { Button } from '../ui/Button';
+import {
+  regenerateMissingProductionSceneImages,
+  regenerateProductionSceneImage,
+} from '../../api/videoProduction';
 import type {
   ProductionSceneItem,
   ProductionScenesResponse,
@@ -112,9 +116,46 @@ export function SceneTable({
   const { t } = useTranslation('factory');
   const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
   const [errorsByIndex, setErrorsByIndex] = useState<Record<number, string>>({});
+  const [regeneratingMissing, setRegeneratingMissing] = useState(false);
+  const [missingError, setMissingError] = useState<string | null>(null);
+
+  const missingCount = scenes.filter((scene) => !scene.imageUrl).length;
+  const busy = regeneratingIndex !== null || regeneratingMissing;
+
+  const handleRegenerateMissing = async () => {
+    if (busy) return;
+
+    const missingIndexes = new Set(scenes.filter((scene) => !scene.imageUrl).map((s) => s.index));
+    setRegeneratingMissing(true);
+    setMissingError(null);
+
+    try {
+      const data = await regenerateMissingProductionSceneImages(channelId, videoId);
+      const bust = Date.now();
+      const previousByIndex = new Map(scenes.map((scene) => [scene.index, scene]));
+      onScenesUpdated({
+        ...data,
+        scenes: data.scenes.map((scene) => {
+          if (missingIndexes.has(scene.index)) {
+            return { ...scene, imageUrl: withCacheBust(scene.imageUrl, bust) };
+          }
+          const previousUrl = previousByIndex.get(scene.index)?.imageUrl;
+          return scene.imageUrl && previousUrl ? { ...scene, imageUrl: previousUrl } : scene;
+        }),
+      });
+    } catch (err) {
+      setMissingError(
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : t('production.scene.generateMissingError'),
+      );
+    } finally {
+      setRegeneratingMissing(false);
+    }
+  };
 
   const handleRegenerate = async (sceneIndex: number) => {
-    if (regeneratingIndex !== null) return;
+    if (busy) return;
 
     setRegeneratingIndex(sceneIndex);
     setErrorsByIndex((prev) => {
@@ -154,6 +195,33 @@ export function SceneTable({
 
   return (
     <div className="overflow-x-auto">
+      {missingCount > 0 || missingError ? (
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-3 py-2.5">
+          {missingCount > 0 ? (
+            <>
+              <p className="text-sm text-foreground/90">
+                {t('production.scene.missingCount', { count: missingCount })}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy}
+                onClick={() => void handleRegenerateMissing()}
+              >
+                {regeneratingMissing ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <RefreshCw className="size-3.5" aria-hidden="true" />
+                )}
+                {regeneratingMissing
+                  ? t('production.scene.generatingMissing')
+                  : t('production.scene.generateMissing')}
+              </Button>
+            </>
+          ) : null}
+          {missingError ? <p className="text-xs text-danger">{missingError}</p> : null}
+        </div>
+      ) : null}
       <table className="w-full min-w-[1000px] border-collapse text-left">
         <tbody className="divide-y divide-border">
           {scenes.map((scene) => {
@@ -184,8 +252,10 @@ export function SceneTable({
                   <SceneImageCell
                     key={scene.imageUrl ?? `scene-${scene.index}`}
                     scene={scene}
-                    regenerating={regeneratingIndex === scene.index}
-                    disabled={regeneratingIndex !== null}
+                    regenerating={
+                      regeneratingIndex === scene.index || (regeneratingMissing && !scene.imageUrl)
+                    }
+                    disabled={busy}
                     error={errorsByIndex[scene.index] ?? null}
                     onRegenerate={() => void handleRegenerate(scene.index)}
                   />

@@ -123,7 +123,11 @@
       "collapse": "Show less",
       "regenerate": "Regenerate",
       "regenerating": "Regenerating…",
-      "regenerateError": "Could not regenerate scene image"
+      "regenerateError": "Could not regenerate scene image",
+      "missingCount": "{{count}} scene(s) have no image",
+      "generateMissing": "Generate images for scenes without one",
+      "generatingMissing": "Generating images…",
+      "generateMissingError": "Could not generate images for the missing scenes"
     },
     "table": {
       "col": {

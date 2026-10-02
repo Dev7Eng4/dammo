@@ -42,6 +42,17 @@ export function regenerateProductionSceneImage(
   );
 }
 
+export function regenerateMissingProductionSceneImages(
+  channelId: string,
+  videoId: string,
+  options?: FetchOptions,
+) {
+  return fetchJson<ProductionScenesResponse>(
+    `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/scenes/regenerate-missing`,
+    withSignal({ method: 'POST' }, options),
+  );
+}
+
 export function fetchProductionTranscript(
   channelId: string,
   videoId: string,

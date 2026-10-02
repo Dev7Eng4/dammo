@@ -109,6 +109,15 @@ export function createVideoProductionUiRoutes() {
     return c.json(result);
   });
 
+  app.post('/videos/:channelId/:videoId/scenes/regenerate-missing', async (c) => {
+    const result = await videoProductionUiService.regenerateMissingSceneImages(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+      c.req.path,
+    );
+    return c.json(result);
+  });
+
   app.get('/videos/:channelId/:videoId/transcript', (c) => {
     const result = videoProductionUiService.getTranscript(
       c.req.param('channelId'),

@@ -220,6 +220,41 @@ function readVideoMetadataFields(workDir: string): {
   }
 }
 
+/** Videos with a scene-image generation currently running (one at a time per video). */
+const sceneImageJobsInFlight = new Set<string>();
+
+async function runExclusiveSceneImageJob<T>(
+  channelId: string,
+  videoId: string,
+  job: () => Promise<T>,
+): Promise<T> {
+  const key = `${channelId}:${videoId}`;
+  if (sceneImageJobsInFlight.has(key)) {
+    throw new AppError(
+      'Scene images are already being generated for this video',
+      409,
+      'AI_SCENE_IMAGE_BUSY',
+    );
+  }
+  sceneImageJobsInFlight.add(key);
+  try {
+    return await job();
+  } finally {
+    sceneImageJobsInFlight.delete(key);
+  }
+}
+
+async function resolveSceneImageRenderOptions(
+  workDir: string,
+): Promise<{ audioSpeed?: number; kenBurns: boolean }> {
+  try {
+    const renderConfig = await loadAiRenderConfig(workDir);
+    return { audioSpeed: renderConfig.audioSpeed, kenBurns: isKenBurnsEnabled() };
+  } catch {
+    return { kenBurns: false };
+  }
+}
+
 export class VideoProductionUiService {
   listVideos(videosBasePath: string): ProductionVideoListItem[] {
     const channels = youtubeChannelsRepository.findAll();
@@ -376,24 +411,18 @@ export class VideoProductionUiService {
       throw new AppError('Scene has an empty prompt', 400, 'AI_SCENE_IMAGE_EMPTY_PROMPT');
     }
 
-    let audioSpeed: number | undefined;
-    let kenBurns = false;
-    try {
-      const renderConfig = await loadAiRenderConfig(workDir);
-      audioSpeed = renderConfig.audioSpeed;
-      kenBurns = isKenBurnsEnabled();
-    } catch {
-      kenBurns = false;
-    }
+    const { audioSpeed, kenBurns } = await resolveSceneImageRenderOptions(workDir);
 
-    const result = await generateAiSceneSlideImages({
-      workDir,
-      youtubeVideoId: safeVideoId,
-      scenes: file.scenes,
-      forceIndexes: [sceneIndex],
-      ...(audioSpeed != null ? { audioSpeed } : {}),
-      kenBurns,
-    });
+    const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
+      generateAiSceneSlideImages({
+        workDir,
+        youtubeVideoId: safeVideoId,
+        scenes: file.scenes,
+        forceIndexes: [sceneIndex],
+        ...(audioSpeed != null ? { audioSpeed } : {}),
+        kenBurns,
+      }),
+    );
 
     const regenerated = result.scenes[sceneIndex];
     const hasImage =
@@ -411,6 +440,68 @@ export class VideoProductionUiService {
     }
 
     const scenesBasePath = basePath.replace(/\/scenes\/\d+\/regenerate$/, '/scenes');
+    return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
+  }
+
+  /** Generate images for every scene that has no image yet; scenes that already have one are untouched. */
+  async regenerateMissingSceneImages(
+    channelId: string,
+    videoId: string,
+    basePath: string,
+  ): Promise<ProductionScenesResponse> {
+    const safeChannelId = assertSafeId(channelId, 'channel id');
+    const safeVideoId = assertSafeId(videoId, 'video id');
+    const workDir = resolveProductionVideoFolder(safeChannelId, safeVideoId);
+    const scenesBasePath = basePath.replace(/\/scenes\/regenerate-missing$/, '/scenes');
+
+    const file = readScenePromptsFile(workDir);
+    if (!file || file.scenes.length === 0) {
+      throw new AppError('Scene prompts not found', 404, 'SCENES_NOT_FOUND');
+    }
+
+    const hasImage = (scene: (typeof file.scenes)[number]) =>
+      typeof scene.path === 'string' && Boolean(resolveWorkDirFilePath(workDir, scene.path));
+    const missing = file.scenes
+      .map((scene, index) => ({ scene, index }))
+      .filter(({ scene }) => !hasImage(scene));
+
+    if (missing.length === 0) {
+      return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
+    }
+
+    const emptyPrompt = missing.filter(
+      ({ scene }) => typeof scene.prompt !== 'string' || !scene.prompt.trim(),
+    );
+    if (emptyPrompt.length > 0) {
+      throw new AppError(
+        `Scene(s) with an empty prompt: ${emptyPrompt.map(({ index }) => index + 1).join(', ')}`,
+        400,
+        'AI_SCENE_IMAGE_EMPTY_PROMPT',
+      );
+    }
+
+    const { audioSpeed, kenBurns } = await resolveSceneImageRenderOptions(workDir);
+
+    const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
+      generateAiSceneSlideImages({
+        workDir,
+        youtubeVideoId: safeVideoId,
+        scenes: file.scenes,
+        forceIndexes: missing.map(({ index }) => index),
+        ...(audioSpeed != null ? { audioSpeed } : {}),
+        kenBurns,
+      }),
+    );
+
+    if (result.generatedCount === 0) {
+      throw new AppError(
+        'Scene image generation failed for all missing scenes',
+        502,
+        'AI_SCENE_IMAGE_REGENERATE_FAILED',
+      );
+    }
+
+    // Partial success is fine: scenes that still failed simply remain without an image.
     return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
   }
 
