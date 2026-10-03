@@ -243,8 +243,12 @@
       "videoAi": "Video AI",
       "chrome": "Chrome",
       "video": "Video",
-      "taskQueue": "Hàng đợi"
+      "taskQueue": "Hàng đợi",
+      "seeding": "Seeding"
     },
+    "seedingHint": "Thời gian seeding mặc định (tính theo ngày).",
+    "seedingEmailDays": "Thời gian seeding email (ngày)",
+    "seedingYoutubeDays": "Thời gian seeding YouTube (ngày)",
     "videoAi": {
       "hint": "Hiệu ứng ảnh cho dạng video AI (slideshow)."
     },

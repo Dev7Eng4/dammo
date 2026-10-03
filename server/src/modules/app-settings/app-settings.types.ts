@@ -32,6 +32,10 @@ export interface AppSettings {
    * 1 = sequential (uses aiScenePromptChromeProfileRole). >1 uses that many sub profiles.
    */
   aiScenePromptConcurrency: number;
+  /** Default seeding period for a new email account, in days. */
+  seedingEmailDays: number;
+  /** Default seeding period for a new YouTube channel, in days. */
+  seedingYoutubeDays: number;
 }
 
 export type UpdateAppSettingsInput = Partial<

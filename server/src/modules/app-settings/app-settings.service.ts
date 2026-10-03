@@ -20,7 +20,16 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
   aiScenePromptConcurrency: 1,
+  seedingEmailDays: 5,
+  seedingYoutubeDays: 3,
 };
+
+function clampDays(value: number | undefined, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  const rounded = Math.round(value);
+  if (rounded < 1 || rounded > 365) return fallback;
+  return rounded;
+}
 
 function resolveScenePromptChromeProfileRole(
   value: unknown,
@@ -69,6 +78,11 @@ function loadSettings(): AppSettings {
       stored?.aiScenePromptConcurrency,
       DEFAULT_APP_SETTINGS.aiScenePromptConcurrency,
     ),
+    seedingEmailDays: clampDays(stored?.seedingEmailDays, DEFAULT_APP_SETTINGS.seedingEmailDays),
+    seedingYoutubeDays: clampDays(
+      stored?.seedingYoutubeDays,
+      DEFAULT_APP_SETTINGS.seedingYoutubeDays,
+    ),
   };
 }
 
@@ -109,6 +123,8 @@ export class AppSettingsService {
         input.aiScenePromptConcurrency,
         current.aiScenePromptConcurrency,
       ),
+      seedingEmailDays: clampDays(input.seedingEmailDays, current.seedingEmailDays),
+      seedingYoutubeDays: clampDays(input.seedingYoutubeDays, current.seedingYoutubeDays),
     };
     writeJson(paths.appSettings, next);
     return next;

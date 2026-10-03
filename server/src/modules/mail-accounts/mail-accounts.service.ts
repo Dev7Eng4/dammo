@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { createGpmProfile } from '../../infrastructure/gpm/gpm-api.client.js';
+import {
+  createGpmProfile,
+  listGpmProfiles,
+  type GpmProfile,
+} from '../../infrastructure/gpm/gpm-api.client.js';
 import {
   connectPlaywrightToGpmProfile,
   detachGpmPlaywright,
@@ -26,6 +30,13 @@ export interface GmailLoginResult {
   ok: true;
   email: string;
   gpmProfileId: string;
+}
+
+/** GPM profiles are named after the Gmail address; match exactly (search is fuzzy). */
+async function findGpmProfileByEmail(email: string): Promise<GpmProfile | undefined> {
+  const normalized = email.trim().toLowerCase();
+  const result = await listGpmProfiles({ search: email, page_size: 100 });
+  return result.data.find((profile) => profile.name.trim().toLowerCase() === normalized);
 }
 
 function normalizeOptionalString(value: string | undefined): string | undefined {
@@ -340,24 +351,31 @@ export class MailAccountsService {
     }
 
     const email = account.email.trim();
-    const password = account.password?.trim();
     if (!email) {
       throw new AppError('Email is required', 400, 'MISSING_EMAIL');
     }
+    const password = account.password?.trim();
     if (!password) {
       throw new AppError('Password is required for Gmail login', 400, 'MISSING_PASSWORD');
     }
 
-    const profile = await createGpmProfile({
-      name: email,
-      raw_proxy: '',
-    });
-    const gpmProfileId = profile.id;
+    // Reuse the GPM profile named after this email, or create one.
+    const gpmProfileId =
+      (await findGpmProfileByEmail(email))?.id ??
+      (await createGpmProfile({ name: email, raw_proxy: '' })).id;
     let connection: GpmPlaywrightConnection | undefined;
 
     try {
       connection = await connectPlaywrightToGpmProfile(gpmProfileId, { foreground: true });
-      await runGmailLogin(connection.page, connection.context, { email, password });
+      mailAccountsRepository.update(id, (current) => ({
+        ...current,
+        lastLoginAt: new Date().toISOString(),
+      }));
+      await runGmailLogin(connection.page, connection.context, {
+        email,
+        password,
+        twoFactorAuth: account.twoFactorAuth,
+      });
       console.log(`[mail-accounts] Gmail login ok for ${email} (GPM ${gpmProfileId})`);
       return { ok: true, email, gpmProfileId };
     } finally {

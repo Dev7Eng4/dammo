@@ -21,7 +21,14 @@ export function MailAccountsTable({
   onToggleRow,
   onToggleAll,
 }: MailAccountsTableProps) {
-  const { t } = useTranslation('mail');
+  const { t, i18n } = useTranslation('mail');
+  const dateLocale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
+
+  function formatDate(value?: string): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString(dateLocale);
+  }
 
   const columns: ColumnDef<MailAccount, unknown>[] = [
     {
@@ -57,6 +64,15 @@ export function MailAccountsTable({
       header: t('table.col.phone'),
       cell: ({ getValue }) => (
         <span className="text-neutral-300">{getValue<string | undefined>() || '—'}</span>
+      ),
+    },
+    {
+      accessorKey: 'lastLoginAt',
+      header: t('table.col.lastLogin'),
+      cell: ({ getValue }) => (
+        <span className="whitespace-nowrap text-neutral-300">
+          {formatDate(getValue<string | undefined>())}
+        </span>
       ),
     },
     {

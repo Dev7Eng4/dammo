@@ -13,8 +13,8 @@
     "deleting": "Deleting…",
     "export": "Export Excel",
     "exporting": "Exporting...",
-    "gmailLogin": "Login Gmail",
-    "gmailLoginWorking": "Logging in…"
+    "gmailLogin": "Seeding",
+    "gmailLoginWorking": "Seeding…"
   },
   "batch": {
     "title": "Add emails in batch",
@@ -43,6 +43,7 @@
       "twoFa": "2FA",
       "recovery": "RECOVERY EMAIL",
       "phone": "PHONE",
+      "lastLogin": "LATEST LOGIN",
       "youtube": "YOUTUBE",
       "tiktok": "TIKTOK",
       "facebook": "FACEBOOK"
@@ -87,7 +88,7 @@
     "exportError": "Export failed",
     "importSuccess": "Imported {{count}} emails",
     "importPartial": "{{skipped}} rows were skipped",
-    "gmailLoginSuccess": "Created GPM profile and logged in \"{{email}}\" (profile left open)",
+    "gmailLoginSuccess": "Opened GPM profile and logged in \"{{email}}\" (profile left open)",
     "gmailLoginError": "Gmail login failed"
   }
 }

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  deleteGpmGroup,
   deleteGpmProfile,
   fetchGpmGroups,
   fetchGpmProfiles,
@@ -11,15 +10,11 @@ import {
 } from '../api/gpm';
 import { setProfileProxy } from '../api/proxies';
 import { AddGpmProfileModal } from '../components/gpm-manager/AddGpmProfileModal';
-import { AddGpmGroupModal } from '../components/gpm-manager/AddGpmGroupModal';
-import { EditGpmGroupModal } from '../components/gpm-manager/EditGpmGroupModal';
 import { EditGpmProfileModal } from '../components/gpm-manager/EditGpmProfileModal';
-import { GpmGroupsTable } from '../components/gpm-manager/GpmGroupsTable';
-import { GpmGroupsToolbar } from '../components/gpm-manager/GpmGroupsToolbar';
 import { GpmProfilesTable } from '../components/gpm-manager/GpmProfilesTable';
 import { GpmProfilesToolbar } from '../components/gpm-manager/GpmProfilesToolbar';
 import { PageHeader, PageShell } from '../components/layout';
-import { Button, Modal, PageTabs, useToast } from '../components/ui';
+import { Button, Modal, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import { UserPlus } from 'lucide-react';
 import type {
@@ -29,25 +24,19 @@ import type {
   GpmTestResult,
 } from '../types/gpm';
 
-type GpmTab = 'profiles' | 'groups';
-
 export function GpmManagerPage() {
   const { t } = useTranslation(['browser', 'common']);
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<GpmTab>('profiles');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [profiles, setProfiles] = useState<GpmProfile[]>([]);
   const [groups, setGroups] = useState<GpmGroup[]>([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
-  const [groupsLoading, setGroupsLoading] = useState(true);
   const [profilesError, setProfilesError] = useState<string | null>(null);
-  const [groupsError, setGroupsError] = useState<string | null>(null);
 
   const [profileSearch, setProfileSearch] = useState('');
   const [profileSort, setProfileSort] = useState<GpmProfileSort>(0);
   const [debouncedProfileSearch, setDebouncedProfileSearch] = useState('');
-  const [groupSearch, setGroupSearch] = useState('');
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [runningProfileIds, setRunningProfileIds] = useState<Set<string>>(() => new Set());
@@ -56,11 +45,6 @@ export function GpmManagerPage() {
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showDeleteProfileModal, setShowDeleteProfileModal] = useState(false);
   const [deleteHardMode, setDeleteHardMode] = useState(true);
-  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
-  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
-  const [showDeleteGroupModal, setShowDeleteGroupModal] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<GpmGroup | null>(null);
-  const [deletingGroup, setDeletingGroup] = useState(false);
 
   const [actionBusyIds, setActionBusyIds] = useState<Set<string>>(() => new Set());
   const [testing, setTesting] = useState(false);
@@ -78,12 +62,6 @@ export function GpmManagerPage() {
     () => Array.from(new Set(profiles.map((profile) => profile.name.trim().toLowerCase()).filter(Boolean))),
     [profiles],
   );
-
-  const filteredGroups = useMemo(() => {
-    const query = groupSearch.trim().toLowerCase();
-    if (!query) return groups;
-    return groups.filter((group) => group.name.toLowerCase().includes(query));
-  }, [groups, groupSearch]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedProfileSearch(profileSearch.trim()), 300);
@@ -125,17 +103,12 @@ export function GpmManagerPage() {
 
   useAbortableEffect(
     async (signal) => {
-      setGroupsLoading(true);
-      setGroupsError(null);
       try {
         const { item } = await fetchGpmGroups(undefined, { signal });
         setGroups(item.data);
       } catch (err) {
         if (signal.aborted) return;
         setGroups([]);
-        setGroupsError(err instanceof Error ? err.message : t('gpm.toast.groupsLoadError'));
-      } finally {
-        if (!signal.aborted) setGroupsLoading(false);
       }
     },
     [refreshKey],
@@ -263,53 +236,15 @@ export function GpmManagerPage() {
     }
   }
 
-  function handleEditGroup(group: GpmGroup) {
-    setSelectedGroup(group);
-    setShowEditGroupModal(true);
-  }
-
-  function handleDeleteGroup(group: GpmGroup) {
-    setSelectedGroup(group);
-    setShowDeleteGroupModal(true);
-  }
-
-  async function handleConfirmDeleteGroup() {
-    if (!selectedGroup || deletingGroup) return;
-    setDeletingGroup(true);
-    try {
-      await deleteGpmGroup(selectedGroup.id);
-      toast.success(t('gpm.toast.groupDeleted', { name: selectedGroup.name }));
-      setShowDeleteGroupModal(false);
-      setSelectedGroup(null);
-      handleRefresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('gpm.toast.groupDeleteError'));
-    } finally {
-      setDeletingGroup(false);
-    }
-  }
-
   return (
     <PageShell fullBleed>
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="mb-4 shrink-0 space-y-4">
           <PageHeader title={t('gpm.page.title')} subtitle={t('gpm.page.subtitle')} icon={UserPlus} />
-          <PageTabs
-            variant="pill"
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as 'profiles' | 'groups')}
-            items={[
-              { id: 'profiles', label: t('gpm.tab.profiles') },
-              { id: 'groups', label: t('gpm.tab.groups') },
-            ]}
-          />
         </div>
 
-        {activeTab === 'profiles' ? (
-          <>
             <div className="shrink-0 border-b border-border pb-4">
               <GpmProfilesToolbar
-                count={profiles.length}
                 search={profileSearch}
                 sort={profileSort}
                 loading={profilesLoading}
@@ -346,36 +281,6 @@ export function GpmManagerPage() {
                 />
               </div>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="shrink-0 border-b border-border pb-4">
-              <GpmGroupsToolbar
-                count={filteredGroups.length}
-                search={groupSearch}
-                loading={groupsLoading}
-                onSearchChange={setGroupSearch}
-                onRefresh={handleRefresh}
-                onAddGroup={() => setShowAddGroupModal(true)}
-              />
-            </div>
-
-            {groupsError ? <p className="mt-2 shrink-0 text-xs text-danger">{groupsError}</p> : null}
-
-            <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
-              <div className="min-h-0 flex-1 overflow-auto">
-                <GpmGroupsTable
-                  groups={filteredGroups}
-                  loading={groupsLoading}
-                  readOnly={false}
-                  deletingId={deletingGroup ? selectedGroup?.id ?? null : null}
-                  onEdit={handleEditGroup}
-                  onDelete={handleDeleteGroup}
-                />
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       <AddGpmProfileModal
@@ -385,28 +290,6 @@ export function GpmManagerPage() {
         onClose={() => setShowAddProfileModal(false)}
         onSuccess={() => {
           toast.success(t('gpm.toast.created'));
-          handleRefresh();
-        }}
-      />
-
-      <AddGpmGroupModal
-        open={showAddGroupModal}
-        onClose={() => setShowAddGroupModal(false)}
-        onSuccess={() => {
-          toast.success(t('gpm.toast.groupCreated'));
-          handleRefresh();
-        }}
-      />
-
-      <EditGpmGroupModal
-        open={showEditGroupModal}
-        group={selectedGroup}
-        onClose={() => {
-          setShowEditGroupModal(false);
-          setSelectedGroup(null);
-        }}
-        onSuccess={() => {
-          toast.success(t('gpm.toast.groupUpdated'));
           handleRefresh();
         }}
       />
@@ -517,44 +400,6 @@ export function GpmManagerPage() {
           {t('gpm.deleteProfile.hardLabel')}
         </label>
         <p className="mt-2 text-xs text-neutral-500">{t('gpm.deleteProfile.softHint')}</p>
-      </Modal>
-
-      <Modal
-        open={showDeleteGroupModal}
-        onClose={() => {
-          if (deletingGroup) return;
-          setShowDeleteGroupModal(false);
-          setSelectedGroup(null);
-        }}
-        title={t('gpm.deleteGroup.title')}
-        footer={
-          <>
-            <Button
-              variant="outlined"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => {
-                setShowDeleteGroupModal(false);
-                setSelectedGroup(null);
-              }}
-              disabled={deletingGroup}
-            >
-              {t('common:actions.cancel')}
-            </Button>
-            <Button
-              size="sm"
-              className="rounded-lg"
-              onClick={handleConfirmDeleteGroup}
-              disabled={deletingGroup}
-            >
-              {deletingGroup ? t('common:actions.deleting') : t('common:actions.delete')}
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-neutral-300">
-          {t('gpm.deleteGroup.body', { name: selectedGroup?.name })}
-        </p>
       </Modal>
     </PageShell>
   );

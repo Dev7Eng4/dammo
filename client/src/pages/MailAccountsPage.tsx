@@ -166,6 +166,8 @@ export function MailAccountsPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('toast.gmailLoginError'));
     } finally {
+      // Profile open stamps lastLoginAt even when the login itself fails.
+      list.refresh();
       setGmailLoggingIn(false);
     }
   }

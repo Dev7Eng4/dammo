@@ -15,6 +15,7 @@ export interface MailAccount {
   recoveryEmail: string;
   phone?: string;
   notes?: string;
+  lastLoginAt?: string;
   platformLinks: PlatformLinks;
 }
 
