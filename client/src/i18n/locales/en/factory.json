@@ -131,6 +131,7 @@
       "regenerating": "Regenerating…",
       "regenerateError": "Could not regenerate scene image",
       "missingCount": "{{count}} scene(s) have no image",
+      "generateMissingCount": "Generate missing images ({{count}})",
       "generateMissing": "Generate images for scenes without one",
       "generatingMissing": "Generating images…",
       "generateMissingError": "Could not generate images for the missing scenes"

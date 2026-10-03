@@ -16,7 +16,6 @@ interface VideoProductionToolbarProps {
   onChannelChange: (channelId: string | null) => void;
   statusFilter: ProductionStatusFilter;
   onStatusFilterChange: (status: ProductionStatusFilter) => void;
-  total: number;
   channelLoading?: boolean;
   trailing?: ReactNode;
 }
@@ -27,7 +26,6 @@ export function VideoProductionToolbar({
   onChannelChange,
   statusFilter,
   onStatusFilterChange,
-  total,
   channelLoading = false,
   trailing,
 }: VideoProductionToolbarProps) {
@@ -43,8 +41,6 @@ export function VideoProductionToolbar({
     { value: 'Created', label: t('production.toolbar.statusCreated') },
     { value: 'Prepared', label: t('production.toolbar.statusPrepared') },
   ];
-
-  const hasChannel = Boolean(selectedChannelId);
 
   return (
     <div className="flex flex-col gap-3">
@@ -74,14 +70,6 @@ export function VideoProductionToolbar({
         </div>
 
         {trailing ? <div className="flex min-w-0 flex-1 items-center justify-end">{trailing}</div> : null}
-      </div>
-
-      <div className="flex justify-end">
-        <span className="text-xs text-muted-foreground">
-          {hasChannel
-            ? t('production.toolbar.count', { total })
-            : t('production.toolbar.noChannel')}
-        </span>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import {
   fetchProductionScenes,
   fetchProductionTranscript,
   fetchProductionVideos,
+  regenerateMissingProductionSceneImages,
 } from '../api/videoProduction';
 import { PageHeader, PageShell } from '../components/layout';
 import { VideoProductionDetailPanel } from '../components/video-production/VideoProductionDetailPanel';
@@ -120,6 +121,7 @@ export function VideoProductionPage() {
   const [enqueueingCreateVideo, setEnqueueingCreateVideo] = useState(false);
   const [createVideoError, setCreateVideoError] = useState<string | null>(null);
   const [playbackVersion, setPlaybackVersion] = useState(0);
+  const [regeneratingMissing, setRegeneratingMissing] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -440,6 +442,45 @@ export function VideoProductionPage() {
     );
   }
 
+  const missingImageCount = scenesData
+    ? scenesData.scenes.filter((scene) => !scene.imageUrl).length
+    : 0;
+
+  async function handleGenerateMissingImages() {
+    if (!selectedVideo || !scenesData || regeneratingMissing || toolbarBusy) return;
+
+    const { channelId, videoId } = selectedVideo;
+    const missingIndexes = new Set(
+      scenesData.scenes.filter((scene) => !scene.imageUrl).map((scene) => scene.index),
+    );
+    const previousByIndex = new Map(scenesData.scenes.map((scene) => [scene.index, scene]));
+    setRegeneratingMissing(true);
+    try {
+      const data = await regenerateMissingProductionSceneImages(channelId, videoId);
+      if (!mountedRef.current) return;
+      const bust = Date.now();
+      setScenesData({
+        ...data,
+        scenes: data.scenes.map((scene) => {
+          if (missingIndexes.has(scene.index)) {
+            return { ...scene, imageUrl: withCacheBust(scene.imageUrl, bust) };
+          }
+          const previousUrl = previousByIndex.get(scene.index)?.imageUrl;
+          return scene.imageUrl && previousUrl ? { ...scene, imageUrl: previousUrl } : scene;
+        }),
+      });
+      setScenesError(null);
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : t('production.scene.generateMissingError'),
+      );
+    } finally {
+      if (mountedRef.current) setRegeneratingMissing(false);
+    }
+  }
+
   function handleScenesUpdated(data: ProductionScenesResponse) {
     setScenesData(data);
     setScenesError(null);
@@ -669,11 +710,21 @@ export function VideoProductionPage() {
             onChannelChange={handleChannelChange}
             statusFilter={statusFilter}
             onStatusFilterChange={handleStatusFilterChange}
-            total={filteredVideos.length}
             channelLoading={loading}
             trailing={
               selectedVideo ? (
                 <div className="flex flex-wrap items-center justify-end gap-2">
+                  {activeTab === 'scenes' && missingImageCount > 0 ? (
+                    <Button
+                      type="button"
+                      disabled={toolbarBusy || regeneratingMissing}
+                      onClick={() => void handleGenerateMissingImages()}
+                    >
+                      {regeneratingMissing
+                        ? t('production.scene.generatingMissing')
+                        : t('production.scene.generateMissingCount', { count: missingImageCount })}
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     variant="outlined"
@@ -722,6 +773,7 @@ export function VideoProductionPage() {
             activeTab={activeTab}
             onActiveTabChange={setActiveTab}
             playbackVersion={playbackVersion}
+            regeneratingMissing={regeneratingMissing}
             onSelectScene={setSelectedSceneIndex}
             onScenesUpdated={handleScenesUpdated}
             onMetadataSaved={handleMetadataSaved}

@@ -78,6 +78,7 @@ interface VideoProductionDetailPanelProps {
   playbackVersion: number;
   onSelectScene: (index: number) => void;
   onScenesUpdated: (data: ProductionScenesResponse) => void;
+  regeneratingMissing?: boolean;
   onMetadataSaved: (metadata: ProductionMetadataResponse) => void;
   onMetadataSaveStateChange?: (state: { canSave: boolean; saving: boolean }) => void;
 }
@@ -102,6 +103,7 @@ export function VideoProductionDetailPanel({
   playbackVersion,
   onSelectScene,
   onScenesUpdated,
+  regeneratingMissing,
   onMetadataSaved,
   onMetadataSaveStateChange,
 }: VideoProductionDetailPanelProps) {
@@ -196,6 +198,7 @@ export function VideoProductionDetailPanel({
               selectedIndex={selectedSceneIndex}
               onSelect={onSelectScene}
               onScenesUpdated={onScenesUpdated}
+              regeneratingMissing={regeneratingMissing}
             />
           )
         ) : null}
