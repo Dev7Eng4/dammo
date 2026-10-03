@@ -48,16 +48,15 @@ export function VideoProductionToolbar({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="w-1/2 min-w-0">
-        <Select
-          options={statusOptions}
-          value={statusFilter}
-          onChange={(value) => onStatusFilterChange((value || 'all') as ProductionStatusFilter)}
-        />
-      </div>
-
       <div className="flex items-center gap-3">
-        <div className="w-1/2 min-w-0">
+        <div className="w-36 shrink-0">
+          <Select
+            options={statusOptions}
+            value={statusFilter}
+            onChange={(value) => onStatusFilterChange((value || 'all') as ProductionStatusFilter)}
+          />
+        </div>
+        <div className="w-1/3 min-w-0">
           <Select
             options={channelOptions}
             value={selectedChannelId ?? ''}

@@ -88,6 +88,16 @@ export function VideoProductionList({
                 selected ? 'bg-primary-500/10 ring-1 ring-primary-500/40' : 'hover:bg-surface-elevated',
               )}
             >
+              <span
+                className={cn(
+                  'mb-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium',
+                  video.status === 'Created'
+                    ? 'bg-emerald-500/15 text-emerald-400'
+                    : 'bg-amber-500/15 text-amber-400',
+                )}
+              >
+                {video.status}
+              </span>
               <VideoThumb video={video} />
               <p className="mt-2 line-clamp-2 px-0.5 text-sm font-medium leading-snug text-foreground">
                 {video.title}
