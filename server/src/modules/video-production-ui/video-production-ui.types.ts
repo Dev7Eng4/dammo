@@ -9,6 +9,7 @@ export interface ProductionVideoListItem {
   sceneCount: number;
   hasScenes: boolean;
   thumbnailUrl: string | null;
+  videoFolderPath: string | null;
 }
 
 export interface ProductionSceneItem {

@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { Select } from '../ui';
 
+export type ProductionStatusFilter = 'all' | 'Created' | 'Prepared';
+
 export interface ProductionChannelOption {
   id: string;
   name: string;
@@ -12,6 +14,8 @@ interface VideoProductionToolbarProps {
   channels: ProductionChannelOption[];
   selectedChannelId: string | null;
   onChannelChange: (channelId: string | null) => void;
+  statusFilter: ProductionStatusFilter;
+  onStatusFilterChange: (status: ProductionStatusFilter) => void;
   total: number;
   channelLoading?: boolean;
   trailing?: ReactNode;
@@ -21,6 +25,8 @@ export function VideoProductionToolbar({
   channels,
   selectedChannelId,
   onChannelChange,
+  statusFilter,
+  onStatusFilterChange,
   total,
   channelLoading = false,
   trailing,
@@ -32,10 +38,24 @@ export function VideoProductionToolbar({
     label: `${channel.name} (${channel.videoCount})`,
   }));
 
+  const statusOptions = [
+    { value: 'all', label: t('production.toolbar.statusAll') },
+    { value: 'Created', label: t('production.toolbar.statusCreated') },
+    { value: 'Prepared', label: t('production.toolbar.statusPrepared') },
+  ];
+
   const hasChannel = Boolean(selectedChannelId);
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="w-1/2 min-w-0">
+        <Select
+          options={statusOptions}
+          value={statusFilter}
+          onChange={(value) => onStatusFilterChange((value || 'all') as ProductionStatusFilter)}
+        />
+      </div>
+
       <div className="flex items-center gap-3">
         <div className="w-1/2 min-w-0">
           <Select

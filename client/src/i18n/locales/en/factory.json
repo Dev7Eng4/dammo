@@ -30,6 +30,12 @@
       "videoSearch": "Search by video title...",
       "selectChannelFirst": "Select a channel first",
       "filterAll": "All",
+      "statusAll": "All",
+      "statusCreated": "Created",
+      "statusPrepared": "Prepared",
+      "copyPath": "Copy path",
+      "copyPathSuccess": "Copied video folder path",
+      "copyPathError": "Could not copy video folder path",
       "count": "{{total}} videos",
       "noChannel": "No channel selected"
     },

@@ -15,6 +15,7 @@ import { VideoProductionList } from '../components/video-production/VideoProduct
 import { PRODUCTION_METADATA_FORM_ID } from '../components/video-production/MetadataPanel';
 import {
   VideoProductionToolbar,
+  type ProductionStatusFilter,
 } from '../components/video-production/VideoProductionToolbar';
 import {
   CreateVideoConfirmModal,
@@ -84,7 +85,7 @@ function withSceneCacheBust(data: ProductionScenesResponse): ProductionScenesRes
 
 export function VideoProductionPage() {
   const { t } = useTranslation('factory');
-  const toast = useToast();
+  const { toast } = useToast();
   const { jobs, enqueueTask } = useTaskQueue();
   const [searchParams, setSearchParams] = useSearchParams();
   const mountedRef = useRef(true);
@@ -92,6 +93,7 @@ export function VideoProductionPage() {
   const [videos, setVideos] = useState<ProductionVideoListItem[]>([]);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<ProductionStatusFilter>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scenesData, setScenesData] = useState<ProductionScenesResponse | null>(null);
@@ -152,9 +154,15 @@ export function VideoProductionPage() {
     }
   }, []);
 
+  const statusVideos = useMemo(
+    () =>
+      statusFilter === 'all' ? videos : videos.filter((video) => video.status === statusFilter),
+    [videos, statusFilter],
+  );
+
   const channels = useMemo(() => {
     const map = new Map<string, { id: string; name: string; videoCount: number }>();
-    for (const video of videos) {
+    for (const video of statusVideos) {
       const existing = map.get(video.channelId);
       if (existing) {
         existing.videoCount += 1;
@@ -169,7 +177,7 @@ export function VideoProductionPage() {
     return [...map.values()].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
     );
-  }, [videos]);
+  }, [statusVideos]);
 
   useEffect(() => {
     const channelIdFromQuery = searchParams.get('channelId')?.trim() ?? '';
@@ -187,8 +195,8 @@ export function VideoProductionPage() {
 
   const filteredVideos = useMemo(() => {
     if (!selectedChannelId) return [];
-    return videos.filter((video) => video.channelId === selectedChannelId);
-  }, [videos, selectedChannelId]);
+    return statusVideos.filter((video) => video.channelId === selectedChannelId);
+  }, [statusVideos, selectedChannelId]);
 
   const selectedVideo = useMemo(
     () => videos.find((video) => productionVideoKey(video) === selectedKey) ?? null,
@@ -355,6 +363,39 @@ export function VideoProductionPage() {
     setSelectedChannelId(channelId);
     setSelectedKey(null);
     clearDetailState();
+  }
+
+  function handleStatusFilterChange(status: ProductionStatusFilter) {
+    setStatusFilter(status);
+    const stillValid =
+      selectedChannelId !== null &&
+      videos.some(
+        (video) =>
+          video.channelId === selectedChannelId && (status === 'all' || video.status === status),
+      );
+    if (!stillValid) {
+      handleChannelChange(null);
+      return;
+    }
+    if (
+      selectedVideo &&
+      status !== 'all' &&
+      selectedVideo.status !== status
+    ) {
+      setSelectedKey(null);
+      clearDetailState();
+    }
+  }
+
+  async function handleCopyVideoPath() {
+    const folderPath = selectedVideo?.videoFolderPath;
+    if (!folderPath) return;
+    try {
+      await navigator.clipboard.writeText(folderPath);
+      toast.success(t('production.toolbar.copyPathSuccess'));
+    } catch {
+      toast.error(t('production.toolbar.copyPathError'));
+    }
   }
 
   function handleSelectVideo(video: ProductionVideoListItem) {
@@ -572,6 +613,46 @@ export function VideoProductionPage() {
     );
   }
 
+  const tabActions =
+    activeTab === 'scenes' || activeTab === 'characters' ? (
+      <Button
+        type="button"
+        variant="outlined"
+        disabled={toolbarBusy}
+        onClick={() => setConfirmRegenerateScenesOpen(true)}
+      >
+        {regenerateScenesInProgress
+          ? t('production.scenes.regenerating')
+          : t('production.scenes.regenerate')}
+      </Button>
+    ) : activeTab === 'metadata' ? (
+      <>
+        <Button
+          type="button"
+          variant="outlined"
+          disabled={toolbarBusy || !metadataData}
+          onClick={() => setConfirmRegenerateOpen(true)}
+        >
+          {regenerateInProgress
+            ? t('production.metadata.regenerating')
+            : t('production.metadata.regenerate')}
+        </Button>
+        <Button
+          type="submit"
+          form={PRODUCTION_METADATA_FORM_ID}
+          disabled={!metadataCanSave || toolbarBusy}
+        >
+          {metadataSaving ? t('production.metadata.saving') : t('production.metadata.save')}
+        </Button>
+      </>
+    ) : activeTab === 'video' ? (
+      <Button type="button" disabled={toolbarBusy} onClick={handleCreateVideoClick}>
+        {assembleInProgress || enqueueingCreateVideo
+          ? t('production.createVideo.creating')
+          : t('production.createVideo.button')}
+      </Button>
+    ) : null;
+
   return (
     <PageShell fullBleed>
       <div className="shrink-0">
@@ -586,46 +667,23 @@ export function VideoProductionPage() {
             channels={channels}
             selectedChannelId={selectedChannelId}
             onChannelChange={handleChannelChange}
+            statusFilter={statusFilter}
+            onStatusFilterChange={handleStatusFilterChange}
             total={filteredVideos.length}
             channelLoading={loading}
             trailing={
-              selectedVideo && (activeTab === 'scenes' || activeTab === 'characters') ? (
-                <Button
-                  type="button"
-                  variant="outlined"
-                  disabled={toolbarBusy}
-                  onClick={() => setConfirmRegenerateScenesOpen(true)}
-                >
-                  {regenerateScenesInProgress
-                    ? t('production.scenes.regenerating')
-                    : t('production.scenes.regenerate')}
-                </Button>
-              ) : selectedVideo && activeTab === 'metadata' ? (
-                <div className="flex flex-wrap items-center gap-2">
+              selectedVideo ? (
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <Button
                     type="button"
                     variant="outlined"
-                    disabled={toolbarBusy || !metadataData}
-                    onClick={() => setConfirmRegenerateOpen(true)}
+                    disabled={!selectedVideo.videoFolderPath}
+                    onClick={() => void handleCopyVideoPath()}
                   >
-                    {regenerateInProgress
-                      ? t('production.metadata.regenerating')
-                      : t('production.metadata.regenerate')}
+                    {t('production.toolbar.copyPath')}
                   </Button>
-                  <Button
-                    type="submit"
-                    form={PRODUCTION_METADATA_FORM_ID}
-                    disabled={!metadataCanSave || toolbarBusy}
-                  >
-                    {metadataSaving ? t('production.metadata.saving') : t('production.metadata.save')}
-                  </Button>
+                  {tabActions}
                 </div>
-              ) : selectedVideo && activeTab === 'video' ? (
-                <Button type="button" disabled={toolbarBusy} onClick={handleCreateVideoClick}>
-                  {assembleInProgress || enqueueingCreateVideo
-                    ? t('production.createVideo.creating')
-                    : t('production.createVideo.button')}
-                </Button>
               ) : null
             }
           />

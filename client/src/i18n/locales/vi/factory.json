@@ -30,6 +30,12 @@
       "videoSearch": "Tìm theo tiêu đề video...",
       "selectChannelFirst": "Chọn kênh trước",
       "filterAll": "Tất cả",
+      "statusAll": "Tất cả",
+      "statusCreated": "Created",
+      "statusPrepared": "Prepared",
+      "copyPath": "Copy path",
+      "copyPathSuccess": "Đã sao chép đường dẫn folder video",
+      "copyPathError": "Không thể sao chép đường dẫn folder video",
       "count": "{{total}} video",
       "noChannel": "Chưa chọn kênh"
     },

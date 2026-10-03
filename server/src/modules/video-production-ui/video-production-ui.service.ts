@@ -283,6 +283,7 @@ export class VideoProductionUiService {
           thumbnailUrl: hasThumbnail
             ? `${videosBasePath}/${encodeURIComponent(channel.id)}/${encodeURIComponent(videoId)}/thumbnail`
             : null,
+          videoFolderPath: workDir ? path.resolve(workDir) : null,
         });
       }
     }
