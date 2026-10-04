@@ -21,6 +21,10 @@ export interface AppSettings {
   aiScenePromptChromeProfileRole: AiScenePromptChromeProfileRole;
   /** Max parallel Chrome profiles for scene-prompt LLM chunks (1–8). */
   aiScenePromptConcurrency: number;
+  /** Default seeding period for a new email account, in days. */
+  seedingEmailDays: number;
+  /** Default seeding period for a new YouTube channel, in days. */
+  seedingYoutubeDays: number;
 }
 
 export type UpdateAppSettingsPayload = Partial<
@@ -29,4 +33,4 @@ export type UpdateAppSettingsPayload = Partial<
   }
 >;
 
-export type SettingsTab = 'video-ai' | 'chrome' | 'video' | 'task-queue';
+export type SettingsTab = 'video-ai' | 'chrome' | 'video' | 'task-queue' | 'seeding';

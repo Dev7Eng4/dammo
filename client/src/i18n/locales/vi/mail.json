@@ -13,8 +13,8 @@
     "deleting": "Đang xóa…",
     "export": "Xuất Excel",
     "exporting": "Đang xuất...",
-    "gmailLogin": "Đăng nhập Gmail",
-    "gmailLoginWorking": "Đang đăng nhập…"
+    "gmailLogin": "Seeding",
+    "gmailLoginWorking": "Đang seeding…"
   },
   "batch": {
     "title": "Thêm email hàng loạt",
@@ -43,6 +43,7 @@
       "twoFa": "2FA",
       "recovery": "EMAIL KHÔI PHỤC",
       "phone": "SỐ ĐIỆN THOẠI",
+      "lastLogin": "ĐĂNG NHẬP GẦN NHẤT",
       "youtube": "YOUTUBE",
       "tiktok": "TIKTOK",
       "facebook": "FACEBOOK"
@@ -87,7 +88,7 @@
     "exportError": "Xuất file thất bại",
     "importSuccess": "Đã import {{count}} email",
     "importPartial": "Đã bỏ qua {{skipped}} dòng",
-    "gmailLoginSuccess": "Đã tạo GPM và đăng nhập \"{{email}}\" (giữ profile đang mở)",
+    "gmailLoginSuccess": "Đã mở GPM profile và đăng nhập \"{{email}}\" (giữ profile đang mở)",
     "gmailLoginError": "Đăng nhập Gmail thất bại"
   }
 }

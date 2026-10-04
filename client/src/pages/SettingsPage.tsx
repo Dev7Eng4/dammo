@@ -17,6 +17,13 @@ const EMPTY_SETTINGS: AppSettings = {
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
   aiScenePromptConcurrency: 1,
+  seedingEmailDays: 5,
+  seedingYoutubeDays: 3,
+}
+
+function clampDays(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value))
+  return Number.isFinite(parsed) && parsed >= 1 && parsed <= 365 ? parsed : fallback
 }
 
 function SettingSwitch({
@@ -61,6 +68,7 @@ export function SettingsPage() {
     { id: 'chrome', label: t('settings.tab.chrome') },
     { id: 'video', label: t('settings.tab.video') },
     { id: 'task-queue', label: t('settings.tab.taskQueue') },
+    { id: 'seeding', label: t('settings.tab.seeding') },
   ]
 
   useAbortableEffect(async (signal) => {
@@ -81,6 +89,8 @@ export function SettingsPage() {
             8,
             Math.max(1, Math.round(Number(item.aiScenePromptConcurrency)) || 1),
           ),
+          seedingEmailDays: clampDays(item.seedingEmailDays, EMPTY_SETTINGS.seedingEmailDays),
+          seedingYoutubeDays: clampDays(item.seedingYoutubeDays, EMPTY_SETTINGS.seedingYoutubeDays),
         })
       }
     } catch (err) {
@@ -114,6 +124,11 @@ export function SettingsPage() {
         aiScenePromptConcurrency: Math.min(
           8,
           Math.max(1, Math.round(Number(settings.aiScenePromptConcurrency)) || 1),
+        ),
+        seedingEmailDays: clampDays(settings.seedingEmailDays, EMPTY_SETTINGS.seedingEmailDays),
+        seedingYoutubeDays: clampDays(
+          settings.seedingYoutubeDays,
+          EMPTY_SETTINGS.seedingYoutubeDays,
         ),
       })
       setSettings(item)
@@ -342,6 +357,56 @@ export function SettingsPage() {
                 }
                 disabled={saving}
               />
+            </section>
+          ) : null}
+
+          {activeTab === 'seeding' ? (
+            <section className="space-y-3">
+              <p className="text-sm text-muted-foreground">{t('settings.seedingHint')}</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">
+                    {t('settings.seedingEmailDays')}
+                  </span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    className="h-10"
+                    disabled={saving}
+                    value={settings.seedingEmailDays}
+                    onChange={(e) => {
+                      const parsed = Number(e.target.value)
+                      setSettings((prev) => ({
+                        ...prev,
+                        seedingEmailDays: Number.isFinite(parsed) ? parsed : prev.seedingEmailDays,
+                      }))
+                    }}
+                  />
+                </label>
+                <label className="block space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">
+                    {t('settings.seedingYoutubeDays')}
+                  </span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    className="h-10"
+                    disabled={saving}
+                    value={settings.seedingYoutubeDays}
+                    onChange={(e) => {
+                      const parsed = Number(e.target.value)
+                      setSettings((prev) => ({
+                        ...prev,
+                        seedingYoutubeDays: Number.isFinite(parsed)
+                          ? parsed
+                          : prev.seedingYoutubeDays,
+                      }))
+                    }}
+                  />
+                </label>
+              </div>
             </section>
           ) : null}
 

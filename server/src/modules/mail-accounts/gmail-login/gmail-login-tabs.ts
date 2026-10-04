@@ -76,6 +76,7 @@ export async function openGoogleSignInTab(
 
   const signIn = starterPage.locator(GMAIL_LOGIN.signIn).first();
   await signIn.waitFor({ state: 'visible', timeout: 45_000 });
+  await randomDelay(800, 1_500);
   log('openGoogleSignInTab: Sign in button visible — clicking');
 
   const nextPagePromise = context.waitForEvent('page', { timeout: POPUP_TIMEOUT_MS }).catch(() => null);
@@ -132,7 +133,7 @@ export async function openGoogleSignInTab(
       `openGoogleSignInTab: pre-focus click failed — ${err instanceof Error ? err.message : String(err)}`,
     );
   });
-  await randomDelay(200, 500);
+  await randomDelay(800, 1_500);
 
   log(`sign-in tab ready url=${signInPage.url()}`);
   return signInPage;

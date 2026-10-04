@@ -1,12 +1,17 @@
 import type { BrowserContext, Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
 import { randomDelay } from '../../../infrastructure/browser/human-interaction.js';
+import { enterTotpPin, fetchTotpToken } from './gmail-2fa.js';
+import { humanPaste } from './gmail-paste.js';
 import { openGoogleSignInTab } from './gmail-login-tabs.js';
 import { GMAIL_LOGIN } from './gmail-selectors.js';
 
 export interface GmailLoginCredentials {
   email: string;
-  password: string;
+  /** Omit to stop after the email is entered. */
+  password?: string;
+  /** 2FA secret; when set, a TOTP token is fetched from 2fa.live after the password. */
+  twoFactorAuth?: string;
 }
 
 const STEP_TIMEOUT_MS = 45_000;
@@ -14,10 +19,6 @@ const SUCCESS_TIMEOUT_MS = 60_000;
 
 function log(msg: string): void {
   console.log(`[gmail-login] ${msg}`);
-}
-
-function nextButton(page: Page) {
-  return page.getByRole('button', { name: GMAIL_LOGIN.nextButtonName }).first();
 }
 
 async function readInputValue(locator: Locator): Promise<string> {
@@ -79,9 +80,23 @@ async function fillGoogleInput(
   log(`fill ${label}: visible — ${await describeInput(locator, text.length)}`);
 
   await locator.click({ timeout: 15_000, force: true });
-  await randomDelay(120, 280);
+  await randomDelay(400, 800);
   await locator.focus().catch(() => undefined);
   log(`fill ${label}: after focus — ${await describeInput(locator, text.length)}`);
+
+  // --- strategy 0: human paste (clipboard + Ctrl+V) ---
+  log(`fill ${label}: try humanPaste…`);
+  try {
+    await humanPaste(page, locator, text);
+  } catch (err) {
+    log(`fill ${label}: humanPaste threw — ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (valueMatches(await readInputValue(locator), text)) {
+    log(`${label} filled via humanPaste`);
+    return;
+  }
+  // Clear whatever a partial paste left before the typing fallbacks.
+  await locator.fill('').catch(() => undefined);
 
   // --- strategy 1: pressSequentially ---
   log(`fill ${label}: try pressSequentially…`);
@@ -161,16 +176,6 @@ async function fillGoogleInput(
   );
 }
 
-async function clickNext(page: Page): Promise<void> {
-  log(`click Next — url=${page.url()}`);
-  const btn = nextButton(page);
-  await btn.waitFor({ state: 'visible', timeout: STEP_TIMEOUT_MS });
-  const label = await btn.innerText().catch(() => '(no text)');
-  log(`click Next: button visible text=${JSON.stringify(label.trim().slice(0, 40))}`);
-  await btn.click({ timeout: 15_000, force: true });
-  log(`click Next: clicked — url=${page.url()}`);
-}
-
 function isStillOnSignIn(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -198,7 +203,7 @@ function looksLikeChallenge(url: string): boolean {
   }
 }
 
-async function waitForLoginSuccess(page: Page): Promise<void> {
+async function waitForLoginSuccess(page: Page, ignoreChallenge = false): Promise<void> {
   log(`waitForLoginSuccess: start url=${page.url()}`);
   const deadline = Date.now() + SUCCESS_TIMEOUT_MS;
   let ticks = 0;
@@ -210,7 +215,7 @@ async function waitForLoginSuccess(page: Page): Promise<void> {
       log(`waitForLoginSuccess: tick=${ticks} url=${url}`);
     }
 
-    if (looksLikeChallenge(url)) {
+    if (!ignoreChallenge && looksLikeChallenge(url)) {
       log(`waitForLoginSuccess: challenge detected url=${url}`);
       throw new AppError(
         'Google requested an extra challenge (2FA/captcha) — not supported in phase 1',
@@ -256,21 +261,21 @@ export async function runGmailLogin(
 ): Promise<Page> {
   const email = creds.email.trim();
   const password = creds.password;
-  if (!email || !password) {
-    throw new AppError('Email and password are required', 400, 'MISSING_PASSWORD');
+  if (!email) {
+    throw new AppError('Email is required', 400, 'MISSING_EMAIL');
   }
 
   log(
-    `runGmailLogin: start emailLen=${email.length} passwordLen=${password.length} pages=${context.pages().length}`,
+    `runGmailLogin: start emailLen=${email.length} passwordLen=${password?.length ?? 0} pages=${context.pages().length}`,
   );
 
   log(`goto ${GMAIL_LOGIN.startUrl}`);
   await starterPage.goto(GMAIL_LOGIN.startUrl, {
-    waitUntil: 'domcontentloaded',
+    waitUntil: 'load',
     timeout: 60_000,
   });
-  log(`gmail.com loaded url=${starterPage.url()}`);
-  await randomDelay(400, 900);
+  log(`gmail landing page loaded url=${starterPage.url()}`);
+  await randomDelay(1_200, 2_000);
 
   const page = await openGoogleSignInTab(starterPage, context);
   log(`sign-in page ready url=${page.url()} pages=${context.pages().length}`);
@@ -280,8 +285,14 @@ export async function runGmailLogin(
     .or(page.locator(GMAIL_LOGIN.emailInput))
     .first();
   await fillGoogleInput(page, emailInput, email, 'email');
-  await randomDelay(200, 500);
-  await clickNext(page);
+  if (!password) {
+    log('runGmailLogin: email entered, no password supplied — stopping before Next');
+    return page;
+  }
+  await randomDelay(1_000, 1_800);
+  log('press Enter after email');
+  await page.keyboard.press('Enter');
+  await randomDelay(2_500, 3_500);
 
   const passwordInput = page.locator(GMAIL_LOGIN.passwordInput).first();
   log(`waiting for password field… url=${page.url()}`);
@@ -305,11 +316,21 @@ export async function runGmailLogin(
     );
   }
 
+  await randomDelay(800, 1_500);
   await fillGoogleInput(page, passwordInput, password, 'password');
-  await randomDelay(200, 500);
-  await clickNext(page);
+  await randomDelay(1_200, 2_000);
+  log('press Enter after password');
+  await page.keyboard.press('Enter');
 
-  await waitForLoginSuccess(page);
+  const twoFactorSecret = creds.twoFactorAuth?.trim();
+  if (twoFactorSecret) {
+    log('2FA configured — fetching token from 2fa.live');
+    await randomDelay(2_500, 3_500);
+    const token = await fetchTotpToken(context, twoFactorSecret);
+    await enterTotpPin(page, token);
+  }
+
+  await waitForLoginSuccess(page, Boolean(twoFactorSecret));
   log(`runGmailLogin: done url=${page.url()}`);
   return page;
 }

@@ -16,6 +16,8 @@ export interface MailAccount {
   phone?: string;
   notes?: string;
   youtubeDeletedAt?: string;
+  /** ISO time the GPM profile for this email was last created/opened via Gmail login. */
+  lastLoginAt?: string;
 }
 
 export interface MailAccountView extends MailAccount {

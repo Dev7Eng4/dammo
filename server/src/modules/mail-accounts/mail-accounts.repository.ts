@@ -31,6 +31,7 @@ function normalizeAccount(account: LegacyMailAccount): MailAccount {
     phone: account.phone ?? recoveryPhone,
     notes: account.notes ?? '',
     youtubeDeletedAt: account.youtubeDeletedAt,
+    lastLoginAt: account.lastLoginAt,
   };
 }
 

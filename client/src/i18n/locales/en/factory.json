@@ -243,8 +243,12 @@
       "videoAi": "AI Video",
       "chrome": "Chrome",
       "video": "Video",
-      "taskQueue": "Queue"
+      "taskQueue": "Queue",
+      "seeding": "Seeding"
     },
+    "seedingHint": "Default seeding period (in days).",
+    "seedingEmailDays": "Email seeding period (days)",
+    "seedingYoutubeDays": "YouTube seeding period (days)",
     "videoAi": {
       "hint": "Image effects for AI video (slideshow)."
     },

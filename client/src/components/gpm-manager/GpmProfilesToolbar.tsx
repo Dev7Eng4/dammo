@@ -4,7 +4,6 @@ import { ListToolbar } from '../layout'
 import type { GpmProfileSort } from '../../types/gpm'
 
 interface GpmProfilesToolbarProps {
-  count: number
   search: string
   sort: GpmProfileSort
   loading?: boolean
@@ -23,7 +22,6 @@ interface GpmProfilesToolbarProps {
 }
 
 export function GpmProfilesToolbar({
-  count,
   search,
   loading,
   testing,
@@ -43,7 +41,6 @@ export function GpmProfilesToolbar({
 
   return (
     <ListToolbar
-      countLabel={<span>{t('gpm.profiles.count', { count: count.toLocaleString() })}</span>}
       filters={
         <Input
           value={search}
