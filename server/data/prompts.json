@@ -4,11 +4,11 @@
       "id": "ja:scene_image",
       "baseKey": "scene_image",
       "language": "ja",
-      "name": "Scene image",
+      "name": "THỰC PHẨM",
       "category": "image",
       "niche": "5b1354ab-37cb-4e0e-94ad-3a515d97eecc",
       "createdAt": "2026-09-30T14:46:30.347Z",
-      "updatedAt": "2026-09-30T14:46:30.347Z",
+      "updatedAt": "2026-10-04T19:49:37.657Z",
       "steps": [
         {
           "id": "12eab423-ade7-4e4d-847c-2a54a3d8827b",
