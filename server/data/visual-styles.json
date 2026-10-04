@@ -1,6 +1,14 @@
 {
   "styles": [
     {
+      "id": "d3b93230-5bc1-4196-86ef-5a2e26aa1123",
+      "name": "Stickman",
+      "rule": "Minimalist line art, rough pencil sketch, faceless stickman characters, white strokes on dark greenish-gray background, monochrome psychological conceptual art",
+      "niche": "Stickman",
+      "createdAt": "2026-10-04T20:24:39.168Z",
+      "updatedAt": "2026-10-04T20:24:39.168Z"
+    },
+    {
       "id": "161cf1be-7627-4779-8fe6-fdb74e8df93b",
       "name": "2D",
       "rule": "A cute Irasutoya-style Japanese health educational illustration, simple 2D clip art with clean lines and bright pastel colors",

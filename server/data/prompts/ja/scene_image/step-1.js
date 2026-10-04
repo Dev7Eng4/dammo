@@ -10,15 +10,16 @@ Nhiệm vụ của bạn:
 2. RÀNG BUỘC THỜI GIAN NGHIÊM NGẶT: Tổng thời lượng một cảnh KHÔNG VƯỢT QUÁ ${maxDuration} GIÂY (tính từ startTime của object đầu đến endTime của object cuối trong nhóm).
 3. Viết Image Prompt bằng Tiếng Anh để mô tả cảnh đó theo phong cách minh họa 2D Nhật Bản.
 
-Ràng buộc về Hình ảnh & Prompt:
-- Style chủ đạo: ${style}. Tự động thêm các từ khóa tối ưu render nét vẽ 2D đơn giản, màu phẳng (high quality 2D simple vector clip art, clean line art, crisp graphic, flat colors, no gradients, bright palette).
-- Cấu trúc Prompt yêu cầu: [Subject/Character] + [Action/Pose] + [Educational/Anatomical Diagram or Food Item if needed] + [Setting/Background - ưu tiên clean solid white background hoặc minimal indoor] + [Style Modifiers].
-- Bố cục & Nhân vật:
-  + Duyện dáng, đáng yêu, nét vẽ ông/bà lão Nhật Bản tươi cười, hiền từ (kawaii character designs).
-  + Nếu thoại đề cập đến sức khỏe/nội tạng (tim, gan, mạch máu, khớp), hãy mô tả thêm dạng hình vẽ minh họa y tế 2D dễ thương (cute 2D medical illustration) xuất hiện như một bảng giải thích (educational explanatory panel) bên cạnh nhân vật.
-  + Nếu thoại đề cập đến thực phẩm/món ăn, mô tả các đĩa thức ăn Nhật (cá nướng, súp miso, đậu phụ, cơm gạo lứt) vẽ dạng clip-art rõ nét, tối giản, trình bày như một biểu tượng thực đơn sạch sẽ (clean menu icon or illustrative badge).
-- Nền (Background): Mặc định ưu tiên "clean solid white background". RẤT QUAN TRỌNG: Chỉ sử dụng nền trắng phẳng, tối giản để dễ chèn chữ/thông tin lên video. Tránh mọi bối cảnh phức tạp hoặc lộn xộn. Chỉ sử dụng "minimal warm wooden table setting" nếu thực sự cần thiết và tối giản.
-- KHÔNG yêu cầu AI sinh chữ, văn bản hoặc ký tự tiếng Nhật/Anh trong hình ảnh.
+RÀNG BUỘC SỐNG CÒN VỀ HÌNH ẢNH & PROMPT (PHẢI TUÂN THỦ TUYỆT ĐỐI ĐỂ LÀM VIDEO):
+- Style chủ đạo: ${style}. Tự động thêm các từ khóa tối ưu render nét vẽ 2D (high quality 2D simple vector clip art, clean line art, crisp graphic, flat colors, no gradients).
+- Cấu trúc Prompt yêu cầu: [Subject/Character/Food/Diagram] + [Action/Pose/State] + "on a pure solid white background" + [Negative Prompts].
+- Bố cục, Nhân vật & Đồ vật (Luôn giữ nguyên tắc TỐI GIẢN CLIP-ART):
+  + Thay vì vẽ một bối cảnh phòng bếp/siêu thị đầy đủ, CHỈ VẼ CHỦ THỂ CẦN THIẾT. 
+  + Nếu thoại nói về nhân vật: Vẽ ông/bà lão Nhật Bản tươi cười, hiền từ (kawaii character design) đứng độc lập.
+  + Nếu thoại đề cập đến sức khỏe/nội tạng: Vẽ dạng sơ đồ y tế 2D dễ thương (cute 2D medical illustration diagram) như một biểu tượng độc lập.
+  + Nếu thoại đề cập đến thực phẩm/món ăn: Vẽ các đĩa thức ăn/thực phẩm dạng 2D clip-art icon, sạch sẽ, không vẽ người hay bàn ăn phức tạp xung quanh.
+- BẮT BUỘC VỀ NỀN (Background): MỌI PROMPT đều phải có cụm từ: "pure solid white background, completely empty background, isolated on white". TUYỆT ĐỐI KHÔNG vẽ cảnh phòng, nội thất, siêu thị, cảnh vật, đồ đạc lộn xộn. Phải có không gian trống (negative space) để chèn chữ video.
+- LỆNH CẤM (Negative Prompt): MỌI PROMPT bắt buộc phải kết thúc bằng cụm từ cấm chữ và cấm bối cảnh rác: "--no text, no letters, no words, no banners, no charts, no speech bubbles, no labels, no watermark, no room, no messy background".
 
 Yêu cầu định dạng đầu ra (QUAN TRỌNG TỐI ĐA):
 - Trả về DUY NHẤT một mảng JSON hợp lệ. TUYỆT ĐỐI KHÔNG giải thích, không dùng markdown (như \`\`\`json).

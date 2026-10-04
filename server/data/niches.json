@@ -1,6 +1,11 @@
 {
   "niches": [
     {
+      "key": "a456048f-0ad9-4052-931c-2f6d8dccd910",
+      "label": "STICKMAN",
+      "createdAt": "2026-10-04T20:23:45.043Z"
+    },
+    {
       "key": "b26f9182-9962-4749-9e00-ef0c2d6c8eae",
       "label": "TEST",
       "createdAt": "2026-09-06T08:46:10.424Z"
