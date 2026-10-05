@@ -1,6 +1,12 @@
 {
   "celebrities": [
     {
+      "id": "5823ba2d-85c0-4652-8f2d-2166ee562c65",
+      "name": "Jakucho Setouchi",
+      "createdAt": "2026-10-04T17:32:47.061Z",
+      "updatedAt": "2026-10-04T17:32:47.061Z"
+    },
+    {
       "id": "f85ff01e-c077-44ea-acb6-fad544688bc8",
       "name": "Akihiro Miwa",
       "createdAt": "2026-08-16T04:18:36.439Z",
@@ -18,7 +24,7 @@
       "name": "Nakamura Tempū",
       "note": "JAPAN",
       "createdAt": "2026-08-05T07:56:47.898Z",
-      "updatedAt": "2026-09-21T15:22:03.367Z"
+      "updatedAt": "2026-10-03T08:51:44.511Z"
     }
   ]
 }
