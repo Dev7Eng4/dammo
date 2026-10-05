@@ -6,21 +6,18 @@ Ngách/Chủ đề của video là: "${niche}". Hãy luôn bám sát ngữ cản
 
 Nhiệm vụ của bạn:
 1. Gom nhóm các object liên tiếp trong mảng JSON để tạo thành các cảnh hợp lý.
-2. RÀNG BUỘC THỜI GIAN NGHIÊM NGẶT: Tổng thời lượng một cảnh KHÔNG VƯỢT QUÁ ${maxDuration} GIÂY.
+2. Tổng thời lượng một cảnh KHÔNG VƯỢT QUÁ ${maxDuration} GIÂY.
 3. Viết Image Prompt bằng Tiếng Anh để mô tả cảnh đó.
 
-Ràng buộc về Hình ảnh & Prompt (CỰC KỲ QUAN TRỌNG ĐỂ TẠO ĐÚNG NGƯỜI QUE):
+Ràng buộc về Hình ảnh & Prompt (CỰC KỲ QUAN TRỌNG ĐỂ TẠO NGƯỜI QUE VÀ TRÁNH LỖI NGƯỜI THẬT):
 - Style chủ đạo: ${style}.
-- Modifiers Bắt buộc: "crude stick figure, circle head, single line for torso and limbs, zero body volume, chalk drawing on dark greenish-gray blackboard, minimalist, flat 2D".
-- Modifiers Cấm: TUYỆT ĐỐI KHÔNG dùng: "silhouette, human shape, detailed, joints, realistic, 3D, shading, glowing".
-- Nhân vật (Characters): PHẢI LÀ NGƯỜI QUE (Stickman/Stick figure). Đầu là một hình tròn đơn giản, thân và tay chân chỉ là những đường kẻ đơn (single lines). Không vẽ khớp, không vẽ cơ bắp, không có độ khối.
-- Cấu trúc Prompt: [Stick figure character(s)] + [Action/Pose] + [Minimalist dark greenish-gray canvas/blackboard] + [Style Modifiers].
-- Ẩn dụ thị giác: Hãy để người que tương tác với các hình vẽ mang tính biểu tượng đơn giản (vd: người que đối mặt với bức tường gạch, người que cầm một khối vuông lớn).
+- Modifiers Bắt buộc (THÊM VÀO CUỐI MỖI PROMPT): "literal stick figure character, simple empty circle for a head, simple black lines for limbs, drawn with multiple rough overlapping black pencil strokes, flat 2D conceptual art, off-white textured paper background, clean minimalist aesthetic".
+- Modifiers Cấm (Negative Prompt ngầm): TUYỆT ĐỐI KHÔNG dùng các từ: "chalk, chalkboard, hand, artist, person drawing, human holding pen, realistic anatomy, 3D, detailed face, photo". (Điều này giúp ngăn AI vẽ người thật cầm bút).
+- Cấu trúc Prompt: [A sketchy black pencil stick figure] + [Action/Pose/Metaphor] + [off-white textured paper background] + [Style Modifiers].
+- Ẩn dụ thị giác: Đặt người que vào các tình huống tâm lý trừu tượng (vd: người que đứng trước bánh răng khổng lồ, đi trong sương mù).
 
 Yêu cầu định dạng đầu ra (QUAN TRỌNG TỐI ĐA):
 - Trả về DUY NHẤT một mảng JSON hợp lệ. TUYỆT ĐỐI KHÔNG giải thích.
-
-Cấu trúc JSON đầu ra:
 [
   {
     "prompt": "[English Image Prompt]",
