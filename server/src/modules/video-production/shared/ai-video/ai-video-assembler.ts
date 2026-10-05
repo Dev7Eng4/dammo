@@ -53,6 +53,7 @@ import {
   addAudioDeficitHold,
   assignHoldsForMissingScenes,
   buildAiTimedSlides,
+  buildStillBackgroundSlides,
 } from './ai-video-slide-spec.js';
 import {
   scaleSceneTimestamps,
@@ -91,6 +92,7 @@ export async function assembleReupAiSlideshowVideo(
     showSmallVideo = false,
     smallVideoFile,
     smallVideoPath,
+    stillBackground = false,
     onLog,
   } = input;
   const log = (msg: string) => emitDetailLog(msg, onLog);
@@ -106,8 +108,9 @@ export async function assembleReupAiSlideshowVideo(
   const audioDurationAfterTempo = originalAudioDuration / speed;
   const scaledScenes = scaleSceneTimestamps(scenes, speed);
 
-  let slides = buildAiTimedSlides(workDir, scaledScenes);
-  slides = assignHoldsForMissingScenes(scaledScenes, slides);
+  let slides = stillBackground
+    ? buildStillBackgroundSlides(workDir, scenes)
+    : assignHoldsForMissingScenes(scaledScenes, buildAiTimedSlides(workDir, scaledScenes));
   slides = addAudioDeficitHold(slides, audioDurationAfterTempo, log);
   const imagePaths = slides.map(slide => slide.imagePath);
 

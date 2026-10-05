@@ -61,13 +61,13 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
     ...(channel.reupAudioVideoType === 'si'
       ? {
           reupAudioBackgroundImage: siBackgroundImage!,
-          ...(channel.celebrityId?.trim() ? { celebrityId: channel.celebrityId.trim() } : {}),
           showAudioBar: channel.showAudioBar === true || Boolean(channel.audioBarFile?.trim()),
           ...(channel.audioBarFile?.trim() ? { audioBarFile: channel.audioBarFile.trim() } : {}),
           showSubscribe: channel.showSubscribe === true || Boolean(channel.subscribeFile?.trim()),
           ...(channel.subscribeFile?.trim() ? { subscribeFile: channel.subscribeFile.trim() } : {}),
         }
       : {}),
+    ...(channel.celebrityId?.trim() ? { celebrityId: channel.celebrityId.trim() } : {}),
     ...(channel.reupAudioVisualStyleId?.trim()
       ? { reupAudioVisualStyleId: channel.reupAudioVisualStyleId.trim() }
       : {}),

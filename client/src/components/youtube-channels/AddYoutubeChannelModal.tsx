@@ -40,6 +40,7 @@ import type { SourceChannel } from '../../types/sourceChannel';
 import type {
   AddYoutubeChannelFormValues,
   AiSceneDensityMaxSec,
+  ReupAudioBackgroundImage,
   StoredYoutubeChannelType,
   YoutubeChannel,
   YoutubeChannelLanguage,
@@ -157,6 +158,18 @@ function buildAudioBackgroundImageOptions(t: TFunc): SelectOption[] {
     }[option.value],
     group: t('form.imgGroup'),
   }));
+}
+
+/** SI sends its background mode (+ celebrity); AI only ever sends a celebrity. */
+function buildBackgroundImagePayload(
+  videoType: string,
+  formValue: string,
+): { reupAudioBackgroundImage?: ReupAudioBackgroundImage; celebrityId?: string } {
+  const { mode, celebrityId } = parseSiBackgroundImageValue(formValue);
+  if (videoType === 'ai') return mode === 'celebrity' && celebrityId ? { celebrityId } : {};
+  if (videoType !== 'si' || !mode) return {};
+  if (mode === 'celebrity') return celebrityId ? { reupAudioBackgroundImage: mode, celebrityId } : {};
+  return { reupAudioBackgroundImage: mode };
 }
 
 function buildLocalImageLegacyOption(t: TFunc): SelectOption {
@@ -382,6 +395,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const isReupAudio = isReupAudioChannelType(channelType);
   const language = watch('language') as YoutubeChannelLanguage | '';
   const reupAudioVideoType = watch('reupAudioVideoType');
+  /** SI picks its background (incl. celebrity); AI can only pick a celebrity for celebrity-wisdom videos. */
+  const usesCelebrityPicker = isReupAudio && (reupAudioVideoType === 'si' || reupAudioVideoType === 'ai');
   const reupAudioBackgroundImage = watch('reupAudioBackgroundImage');
   const parsedBackgroundImage = useMemo(
     () => parseSiBackgroundImageValue(reupAudioBackgroundImage),
@@ -418,9 +433,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   );
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
 
-  const siBackgroundImageOptions = useMemo(() => {
-    const options: SelectOption[] = [...audioBackgroundImageOptions];
-    if (parsedBackgroundImage.mode === 'local_image') {
+  const backgroundImageOptions = useMemo(() => {
+    /* AI videos have no image-count modes: only a celebrity can be picked. */
+    const options: SelectOption[] = audioBackgroundImageOptions.map(option => ({
+      ...option,
+      disabled: reupAudioVideoType === 'ai',
+    }));
+    if (reupAudioVideoType === 'si' && parsedBackgroundImage.mode === 'local_image') {
       options.push(localImageLegacyOption);
     }
     if (celebritiesWithMedia.length > 0) {
@@ -440,7 +459,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       });
     }
     return options;
-  }, [celebritiesWithMedia, parsedBackgroundImage.mode, audioBackgroundImageOptions, localImageLegacyOption, t]);
+  }, [
+    celebritiesWithMedia,
+    reupAudioVideoType,
+    parsedBackgroundImage.mode,
+    audioBackgroundImageOptions,
+    localImageLegacyOption,
+    t,
+  ]);
 
   useAbortableEffect(
     async signal => {
@@ -548,11 +574,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   useEffect(() => {
     if (!formReady || !isReupAudio || !reupAudioVideoType) return;
     if (reupAudioVideoType === 'ai') {
-      setValue('reupAudioBackgroundImage', '');
+      if (parseSiBackgroundImageValue(getValues('reupAudioBackgroundImage')).mode !== 'celebrity') {
+        setValue('reupAudioBackgroundImage', '');
+      }
       setValue('audioBarFile', '');
       setValue('subscribeFile', '');
     }
-  }, [formReady, isReupAudio, reupAudioVideoType, setValue]);
+  }, [formReady, isReupAudio, reupAudioVideoType, getValues, setValue]);
 
   useEffect(() => {
     if (!formReady) return;
@@ -562,7 +590,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
   useAbortableEffect(
     async signal => {
-      if (!open || !formReady || !isReupAudio || reupAudioVideoType !== 'si') {
+      if (!open || !formReady || !usesCelebrityPicker) {
         setCelebritiesWithMedia([]);
         return;
       }
@@ -591,8 +619,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         if (!signal.aborted) setCelebritiesLoading(false);
       }
     },
-    [open, formReady, isReupAudio, reupAudioVideoType],
-    { enabled: open && formReady && isReupAudio && reupAudioVideoType === 'si' },
+    [open, formReady, usesCelebrityPicker],
+    { enabled: open && formReady && usesCelebrityPicker },
   );
 
   useAbortableEffect(
@@ -738,17 +766,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
         ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
-        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si' && values.reupAudioBackgroundImage
-          ? (() => {
-              const parsed = parseSiBackgroundImageValue(values.reupAudioBackgroundImage);
-              if (!parsed.mode || (parsed.mode === 'celebrity' && !parsed.celebrityId)) return {};
-              return {
-                reupAudioBackgroundImage: parsed.mode,
-                ...(parsed.mode === 'celebrity' && parsed.celebrityId
-                  ? { celebrityId: parsed.celebrityId }
-                  : {}),
-              };
-            })()
+        ...(values.type === 'reup_audio'
+          ? buildBackgroundImagePayload(values.reupAudioVideoType, values.reupAudioBackgroundImage)
           : {}),
         ...(values.type === 'reup_audio' &&
         (values.reupAudioVideoType === 'ai' ||
@@ -1046,7 +1065,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 />
               </FormField>
 
-              {reupAudioVideoType === 'si' ? (
+              {usesCelebrityPicker ? (
                 <>
                   <FormField
                     label={t('form.images')}
@@ -1072,8 +1091,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                       render={({ field }) => (
                         <Select
                           id='reup-audio-background-image'
-                          options={siBackgroundImageOptions}
+                          options={backgroundImageOptions}
                           value={field.value}
+                          clearable={reupAudioVideoType === 'ai'}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
                           placeholder={celebritiesLoading ? t('form.imagesLoading') : t('form.imagesPlaceholder')}

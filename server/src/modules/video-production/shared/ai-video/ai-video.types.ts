@@ -112,6 +112,8 @@ export interface AssembleReupAiSlideshowVideoInput {
   smallVideoFile?: string;
   /** Absolute path to a small-video clip (test / local override). */
   smallVideoPath?: string;
+  /** Show only the first scene image, letterboxed on black, for the whole audio (no Ken Burns). */
+  stillBackground?: boolean;
   onLog?: (msg: string) => void;
 }
 

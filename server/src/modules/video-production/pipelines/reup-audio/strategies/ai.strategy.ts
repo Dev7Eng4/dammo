@@ -1,5 +1,6 @@
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
 import { assembleReupAiSlideshowVideo } from '../../../shared/ai-video/index.js';
+import { runCelebrityStillStep, usesCelebrityStillBackground } from '../steps/celebrity-still.step.js';
 import { runSceneAssetsStep } from '../steps/scene-assets.step.js';
 import { toOnLog, type AssembleContext } from '../video-task.context.js';
 import type { AssembleReadiness, VideoTypeStrategy, VisualAssets } from './video-type.strategy.js';
@@ -21,7 +22,9 @@ export const aiStrategy: VideoTypeStrategy = {
   },
 
   async prepareSceneAssets(ctx) {
-    const result = await runSceneAssetsStep(ctx, { label: 'AI' });
+    const result = usesCelebrityStillBackground(ctx.destination)
+      ? await runCelebrityStillStep(ctx)
+      : await runSceneAssetsStep(ctx, { label: 'AI' });
 
     return {
       aiScenePrompts: result.scenes,
@@ -43,9 +46,14 @@ export const aiStrategy: VideoTypeStrategy = {
     const { destination, log, outputBasename } = ctx;
     const timedScenes = timedScenesOf(assets);
     const allScenes = assets.aiScenePrompts ?? [];
+    const stillBackground = usesCelebrityStillBackground(destination);
 
     ctx.beginRenderPhase?.();
-    log.info(`Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`);
+    log.info(
+      stillBackground
+        ? 'Assembling AI video (celebrity image on black background + captions)...'
+        : `Assembling AI slideshow (${timedScenes.length} timed slides + captions)...`,
+    );
 
     const outputPath = await timedStep(
       'AI assemble video',
@@ -58,6 +66,7 @@ export const aiStrategy: VideoTypeStrategy = {
           language: destination.language,
           captionStyleKey: destination.captionStyleKey,
           outputBasename,
+          ...(stillBackground ? { stillBackground } : {}),
           showDisclaim: ctx.showDisclaim,
           disclaimerText: ctx.disclaimerText,
           ...(ctx.channelAvatarPath ? { channelAvatarPath: ctx.channelAvatarPath } : {}),

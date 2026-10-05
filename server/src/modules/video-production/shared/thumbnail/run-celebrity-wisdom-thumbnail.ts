@@ -1,7 +1,6 @@
 import path from 'node:path';
-import { celebrityDir } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import { celebritiesService } from '../../../celebrities/celebrities.service.js';
+import { pickRandomCelebrityImagePath } from '../celebrity-image.js';
 import {
   resolveThumbnailImageProvider,
   runBrowserImageGeneration,
@@ -21,10 +20,6 @@ export interface CelebrityWisdomThumbnailResult {
   promptUsed: string;
 }
 
-function pickRandomItem<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)]!;
-}
-
 export async function runCelebrityWisdomThumbnail(
   workDir: string,
   celebrityId: string,
@@ -41,21 +36,7 @@ export async function runCelebrityWisdomThumbnail(
     throw new AppError('image_generation_prompt is required for celebrity wisdom thumbnail', 400, 'INVALID_INPUT');
   }
 
-  celebritiesService.getById(trimmedCelebrityId);
-
-  const imageMedia = celebritiesService
-    .listMedia(trimmedCelebrityId)
-    .filter(item => item.kind === 'image');
-
-  if (imageMedia.length === 0) {
-    throw new AppError(
-      `No celebrity images found for celebrityId "${trimmedCelebrityId}"`,
-      400,
-      'CELEBRITY_IMAGES_EMPTY',
-    );
-  }
-
-  const referenceImagePath = path.join(celebrityDir(trimmedCelebrityId), pickRandomItem(imageMedia).name);
+  const referenceImagePath = pickRandomCelebrityImagePath(trimmedCelebrityId);
 
   const provider = resolveThumbnailImageProvider();
   console.log(

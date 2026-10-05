@@ -74,6 +74,18 @@ export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]
   });
 }
 
+/**
+ * One static slide: the first scene image, letterboxed (contain) on black. Its on-screen
+ * time is only a stub; {@link addAudioDeficitHold} stretches it over the whole audio.
+ */
+export function buildStillBackgroundSlides(workDir: string, scenes: AiVideoScenePrompt[]): SlideSpec[] {
+  const [scene] = scenesWithImagePaths(scenes);
+  if (!scene) {
+    throw new AppError('Still background requires one scene with an image path', 400, 'AI_SLIDESHOW_NO_IMAGES');
+  }
+  return [{ imagePath: resolveSceneImageAbsolutePath(workDir, scene), durationSec: 1, fit: 'contain' }];
+}
+
 /** xfade shortens total length by sum(transitionDuration); pad the last slide so timeline matches target. */
 export function padAiSlidesToAudio(
   slides: SlideSpec[],

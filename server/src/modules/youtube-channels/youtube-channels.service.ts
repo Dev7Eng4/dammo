@@ -169,6 +169,22 @@ function normalizeSourceIds(ids: string[] | undefined): string[] {
   return [...new Set((ids ?? []).map(id => id.trim()).filter(Boolean))];
 }
 
+/** Existing celebrity that has media (only `kind` media when given); returns its id. */
+function resolveCelebrityWithMedia(celebrityId: string, kind?: 'image' | 'video'): string {
+  celebritiesService.getById(celebrityId);
+  const media = celebritiesService
+    .listMedia(celebrityId)
+    .filter(item => kind === undefined || item.kind === kind);
+  if (media.length === 0) {
+    throw new AppError(
+      `Selected celebrity has no ${kind === 'image' ? 'images' : 'images or videos'}`,
+      400,
+      'CELEBRITY_MEDIA_EMPTY',
+    );
+  }
+  return celebrityId;
+}
+
 function validateChannelConfig(input: ChannelConfigInput): {
   linkedEmail: string;
   sourceChannels: string[];
@@ -271,6 +287,12 @@ function validateChannelConfig(input: ChannelConfigInput): {
       );
       reupAudioVisualStyleId = input.reupAudioVisualStyleId.trim();
       aiSceneDensityMaxSec = resolveAiSceneDensityMaxSec(input.aiSceneDensityMaxSec);
+
+      /* Optional: celebrity-wisdom channels show one of its images on a black background. */
+      const selectedCelebrityId = input.celebrityId?.trim();
+      if (selectedCelebrityId) {
+        celebrityId = resolveCelebrityWithMedia(selectedCelebrityId, 'image');
+      }
     } else if (input.reupAudioVideoType === 'si') {
       if (!input.reupAudioBackgroundImage) {
         throw new AppError(
@@ -290,16 +312,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
             'VALIDATION_ERROR',
           );
         }
-        celebritiesService.getById(selectedCelebrityId);
-        const media = celebritiesService.listMedia(selectedCelebrityId);
-        if (media.length === 0) {
-          throw new AppError(
-            'Selected celebrity has no images or videos',
-            400,
-            'CELEBRITY_MEDIA_EMPTY',
-          );
-        }
-        celebrityId = selectedCelebrityId;
+        celebrityId = resolveCelebrityWithMedia(selectedCelebrityId);
       }
 
       const selectedAudioBar = input.audioBarFile?.trim();
