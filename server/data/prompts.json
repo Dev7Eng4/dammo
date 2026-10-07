@@ -1,6 +1,30 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_tam_ly_hoc",
+      "baseKey": "metadata_tam_ly_hoc",
+      "language": "ja",
+      "name": "Metadata Tâm lý học",
+      "category": "meta",
+      "niche": "a456048f-0ad9-4052-931c-2f6d8dccd910",
+      "createdAt": "2026-10-07T14:39:16.517Z",
+      "updatedAt": "2026-10-07T14:39:16.544Z",
+      "steps": [
+        {
+          "id": "d5b20d0d-161c-4ba3-8f47-b6cea64f75f0",
+          "key": "metadata_tam_ly_hoc_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "10363403-645c-4e93-af44-38f764624c87",
+          "key": "metadata_tam_ly_hoc_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "all:stickman",
       "baseKey": "stickman",
       "language": "all",
