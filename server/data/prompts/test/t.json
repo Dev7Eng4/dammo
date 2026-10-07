@@ -1,24 +1,44 @@
 {
-"detected_niche": "Sức khỏe, Dinh dưỡng, Thực phẩm & Đời sống Người cao tuổi (健康・栄養・シニアライフ・予防医学)",
-"detected_focus": "Lối sống người cao tuổi (70代以上の健康習慣・人間関係・心の整え方)",
+"detected_niche": "FOOD_RANKING",
+"detected_focus": "Maintaining dietary diversity and nutritional balance through simple, familiar additions rather than drastic dietary overhauls as people age.",
+"selected_ctr_angle": "SELF_IDENTIFICATION",
 "metadata": {
-"title": "【60代以上必見】70代で意味がなくなる10のこと｜老後をラクにする手放し術",
-"description": "70代を迎えて本当に大切なものが見えてくる。人間関係や役割、完璧主義を手放して心と体を軽くする老後の生き方ヒントをご紹介します。ぜひチャンネル登録してご覧ください！",
-"tags": ["70代生き方", "老後生活", "人間関係の断捨離", "シニアライフ", "健康寿命", "おひとりさま", "心の整え方"]
+"title": "ちゃんと食べているつもりなのに…気づかないうちに食事の幅が狭くなっていませんか？身近な食材で栄養を補う5つの工夫",
+"description": "1日3食しっかり食べていても、いつの間にか食材の種類が減っていませんか？料理を大きく変えずに、今の献立に自然と取り入れられる5つの身近な食材と工夫をご紹介します。",
+"tags": [
+"食生活",
+"高齢者",
+"健康",
+"栄養バランス",
+"食材の種類",
+"食事の工夫",
+"キノコ",
+"シラス",
+"かぼちゃ",
+"小豆",
+"海苔",
+"健康維持"
+]
 },
-"alternative_titles": [
-"【70代の健康習慣】無理を手放して心穏やかに生きるためのヒント",
-"【60代・70代】老後の不安を消す！今すぐやめるべき10の習慣"
-],
 "thumbnail": {
-"chosen_layout": "Cụ già sống vui khỏe",
-"concept": "Cụ bà 75 tuổi với mái tóc bạc hiền hậu, nụ cười an yên bên tách trà xanh ấm áp trong căn phòng khách tối giản ngập tràn ánh sáng, mang lại cảm giác bình yên và chữa lành.",
+"chosen_archetype": "FOOD_ONLY",
+"concept": "A minimalist, warm tabletop view highlighting a simple bowl of white rice with a single dark sheet of nori, prompting the viewer to reflect on their own daily meals.",
+"dominant_visual": "The crisp dark sheet of nori resting cleanly against a simple ceramic bowl of white rice under warm natural light.",
+"dominant_emotion": "Warm, inviting, and personally reflective",
 "telop_japanese": {
-"badge": "【心と体が軽くなる】",
-"main_text": "「70代の手放し術」",
-"sub_text": "無理をしない穏やかな老後の暮らし方",
-"color": "Chữ chính vàng neon viền đen dày 3D, badge đỏ chữ trắng"
+"line_1": "それ、いつも",
+"line_2": "同じ食事に",
+"line_3": "なってませんか？",
+"line_count": 3,
+"position": "upper-left overlay",
+"base_text_color": "#2C2C2C",
+"emphasis_word": "同じ食事",
+"emphasis_color": "#D35400",
+"outline_color": "#FFFFFF",
+"text_contrast_strategy": "Bold dark text with a clean white outline placed over an uncluttered, warm-toned wooden tabletop background.",
+"treatment": "Directly overlaid on the scene without panels or banners."
 },
-"prompt": "Professional Japanese YouTube health and lifestyle thumbnail graphic design. Featuring a 75-year-old Japanese senior woman with gentle silver hair tied loosely, warm smiling eyes, wearing a modest, elegant beige cardigan over a light-colored blouse, sitting comfortably in a minimalist Japanese living room with natural lighting, a simple green tea ceramic cup placed neatly on a polished wooden table accompanied by a small glass vase with a single seasonal flower. In the top-right corner, a solid red horizontal rectangular text box containing the white text '【心と体が軽くなる】' strictly aligned on a single straight line. Running across the center-top, massive 3D Japanese typography reading '「70代の手放し術」' in radiant yellow with thick heavy black outline and deep drop shadow, followed by secondary white text '無理をしない穏やかな老後の暮らし方'. High contrast, bright cozy lighting, styled in Warm slice-of-life anime illustration style, gentle semi-realistic character design for elderly and middle-aged characters, soft rounded facial features, natural expressive emotions, realistic grey/silver hair with soft shading, warm golden natural lighting, cozy everyday Japanese settings (tatami room, family living room, retail store), soft flat coloring with light gradients, heartwarming wholesome atmosphere, detailed but comforting background, storytelling illustration for narrated video, masterpiece, highly detailed --ar 16:9"
+"title_thumbnail_relationship": "TITLE_PROBLEM + THUMBNAIL_EMOTION",
+"prompt": "An illustration of a minimalist Japanese tabletop scene featuring a simple ceramic bowl of steaming white rice, next to which rests a crisp, dark black sheet of high-quality nori, lit with soft natural window light. Japanese text overlay in the upper-left area: line 1 'それ、いつも', line 2 '同じ食事に', line 3 'なってませんか？'. The text '同じ食事' is rendered in deep orange emphasis color, while the rest of the text is dark charcoal gray with a clean white outline for contrast. The text is directly overlaid on the uncluttered part of the warm wooden table background without any panels, boxes, or horizontal bars. Hard negative constraints: strictly no white text panels, no white rectangles, no horizontal white strips, no full-width text banners, no full-width color bands, no subtitle bars, no lower-thirds, no rectangular text boxes, no split-screen layouts, no poster layouts, no presentation layouts, no infographic layouts, no separate text and image sections, no blank typography areas, no artificial empty typography space, no collage, no multiple unrelated scenes, no excessive decorative icons, no generic X marks, no generic question marks, no generic check marks, no watermark, no logo, no brand name. styled in A cute Irasutoya-style Japanese health educational illustration, simple 2D clip art with clean lines and bright pastel colors --ar 16:9"
 }
 }
