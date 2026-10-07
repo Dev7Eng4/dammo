@@ -1,14 +1,14 @@
 {
   "promptSets": [
     {
-      "id": "all:stickman",
+      "id": "ja:stickman",
       "baseKey": "stickman",
-      "language": "all",
+      "language": "ja",
       "name": "STICKMAN",
       "category": "image",
       "niche": "a456048f-0ad9-4052-931c-2f6d8dccd910",
       "createdAt": "2026-10-04T20:24:13.132Z",
-      "updatedAt": "2026-10-07T00:00:00.000Z",
+      "updatedAt": "2026-10-07T12:49:37.111Z",
       "steps": [
         {
           "id": "7e5a21f8-3c62-4c52-847a-5f3419d9bd7e",
