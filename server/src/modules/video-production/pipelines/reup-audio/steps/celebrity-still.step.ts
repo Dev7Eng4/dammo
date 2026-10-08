@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { getAudioDurationSeconds } from '../../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
@@ -42,7 +43,9 @@ export async function runCelebrityStillStep(ctx: VideoTaskContext): Promise<Scen
 
   const sourcePath = pickRandomCelebrityImagePath(celebrityId);
   log.info(`Celebrity still background: ${path.basename(sourcePath)} (celebrity ${celebrityId})`);
-  await materializeStillJpeg(sourcePath, path.join(workDir, STILL_SCENE_RELATIVE_PATH), toOnLog(log));
+  const stillPath = path.join(workDir, STILL_SCENE_RELATIVE_PATH);
+  await fs.mkdir(path.dirname(stillPath), { recursive: true });
+  await materializeStillJpeg(sourcePath, stillPath, toOnLog(log));
 
   await resolveAiRenderConfig(workDir, { kenBurns: false });
 
