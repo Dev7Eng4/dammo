@@ -396,6 +396,32 @@
       "niche": "all"
     },
     {
+      "id": "all:anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia",
+      "baseKey": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia",
+      "language": "all",
+      "name": "Ảnh Theo Cảnh Có Tham Chiếu - Cuộc Sống Người Già",
+      "category": "image",
+      "createdAt": "2026-10-09T00:00:00.000Z",
+      "updatedAt": "2026-10-09T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "f14a000b-8b70-4719-94cd-8d463195ce75",
+          "key": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia_step_1",
+          "step": 1,
+          "outputType": "text",
+          "useReferenceImage": true
+        },
+        {
+          "id": "c21446e7-e1e8-4646-a0e8-071bb5773b81",
+          "key": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia_step_2",
+          "step": 2,
+          "outputType": "text",
+          "useReferenceImage": true
+        }
+      ],
+      "niche": "68020000-7a54-4cbd-abf8-b00b9587c0f8"
+    },
+    {
       "id": "all:image_scenes",
       "baseKey": "image_scenes",
       "language": "all",

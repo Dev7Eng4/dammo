@@ -33,7 +33,6 @@ export function GpmGroupsToolbar({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t('gpm.groups.search')}
           className="h-9 w-48 rounded-lg text-sm"
-          disabled={loading}
         />
         {readOnly ? (
           <span className="text-xs text-neutral-500">{t('gpm.groups.readonly')}</span>

@@ -47,7 +47,6 @@ export function GpmProfilesToolbar({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t('gpm.profiles.search')}
           className="h-9 w-48 text-sm"
-          disabled={busy}
         />
       }
       extraActions={
