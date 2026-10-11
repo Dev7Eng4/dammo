@@ -126,6 +126,7 @@
       "noImage": "Chưa có ảnh",
       "noPrompt": "Không có prompt",
       "references": "Ảnh tham chiếu",
+      "clickToEdit": "Bấm để sửa prompt",
       "addReference": "+ Thêm nhân vật",
       "removeReference": "Bỏ tham chiếu",
       "save": "Lưu",

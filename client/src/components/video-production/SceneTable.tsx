@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image as ImageIcon, ImageOff, Loader2, RefreshCw, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
@@ -142,6 +142,20 @@ function ScenePromptEditor({
   const [refs, setRefs] = useState<string[]>(initialRefs);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = promptRef.current;
+    if (!editing || !el) return;
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, [editing]);
 
   const dirty =
     prompt.trim() !== scene.prompt.trim() ||
@@ -170,13 +184,39 @@ function ScenePromptEditor({
 
   return (
     <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
-      <textarea
-        value={prompt}
-        rows={5}
-        placeholder={t('production.scene.noPrompt')}
-        onChange={(event) => setPrompt(event.target.value)}
-        className="w-full resize-y rounded-md border border-border bg-background p-2 text-sm leading-relaxed text-foreground/90 focus:outline-none focus:ring-1 focus:ring-primary-500"
-      />
+      <div
+        ref={promptRef}
+        role="textbox"
+        aria-multiline="true"
+        tabIndex={0}
+        contentEditable={editing ? 'plaintext-only' : false}
+        suppressContentEditableWarning
+        onClick={() => {
+          if (!editing) setEditing(true);
+        }}
+        onFocus={() => {
+          if (!editing) setEditing(true);
+        }}
+        onBlur={(event) => {
+          setPrompt(event.currentTarget.innerText.replace(/\n$/, ''));
+          setEditing(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.currentTarget.innerText = prompt;
+            event.currentTarget.blur();
+          }
+        }}
+        title={editing ? undefined : t('production.scene.clickToEdit')}
+        className={cn(
+          'min-h-[3rem] w-full rounded-md border p-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground/90 outline-none',
+          editing
+            ? 'cursor-text border-primary-500 bg-background ring-1 ring-primary-500'
+            : 'cursor-pointer border-transparent hover:border-border hover:bg-surface-elevated',
+        )}
+      >
+        {prompt || (editing ? '' : t('production.scene.noPrompt'))}
+      </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -217,7 +257,7 @@ function ScenePromptEditor({
         </select>
       </div>
 
-      {dirty ? (
+      {dirty || editing ? (
         <div className="flex items-center gap-2">
           <button
             type="button"

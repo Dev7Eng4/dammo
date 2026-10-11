@@ -126,6 +126,7 @@
       "noImage": "No image yet",
       "noPrompt": "No prompt",
       "references": "Reference images",
+      "clickToEdit": "Click to edit prompt",
       "addReference": "+ Add character",
       "removeReference": "Remove reference",
       "save": "Save",
