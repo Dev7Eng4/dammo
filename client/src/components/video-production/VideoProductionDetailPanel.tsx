@@ -195,6 +195,7 @@ export function VideoProductionDetailPanel({
               channelId={video.channelId}
               videoId={video.videoId}
               scenes={scenes}
+              characters={characters}
               selectedIndex={selectedSceneIndex}
               onSelect={onSelectScene}
               onScenesUpdated={onScenesUpdated}

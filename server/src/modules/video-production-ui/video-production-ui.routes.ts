@@ -98,6 +98,22 @@ export function createVideoProductionUiRoutes() {
     return streamFileAsset(c.req.raw, asset);
   });
 
+  app.patch('/videos/:channelId/:videoId/scenes/:sceneIndex', async (c) => {
+    const sceneIndex = Number(c.req.param('sceneIndex'));
+    const body = (await c.req.json().catch(() => ({}))) as {
+      prompt?: unknown;
+      references?: unknown;
+    };
+    const result = videoProductionUiService.updateScene(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+      sceneIndex,
+      body,
+      c.req.path,
+    );
+    return c.json(result);
+  });
+
   app.post('/videos/:channelId/:videoId/scenes/:sceneIndex/regenerate', async (c) => {
     const sceneIndex = Number(c.req.param('sceneIndex'));
     const result = await videoProductionUiService.regenerateSceneImage(

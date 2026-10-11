@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { parseSrt } from '../../infrastructure/subtitle/srt-utils.js';
-import { readJson } from '../../infrastructure/storage/json-store.js';
+import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { AppError } from '../../shared/http/errors.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import {
@@ -382,6 +382,57 @@ export class VideoProductionUiService {
       contentType: imageContentType(filePath),
       size: fs.statSync(filePath).size,
     };
+  }
+
+  /** Persist an edited prompt and/or reference character ids for one scene (image is not regenerated). */
+  updateScene(
+    channelId: string,
+    videoId: string,
+    sceneIndex: number,
+    patch: { prompt?: unknown; references?: unknown },
+    basePath: string,
+  ): ProductionScenesResponse {
+    if (!Number.isInteger(sceneIndex) || sceneIndex < 0) {
+      throw new AppError('Invalid scene index', 400, 'INVALID_SCENE_INDEX');
+    }
+
+    const safeChannelId = assertSafeId(channelId, 'channel id');
+    const safeVideoId = assertSafeId(videoId, 'video id');
+    const workDir = resolveProductionVideoFolder(safeChannelId, safeVideoId);
+    const file = readScenePromptsFile(workDir);
+    const scene = file?.scenes[sceneIndex];
+    if (!file || !scene) {
+      throw new AppError('Scene not found', 404, 'SCENE_NOT_FOUND');
+    }
+
+    if (patch.prompt !== undefined) {
+      if (typeof patch.prompt !== 'string') {
+        throw new AppError('Invalid prompt', 400, 'INVALID_SCENE_PROMPT');
+      }
+      scene.prompt = patch.prompt.trim();
+    }
+
+    if (patch.references !== undefined) {
+      if (
+        !Array.isArray(patch.references) ||
+        patch.references.some((ref) => typeof ref !== 'string')
+      ) {
+        throw new AppError('Invalid references', 400, 'INVALID_SCENE_REFERENCES');
+      }
+      const refs = [...new Set((patch.references as string[]).map((ref) => ref.trim()))].filter(
+        Boolean,
+      );
+      if (refs.length > 0) {
+        scene.references = refs;
+      } else {
+        delete scene.references;
+      }
+    }
+
+    writeJson(resolveAiScenePromptsFilePath(workDir), file);
+
+    const scenesBasePath = basePath.replace(/\/scenes\/\d+$/, '/scenes');
+    return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
   }
 
   async regenerateSceneImage(

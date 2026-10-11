@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image as ImageIcon, ImageOff, Loader2, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, ImageOff, Loader2, RefreshCw, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import {
   regenerateProductionSceneImage,
+  updateProductionScene,
 } from '../../api/videoProduction';
 import type {
+  ProductionCharacterItem,
   ProductionSceneItem,
   ProductionScenesResponse,
 } from '../../types/videoProductionScenes';
@@ -14,6 +16,7 @@ interface SceneTableProps {
   channelId: string;
   videoId: string;
   scenes: ProductionSceneItem[];
+  characters: ProductionCharacterItem[];
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onScenesUpdated: (data: ProductionScenesResponse) => void;
@@ -104,10 +107,150 @@ function SceneImageCell({
   );
 }
 
+function keepCacheBustedUrls(
+  data: ProductionScenesResponse,
+  previous: ProductionSceneItem[],
+): ProductionScenesResponse {
+  const previousByIndex = new Map(previous.map((scene) => [scene.index, scene]));
+  return {
+    ...data,
+    scenes: data.scenes.map((scene) => {
+      const previousUrl = previousByIndex.get(scene.index)?.imageUrl;
+      return scene.imageUrl && previousUrl ? { ...scene, imageUrl: previousUrl } : scene;
+    }),
+  };
+}
+
+function ScenePromptEditor({
+  channelId,
+  videoId,
+  scene,
+  characters,
+  onScenesUpdated,
+  imagesUpdate,
+}: {
+  channelId: string;
+  videoId: string;
+  scene: ProductionSceneItem;
+  characters: ProductionCharacterItem[];
+  onScenesUpdated: (data: ProductionScenesResponse) => void;
+  imagesUpdate: (data: ProductionScenesResponse) => ProductionScenesResponse;
+}) {
+  const { t } = useTranslation('factory');
+  const initialRefs = scene.references ?? [];
+  const [prompt, setPrompt] = useState(scene.prompt);
+  const [refs, setRefs] = useState<string[]>(initialRefs);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const dirty =
+    prompt.trim() !== scene.prompt.trim() ||
+    refs.length !== initialRefs.length ||
+    refs.some((ref, i) => ref !== initialRefs[i]);
+  const available = characters.filter((character) => !refs.includes(character.id));
+  const nameOf = (id: string) => characters.find((c) => c.id === id)?.name ?? id;
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const data = await updateProductionScene(channelId, videoId, scene.index, {
+        prompt,
+        references: refs,
+      });
+      onScenesUpdated(imagesUpdate(data));
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message.trim() ? err.message : t('production.scene.saveError'),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
+      <textarea
+        value={prompt}
+        rows={5}
+        placeholder={t('production.scene.noPrompt')}
+        onChange={(event) => setPrompt(event.target.value)}
+        className="w-full resize-y rounded-md border border-border bg-background p-2 text-sm leading-relaxed text-foreground/90 focus:outline-none focus:ring-1 focus:ring-primary-500"
+      />
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <ImageIcon className="size-3.5" aria-hidden="true" />
+          {t('production.scene.references')}:
+        </span>
+        {refs.map((ref) => (
+          <span
+            key={ref}
+            className="inline-flex items-center gap-1 rounded-full bg-primary-500/10 px-2 py-0.5 text-xs font-medium text-primary-500"
+          >
+            {nameOf(ref)}
+            <button
+              type="button"
+              aria-label={t('production.scene.removeReference')}
+              onClick={() => setRefs((prev) => prev.filter((item) => item !== ref))}
+              className="hover:text-danger"
+            >
+              <X className="size-3" aria-hidden="true" />
+            </button>
+          </span>
+        ))}
+        <select
+          value=""
+          disabled={available.length === 0}
+          onChange={(event) => {
+            const id = event.target.value;
+            if (id) setRefs((prev) => [...prev, id]);
+          }}
+          className="rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground disabled:opacity-50"
+        >
+          <option value="">{t('production.scene.addReference')}</option>
+          {available.map((character) => (
+            <option key={character.id} value={character.id}>
+              {character.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {dirty ? (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void save()}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-white disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
+            {t('production.scene.save')}
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => {
+              setPrompt(scene.prompt);
+              setRefs(initialRefs);
+            }}
+            className="rounded-md px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {t('production.scene.cancel')}
+          </button>
+        </div>
+      ) : null}
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
+    </div>
+  );
+}
+
 export function SceneTable({
   channelId,
   videoId,
   scenes,
+  characters,
   selectedIndex,
   onSelect,
   onScenesUpdated,
@@ -182,25 +325,15 @@ export function SceneTable({
                   </div>
                 </td>
                 <td className="px-3 py-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
-                    {scene.prompt || t('production.scene.noPrompt')}
-                  </p>
-                  {scene.references && scene.references.length > 0 ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <ImageIcon className="size-3.5" aria-hidden="true" />
-                        {t('production.scene.references')}:
-                      </span>
-                      {scene.references.map((ref) => (
-                        <span
-                          key={ref}
-                          className="rounded-full bg-primary-500/10 px-2 py-0.5 text-xs font-medium text-primary-500"
-                        >
-                          {ref}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
+                  <ScenePromptEditor
+                    key={`${scene.index}:${scene.prompt}:${(scene.references ?? []).join(',')}`}
+                    channelId={channelId}
+                    videoId={videoId}
+                    scene={scene}
+                    characters={characters}
+                    onScenesUpdated={onScenesUpdated}
+                    imagesUpdate={(data) => keepCacheBustedUrls(data, scenes)}
+                  />
                 </td>
                 <td className="w-[500px] px-3 py-3">
                   <SceneImageCell

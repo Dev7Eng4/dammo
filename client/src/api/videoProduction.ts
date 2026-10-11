@@ -42,6 +42,26 @@ export function regenerateProductionSceneImage(
   );
 }
 
+export function updateProductionScene(
+  channelId: string,
+  videoId: string,
+  sceneIndex: number,
+  patch: { prompt?: string; references?: string[] },
+  options?: FetchOptions,
+) {
+  return fetchJson<ProductionScenesResponse>(
+    `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/scenes/${sceneIndex}`,
+    withSignal(
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      },
+      options,
+    ),
+  );
+}
+
 export function regenerateMissingProductionSceneImages(
   channelId: string,
   videoId: string,
