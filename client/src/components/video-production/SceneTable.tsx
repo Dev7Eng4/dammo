@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image as ImageIcon, ImageOff, Loader2, RefreshCw, X } from 'lucide-react';
+import { Image as ImageIcon, ImageOff, ImagePlus, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { Button, Modal, MultiSelect } from '../ui';
 import {
   regenerateProductionSceneImage,
+  replaceProductionSceneImage,
   updateProductionScene,
 } from '../../api/videoProduction';
 import type {
@@ -41,12 +43,14 @@ function SceneImageCell({
   disabled,
   error,
   onRegenerate,
+  onChange,
 }: {
   scene: ProductionSceneItem;
   regenerating: boolean;
   disabled: boolean;
   error: string | null;
   onRegenerate: () => void;
+  onChange: () => void;
 }) {
   const { t } = useTranslation('factory');
   const [imageFailed, setImageFailed] = useState(false);
@@ -71,7 +75,22 @@ function SceneImageCell({
           </div>
         )}
 
-        <div className="absolute inset-x-0 bottom-0 flex justify-end bg-gradient-to-t from-black/50 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 bg-gradient-to-t from-black/50 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <button
+            type="button"
+            disabled={regenerating || disabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onChange();
+            }}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md bg-background/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm',
+              'hover:bg-background disabled:cursor-not-allowed disabled:opacity-60',
+            )}
+          >
+            <ImagePlus className="size-3.5" aria-hidden="true" />
+            {t('production.scene.change')}
+          </button>
           <button
             type="button"
             disabled={regenerating || disabled}
@@ -161,8 +180,13 @@ function ScenePromptEditor({
     prompt.trim() !== scene.prompt.trim() ||
     refs.length !== initialRefs.length ||
     refs.some((ref, i) => ref !== initialRefs[i]);
-  const available = characters.filter((character) => !refs.includes(character.id));
-  const nameOf = (id: string) => characters.find((c) => c.id === id)?.name ?? id;
+  // Keep ids that are no longer in character-references.json selectable so they can be removed.
+  const referenceOptions = [
+    ...characters.map((character) => ({ value: character.id, label: character.name })),
+    ...refs
+      .filter((ref) => !characters.some((character) => character.id === ref))
+      .map((ref) => ({ value: ref, label: ref })),
+  ];
 
   const save = async () => {
     setSaving(true);
@@ -223,39 +247,14 @@ function ScenePromptEditor({
           <ImageIcon className="size-3.5" aria-hidden="true" />
           {t('production.scene.references')}:
         </span>
-        {refs.map((ref) => (
-          <span
-            key={ref}
-            className="inline-flex items-center gap-1 rounded-full bg-primary-500/10 px-2 py-0.5 text-xs font-medium text-primary-500"
-          >
-            {nameOf(ref)}
-            <button
-              type="button"
-              aria-label={t('production.scene.removeReference')}
-              onClick={() => setRefs((prev) => prev.filter((item) => item !== ref))}
-              className="hover:text-danger"
-            >
-              <X className="size-3" aria-hidden="true" />
-            </button>
-          </span>
-        ))}
-        <select
-          value=""
-          disabled={available.length === 0}
-          onChange={(event) => {
-            const id = event.target.value;
-            if (id) setRefs((prev) => [...prev, id]);
-          }}
-          className="rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground disabled:opacity-50"
-        >
-          <option value="">{t('production.scene.addReference')}</option>
-          {available.map((character) => (
-            <option key={character.id} value={character.id}>
-              {character.name}
-            </option>
-          ))}
-        </select>
       </div>
+      <MultiSelect
+        value={refs}
+        onChange={setRefs}
+        options={referenceOptions}
+        placeholder={t('production.scene.addReference')}
+        disabled={referenceOptions.length === 0}
+      />
 
       {dirty || editing ? (
         <div className="flex items-center gap-2">
@@ -299,6 +298,7 @@ export function SceneTable({
   const { t } = useTranslation('factory');
   const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
   const [errorsByIndex, setErrorsByIndex] = useState<Record<number, string>>({});
+  const [changeIndex, setChangeIndex] = useState<number | null>(null);
 
   const busy = regeneratingIndex !== null || regeneratingMissing;
 
@@ -385,6 +385,7 @@ export function SceneTable({
                     disabled={busy}
                     error={errorsByIndex[scene.index] ?? null}
                     onRegenerate={() => void handleRegenerate(scene.index)}
+                    onChange={() => setChangeIndex(scene.index)}
                   />
                 </td>
               </tr>
@@ -392,6 +393,129 @@ export function SceneTable({
           })}
         </tbody>
       </table>
+
+      <SceneImageChangeModal
+        key={changeIndex ?? 'closed'}
+        open={changeIndex !== null}
+        sceneNumber={(changeIndex ?? 0) + 1}
+        onClose={() => setChangeIndex(null)}
+        onConfirm={async (file) => {
+          if (changeIndex === null) return;
+          const data = await replaceProductionSceneImage(channelId, videoId, changeIndex, file);
+          const bust = Date.now();
+          const merged = keepCacheBustedUrls(data, scenes);
+          onScenesUpdated({
+            ...merged,
+            scenes: merged.scenes.map((scene) =>
+              scene.index === changeIndex
+                ? { ...scene, imageUrl: withCacheBust(data.scenes[scene.index]?.imageUrl ?? null, bust) }
+                : scene,
+            ),
+          });
+          setChangeIndex(null);
+        }}
+      />
     </div>
+  );
+}
+
+function SceneImageChangeModal({
+  open,
+  sceneNumber,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  sceneNumber: number;
+  onClose: () => void;
+  onConfirm: (file: File) => Promise<void>;
+}) {
+  const { t } = useTranslation('factory');
+  const { t: tCommon } = useTranslation('common');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const submit = async () => {
+    if (!file) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onConfirm(file);
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message.trim() ? err.message : t('production.scene.changeError'),
+      );
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={submitting ? () => undefined : onClose}
+      title={t('production.scene.changeTitle', { n: sceneNumber })}
+      className="max-w-lg"
+      footer={
+        <>
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            {tCommon('actions.cancel')}
+          </Button>
+          <Button
+            size="sm"
+            className="rounded-lg"
+            onClick={() => void submit()}
+            disabled={!file || submitting}
+          >
+            {submitting ? t('production.scene.changing') : t('production.scene.changeConfirm')}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        />
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={() => inputRef.current?.click()}
+          className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted text-muted-foreground hover:bg-surface-elevated"
+        >
+          {previewUrl ? (
+            <img src={previewUrl} alt="" className="size-full object-contain" />
+          ) : (
+            <span className="flex flex-col items-center gap-1 text-sm">
+              <ImagePlus className="size-6" aria-hidden="true" />
+              {t('production.scene.choosePicture')}
+            </span>
+          )}
+        </button>
+        {file ? <p className="truncate text-xs text-muted-foreground">{file.name}</p> : null}
+        {error ? <p className="text-xs text-danger">{error}</p> : null}
+      </div>
+    </Modal>
   );
 }

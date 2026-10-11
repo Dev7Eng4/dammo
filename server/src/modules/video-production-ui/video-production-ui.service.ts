@@ -1,11 +1,14 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { runFfmpeg } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { parseSrt } from '../../infrastructure/subtitle/srt-utils.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { AppError } from '../../shared/http/errors.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import {
+  AI_SLIDES_DIRNAME,
   IMAGE_REFERENCES_DIRNAME,
   findOverlappingScenes,
   generateAiSceneSlideImages,
@@ -41,6 +44,7 @@ import type {
 const TRANSCRIPT_CANDIDATES = ['transcript-updated.srt', 'transcript.srt'] as const;
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'] as const;
 const VIDEO_META_FILENAME = 'video-meta.json';
+const MAX_SCENE_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 function assertSafeId(value: string, label: string): string {
   const normalized = value.trim();
@@ -432,6 +436,65 @@ export class VideoProductionUiService {
     writeJson(resolveAiScenePromptsFilePath(workDir), file);
 
     const scenesBasePath = basePath.replace(/\/scenes\/\d+$/, '/scenes');
+    return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
+  }
+
+  /** Replace a scene's image with an uploaded one (converted to the pipeline's scene-NNN.jpg). */
+  async replaceSceneImage(
+    channelId: string,
+    videoId: string,
+    sceneIndex: number,
+    upload: File,
+    basePath: string,
+  ): Promise<ProductionScenesResponse> {
+    if (!Number.isInteger(sceneIndex) || sceneIndex < 0) {
+      throw new AppError('Invalid scene index', 400, 'INVALID_SCENE_INDEX');
+    }
+    if (!upload.type.startsWith('image/')) {
+      throw new AppError('File must be an image', 400, 'INVALID_SCENE_IMAGE');
+    }
+    if (upload.size > MAX_SCENE_IMAGE_UPLOAD_BYTES) {
+      throw new AppError('Image must not exceed 20 MB', 400, 'SCENE_IMAGE_TOO_LARGE');
+    }
+
+    const safeChannelId = assertSafeId(channelId, 'channel id');
+    const safeVideoId = assertSafeId(videoId, 'video id');
+    const workDir = resolveProductionVideoFolder(safeChannelId, safeVideoId);
+    const file = readScenePromptsFile(workDir);
+    const scene = file?.scenes[sceneIndex];
+    if (!file || !scene) {
+      throw new AppError('Scene not found', 404, 'SCENE_NOT_FOUND');
+    }
+
+    const relativePath = path.posix.join(
+      AI_SLIDES_DIRNAME,
+      `scene-${String(sceneIndex + 1).padStart(3, '0')}.jpg`,
+    );
+    const outputPath = path.join(workDir, relativePath);
+    const tmpPath = path.join(
+      os.tmpdir(),
+      `scene-upload-${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(upload.name) || '.img'}`,
+    );
+
+    await runExclusiveSceneImageJob(safeChannelId, safeVideoId, async () => {
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(tmpPath, Buffer.from(await upload.arrayBuffer()));
+      const convertedPath = `${outputPath}.tmp.jpg`;
+      try {
+        await runFfmpeg(['-y', '-i', tmpPath, '-frames:v', '1', '-q:v', '2', convertedPath]);
+        fs.renameSync(convertedPath, outputPath);
+      } catch {
+        throw new AppError('Could not process the image file', 400, 'INVALID_SCENE_IMAGE');
+      } finally {
+        fs.rmSync(tmpPath, { force: true });
+        fs.rmSync(convertedPath, { force: true });
+      }
+    });
+
+    scene.path = relativePath;
+    writeJson(resolveAiScenePromptsFilePath(workDir), file);
+
+    const scenesBasePath = basePath.replace(/\/scenes\/\d+\/image$/, '/scenes');
     return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
   }
 

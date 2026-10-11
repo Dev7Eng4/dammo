@@ -62,6 +62,21 @@ export function updateProductionScene(
   );
 }
 
+export function replaceProductionSceneImage(
+  channelId: string,
+  videoId: string,
+  sceneIndex: number,
+  file: File,
+  options?: FetchOptions,
+) {
+  const body = new FormData();
+  body.append('file', file);
+  return fetchJson<ProductionScenesResponse>(
+    `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/scenes/${sceneIndex}/image`,
+    withSignal({ method: 'PUT', body }, options),
+  );
+}
+
 export function regenerateMissingProductionSceneImages(
   channelId: string,
   videoId: string,
