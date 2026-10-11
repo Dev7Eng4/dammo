@@ -125,6 +125,7 @@
     "scene": {
       "noImage": "No image yet",
       "noPrompt": "No prompt",
+      "references": "Reference images",
       "expand": "Show more",
       "collapse": "Show less",
       "regenerate": "Regenerate",

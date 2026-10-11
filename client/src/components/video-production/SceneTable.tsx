@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageOff, Loader2, RefreshCw } from 'lucide-react';
+import { Image as ImageIcon, ImageOff, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import {
   regenerateProductionSceneImage,
@@ -185,6 +185,22 @@ export function SceneTable({
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
                     {scene.prompt || t('production.scene.noPrompt')}
                   </p>
+                  {scene.references && scene.references.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <ImageIcon className="size-3.5" aria-hidden="true" />
+                        {t('production.scene.references')}:
+                      </span>
+                      {scene.references.map((ref) => (
+                        <span
+                          key={ref}
+                          className="rounded-full bg-primary-500/10 px-2 py-0.5 text-xs font-medium text-primary-500"
+                        >
+                          {ref}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </td>
                 <td className="w-[500px] px-3 py-3">
                   <SceneImageCell

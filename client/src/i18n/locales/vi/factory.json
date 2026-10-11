@@ -125,6 +125,7 @@
     "scene": {
       "noImage": "Chưa có ảnh",
       "noPrompt": "Không có prompt",
+      "references": "Ảnh tham chiếu",
       "expand": "Xem thêm",
       "collapse": "Thu gọn",
       "regenerate": "Tạo lại",
