@@ -238,6 +238,7 @@ export interface YoutubeChannelVideo {
   duration?: number;
   status?: YoutubeChannelVideoStatus;
   localFolder?: 'uploads';
+  missingTitleOrThumbnail?: boolean;
 }
 
 export interface YoutubeChannelVideosResponse {

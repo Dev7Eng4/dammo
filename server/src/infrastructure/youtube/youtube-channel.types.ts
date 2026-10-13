@@ -22,6 +22,8 @@ export interface YoutubeChannelVideo {
   duration?: number;
   status?: YoutubeChannelVideoStatus;
   localFolder?: 'uploads';
+  /** Prepared/Created video whose title or thumbnail is missing locally. */
+  missingTitleOrThumbnail?: boolean;
 }
 
 export interface YtdlpVideoEntry {

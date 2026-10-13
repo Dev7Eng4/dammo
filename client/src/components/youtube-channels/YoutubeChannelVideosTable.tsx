@@ -111,13 +111,27 @@ export function YoutubeChannelVideosTable({
                   e.stopPropagation()
                   onTitleClick(row.original)
                 }}
-                className="cursor-pointer text-left font-medium text-secondary-400 hover:text-secondary-300 hover:underline"
+                className={cn(
+                  'cursor-pointer text-left font-medium hover:underline',
+                  row.original.missingTitleOrThumbnail
+                    ? 'text-red-500 hover:text-red-400'
+                    : 'text-secondary-400 hover:text-secondary-300',
+                )}
               >
                 {title}
               </button>
             )
           }
-          return <span className="font-medium text-neutral-100">{title}</span>
+          return (
+            <span
+              className={cn(
+                'font-medium',
+                row.original.missingTitleOrThumbnail ? 'text-red-500' : 'text-neutral-100',
+              )}
+            >
+              {title}
+            </span>
+          )
         },
       },
       {
