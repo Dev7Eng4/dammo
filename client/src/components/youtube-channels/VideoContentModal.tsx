@@ -448,7 +448,7 @@ export function VideoContentModal({
         open={open}
         onClose={handleClose}
         title={t('videoContent.title')}
-        className="max-w-5xl"
+        className="max-w-[min(96vw,1680px)]"
         bodyClassName="max-h-[calc(100svh-10rem)] overflow-y-auto"
         footer={
           <>
@@ -522,6 +522,94 @@ export function VideoContentModal({
                 {error}
               </div>
             ) : null}
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <section>
+                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldVideo')}</h3>
+                {content.videoUrl ? (
+                  <video
+                    ref={videoRef}
+                    key={content.videoUrl}
+                    src={content.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="aspect-video w-full rounded-xl border border-border bg-black object-contain"
+                  >
+                    {t('videoContent.noVideoSupport')}
+                  </video>
+                ) : (
+                  <div className="flex aspect-video items-center justify-center rounded-xl border border-border bg-neutral-900 px-4 text-center text-sm text-neutral-500">
+                    {t('videoContent.videoMissing')}
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldThumbnail')}</h3>
+                <input
+                  ref={thumbnailInputRef}
+                  type="file"
+                  accept={THUMBNAIL_ACCEPT}
+                  className="hidden"
+                  onChange={handleThumbnailChange}
+                  disabled={busy}
+                />
+                {thumbnailSrc ? (
+                  <div className="group relative">
+                    <Image
+                      key={thumbnailSrc}
+                      src={thumbnailSrc}
+                      alt={`Thumbnail ${title || video.title}`}
+                      aspectRatio="video"
+                      fit="contain"
+                      className="border border-border"
+                      fallback={<span className="px-4 text-center text-sm">{t('metadata.thumbnailError')}</span>}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      disabled={busy}
+                      className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg border border-white/15 bg-black/70 text-white opacity-0 shadow-lg backdrop-blur-sm transition hover:bg-black/85 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100 group-focus-within:opacity-100"
+                      title={t('videoContent.changeThumb')}
+                      aria-label={t('videoContent.changeThumb')}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="size-4"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
+                        <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={busy}
+                    className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-neutral-900 text-neutral-500 transition hover:border-primary-400/60 hover:bg-surface-elevated hover:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={t('videoContent.uploadThumb')}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="size-7"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" />
+                      <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                    </svg>
+                    <span className="text-sm font-medium">{t('videoContent.uploadThumb')}</span>
+                  </button>
+                )}
+              </section>
+            </div>
 
             <div>
               <div className="mb-1.5 flex items-center gap-2">
@@ -607,106 +695,6 @@ export function VideoContentModal({
                   maxLength={100}
                 />
               </div>
-            </div>
-
-            <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-              <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldThumbnail')}</h3>
-                <input
-                  ref={thumbnailInputRef}
-                  type="file"
-                  accept={THUMBNAIL_ACCEPT}
-                  className="hidden"
-                  onChange={handleThumbnailChange}
-                  disabled={busy}
-                />
-                {thumbnailSrc ? (
-                  <div className="group relative">
-                    <Image
-                      key={thumbnailSrc}
-                      src={thumbnailSrc}
-                      alt={`Thumbnail ${title || video.title}`}
-                      aspectRatio="video"
-                      fit="contain"
-                      className="border border-border"
-                      fallback={<span className="px-4 text-center text-sm">{t('metadata.thumbnailError')}</span>}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => thumbnailInputRef.current?.click()}
-                      disabled={busy}
-                      className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg border border-white/15 bg-black/70 text-white opacity-0 shadow-lg backdrop-blur-sm transition hover:bg-black/85 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100 group-focus-within:opacity-100"
-                      title={t('videoContent.changeThumb')}
-                      aria-label={t('videoContent.changeThumb')}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="size-4"
-                        aria-hidden="true"
-                      >
-                        <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5" />
-                        <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => thumbnailInputRef.current?.click()}
-                    disabled={busy}
-                    className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-neutral-900 text-neutral-500 transition hover:border-primary-400/60 hover:bg-surface-elevated hover:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={t('videoContent.uploadThumb')}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      className="size-7"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" />
-                      <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-                    </svg>
-                    <span className="text-sm font-medium">{t('videoContent.uploadThumb')}</span>
-                  </button>
-                )}
-              </section>
-
-              <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('videoContent.oldThumb')}</h3>
-                <Image
-                  src={withCacheBust(content.oldThumbnailUrl)}
-                  alt={`${t('videoContent.oldThumb')} ${title || video.title}`}
-                  aspectRatio="video"
-                  fit="contain"
-                  className="border border-border"
-                  fallback={<span className="px-4 text-center text-sm">{t('videoContent.oldThumbMissing')}</span>}
-                />
-              </section>
-
-              <section>
-                <h3 className="mb-2 text-sm font-medium text-neutral-200">{t('metadata.fieldVideo')}</h3>
-                {content.videoUrl ? (
-                  <video
-                    ref={videoRef}
-                    key={content.videoUrl}
-                    src={content.videoUrl}
-                    controls
-                    preload="metadata"
-                    className="aspect-video w-full rounded-xl border border-border bg-black object-contain"
-                  >
-                    {t('videoContent.noVideoSupport')}
-                  </video>
-                ) : (
-                  <div className="flex aspect-video items-center justify-center rounded-xl border border-border bg-neutral-900 px-4 text-center text-sm text-neutral-500">
-                    {t('videoContent.videoMissing')}
-                  </div>
-                )}
-              </section>
             </div>
           </form>
         ) : null}

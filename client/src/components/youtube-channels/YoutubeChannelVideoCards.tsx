@@ -1,9 +1,10 @@
 import { Eye, Heart, MessageCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { API_V1 } from '../../api/config'
 import { cn } from '../../lib/cn'
 import type { YoutubeChannelVideo, YoutubeChannelVideoStatus } from '../../types/youtubeChannel'
+import { isInteractiveTarget } from '../../utils/dom'
 import { formatCompact } from '../../utils/ypp'
 
 interface YoutubeChannelVideoCardsProps {
@@ -43,7 +44,7 @@ function Thumbnail({ channelId, video }: { channelId: string; video: YoutubeChan
   const src = sources[attempt]
 
   if (!src) {
-    return <div className="size-full bg-gradient-to-br from-surface-elevated to-muted" aria-hidden="true" />
+    return <div className="absolute inset-0 bg-gradient-to-br from-surface-elevated to-muted" aria-hidden="true" />
   }
 
   return (
@@ -52,7 +53,7 @@ function Thumbnail({ channelId, video }: { channelId: string; video: YoutubeChan
       alt=""
       loading="lazy"
       onError={() => setAttempt((current) => current + 1)}
-      className="size-full object-cover"
+      className="absolute inset-0 size-full scale-[1.02] object-cover"
     />
   )
 }
@@ -72,7 +73,7 @@ export function YoutubeChannelVideoCards({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="card-grid" style={{ '--card-min': '190px' } as CSSProperties}>
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-60 animate-pulse rounded-2xl bg-muted" />
         ))}
@@ -86,19 +87,22 @@ export function YoutubeChannelVideoCards({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="card-grid" style={{ '--card-min': '190px' } as CSSProperties}>
       {videos.map((video) => {
         const selected = selectedIds.has(video.id)
         const stamp = video.status ? stampStyle[video.status] : null
         return (
           <div
             key={video.id}
+            onClick={(event) => {
+              if (!isInteractiveTarget(event.target)) onToggleRow(video.id)
+            }}
             className={cn(
-              'group overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-primary-500/50',
-              selected && 'ring-1 ring-primary-500',
+              'group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-primary-500/50',
+              selected && 'border-primary-500/60 ring-1 ring-primary-500',
             )}
           >
-            <div className="relative aspect-video overflow-hidden bg-muted">
+            <div className="relative aspect-video overflow-hidden bg-surface-elevated">
               <Thumbnail channelId={channelId} video={video} />
               <input
                 type="checkbox"

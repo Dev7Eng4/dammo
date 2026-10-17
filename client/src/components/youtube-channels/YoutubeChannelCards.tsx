@@ -5,6 +5,7 @@ import { cn } from '../../lib/cn'
 import type { YoutubeChannel } from '../../types/youtubeChannel'
 import { refreshYoutubeChannelStats, updateYoutubeChannelStats } from '../../api/youtubeChannels'
 import { useToast } from '../ui'
+import { isInteractiveTarget } from '../../utils/dom'
 import { formatNumber, levelColor, levelFor, LEVEL_THRESHOLDS, YPP_HOURS, YPP_SUBSCRIBERS } from '../../utils/ypp'
 import { MonetizationPill } from './MonetizationPill'
 
@@ -149,7 +150,7 @@ export function YoutubeChannelCards({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="card-grid" style={{ '--card-min': '210px' } as CSSProperties}>
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-56 animate-pulse rounded-2xl bg-muted" />
         ))}
@@ -162,7 +163,7 @@ export function YoutubeChannelCards({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="card-grid" style={{ '--card-min': '210px' } as CSSProperties}>
       {channels.map((channel) => {
         const hasMetrics = channel.watchHours !== undefined || channel.subscribers !== undefined
         const hours = channel.watchHours ?? 0
@@ -179,7 +180,10 @@ export function YoutubeChannelCards({
         return (
           <div
             key={channel.id}
-            className={cn('kpi-card flex flex-col gap-3 p-4', selected && 'ring-1 ring-primary-500')}
+            onClick={(event) => {
+              if (!isInteractiveTarget(event.target)) onToggleRow(channel.id)
+            }}
+            className={cn('kpi-card flex cursor-pointer flex-col gap-3 p-4', selected && 'ring-1 ring-primary-500')}
             style={{ '--kpi': eligible ? 'var(--color-primary-500)' : color } as CSSProperties}
           >
             <div className="flex items-center gap-2">
