@@ -186,6 +186,14 @@ export function updateYoutubeVideoContent(
   );
 }
 
+/** Regenerates the saved thumbnail through Meta with the Settings prompt (can take several minutes). */
+export function removeYoutubeThumbnailWatermark(channelId: string, videoId: string) {
+  return fetchJson<YoutubeVideoContent>(
+    `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/content/thumbnail/remove-watermark`,
+    { method: 'POST' },
+  );
+}
+
 export function markYoutubeVideoUploaded(channelId: string, videoId: string) {
   return fetchJson<MarkYoutubeVideoUploadedResponse>(
     `${API_V1}/youtube-channels/${channelId}/videos/${videoId}/mark-uploaded`,

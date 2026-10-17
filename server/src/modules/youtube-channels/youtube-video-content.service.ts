@@ -15,6 +15,8 @@ import {
 } from '../youtube-upload/upload-assets.js';
 import { findFinalVideoMp4 } from '../video-production/shared/render-core/video-output-file.js';
 import { videoPrepareRepository } from './video-prepare.repository.js';
+import { appSettingsService } from '../app-settings/app-settings.service.js';
+import { generateThumbnailWithoutWatermark } from '../video-production/shared/thumbnail/remove-gemini-watermark.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 
 const VIDEO_META_FILENAME = 'video-meta.json';
@@ -230,6 +232,8 @@ export async function replaceThumbnailJpeg(folderPath: string, stagedPath: strin
   }
 }
 
+const watermarkRemovalsInFlight = new Set<string>();
+
 export class YoutubeVideoContentService {
   get(channelId: string, videoId: string): YoutubeVideoContent {
     const folderPath = requireViewableVideoFolder(channelId, videoId);
@@ -297,6 +301,43 @@ export class YoutubeVideoContentService {
       if (stagedThumbnailPath) {
         await fs.promises.rm(stagedThumbnailPath, { force: true }).catch(() => undefined);
       }
+    }
+  }
+
+  /**
+   * Manual "remove watermark": regenerate the saved thumbnail through Meta with the prompt from Settings
+   * (works whether or not the automatic toggle is on) and replace thumbnail.jpg with the result.
+   */
+  async removeThumbnailWatermark(channelId: string, videoId: string): Promise<YoutubeVideoContent> {
+    const folderPath = requireViewableVideoFolder(channelId, videoId);
+    const thumbnailPath = findThumbnailPath(folderPath);
+    if (!thumbnailPath) {
+      throw new AppError('Thumbnail not found', 404, 'THUMBNAIL_NOT_FOUND');
+    }
+
+    const key = path.resolve(folderPath);
+    if (watermarkRemovalsInFlight.has(key)) {
+      throw new AppError('Watermark removal is already running for this video', 409, 'WATERMARK_REMOVAL_IN_PROGRESS');
+    }
+
+    watermarkRemovalsInFlight.add(key);
+    let generatedPath: string | null = null;
+    try {
+      const { removeGeminiWatermarkPrompt } = appSettingsService.get();
+      try {
+        generatedPath = await generateThumbnailWithoutWatermark(thumbnailPath, removeGeminiWatermarkPrompt);
+      } catch (error) {
+        if (error instanceof AppError) throw error;
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new AppError(`Watermark removal failed: ${detail}`, 502, 'WATERMARK_REMOVAL_FAILED');
+      }
+
+      await replaceThumbnailJpeg(folderPath, generatedPath);
+      generatedPath = null;
+      return this.get(channelId, videoId);
+    } finally {
+      watermarkRemovalsInFlight.delete(key);
+      if (generatedPath) await fs.promises.rm(generatedPath, { force: true }).catch(() => undefined);
     }
   }
 

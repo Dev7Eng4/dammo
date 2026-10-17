@@ -415,6 +415,20 @@ export function createYoutubeChannelsRoutes() {
     });
   });
 
+  app.post('/:id/videos/:videoId/content/thumbnail/remove-watermark', async (c) => {
+    const item = await youtubeVideoContentService.removeThumbnailWatermark(
+      c.req.param('id'),
+      c.req.param('videoId'),
+    );
+    const baseUrl = c.req.path.replace(/\/thumbnail\/remove-watermark$/, '');
+    return c.json({
+      ...item,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
+      oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+    });
+  });
+
   app.get('/:id/videos/:videoId/content/:asset', (c) => {
     const assetKind = c.req.param('asset');
     if (

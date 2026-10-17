@@ -6,12 +6,13 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Clapperboard, Copy, FileText, Images, Plus, UsersRound } from 'lucide-react';
+import { Clapperboard, Copy, Eraser, FileText, Images, Loader2, Plus, UsersRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import {
   fetchYoutubeVideoContent,
   markYoutubeVideoUploaded,
+  removeYoutubeThumbnailWatermark,
   updateYoutubeVideoContent,
 } from '../../api/youtubeChannels';
 import { isAbortError } from '../../api/http';
@@ -121,6 +122,7 @@ export function VideoContentModal({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [marking, setMarking] = useState(false);
+  const [removingWatermark, setRemovingWatermark] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [enqueueingRegenerate, setEnqueueingRegenerate] = useState(false);
@@ -157,7 +159,13 @@ export function VideoContentModal({
       isAssembleOnlyJobForVideo(job.payload as CreateVideoTaskPayload, channelId, video.id),
   );
   const busy =
-    saving || marking || enqueueingRegenerate || enqueueingAssemble || regenerateInProgress || assembleInProgress;
+    saving ||
+    marking ||
+    removingWatermark ||
+    enqueueingRegenerate ||
+    enqueueingAssemble ||
+    regenerateInProgress ||
+    assembleInProgress;
 
   function clearSelectedThumbnail() {
     if (thumbnailPreviewUrlRef.current) {
@@ -275,10 +283,33 @@ export function VideoContentModal({
   }
 
   const handleClose = () => {
-    if (saving || marking || enqueueingRegenerate) return;
+    if (saving || marking || removingWatermark || enqueueingRegenerate) return;
     clearSelectedThumbnail();
     onClose();
   };
+
+  async function handleRemoveWatermark() {
+    if (loading || busy) return;
+
+    setRemovingWatermark(true);
+    setError(null);
+    try {
+      const updated = await removeYoutubeThumbnailWatermark(channelId, video.id);
+      // Refresh only the thumbnail: applyContent() would also reset unsaved title/description/tag edits.
+      if (mountedRef.current) {
+        setContent(updated);
+        setContentCacheBust(value => value + 1);
+      }
+      onSaved(updated);
+      toast.success(t('videoContent.removeWatermarkSuccess'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('videoContent.removeWatermarkError');
+      setError(message);
+      toast.error(message);
+    } finally {
+      if (mountedRef.current) setRemovingWatermark(false);
+    }
+  }
 
   async function handleMarkUploaded() {
     if (loading || busy || video.status !== 'Created') return;
@@ -691,6 +722,30 @@ export function VideoContentModal({
                         <Copy className="size-4" aria-hidden="true" />
                       </button>
                     ) : null}
+                    <button
+                      type="button"
+                      onClick={() => void handleRemoveWatermark()}
+                      disabled={busy || thumbnailPreviewUrl !== null}
+                      className={cn(
+                        'absolute top-2 inline-flex size-9 items-center justify-center rounded-lg border border-white/15 bg-black/70 text-white shadow-lg backdrop-blur-sm transition hover:bg-black/85 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100 group-focus-within:opacity-100',
+                        content.thumbnailPrompt ? 'right-[5.5rem]' : 'right-12',
+                        removingWatermark ? 'opacity-100' : 'opacity-0',
+                      )}
+                      title={
+                        removingWatermark
+                          ? t('videoContent.removingWatermark')
+                          : thumbnailPreviewUrl !== null
+                            ? t('videoContent.removeWatermarkSaveFirst')
+                            : t('videoContent.removeWatermark')
+                      }
+                      aria-label={t('videoContent.removeWatermark')}
+                    >
+                      {removingWatermark ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Eraser className="size-4" aria-hidden="true" />
+                      )}
+                    </button>
                     <button
                       type="button"
                       onClick={() => thumbnailInputRef.current?.click()}

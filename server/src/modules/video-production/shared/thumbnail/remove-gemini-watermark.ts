@@ -16,9 +16,39 @@ export interface RemoveGeminiWatermarkOptions extends FlowProfileOptions {
 }
 
 /**
- * Optional post-step (Settings → "Xóa watermark Gemini"): when the thumbnail came from Flow, ask Meta to
- * regenerate it with the Flow image as the only reference and the configured prompt, then replace the
- * thumbnail with the result. The Meta image is saved as downloaded (no 1280x720 resize).
+ * Regenerate `thumbnailPath` through Meta: the thumbnail is attached as the only reference and `prompt`
+ * is sent as-is. The result is saved next to the thumbnail as `thumbnail-nowm.jpg` exactly as downloaded
+ * (no 1280x720 resize); the caller decides what to do with it. Throws when Meta fails.
+ */
+export async function generateThumbnailWithoutWatermark(
+  thumbnailPath: string,
+  prompt: string,
+  options?: RemoveGeminiWatermarkOptions,
+): Promise<string> {
+  const workDir = path.dirname(thumbnailPath);
+  const referencePath = path.join(workDir, REFERENCE_FILENAME);
+
+  try {
+    // Short, ASCII-only attach path (same reason runDefaultFlowThumbnail copies references).
+    await fs.copyFile(thumbnailPath, referencePath);
+    const result = await runBrowserImageGeneration(prompt, workDir, {
+      provider: 'meta',
+      fileName: CLEANED_FILENAME,
+      referenceImagePaths: [referencePath],
+      skipResize: true,
+      profileId: options?.profileId,
+      onProgress: options?.onProgress,
+    });
+    await fs.access(result.imagePath);
+    return result.imagePath;
+  } finally {
+    await fs.unlink(referencePath).catch(() => undefined);
+  }
+}
+
+/**
+ * Optional post-step (Settings → "Xóa watermark Gemini"): when the thumbnail came from Flow, regenerate it
+ * through Meta and replace the thumbnail with the result.
  *
  * Never throws: on any failure the original Flow thumbnail is kept, so a thumbnail is still delivered.
  * Returns the path of the thumbnail to use (always `thumbnailPath`).
@@ -35,34 +65,22 @@ export async function removeGeminiWatermarkIfEnabled(
     return thumbnailPath;
   }
 
-  const workDir = path.dirname(thumbnailPath);
-  const referencePath = path.join(workDir, REFERENCE_FILENAME);
-  const cleanedPath = path.join(workDir, CLEANED_FILENAME);
-
+  const cleanedPath = path.join(path.dirname(thumbnailPath), CLEANED_FILENAME);
   try {
-    // Short, ASCII-only attach path (same reason runDefaultFlowThumbnail copies references).
-    await fs.copyFile(thumbnailPath, referencePath);
     console.log('[remove-gemini-watermark] Regenerating thumbnail via Meta to remove the watermark...');
-
-    const result = await runBrowserImageGeneration(settings.removeGeminiWatermarkPrompt, workDir, {
-      provider: 'meta',
-      fileName: CLEANED_FILENAME,
-      referenceImagePaths: [referencePath],
-      skipResize: true,
-      profileId: options?.profileId,
-      onProgress: options?.onProgress,
-    });
-
-    await fs.access(result.imagePath);
-    if (path.resolve(result.imagePath) !== path.resolve(thumbnailPath)) {
-      await fs.copyFile(result.imagePath, thumbnailPath);
+    const generatedPath = await generateThumbnailWithoutWatermark(
+      thumbnailPath,
+      settings.removeGeminiWatermarkPrompt,
+      options,
+    );
+    if (path.resolve(generatedPath) !== path.resolve(thumbnailPath)) {
+      await fs.copyFile(generatedPath, thumbnailPath);
     }
     console.log('[remove-gemini-watermark] Watermark-free thumbnail saved');
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.warn(`[remove-gemini-watermark] failed, keeping the Flow thumbnail (non-fatal): ${reason}`);
   } finally {
-    await fs.unlink(referencePath).catch(() => undefined);
     await fs.unlink(cleanedPath).catch(() => undefined);
   }
 
