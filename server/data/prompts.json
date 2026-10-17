@@ -402,7 +402,7 @@
       "name": "Ảnh Theo Cảnh Có Tham Chiếu - Cuộc Sống Người Già",
       "category": "image",
       "createdAt": "2026-10-09T00:00:00.000Z",
-      "updatedAt": "2026-10-09T00:00:00.000Z",
+      "updatedAt": "2026-10-11T16:27:56.613Z",
       "steps": [
         {
           "id": "f14a000b-8b70-4719-94cd-8d463195ce75",
@@ -419,7 +419,7 @@
           "useReferenceImage": true
         }
       ],
-      "niche": "68020000-7a54-4cbd-abf8-b00b9587c0f8"
+      "niche": "3b5a9d49-8834-4bae-aa97-427ed9f04828"
     },
     {
       "id": "all:image_scenes",
