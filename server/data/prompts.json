@@ -476,6 +476,48 @@
         }
       ],
       "niche": "all"
+    },
+    {
+      "id": "ja:metadata_tam_ly_dai_chung",
+      "baseKey": "metadata_tam_ly_dai_chung",
+      "language": "ja",
+      "name": "Metadata Tâm lý học đại chúng",
+      "category": "meta",
+      "niche": "6a42e74d-6dd9-4229-bd47-c1b34fde8734",
+      "createdAt": "2026-10-18T00:00:00.000Z",
+      "updatedAt": "2026-10-18T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "6cd03d13-16c0-4e2a-bb0c-af83b54511e7",
+          "key": "metadata_tam_ly_dai_chung_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "0a46c6f0-ec0b-40a7-80fb-a40a2d5274d7",
+          "key": "metadata_tam_ly_dai_chung_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:psych_scene",
+      "baseKey": "psych_scene",
+      "language": "ja",
+      "name": "PSYCH SCENE (người que nền tối)",
+      "category": "image",
+      "niche": "6a42e74d-6dd9-4229-bd47-c1b34fde8734",
+      "createdAt": "2026-10-18T00:00:00.000Z",
+      "updatedAt": "2026-10-18T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "4e127daf-c2ab-432a-926b-8bf8d132e15d",
+          "key": "psych_scene",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
     }
   ]
 }

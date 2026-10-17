@@ -1,6 +1,11 @@
 {
   "niches": [
     {
+      "key": "6a42e74d-6dd9-4229-bd47-c1b34fde8734",
+      "label": "Tâm lý học đại chúng – Psych Explainer (深淵回廊)",
+      "createdAt": "2026-10-18T00:00:00.000Z"
+    },
+    {
       "key": "a456048f-0ad9-4052-931c-2f6d8dccd910",
       "label": "Tâm lý học phân tích/Triết lý sống (STICKMAN)",
       "createdAt": "2026-10-04T20:23:45.043Z"
