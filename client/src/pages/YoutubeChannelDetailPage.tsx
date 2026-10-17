@@ -20,7 +20,7 @@ import { VideoCommentsDrawer } from '../components/youtube-channels/VideoComment
 import { RecreateMetadataModal } from '../components/youtube-channels/RecreateMetadataModal';
 import { VideoContentModal } from '../components/youtube-channels/VideoContentModal';
 import { useToast } from '../components/ui';
-import { useAbortableEffect, useClientPaginatedList, useTaskQueue } from '../hooks';
+import { useAbortableEffect, useClientPaginatedList, useDismissibleTarget, useTaskQueue } from '../hooks';
 import type { YoutubeChannel, YoutubeChannelVideo, YoutubeChannelVideoStatusFilter } from '../types/youtubeChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 import { filterYoutubeChannelVideosByStatus } from '../utils/youtubeChannelVideos';
@@ -63,7 +63,9 @@ export function YoutubeChannelDetailPage() {
   const [videosError, setVideosError] = useState<string | null>(null);
   const [videoResetKey, setVideoResetKey] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
-  const [contentVideo, setContentVideo] = useState<YoutubeChannelVideo | null>(null);
+  const contentModal = useDismissibleTarget<YoutubeChannelVideo>();
+  const contentVideo = contentModal.target;
+  const setContentVideo = contentModal.setTarget; // in-place updates only; open/close go through show/hide
   const [editOpen, setEditOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<YoutubeChannelVideoStatusFilter>('all');
   const [openingProfile, setOpeningProfile] = useState(false);
@@ -81,11 +83,12 @@ export function YoutubeChannelDetailPage() {
   const [pendingResetKey, setPendingResetKey] = useState(0);
   const [limit, setLimit] = useState(20);
   const [recreateMetadataOpen, setRecreateMetadataOpen] = useState(false);
-  const [publishedVideo, setPublishedVideo] = useState<YoutubeChannelVideo | null>(null);
+  const publishedModal = useDismissibleTarget<YoutubeChannelVideo>();
+  const publishedVideo = publishedModal.target;
 
   function handleOpenVideo(video: YoutubeChannelVideo) {
-    if (isYoutubePublishedVideo(video)) setPublishedVideo(video);
-    else setContentVideo(video);
+    if (isYoutubePublishedVideo(video)) publishedModal.show(video);
+    else contentModal.show(video);
   }
 
   const isPendingFilter = statusFilter === 'Pending';
@@ -520,21 +523,21 @@ export function YoutubeChannelDetailPage() {
       {publishedVideo && id ? (
         <PublishedVideoModal
           key={publishedVideo.id}
-          open
+          open={publishedModal.open}
           channelId={id}
           video={publishedVideo}
-          onClose={() => setPublishedVideo(null)}
+          onClose={publishedModal.hide}
         />
       ) : null}
 
       {contentVideo ? (
         <VideoContentModal
           key={contentVideo.id}
-          open
+          open={contentModal.open}
           channelId={id}
           video={contentVideo}
           canRegenerateMetadata={channel?.language === 'ja'}
-          onClose={() => setContentVideo(null)}
+          onClose={contentModal.hide}
           onSaved={content => {
             setAllVideos(current =>
               current.map(video => (video.id === contentVideo.id ? { ...video, title: content.title } : video)),

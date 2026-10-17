@@ -8,6 +8,7 @@ export {
   type UseClientPaginatedListResult,
 } from './useClientPaginatedList';
 export { useDebouncedValue } from './useDebouncedValue';
+export { useDismissibleTarget } from './useDismissibleTarget';
 export { useFetchedItem, type UseFetchedItemResult } from './useFetchedItem';
 export {
   usePaginatedList,
