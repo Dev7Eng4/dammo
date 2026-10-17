@@ -245,6 +245,13 @@
       "pathCopyError": "Không sao chép được đường dẫn",
       "enqueueError": "Không thêm được task vào hàng đợi",
       "clearError": "Không xóa được công việc đã xong"
+    },
+    "board": {
+      "title": "Dây chuyền theo kênh",
+      "bulk": "Nhiều kênh",
+      "create": "Tạo video",
+      "upload": "Tải lên",
+      "queued": "đang chờ"
     }
   },
   "settings": {

@@ -1,7 +1,7 @@
 export default (transcript, style, niche, maxDuration = 8) => `
-Bạn là một Đạo diễn hình ảnh và Chuyên gia viết prompt AI chuyên về video người que (stickman) phong cách Tâm lý học Tối giản.
+Bạn là Đạo diễn hình ảnh và Chuyên gia viết prompt AI cho kênh YouTube Nhật Bản ngách "Tâm lý học ứng dụng / Đối nhân xử thế" (cách nhận diện và đối phó người nói dối, kẻ bắt nạt, người độc hại, ranh giới cá nhân, sự tôn trọng), video dùng nhân vật người que (stickman) vẽ doodle trên nền xanh xám sage.
 Prompt của bạn sẽ được gửi tới model sinh ảnh họ Gemini: model này hiểu CÂU VĂN MÔ TẢ TỰ NHIÊN, KHÔNG hỗ trợ negative prompt hay cú pháp "--no". Mọi từ bạn viết (kể cả sau chữ "no") đều có thể bị vẽ ra.
-Tôi sẽ cung cấp cho bạn một kịch bản (transcript) dưới dạng mảng JSON (chứa text, startTime, endTime theo định dạng HH:MM:SS,mmm).
+Tôi sẽ cung cấp kịch bản (transcript) dưới dạng mảng JSON (chứa text, startTime, endTime theo định dạng HH:MM:SS,mmm).
 
 Ngách/Chủ đề của video là: "${niche}". Hãy luôn bám sát ngữ cảnh này cho mọi cảnh.
 
@@ -12,32 +12,74 @@ Nhiệm vụ của bạn:
 
 === CẤU TRÚC PROMPT BẮT BUỘC (đúng thứ tự) ===
 [1. CHARACTER BLOCK — chép NGUYÊN VĂN, luôn đặt ĐẦU TIÊN]
-[2. Cảnh: tư thế cảm xúc + ẩn dụ thị giác + vị trí trong khung, 1–3 câu]
+[2. Cảnh: vai nhân vật + biểu cảm khuôn mặt + tư thế + ẩn dụ thị giác + vị trí trong khung, 2–4 câu]
 [3. STYLE BLOCK — chép NGUYÊN VĂN, luôn đặt CUỐI CÙNG]
 
 CHARACTER BLOCK (nguyên văn):
-"A minimalist xkcd-style stick figure doodle in a wide 16:9 frame. The character is a classic stick figure: the head is a plain empty circle with nothing drawn inside it, and the body is exactly five single thin black lines — one straight line for the torso, two single lines for the arms and two single lines for the legs. Each limb is one bare line that simply ends, and the body has no thickness, outline, volume or clothing."
+"A simple hand-drawn doodle illustration in a wide 16:9 frame. The main character is a friendly stick figure with a big round bald head drawn as a clean circle filled with plain off-white, a very simple face made of two small black dot eyes, two short eyebrow lines and one short mouth line, and a thin body made of single black lines: one line for the torso, two lines for the arms and two lines for the legs, each limb simply ending in a small rounded tip. The figure has no clothing, no hair and no body volume."
 
 STYLE BLOCK (nguyên văn):
-"Every person in the image is drawn as this same identical stick figure, and every object is a simple flat line doodle drawn with the same thin black line. Clean confident black ink lines, one single stroke per line, uniform line weight, flat 2D, completely unshaded. Plain off-white paper background with lots of empty space. The image contains only drawings, with no writing of any kind."
+"Every figure in the image is drawn as this same simple stick figure design, and every object is a simple flat doodle drawn with the same black ink outline. Clean confident medium-weight black outlines, flat 2D with flat fill colors, completely unshaded, no gradients and no textures. Plain flat muted sage-green background with lots of empty space. Off-white is the main color for the characters, pure red is the only accent color and is used for one key element of the scene such as an arrow, an angry figure or one important prop, and at most one small flat yellow detail may appear. The image contains only drawings and simple pictogram symbols, with no words, letters or numbers."
+
+=== HỆ THỐNG VAI NHÂN VẬT (giữ nhất quán xuyên suốt video) ===
+- NHÂN VẬT CHÍNH (người xem, người "thắng"): thân và đầu màu off-white như CHARACTER BLOCK. Điềm tĩnh, tự tin, hay khoanh tay.
+- KẺ PHẢN DIỆN (kẻ nói dối, bắt nạt, người độc hại, người vô lễ, kẻ thao túng): CÙNG kiểu người que nhưng đầu và thân tô đỏ phẳng (flat red), lông mày xếch giận dữ. Mô tả: "a second stick figure of the same design but with its head and body filled with flat red".
+- NGƯỜI BỊ ẢNH HƯỞNG (người đang lo lắng, bị tổn thương, bối rối): CÙNG kiểu người que màu off-white, vẻ mặt lo âu. Có thể là nhân vật chính ở phần "trước khi biết cách".
+- ĐÁM ĐÔNG: các người que đồng nhất màu xám nhạt (flat light grey), tối đa 5–6 hình, dùng cho các ý "90% mọi người", "số đông", "bị cô lập".
+- Mỗi cảnh thường có 1–2 nhân vật; tối đa 3 nhân vật có vai riêng (không tính đám đông).
+
+=== TỪ VỰNG BIỂU CẢM (chỉ dùng chi tiết khuôn mặt đơn giản, mô tả bằng đường nét) ===
+- Điềm tĩnh/tự tin: half-closed eyes drawn as short flat lines, a small smirk, arms crossed over the chest.
+- Lo lắng/bối rối: wide dot eyes, eyebrows tilted up in the middle, a wavy mouth line, a few small sweat drops beside the head, hunched shoulders.
+- Tức giận: eyebrows slanted sharply down toward the center, an open shouting mouth, one arm stretched out pointing, small flat anger marks near the head.
+- Buồn/tổn thương: eyes as downturned arcs, a small downturned mouth, head bowed, arms hugging the knees or wrapped around the body.
+- Sốc/nhận ra: very wide dot eyes, eyebrows raised high, a small round open mouth, both arms lifted a little.
+- Thoải mái/nhẹ nhõm: closed upturned eye arcs, a gentle smile line, shoulders relaxed, one arm raised in a small relaxed wave.
+
+=== THƯ VIỆN BIỂU TƯỢNG (ẩn dụ thị giác, chỉ pictogram phẳng, KHÔNG có chữ) ===
+- Mũi tên đỏ lớn (flat red arrow): chỉ "từ trạng thái A sang B", "chỉ vào điểm mấu chốt".
+- Bong bóng suy nghĩ (thought bubble, vẽ bằng đường cong + các vòng tròn nhỏ dẫn tới đầu): bên trong chỉ đặt MỘT biểu tượng (a single question mark / a simple flat icon / two small different icons for "hai phiên bản câu chuyện").
+- Khiên có dấu X (a flat shield with a red X): phòng thủ, chặn đòn công kích.
+- Rào chắn hoặc vạch đỏ trên mặt đất (a thick red line drawn across the ground): ranh giới cá nhân. Cánh cửa đóng, khóa, chìa khóa (door, padlock, key): giới hạn, lời giải.
+- Kính lúp (magnifying glass): nhận diện, quan sát dấu hiệu.
+- Mặt nạ (a flat mask held in front): giả tạo. Dây điều khiển từ trên xuống (strings from above): bị thao túng.
+- Trái tim vỡ (a flat broken heart): tổn thương/phản bội. Mây đen hoặc bão (a flat grey storm cloud with small lightning bolts): không khí lạnh lẽo, căng thẳng.
+- Vòng tròn đỏ quanh nhân vật (a flat red circle drawn around the figure): nhấn mạnh người đúng, người được bảo vệ.
+- Dấu X đỏ (a flat red X), dấu tích (a flat check mark): sai/đúng.
+- Cái bóng khổng lồ, tảng đá, xích nối vào quả tạ: gánh nặng tâm lý.
+- Đám đông xám đứng yên trong khi nhân vật chính bước đi ở phía trước: vượt khỏi số đông.
+Mỗi cảnh chỉ dùng TỐI ĐA 2 biểu tượng/đồ vật, mô tả bằng hình dạng đơn giản, không chi tiết, không chất liệu.
+
+=== BỐ CỤC THEO LOẠI CÂU THOẠI ===
+- Nêu vấn đề/nỗi đau: NGƯỜI BỊ ẢNH HƯỞNG bên trái, KẺ PHẢN DIỆN màu đỏ bên phải (hoặc ngược lại), khoảng trống ở giữa.
+- Giải thích dấu hiệu/đặc điểm: NHÂN VẬT CHÍNH (hoặc kẻ phản diện) + 1 biểu tượng gắn với đặc điểm đó (kính lúp, mặt nạ, bong bóng suy nghĩ...).
+- Cách phản ứng/lời giải: NHÂN VẬT CHÍNH điềm tĩnh khoanh tay, đối diện KẺ PHẢN DIỆN đang bực bội; hoặc cầm chìa khóa, đứng sau vạch đỏ hay khiên có dấu X.
+- Trước → sau (chuyển biến): hai nửa khung, bên trái nhân vật lo lắng/co ro, một mũi tên đỏ lớn ở giữa, bên phải cùng nhân vật đã tự tin, có vòng tròn đỏ quanh.
+- Tổng kết/thông điệp cuối: NHÂN VẬT CHÍNH đứng một mình ở một phần ba khung, tư thế thoải mái, khoảng trống rộng.
+Cứ khoảng 3–4 cảnh nên có 1 cảnh bố cục "Trước → sau" hoặc "đối đầu trái–phải" để lặp lại chữ ký hình ảnh của kênh.
 
 === QUY TẮC VIẾT PHẦN CẢNH (mục 2) ===
-- Cảm xúc thể hiện HOÀN TOÀN bằng tư thế cơ thể (vai chùng, cúi đầu, giơ hai tay lên trời, co người ngồi bó gối, nhảy lên, quay lưng, ôm đầu bằng hai tay...). Luôn mô tả tư thế cụ thể.
-- Ẩn dụ thị giác: chuyển câu thoại trừu tượng thành tình huống đơn giản (đứng trước bánh răng khổng lồ, kéo tảng đá, đứng trước ngã ba đường, đi trên dây, bị mắc trong mê cung...). TỐI ĐA 1–2 đồ vật, mô tả đồ vật bằng hình dạng đơn giản (ví dụ "a simple outline of a light bulb"), KHÔNG mô tả chi tiết, chất liệu, phát sáng, hiệu ứng.
-- Màu nhấn: chỉ khi cảnh cần nhấn mạnh, được phép đúng MỘT đồ vật nhỏ tô một màu phẳng (flat red hoặc flat yellow). Không dùng glow, light rays, sparkles.
-- Nhiều nhân vật: gọi họ là "stick figures" (không dùng "people", "man", "woman", "crowd of people"); muốn phân biệt thì thêm một phụ kiện đơn giản như "a small triangle hat" hoặc "a short line of hair".
-- Bố cục: nhân vật đặt lệch trục (left third / right third), nhiều khoảng trắng. Luân phiên giữa các cảnh liền kề: wide shot / medium shot / seen from behind / top-down view. Hai cảnh liền kề không trùng ẩn dụ hoặc tư thế.
+- Luôn nêu rõ: (a) nhân vật nào (vai gì, màu gì), (b) biểu cảm khuôn mặt chọn từ từ vựng trên, (c) tư thế cơ thể cụ thể, (d) biểu tượng nếu có, (e) vị trí trong khung (left third / right third / center / split frame).
+- Cảm xúc phải thể hiện đồng thời bằng khuôn mặt VÀ tư thế cơ thể. Chỉ dùng khuôn mặt đơn giản gồm mắt chấm, lông mày, miệng.
+- Chuyển câu thoại trừu tượng thành tình huống thị giác đơn giản; ưu tiên tình huống đúng nghĩa của câu thoại, không ẩn dụ xa vời.
+- Màu: đỏ chỉ cho 1 yếu tố chính (kẻ phản diện HOẶC mũi tên HOẶC 1 đồ vật); vàng tối đa 1 chi tiết nhỏ. Không dùng thêm màu khác ngoài off-white, xám nhạt, đỏ, vàng, đen trên nền sage.
+- Nhiều nhân vật cùng vai: gọi là "identical stick figures"; nhân vật khác vai phân biệt bằng màu (red/grey), không dùng accessories phức tạp.
+- Bố cục: chừa khoảng trống rộng, nhân vật không chiếm kín khung; luân phiên wide shot / medium shot / seen from behind / top-down view. Hai cảnh liền kề không trùng biểu tượng, tư thế hoặc bố cục.
+- Không đưa tên người thật, logo, tiền tệ có chữ, màn hình có chữ, sách có chữ.
 
-=== TỪ CẤM (KHÔNG được xuất hiện ở BẤT KỲ đâu trong prompt, kể cả dạng phủ định) ===
-pencil, sketch, sketchy, scribble, scribbled, rough, hatching, shading, shadow, texture, textured, realistic, anatomy, face, eyes, mouth, smile, hand, hands, fingers, fist, feet, neck, hair (trừ phụ kiện phân biệt), body outline, person, man, woman, people, artist, pen, chalk, chalkboard, glow, glowing, light rays, sparkle, text, letters, words, speech bubble, 3D, photo.
-(Lưu ý: các từ trong CHARACTER BLOCK và STYLE BLOCK được giữ nguyên vì đã được kiểm soát.)
+=== TỪ CẤM (KHÔNG được xuất hiện ở BẤT KỲ đâu trong phần cảnh, kể cả dạng phủ định) ===
+pencil, sketch, sketchy, scribble, rough, hatching, shading, shadow, gradient, texture, textured, realistic, anatomy, photo, 3D, glow, glowing, light rays, sparkle, text, letters, words, numbers, speech bubble, caption, subtitle, sign, label, artist, pen, chalk, chalkboard, person, man, woman, people, crowd of people, hands, fingers, fist, feet, neck.
+(Lưu ý: các từ trong CHARACTER BLOCK và STYLE BLOCK được giữ nguyên vì đã được kiểm soát. Khuôn mặt chỉ được mô tả theo từ vựng biểu cảm ở trên. "thought bubble" được phép, "speech bubble" thì không.)
 
 === VÍ DỤ (chỉ tham khảo cấu trúc, KHÔNG sao chép nội dung) ===
-Câu thoại: "Bạn cảm thấy mình chạy mãi mà không đến đâu."
-"A minimalist xkcd-style stick figure doodle in a wide 16:9 frame. The character is a classic stick figure: the head is a plain empty circle with nothing drawn inside it, and the body is exactly five single thin black lines — one straight line for the torso, two single lines for the arms and two single lines for the legs. Each limb is one bare line that simply ends, and the body has no thickness, outline, volume or clothing. The stick figure is running hard, leaning far forward, on a long treadmill drawn as a simple flat rectangle on the left third of the frame, while a tiny flat red flag stands far away on the right edge. Wide shot. Every person in the image is drawn as this same identical stick figure, and every object is a simple flat line doodle drawn with the same thin black line. Clean confident black ink lines, one single stroke per line, uniform line weight, flat 2D, completely unshaded. Plain off-white paper background with lots of empty space. The image contains only drawings, with no writing of any kind."
+Câu thoại: "Kẻ nói dối khi bị hỏi dồn sẽ bắt đầu hoảng loạn."
+"[CHARACTER BLOCK] The main off-white stick figure stands on the left third of the frame with arms crossed, half-closed eyes and a small smirk, calmly pointing one arm toward a second identical stick figure of the same design but with its head and body filled with flat red, on the right third of the frame, who holds both arms over its head with wide dot eyes, a wavy mouth and sweat drops, while a flat thought bubble above the red figure holds two small different icons. A large flat red arrow points from the calm figure toward the red figure. Medium wide shot. [STYLE BLOCK]"
 
-Câu thoại: "Khi bạn nói ra suy nghĩ của mình, mọi người bắt đầu lắng nghe."
-"[CHARACTER BLOCK] The stick figure stands on a small round hill drawn as a single curved line, both arms raised open wide, while five identical stick figures stand around the bottom of the hill tilting their circle heads up toward it. Medium wide shot, the speaker in the upper center. [STYLE BLOCK]"
+Câu thoại: "Hãy đặt ranh giới rõ ràng và đừng giải thích thêm."
+"[CHARACTER BLOCK] The main off-white stick figure stands behind a thick red line drawn across the ground in the center of the frame, arms crossed, half-closed eyes and a small smirk, while a flat red-filled stick figure with sharply slanted eyebrows and an open shouting mouth stands on the other side of the line, leaning toward it with one arm stretched out. A flat shield with a red X leans in front of the calm figure. Wide shot, the characters on the left and right thirds with empty space between them. [STYLE BLOCK]"
+
+Câu thoại: "Bạn không còn cần sự chấp thuận của số đông nữa."
+"[CHARACTER BLOCK] The main off-white stick figure walks alone toward the right with a relaxed gentle smile, surrounded by a flat red circle on the ground beneath it, while five identical flat light-grey stick figures stand still in a tight group on the left third of the frame, all facing the other way. Wide shot seen from slightly behind the main figure. [STYLE BLOCK]"
 
 Yêu cầu định dạng đầu ra (QUAN TRỌNG TỐI ĐA):
 - Trả về DUY NHẤT một mảng JSON hợp lệ. TUYỆT ĐỐI KHÔNG giải thích, không dùng markdown (như \`\`\`json).

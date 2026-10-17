@@ -15,7 +15,7 @@ export function HealthAlerts({ alerts, loading }: HealthAlertsProps) {
     <div className="rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <AlertTriangle className="size-4 text-warning" />
-        <p className="text-sm font-medium text-muted-foreground">{t('health.title')}</p>
+        <p className="section-label">{t('health.title')}</p>
       </div>
       <div className="space-y-2">
         {loading

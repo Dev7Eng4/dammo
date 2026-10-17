@@ -140,6 +140,15 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  [data-theme='dark'] body,
+  :root:not([data-theme='light']) body {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
+  }
+
   button:not(:disabled) {
     cursor: pointer;
   }
@@ -284,6 +293,37 @@
 
   .card-surface {
     @apply rounded-2xl border border-border bg-surface;
+  }
+
+  /* KPI card: accent color via --kpi (set inline), soft glow + top accent line */
+  .kpi-card {
+    --kpi: var(--color-primary-500);
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid var(--color-border);
+    background:
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--kpi) 10%, transparent), transparent 60%),
+      var(--color-surface);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    height: 2px;
+    width: 40%;
+    background: linear-gradient(to right, var(--kpi), transparent);
+  }
+
+  .kpi-card:hover {
+    border-color: color-mix(in srgb, var(--kpi) 45%, var(--color-border));
+    box-shadow: 0 0 24px -8px color-mix(in srgb, var(--kpi) 55%, transparent);
+  }
+
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
   }
 
   .scrollbar-thin {

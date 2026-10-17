@@ -12,17 +12,29 @@ import { CreateVideoCountModal } from '../components/youtube-channels/CreateVide
 import { DeleteUploadedVideosConfirmModal } from '../components/youtube-channels/DeleteUploadedVideosConfirmModal';
 import { DeleteYoutubeChannelConfirmModal } from '../components/youtube-channels/DeleteYoutubeChannelConfirmModal';
 import { PauseYoutubeChannelConfirmModal } from '../components/youtube-channels/PauseYoutubeChannelConfirmModal';
+import { YoutubeChannelCards } from '../components/youtube-channels/YoutubeChannelCards';
 import { YoutubeChannelsTable } from '../components/youtube-channels/YoutubeChannelsTable';
 import { YoutubeChannelsToolbar } from '../components/youtube-channels/YoutubeChannelsToolbar';
 import { useToast } from '../components/ui';
 import { useAbortableEffect, useDebouncedValue, usePaginatedList, useTaskQueue } from '../hooks';
-import { Clapperboard } from 'lucide-react';
+import { Clapperboard, LayoutGrid, Table2 } from 'lucide-react';
 import type { Niche } from '../types/niche';
 import type { YoutubeChannel, YoutubeChannelTypeFilter, YoutubeMonetizationFilter } from '../types/youtubeChannel';
 import type { SourceChannel } from '../types/sourceChannel';
 import { isStoredReupChannelType } from '../types/youtubeChannel';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const VIEW_STORAGE_KEY = 'youtube-channels-view';
+
+type ChannelsView = 'table' | 'cards';
+
+function readStoredView(): ChannelsView {
+  try {
+    return localStorage.getItem(VIEW_STORAGE_KEY) === 'cards' ? 'cards' : 'table';
+  } catch {
+    return 'table';
+  }
+}
 
 const TYPE_FILTERS: readonly YoutubeChannelTypeFilter[] = [
   'all',
@@ -86,6 +98,16 @@ export function YoutubeChannelsPage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [openingProfileIds, setOpeningProfileIds] = useState<Set<string>>(() => new Set());
   const [limit, setLimit] = useState(20);
+  const [view, setView] = useState<ChannelsView>(readStoredView);
+
+  function handleViewChange(next: ChannelsView) {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      /* storage unavailable */
+    }
+  }
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const paginationLocale = i18n.language === 'vi' ? 'vi' : 'en';
@@ -480,7 +502,33 @@ export function YoutubeChannelsPage() {
           {list.error ? <p className='text-xs text-danger'>{t('page.loadError')}</p> : null}
         </div>
         <div className='mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
+          <div className="mb-3 flex shrink-0 justify-end">
+            <div className="inline-flex rounded-lg border border-border bg-surface-elevated p-0.5">
+              {([['table', Table2, 'cards.viewTable'], ['cards', LayoutGrid, 'cards.viewCards']] as const).map(([key, Icon, labelKey]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleViewChange(key)}
+                  aria-pressed={view === key}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === key ? 'bg-primary-500 text-on-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Icon className="size-3.5" />
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="min-h-0 flex-1 overflow-auto">
+            {view === 'cards' ? (
+              <YoutubeChannelCards
+                channels={list.items}
+                loading={list.loading}
+                selectedIds={selectedIds}
+                onSelect={handleSelect}
+                onToggleRow={handleToggleRow}
+                onChannelUpdated={() => list.refresh()}
+              />
+            ) : (
             <YoutubeChannelsTable
               channels={list.items}
               sources={sources}
@@ -501,6 +549,7 @@ export function YoutubeChannelsPage() {
               resumingChannelId={resumingChannelId}
               deletingChannelId={deletingChannelId}
             />
+            )}
           </div>
           <div className="shrink-0">
             <MailAccountsPagination

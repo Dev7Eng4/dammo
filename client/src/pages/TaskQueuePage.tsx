@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListTodo } from 'lucide-react';
 import { PageHeader, PageShell } from '../components/layout';
+import { ChannelProductionBoard } from '../components/task-queue/ChannelProductionBoard';
 import { TaskJobCard } from '../components/task-queue/TaskJobCard';
 import { TaskJobDetailDrawer } from '../components/task-queue/TaskJobDetailDrawer';
 import { TaskQueuePageToolbar } from '../components/task-queue/TaskQueuePageToolbar';
@@ -124,6 +125,7 @@ export function TaskQueuePage() {
         </div>
 
         <div className="mt-6 min-h-0 flex-1 space-y-3 overflow-y-auto">
+          <ChannelProductionBoard jobs={jobs} onSelectJob={handleSelectJob} />
           {filteredJobs.length === 0 ? (
             <div className="card-surface rounded-2xl px-5 py-12 text-center">
               <p className="text-sm text-neutral-500">

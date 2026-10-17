@@ -509,5 +509,25 @@
     "thumbBgLoading": "Đang tải danh sách ảnh...",
     "thumbBgEmpty": "Chưa có ảnh nền nào",
     "thumbBgPreviewAlt": "Xem ảnh nền"
+  },
+  "cards": {
+    "viewTable": "Dạng bảng",
+    "viewCards": "Dạng thẻ",
+    "level": "CẤP {{level}}",
+    "watchHours": "GIỜ XEM",
+    "subscribers": "ĐĂNG KÝ",
+    "ypp": "Đủ điều kiện YPP",
+    "hoursLeft": "Cấp {{next}} ở {{target}} giờ · còn {{left}} giờ",
+    "noData": "Chưa có dữ liệu giờ xem / đăng ký",
+    "lastUpload": "Đăng gần nhất",
+    "open": "Mở kênh",
+    "empty": "Không có kênh nào",
+    "editStats": "Cập nhật số liệu",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "refreshSubs": "Lấy đăng ký từ YouTube",
+    "hoursHint": "Giờ xem 12 tháng (xem trong YouTube Studio)",
+    "saved": "Đã cập nhật số liệu",
+    "saveError": "Không thể cập nhật số liệu"
   }
 }

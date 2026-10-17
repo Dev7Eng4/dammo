@@ -82,6 +82,11 @@ export interface YoutubeChannel {
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
+  /** YPP progress: 12-month watch hours (Studio only, entered manually) */
+  watchHours?: number;
+  /** Subscriber count (public, refreshed via yt-dlp or entered manually) */
+  subscribers?: number;
+  statsUpdatedAt?: string;
   /** Computed for API responses; not persisted */
   nextUploadAt?: string | null;
   createdAt: string;

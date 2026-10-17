@@ -5,9 +5,13 @@ import { AccountSummaryCard } from '../components/dashboard/AccountSummary'
 import { ActiveRenderCard } from '../components/dashboard/ActiveRenderCard'
 import { ContentPipeline } from '../components/dashboard/ContentPipeline'
 import { HealthAlerts } from '../components/dashboard/HealthAlerts'
+import { ProductionStatsCard } from '../components/dashboard/ProductionStatsCard'
 import { QuickActions } from '../components/dashboard/QuickActions'
 import { RecentProjectsTable } from '../components/dashboard/RecentProjectsTable'
 import { StatCards } from '../components/dashboard/StatCards'
+import { SystemHealthPanel } from '../components/dashboard/SystemHealthPanel'
+import { TrendingSources } from '../components/dashboard/TrendingSources'
+import { UpcomingUploads } from '../components/dashboard/UpcomingUploads'
 import { PageHeader, PageShell } from '../components/layout'
 import { useAbortableEffect } from '../hooks'
 import type { DashboardData } from '../types/dashboard'
@@ -20,6 +24,7 @@ const emptyData: DashboardData = {
   activeRender: { fileName: '', progress: 0, eta: '', filePath: '' },
   recentProjects: [],
   healthAlerts: [],
+  upcomingUploads: [],
 }
 
 export function DashboardPage() {
@@ -73,12 +78,17 @@ export function DashboardPage() {
         <ActiveRenderCard data={data.activeRender} loading={loading} />
       </div>
 
-      <StatCards data={data.overview} loading={loading} />
+      <StatCards data={data.overview} trends={data.overviewTrends} loading={loading} />
+
+      <TrendingSources items={data.trendingSources} loading={loading} />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <RecentProjectsTable projects={data.recentProjects} loading={loading} />
         <div className="space-y-4">
           <AccountSummaryCard data={data.accounts} loading={loading} />
+          <ProductionStatsCard data={data.productionStats} loading={loading} />
+          <SystemHealthPanel data={data.systemHealth} loading={loading} />
+          <UpcomingUploads items={data.upcomingUploads} loading={loading} />
           <HealthAlerts alerts={data.healthAlerts} loading={loading} />
           <QuickActions />
         </div>

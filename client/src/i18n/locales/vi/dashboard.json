@@ -43,5 +43,44 @@
   },
   "health": {
     "title": "Cảnh báo sức khỏe"
+  },
+  "upcoming": {
+    "title": "Lịch đăng sắp tới",
+    "empty": "Chưa có kênh nào có lịch đăng",
+    "inTime": "còn {{time}}",
+    "now": "sắp đến giờ",
+    "hours": "{{h}} giờ {{m}} phút",
+    "minutes": "{{m}} phút",
+    "days": "{{d}} ngày {{h}} giờ"
+  },
+  "system": {
+    "title": "Sức khỏe máy",
+    "ram": "RAM trống",
+    "disk": "Ổ đĩa trống",
+    "queue": "Hàng đợi",
+    "running": "đang chạy",
+    "queued": "chờ",
+    "failed": "lỗi",
+    "paused": "tạm dừng",
+    "unavailable": "Không đọc được"
+  },
+  "production": {
+    "title": "Thời gian sản xuất",
+    "avgPerVideo": "trung bình mỗi video · từ {{count}} tác vụ",
+    "noSamples": "Chưa có tác vụ tạo video hoàn thành",
+    "today": "Hôm nay",
+    "last7Days": "7 ngày",
+    "videos": "video",
+    "ok": "xong",
+    "failed": "lỗi"
+  },
+  "trending": {
+    "title": "Video nguồn nổi bật",
+    "hint": "Video có lượt xem vượt xa trung vị của chính kênh nguồn — ứng viên để làm tiếp",
+    "empty": "Chưa có video nào nổi bật (cần kênh nguồn có ít nhất 5 video đã đồng bộ)",
+    "views": "lượt xem",
+    "used": "đã dùng",
+    "open": "Mở trên YouTube",
+    "ratioTitle": "Gấp bao nhiêu lần trung vị lượt xem của kênh nguồn"
   }
 }

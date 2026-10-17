@@ -12,6 +12,7 @@ import {
   moveYoutubeVideosSchema,
   updateYoutubeVideoContentSchema,
   updateYoutubeChannelSchema,
+  updateYoutubeChannelStatsSchema,
 } from './youtube-channels.schema.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelsService } from './youtube-channels.service.js';
@@ -162,6 +163,16 @@ export function createYoutubeChannelsRoutes() {
   app.delete('/:id', (c) => {
     youtubeChannelsService.deleteChannel(c.req.param('id'));
     return c.body(null, 204);
+  });
+
+  app.patch('/:id/stats', zValidator('json', updateYoutubeChannelStatsSchema), (c) => {
+    const item = youtubeChannelsService.updateStats(c.req.param('id'), c.req.valid('json'));
+    return c.json({ item });
+  });
+
+  app.post('/:id/refresh-stats', async (c) => {
+    const item = await youtubeChannelsService.refreshSubscribers(c.req.param('id'));
+    return c.json({ item });
   });
 
   app.post('/:id/pause', (c) => {

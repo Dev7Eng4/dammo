@@ -83,6 +83,23 @@ export async function deleteYoutubeChannel(id: string) {
   }
 }
 
+export function updateYoutubeChannelStats(
+  id: string,
+  payload: { watchHours?: number; subscribers?: number },
+) {
+  return fetchJson<{ item: YoutubeChannel }>(`${API_V1}/youtube-channels/${id}/stats`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function refreshYoutubeChannelStats(id: string) {
+  return fetchJson<{ item: YoutubeChannel }>(`${API_V1}/youtube-channels/${id}/refresh-stats`, {
+    method: 'POST',
+  });
+}
+
 export function pauseYoutubeChannel(id: string) {
   return fetchJson<{ item: YoutubeChannel }>(`${API_V1}/youtube-channels/${id}/pause`, {
     method: 'POST',

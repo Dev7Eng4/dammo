@@ -570,6 +570,39 @@ export class YoutubeChannelsService {
     return this.getById(id);
   }
 
+  updateStats(id: string, input: { watchHours?: number; subscribers?: number }): YoutubeChannel {
+    this.getById(id);
+    const updated = youtubeChannelsRepository.update(id, (current) => ({
+      ...current,
+      ...(input.watchHours !== undefined ? { watchHours: input.watchHours } : {}),
+      ...(input.subscribers !== undefined ? { subscribers: input.subscribers } : {}),
+      statsUpdatedAt: new Date().toISOString(),
+    }));
+    if (!updated) {
+      throw new AppError('Channel not found', 404, 'NOT_FOUND');
+    }
+    return this.getById(id);
+  }
+
+  /** Public subscriber count via yt-dlp. Watch hours are Studio-only and cannot be fetched. */
+  async refreshSubscribers(id: string): Promise<YoutubeChannel> {
+    const channel = this.getById(id);
+    if (!channel.youtubeUrl || channel.youtubeUrl.includes('@channel_')) {
+      throw new AppError('Channel has no YouTube URL', 400, 'NO_YOUTUBE_URL');
+    }
+    let subscriberCount: number | undefined;
+    try {
+      subscriberCount = (await fetchYoutubeChannelMetadata(channel.youtubeUrl)).subscriberCount;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(`Failed to fetch YouTube channel metadata: ${detail}`, 502, 'YOUTUBE_FETCH_FAILED');
+    }
+    if (subscriberCount === undefined) {
+      throw new AppError('Subscriber count is hidden or unavailable', 422, 'SUBSCRIBERS_UNAVAILABLE');
+    }
+    return this.updateStats(id, { subscribers: subscriberCount });
+  }
+
   resumeChannel(id: string): YoutubeChannel {
     const channel = this.getById(id);
 
@@ -623,6 +656,9 @@ export class YoutubeChannelsService {
       name: metadata.name,
       handle,
       channelId: metadata.channelId ?? current.channelId,
+      ...(metadata.subscriberCount !== undefined
+        ? { subscribers: metadata.subscriberCount, statsUpdatedAt: new Date().toISOString() }
+        : {}),
     }));
 
     if (!updated) {

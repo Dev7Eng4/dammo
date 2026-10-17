@@ -174,6 +174,9 @@ export interface YoutubeChannel {
   uploadFrequency?: UploadFrequency;
   notes?: string;
   lastUploadAt?: string;
+  /** Optional YPP progress metrics (12-month watch hours, subscribers); card shows "no data" when absent */
+  watchHours?: number;
+  subscribers?: number;
   /** Computed server-side for detail responses */
   nextUploadAt?: string | null;
   createdAt: string;

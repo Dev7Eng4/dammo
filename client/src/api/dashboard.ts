@@ -6,14 +6,26 @@ import type {
   DashboardData,
   HealthAlert,
   OverviewStats,
+  OverviewTrends,
   PipelineStep,
+  ProductionStats,
   RecentProject,
+  SystemHealth,
+  TrendingSourceVideo,
   SearchResponse,
+  UpcomingUpload,
 } from '../types/dashboard';
 
 export function fetchOverview(options?: FetchOptions) {
   return fetchJson<OverviewStats>(
     `${API_V1}/dashboard/overview`,
+    withSignal(undefined, options),
+  );
+}
+
+export function fetchOverviewTrends(options?: FetchOptions) {
+  return fetchJson<OverviewTrends>(
+    `${API_V1}/dashboard/overview-trends`,
     withSignal(undefined, options),
   );
 }
@@ -53,6 +65,34 @@ export function fetchHealthAlerts(options?: FetchOptions) {
   );
 }
 
+export function fetchUpcomingUploads(options?: FetchOptions) {
+  return fetchJson<UpcomingUpload[]>(
+    `${API_V1}/dashboard/upcoming-uploads`,
+    withSignal(undefined, options),
+  );
+}
+
+export function fetchSystemHealth(options?: FetchOptions) {
+  return fetchJson<SystemHealth>(
+    `${API_V1}/dashboard/system-health`,
+    withSignal(undefined, options),
+  );
+}
+
+export function fetchProductionStats(options?: FetchOptions) {
+  return fetchJson<ProductionStats>(
+    `${API_V1}/dashboard/production-stats`,
+    withSignal(undefined, options),
+  );
+}
+
+export function fetchTrendingSources(options?: FetchOptions) {
+  return fetchJson<TrendingSourceVideo[]>(
+    `${API_V1}/dashboard/trending-sources`,
+    withSignal(undefined, options),
+  );
+}
+
 export function fetchSearch(query: string, options?: FetchOptions) {
   const params = new URLSearchParams({ q: query });
   return fetchJson<SearchResponse>(
@@ -62,7 +102,7 @@ export function fetchSearch(query: string, options?: FetchOptions) {
 }
 
 export async function fetchDashboardData(options?: FetchOptions): Promise<DashboardData> {
-  const [overview, pipeline, accounts, activeRender, recentProjects, healthAlerts] =
+  const [overview, pipeline, accounts, activeRender, recentProjects, healthAlerts, upcomingUploads, overviewTrends, systemHealth, productionStats, trendingSources] =
     await Promise.all([
       fetchOverview(options),
       fetchPipeline(options),
@@ -70,7 +110,13 @@ export async function fetchDashboardData(options?: FetchOptions): Promise<Dashbo
       fetchActiveRender(options),
       fetchRecentProjects(options),
       fetchHealthAlerts(options),
+      fetchUpcomingUploads(options),
+      // Trends are decorative: a failure must not break the whole dashboard.
+      fetchOverviewTrends(options).catch(() => undefined),
+      fetchSystemHealth(options).catch(() => undefined),
+      fetchProductionStats(options).catch(() => undefined),
+      fetchTrendingSources(options).catch(() => undefined),
     ]);
 
-  return { overview, pipeline, accounts, activeRender, recentProjects, healthAlerts };
+  return { overview, overviewTrends, pipeline, accounts, activeRender, recentProjects, healthAlerts, upcomingUploads, systemHealth, productionStats, trendingSources };
 }

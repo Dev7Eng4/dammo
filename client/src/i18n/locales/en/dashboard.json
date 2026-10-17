@@ -43,5 +43,44 @@
   },
   "health": {
     "title": "Health alerts"
+  },
+  "upcoming": {
+    "title": "Upcoming uploads",
+    "empty": "No channel has an upload schedule",
+    "inTime": "in {{time}}",
+    "now": "due now",
+    "hours": "{{h}}h {{m}}m",
+    "minutes": "{{m}}m",
+    "days": "{{d}}d {{h}}h"
+  },
+  "system": {
+    "title": "System health",
+    "ram": "Free RAM",
+    "disk": "Free disk",
+    "queue": "Queue",
+    "running": "running",
+    "queued": "queued",
+    "failed": "failed",
+    "paused": "paused",
+    "unavailable": "Unavailable"
+  },
+  "production": {
+    "title": "Production time",
+    "avgPerVideo": "avg per video · from {{count}} tasks",
+    "noSamples": "No completed create-video tasks yet",
+    "today": "Today",
+    "last7Days": "7 days",
+    "videos": "videos",
+    "ok": "done",
+    "failed": "failed"
+  },
+  "trending": {
+    "title": "Standout source videos",
+    "hint": "Videos far above their own channel's median views — candidates to produce next",
+    "empty": "No standout videos yet (needs source channels with at least 5 synced videos)",
+    "views": "views",
+    "used": "used",
+    "open": "Open on YouTube",
+    "ratioTitle": "Multiple of the source channel's median views"
   }
 }

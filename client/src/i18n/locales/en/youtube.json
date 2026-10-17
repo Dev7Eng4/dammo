@@ -509,5 +509,25 @@
     "thumbBgLoading": "Loading image list...",
     "thumbBgEmpty": "No background images yet",
     "thumbBgPreviewAlt": "Preview background"
+  },
+  "cards": {
+    "viewTable": "Table",
+    "viewCards": "Cards",
+    "level": "LEVEL {{level}}",
+    "watchHours": "WATCH HOURS",
+    "subscribers": "SUBSCRIBERS",
+    "ypp": "YPP eligible",
+    "hoursLeft": "Level {{next}} at {{target}} h · {{left}} h to go",
+    "noData": "No watch-hour / subscriber data yet",
+    "lastUpload": "Last upload",
+    "open": "Open channel",
+    "empty": "No channels",
+    "editStats": "Update stats",
+    "save": "Save",
+    "cancel": "Cancel",
+    "refreshSubs": "Fetch subscribers from YouTube",
+    "hoursHint": "12-month watch hours (see YouTube Studio)",
+    "saved": "Stats updated",
+    "saveError": "Could not update stats"
   }
 }

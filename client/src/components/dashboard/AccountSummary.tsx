@@ -11,7 +11,7 @@ export function AccountSummaryCard({ data, loading }: AccountSummaryCardProps) {
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">
-      <p className="mb-3 text-sm font-medium text-muted-foreground">{t('accountSummary.title')}</p>
+      <p className="section-label mb-3">{t('accountSummary.title')}</p>
       <p className="text-3xl font-semibold tracking-tight text-foreground">
         {loading ? '—' : data.total.toLocaleString()}
       </p>

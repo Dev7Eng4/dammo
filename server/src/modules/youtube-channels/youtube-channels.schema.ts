@@ -166,6 +166,15 @@ export const updateYoutubeChannelSchema = z
   })
   .superRefine(applyChannelConfigRefine);
 
+export const updateYoutubeChannelStatsSchema = z
+  .object({
+    watchHours: z.number().min(0).max(1_000_000).optional(),
+    subscribers: z.number().int().min(0).max(1_000_000_000).optional(),
+  })
+  .refine((v) => v.watchHours !== undefined || v.subscribers !== undefined, {
+    message: 'watchHours or subscribers is required',
+  });
+
 export const listYoutubeChannelsQuerySchema = z.object({
   type: youtubeChannelTypeSchema.optional(),
   monetization: z.enum(['monetized', 'in_review', 'demonetized', 'limited']).optional(),

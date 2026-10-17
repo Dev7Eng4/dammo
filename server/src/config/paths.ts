@@ -8,6 +8,7 @@ export const paths = {
   proxies: path.join(env.dataDir, 'proxies.json'),
   proxyProviders: path.join(env.dataDir, 'proxy-providers.json'),
   dashboard: path.join(env.dataDir, 'dashboard.json'),
+  dashboardSnapshots: path.join(env.dataDir, 'dashboard-snapshots.json'),
   renderJobsDir: path.join(env.dataDir, 'renders', 'jobs'),
   renderOutputDir: path.join(env.dataDir, 'renders', 'output'),
   importsDir: path.join(env.dataDir, 'imports'),

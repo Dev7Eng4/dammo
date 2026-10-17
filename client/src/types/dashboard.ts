@@ -5,6 +5,9 @@ export interface OverviewStats {
   sourceChannels: number;
 }
 
+/** Optional per-metric history (oldest → newest); enables delta + sparkline on KPI cards. */
+export type OverviewTrends = Partial<Record<keyof OverviewStats, number[]>>;
+
 export type PipelineHighlight = 'info' | 'success' | 'danger';
 
 export interface PipelineStep {
@@ -33,6 +36,39 @@ export interface RecentProject {
   format: string;
   target: string;
   status: ProjectStatus;
+}
+
+export interface UpcomingUpload {
+  channelId: string;
+  name: string;
+  handle: string;
+  /** ISO timestamp of the next scheduled publish slot */
+  at: string;
+}
+
+export interface SystemHealth {
+  ram: { freeBytes: number; totalBytes: number };
+  disk: { freeBytes: number; totalBytes: number } | null;
+  queue: { queued: number; running: number; failed: number; paused: boolean };
+}
+
+export interface ProductionStats {
+  today: { completed: number; failed: number; videos: number };
+  last7Days: { completed: number; failed: number; videos: number };
+  avgMinutesPerVideo: number | null;
+  sampleSize: number;
+}
+
+export interface TrendingSourceVideo {
+  videoId: string;
+  title: string;
+  url: string;
+  viewCount: number;
+  /** viewCount ÷ median viewCount of the same source channel */
+  ratio: number;
+  sourceId: string;
+  sourceName: string;
+  used: boolean;
 }
 
 export type AlertSeverity = 'warning' | 'neutral' | 'danger';
@@ -66,9 +102,14 @@ export interface SearchResponse {
 
 export interface DashboardData {
   overview: OverviewStats;
+  overviewTrends?: OverviewTrends;
   pipeline: PipelineStep[];
   accounts: AccountSummary;
   activeRender: ActiveRender;
   recentProjects: RecentProject[];
   healthAlerts: HealthAlert[];
+  upcomingUploads: UpcomingUpload[];
+  systemHealth?: SystemHealth;
+  productionStats?: ProductionStats;
+  trendingSources?: TrendingSourceVideo[];
 }

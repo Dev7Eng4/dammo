@@ -5,6 +5,8 @@ import { sourceChannelsRepository } from '../source-channels/source-channels.rep
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import type { VideoPrepareStatus } from '../youtube-channels/video-prepare.types.js';
+import { buildSystemAlerts } from './system-health.js';
+import { getNextYoutubePublishSlot, scheduleSlotToUnixMs } from '../youtube-upload/publish-schedule.js';
 
 export interface DashboardData {
   overviewStats: {
@@ -43,7 +45,17 @@ export interface DashboardData {
   }>;
 }
 
-const EMPTY_ACTIVE_RENDER: DashboardData['activeRender'] = {
+export interface UpcomingUpload {
+  channelId: string;
+  name: string;
+  handle: string;
+  at: string;
+}
+
+const STALE_WARNING_MS = 48 * 60 * 60 * 1000;
+const STALE_DANGER_MS = 7 * 24 * 60 * 60 * 1000;
+
+const EMPTY_ACTIVE_RENDER:DashboardData['activeRender'] = {
   fileName: '',
   progress: 0,
   eta: '',
@@ -125,10 +137,53 @@ function buildHealthAlerts(): DashboardData['healthAlerts'] {
     });
   }
 
-  return alerts;
+  const now = Date.now();
+  for (const channel of youtubeChannelsRepository.findAll()) {
+    if (channel.status !== 'active' || !channel.lastUploadAt) continue;
+    const idleMs = now - new Date(channel.lastUploadAt).getTime();
+    if (!Number.isFinite(idleMs) || idleMs < STALE_WARNING_MS) continue;
+    const days = Math.floor(idleMs / (24 * 60 * 60 * 1000));
+    const idleLabel = days >= 2 ? `${days} ngày` : `${Math.floor(idleMs / 3_600_000)} giờ`;
+    alerts.push({
+      id: `youtube-stale-${channel.id}`,
+      title: `${channel.name} — ${idleLabel} chưa có video mới`,
+      description: `Lần đăng gần nhất: ${new Date(channel.lastUploadAt).toLocaleString('vi-VN')}.`,
+      severity: idleMs >= STALE_DANGER_MS ? 'danger' : 'warning',
+    });
+  }
+
+  alerts.push(...buildSystemAlerts());
+
+  const rank = { danger: 0, warning: 1, neutral: 2 } as const;
+  return alerts.sort((a, b) => rank[a.severity] - rank[b.severity]);
+}
+
+function buildUpcomingUploads(limit = 6): UpcomingUpload[] {
+  const items: Array<UpcomingUpload & { ms: number }> = [];
+  for (const channel of youtubeChannelsRepository.findAll()) {
+    if (channel.status !== 'active') continue;
+    const slot = getNextYoutubePublishSlot(channel);
+    const ms = scheduleSlotToUnixMs(slot);
+    if (!slot || ms === Number.MAX_SAFE_INTEGER) continue;
+    items.push({
+      channelId: channel.id,
+      name: channel.name,
+      handle: channel.handle,
+      at: new Date(ms).toISOString(),
+      ms,
+    });
+  }
+  return items
+    .sort((a, b) => a.ms - b.ms)
+    .slice(0, limit)
+    .map(({ ms: _ms, ...item }) => item);
 }
 
 export class DashboardRepository {
+  getUpcomingUploads(): UpcomingUpload[] {
+    return buildUpcomingUploads();
+  }
+
   getData(): DashboardData {
     const renderJobs = renderQueueService.list();
     const mailAccounts = mailAccountsRepository.findAll();

@@ -245,6 +245,13 @@
       "pathCopyError": "Could not copy path",
       "enqueueError": "Failed to enqueue task",
       "clearError": "Failed to clear finished jobs"
+    },
+    "board": {
+      "title": "Production by channel",
+      "bulk": "Multiple channels",
+      "create": "Create video",
+      "upload": "Upload",
+      "queued": "queued"
     }
   },
   "settings": {
