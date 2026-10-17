@@ -448,8 +448,8 @@ export function VideoContentModal({
         open={open}
         onClose={handleClose}
         title={t('videoContent.title')}
-        className="max-w-[min(96vw,1680px)]"
-        bodyClassName="max-h-[calc(100svh-10rem)] overflow-y-auto"
+        className="max-w-[min(1280px,calc(100vw-3rem))]"
+        bodyClassName="h-[calc(100svh-11.5rem)] overflow-y-auto"
         footer={
           <>
             <Button
