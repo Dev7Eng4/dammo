@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { describe, test } from 'node:test';
 import {
   resolveYoutubeChannelUploadedVideoDir,
   youtubeChannelUploadedVideoDir,
 } from '../../config/paths.js';
-import { youtubeVideoContentService } from './youtube-video-content.service.js';
+import { findThumbnailPath } from '../youtube-upload/upload-assets.js';
+import { replaceThumbnailJpeg, youtubeVideoContentService } from './youtube-video-content.service.js';
 
 const SAMPLE_CHANNEL_ID = '5fe84e56-5c0c-4384-9057-8e711d524556';
 const SAMPLE_UPLOAD_VIDEO_ID = 'cfgLX-D75rk';
@@ -37,5 +39,27 @@ describe('youtubeVideoContentService uploads folder', () => {
 
     assert.ok(content.title.trim().length > 0);
     assert.ok(content.videoFolderPath.includes(path.join('uploads', SAMPLE_UPLOAD_VIDEO_ID)));
+  });
+});
+
+describe('replaceThumbnailJpeg', () => {
+  test('removes stale thumbnails with other extensions so the new one is found', async () => {
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'thumb-replace-'));
+    try {
+      fs.writeFileSync(path.join(folder, 'thumbnail.jpeg'), 'old');
+      fs.writeFileSync(path.join(folder, 'thumbnail.jpg'), 'old');
+      fs.writeFileSync(path.join(folder, 'old-thumbnail.png'), 'keep');
+      const staged = path.join(folder, '.staged.jpg');
+      fs.writeFileSync(staged, 'new');
+
+      await replaceThumbnailJpeg(folder, staged);
+
+      assert.equal(fs.readFileSync(path.join(folder, 'thumbnail.jpg'), 'utf-8'), 'new');
+      assert.ok(!fs.existsSync(path.join(folder, 'thumbnail.jpeg')));
+      assert.ok(fs.existsSync(path.join(folder, 'old-thumbnail.png')));
+      assert.equal(findThumbnailPath(folder), path.join(folder, 'thumbnail.jpg'));
+    } finally {
+      fs.rmSync(folder, { recursive: true, force: true });
+    }
   });
 });

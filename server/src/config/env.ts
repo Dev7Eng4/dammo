@@ -67,6 +67,8 @@ export const env = {
 
   /** YouTube Data API v3 key (radar). Leave empty to disable radar scans. */
   youtubeApiKey: process.env.YOUTUBE_API_KEY ?? '',
+  /** Hours between automatic radar scans. 0 disables the scheduler. Override: RADAR_SCAN_INTERVAL_HOURS */
+  radarScanIntervalHours: optionalNumber(process.env.RADAR_SCAN_INTERVAL_HOURS) ?? 4,
   /** Soft cap on Data API quota units spent per UTC day by the radar (default quota is 10000). */
   youtubeApiDailyQuotaCap: optionalNumber(process.env.YOUTUBE_API_DAILY_QUOTA_CAP) ?? 8000,
 

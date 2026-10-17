@@ -18,6 +18,8 @@ interface YoutubeChannelVideoCardsProps {
   onToggleRow: (id: string) => void
   onCommentClick?: (video: YoutubeChannelVideo) => void
   onTitleClick?: (video: YoutubeChannelVideo) => void
+  /** Per-video cache-busting stamps, set when a video's local thumbnail was just replaced. */
+  thumbnailVersions?: Record<string, number>
 }
 
 const stampStyle: Record<YoutubeChannelVideoStatus, { labelKey: string; className: string }> = {
@@ -38,9 +40,17 @@ function isLocalOnly(video: YoutubeChannelVideo): boolean {
   return video.status === 'Prepared' || video.status === 'Created'
 }
 
-function Thumbnail({ channelId, video }: { channelId: string; video: YoutubeChannelVideo }) {
+function Thumbnail({
+  channelId,
+  video,
+  version,
+}: {
+  channelId: string
+  video: YoutubeChannelVideo
+  version?: number
+}) {
   const localSource = hasLocalAssets(video)
-    ? `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(video.id)}/content/thumbnail`
+    ? `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(video.id)}/content/thumbnail${version ? `?v=${version}` : ''}`
     : null
   // Highest quality first; each step is used only if the previous one fails to load.
   // maxresdefault is 1280x720, hqdefault 480x360 (letterboxed, cropped by object-cover),
@@ -89,6 +99,7 @@ export function YoutubeChannelVideoCards({
   onToggleRow,
   onCommentClick,
   onTitleClick,
+  thumbnailVersions,
 }: YoutubeChannelVideoCardsProps) {
   const { t, i18n } = useTranslation('youtube')
 
@@ -135,7 +146,7 @@ export function YoutubeChannelVideoCards({
             )}
           >
             <div className="relative aspect-video overflow-hidden bg-surface-elevated">
-              <Thumbnail channelId={channelId} video={video} />
+              <Thumbnail channelId={channelId} video={video} version={thumbnailVersions?.[video.id]} />
               <span
                 aria-hidden="true"
                 className={cn(

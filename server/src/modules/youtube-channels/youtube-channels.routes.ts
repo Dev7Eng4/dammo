@@ -350,7 +350,7 @@ export function createYoutubeChannelsRoutes() {
     const baseUrl = c.req.path;
     return c.json({
       ...item,
-      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail` : null,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
       oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
       videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
     });
@@ -409,7 +409,7 @@ export function createYoutubeChannelsRoutes() {
     const baseUrl = c.req.path;
     return c.json({
       ...item,
-      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail` : null,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
       oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
       videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
     });

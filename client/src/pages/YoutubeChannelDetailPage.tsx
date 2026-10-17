@@ -62,6 +62,7 @@ export function YoutubeChannelDetailPage() {
   const [videosLoading, setVideosLoading] = useState(true);
   const [videosError, setVideosError] = useState<string | null>(null);
   const [videoResetKey, setVideoResetKey] = useState(0);
+  const [thumbnailVersions, setThumbnailVersions] = useState<Record<string, number>>({});
   const [selectedVideo, setSelectedVideo] = useState<YoutubeChannelVideo | null>(null);
   const contentModal = useDismissibleTarget<YoutubeChannelVideo>();
   const contentVideo = contentModal.target;
@@ -459,6 +460,7 @@ export function YoutubeChannelDetailPage() {
                 onToggleRow={handleToggleVideoRow}
                 onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
                 onTitleClick={isPendingFilter ? undefined : handleOpenVideo}
+                thumbnailVersions={thumbnailVersions}
               />
             ) : null}
           </div>
@@ -539,6 +541,7 @@ export function YoutubeChannelDetailPage() {
           canRegenerateMetadata={channel?.language === 'ja'}
           onClose={contentModal.hide}
           onSaved={content => {
+            setThumbnailVersions(current => ({ ...current, [contentVideo.id]: Date.now() }));
             setAllVideos(current =>
               current.map(video => (video.id === contentVideo.id ? { ...video, title: content.title } : video)),
             );

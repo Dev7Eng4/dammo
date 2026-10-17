@@ -25,6 +25,8 @@ export interface YoutubeVideoContent {
   description: string;
   tags: string[];
   hasThumbnail: boolean;
+  /** Modified time of the thumbnail file; appended to its URL so a replaced image is refetched. */
+  thumbnailVersion?: number | null;
   hasOldThumbnail: boolean;
   videoFolderPath: string;
   hasVideo: boolean;
@@ -192,7 +194,20 @@ async function stageThumbnailJpeg(
   }
 }
 
-async function replaceThumbnailJpeg(folderPath: string, stagedPath: string): Promise<void> {
+/**
+ * findThumbnailPath() accepts any `thumbnail.<ext>` and picks the alphabetically first, so a stale
+ * `thumbnail.jpeg`/`.gif`/... would keep winning over the freshly saved `thumbnail.jpg`.
+ */
+async function removeStaleThumbnails(folderPath: string): Promise<void> {
+  for (const file of fs.readdirSync(folderPath)) {
+    const ext = path.extname(file);
+    if (!ext || file === THUMBNAIL_FILENAME) continue;
+    if (path.basename(file, ext).toLowerCase() !== 'thumbnail') continue;
+    await fs.promises.rm(path.join(folderPath, file), { force: true }).catch(() => undefined);
+  }
+}
+
+export async function replaceThumbnailJpeg(folderPath: string, stagedPath: string): Promise<void> {
   const targetPath = path.join(folderPath, THUMBNAIL_FILENAME);
   const backupPath = path.join(folderPath, `.thumbnail-backup-${randomUUID()}.jpg`);
   const hadTarget = fs.existsSync(targetPath);
@@ -206,6 +221,7 @@ async function replaceThumbnailJpeg(folderPath: string, stagedPath: string): Pro
     if (hadTarget) {
       await fs.promises.rm(backupPath, { force: true }).catch(() => undefined);
     }
+    await removeStaleThumbnails(folderPath);
   } catch (error) {
     if (hadTarget && !fs.existsSync(targetPath)) {
       await fs.promises.rename(backupPath, targetPath).catch(() => undefined);
@@ -233,6 +249,7 @@ export class YoutubeVideoContentService {
       description: normalizeText(parsed.metadata.description),
       tags: normalizeTags(parsed.metadata.tags),
       hasThumbnail: Boolean(thumbnailPath),
+      thumbnailVersion: thumbnailPath ? Math.round(fs.statSync(thumbnailPath).mtimeMs) : null,
       hasOldThumbnail: Boolean(oldThumbnailPath),
       videoFolderPath: path.resolve(folderPath),
       hasVideo: Boolean(findFinalVideoMp4(folderPath)),

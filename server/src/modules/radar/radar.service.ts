@@ -58,11 +58,30 @@ function pruneOldVideos(store: RadarStore, now: number): void {
 }
 
 export class RadarService {
+  private scanning = false;
+
+  isScanning(): boolean {
+    return this.scanning;
+  }
+
+  /** Runs one scan; manual and scheduled scans share this guard so they never overlap. */
   async scan(): Promise<RadarScanResult> {
     if (!isYoutubeDataApiConfigured()) {
       throw new AppError('YOUTUBE_API_KEY is not configured', 503, 'YOUTUBE_API_KEY_MISSING');
     }
+    if (this.scanning) {
+      throw new AppError('A radar scan is already running', 409, 'RADAR_SCAN_IN_PROGRESS');
+    }
 
+    this.scanning = true;
+    try {
+      return await this.runScan();
+    } finally {
+      this.scanning = false;
+    }
+  }
+
+  private async runScan(): Promise<RadarScanResult> {
     const store = radarRepository.read();
     const cap = env.youtubeApiDailyQuotaCap;
     const result: RadarScanResult = {
@@ -183,6 +202,8 @@ export class RadarService {
       lastScanAt: store.lastScanAt,
       quotaUsedToday: store.quota.used,
       quotaCap: env.youtubeApiDailyQuotaCap,
+      scanning: this.scanning,
+      scanIntervalHours: env.radarScanIntervalHours,
     };
   }
 }
