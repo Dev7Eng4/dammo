@@ -696,6 +696,93 @@ export class VideoProductionUiService {
     };
   }
 
+  addCharacter(
+    channelId: string,
+    videoId: string,
+    input: { name: string; description?: string; prompt?: string },
+    basePath: string,
+  ): ProductionCharactersResponse {
+    const safeChannelId = assertSafeId(channelId, 'channel id');
+    const safeVideoId = assertSafeId(videoId, 'video id');
+    const workDir = resolveProductionVideoFolder(safeChannelId, safeVideoId);
+
+    const name = input.name.trim();
+    if (!name) {
+      throw new AppError('Character name is required', 400, 'INVALID_CHARACTER');
+    }
+
+    const file = readCharacterReferencesFile(workDir);
+    const existing = file?.characters ?? [];
+    const usedIds = new Set(existing.map((item) => sanitizeCharacterId(String(item.id ?? ''))));
+
+    const baseId = sanitizeCharacterId(name);
+    let id = baseId;
+    for (let n = 2; usedIds.has(id); n += 1) {
+      id = `${baseId}_${n}`;
+    }
+
+    const characters = [
+      ...existing,
+      {
+        id,
+        name,
+        description: input.description?.trim() ?? '',
+        prompt: input.prompt?.trim() ?? '',
+      },
+    ];
+    const payload: AiVideoCharacterReferencesFile = {
+      youtubeVideoId: file?.youtubeVideoId ?? safeVideoId,
+      generatedAt: new Date().toISOString(),
+      characterCount: characters.length,
+      characters,
+    };
+    writeJson(resolveCharacterReferencesFilePath(workDir), payload);
+
+    return this.getCharacters(safeChannelId, safeVideoId, basePath);
+  }
+
+  setCharacterImage(
+    channelId: string,
+    videoId: string,
+    characterId: string,
+    image: { buffer: Buffer; contentType: string },
+    basePath: string,
+  ): ProductionCharactersResponse {
+    const safeChannelId = assertSafeId(channelId, 'channel id');
+    const safeVideoId = assertSafeId(videoId, 'video id');
+    const safeCharacterId = assertSafeId(characterId, 'character id');
+    const workDir = resolveProductionVideoFolder(safeChannelId, safeVideoId);
+
+    const file = readCharacterReferencesFile(workDir);
+    const character = file?.characters.find(
+      (item) => typeof item.id === 'string' && item.id.trim() === safeCharacterId,
+    );
+    if (!file || !character) {
+      throw new AppError('Character not found', 404, 'CHARACTER_NOT_FOUND');
+    }
+
+    const extension = ({ 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' } as Record<string, string>)[
+      image.contentType.toLowerCase()
+    ];
+    if (!extension) {
+      throw new AppError('Character image must be JPEG, PNG or WebP', 400, 'INVALID_IMAGE_TYPE');
+    }
+
+    const base = sanitizeCharacterId(safeCharacterId);
+    const imageDir = path.join(workDir, IMAGE_REFERENCES_DIRNAME);
+    fs.mkdirSync(imageDir, { recursive: true });
+    for (const ext of IMAGE_EXTENSIONS) {
+      const previous = path.join(imageDir, `${base}${ext}`);
+      if (fs.existsSync(previous)) fs.unlinkSync(previous);
+    }
+    fs.writeFileSync(path.join(imageDir, `${base}${extension}`), image.buffer);
+
+    character.path = `${IMAGE_REFERENCES_DIRNAME}/${base}${extension}`;
+    writeJson(resolveCharacterReferencesFilePath(workDir), file);
+
+    return this.getCharacters(safeChannelId, safeVideoId, basePath);
+  }
+
   getCharacterImage(
     channelId: string,
     videoId: string,

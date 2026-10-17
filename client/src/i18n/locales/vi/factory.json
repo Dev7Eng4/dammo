@@ -120,7 +120,19 @@
       "loading": "Đang tải characters...",
       "empty": "Chưa có character-references.json cho video này.",
       "noImage": "Chưa có ảnh",
-      "noPrompt": "Không có prompt"
+      "noPrompt": "Không có prompt",
+      "add": "Thêm character",
+      "newTitle": "Character mới",
+      "namePlaceholder": "Tên character",
+      "promptPlaceholder": "Prompt mô tả character…",
+      "uploadImage": "Tải ảnh lên",
+      "changeImage": "Đổi ảnh",
+      "save": "Lưu character",
+      "saving": "Đang lưu…",
+      "cancel": "Hủy",
+      "nameRequired": "Nhập tên character",
+      "saved": "Đã thêm character",
+      "saveError": "Không thể thêm character"
     },
     "scene": {
       "noImage": "Chưa có ảnh",

@@ -12,6 +12,7 @@ import type {
   ProductionTranscriptResponse,
 } from '../../types/videoProductionScenes'
 import { CharactersPanel } from '../video-production/CharactersPanel'
+import { NewCharacterCard } from './NewCharacterCard'
 import { SceneTable } from '../video-production/SceneTable'
 import { TranscriptPanel } from '../video-production/TranscriptPanel'
 
@@ -21,6 +22,11 @@ interface VideoProductionTabContentProps {
   channelId: string
   videoId: string
   tab: VideoProductionTab
+  /** Bump to reload scenes/script/characters (e.g. after regenerating scenes). */
+  reloadKey?: number
+  /** Shows the draft card for a new character. */
+  addingCharacter?: boolean
+  onAddingCharacterChange?: (adding: boolean) => void
 }
 
 function errorMessage(err: unknown, fallback: string): string {
@@ -31,7 +37,14 @@ function errorMessage(err: unknown, fallback: string): string {
  * Script / Characters / Scenes of a video, reusing the Video Production panels.
  * Data loads once when this component mounts (the modal mounts it on the first non-video tab).
  */
-export function VideoProductionTabContent({ channelId, videoId, tab }: VideoProductionTabContentProps) {
+export function VideoProductionTabContent({
+  channelId,
+  videoId,
+  tab,
+  reloadKey = 0,
+  addingCharacter = false,
+  onAddingCharacterChange,
+}: VideoProductionTabContentProps) {
   const { t } = useTranslation('factory')
 
   const [scenes, setScenes] = useState<ProductionScenesResponse | null>(null)
@@ -95,7 +108,7 @@ export function VideoProductionTabContent({ channelId, videoId, tab }: VideoProd
           }),
       ])
     },
-    [channelId, videoId],
+    [channelId, videoId, reloadKey],
   )
 
   if (tab === 'script') {
@@ -114,6 +127,20 @@ export function VideoProductionTabContent({ channelId, videoId, tab }: VideoProd
         characters={characters?.characters ?? []}
         loading={charactersLoading}
         error={charactersError}
+        leadingItem={
+          addingCharacter ? (
+            <NewCharacterCard
+              channelId={channelId}
+              videoId={videoId}
+              onCancel={() => onAddingCharacterChange?.(false)}
+              onCreated={(data) => {
+                setCharacters(data)
+                setCharactersError(null)
+                onAddingCharacterChange?.(false)
+              }}
+            />
+          ) : null
+        }
       />
     )
   }

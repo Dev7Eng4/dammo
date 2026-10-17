@@ -120,7 +120,19 @@
       "loading": "Loading characters...",
       "empty": "No character-references.json for this video yet.",
       "noImage": "No image yet",
-      "noPrompt": "No prompt"
+      "noPrompt": "No prompt",
+      "add": "Add character",
+      "newTitle": "New character",
+      "namePlaceholder": "Character name",
+      "promptPlaceholder": "Prompt describing the character…",
+      "uploadImage": "Upload image",
+      "changeImage": "Change image",
+      "save": "Save character",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "nameRequired": "Enter a character name",
+      "saved": "Character added",
+      "saveError": "Could not add character"
     },
     "scene": {
       "noImage": "No image yet",

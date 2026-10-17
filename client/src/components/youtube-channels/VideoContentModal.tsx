@@ -6,7 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Clapperboard, FileText, Images, UsersRound } from 'lucide-react';
+import { Clapperboard, FileText, Images, Plus, UsersRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import {
@@ -19,6 +19,7 @@ import { useTaskQueue } from '../../hooks';
 import type { YoutubeChannelVideo, YoutubeVideoContent } from '../../types/youtubeChannel';
 import type { CreateVideoTaskPayload } from '../../types/taskQueue';
 import { Button, Image, Input, Modal, Textarea, useToast } from '../ui';
+import { RegenerateScenesConfirmModal } from '../video-production/RegenerateScenesConfirmModal';
 import { RegenerateMetadataConfirmModal } from './RegenerateMetadataConfirmModal';
 import { VideoProductionTabContent, type VideoProductionTab } from './VideoProductionTabContent';
 
@@ -128,6 +129,10 @@ export function VideoContentModal({
   const [activeTab, setActiveTab] = useState<ContentTab>('video');
   // Production data loads the first time a non-video tab is opened, then stays mounted.
   const [productionOpened, setProductionOpened] = useState(false);
+  const [addingCharacter, setAddingCharacter] = useState(false);
+  const [confirmRegenerateScenesOpen, setConfirmRegenerateScenesOpen] = useState(false);
+  const [enqueueingRegenerateScenes, setEnqueueingRegenerateScenes] = useState(false);
+  const [scenesReloadKey, setScenesReloadKey] = useState(0);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const thumbnailPreviewUrlRef = useRef<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -349,6 +354,42 @@ export function VideoContentModal({
     }
   }
 
+  async function handleConfirmRegenerateScenes() {
+    if (busy || enqueueingRegenerateScenes) return;
+
+    setEnqueueingRegenerateScenes(true);
+    try {
+      await enqueueTask(
+        {
+          type: 'create_video',
+          title: tFactory('production.scenes.regenJobTitle', { title: video.title || video.id }),
+          subtitle: video.id,
+          payload: {
+            channelId,
+            videoIds: [video.id],
+            regenerateScenes: true,
+          },
+        },
+        {
+          onComplete: () => {
+            if (!mountedRef.current) return;
+            setScenesReloadKey(key => key + 1);
+            toast.success(tFactory('production.scenes.regenSuccess'));
+          },
+          onFail: job => {
+            toast.error(job.error ?? tFactory('production.scenes.regenFailed'));
+          },
+        },
+      );
+      setConfirmRegenerateScenesOpen(false);
+      toast.success(tFactory('production.scenes.regenQueued'));
+    } catch {
+      // enqueueTask already toasts
+    } finally {
+      setEnqueueingRegenerateScenes(false);
+    }
+  }
+
   async function handleAssembleVideo() {
     if (video.status !== 'Prepared' || busy) return;
 
@@ -477,6 +518,27 @@ export function VideoContentModal({
             >
               Copy path
             </Button>
+            {activeTab === 'characters' ? (
+              <Button
+                variant="outlined"
+                onClick={() => setAddingCharacter(true)}
+                disabled={addingCharacter}
+              >
+                <Plus className="size-4" />
+                {tFactory('production.characters.add')}
+              </Button>
+            ) : null}
+            {activeTab === 'scenes' ? (
+              <Button
+                variant="outlined"
+                onClick={() => setConfirmRegenerateScenesOpen(true)}
+                disabled={busy || enqueueingRegenerateScenes}
+              >
+                {enqueueingRegenerateScenes
+                  ? tFactory('production.scenes.regenerating')
+                  : tFactory('production.scenes.regenerate')}
+              </Button>
+            ) : null}
             {activeTab === 'video' ? (
               <>
             {canRegenerateMetadata ? (
@@ -527,9 +589,10 @@ export function VideoContentModal({
           </>
         }
       >
+        <div className="sticky -top-4 z-10 -mx-5 -mt-4 mb-4 bg-surface px-5 pb-3 pt-4">
         <div
           role="tablist"
-          className="mb-4 inline-flex rounded-xl border border-border bg-surface-elevated p-1"
+          className="inline-flex rounded-xl border border-border bg-surface-elevated p-1"
         >
           {CONTENT_TABS.map(({ id, labelKey, Icon }) => (
             <button
@@ -552,6 +615,7 @@ export function VideoContentModal({
               {tFactory(labelKey)}
             </button>
           ))}
+        </div>
         </div>
 
         <div className={activeTab === 'video' ? '' : 'hidden'}>
@@ -756,10 +820,20 @@ export function VideoContentModal({
               channelId={channelId}
               videoId={video.id}
               tab={activeTab === 'video' ? 'scenes' : activeTab}
+              reloadKey={scenesReloadKey}
+              addingCharacter={addingCharacter}
+              onAddingCharacterChange={setAddingCharacter}
             />
           </div>
         ) : null}
       </Modal>
+
+      <RegenerateScenesConfirmModal
+        open={confirmRegenerateScenesOpen}
+        regenerating={enqueueingRegenerateScenes}
+        onClose={() => setConfirmRegenerateScenesOpen(false)}
+        onConfirm={() => void handleConfirmRegenerateScenes()}
+      />
 
       <RegenerateMetadataConfirmModal
         open={confirmRegenerateOpen}

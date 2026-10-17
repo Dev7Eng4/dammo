@@ -167,6 +167,46 @@ export function createVideoProductionUiRoutes() {
     return c.json(result);
   });
 
+  app.post('/videos/:channelId/:videoId/characters', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as {
+      name?: unknown;
+      description?: unknown;
+      prompt?: unknown;
+    } | null;
+    const result = videoProductionUiService.addCharacter(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+      {
+        name: typeof body?.name === 'string' ? body.name : '',
+        description: typeof body?.description === 'string' ? body.description : undefined,
+        prompt: typeof body?.prompt === 'string' ? body.prompt : undefined,
+      },
+      c.req.path,
+    );
+    return c.json(result, 201);
+  });
+
+  app.post('/videos/:channelId/:videoId/characters/:characterId/image', async (c) => {
+    const form = await c.req.parseBody();
+    const image = form['image'];
+    if (!(image instanceof File) || image.size === 0) {
+      return c.json({ error: 'Image file is required', code: 'IMAGE_REQUIRED' }, 400);
+    }
+    if (image.size > 10 * 1024 * 1024) {
+      return c.json({ error: 'Image is too large (max 10 MB)', code: 'IMAGE_TOO_LARGE' }, 413);
+    }
+    // Strip the trailing "/<characterId>/image" to get the characters collection path.
+    const collectionPath = c.req.path.replace(/\/[^/]+\/image$/, '');
+    const result = videoProductionUiService.setCharacterImage(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+      c.req.param('characterId'),
+      { buffer: Buffer.from(await image.arrayBuffer()), contentType: image.type },
+      collectionPath,
+    );
+    return c.json(result);
+  });
+
   app.get('/videos/:channelId/:videoId/characters/:characterId/image', (c) => {
     const asset = videoProductionUiService.getCharacterImage(
       c.req.param('channelId'),

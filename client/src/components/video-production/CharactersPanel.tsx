@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageOff } from 'lucide-react';
 import type { ProductionCharacterItem } from '../../types/videoProductionScenes';
@@ -7,6 +7,8 @@ interface CharactersPanelProps {
   characters: ProductionCharacterItem[];
   loading: boolean;
   error: string | null;
+  /** Extra card rendered first in the grid (e.g. a draft for a new character). */
+  leadingItem?: ReactNode;
 }
 
 function CharacterImage({ character }: { character: ProductionCharacterItem }) {
@@ -34,7 +36,7 @@ function CharacterImage({ character }: { character: ProductionCharacterItem }) {
   );
 }
 
-export function CharactersPanel({ characters, loading, error }: CharactersPanelProps) {
+export function CharactersPanel({ characters, loading, error, leadingItem }: CharactersPanelProps) {
   const { t } = useTranslation('factory');
 
   if (loading) {
@@ -49,7 +51,7 @@ export function CharactersPanel({ characters, loading, error }: CharactersPanelP
     return <p className="px-4 py-6 text-sm text-danger">{error}</p>;
   }
 
-  if (characters.length === 0) {
+  if (characters.length === 0 && !leadingItem) {
     return (
       <p className="px-4 py-6 text-sm text-muted-foreground">
         {t('production.characters.empty')}
@@ -59,6 +61,7 @@ export function CharactersPanel({ characters, loading, error }: CharactersPanelP
 
   return (
     <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+      {leadingItem}
       {characters.map((character) => (
         <article
           key={character.id}

@@ -140,3 +140,32 @@ export function productionCharacterImageUrl(
 ): string {
   return `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/characters/${encodeURIComponent(characterId)}/image`;
 }
+
+export function addProductionCharacter(
+  channelId: string,
+  videoId: string,
+  payload: { name: string; description?: string; prompt?: string },
+) {
+  return fetchJson<ProductionCharactersResponse>(
+    `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/characters`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function uploadProductionCharacterImage(
+  channelId: string,
+  videoId: string,
+  characterId: string,
+  image: File,
+) {
+  const form = new FormData();
+  form.append('image', image);
+  return fetchJson<ProductionCharactersResponse>(
+    `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/characters/${encodeURIComponent(characterId)}/image`,
+    { method: 'POST', body: form },
+  );
+}
