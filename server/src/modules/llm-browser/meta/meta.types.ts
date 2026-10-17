@@ -12,6 +12,8 @@ export interface MetaGenerateMediaOptions {
   aspectRatio?: '16:9' | '3:4';
   /** Local paths to attach as reference images before the prompt (Meta only). */
   referenceImagePaths?: string[];
+  /** Save the downloaded image as-is instead of fitting it to 1280x720. */
+  skipResize?: boolean;
 }
 
 /** Meta worker pool: batch = multi-tab/profile parallel; single = 1 tab sequential. */

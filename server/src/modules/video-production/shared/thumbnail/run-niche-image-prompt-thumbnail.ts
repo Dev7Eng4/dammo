@@ -5,6 +5,7 @@ import {
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
+import { removeGeminiWatermarkIfEnabled } from './remove-gemini-watermark.js';
 
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
@@ -45,8 +46,13 @@ export async function runNicheImagePromptThumbnail(
     onProgress: options?.onProgress,
   });
 
+  const thumbnailPath = await removeGeminiWatermarkIfEnabled(flowResult.imagePath, {
+    profileId: options?.profileId,
+    onProgress: options?.onProgress,
+  });
+
   return {
-    thumbnailPath: flowResult.imagePath,
+    thumbnailPath,
     promptUsed: flowResult.promptUsed,
   };
 }

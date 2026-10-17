@@ -21,6 +21,8 @@ export interface FlowImageJob {
   prompt: string;
   fileName: string;
   referenceImagePaths?: string[];
+  /** Meta only: keep the downloaded image at its native size. */
+  skipResize?: boolean;
   logPrefix?: string;
   failureCode?: string;
   buildFailureMessage?: (reason: string, maxRetries: number) => string;
@@ -41,6 +43,7 @@ export interface RunBrowserImageGenerationsOptions extends RunFlowImageGeneratio
 export interface RunFlowImageGenerationOptions extends FlowProfileOptions {
   fileName?: string;
   referenceImagePaths?: string[];
+  skipResize?: boolean;
   onProgress?: (progress: HeroImageProgress) => void;
 }
 
@@ -220,6 +223,7 @@ async function runMetaImageGenerations(
           debugScreenshotPath,
           timeoutMs: META_IMAGE_TIMEOUT_MS,
           ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
+          ...(job.skipResize ? { skipResize: true } : {}),
         });
 
         const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
@@ -281,6 +285,7 @@ export async function runBrowserImageGeneration(
         ...(options?.referenceImagePaths?.length
           ? { referenceImagePaths: options.referenceImagePaths }
           : {}),
+        ...(options?.skipResize ? { skipResize: true } : {}),
       },
     ],
     {

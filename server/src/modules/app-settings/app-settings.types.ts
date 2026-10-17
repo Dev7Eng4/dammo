@@ -36,6 +36,12 @@ export interface AppSettings {
   seedingEmailDays: number;
   /** Default seeding period for a new YouTube channel, in days. */
   seedingYoutubeDays: number;
+  /**
+   * After a Flow thumbnail succeeds, regenerate it once through Meta (reference = the Flow image)
+   * with `removeGeminiWatermarkPrompt` to strip the Gemini star watermark.
+   */
+  removeGeminiWatermark: boolean;
+  removeGeminiWatermarkPrompt: string;
 }
 
 export type UpdateAppSettingsInput = Partial<

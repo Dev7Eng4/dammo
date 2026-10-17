@@ -47,6 +47,8 @@ export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOption
   mediaKind?: 'image' | 'video' | 'auto';
   /** Image prompt aspect ratio prefix. Default: '16:9'. */
   aspectRatio?: '16:9' | '3:4';
+  /** Save the downloaded image as-is instead of fitting it to 1280x720. */
+  skipResize?: boolean;
 }
 export type LlmReceiveResponseOptions = FlowReceiveResponseOptions & MetaReceiveResponseOptions;
 export interface LlmSendPromptOptions {

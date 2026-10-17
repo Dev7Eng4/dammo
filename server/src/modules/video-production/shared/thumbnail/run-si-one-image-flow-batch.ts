@@ -6,6 +6,7 @@ import {
   type FlowProfileOptions,
   type HeroImageProgress,
 } from './hero-image.js';
+import { removeGeminiWatermarkIfEnabled } from './remove-gemini-watermark.js';
 
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
 
@@ -90,12 +91,17 @@ export async function runSiOneImageFlowBatch(
     );
   }
 
+  const thumbnailPath = await removeGeminiWatermarkIfEnabled(thumbnailResult.imagePath, {
+    profileId: options?.profileId,
+    onProgress: options?.onProgress,
+  });
+
   console.log(
-    `[si-one-image-flow-batch] saved → ${thumbnailResult.imagePath}, ${backgroundResult.imagePath}`,
+    `[si-one-image-flow-batch] saved → ${thumbnailPath}, ${backgroundResult.imagePath}`,
   );
 
   return {
-    thumbnailPath: thumbnailResult.imagePath,
+    thumbnailPath,
     heroImagePath: backgroundResult.imagePath,
   };
 }

@@ -635,7 +635,7 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
 
         metaLog(page, 'download', `saving to ${outputPath}`);
         try {
-          mediaAssets.push(await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image', metaOptions.aspectRatio ?? '16:9'));
+          mediaAssets.push(await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image', metaOptions.aspectRatio ?? '16:9', metaOptions.skipResize));
           metaLog(page, 'download', 'saved');
         } catch (err) {
           metaLog(page, 'download', `FAILED: ${errText(err)}`);

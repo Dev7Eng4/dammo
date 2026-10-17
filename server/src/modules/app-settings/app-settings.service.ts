@@ -6,6 +6,9 @@ import type {
   UpdateAppSettingsInput,
 } from './app-settings.types.js';
 
+export const DEFAULT_REMOVE_GEMINI_WATERMARK_PROMPT =
+  'Xóa watermark (dấu sao) góc phải, giữ nguyên hình ảnh và text. Chỉ trả 1 ảnh duy nhất';
+
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   enableKenBurns: true,
   kenBurnsOnPrepare: false,
@@ -22,7 +25,14 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   aiScenePromptConcurrency: 1,
   seedingEmailDays: 5,
   seedingYoutubeDays: 3,
+  removeGeminiWatermark: false,
+  removeGeminiWatermarkPrompt: DEFAULT_REMOVE_GEMINI_WATERMARK_PROMPT,
 };
+
+function resolveWatermarkPrompt(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback;
+  return value.trim() || DEFAULT_REMOVE_GEMINI_WATERMARK_PROMPT;
+}
 
 function clampDays(value: number | undefined, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
@@ -83,6 +93,12 @@ function loadSettings(): AppSettings {
       stored?.seedingYoutubeDays,
       DEFAULT_APP_SETTINGS.seedingYoutubeDays,
     ),
+    removeGeminiWatermark:
+      stored?.removeGeminiWatermark ?? DEFAULT_APP_SETTINGS.removeGeminiWatermark,
+    removeGeminiWatermarkPrompt: resolveWatermarkPrompt(
+      stored?.removeGeminiWatermarkPrompt,
+      DEFAULT_APP_SETTINGS.removeGeminiWatermarkPrompt,
+    ),
   };
 }
 
@@ -125,6 +141,11 @@ export class AppSettingsService {
       ),
       seedingEmailDays: clampDays(input.seedingEmailDays, current.seedingEmailDays),
       seedingYoutubeDays: clampDays(input.seedingYoutubeDays, current.seedingYoutubeDays),
+      removeGeminiWatermark: input.removeGeminiWatermark ?? current.removeGeminiWatermark,
+      removeGeminiWatermarkPrompt: resolveWatermarkPrompt(
+        input.removeGeminiWatermarkPrompt ?? current.removeGeminiWatermarkPrompt,
+        current.removeGeminiWatermarkPrompt,
+      ),
     };
     writeJson(paths.appSettings, next);
     return next;

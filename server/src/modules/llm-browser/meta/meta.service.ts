@@ -121,6 +121,7 @@ export class MetaBrowserService {
     return handler.receiveResponse(page, {
       mediaKind,
       aspectRatio,
+      skipResize: options?.skipResize,
       outputPath: options?.outputPath,
       outputDir: options?.outputDir,
       fileName: options?.fileName,

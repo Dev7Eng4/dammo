@@ -7,6 +7,9 @@ import { Button, Input, PageTabs, Select, Switch, useToast } from '../components
 import { useAbortableEffect } from '../hooks'
 import type { AppSettings, AiScenePromptChromeProfileRole, SettingsTab } from '../types/appSettings'
 
+const DEFAULT_WATERMARK_PROMPT =
+  'Xóa watermark (dấu sao) góc phải, giữ nguyên hình ảnh và text. Chỉ trả 1 ảnh duy nhất'
+
 const EMPTY_SETTINGS: AppSettings = {
   enableKenBurns: true,
   kenBurnsOnPrepare: false,
@@ -19,6 +22,8 @@ const EMPTY_SETTINGS: AppSettings = {
   aiScenePromptConcurrency: 1,
   seedingEmailDays: 5,
   seedingYoutubeDays: 3,
+  removeGeminiWatermark: false,
+  removeGeminiWatermarkPrompt: DEFAULT_WATERMARK_PROMPT,
 }
 
 function clampDays(value: unknown, fallback: number): number {
@@ -91,6 +96,8 @@ export function SettingsPage() {
           ),
           seedingEmailDays: clampDays(item.seedingEmailDays, EMPTY_SETTINGS.seedingEmailDays),
           seedingYoutubeDays: clampDays(item.seedingYoutubeDays, EMPTY_SETTINGS.seedingYoutubeDays),
+          removeGeminiWatermarkPrompt:
+            item.removeGeminiWatermarkPrompt?.trim() || DEFAULT_WATERMARK_PROMPT,
         })
       }
     } catch (err) {
@@ -130,6 +137,9 @@ export function SettingsPage() {
           settings.seedingYoutubeDays,
           EMPTY_SETTINGS.seedingYoutubeDays,
         ),
+        removeGeminiWatermark: settings.removeGeminiWatermark,
+        removeGeminiWatermarkPrompt:
+          settings.removeGeminiWatermarkPrompt.trim() || DEFAULT_WATERMARK_PROMPT,
       })
       setSettings(item)
       toast.success(t('settings.toast.saved'))
@@ -205,6 +215,37 @@ export function SettingsPage() {
                 }
                 disabled={saving}
               />
+              <SettingSwitch
+                id="remove-gemini-watermark"
+                label={t('settings.removeWatermark')}
+                description={t('settings.removeWatermarkDesc')}
+                checked={settings.removeGeminiWatermark}
+                onChange={(removeGeminiWatermark) =>
+                  setSettings((prev) => ({ ...prev, removeGeminiWatermark }))
+                }
+                disabled={saving}
+              />
+              <div className="space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
+                <label
+                  htmlFor="remove-gemini-watermark-prompt"
+                  className="text-sm font-medium text-foreground"
+                >
+                  {t('settings.removeWatermarkPrompt')}
+                </label>
+                <Input
+                  id="remove-gemini-watermark-prompt"
+                  value={settings.removeGeminiWatermarkPrompt}
+                  maxLength={1000}
+                  placeholder={DEFAULT_WATERMARK_PROMPT}
+                  disabled={saving || !settings.removeGeminiWatermark}
+                  onChange={(event) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      removeGeminiWatermarkPrompt: event.target.value,
+                    }))
+                  }
+                />
+              </div>
             </section>
           ) : null}
 
