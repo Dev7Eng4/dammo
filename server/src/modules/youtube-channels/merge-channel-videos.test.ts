@@ -22,6 +22,33 @@ describe('mergeChannelVideos', () => {
     assert.equal(result[0]?.localFolder, 'uploads');
   });
 
+  test('marks local uploads missing from a fresh YouTube listing as Uploaded, not Published', () => {
+    const published: YoutubeChannelVideo[] = [
+      { id: 'public1', title: 'Still public', url: 'https://www.youtube.com/watch?v=public1' },
+    ];
+    const uploadedFromFolder: YoutubeChannelVideo[] = [
+      { id: 'public1', title: 'Still public', url: 'https://www.youtube.com/watch?v=public1' },
+      { id: 'nowPrivate', title: 'Made private', url: 'https://www.youtube.com/watch?v=nowPrivate' },
+    ];
+
+    const result = mergeChannelVideos(published, [], uploadedFromFolder, { remoteKnown: true });
+    const byId = new Map(result.map(video => [video.id, video]));
+
+    assert.equal(byId.get('public1')?.status, 'Published');
+    assert.equal(byId.get('nowPrivate')?.status, 'Uploaded');
+    assert.equal(byId.get('nowPrivate')?.localFolder, 'uploads');
+  });
+
+  test('keeps uploads-only videos as Published when the remote listing is unknown', () => {
+    const uploadedFromFolder: YoutubeChannelVideo[] = [
+      { id: 'x1', title: 'Local', url: 'https://www.youtube.com/watch?v=x1' },
+    ];
+
+    const result = mergeChannelVideos([], [], uploadedFromFolder, { remoteKnown: false });
+
+    assert.equal(result[0]?.status, 'Published');
+  });
+
   test('dedupes uploads when video id already exists in published sync', () => {
     const published: YoutubeChannelVideo[] = [
       {

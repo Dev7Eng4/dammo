@@ -10,10 +10,21 @@ function prepareItemToVideo(item: VideoPrepareItem): YoutubeChannelVideo {
   };
 }
 
+export interface MergeChannelVideosOptions {
+  /**
+   * True when `published` is a fresh, successful listing of the channel's public videos.
+   * Videos still in the local uploads folder but absent from that listing are then NOT public
+   * (private, unlisted, scheduled or deleted on YouTube), so they must not be shown as Published.
+   * Leave false when the remote listing is unavailable, to avoid downgrading everything.
+   */
+  remoteKnown?: boolean;
+}
+
 export function mergeChannelVideos(
   published: YoutubeChannelVideo[],
   prepare: VideoPrepareItem[],
   uploadedFromFolder: YoutubeChannelVideo[] = [],
+  options: MergeChannelVideosOptions = {},
 ): YoutubeChannelVideo[] {
   const publishedIds = new Set(published.map(video => video.id));
   const uploadedFolderIds = new Set(uploadedFromFolder.map(video => video.id));
@@ -28,7 +39,7 @@ export function mergeChannelVideos(
     .filter(video => !publishedIds.has(video.id))
     .map(video => ({
       ...video,
-      status: 'Published' as const,
+      status: options.remoteKnown ? ('Uploaded' as const) : ('Published' as const),
       localFolder: 'uploads' as const,
     }));
 

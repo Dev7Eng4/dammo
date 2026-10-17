@@ -690,10 +690,14 @@ export class YoutubeChannelsService {
     return fetchedAt;
   }
 
-  private mergeVideosWithPrepare(channelId: string, videos: YoutubeChannelVideo[]): YoutubeChannelVideo[] {
+  private mergeVideosWithPrepare(
+    channelId: string,
+    videos: YoutubeChannelVideo[],
+    remoteKnown = false,
+  ): YoutubeChannelVideo[] {
     const prepare = videoPrepareRepository.read(channelId);
     const uploadedFromFolder = listUploadedFolderVideos(channelId);
-    return mergeChannelVideos(videos, prepare, uploadedFromFolder).map(video =>
+    return mergeChannelVideos(videos, prepare, uploadedFromFolder, { remoteKnown }).map(video =>
       isMissingTitleOrThumbnail(channelId, video) ? { ...video, missingTitleOrThumbnail: true } : video,
     );
   }
@@ -704,7 +708,7 @@ export class YoutubeChannelsService {
     const store = youtubeChannelVideosRepository.read(id);
     if (store) {
       return {
-        items: this.mergeVideosWithPrepare(id, store.videos),
+        items: this.mergeVideosWithPrepare(id, store.videos, true),
         fetchedAt: store.fetchedAt,
       };
     }
@@ -717,7 +721,7 @@ export class YoutubeChannelsService {
     }
 
     const fetchedAt = this.persistVideos(id, videos);
-    return { items: this.mergeVideosWithPrepare(id, videos), fetchedAt };
+    return { items: this.mergeVideosWithPrepare(id, videos, true), fetchedAt };
   }
 
   /** Source videos linked to the channel that are not yet in video-prepare.json. */
@@ -916,7 +920,7 @@ export class YoutubeChannelsService {
       this.refreshChannelMetadata(id, channel),
     ]);
     const fetchedAt = this.persistVideos(id, videos);
-    return { item, videos: this.mergeVideosWithPrepare(id, videos), fetchedAt };
+    return { item, videos: this.mergeVideosWithPrepare(id, videos, true), fetchedAt };
   }
 
   async getVideoComments(

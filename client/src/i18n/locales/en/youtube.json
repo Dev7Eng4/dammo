@@ -32,7 +32,8 @@
     "statusPublished": "Published",
     "statusPrepared": "Prepared",
     "statusCreated": "Created",
-    "statusDraft": "Draft"
+    "statusDraft": "Draft",
+    "statusUploaded": "Uploaded (not public)"
   },
   "table": {
     "col": {
@@ -546,5 +547,11 @@
     "publishedVideos": "Published videos",
     "likes": "Likes",
     "comments": "Comments"
+  },
+  "publishedVideo": {
+    "title": "Published video",
+    "views": "views",
+    "openOnYoutube": "Open on YouTube",
+    "retry": "Retry"
   }
 }

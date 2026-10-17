@@ -37,7 +37,12 @@ function Thumbnail({ channelId, video }: { channelId: string; video: YoutubeChan
     hasLocalAssets(video)
       ? `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(video.id)}/content/thumbnail`
       : null,
-    `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/mqdefault.jpg`,
+    // Highest quality first; each step is used only if the previous one fails to load.
+    // maxresdefault is 1280x720, hqdefault 480x360 (letterboxed, cropped by object-cover),
+    // mqdefault 320x180 would look blurry on HiDPI screens so it is the last resort.
+    ...['maxresdefault', 'hqdefault', 'mqdefault'].map(
+      (name) => `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/${name}.jpg`,
+    ),
   ].filter((src): src is string => src !== null)
 
   const [attempt, setAttempt] = useState(0)
@@ -52,8 +57,17 @@ function Thumbnail({ channelId, video }: { channelId: string; video: YoutubeChan
       src={src}
       alt=""
       loading="lazy"
+      decoding="async"
       onError={() => setAttempt((current) => current + 1)}
-      className="absolute inset-0 size-full scale-[1.02] object-cover"
+      onLoad={(event) => {
+        // YouTube answers a missing size with a 120x90 grey placeholder (status 404 but the body
+        // is still an image, so no error event fires) — treat it as "not available" and fall back.
+        if (event.currentTarget.naturalWidth <= 120 && attempt < sources.length - 1) {
+          setAttempt((current) => current + 1)
+        }
+      }}
+      // -1px bleed hides sub-pixel gaps without rescaling (scale() made the image soft).
+      className="absolute -inset-px size-[calc(100%+2px)] max-w-none object-cover"
     />
   )
 }
@@ -167,7 +181,7 @@ export function YoutubeChannelVideoCards({
                   <button
                     type="button"
                     onClick={() => onCommentClick(video)}
-                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    className="-mx-1.5 -my-1 inline-flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <MessageCircle className="size-3" />
                     {video.commentCount != null ? formatCompact(video.commentCount) : '—'}

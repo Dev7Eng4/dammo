@@ -3,6 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import type { YoutubeChannelVideo, YoutubeChannelVideoStatus } from '../../types/youtubeChannel'
+import { isLocalContentVideo, isYoutubePublishedVideo } from '../../utils/youtubeVideo'
 import { DataTable } from '../ui'
 
 interface YoutubeChannelVideosTableProps {
@@ -73,14 +74,6 @@ function formatCount(count: number | null | undefined, locale: string): string {
   return count.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')
 }
 
-function isContentViewable(video: YoutubeChannelVideo): boolean {
-  return (
-    video.status === 'Prepared' ||
-    video.status === 'Created' ||
-    video.localFolder === 'uploads'
-  )
-}
-
 export function YoutubeChannelVideosTable({
   videos,
   loading,
@@ -103,7 +96,7 @@ export function YoutubeChannelVideosTable({
         header: t('videos.col.title'),
         cell: ({ row, getValue }) => {
           const title = getValue<string>()
-          if (isContentViewable(row.original) && onTitleClick) {
+          if ((isLocalContentVideo(row.original) || isYoutubePublishedVideo(row.original)) && onTitleClick) {
             return (
               <button
                 type="button"

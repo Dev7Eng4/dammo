@@ -32,7 +32,8 @@
     "statusPublished": "Đã xuất bản",
     "statusPrepared": "Đã chuẩn bị",
     "statusCreated": "Đã tạo",
-    "statusDraft": "Bản nháp"
+    "statusDraft": "Bản nháp",
+    "statusUploaded": "Đã tải lên (chưa công khai)"
   },
   "table": {
     "col": {
@@ -546,5 +547,11 @@
     "publishedVideos": "Video đã đăng",
     "likes": "Lượt thích",
     "comments": "Bình luận"
+  },
+  "publishedVideo": {
+    "title": "Video đã xuất bản",
+    "views": "lượt xem",
+    "openOnYoutube": "Mở trên YouTube",
+    "retry": "Thử lại"
   }
 }

@@ -11,6 +11,8 @@ import { DeleteVideosConfirmModal } from '../components/youtube-channels/DeleteV
 import { MoveVideosChannelModal } from '../components/youtube-channels/MoveVideosChannelModal';
 import { MoveVideosConfirmModal } from '../components/youtube-channels/MoveVideosConfirmModal';
 import { YoutubeChannelDetailHeader, YoutubeChannelDetailHeaderSkeleton } from '../components/youtube-channels/YoutubeChannelDetailHeader';
+import { PublishedVideoModal } from '../components/youtube-channels/PublishedVideoModal';
+import { isYoutubePublishedVideo } from '../utils/youtubeVideo';
 import { YoutubeChannelHero } from '../components/youtube-channels/YoutubeChannelHero';
 import { YoutubeChannelVideoCards } from '../components/youtube-channels/YoutubeChannelVideoCards';
 import { ViewToggle, readStoredView, storeView, type ChannelsView } from '../components/youtube-channels/ViewToggle';
@@ -83,6 +85,12 @@ export function YoutubeChannelDetailPage() {
   const [pendingResetKey, setPendingResetKey] = useState(0);
   const [limit, setLimit] = useState(20);
   const [recreateMetadataOpen, setRecreateMetadataOpen] = useState(false);
+  const [publishedVideo, setPublishedVideo] = useState<YoutubeChannelVideo | null>(null);
+
+  function handleOpenVideo(video: YoutubeChannelVideo) {
+    if (isYoutubePublishedVideo(video)) setPublishedVideo(video);
+    else setContentVideo(video);
+  }
   const [videosView, setVideosView] = useState<ChannelsView>(() => readStoredView(VIDEOS_VIEW_STORAGE_KEY));
 
   function handleVideosViewChange(next: ChannelsView) {
@@ -483,7 +491,7 @@ export function YoutubeChannelDetailPage() {
                   selectedIds={selectedVideoIds}
                   onToggleRow={handleToggleVideoRow}
                   onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
-                  onTitleClick={isPendingFilter ? undefined : setContentVideo}
+                  onTitleClick={isPendingFilter ? undefined : handleOpenVideo}
                 />
               ) : null}
             </div>
@@ -513,7 +521,7 @@ export function YoutubeChannelDetailPage() {
                 onToggleRow={handleToggleVideoRow}
                 onToggleAll={handleToggleAllVideos}
                 onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
-                onTitleClick={isPendingFilter ? undefined : setContentVideo}
+                onTitleClick={isPendingFilter ? undefined : handleOpenVideo}
               />
             </div>
           <div className='shrink-0'>
@@ -574,6 +582,16 @@ export function YoutubeChannelDetailPage() {
         <div className='fixed inset-y-0 right-0 z-50 flex lg:static lg:z-auto'>
           <VideoCommentsDrawer open={Boolean(selectedVideo)} channelId={id} video={selectedVideo} onClose={() => setSelectedVideo(null)} />
         </div>
+      ) : null}
+
+      {publishedVideo && id ? (
+        <PublishedVideoModal
+          key={publishedVideo.id}
+          open
+          channelId={id}
+          video={publishedVideo}
+          onClose={() => setPublishedVideo(null)}
+        />
       ) : null}
 
       {contentVideo ? (
