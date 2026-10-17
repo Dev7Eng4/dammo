@@ -35,7 +35,7 @@ export function YoutubeChannelVideosToolbar({
   )
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <p className="text-sm text-neutral-400">
         {t('detail.nextSchedule', { time: formatNextUploadAt(nextUploadAt, i18n.language) })}
       </p>

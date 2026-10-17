@@ -90,15 +90,15 @@
   :root,
   [data-theme='dark'] {
     color-scheme: dark;
-    --app-background: #0b0e14;
-    --app-foreground: #eceef0;
-    --app-surface: #161b22;
-    --app-surface-elevated: #1c2128;
-    --app-card: #161b22;
-    --app-card-foreground: #eceef0;
-    --app-muted: #21262d;
-    --app-muted-foreground: #8b949e;
-    --app-border: #30363d;
+    --app-background: #0a1020;
+    --app-foreground: #e8edf7;
+    --app-surface: #111a2e;
+    --app-surface-elevated: #17223a;
+    --app-card: #111a2e;
+    --app-card-foreground: #e8edf7;
+    --app-muted: #1b2744;
+    --app-muted-foreground: #8d9bb8;
+    --app-border: #243250;
     --app-ring: #f0b90b;
     --scrollbar-size: 6px;
     --scrollbar-thumb: color-mix(in srgb, var(--color-neutral-500) 32%, transparent);

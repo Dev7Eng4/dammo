@@ -5,31 +5,8 @@ import { cn } from '../../lib/cn'
 import type { YoutubeChannel } from '../../types/youtubeChannel'
 import { refreshYoutubeChannelStats, updateYoutubeChannelStats } from '../../api/youtubeChannels'
 import { useToast } from '../ui'
+import { formatNumber, levelColor, levelFor, LEVEL_THRESHOLDS, YPP_HOURS, YPP_SUBSCRIBERS } from '../../utils/ypp'
 import { MonetizationPill } from './MonetizationPill'
-
-/** Watch-hour thresholds for level 1..10; level 10 = 4000h (YPP requirement). */
-const LEVEL_THRESHOLDS = [0, 10, 50, 100, 250, 500, 1000, 2000, 3000, 4000]
-const YPP_HOURS = 4000
-const YPP_SUBSCRIBERS = 1000
-
-function levelFor(hours: number) {
-  let level = 1
-  LEVEL_THRESHOLDS.forEach((threshold, index) => {
-    if (hours >= threshold) level = index + 1
-  })
-  return level
-}
-
-function levelColor(level: number) {
-  if (level >= 10) return 'var(--color-primary-500)'
-  if (level >= 6) return 'var(--color-info)'
-  if (level >= 4) return '#a78bfa'
-  return 'var(--color-success)'
-}
-
-function formatNumber(value: number) {
-  return value.toLocaleString('vi-VN', { maximumFractionDigits: 1 })
-}
 
 function MeterRow({
   label,
@@ -172,7 +149,7 @@ export function YoutubeChannelCards({
 
   if (loading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-56 animate-pulse rounded-2xl bg-muted" />
         ))}
@@ -185,7 +162,7 @@ export function YoutubeChannelCards({
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {channels.map((channel) => {
         const hasMetrics = channel.watchHours !== undefined || channel.subscribers !== undefined
         const hours = channel.watchHours ?? 0
@@ -205,50 +182,53 @@ export function YoutubeChannelCards({
             className={cn('kpi-card flex flex-col gap-3 p-4', selected && 'ring-1 ring-primary-500')}
             style={{ '--kpi': eligible ? 'var(--color-primary-500)' : color } as CSSProperties}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={selected}
                 onChange={() => onToggleRow(channel.id)}
                 aria-label={channel.name}
-                className="mt-1 size-4 shrink-0 accent-primary-500"
+                className="size-4 shrink-0 accent-primary-500"
               />
               <div
-                className="relative flex size-11 shrink-0 items-center justify-center rounded-full border-2 bg-surface-elevated"
+                className="relative flex size-10 shrink-0 items-center justify-center rounded-full border-2 bg-surface-elevated"
                 style={{ borderColor: color }}
               >
                 <Clapperboard className="size-5" style={{ color }} />
                 <span
-                  className="absolute -bottom-2 rounded-full px-1.5 text-[9px] font-bold leading-4 text-on-primary"
+                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-1.5 text-[9px] font-bold leading-4 text-on-primary"
                   style={{ background: color }}
                 >
                   {t('cards.level', { level })}
                 </span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground" title={channel.name}>
-                  {channel.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">{channel.handle}</p>
+              <div className="ml-auto flex shrink-0 items-center">
+                <button
+                  type="button"
+                  onClick={() => setEditingId(editingId === channel.id ? null : channel.id)}
+                  title={t('cards.editStats')}
+                  aria-label={t('cards.editStats')}
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Pencil className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelect(channel.id)}
+                  title={t('cards.open')}
+                  aria-label={t('cards.open')}
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <ExternalLink className="size-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditingId(editingId === channel.id ? null : channel.id)}
-                title={t('cards.editStats')}
-                aria-label={t('cards.editStats')}
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Pencil className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelect(channel.id)}
-                title={t('cards.open')}
-                aria-label={t('cards.open')}
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <ExternalLink className="size-4" />
-              </button>
+            </div>
+
+            <div className="min-w-0">
+              <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground" title={channel.name}>
+                {channel.name}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">{channel.handle}</p>
             </div>
 
             <div className="space-y-2.5 pt-1">
@@ -291,7 +271,7 @@ export function YoutubeChannelCards({
               )}
             </div>
 
-            <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
+            <div className="mt-auto flex flex-col items-start gap-1.5 border-t border-border pt-3">
               <MonetizationPill status={channel.monetizationStatus} />
               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                 <Trophy className="size-3" />

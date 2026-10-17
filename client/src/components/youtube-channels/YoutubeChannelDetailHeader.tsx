@@ -1,10 +1,27 @@
+import {
+  Clapperboard,
+  FileText,
+  Film,
+  FolderInput,
+  ListChecks,
+  RefreshCw,
+  Trash2,
+  Upload,
+  UserRound,
+} from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../ui'
+import { cn } from '../../lib/cn'
+import { Button, Tooltip } from '../ui'
 import { type YoutubeChannel } from '../../types/youtubeChannel'
 
 interface YoutubeChannelDetailHeaderProps {
   channel: YoutubeChannel
+  /** Rendered between the back link and the action buttons. */
+  hero?: ReactNode
+  /** Rendered on the same line as the action buttons (left side). */
+  toolbar?: ReactNode
   syncing?: boolean
   syncError?: string | null
   videosFetchedAt?: string | null
@@ -45,8 +62,53 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
   return normalized.length > 0 && normalized !== 'default'
 }
 
+interface IconActionProps {
+  label: string
+  /** Extra hint shown under the label (e.g. why the action is disabled). */
+  hint?: string
+  icon: ReactNode
+  disabled?: boolean
+  variant?: 'outlined' | 'primary' | 'danger'
+  onClick?: () => void
+  asChild?: boolean
+  children?: ReactNode
+}
+
+/**
+ * Square icon button; the text label appears in a tooltip on hover/focus.
+ * The button is wrapped in a span so the tooltip still works while it is disabled.
+ */
+function IconAction({ label, hint, icon, disabled, variant = 'outlined', onClick, asChild, children }: IconActionProps) {
+  return (
+    <Tooltip
+      content={
+        <span className="block">
+          <span className="font-medium">{label}</span>
+          {hint ? <span className="mt-0.5 block text-[11px] text-muted-foreground">{hint}</span> : null}
+        </span>
+      }
+    >
+      <span className={cn('inline-flex', disabled && 'cursor-not-allowed')} tabIndex={disabled ? 0 : -1}>
+        <Button
+          variant={variant}
+          size="icon"
+          className="size-9 rounded-lg"
+          disabled={disabled}
+          aria-label={label}
+          onClick={onClick}
+          asChild={asChild}
+        >
+          {asChild ? children : icon}
+        </Button>
+      </span>
+    </Tooltip>
+  )
+}
+
 export function YoutubeChannelDetailHeader({
   channel,
+  hero,
+  toolbar,
   syncing,
   videosFetchedAt,
   creatingVideo,
@@ -78,7 +140,6 @@ export function YoutubeChannelDetailHeader({
     requestedReturn === '/youtube-channels' || requestedReturn.startsWith('/youtube-channels?')
       ? requestedReturn
       : '/youtube-channels'
-  const initial = channel.name.charAt(0).toUpperCase()
   const canOpenProfile = canOpenGpmProfile(channel.linkedEmail)
   const canRunCreateActions = canCreateFromSelection ?? canCreateVideo
 
@@ -94,123 +155,94 @@ export function YoutubeChannelDetailHeader({
         {t('page.backToList')}
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface-elevated text-lg font-semibold text-neutral-300">
-            {initial}
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-neutral-50">{channel.name}</h1>
-            <p className="mt-0.5 text-sm text-neutral-500">{channel.handle}</p>
-            <a
-              href={channel.youtubeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-block truncate text-sm text-secondary-400 hover:underline"
-            >
-              {channel.youtubeUrl.replace('https://', '')}
-            </a>
-          </div>
-        </div>
+      {hero}
 
-        <div className="flex shrink-0 flex-wrap items-start gap-2">
-          <Button
-            variant="outlined"
-            className="rounded-lg"
-            asChild
-          >
-            <Link to={`/video-production?channelId=${encodeURIComponent(channel.id)}`}>
-              {t('actions.openVideoProduction')}
-            </Link>
-          </Button>
-          {onRecreateMetadata ? (
-            <Button variant="outlined" className="rounded-lg" onClick={onRecreateMetadata}>
-              {t('actions.createMetadata')}
-            </Button>
-          ) : null}
-          {onOpenProfile ? (
-            <Button
-              variant="outlined"
-              className="rounded-lg"
-              disabled={!canOpenProfile || openingProfile}
-              title={canOpenProfile ? undefined : t('actions.noLinkedEmail')}
-              onClick={onOpenProfile}
-            >
-              {openingProfile ? t('actions.openingProfile') : t('actions.openProfile')}
-            </Button>
-          ) : null}
-          {onPrepareVideo ? (
-            <Button
-              variant="outlined"
-              className="rounded-lg"
-              disabled={!canRunCreateActions || creatingVideo}
-              onClick={onPrepareVideo}
-            >
-              {t('actions.prepareVideo')}
-            </Button>
-          ) : null}
-          {onCreateVideo ? (
-            <Button
-              variant="outlined"
-              className="rounded-lg"
-              disabled={!canRunCreateActions || creatingVideo}
-              onClick={onCreateVideo}
-            >
-              {creatingVideo ? t('actions.creating') : t('actions.createVideo')}
-            </Button>
-          ) : null}
-          {onUploadVideos ? (
-            <Button
-              variant="outlined"
-              className="rounded-lg"
-              disabled={!canUploadVideos}
-              title={uploadDisabledReason}
-              onClick={onUploadVideos}
-            >
-              <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              {t('actions.upload')}
-            </Button>
-          ) : null}
-          {onMoveVideos ? (
-            <Button
-              variant="outlined"
-              className="rounded-lg"
-              disabled={!canMoveVideos || movingVideos}
-              onClick={onMoveVideos}
-            >
-              {movingVideos ? t('actions.movingVideos') : t('actions.move')}
-            </Button>
-          ) : null}
-          {onDeleteVideos ? (
-            <Button
-              variant="outlined"
-              className="rounded-lg"
-              disabled={!canDeleteVideos || deletingVideos}
-              title={!canDeleteVideos ? t('actions.deleteVideosDisabled') : undefined}
-              onClick={onDeleteVideos}
-            >
-              {deletingVideos ? t('actions.deletingVideos') : t('actions.deleteVideos')}
-            </Button>
-          ) : null}
-          {onSync ? (
-            <div>
-              <Button className="rounded-lg" disabled={syncing} onClick={onSync}>
-                {syncing
-                  ? t('actions.syncing')
-                  : t('actions.syncNow', {
-                      fetchedAt: formatVideosFetchedAt(
-                        videosFetchedAt,
-                        i18n.language,
-                        t('actions.notSynced'),
-                      ),
-                    })}
-              </Button>
-            </div>
-          ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">{toolbar}</div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+        <IconAction
+          label={t('actions.openVideoProduction')}
+          icon={<Clapperboard className="size-4" />}
+          asChild
+        >
+          <Link to={`/video-production?channelId=${encodeURIComponent(channel.id)}`}>
+            <Clapperboard className="size-4" />
+          </Link>
+        </IconAction>
+        {onRecreateMetadata ? (
+          <IconAction
+            label={t('actions.createMetadata')}
+            icon={<FileText className="size-4" />}
+            onClick={onRecreateMetadata}
+          />
+        ) : null}
+        {onOpenProfile ? (
+          <IconAction
+            label={openingProfile ? t('actions.openingProfile') : t('actions.openProfile')}
+            hint={canOpenProfile ? undefined : t('actions.noLinkedEmail')}
+            icon={<UserRound className="size-4" />}
+            disabled={!canOpenProfile || openingProfile}
+            onClick={onOpenProfile}
+          />
+        ) : null}
+        {onPrepareVideo ? (
+          <IconAction
+            label={t('actions.prepareVideo')}
+            icon={<ListChecks className="size-4" />}
+            disabled={!canRunCreateActions || creatingVideo}
+            onClick={onPrepareVideo}
+          />
+        ) : null}
+        {onCreateVideo ? (
+          <IconAction
+            label={creatingVideo ? t('actions.creating') : t('actions.createVideo')}
+            icon={<Film className="size-4" />}
+            disabled={!canRunCreateActions || creatingVideo}
+            onClick={onCreateVideo}
+          />
+        ) : null}
+        {onUploadVideos ? (
+          <IconAction
+            label={t('actions.upload')}
+            hint={uploadDisabledReason}
+            icon={<Upload className="size-4" />}
+            disabled={!canUploadVideos}
+            onClick={onUploadVideos}
+          />
+        ) : null}
+        {onMoveVideos ? (
+          <IconAction
+            label={movingVideos ? t('actions.movingVideos') : t('actions.move')}
+            icon={<FolderInput className="size-4" />}
+            disabled={!canMoveVideos || movingVideos}
+            onClick={onMoveVideos}
+          />
+        ) : null}
+        {onDeleteVideos ? (
+          <IconAction
+            label={deletingVideos ? t('actions.deletingVideos') : t('actions.deleteVideos')}
+            hint={!canDeleteVideos ? t('actions.deleteVideosDisabled') : undefined}
+            icon={<Trash2 className="size-4" />}
+            variant="danger"
+            disabled={!canDeleteVideos || deletingVideos}
+            onClick={onDeleteVideos}
+          />
+        ) : null}
+        {onSync ? (
+          <IconAction
+            label={
+              syncing
+                ? t('actions.syncing')
+                : t('actions.syncNow', {
+                    fetchedAt: formatVideosFetchedAt(videosFetchedAt, i18n.language, t('actions.notSynced')),
+                  })
+            }
+            icon={<RefreshCw className={cn('size-4', syncing && 'animate-spin')} />}
+            variant="primary"
+            disabled={syncing}
+            onClick={onSync}
+          />
+        ) : null}
         </div>
       </div>
     </div>

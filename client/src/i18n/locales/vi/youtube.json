@@ -529,5 +529,20 @@
     "hoursHint": "Giờ xem 12 tháng (xem trong YouTube Studio)",
     "saved": "Đã cập nhật số liệu",
     "saveError": "Không thể cập nhật số liệu"
+  },
+  "hero": {
+    "nextUpload": "lên sóng {{time}}",
+    "watchHoursLabel": "GIỜ XEM · MỤC TIÊU YPP",
+    "subscribersLabel": "ĐĂNG KÝ · MỤC TIÊU YPP",
+    "hoursEnough": "đủ giờ YPP",
+    "yppProgress": "Tiến độ YPP",
+    "eligible": "Đủ điều kiện YPP",
+    "remaining": "Còn {{hours}} giờ xem và {{subs}} đăng ký",
+    "totalViews": "Tổng lượt xem",
+    "watchHours": "Giờ xem",
+    "subscribers": "Đăng ký",
+    "publishedVideos": "Video đã đăng",
+    "likes": "Lượt thích",
+    "comments": "Bình luận"
   }
 }

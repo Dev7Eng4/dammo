@@ -529,5 +529,20 @@
     "hoursHint": "12-month watch hours (see YouTube Studio)",
     "saved": "Stats updated",
     "saveError": "Could not update stats"
+  },
+  "hero": {
+    "nextUpload": "next upload {{time}}",
+    "watchHoursLabel": "WATCH HOURS · YPP GOAL",
+    "subscribersLabel": "SUBSCRIBERS · YPP GOAL",
+    "hoursEnough": "YPP hours met",
+    "yppProgress": "YPP progress",
+    "eligible": "YPP eligible",
+    "remaining": "{{hours}} watch hours and {{subs}} subscribers to go",
+    "totalViews": "Total views",
+    "watchHours": "Watch hours",
+    "subscribers": "Subscribers",
+    "publishedVideos": "Published videos",
+    "likes": "Likes",
+    "comments": "Comments"
   }
 }
