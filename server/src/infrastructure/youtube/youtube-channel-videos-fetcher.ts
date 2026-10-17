@@ -41,7 +41,21 @@ function mapVideoEntry(entry: YtdlpVideoEntry): YoutubeChannelVideo | null {
     likeCount: entry.like_count,
     commentCount: entry.comment_count,
     duration: entry.duration,
+    publishedAt: resolvePublishedAt(entry),
   };
+}
+
+function resolvePublishedAt(entry: YtdlpVideoEntry): string | undefined {
+  const unixSeconds = entry.release_timestamp ?? entry.timestamp;
+  if (typeof unixSeconds === 'number' && Number.isFinite(unixSeconds) && unixSeconds > 0) {
+    return new Date(unixSeconds * 1000).toISOString();
+  }
+
+  const compact = entry.upload_date?.trim();
+  const match = compact?.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}T00:00:00.000Z`;
+
+  return undefined;
 }
 
 function normalizePlaylistEntries(entries: unknown): YtdlpVideoEntry[] {
@@ -56,8 +70,10 @@ async function fetchFlatPlaylistVideos(
   try {
     const raw = await youtubeDl(buildVideosTabUrl(channelUrl), {
       ...getYoutubeDlPublicOptions(),
+      // Flat channel listings carry no dates; this makes yt-dlp derive them from "N days ago" text.
+      extractorArgs: 'youtubetab:approximate_date',
       ...(options?.playlistEnd !== undefined ? { playlistEnd: options.playlistEnd } : {}),
-    });
+    } as Parameters<typeof youtubeDl>[1]);
 
     const data = raw as YtdlpChannelResponse;
     const videos = normalizePlaylistEntries(data.entries)

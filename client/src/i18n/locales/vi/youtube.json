@@ -58,7 +58,8 @@
     "empty": "Không tìm thấy video nào.",
     "emptyFiltered": "Không có video nào khớp với trạng thái đã chọn.",
     "loadError": "Không thể tải video",
-    "pendingLoadError": "Không thể tải video chưa xử lý"
+    "pendingLoadError": "Không thể tải video chưa xử lý",
+    "publishedAtTitle": "Ngày đăng (YouTube, video cũ chỉ là ước tính)"
   },
   "status": {
     "published": "Đã xuất bản",
@@ -545,8 +546,8 @@
     "watchHours": "Giờ xem",
     "subscribers": "Đăng ký",
     "publishedVideos": "Video đã đăng",
-    "likes": "Lượt thích",
-    "comments": "Bình luận"
+    "impressions": "Lượt hiển thị",
+    "ctr": "CTR"
   },
   "publishedVideo": {
     "title": "Video đã xuất bản",

@@ -1,5 +1,5 @@
-import { CalendarClock, Clock, Eye, Globe, Heart, MessageCircle, Star, Users, Video } from 'lucide-react'
-import type { CSSProperties, ReactNode } from 'react'
+import { CalendarClock, Clock, Eye, Globe, MousePointerClick, ScanEye, Star, Users, Video } from 'lucide-react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { YoutubeChannel, YoutubeChannelVideo } from '../../types/youtubeChannel'
 import {
@@ -103,6 +103,51 @@ function Kpi({ icon, label, value }: { icon: ReactNode; label: string; value: st
   )
 }
 
+function ChannelBadge({ channel, color, level }: { channel: YoutubeChannel; color: string; level: number }) {
+  const { t } = useTranslation('youtube')
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const showAvatar = Boolean(channel.avatarUrl) && failedUrl !== channel.avatarUrl
+
+  const levelLabel = (
+    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/3 whitespace-nowrap rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+      {t('cards.level', { level })}
+    </span>
+  )
+
+  if (showAvatar) {
+    return (
+      <div className="relative size-28 shrink-0">
+        <img
+          src={channel.avatarUrl}
+          alt={channel.name}
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrl(channel.avatarUrl ?? null)}
+          className="size-full rounded-full border-4 object-cover"
+          style={{ borderColor: color }}
+        />
+        {levelLabel}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="relative flex size-28 shrink-0 items-center justify-center"
+      style={{
+        clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
+        background: `linear-gradient(160deg, color-mix(in srgb, ${color} 85%, white), ${color})`,
+      }}
+    >
+      <span className="text-3xl font-black tracking-tight text-on-primary">
+        {channel.handle.replace(/^@/, '').slice(0, 3).toUpperCase()}
+      </span>
+      <span className="absolute bottom-4 whitespace-nowrap rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+        {t('cards.level', { level })}
+      </span>
+    </div>
+  )
+}
+
 export function YoutubeChannelHero({ channel, videos }: YoutubeChannelHeroProps) {
   const { t, i18n } = useTranslation('youtube')
 
@@ -117,8 +162,9 @@ export function YoutubeChannelHero({ channel, videos }: YoutubeChannelHeroProps)
 
   const published = videos.filter((v) => v.status === 'Published' || v.status === 'Uploaded')
   const totalViews = videos.reduce((sum, v) => sum + (v.viewCount ?? 0), 0)
-  const totalLikes = videos.reduce((sum, v) => sum + (v.likeCount ?? 0), 0)
-  const totalComments = videos.reduce((sum, v) => sum + (v.commentCount ?? 0), 0)
+  // Impressions and CTR come from YouTube Studio analytics, which is not fetched yet.
+  const impressions = 0
+  const ctr = 0
 
   const nextUpload = channel.nextUploadAt
     ? new Date(channel.nextUploadAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'vi-VN', {
@@ -136,20 +182,7 @@ export function YoutubeChannelHero({ channel, videos }: YoutubeChannelHeroProps)
         style={{ '--kpi': eligible ? 'var(--color-primary-500)' : color } as CSSProperties}
       >
         <div className="flex flex-wrap items-center gap-6">
-          <div
-            className="relative flex size-28 shrink-0 items-center justify-center"
-            style={{
-              clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
-              background: `linear-gradient(160deg, color-mix(in srgb, ${color} 85%, white), ${color})`,
-            }}
-          >
-            <span className="text-3xl font-black tracking-tight text-on-primary">
-              {channel.handle.replace(/^@/, '').slice(0, 3).toUpperCase()}
-            </span>
-            <span className="absolute bottom-4 whitespace-nowrap rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-              {t('cards.level', { level })}
-            </span>
-          </div>
+          <ChannelBadge channel={channel} color={color} level={level} />
 
           <div className="min-w-[16rem] flex-1">
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">{channel.name}</h2>
@@ -256,8 +289,8 @@ export function YoutubeChannelHero({ channel, videos }: YoutubeChannelHeroProps)
           label={t('hero.publishedVideos')}
           value={`${published.length}/${videos.length}`}
         />
-        <Kpi icon={<Heart className="size-3.5" />} label={t('hero.likes')} value={formatCompact(totalLikes)} />
-        <Kpi icon={<MessageCircle className="size-3.5" />} label={t('hero.comments')} value={formatCompact(totalComments)} />
+        <Kpi icon={<ScanEye className="size-3.5" />} label={t('hero.impressions')} value={formatCompact(impressions)} />
+        <Kpi icon={<MousePointerClick className="size-3.5" />} label={t('hero.ctr')} value={`${ctr.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%`} />
       </div>
     </div>
   )

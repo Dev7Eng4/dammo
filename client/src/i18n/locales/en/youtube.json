@@ -58,7 +58,8 @@
     "empty": "No videos found.",
     "emptyFiltered": "No videos match the selected status.",
     "loadError": "Could not load videos",
-    "pendingLoadError": "Could not load pending videos"
+    "pendingLoadError": "Could not load pending videos",
+    "publishedAtTitle": "Published date (YouTube; approximate for older videos)"
   },
   "status": {
     "published": "Published",
@@ -545,8 +546,8 @@
     "watchHours": "Watch hours",
     "subscribers": "Subscribers",
     "publishedVideos": "Published videos",
-    "likes": "Likes",
-    "comments": "Comments"
+    "impressions": "Impressions",
+    "ctr": "CTR"
   },
   "publishedVideo": {
     "title": "Published video",

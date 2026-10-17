@@ -659,6 +659,8 @@ export class YoutubeChannelsService {
       ...(metadata.subscriberCount !== undefined
         ? { subscribers: metadata.subscriberCount, statsUpdatedAt: new Date().toISOString() }
         : {}),
+      // Keep the previous avatar when this sync did not return one.
+      ...(metadata.avatarUrl ? { avatarUrl: metadata.avatarUrl } : {}),
     }));
 
     if (!updated) {

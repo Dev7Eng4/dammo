@@ -177,6 +177,8 @@ export interface YoutubeChannel {
   /** Optional YPP progress metrics (12-month watch hours, subscribers); card shows "no data" when absent */
   watchHours?: number;
   subscribers?: number;
+  /** Channel avatar URL saved by the last sync. */
+  avatarUrl?: string;
   /** Computed server-side for detail responses */
   nextUploadAt?: string | null;
   createdAt: string;
@@ -239,6 +241,8 @@ export interface YoutubeChannelVideo {
   likeCount?: number;
   commentCount?: number;
   duration?: number;
+  /** ISO timestamp of publication on YouTube (approximate for older videos). */
+  publishedAt?: string;
   status?: YoutubeChannelVideoStatus;
   localFolder?: 'uploads';
   missingTitleOrThumbnail?: boolean;

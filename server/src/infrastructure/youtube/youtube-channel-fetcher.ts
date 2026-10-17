@@ -1,6 +1,7 @@
 import { youtubeDl } from './youtube-dl-client.js';
 import { getYoutubeDlPublicOptions } from './youtube-dl-auth.js';
 import { inferNiche } from './niche-inferrer.js';
+import { pickChannelAvatarUrl } from './channel-avatar.js';
 import type { YoutubeChannelMetadata, YtdlpChannelResponse } from './youtube-channel.types.js';
 
 function extractHandle(data: YtdlpChannelResponse): string {
@@ -36,6 +37,7 @@ function mapResponse(data: YtdlpChannelResponse): Omit<YoutubeChannelMetadata, '
     videoCount,
     subscriberCount: data.channel_follower_count,
     thumbnailUrl: data.thumbnail,
+    avatarUrl: pickChannelAvatarUrl(data.thumbnails),
     categories: data.categories,
   };
 }

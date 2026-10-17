@@ -87,6 +87,8 @@ export interface YoutubeChannel {
   /** Subscriber count (public, refreshed via yt-dlp or entered manually) */
   subscribers?: number;
   statsUpdatedAt?: string;
+  /** Channel avatar URL from the last sync (remote URL, not a downloaded file). */
+  avatarUrl?: string;
   /** Computed for API responses; not persisted */
   nextUploadAt?: string | null;
   createdAt: string;

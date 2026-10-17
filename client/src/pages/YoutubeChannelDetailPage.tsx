@@ -15,8 +15,6 @@ import { PublishedVideoModal } from '../components/youtube-channels/PublishedVid
 import { isYoutubePublishedVideo } from '../utils/youtubeVideo';
 import { YoutubeChannelHero } from '../components/youtube-channels/YoutubeChannelHero';
 import { YoutubeChannelVideoCards } from '../components/youtube-channels/YoutubeChannelVideoCards';
-import { ViewToggle, readStoredView, storeView, type ChannelsView } from '../components/youtube-channels/ViewToggle';
-import { YoutubeChannelVideosTable } from '../components/youtube-channels/YoutubeChannelVideosTable';
 import { YoutubeChannelVideosToolbar } from '../components/youtube-channels/YoutubeChannelVideosToolbar';
 import { VideoCommentsDrawer } from '../components/youtube-channels/VideoCommentsDrawer';
 import { RecreateMetadataModal } from '../components/youtube-channels/RecreateMetadataModal';
@@ -39,8 +37,6 @@ function isDeletableVideoStatus(status: YoutubeChannelVideo['status']): boolean 
 function isMovableVideoStatus(status: YoutubeChannelVideo['status']): boolean {
   return status === 'Prepared' || status === 'Created';
 }
-
-const VIDEOS_VIEW_STORAGE_KEY = 'youtube-channel-videos-view';
 
 export function YoutubeChannelDetailPage() {
   const { t, i18n } = useTranslation('youtube');
@@ -90,12 +86,6 @@ export function YoutubeChannelDetailPage() {
   function handleOpenVideo(video: YoutubeChannelVideo) {
     if (isYoutubePublishedVideo(video)) setPublishedVideo(video);
     else setContentVideo(video);
-  }
-  const [videosView, setVideosView] = useState<ChannelsView>(() => readStoredView(VIDEOS_VIEW_STORAGE_KEY));
-
-  function handleVideosViewChange(next: ChannelsView) {
-    setVideosView(next);
-    storeView(VIDEOS_VIEW_STORAGE_KEY, next);
   }
 
   const isPendingFilter = statusFilter === 'Pending';
@@ -312,20 +302,6 @@ export function YoutubeChannelDetailPage() {
     });
   }
 
-  function handleToggleAllVideos() {
-    const pageIds = videos.pageItems.map(video => video.id);
-    const allPageSelected = pageIds.length > 0 && pageIds.every(videoId => selectedVideoIds.has(videoId));
-    setSelectedVideoIds(prev => {
-      const next = new Set(prev);
-      if (allPageSelected) {
-        for (const videoId of pageIds) next.delete(videoId);
-      } else {
-        for (const videoId of pageIds) next.add(videoId);
-      }
-      return next;
-    });
-  }
-
   async function handleConfirmDeleteVideos() {
     if (!id || !canDeleteVideos || deletingVideos) return;
 
@@ -410,13 +386,7 @@ export function YoutubeChannelDetailPage() {
 
   return (
     <PageShell fullBleed className='lg:flex-row'>
-      <div
-        className={
-          videosView === 'cards'
-            ? 'scrollbar-thin flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1'
-            : 'flex min-w-0 flex-1 flex-col overflow-hidden'
-        }
-      >
+      <div className='scrollbar-thin flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1'>
         <div className='shrink-0'>
           {loading || !channel ? (
             <YoutubeChannelDetailHeaderSkeleton />
@@ -472,58 +442,23 @@ export function YoutubeChannelDetailPage() {
               }}
             />
           ) : null}
-
-          <div className='mt-3 flex justify-end'>
-            <ViewToggle value={videosView} onChange={handleVideosViewChange} />
-          </div>
         </div>
 
-        {videosView === 'cards' ? (
-          <>
-            <div className='mt-3 pb-2'>
-              {id ? (
-                <YoutubeChannelVideoCards
-                  channelId={id}
-                  videos={videos.pageItems}
-                  loading={tableLoading}
-                  error={tableError}
-                  emptyMessage={videosEmptyMessage}
-                  selectedIds={selectedVideoIds}
-                  onToggleRow={handleToggleVideoRow}
-                  onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
-                  onTitleClick={isPendingFilter ? undefined : handleOpenVideo}
-                />
-              ) : null}
-            </div>
-            <div className='shrink-0'>
-              <MailAccountsPagination
-                page={videos.page}
-                limit={videos.limit}
-                total={videos.total}
-                totalPages={videos.totalPages}
-                onPageChange={videos.setPage}
-                onLimitChange={setLimit}
-                locale={paginationLocale}
-              />
-            </div>
-          </>
-        ) : (
-          <div className='mt-3 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4'>
-            <div className='min-h-0 flex-1 overflow-auto'>
-              <YoutubeChannelVideosTable
+          <div className='mt-3 pb-2'>
+            {id ? (
+              <YoutubeChannelVideoCards
+                channelId={id}
                 videos={videos.pageItems}
                 loading={tableLoading}
                 error={tableError}
                 emptyMessage={videosEmptyMessage}
-                rowNumberStart={(videos.page - 1) * videos.limit + 1}
-                enableRowSelection
                 selectedIds={selectedVideoIds}
                 onToggleRow={handleToggleVideoRow}
-                onToggleAll={handleToggleAllVideos}
                 onCommentClick={isPendingFilter ? undefined : setSelectedVideo}
                 onTitleClick={isPendingFilter ? undefined : handleOpenVideo}
               />
-            </div>
+            ) : null}
+          </div>
           <div className='shrink-0'>
             <MailAccountsPagination
               page={videos.page}
@@ -535,8 +470,6 @@ export function YoutubeChannelDetailPage() {
               locale={paginationLocale}
             />
           </div>
-          </div>
-        )}
       </div>
 
       <DeleteVideosConfirmModal

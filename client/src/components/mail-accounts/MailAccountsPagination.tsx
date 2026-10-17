@@ -9,6 +9,26 @@ const PAGE_SIZE_SELECT_OPTIONS = PAGE_SIZE_OPTIONS.map(size => ({
   label: String(size),
 }));
 
+/** Page numbers to show: always first/last, the current page ±1, with 'gap' markers in between. */
+export function buildPageItems(page: number, totalPages: number): Array<number | 'gap'> {
+  const wanted = new Set<number>([1, totalPages, page - 1, page, page + 1]);
+  // Keep the control a stable width near the edges (1 2 3 4 … N instead of 1 2 3 … N).
+  if (page <= 3) [2, 3, 4].forEach(n => wanted.add(n));
+  if (page >= totalPages - 2) [totalPages - 1, totalPages - 2, totalPages - 3].forEach(n => wanted.add(n));
+
+  const pages = [...wanted].filter(n => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+  const items: Array<number | 'gap'> = [];
+  pages.forEach((n, index) => {
+    const previous = pages[index - 1];
+    if (previous !== undefined) {
+      if (n - previous === 2) items.push(previous + 1); // a single hidden page: show it instead of "…"
+      else if (n - previous > 2) items.push('gap');
+    }
+    items.push(n);
+  });
+  return items;
+}
+
 interface MailAccountsPaginationProps {
   page: number;
   limit: number;
@@ -68,9 +88,31 @@ export function MailAccountsPagination({
         >
           {t('pagination.prev')}
         </Button>
-        <span className="text-sm text-neutral-400">
-          {t('pagination.page')} {page} {t('pagination.of')} {totalPages}
-        </span>
+        <nav className="flex items-center gap-1" aria-label={t('pagination.page')}>
+          {buildPageItems(page, totalPages).map((item, index) =>
+            item === 'gap' ? (
+              <span key={`gap-${index}`} className="px-1 text-sm text-neutral-500" aria-hidden="true">
+                …
+              </span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => item !== page && onPageChange(item)}
+                aria-current={item === page ? 'page' : undefined}
+                aria-label={`${t('pagination.page')} ${item}`}
+                className={cn(
+                  'inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-medium tabular-nums transition-colors',
+                  item === page
+                    ? 'cursor-default bg-primary-500 text-on-primary'
+                    : 'text-neutral-300 hover:bg-surface-elevated hover:text-foreground',
+                )}
+              >
+                {item.toLocaleString(numberLocale)}
+              </button>
+            ),
+          )}
+        </nav>
         <Button
           variant="outlined"
           size="sm"

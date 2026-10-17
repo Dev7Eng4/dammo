@@ -1,8 +1,9 @@
-import { Check, Eye, Heart, MessageCircle } from 'lucide-react'
+import { CalendarDays, Check, Eye, Heart, MessageCircle } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { API_V1 } from '../../api/config'
 import { cn } from '../../lib/cn'
+import { formatPublishedDate } from '../../utils/youtubeVideo'
 import type { YoutubeChannelVideo, YoutubeChannelVideoStatus } from '../../types/youtubeChannel'
 import { isInteractiveTarget } from '../../utils/dom'
 import { formatCompact } from '../../utils/ypp'
@@ -32,18 +33,24 @@ function hasLocalAssets(video: YoutubeChannelVideo): boolean {
   return video.status === 'Prepared' || video.status === 'Created' || video.localFolder === 'uploads'
 }
 
+/** Prepared/Created videos are not on YouTube yet, so a YouTube thumbnail for their id does not exist. */
+function isLocalOnly(video: YoutubeChannelVideo): boolean {
+  return video.status === 'Prepared' || video.status === 'Created'
+}
+
 function Thumbnail({ channelId, video }: { channelId: string; video: YoutubeChannelVideo }) {
-  const sources = [
-    hasLocalAssets(video)
-      ? `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(video.id)}/content/thumbnail`
-      : null,
-    // Highest quality first; each step is used only if the previous one fails to load.
-    // maxresdefault is 1280x720, hqdefault 480x360 (letterboxed, cropped by object-cover),
-    // mqdefault 320x180 would look blurry on HiDPI screens so it is the last resort.
-    ...['maxresdefault', 'hqdefault', 'mqdefault'].map(
-      (name) => `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/${name}.jpg`,
-    ),
-  ].filter((src): src is string => src !== null)
+  const localSource = hasLocalAssets(video)
+    ? `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(video.id)}/content/thumbnail`
+    : null
+  // Highest quality first; each step is used only if the previous one fails to load.
+  // maxresdefault is 1280x720, hqdefault 480x360 (letterboxed, cropped by object-cover),
+  // mqdefault 320x180 would look blurry on HiDPI screens so it is the last resort.
+  const youtubeSources = ['maxresdefault', 'hqdefault', 'mqdefault'].map(
+    (name) => `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/${name}.jpg`,
+  )
+  const sources = isLocalOnly(video)
+    ? [localSource].filter((src): src is string => src !== null)
+    : [localSource, ...youtubeSources].filter((src): src is string => src !== null)
 
   const [attempt, setAttempt] = useState(0)
   const src = sources[attempt]
@@ -83,7 +90,7 @@ export function YoutubeChannelVideoCards({
   onCommentClick,
   onTitleClick,
 }: YoutubeChannelVideoCardsProps) {
-  const { t } = useTranslation('youtube')
+  const { t, i18n } = useTranslation('youtube')
 
   if (loading) {
     return (
@@ -123,7 +130,7 @@ export function YoutubeChannelVideoCards({
               }
             }}
             className={cn(
-              'group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-primary-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+              'group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:border-primary-500/50 hover:shadow-lg hover:shadow-black/30 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
               selected && 'border-primary-500/60 ring-1 ring-primary-500',
             )}
           >
@@ -187,9 +194,13 @@ export function YoutubeChannelVideoCards({
                     {video.commentCount != null ? formatCompact(video.commentCount) : '—'}
                   </button>
                 ) : null}
-                {video.duration ? (
-                  <span className="ml-auto">
-                    {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                {video.status === 'Published' && video.publishedAt ? (
+                  <span
+                    className="ml-auto inline-flex items-center gap-1"
+                    title={t('videos.publishedAtTitle')}
+                  >
+                    <CalendarDays className="size-3" aria-hidden="true" />
+                    {formatPublishedDate(video.publishedAt, i18n.language)}
                   </span>
                 ) : null}
               </div>

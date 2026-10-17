@@ -7,6 +7,8 @@ export interface YoutubeChannelMetadata {
   videoCount?: number;
   subscriberCount?: number;
   thumbnailUrl?: string;
+  /** Channel avatar (square) URL taken from yt-dlp's thumbnails. */
+  avatarUrl?: string;
   categories?: string[];
 }
 
@@ -20,6 +22,8 @@ export interface YoutubeChannelVideo {
   likeCount?: number;
   commentCount?: number;
   duration?: number;
+  /** ISO timestamp of publication when YouTube reports it (approximate for older videos). */
+  publishedAt?: string;
   status?: YoutubeChannelVideoStatus;
   localFolder?: 'uploads';
   /** Prepared/Created video whose title or thumbnail is missing locally. */
@@ -35,6 +39,18 @@ export interface YtdlpVideoEntry {
   like_count?: number;
   comment_count?: number;
   duration?: number;
+  /** YYYYMMDD; only present with the `youtubetab:approximate_date` extractor arg in flat mode. */
+  upload_date?: string;
+  /** Unix seconds. */
+  timestamp?: number;
+  release_timestamp?: number;
+}
+
+export interface YtdlpChannelThumbnail {
+  id?: string;
+  url?: string;
+  width?: number;
+  height?: number;
 }
 
 export interface YtdlpChannelResponse {
@@ -50,6 +66,7 @@ export interface YtdlpChannelResponse {
   playlist_count?: number;
   channel_follower_count?: number;
   thumbnail?: string;
+  thumbnails?: YtdlpChannelThumbnail[];
   categories?: string[];
   entries?: YtdlpVideoEntry[];
 }
