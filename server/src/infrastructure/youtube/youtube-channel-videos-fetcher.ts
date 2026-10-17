@@ -1,17 +1,17 @@
 import { youtubeDl } from './youtube-dl-client.js';
 import { getYoutubeDlPublicOptions } from './youtube-dl-auth.js';
 import type { YoutubeChannelVideo, YtdlpChannelResponse, YtdlpVideoEntry } from './youtube-channel.types.js';
+import {
+  buildChannelTabUrl,
+  isMissingChannelTabError,
+  VIDEO_FALLBACK_TABS,
+  type ChannelTab,
+} from './channel-tabs.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
 const UNAVAILABLE_TITLE_MARKERS = ['[private video]', '[deleted video]', 'private video', 'members-only', 'member-only'];
-
-function buildVideosTabUrl(channelUrl: string): string {
-  const trimmed = channelUrl.replace(/\/$/, '');
-  if (trimmed.endsWith('/videos')) return trimmed;
-  return `${trimmed}/videos`;
-}
 
 function buildVideoUrl(entry: YtdlpVideoEntry): string | null {
   const id = entry.id?.trim();
@@ -63,32 +63,58 @@ function normalizePlaylistEntries(entries: unknown): YtdlpVideoEntry[] {
   return entries.filter((entry): entry is YtdlpVideoEntry => entry !== null && typeof entry === 'object');
 }
 
+async function fetchTabVideos(
+  channelUrl: string,
+  tab: ChannelTab,
+  options?: { playlistEnd?: number },
+): Promise<YoutubeChannelVideo[]> {
+  const raw = await youtubeDl(buildChannelTabUrl(channelUrl, tab), {
+    ...getYoutubeDlPublicOptions(),
+    // Flat channel listings carry no dates; this makes yt-dlp derive them from "N days ago" text.
+    extractorArgs: 'youtubetab:approximate_date',
+    ...(options?.playlistEnd !== undefined ? { playlistEnd: options.playlistEnd } : {}),
+  } as Parameters<typeof youtubeDl>[1]);
+
+  const data = raw as YtdlpChannelResponse;
+  return normalizePlaylistEntries(data.entries)
+    .map(mapVideoEntry)
+    .filter((video): video is YoutubeChannelVideo => video !== null);
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Unknown yt-dlp error';
+}
+
 async function fetchFlatPlaylistVideos(
   channelUrl: string,
   options?: { playlistEnd?: number; maxVideos?: number },
 ): Promise<YoutubeChannelVideo[]> {
+  let videos: YoutubeChannelVideo[];
+
   try {
-    const raw = await youtubeDl(buildVideosTabUrl(channelUrl), {
-      ...getYoutubeDlPublicOptions(),
-      // Flat channel listings carry no dates; this makes yt-dlp derive them from "N days ago" text.
-      extractorArgs: 'youtubetab:approximate_date',
-      ...(options?.playlistEnd !== undefined ? { playlistEnd: options.playlistEnd } : {}),
-    } as Parameters<typeof youtubeDl>[1]);
-
-    const data = raw as YtdlpChannelResponse;
-    const videos = normalizePlaylistEntries(data.entries)
-      .map(mapVideoEntry)
-      .filter((video): video is YoutubeChannelVideo => video !== null);
-
-    if (options?.maxVideos !== undefined) {
-      return videos.slice(0, options.maxVideos);
-    }
-
-    return videos;
+    videos = await fetchTabVideos(channelUrl, 'videos', options);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown yt-dlp error';
-    throw new Error(message);
+    const message = errorMessage(err);
+    if (!isMissingChannelTabError(message)) throw new Error(message);
+
+    // No regular videos (new channel, or Shorts/streams only): use the other tabs; none is a valid empty result.
+    videos = [];
+    const seen = new Set<string>();
+    for (const tab of VIDEO_FALLBACK_TABS) {
+      try {
+        for (const video of await fetchTabVideos(channelUrl, tab, options)) {
+          if (seen.has(video.id)) continue;
+          seen.add(video.id);
+          videos.push(video);
+        }
+      } catch (fallbackErr) {
+        const fallbackMessage = errorMessage(fallbackErr);
+        if (!isMissingChannelTabError(fallbackMessage)) throw new Error(fallbackMessage);
+      }
+    }
   }
+
+  return options?.maxVideos !== undefined ? videos.slice(0, options.maxVideos) : videos;
 }
 
 export async function fetchYoutubeChannelVideos(channelUrl: string, limit = DEFAULT_LIMIT): Promise<YoutubeChannelVideo[]> {

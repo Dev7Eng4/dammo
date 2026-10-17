@@ -10,6 +10,7 @@ import { MailAccountsPage } from './pages/MailAccountsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProxiesPage } from './pages/ProxiesPage';
 import { PromptsPage } from './pages/PromptsPage';
+import { RadarPage } from './pages/RadarPage';
 import { VideoProductionPage } from './pages/VideoProductionPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SourceChannelDetailPage } from './pages/SourceChannelDetailPage';
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="youtube-channels/:id" element={<YoutubeChannelDetailPage />} />
               <Route path="source-channels" element={<SourceChannelsPage />} />
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
+              <Route path="radar" element={<RadarPage />} />
               <Route path="prompts" element={<PromptsPage />} />
               <Route path="visual-styles" element={<VisualStylesPage />} />
               <Route path="chrome-profiles" element={<ChromeProfilesPage />} />

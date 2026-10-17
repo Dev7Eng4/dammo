@@ -1,0 +1,59 @@
+{
+  "page": {
+    "title": "Breakout radar",
+    "subtitle": "Source-channel videos running far above that channel's own normal for their age.",
+    "scan": "Scan now",
+    "scanning": "Scanning…",
+    "loadError": "Could not load the radar",
+    "retry": "Retry"
+  },
+  "status": {
+    "quota": "Quota today",
+    "quotaValue": "{{used}} / {{cap}} units",
+    "channels": "Tracked channels",
+    "channelsValue": "{{ready}} / {{total}} with a baseline",
+    "videos": "Tracked videos",
+    "lastScan": "Last scan",
+    "never": "Never scanned"
+  },
+  "filters": {
+    "age": "Video age",
+    "ratio": "Minimum breakout",
+    "age24": "24 hours",
+    "age72": "72 hours",
+    "age168": "7 days",
+    "age720": "30 days"
+  },
+  "table": {
+    "ratio": "Breakout",
+    "video": "Video",
+    "channel": "Source channel",
+    "age": "Age",
+    "views": "Views",
+    "perHour": "Views/hour",
+    "expected": "Expected",
+    "open": "Open video"
+  },
+  "tier": {
+    "spike": "Spike",
+    "burst": "Burst",
+    "super": "Super burst"
+  },
+  "empty": {
+    "noKey": "YOUTUBE_API_KEY is not set in the server .env, so scanning is unavailable.",
+    "noChannels": "No YouTube source channels yet. Add some on the Source channels page, then scan.",
+    "noScan": "No data yet. Press Scan now to fetch the latest videos.",
+    "noBaseline": "A channel needs at least 5 videos older than 28 days before its normal level can be computed.",
+    "noResult": "No video meets the threshold with the current filters."
+  },
+  "scan": {
+    "done": "Scanned {{count}} channels using {{units}} quota units.",
+    "partial": "Scanned {{count}} channels, {{failed}} failed.",
+    "quotaStop": "Stopped at the daily quota cap; {{skipped}} channels were not scanned.",
+    "failed": "Scan failed"
+  },
+  "unit": {
+    "hours": "{{value}} h",
+    "days": "{{value}} d"
+  }
+}

@@ -15,6 +15,7 @@ export const paths = {
   youtubeChannels: path.join(env.dataDir, 'youtube-channels.json'),
   youtubeChannelsDir: path.join(env.dataDir, 'youtube-channels'),
   sourceChannels: path.join(env.dataDir, 'source-channels.json'),
+  radarStore: path.join(env.dataDir, 'radar.json'),
   sourcesDir: path.join(env.dataDir, 'sources'),
   chromeProfiles: path.join(env.dataDir, 'chrome-profiles.json'),
   chromeProfilesDir: path.join(env.dataDir, 'chrome-profiles'),

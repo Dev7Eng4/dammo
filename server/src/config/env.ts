@@ -65,6 +65,11 @@ export const env = {
   /** yt-dlp: path to Netscape cookies.txt */
   youtubeCookiesFile: process.env.YOUTUBE_COOKIES_FILE ?? '',
 
+  /** YouTube Data API v3 key (radar). Leave empty to disable radar scans. */
+  youtubeApiKey: process.env.YOUTUBE_API_KEY ?? '',
+  /** Soft cap on Data API quota units spent per UTC day by the radar (default quota is 10000). */
+  youtubeApiDailyQuotaCap: optionalNumber(process.env.YOUTUBE_API_DAILY_QUOTA_CAP) ?? 8000,
+
   /** Đường dẫn yt-dlp.exe tùy chỉnh; fallback về binary bundled nếu không tồn tại */
   ytDlpPath: process.env.YT_DLP_PATH ?? 'D:\\yt-dlp.exe',
   gpmApiBaseUrl: process.env.GPM_API_BASE_URL ?? 'http://127.0.0.1:19995/api/v3',

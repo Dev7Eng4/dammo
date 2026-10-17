@@ -3,6 +3,7 @@ export type NavIcon =
   | 'mail'
   | 'youtube'
   | 'source'
+  | 'radar'
   | 'prompt'
   | 'visual-styles'
   | 'browser'
@@ -57,7 +58,10 @@ export const navSections: NavSection[] = [
   {
     id: 'sources',
     labelKey: 'section.sources',
-    items: [{ id: 'source', labelKey: 'item.source', path: '/source-channels', icon: 'source' }],
+    items: [
+      { id: 'source', labelKey: 'item.source', path: '/source-channels', icon: 'source' },
+      { id: 'radar', labelKey: 'item.radar', path: '/radar', icon: 'radar' },
+    ],
   },
   {
     id: 'content',

@@ -1,0 +1,59 @@
+{
+  "page": {
+    "title": "Radar video nổ",
+    "subtitle": "Video của kênh nguồn đang vượt xa mức thường của chính kênh đó ở cùng độ tuổi.",
+    "scan": "Quét ngay",
+    "scanning": "Đang quét…",
+    "loadError": "Không tải được radar",
+    "retry": "Thử lại"
+  },
+  "status": {
+    "quota": "Quota hôm nay",
+    "quotaValue": "{{used}} / {{cap}} đơn vị",
+    "channels": "Kênh theo dõi",
+    "channelsValue": "{{ready}} / {{total}} có đường cơ sở",
+    "videos": "Video đang theo dõi",
+    "lastScan": "Lần quét cuối",
+    "never": "Chưa quét"
+  },
+  "filters": {
+    "age": "Tuổi video",
+    "ratio": "Mức nổ tối thiểu",
+    "age24": "24 giờ",
+    "age72": "72 giờ",
+    "age168": "7 ngày",
+    "age720": "30 ngày"
+  },
+  "table": {
+    "ratio": "Mức nổ",
+    "video": "Video",
+    "channel": "Kênh nguồn",
+    "age": "Tuổi",
+    "views": "Lượt xem",
+    "perHour": "Lượt/giờ",
+    "expected": "Kỳ vọng",
+    "open": "Mở video"
+  },
+  "tier": {
+    "spike": "Đột biến",
+    "burst": "Nổ",
+    "super": "Siêu nổ"
+  },
+  "empty": {
+    "noKey": "Chưa cấu hình YOUTUBE_API_KEY trong file .env của server nên chưa thể quét.",
+    "noChannels": "Chưa có kênh nguồn YouTube nào. Hãy thêm kênh ở trang Kênh nguồn rồi quét.",
+    "noScan": "Chưa có dữ liệu. Bấm Quét ngay để lấy video mới nhất.",
+    "noBaseline": "Kênh cần ít nhất 5 video đã đăng trên 28 ngày mới tính được mức thường.",
+    "noResult": "Không có video nào đạt ngưỡng với bộ lọc hiện tại."
+  },
+  "scan": {
+    "done": "Đã quét {{count}} kênh, dùng {{units}} đơn vị quota.",
+    "partial": "Đã quét {{count}} kênh, {{failed}} kênh lỗi.",
+    "quotaStop": "Dừng vì chạm giới hạn quota ngày, còn {{skipped}} kênh chưa quét.",
+    "failed": "Quét thất bại"
+  },
+  "unit": {
+    "hours": "{{value}} giờ",
+    "days": "{{value}} ngày"
+  }
+}

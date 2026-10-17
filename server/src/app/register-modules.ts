@@ -11,6 +11,7 @@ import { createLlmBrowserRoutes } from '../modules/llm-browser/llm-browser.route
 import { createMailAccountsRoutes } from '../modules/mail-accounts/mail-accounts.routes.js';
 import { createProxiesRoutes } from '../modules/proxies/proxies.routes.js';
 import { createPromptsRoutes } from '../modules/prompts/prompts.routes.js';
+import { createRadarRoutes } from '../modules/radar/radar.routes.js';
 import { createRenderQueueRoutes } from '../modules/render-queue/render-queue.routes.js';
 import { createSearchRoutes } from '../modules/search/search.routes.js';
 import { createSourceChannelsRoutes } from '../modules/source-channels/source-channels.routes.js';
@@ -30,6 +31,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/search`, createSearchRoutes());
   app.route(`${prefix}/youtube-channels`, createYoutubeChannelsRoutes());
   app.route(`${prefix}/source-channels`, createSourceChannelsRoutes());
+  app.route(`${prefix}/radar`, createRadarRoutes());
   app.route(`${prefix}/render-queue`, createRenderQueueRoutes());
   app.route(`${prefix}/video-production`, createVideoProductionUiRoutes());
   app.route(`${prefix}/task-queue`, createTaskQueueRoutes());
