@@ -114,6 +114,7 @@ export function VideoProductionTabContent({
   if (tab === 'script') {
     return (
       <TranscriptPanel
+        flush
         cues={transcript?.cues ?? []}
         loading={transcriptLoading}
         error={transcriptError}
@@ -124,6 +125,7 @@ export function VideoProductionTabContent({
   if (tab === 'characters') {
     return (
       <CharactersPanel
+        flush
         characters={characters?.characters ?? []}
         loading={charactersLoading}
         error={charactersError}
@@ -146,15 +148,16 @@ export function VideoProductionTabContent({
   }
 
   if (scenesLoading) {
-    return <p className="py-6 text-sm text-muted-foreground">{t('production.detail.loadingScenes')}</p>
+    return <p className="py-4 text-sm text-muted-foreground">{t('production.detail.loadingScenes')}</p>
   }
-  if (scenesError) return <p className="py-6 text-sm text-danger">{scenesError}</p>
+  if (scenesError) return <p className="py-4 text-sm text-danger">{scenesError}</p>
   if (!scenes || scenes.scenes.length === 0) {
-    return <p className="py-6 text-sm text-muted-foreground">{t('production.detail.noScenes')}</p>
+    return <p className="py-4 text-sm text-muted-foreground">{t('production.detail.noScenes')}</p>
   }
 
   return (
     <SceneTable
+      flush
       channelId={channelId}
       videoId={videoId}
       scenes={scenes.scenes}

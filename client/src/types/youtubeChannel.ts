@@ -260,6 +260,8 @@ export interface YoutubeVideoContent {
   oldThumbnailUrl: string | null;
   videoFolderPath: string;
   videoUrl: string | null;
+  /** Prompt used to generate the thumbnail (image_generation_prompt), when available. */
+  thumbnailPrompt?: string | null;
 }
 
 export interface UpdateYoutubeVideoContentPayload {

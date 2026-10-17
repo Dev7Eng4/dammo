@@ -23,6 +23,8 @@ interface SceneTableProps {
   onSelect: (index: number) => void;
   onScenesUpdated: (data: ProductionScenesResponse) => void;
   regeneratingMissing?: boolean;
+  /** Drop the table's own side offset (when the host already pads the content). */
+  flush?: boolean;
 }
 
 function formatClock(srt: string): string {
@@ -308,6 +310,7 @@ export function SceneTable({
   onSelect,
   onScenesUpdated,
   regeneratingMissing = false,
+  flush = false,
 }: SceneTableProps) {
   const { t } = useTranslation('factory');
   const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
@@ -390,7 +393,7 @@ export function SceneTable({
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className={flush ? '-mx-3 overflow-x-auto' : 'overflow-x-auto'}>
       <table className="w-full min-w-[1000px] border-collapse text-left">
         <tbody className="divide-y divide-border">
           {scenes.map((scene) => {

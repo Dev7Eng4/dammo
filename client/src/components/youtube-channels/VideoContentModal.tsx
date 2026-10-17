@@ -6,7 +6,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Clapperboard, FileText, Images, Plus, UsersRound } from 'lucide-react';
+import { Clapperboard, Copy, FileText, Images, Plus, UsersRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import {
@@ -679,6 +679,18 @@ export function VideoContentModal({
                       className="border border-border"
                       fallback={<span className="px-4 text-center text-sm">{t('metadata.thumbnailError')}</span>}
                     />
+                    {content.thumbnailPrompt ? (
+                      <button
+                        type="button"
+                        onClick={() => void copyText(content.thumbnailPrompt ?? '', t('videoContent.thumbPromptLabel'))}
+                        disabled={busy}
+                        className="absolute right-12 top-2 inline-flex size-9 items-center justify-center rounded-lg border border-white/15 bg-black/70 text-white opacity-0 shadow-lg backdrop-blur-sm transition hover:bg-black/85 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100 group-focus-within:opacity-100"
+                        title={t('videoContent.copyThumbPrompt')}
+                        aria-label={t('videoContent.copyThumbPrompt')}
+                      >
+                        <Copy className="size-4" aria-hidden="true" />
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => thumbnailInputRef.current?.click()}

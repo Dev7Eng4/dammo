@@ -460,7 +460,9 @@
     "tagPlaceholderEmpty": "Nhập tag rồi nhấn Enter hoặc dấu phẩy",
     "tagPlaceholderAdd": "Thêm tag",
     "regenJobTitle": "Tạo lại metadata: {{title}}",
-    "assembleJobTitle": "Tạo video: {{title}}"
+    "assembleJobTitle": "Tạo video: {{title}}",
+    "copyThumbPrompt": "Sao chép prompt thumbnail",
+    "thumbPromptLabel": "Prompt thumbnail"
   },
   "comments": {
     "title": "Bình luận",

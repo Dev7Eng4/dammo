@@ -86,7 +86,8 @@ export class YoutubeRecreateMetadataService {
       hasThumbnail: Boolean(thumbnailPath),
       hasOldThumbnail: Boolean(oldThumbnailPath),
       videoFolderPath: path.resolve(folderPath),
-      hasVideo: false,
+      hasVideo: false,
+      thumbnailPrompt: normalizeText(parsed.image_generation_prompt) || null,
     };
   }
 

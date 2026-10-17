@@ -5,6 +5,8 @@ interface TranscriptPanelProps {
   cues: ProductionTranscriptCue[];
   loading: boolean;
   error: string | null;
+  /** Drop the panel's own outer padding (when the host already pads the content). */
+  flush?: boolean;
 }
 
 function formatClock(srt: string): string {
@@ -13,31 +15,32 @@ function formatClock(srt: string): string {
   return hms ?? srt;
 }
 
-export function TranscriptPanel({ cues, loading, error }: TranscriptPanelProps) {
+export function TranscriptPanel({ cues, loading, error, flush = false }: TranscriptPanelProps) {
   const { t } = useTranslation('factory');
+  const messagePadding = flush ? 'py-4' : 'px-4 py-6';
 
   if (loading) {
     return (
-      <p className="px-4 py-6 text-sm text-muted-foreground">
+      <p className={`${messagePadding} text-sm text-muted-foreground`}>
         {t('production.transcript.loading')}
       </p>
     );
   }
 
   if (error) {
-    return <p className="px-4 py-6 text-sm text-danger">{error}</p>;
+    return <p className={`${messagePadding} text-sm text-danger`}>{error}</p>;
   }
 
   if (cues.length === 0) {
     return (
-      <p className="px-4 py-6 text-sm text-muted-foreground">
+      <p className={`${messagePadding} text-sm text-muted-foreground`}>
         {t('production.transcript.empty')}
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className={flush ? '-mx-3 overflow-x-auto' : 'overflow-x-auto'}>
       <table className="w-full min-w-[480px] border-collapse text-left">
         <tbody className="divide-y divide-border">
           {cues.map((cue) => (

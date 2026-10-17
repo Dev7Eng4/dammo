@@ -460,7 +460,9 @@
     "tagPlaceholderEmpty": "Type a tag and press Enter or comma",
     "tagPlaceholderAdd": "Add tag",
     "regenJobTitle": "Regenerate metadata: {{title}}",
-    "assembleJobTitle": "Create video: {{title}}"
+    "assembleJobTitle": "Create video: {{title}}",
+    "copyThumbPrompt": "Copy thumbnail prompt",
+    "thumbPromptLabel": "Thumbnail prompt"
   },
   "comments": {
     "title": "Comments",

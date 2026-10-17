@@ -9,6 +9,8 @@ interface CharactersPanelProps {
   error: string | null;
   /** Extra card rendered first in the grid (e.g. a draft for a new character). */
   leadingItem?: ReactNode;
+  /** Drop the panel's own outer padding (when the host already pads the content). */
+  flush?: boolean;
 }
 
 function CharacterImage({ character }: { character: ProductionCharacterItem }) {
@@ -36,31 +38,32 @@ function CharacterImage({ character }: { character: ProductionCharacterItem }) {
   );
 }
 
-export function CharactersPanel({ characters, loading, error, leadingItem }: CharactersPanelProps) {
+export function CharactersPanel({ characters, loading, error, leadingItem, flush = false }: CharactersPanelProps) {
   const { t } = useTranslation('factory');
+  const messagePadding = flush ? 'py-4' : 'px-4 py-6';
 
   if (loading) {
     return (
-      <p className="px-4 py-6 text-sm text-muted-foreground">
+      <p className={`${messagePadding} text-sm text-muted-foreground`}>
         {t('production.characters.loading')}
       </p>
     );
   }
 
   if (error) {
-    return <p className="px-4 py-6 text-sm text-danger">{error}</p>;
+    return <p className={`${messagePadding} text-sm text-danger`}>{error}</p>;
   }
 
   if (characters.length === 0 && !leadingItem) {
     return (
-      <p className="px-4 py-6 text-sm text-muted-foreground">
+      <p className={`${messagePadding} text-sm text-muted-foreground`}>
         {t('production.characters.empty')}
       </p>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 ${flush ? '' : 'p-4'}`}>
       {leadingItem}
       {characters.map((character) => (
         <article

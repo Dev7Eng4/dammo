@@ -28,6 +28,8 @@ export interface YoutubeVideoContent {
   hasOldThumbnail: boolean;
   videoFolderPath: string;
   hasVideo: boolean;
+  /** image_generation_prompt from video-meta.json (null when the video has none). */
+  thumbnailPrompt: string | null;
 }
 
 export interface UpdateYoutubeVideoContentInput {
@@ -234,6 +236,7 @@ export class YoutubeVideoContentService {
       hasOldThumbnail: Boolean(oldThumbnailPath),
       videoFolderPath: path.resolve(folderPath),
       hasVideo: Boolean(findFinalVideoMp4(folderPath)),
+      thumbnailPrompt: normalizeText(parsed.image_generation_prompt) || null,
     };
   }
 

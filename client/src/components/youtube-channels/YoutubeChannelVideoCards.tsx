@@ -1,4 +1,4 @@
-import { Eye, Heart, MessageCircle } from 'lucide-react'
+import { Check, Eye, Heart, MessageCircle } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { API_V1 } from '../../api/config'
@@ -94,23 +94,38 @@ export function YoutubeChannelVideoCards({
         return (
           <div
             key={video.id}
+            role="group"
+            aria-label={video.title}
+            aria-selected={selected}
+            tabIndex={0}
             onClick={(event) => {
               if (!isInteractiveTarget(event.target)) onToggleRow(video.id)
             }}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return
+              if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault()
+                onToggleRow(video.id)
+              }
+            }}
             className={cn(
-              'group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-primary-500/50',
+              'group cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-primary-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
               selected && 'border-primary-500/60 ring-1 ring-primary-500',
             )}
           >
             <div className="relative aspect-video overflow-hidden bg-surface-elevated">
               <Thumbnail channelId={channelId} video={video} />
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={() => onToggleRow(video.id)}
-                aria-label={video.title}
-                className="absolute left-2 top-2 size-4 accent-primary-500"
-              />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'absolute left-2 top-2 flex size-6 items-center justify-center rounded-full border-2 transition-all',
+                  selected
+                    ? 'scale-100 border-primary-500 bg-primary-500 text-on-primary shadow-md'
+                    : 'scale-90 border-white/70 bg-black/30 text-transparent opacity-0 group-hover:opacity-100',
+                )}
+              >
+                <Check className="size-3.5" strokeWidth={3} />
+              </span>
               {stamp ? (
                 <span
                   className={cn(
