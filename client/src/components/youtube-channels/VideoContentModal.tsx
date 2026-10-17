@@ -6,7 +6,9 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
+import { Clapperboard, FileText, Images, UsersRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '../../lib/cn';
 import {
   fetchYoutubeVideoContent,
   markYoutubeVideoUploaded,
@@ -18,6 +20,16 @@ import type { YoutubeChannelVideo, YoutubeVideoContent } from '../../types/youtu
 import type { CreateVideoTaskPayload } from '../../types/taskQueue';
 import { Button, Image, Input, Modal, Textarea, useToast } from '../ui';
 import { RegenerateMetadataConfirmModal } from './RegenerateMetadataConfirmModal';
+import { VideoProductionTabContent, type VideoProductionTab } from './VideoProductionTabContent';
+
+type ContentTab = 'video' | VideoProductionTab;
+
+const CONTENT_TABS: Array<{ id: ContentTab; labelKey: string; Icon: typeof Clapperboard }> = [
+  { id: 'video', labelKey: 'production.tabs.video', Icon: Clapperboard },
+  { id: 'script', labelKey: 'production.tabs.transcript', Icon: FileText },
+  { id: 'characters', labelKey: 'production.tabs.characters', Icon: UsersRound },
+  { id: 'scenes', labelKey: 'production.tabs.scenes', Icon: Images },
+];
 
 interface VideoContentModalProps {
   open: boolean;
@@ -112,6 +124,10 @@ export function VideoContentModal({
   const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [enqueueingRegenerate, setEnqueueingRegenerate] = useState(false);
   const [enqueueingAssemble, setEnqueueingAssemble] = useState(false);
+  const { t: tFactory } = useTranslation('factory');
+  const [activeTab, setActiveTab] = useState<ContentTab>('video');
+  // Production data loads the first time a non-video tab is opened, then stays mounted.
+  const [productionOpened, setProductionOpened] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const thumbnailPreviewUrlRef = useRef<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -461,6 +477,8 @@ export function VideoContentModal({
             >
               Copy path
             </Button>
+            {activeTab === 'video' ? (
+              <>
             {canRegenerateMetadata ? (
               <Button
                 variant="outlined"
@@ -488,6 +506,8 @@ export function VideoContentModal({
                 {marking ? t('videoContent.marking') : t('videoContent.markUploaded')}
               </Button>
             ) : null}
+              </>
+            ) : null}
             <Button
               variant="secondary"
               onClick={handleClose}
@@ -495,6 +515,7 @@ export function VideoContentModal({
             >
               {tCommon('actions.cancel')}
             </Button>
+            {activeTab === 'video' ? (
             <Button
               type="submit"
               form="video-content-form"
@@ -502,9 +523,38 @@ export function VideoContentModal({
             >
               {saving ? tCommon('actions.saving') : tCommon('actions.save')}
             </Button>
+            ) : null}
           </>
         }
       >
+        <div
+          role="tablist"
+          className="mb-4 inline-flex rounded-xl border border-border bg-surface-elevated p-1"
+        >
+          {CONTENT_TABS.map(({ id, labelKey, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              onClick={() => {
+                setActiveTab(id);
+                if (id !== 'video') setProductionOpened(true);
+              }}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                activeTab === id
+                  ? 'bg-muted text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="size-4" />
+              {tFactory(labelKey)}
+            </button>
+          ))}
+        </div>
+
+        <div className={activeTab === 'video' ? '' : 'hidden'}>
         {loading ? (
           <div className="space-y-4" aria-label={t('videoContent.loadingAria')}>
             <div className="h-10 animate-pulse rounded-lg bg-neutral-800" />
@@ -697,6 +747,17 @@ export function VideoContentModal({
               </div>
             </div>
           </form>
+        ) : null}
+        </div>
+
+        {productionOpened ? (
+          <div className={activeTab === 'video' ? 'hidden' : ''}>
+            <VideoProductionTabContent
+              channelId={channelId}
+              videoId={video.id}
+              tab={activeTab === 'video' ? 'scenes' : activeTab}
+            />
+          </div>
         ) : null}
       </Modal>
 
