@@ -224,7 +224,7 @@ async function generateCharacterImagesViaFlow(
   for (const character of characters) {
     const name = sanitizeCharacterId(character.id);
     const outputPath = path.join(imageReferencesDir, `${name}.jpg`);
-    if (await fileExists(outputPath)) {
+    if (await findExistingCharacterImage(imageReferencesDir, character.id)) {
       continue;
     }
 
@@ -264,8 +264,7 @@ async function generateCharacterImagesViaMeta(
   const jobs: MetaMediaBatchJob[] = [];
   for (const character of characters) {
     const name = sanitizeCharacterId(character.id);
-    const outputPath = path.join(imageReferencesDir, `${name}.jpg`);
-    if (await fileExists(outputPath)) continue;
+    if (await findExistingCharacterImage(imageReferencesDir, character.id)) continue;
     jobs.push({
       id: name,
       prompt: character.prompt,

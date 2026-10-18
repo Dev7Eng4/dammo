@@ -1,6 +1,57 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_mochi_senior_psych",
+      "baseKey": "metadata_mochi_senior_psych",
+      "language": "ja",
+      "name": "Metadata Mochi Senior Psych (title + thumbnail 3 lớp)",
+      "category": "meta",
+      "niche": "618665f9-bb6d-4b91-afa8-f3663ca6af17",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-18T00:00:00.000Z",
+      "updatedAt": "2026-10-18T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "f6b3f142-8552-41bd-a709-23a7e9b0468c",
+          "key": "metadata_mochi_senior_psych_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "d2dd9880-6aa8-4be7-bd48-887e52752874",
+          "key": "metadata_mochi_senior_psych_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:mochi_senior_scenes",
+      "baseKey": "mochi_senior_scenes",
+      "language": "all",
+      "name": "Mochi Senior – Ảnh theo cảnh có tham chiếu (cast cố định)",
+      "category": "image",
+      "niche": "618665f9-bb6d-4b91-afa8-f3663ca6af17",
+      "createdAt": "2026-10-18T00:00:00.000Z",
+      "updatedAt": "2026-10-18T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "87a5196c-e43c-47c9-a156-2ab8c57ea644",
+          "key": "mochi_senior_scenes_step_1",
+          "step": 1,
+          "outputType": "text",
+          "useReferenceImage": true
+        },
+        {
+          "id": "f929c151-25a6-4db6-9161-3b03a0846399",
+          "key": "mochi_senior_scenes_step_2",
+          "step": 2,
+          "outputType": "text",
+          "useReferenceImage": true
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_tam_ly_hoc",
       "baseKey": "metadata_tam_ly_hoc",
       "language": "ja",

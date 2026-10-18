@@ -59,6 +59,8 @@ export interface GenerateAiVideoImagesResult {
 
 export interface GenerateAiVideoImagesInput {
   workDir: string;
+  /** Channel id; enables the channel mascot store (`mascots/` folder) for the reference flow. */
+  channelId?: string;
   youtubeVideoId: string;
   visualStyle: AiVideoVisualStyle;
   subtitlePath: string;

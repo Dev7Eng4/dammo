@@ -6,6 +6,7 @@ import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { parseSrt } from '../../infrastructure/subtitle/srt-utils.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { AppError } from '../../shared/http/errors.js';
+import { saveChannelMascotImage } from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import {
   AI_SLIDES_DIRNAME,
@@ -776,6 +777,7 @@ export class VideoProductionUiService {
       if (fs.existsSync(previous)) fs.unlinkSync(previous);
     }
     fs.writeFileSync(path.join(imageDir, `${base}${extension}`), image.buffer);
+    saveChannelMascotImage(safeChannelId, base, { buffer: image.buffer, extension }).catch(() => undefined);
 
     character.path = `${IMAGE_REFERENCES_DIRNAME}/${base}${extension}`;
     writeJson(resolveCharacterReferencesFilePath(workDir), file);

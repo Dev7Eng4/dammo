@@ -13,6 +13,10 @@ import {
   generateCharacterReferenceImagesFromList,
   type GenerateCharacterReferencesResult,
 } from './ai-video-character-references.js';
+import {
+  promoteImageReferencesToChannelMascots,
+  seedImageReferencesFromChannelMascots,
+} from './ai-video-channel-mascots.js';
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
@@ -400,14 +404,24 @@ export async function generateAiVideoImagesWithReference(
     ? [parallelProfiles.reservedMainProfileId]
     : [];
 
-  const runCharacterImages = () =>
-    generateCharacterReferenceImagesFromList({
+  const runCharacterImages = async (): Promise<GenerateCharacterReferencesResult> => {
+    const mascotSync = {
+      channelId: input.channelId,
+      workDir: input.workDir,
+      characterIds: characters.map(character => character.id),
+      onLog: input.onLog,
+    };
+    await seedImageReferencesFromChannelMascots(mascotSync);
+    const result = await generateCharacterReferenceImagesFromList({
       workDir: input.workDir,
       youtubeVideoId: input.youtubeVideoId,
       characters,
       excludeMainProfileIds,
       onLog: input.onLog,
     });
+    await promoteImageReferencesToChannelMascots(mascotSync);
+    return result;
+  };
   const runScenePrompts = () =>
     generateScenePromptsFromJobs(input, jobs, log, {
       promptKey: scenePromptKey,

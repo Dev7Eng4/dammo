@@ -63,6 +63,7 @@ export async function runSceneAssetsStep(
     () =>
       generateAiScenePromptsForPipeline({
         workDir,
+        channelId: destination.id,
         youtubeVideoId: downloaded.youtubeVideoId,
         visualStyle: destination.visualStyle!,
         subtitlePath,
