@@ -1,6 +1,49 @@
 {
   "promptSets": [
     {
+      "id": "ja:metadata_money_psych",
+      "baseKey": "metadata_money_psych",
+      "language": "ja",
+      "name": "Metadata Money Psych (title phủ định hiểu lầm + thumbnail toàn khung)",
+      "category": "meta",
+      "niche": "734a1790-b5e8-45cc-9fce-296a74d64b67",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-19T00:00:00.000Z",
+      "updatedAt": "2026-10-19T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "2cb41b02-731e-44ec-909b-39957cd9d649",
+          "key": "metadata_money_psych_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "88986b6d-5c37-45a2-b739-8d803c777f2f",
+          "key": "metadata_money_psych_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:money_psych_scenes",
+      "baseKey": "money_psych_scenes",
+      "language": "all",
+      "name": "Money Psych – Ảnh theo cảnh (người trắng tối giản, 1 bước)",
+      "category": "image",
+      "niche": "734a1790-b5e8-45cc-9fce-296a74d64b67",
+      "createdAt": "2026-10-19T00:00:00.000Z",
+      "updatedAt": "2026-10-19T00:00:00.000Z",
+      "steps": [
+        {
+          "id": "ae646406-7500-41c5-8856-9ba2fdce80ca",
+          "key": "money_psych_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_mochi_senior_psych",
       "baseKey": "metadata_mochi_senior_psych",
       "language": "ja",
