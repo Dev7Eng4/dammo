@@ -1159,6 +1159,16 @@ export class YoutubeChannelsService {
         youtubeUrl: fullUrl,
       };
       channelUrlChanged = canonicalUrl !== canonicalizeSourceUrl(current.youtubeUrl);
+    } else if (input.channelUrl !== undefined) {
+      // URL explicitly cleared: back to a placeholder channel, unless it already is one.
+      const isPlaceholder =
+        current.handle.startsWith('@channel_') &&
+        current.youtubeUrl === `https://youtube.com/${current.handle}`;
+      if (!isPlaceholder) {
+        const handle = `@channel_${generateId().slice(0, 8)}`;
+        identityUpdate = { handle, youtubeUrl: `https://youtube.com/${handle}` };
+        channelUrlChanged = true;
+      }
     }
 
     const updated = youtubeChannelsRepository.update(id, (existing) => {

@@ -804,9 +804,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       if (isEditModalProps(props)) {
         const trimmedChannelUrl = values.channelUrl.trim();
         const shouldUpdateChannelUrl =
-          trimmedChannelUrl.length > 0 &&
-          trimmedChannelUrl !== props.channel.youtubeUrl &&
-          trimmedChannelUrl !== props.channel.handle;
+          trimmedChannelUrl !== props.channel.youtubeUrl && trimmedChannelUrl !== props.channel.handle;
         const { item } = await updateYoutubeChannel(props.channel.id, {
           ...payload,
           ...(shouldUpdateChannelUrl ? { channelUrl: trimmedChannelUrl } : {}),
