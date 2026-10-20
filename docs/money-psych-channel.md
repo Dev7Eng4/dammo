@@ -22,7 +22,7 @@ Kênh mock `mock-09`: tâm lý học tiền bạc và lối sống tiết kiệm
 
 ## Nhân vật
 
-Một người trắng tối giản, hai biến thể do LLM chọn một lần cho cả video theo nội dung:
+Một người trắng tối giản kiểu chibi **thấp và mập** (đầu to chiếm gần nửa chiều cao, thân tròn hình quả lê, tay chân ngắn, không má hồng), hai biến thể do LLM chọn một lần cho cả video theo nội dung:
 - **female:** đầu tròn trắng, mắt chấm, búi tóc nhỏ, váy dài kem, khăn đỏ cam.
 - **male:** không tóc, cardigan kem, khăn đỏ cam.
 

@@ -1,6 +1,6 @@
 export default (transcript, style, niche, maxDuration = 8) => `
 Bạn là Đạo diễn hình ảnh và Chuyên gia viết prompt AI cho kênh YouTube Nhật Bản ngách "Tâm lý học tiền bạc và lối sống tiết kiệm" (người tiết kiệm lặng lẽ, mua sắm có chủ ý, nhà cửa gọn gàng, thói quen nhỏ lộ tính cách, phụ nữ khôn ngoan tuổi trung niên).
-Video dùng MỘT nhân vật người trắng tối giản (đầu tròn trắng, mắt chấm, thân nét mảnh) đặt trong cảnh đời sống Nhật rất giàu chi tiết, ánh vàng ấm.
+Video dùng MỘT nhân vật người trắng tối giản (đầu tròn to, mắt chấm, thân thấp tròn mập) đặt trong cảnh đời sống Nhật rất giàu chi tiết, ánh vàng ấm.
 Prompt của bạn sẽ được gửi tới model sinh ảnh họ Gemini: model này hiểu CÂU VĂN MÔ TẢ TỰ NHIÊN, KHÔNG hỗ trợ negative prompt hay cú pháp "--no". Mọi từ bạn viết (kể cả sau chữ "no") đều có thể bị vẽ ra.
 Tôi sẽ cung cấp kịch bản (transcript) dưới dạng mảng JSON (chứa text, startTime, endTime theo định dạng HH:MM:SS,mmm).
 
@@ -24,10 +24,10 @@ Không đổi giới tính nhân vật chính giữa các cảnh.
 [3. STYLE BLOCK — chép NGUYÊN VĂN, luôn đặt CUỐI CÙNG]
 
 CHARACTER BLOCK - FEMALE (nguyên văn):
-"A very simple minimalist character: a perfectly round plain white head with two small black dot eyes and a tiny gentle curved smile, no nose, no blush, a small round hair bun on top of the head drawn as a white circle with a thin outline, a slim body made of clean thin outlines wearing a simple long cream-white dress shape and a small red-orange scarf around the neck, thin arms and legs ending in simple rounded tips, no fingers, no hair detail."
+"A very simple minimalist chibi character with short plump proportions: a big perfectly round plain white head taking up almost half of the total height, two small black dot eyes and a tiny gentle curved smile, no nose, no blush, a small round hair bun on top of the head drawn as a white circle with a thin outline, a short soft pear-shaped chubby body drawn with clean thin dark outlines wearing a simple cream-white dress shape and a small red-orange scarf around the neck, short rounded arms and short stubby legs ending in simple rounded tips, no fingers, no hair detail."
 
 CHARACTER BLOCK - MALE (nguyên văn):
-"A very simple minimalist character: a perfectly round plain white head with two small black dot eyes and a tiny gentle curved smile, no nose, no blush, no hair, a slim body made of clean thin outlines wearing a simple cream-white cardigan and trousers shape and a small red-orange scarf around the neck, thin arms and legs ending in simple rounded tips, no fingers."
+"A very simple minimalist chibi character with short plump proportions: a big perfectly round plain white head taking up almost half of the total height, two small black dot eyes and a tiny gentle curved smile, no nose, no blush, no hair, a short soft pear-shaped chubby body drawn with clean thin dark outlines wearing a simple cream-white cardigan shape and a small red-orange scarf around the neck, short rounded arms and short stubby legs ending in simple rounded tips, no fingers."
 
 STYLE BLOCK (nguyên văn):
 "Rich warm painterly illustration of a cozy Japanese everyday setting bathed in golden-hour window light, soft background bokeh, layered depth, detailed props and green plants, warm amber, honey and cream palette. The single minimalist white character is drawn flat and simple in contrast to the richly detailed background, gentle soft shading on the background only. The image contains only drawings, with no text, no letters, no numbers, no readable signs, no speech bubbles, no watermark."
@@ -35,6 +35,7 @@ STYLE BLOCK (nguyên văn):
 === QUY TẮC NHÂN VẬT ===
 - Chỉ MỘT nhân vật chính có CHARACTER BLOCK đầy đủ. Mỗi cảnh thường chỉ có 1 nhân vật chính; tối đa 1 nhân vật phụ.
 - Nhân vật phụ (nhân viên thu ngân, bạn bè, người đối diện, người đám đông): "a second figure of the same minimalist design but filled with soft warm grey", không có khăn đỏ, không chi tiết riêng.
+- TỈ LỆ CƠ THỂ (rất quan trọng): nhân vật luôn thấp và mập kiểu chibi, đầu to chiếm gần nửa chiều cao, thân tròn hình quả lê, tay chân ngắn. KHÔNG vẽ thân cao gầy, KHÔNG vẽ dáng người que, KHÔNG vẽ má hồng. Tỉ lệ này giữ nguyên ở mọi tư thế (ngồi, đứng, nhìn từ sau).
 - Nhân vật chính nhỏ vừa phải trong khung: chiếm khoảng 30–45% chiều cao khung, đặt ở một phần ba trái, phải hoặc trên; không chiếm kín cảnh.
 - Biểu cảm chỉ diễn tả bằng mắt chấm, độ cong miệng, tư thế vai và tay (ví dụ: nhẹ nhõm = mắt cong lên, miệng cong nhẹ, vai thả lỏng; phân vân = một tay chống cằm, miệng thẳng nhỏ, bong bóng suy nghĩ chứa một đạo cụ; từ chối = một tay giơ ra như dừng lại, miệng nhỏ điềm tĩnh; hài lòng = ngồi thư thái, tay đặt lên đạo cụ).
 

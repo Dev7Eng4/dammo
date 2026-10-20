@@ -16,6 +16,8 @@ export function useFloatingMenuPosition(
   open: boolean,
   triggerRef: RefObject<HTMLElement | null>,
   menuRef: RefObject<HTMLElement | null>,
+  /** Transformed ancestor the menu is portaled into (e.g. a dialog); fixed coords are relative to it. */
+  portalContainer?: HTMLElement | null,
 ) {
   const [menuStyle, setMenuStyle] = useState<CSSProperties>(HIDDEN_MENU_STYLE);
   const [isPositioned, setIsPositioned] = useState(false);
@@ -24,10 +26,20 @@ export function useFloatingMenuPosition(
     const trigger = triggerRef.current;
     if (!trigger) return;
 
-    const rect = trigger.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const containerRect =
+      portalContainer && portalContainer !== document.body ? portalContainer.getBoundingClientRect() : null;
+    const originLeft = containerRect ? containerRect.left + portalContainer!.clientLeft : 0;
+    const originTop = containerRect ? containerRect.top + portalContainer!.clientTop : 0;
+    const rect = {
+      left: triggerRect.left - originLeft,
+      top: triggerRect.top - originTop,
+      bottom: triggerRect.bottom - originTop,
+      width: triggerRect.width,
+    };
     const menuHeight = menuRef.current?.offsetHeight ?? DEFAULT_MENU_HEIGHT;
-    const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP;
-    const spaceAbove = rect.top - MENU_GAP;
+    const spaceBelow = window.innerHeight - triggerRect.bottom - MENU_GAP;
+    const spaceAbove = triggerRect.top - MENU_GAP;
     const showAbove = spaceBelow < menuHeight && spaceAbove > spaceBelow;
 
     setMenuStyle({
@@ -40,7 +52,7 @@ export function useFloatingMenuPosition(
       zIndex: MENU_Z_INDEX,
     });
     setIsPositioned(true);
-  }, [triggerRef, menuRef]);
+  }, [triggerRef, menuRef, portalContainer]);
 
   useLayoutEffect(() => {
     if (!open) {

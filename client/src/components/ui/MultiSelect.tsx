@@ -85,7 +85,11 @@ export function MultiSelect<T extends string>({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef);
+  // Inside a modal dialog the menu must live in the dialog's DOM, otherwise its focus trap steals focus from the search input.
+  const portalContainer = open
+    ? (containerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? document.body)
+    : document.body;
+  const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef, portalContainer);
   const selectedOptions = value
     .map((v) => options.find((o) => o.value === v))
     .filter((opt): opt is DropdownSelectOption<T> => opt != null);
@@ -258,7 +262,7 @@ export function MultiSelect<T extends string>({
         </span>
         <ChevronDownIcon className="size-3.5 shrink-0 text-neutral-500" />
       </button>
-      {menu ? createPortal(menu, document.body) : null}
+      {menu ? createPortal(menu, portalContainer) : null}
     </div>
   );
 }

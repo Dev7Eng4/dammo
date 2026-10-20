@@ -90,7 +90,11 @@ export function DropdownSelect<T extends string>({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef);
+  // Inside a modal dialog the menu must live in the dialog's DOM, otherwise its focus trap steals focus from the search input.
+  const portalContainer = open
+    ? (containerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? document.body)
+    : document.body;
+  const { menuStyle } = useFloatingMenuPosition(open, triggerRef, menuRef, portalContainer);
   const selected = options.find((o) => o.value === value);
   const activeLabel = selected ? optionLabel(selected.label) : (placeholder ?? optionLabel(options[0]?.label ?? ''));
   const showClear = clearable && Boolean(value) && !disabled;
@@ -269,7 +273,7 @@ export function DropdownSelect<T extends string>({
           <ChevronDownIcon className="size-3.5 text-neutral-500" />
         </span>
       </button>
-      {menu ? createPortal(menu, document.body) : null}
+      {menu ? createPortal(menu, portalContainer) : null}
     </div>
   );
 }
