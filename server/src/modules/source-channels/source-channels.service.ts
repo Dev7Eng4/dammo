@@ -363,8 +363,17 @@ export class SourceChannelsService {
       }
     }
 
+    const niche = input.niche?.trim();
+    if (niche && !nichesService.exists(niche)) {
+      throw new AppError('Niche not found', 400, 'INVALID_NICHE');
+    }
+
     const updated = sourceChannelsRepository.update(id, (current) => {
       const next = { ...current };
+
+      if (niche !== undefined) {
+        next.niche = niche;
+      }
 
       if (input.bumpRisk) {
         const bumped = nextRiskLevel(current.riskLevel);

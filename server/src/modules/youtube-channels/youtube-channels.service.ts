@@ -105,6 +105,11 @@ function isStale(channel: YoutubeChannel): boolean {
   return Date.now() - new Date(channel.lastUploadAt).getTime() > STALE_THRESHOLD_MS;
 }
 
+function defaultChannelName(linkedEmail: string): string {
+  if (!linkedEmail || linkedEmail.toLowerCase() === 'default') return 'Channel';
+  return linkedEmail.split('@')[0] || 'Channel';
+}
+
 function buildProjectId(handle: string): string {
   const slug = handle.replace(/^@/, '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
   return `PRJ-${slug || 'NEW'}`;
@@ -1011,11 +1016,7 @@ export class YoutubeChannelsService {
       handle = `@channel_${id}`;
       youtubeUrl = `https://youtube.com/${handle}`;
       
-      let emailPrefix = 'Channel';
-      if (config.linkedEmail && config.linkedEmail.toLowerCase() !== 'default') {
-        emailPrefix = config.linkedEmail.split('@')[0] || 'Channel';
-      }
-      name = emailPrefix;
+      name = defaultChannelName(config.linkedEmail);
     }
 
     const hasChannelUrl = Boolean(input.channelUrl?.trim());
@@ -1110,6 +1111,7 @@ export class YoutubeChannelsService {
     // }
 
     let identityUpdate: { handle: string; youtubeUrl: string } | undefined;
+    let channelUrlChanged = false;
 
     if (channelUrl) {
       const { platform, url, fullUrl } = parseSourceUrl(channelUrl);
@@ -1156,6 +1158,7 @@ export class YoutubeChannelsService {
         handle: url.startsWith('@') ? url : current.handle,
         youtubeUrl: fullUrl,
       };
+      channelUrlChanged = canonicalUrl !== canonicalizeSourceUrl(current.youtubeUrl);
     }
 
     const updated = youtubeChannelsRepository.update(id, (existing) => {
@@ -1174,7 +1177,16 @@ export class YoutubeChannelsService {
         next.handle = identityUpdate.handle;
         next.youtubeUrl = identityUpdate.youtubeUrl;
         delete next.channelId;
-        if (existing.status === 'init') {
+        if (channelUrlChanged) {
+          // Pointing at a different channel: reset to a brand-new channel (same defaults as create without URL).
+          next.status = 'init';
+          next.name = defaultChannelName(config.linkedEmail);
+          delete next.lastUploadAt;
+          delete next.avatarUrl;
+          delete next.subscribers;
+          delete next.watchHours;
+          delete next.statsUpdatedAt;
+        } else if (existing.status === 'init') {
           next.status = 'created';
         }
       }
@@ -1324,7 +1336,27 @@ export class YoutubeChannelsService {
       throw new AppError('Channel not found', 404, 'NOT_FOUND');
     }
 
+    if (channelUrlChanged) {
+      this.resetChannelVideos(id);
+    }
+
     return updated;
+  }
+
+  /** Drops fetched/prepared/uploaded video data so the channel starts clean. */
+  private resetChannelVideos(id: string): void {
+    youtubeChannelVideosRepository.delete(id);
+
+    for (const item of videoPrepareRepository.read(id)) {
+      const videoId = item.videoId.trim();
+      if (!videoId) continue;
+      const folder = resolveYoutubeChannelVideoDir(id, videoId);
+      if (folder) fs.rmSync(folder, { recursive: true, force: true });
+    }
+    const prepareIds = [...videoPrepareRepository.getPreparedVideoIds(id)];
+    videoPrepareRepository.removeByVideoIds(id, prepareIds);
+
+    fs.rmSync(youtubeChannelUploadsDir(id), { recursive: true, force: true });
   }
 
   async createVideos(id: string) {

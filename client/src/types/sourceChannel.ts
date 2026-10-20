@@ -98,6 +98,7 @@ export interface CreateSourceChannelPayload {
 
 export interface UpdateSourceChannelPayload {
   notes?: string;
+  niche?: string;
   bumpRisk?: true;
 }
 

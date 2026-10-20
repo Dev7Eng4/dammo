@@ -50,7 +50,9 @@ export const updateSourceChannelSchema = z
   .object({
     notes: z.string().max(500).optional(),
     bumpRisk: z.literal(true).optional(),
+    /** Niche key; empty string clears it. */
+    niche: z.string().optional(),
   })
-  .refine((data) => data.bumpRisk === true || data.notes !== undefined, {
-    message: 'Provide notes or bumpRisk',
+  .refine((data) => data.bumpRisk === true || data.notes !== undefined || data.niche !== undefined, {
+    message: 'Provide notes, niche or bumpRisk',
   });

@@ -150,6 +150,7 @@
     "addError": "Could not add: {{url}}",
     "riskError": "Could not increase risk level",
     "notesError": "Could not save notes",
+    "nicheError": "Could not update niche",
     "inUseCheckError": "Could not check whether the source is in use",
     "deleteOne": "Deleted source \"{{name}}\"",
     "deleteMany": "Deleted {{count}} source channels",

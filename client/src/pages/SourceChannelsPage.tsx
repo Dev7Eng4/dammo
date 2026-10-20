@@ -70,6 +70,7 @@ export function SourceChannelsPage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [bumpingRiskId, setBumpingRiskId] = useState<string | null>(null);
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+  const [savingNicheId, setSavingNicheId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteModalSources, setDeleteModalSources] = useState<SourceChannel[]>([]);
   const [deleteModalUsages, setDeleteModalUsages] = useState<SourceChannelUsage[]>([]);
@@ -304,6 +305,21 @@ export function SourceChannelsPage() {
     }
   }
 
+  async function handleNicheChange(id: string, niche: string) {
+    const source = list.items.find((item) => item.id === id);
+    if (!source || source.niche === niche) return;
+
+    setSavingNicheId(id);
+    try {
+      await updateSourceChannel(id, { niche });
+      list.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.nicheError'));
+    } finally {
+      setSavingNicheId(null);
+    }
+  }
+
   function closeDeleteModal() {
     setDeleteModalSources([]);
     setDeleteModalUsages([]);
@@ -410,12 +426,14 @@ export function SourceChannelsPage() {
               selectedIds={selectedIds}
               bumpingRiskId={bumpingRiskId}
               savingNotesId={savingNotesId}
+              savingNicheId={savingNicheId}
               deletingId={deletingId}
               onSelect={handleSelect}
               onToggleRow={handleToggleRow}
               onToggleAll={handleToggleAll}
               onBumpRisk={handleBumpRisk}
               onNotesChange={handleNotesChange}
+              onNicheChange={handleNicheChange}
               onDelete={handleDelete}
             />
           </div>

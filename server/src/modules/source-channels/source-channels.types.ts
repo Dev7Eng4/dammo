@@ -76,5 +76,6 @@ export interface CreateSourceChannelInput {
 
 export interface UpdateSourceChannelInput {
   notes?: string;
+  niche?: string;
   bumpRisk?: true;
 }

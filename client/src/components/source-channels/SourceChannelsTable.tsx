@@ -4,7 +4,7 @@ import type { Niche } from '../../types/niche';
 import type { SourceChannel } from '../../types/sourceChannel';
 import { resolveNicheLabel } from '../../utils/niche';
 import { PlatformIcon } from '../mail-accounts/PlatformIcon';
-import { DataTable, Link } from '../ui';
+import { DataTable, Link, Select } from '../ui';
 import { PurposePill } from './PurposePill';
 
 interface SourceChannelsTableProps {
@@ -15,12 +15,14 @@ interface SourceChannelsTableProps {
   selectedIds: Set<string>;
   bumpingRiskId?: string | null;
   savingNotesId?: string | null;
+  savingNicheId?: string | null;
   deletingId?: string | null;
   onSelect: (id: string) => void;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
   onBumpRisk?: (id: string) => void;
   onNotesChange?: (id: string, notes: string) => void;
+  onNicheChange?: (id: string, niche: string) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -37,12 +39,14 @@ export function SourceChannelsTable({
   selectedIds,
   bumpingRiskId: _bumpingRiskId,
   savingNotesId,
+  savingNicheId,
   deletingId: _deletingId,
   onSelect,
   onToggleRow,
   onToggleAll,
   onBumpRisk: _onBumpRisk,
   onNotesChange,
+  onNicheChange,
   onDelete: _onDelete,
 }: SourceChannelsTableProps) {
   const { t } = useTranslation('source');
@@ -79,9 +83,23 @@ export function SourceChannelsTable({
     {
       accessorKey: 'niche',
       header: t('table.col.niche'),
-      cell: ({ getValue }) => (
-        <span className="text-neutral-300">{resolveNicheLabel(getValue<string>(), niches)}</span>
-      ),
+      cell: ({ row, getValue }) =>
+        onNicheChange ? (
+          <div className="min-w-[10rem]" onClick={e => e.stopPropagation()}>
+            <Select
+              options={niches.map(item => ({ value: item.key, label: item.label }))}
+              value={row.original.niche}
+              onChange={next => onNicheChange(row.original.id, next)}
+              placeholder='—'
+              searchable
+              clearable
+              disabled={savingNicheId === row.original.id}
+              triggerClassName="h-8 rounded-lg px-2.5 text-xs"
+            />
+          </div>
+        ) : (
+          <span className="text-neutral-300">{resolveNicheLabel(getValue<string>(), niches)}</span>
+        ),
     },
     {
       accessorKey: 'purpose',

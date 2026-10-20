@@ -150,6 +150,7 @@
     "addError": "Không thể thêm: {{url}}",
     "riskError": "Không thể tăng mức rủi ro",
     "notesError": "Không thể lưu ghi chú",
+    "nicheError": "Không thể cập nhật niche",
     "inUseCheckError": "Không thể kiểm tra nguồn đang được sử dụng",
     "deleteOne": "Đã xóa nguồn \"{{name}}\"",
     "deleteMany": "Đã xóa {{count}} kênh nguồn",
