@@ -94,27 +94,15 @@ Relevant motivations may include:
 - weight management
 - general healthy aging
 
-However:
+Age labels are allowed and often effective for this audience when the transcript genuinely relates to age.
 
-DO NOT force age-related language into every concept.
+Examples of natural labels: 「45歳以上」「50歳を過ぎて」「70代」「シニア」「年齢とともに」.
 
-Do NOT automatically use:
+Rules:
 
-「60代必見」
-「60代は要注意」
-「高齢者必見」
-
-Behavioral self-identification is generally stronger than explicit age labeling when the topic allows it.
-
-Prefer:
-
-"What people like me commonly do"
-
-over:
-
-"What people my age should know"
-
-when that creates stronger personal relevance.
+- Use an age label only if the transcript topic is genuinely connected to aging (muscle loss, sleep, blood sugar, kidney, memory, vision, etc.).
+- Do NOT attach an age label to a topic that is not age-related.
+- Behavioral self-identification ("people who eat this every day") can be combined with an age label.
 
 ==================================================
 DETECTED NICHE
@@ -143,6 +131,11 @@ MEMORY
 MOBILITY
 WEIGHT_MANAGEMENT
 LIFESTYLE
+WARNING_SIGNS
+BODY_ORGAN_CARE
+SUPERFOOD_HABIT
+FOOD_SWAP
+MORNING_ROUTINE
 OTHER
 
 Do NOT select a niche merely because a keyword appears in the transcript.
@@ -393,6 +386,7 @@ FOOD_ONLY
 FOOD_PLUS_CHARACTER
 FOOD_PLUS_ACTION
 FOOD_PLUS_HEALTH_VISUAL
+BODY_PART_CLOSEUP
 SIMPLE_ENVIRONMENT
 
 Do NOT automatically use a doctor.
@@ -537,6 +531,65 @@ Do NOT confuse sensationalism with CTR.
 The strongest concept is the one that creates a meaningful unanswered question while remaining believable.
 
 ==================================================
+TITLE FORMAT AND THUMBNAIL BLUEPRINT
+==================================================
+
+Pick the ONE title_format that best matches the transcript:
+
+hidden_danger
+A familiar food or habit quietly affects a body part. ("this food, actually, X")
+
+age_warning
+A mistake that matters from a certain age onward.
+
+food_swap
+A cheaper, easier or better alternative to a familiar food, with a concrete number or cost if the transcript gives one.
+
+body_sign
+A body symptom or sign linked to a nutrient or habit; the video explains the sign and what to do.
+
+superfood_howto
+A food eaten the right way (preparation, timing, pairing) to get the benefit.
+
+morning_routine
+A small morning drink or habit, plus one added ingredient.
+
+myth_correction
+Many people do it the opposite way; the video corrects it.
+
+ranking_list
+TOP N or N picks of foods or habits, with one unknown item that stays hidden.
+
+Then extract the elements that the thumbnail will stack in four lines:
+
+audience_label:
+A short Japanese phrase that calls the viewer (e.g. 45歳以上 / 50歳を過ぎて / 毎日食べる人). Empty string if not natural.
+
+list_count:
+The number of items if the video is a numbered list, otherwise 0. Use the transcript's real number.
+
+hook_line_1_context:
+The object or situation in 2-10 Japanese characters (e.g. ゆで卵に / 朝の白湯に / 納豆の食べ方).
+
+hook_line_2_subject:
+The main subject in 2-8 Japanese characters (e.g. 老化食品 / キャベツ×〇〇 / 筋肉).
+
+hook_line_3_consequence:
+The consequence or tension in 3-10 Japanese characters, strictly within safe_claim (use wording such as リスク / サイン / 見直し rather than disease or death statements).
+
+hook_line_4_resolution:
+The reassurance or hidden answer in 3-12 Japanese characters. May contain a blank such as 〇〇 or ●● for the withheld item (e.g. 〇〇不足でした, これだけはやめて).
+
+mystery_blank:
+The exact withheld item that the blank stands for (for the producer only, never shown).
+
+thumbnail_mood:
+Choose ONE: WARNING (risk, mistake) / BENEFIT (positive, how-to) / MYSTERY (hidden item, ranking).
+
+body_part_or_symbol:
+If a body part or sign is central (eye, kidney, muscle, blood vessel, hair, lips, brain), name it; otherwise "NONE".
+
+==================================================
 OUTPUT FORMAT
 ==================================================
 
@@ -553,6 +606,18 @@ Use this exact structure:
   "detected_focus": "",
   "target_audience": "",
   "primary_hook": "",
+  "title_format": "",
+  "audience_label": "",
+  "list_count": 0,
+  "thumbnail_blueprint": {
+    "hook_line_1_context": "",
+    "hook_line_2_subject": "",
+    "hook_line_3_consequence": "",
+    "hook_line_4_resolution": "",
+    "mystery_blank": "",
+    "thumbnail_mood": "",
+    "body_part_or_symbol": ""
+  },
   "content_core": {
     "hero_food": "",
     "critical_mistake": "",
