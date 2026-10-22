@@ -34,6 +34,8 @@ export const paths = {
   niches: path.join(env.dataDir, 'niches.json'),
   celebrities: path.join(env.dataDir, 'celebrities.json'),
   celebritiesDir: path.join(env.dataDir, 'celebrities'),
+  mascots: path.join(env.dataDir, 'mascots.json'),
+  mascotsDir: path.join(env.dataDir, 'mascot-library'),
   smallVideoGroups: path.join(env.dataDir, 'small-video-groups.json'),
   promptsDir: path.join(env.dataDir, 'prompts'),
   playgroundDir: path.join(env.dataDir, 'playground'),
@@ -47,6 +49,10 @@ export const paths = {
 
 export function celebrityDir(celebrityId: string): string {
   return path.join(paths.celebritiesDir, celebrityId);
+}
+
+export function mascotDir(mascotId: string): string {
+  return path.join(paths.mascotsDir, mascotId);
 }
 
 export function smallVideoGroupDir(groupId: string): string {
@@ -356,6 +362,7 @@ export function ensureDataDirs(): void {
     paths.siSubscribeDir,
     paths.siTempStockDir,
     paths.celebritiesDir,
+    paths.mascotsDir,
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) {

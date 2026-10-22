@@ -159,6 +159,8 @@ export interface YoutubeChannel {
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   /** Required when reupAudioBackgroundImage is `celebrity` */
   celebrityId?: string;
+  /** Mascot from the Assets library, used as the channel's character reference. */
+  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -459,6 +461,8 @@ export interface CreateYoutubeChannelPayload {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   celebrityId?: string;
+  /** Mascot from the Assets library, used as the channel's character reference. */
+  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -501,6 +505,8 @@ export interface AddYoutubeChannelFormValues {
   reupAudioBackgroundImage: string;
   aiSceneDensityMaxSec: AiSceneDensityMaxSec;
   useReferenceImage: boolean;
+  useMascot: boolean;
+  mascotId: string;
   audioBarFile: string;
   showChannelAvatar: boolean;
   showSubscribe: boolean;

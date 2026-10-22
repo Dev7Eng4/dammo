@@ -51,6 +51,7 @@ import { assetsService } from '../assets/assets.service.js';
 import { channelAvatarsService } from './channel-avatars.service.js';
 import { parseSmallVideoGroupId, OVERLAY_AUTO_SENTINEL } from '../video-production/shared/render-core/canvas.constants.js';
 import { celebritiesService } from '../celebrities/celebrities.service.js';
+import { mascotsService } from '../mascots/mascots.service.js';
 import { smallVideoGroupsService } from '../small-video-groups/small-video-groups.service.js';
 import type {
   AiSceneDensityMaxSec,
@@ -147,6 +148,7 @@ type ChannelConfigInput = Pick<
   | 'reupAudioVisualStyleId'
   | 'reupAudioBackgroundImage'
   | 'celebrityId'
+  | 'mascotId'
   | 'aiSceneDensityMaxSec'
   | 'useReferenceImage'
   | 'showAudioBar'
@@ -203,6 +205,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   celebrityId?: string;
+  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -261,6 +264,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   let reupAudioVisualStyleId: string | undefined;
   let reupAudioBackgroundImage: ReupAudioBackgroundImage | undefined;
   let celebrityId: string | undefined;
+  let mascotId: string | undefined;
   let aiSceneDensityMaxSec: AiSceneDensityMaxSec | undefined;
   let useReferenceImage: boolean | undefined;
   let showAudioBar: boolean | undefined;
@@ -281,6 +285,11 @@ function validateChannelConfig(input: ChannelConfigInput): {
     }
     reupAudioVideoType = input.reupAudioVideoType;
     useReferenceImage = input.useReferenceImage === true;
+    const selectedMascotId = input.mascotId?.trim();
+    if (selectedMascotId) {
+      mascotsService.assertUsable(selectedMascotId);
+      mascotId = selectedMascotId;
+    }
 
     if (input.reupAudioVideoType === 'ai') {
       if (!input.reupAudioVisualStyleId?.trim()) {
@@ -426,6 +435,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(reupAudioVisualStyleId ? { reupAudioVisualStyleId } : {}),
     ...(reupAudioBackgroundImage ? { reupAudioBackgroundImage } : {}),
     ...(celebrityId ? { celebrityId } : {}),
+    ...(mascotId ? { mascotId } : {}),
     ...(aiSceneDensityMaxSec ? { aiSceneDensityMaxSec } : {}),
     ...(useReferenceImage ? { useReferenceImage: true } : {}),
     ...(showAudioBar ? { showAudioBar: true } : {}),
@@ -1053,6 +1063,7 @@ export class YoutubeChannelsService {
         ? { reupAudioBackgroundImage: config.reupAudioBackgroundImage }
         : {}),
       ...(config.celebrityId ? { celebrityId: config.celebrityId } : {}),
+      ...(config.mascotId ? { mascotId: config.mascotId } : {}),
       ...(config.aiSceneDensityMaxSec ? { aiSceneDensityMaxSec: config.aiSceneDensityMaxSec } : {}),
       ...(config.useReferenceImage ? { useReferenceImage: true } : {}),
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
@@ -1273,6 +1284,11 @@ export class YoutubeChannelsService {
         } else {
           delete next.celebrityId;
         }
+        if (config.mascotId) {
+          next.mascotId = config.mascotId;
+        } else {
+          delete next.mascotId;
+        }
         if (config.aiSceneDensityMaxSec) {
           next.aiSceneDensityMaxSec = config.aiSceneDensityMaxSec;
         } else {
@@ -1324,6 +1340,7 @@ export class YoutubeChannelsService {
         delete next.reupAudioVisualStyleId;
         delete next.reupAudioBackgroundImage;
         delete next.celebrityId;
+        delete next.mascotId;
         delete next.aiSceneDensityMaxSec;
         delete next.useReferenceImage;
         delete next.showAudioBar;

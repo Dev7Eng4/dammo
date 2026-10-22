@@ -21,6 +21,7 @@ import { createVisualStylesRoutes } from '../modules/visual-styles/visual-styles
 import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube-channels.routes.js';
 import { createAssetsRoutes } from '../modules/assets/assets.routes.js';
 import { createCelebritiesRoutes } from '../modules/celebrities/celebrities.routes.js';
+import { createMascotsRoutes } from '../modules/mascots/mascots.routes.js';
 import { createSmallVideoGroupsRoutes } from '../modules/small-video-groups/small-video-groups.routes.js';
 import { createVideoProductionUiRoutes } from '../modules/video-production-ui/video-production-ui.routes.js';
 
@@ -44,6 +45,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/gpm`, createGpmManagerRoutes());
   app.route(`${prefix}/assets`, createAssetsRoutes());
   app.route(`${prefix}/celebrities`, createCelebritiesRoutes());
+  app.route(`${prefix}/mascots`, createMascotsRoutes());
   app.route(`${prefix}/small-video-groups`, createSmallVideoGroupsRoutes());
   app.route(`${prefix}/app-settings`, createAppSettingsRoutes());
 }

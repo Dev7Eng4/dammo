@@ -154,7 +154,8 @@
       "fonts": "Phông chữ",
       "smallVideo": "Video stock nhỏ",
       "siLocalStock": "Video background footage",
-      "celebrities": "Người nổi tiếng"
+      "celebrities": "Người nổi tiếng",
+      "mascots": "Mascot"
     },
     "table": {
       "col": {
@@ -191,6 +192,41 @@
       "colorDone": "Đã xử lý {{color}}: {{name}}",
       "colorAlready": "{{name}} đã được xử lý {{color}} trước đó",
       "colorError": "Không thể xử lý màu"
+    },
+    "mascots": {
+      "count": "{{count}} mascot",
+      "add": "+ Thêm mascot",
+      "addTitle": "Thêm mascot",
+      "editTitle": "Sửa mascot",
+      "addSubmit": "Thêm",
+      "saveSubmit": "Lưu",
+      "name": "Tên mascot",
+      "namePlaceholder": "Ví dụ: Mochi cam",
+      "nameRequired": "Vui lòng nhập tên",
+      "prompt": "Prompt tạo ảnh mascot",
+      "promptPlaceholder": "Mô tả mascot: hình dáng, màu sắc, dấu hiệu nhận diện, phong cách vẽ...",
+      "promptRequired": "Vui lòng nhập prompt",
+      "image": "Ảnh mascot chuẩn",
+      "noImage": "Chưa có ảnh",
+      "uploadImage": "Tải ảnh lên",
+      "replaceImage": "Đổi ảnh",
+      "removeImage": "Xóa ảnh",
+      "imageHint": "Tạo ảnh từ prompt ở Flow/Meta, chọn 1 ảnh đẹp nhất rồi tải lên. JPG, PNG hoặc WebP, tối đa 20 MB.",
+      "needsImage": "Chưa có ảnh",
+      "copyPrompt": "Sao chép prompt",
+      "saveError": "Không thể lưu mascot",
+      "loading": "Đang tải danh sách…",
+      "empty": "Chưa có mascot. Bấm \"Thêm mascot\" để bắt đầu.",
+      "deleteTitle": "Xóa mascot?",
+      "deleteBody": "Bạn có chắc muốn xóa mascot {{name}} và ảnh đi kèm?",
+      "toast": {
+        "added": "Đã thêm mascot",
+        "saved": "Đã lưu mascot",
+        "deleted": "Đã xóa mascot",
+        "deleteError": "Không thể xóa mascot",
+        "copied": "Đã sao chép prompt",
+        "copyError": "Không thể sao chép"
+      }
     },
     "celebrities": {
       "count": "{{count}} người nổi tiếng",

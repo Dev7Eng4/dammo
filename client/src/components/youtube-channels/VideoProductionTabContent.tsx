@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   fetchProductionCharacters,
   fetchProductionScenes,
   fetchProductionTranscript,
+  regenerateMissingProductionSceneImages,
 } from '../../api/videoProduction'
 import { useAbortableEffect } from '../../hooks'
+import { Button, useToast } from '../ui'
 import type {
   ProductionCharactersResponse,
   ProductionScenesResponse,
@@ -29,6 +31,12 @@ interface VideoProductionTabContentProps {
   onAddingCharacterChange?: (adding: boolean) => void
 }
 
+function withCacheBust(url: string | null, version: number): string | null {
+  if (!url) return null
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}v=${version}`
+}
+
 function errorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
 }
@@ -46,6 +54,9 @@ export function VideoProductionTabContent({
   onAddingCharacterChange,
 }: VideoProductionTabContentProps) {
   const { t } = useTranslation('factory')
+  const { toast } = useToast()
+  const mountedRef = useRef(true)
+  const [regeneratingMissing, setRegeneratingMissing] = useState(false)
 
   const [scenes, setScenes] = useState<ProductionScenesResponse | null>(null)
   const [scenesLoading, setScenesLoading] = useState(true)
@@ -57,6 +68,13 @@ export function VideoProductionTabContent({
   const [charactersLoading, setCharactersLoading] = useState(true)
   const [charactersError, setCharactersError] = useState<string | null>(null)
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   useAbortableEffect(
     async (signal) => {
@@ -111,6 +129,41 @@ export function VideoProductionTabContent({
     [channelId, videoId, reloadKey],
   )
 
+  const missingImageCount = scenes ? scenes.scenes.filter((scene) => !scene.imageUrl).length : 0
+
+  async function handleGenerateMissingImages() {
+    if (!scenes || regeneratingMissing) return
+    const missingIndexes = new Set(
+      scenes.scenes.filter((scene) => !scene.imageUrl).map((scene) => scene.index),
+    )
+    const previousByIndex = new Map(scenes.scenes.map((scene) => [scene.index, scene]))
+    setRegeneratingMissing(true)
+    try {
+      const data = await regenerateMissingProductionSceneImages(channelId, videoId)
+      if (!mountedRef.current) return
+      const bust = Date.now()
+      setScenes({
+        ...data,
+        scenes: data.scenes.map((scene) => {
+          if (missingIndexes.has(scene.index)) {
+            return { ...scene, imageUrl: withCacheBust(scene.imageUrl, bust) }
+          }
+          const previousUrl = previousByIndex.get(scene.index)?.imageUrl
+          return scene.imageUrl && previousUrl ? { ...scene, imageUrl: previousUrl } : scene
+        }),
+      })
+      setScenesError(null)
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : t('production.scene.generateMissingError'),
+      )
+    } finally {
+      if (mountedRef.current) setRegeneratingMissing(false)
+    }
+  }
+
   if (tab === 'script') {
     return (
       <TranscriptPanel
@@ -156,18 +209,37 @@ export function VideoProductionTabContent({
   }
 
   return (
-    <SceneTable
-      flush
-      channelId={channelId}
-      videoId={videoId}
-      scenes={scenes.scenes}
-      characters={characters?.characters ?? []}
-      selectedIndex={selectedSceneIndex}
-      onSelect={setSelectedSceneIndex}
-      onScenesUpdated={(data) => {
-        setScenes(data)
-        setScenesError(null)
-      }}
-    />
+    <>
+      {missingImageCount > 0 ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {t('production.scene.missingCount', { count: missingImageCount })}
+          </p>
+          <Button
+            type="button"
+            disabled={regeneratingMissing}
+            onClick={() => void handleGenerateMissingImages()}
+          >
+            {regeneratingMissing
+              ? t('production.scene.generatingMissing')
+              : t('production.scene.generateMissingCount', { count: missingImageCount })}
+          </Button>
+        </div>
+      ) : null}
+      <SceneTable
+        flush
+        channelId={channelId}
+        videoId={videoId}
+        scenes={scenes.scenes}
+        characters={characters?.characters ?? []}
+        selectedIndex={selectedSceneIndex}
+        onSelect={setSelectedSceneIndex}
+        regeneratingMissing={regeneratingMissing}
+        onScenesUpdated={(data) => {
+          setScenes(data)
+          setScenesError(null)
+        }}
+      />
+    </>
   )
 }

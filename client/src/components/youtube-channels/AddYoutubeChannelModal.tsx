@@ -7,6 +7,7 @@ import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { fetchCelebrities } from '../../api/celebrities';
+import { fetchMascots } from '../../api/mascots';
 import { fetchSmallVideoGroups } from '../../api/small-video-groups';
 import {
   createYoutubeChannel,
@@ -33,6 +34,7 @@ import {
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { CelebrityListItem } from '../../types/celebrity';
+import type { MascotListItem } from '../../types/mascot';
 import type { SmallVideoGroupListItem } from '../../types/smallVideoGroup';
 import type { MailAccount } from '../../types/mailAccount';
 import type { Niche } from '../../types/niche';
@@ -236,6 +238,8 @@ const defaultValues: AddYoutubeChannelFormValues = {
   reupAudioBackgroundImage: '',
   aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC },
   useReferenceImage: false,
+  useMascot: false,
+  mascotId: '',
   audioBarFile: '',
   showChannelAvatar: false,
   showSubscribe: false,
@@ -285,6 +289,8 @@ function getChannelFormValues(
       low: channel.aiSceneDensityMaxSec?.low ?? densityDefaults.low,
     },
     useReferenceImage: channel.useReferenceImage === true,
+    useMascot: Boolean(channel.mascotId),
+    mascotId: channel.mascotId ?? '',
     audioBarFile: channel.audioBarFile ?? '',
     showChannelAvatar: channel.showChannelAvatar === true,
     showSubscribe: channel.showSubscribe === true,
@@ -363,6 +369,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [celebritiesWithMedia, setCelebritiesWithMedia] = useState<CelebrityListItem[]>([]);
   const [celebritiesLoading, setCelebritiesLoading] = useState(false);
   const [smallVideoGroups, setSmallVideoGroups] = useState<SmallVideoGroupListItem[]>([]);
+  const [mascots, setMascots] = useState<MascotListItem[]>([]);
+  const [mascotsLoading, setMascotsLoading] = useState(false);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
   const [tempBackgroundSessionId, setTempBackgroundSessionId] = useState(() => crypto.randomUUID());
   const [audioBarPickerOpen, setAudioBarPickerOpen] = useState(false);
@@ -403,6 +411,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     [reupAudioBackgroundImage],
   );
   const useReferenceImage = watch('useReferenceImage');
+  const useMascot = watch('useMascot');
   const canEditSceneDensity =
     isReupAudio && (reupAudioVideoType === 'ai' || parsedBackgroundImage.mode === 'multi_image');
   const showDisclaimer = watch('showDisclaimer');
@@ -430,6 +439,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
     ],
     [sources, niches],
+  );
+  const mascotOptions = useMemo(
+    () => mascots.map(item => ({ value: item.id, label: item.name })),
+    [mascots],
   );
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
 
@@ -564,6 +577,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setValue('reupAudioVisualStyleId', '');
     setValue('reupAudioBackgroundImage', '');
     setValue('useReferenceImage', false);
+    setValue('useMascot', false);
+    setValue('mascotId', '');
     setValue('audioBarFile', '');
     setValue('smallVideoFile', '');
     setValue('subscribeFile', '');
@@ -621,6 +636,34 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     },
     [open, formReady, usesCelebrityPicker],
     { enabled: open && formReady && usesCelebrityPicker },
+  );
+
+  useAbortableEffect(
+    async signal => {
+      if (!open || !formReady || !isReupAudio || !useMascot) {
+        setMascots([]);
+        return;
+      }
+
+      setMascotsLoading(true);
+      try {
+        const { items } = await fetchMascots({ signal });
+        const withImage = items.filter(item => item.hasImage);
+        setMascots(withImage);
+
+        const current = getValues('mascotId');
+        if (current && !withImage.some(item => item.id === current)) {
+          setValue('mascotId', '');
+        }
+      } catch {
+        if (signal.aborted) return;
+        setMascots([]);
+      } finally {
+        if (!signal.aborted) setMascotsLoading(false);
+      }
+    },
+    [open, formReady, isReupAudio, useMascot],
+    { enabled: open && formReady && isReupAudio && useMascot },
   );
 
   useAbortableEffect(
@@ -766,6 +809,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
         ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
+        ...(values.type === 'reup_audio' && values.useMascot && values.mascotId
+          ? { mascotId: values.mascotId }
+          : {}),
         ...(values.type === 'reup_audio'
           ? buildBackgroundImagePayload(values.reupAudioVideoType, values.reupAudioBackgroundImage)
           : {}),
@@ -1195,6 +1241,69 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   )}
                 />
               </FormField>
+
+              <FormField label='' htmlFor='reup-audio-use-mascot' className='min-w-0 flex items-center'>
+                <Controller
+                  name='useMascot'
+                  control={control}
+                  render={({ field }) => (
+                    <label
+                      htmlFor='reup-audio-use-mascot'
+                      className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'
+                    >
+                      <input
+                        id='reup-audio-use-mascot'
+                        type='checkbox'
+                        checked={!!field.value}
+                        onChange={e => {
+                          field.onChange(e.target.checked);
+                          if (!e.target.checked) setValue('mascotId', '');
+                        }}
+                        onBlur={field.onBlur}
+                        disabled={isSubmitting}
+                        className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
+                      />
+                      {t('form.useMascot')}
+                    </label>
+                  )}
+                />
+              </FormField>
+
+              {useMascot ? (
+                <FormField
+                  label={t('form.mascot')}
+                  htmlFor='reup-audio-mascot'
+                  error={errors.mascotId?.message}
+                  className='min-w-0'
+                >
+                  <Controller
+                    name='mascotId'
+                    control={control}
+                    rules={{ validate: value => !useMascot || Boolean(value) || t('form.mascotRequired') }}
+                    render={({ field }) => (
+                      <Select
+                        id='reup-audio-mascot'
+                        options={mascotOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        placeholder={
+                          mascotsLoading
+                            ? t('form.mascotLoading')
+                            : mascotOptions.length === 0
+                              ? t('form.mascotEmpty')
+                              : t('form.mascotPlaceholder')
+                        }
+                        searchPlaceholder={t('form.mascotSearch')}
+                        searchable
+                        disabled={isSubmitting || mascotsLoading || mascotOptions.length === 0}
+                        className='w-full'
+                        triggerClassName={selectTriggerClass}
+                      />
+                    )}
+                  />
+                </FormField>
+              ) : null}
 
               <div className='min-w-0 sm:col-start-1 sm:col-span-2'>
                 <p className='mb-2 text-xs font-medium text-neutral-400'>{t('form.sceneDensity')}</p>

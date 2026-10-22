@@ -154,7 +154,8 @@
       "fonts": "Fonts",
       "smallVideo": "Small stock video",
       "siLocalStock": "Background footage",
-      "celebrities": "Celebrities"
+      "celebrities": "Celebrities",
+      "mascots": "Mascots"
     },
     "table": {
       "col": {
@@ -191,6 +192,41 @@
       "colorDone": "Processed {{color}}: {{name}}",
       "colorAlready": "{{name}} was already processed for {{color}}",
       "colorError": "Could not process color"
+    },
+    "mascots": {
+      "count": "{{count}} mascots",
+      "add": "+ Add mascot",
+      "addTitle": "Add mascot",
+      "editTitle": "Edit mascot",
+      "addSubmit": "Add",
+      "saveSubmit": "Save",
+      "name": "Mascot name",
+      "namePlaceholder": "e.g. Orange mochi",
+      "nameRequired": "Please enter a name",
+      "prompt": "Mascot image prompt",
+      "promptPlaceholder": "Describe the mascot: shape, colors, signature detail, art style...",
+      "promptRequired": "Please enter a prompt",
+      "image": "Canonical mascot image",
+      "noImage": "No image",
+      "uploadImage": "Upload image",
+      "replaceImage": "Replace image",
+      "removeImage": "Remove image",
+      "imageHint": "Generate images from the prompt in Flow/Meta, pick the best one and upload it. JPG, PNG or WebP, up to 20 MB.",
+      "needsImage": "No image yet",
+      "copyPrompt": "Copy prompt",
+      "saveError": "Could not save mascot",
+      "loading": "Loading list…",
+      "empty": "No mascots yet. Click \"Add mascot\" to start.",
+      "deleteTitle": "Delete mascot?",
+      "deleteBody": "Delete mascot {{name}} and its image?",
+      "toast": {
+        "added": "Mascot added",
+        "saved": "Mascot saved",
+        "deleted": "Mascot deleted",
+        "deleteError": "Could not delete mascot",
+        "copied": "Prompt copied",
+        "copyError": "Could not copy"
+      }
     },
     "celebrities": {
       "count": "{{count}} celebrities",
