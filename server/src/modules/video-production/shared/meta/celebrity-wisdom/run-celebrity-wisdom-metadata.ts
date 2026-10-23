@@ -41,14 +41,6 @@ export async function runCelebrityWisdomMetadata(
   videoId: string,
   options?: RunCelebrityWisdomMetadataOptions,
 ): Promise<VideoMetaOutput> {
-  if (language !== 'ja') {
-    throw new AppError(
-      'Celebrity wisdom metadata generation is only supported for Japanese',
-      400,
-      'UNSUPPORTED_LANGUAGE',
-    );
-  }
-
   const step1Key = resolveCelebrityWisdomStepKey(language, 1);
   const shellLen = await measureCelebrityWisdomStep1PromptShellLength(language, step1Key);
   const maxChars = computeStep1MaxTranscriptChars(shellLen);

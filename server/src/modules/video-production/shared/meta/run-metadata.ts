@@ -189,10 +189,6 @@ export async function executeMetadata(
   videoId: string,
   options?: RunMetadataOptions
 ): Promise<VideoMetaOutput> {
-  if (language !== 'ja') {
-    throw new AppError('Metadata generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
-  }
-
   const resolved = resolveMetadataPrompt(language, options?.niche);
   const promptKey = resolved.key;
   const parseNiche = isCelebrityWisdomNiche(options?.niche) ? options?.niche : resolved.niche;

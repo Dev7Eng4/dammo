@@ -41,14 +41,6 @@ export async function runSeniorHealthMetadata(
   videoId: string,
   options?: RunSeniorHealthMetadataOptions,
 ): Promise<VideoMetaOutput> {
-  if (language !== 'ja') {
-    throw new AppError(
-      'Senior health metadata generation is only supported for Japanese',
-      400,
-      'UNSUPPORTED_LANGUAGE',
-    );
-  }
-
   const imageStyle = options?.imageStyle?.trim() ?? '';
   if (!imageStyle) {
     throw new AppError(

@@ -41,10 +41,6 @@ export async function runDramaMetadata(
   videoId: string,
   options?: RunDramaMetadataOptions,
 ): Promise<VideoMetaOutput> {
-  if (language !== 'ja') {
-    throw new AppError('Drama metadata generation is only supported for Japanese', 400, 'UNSUPPORTED_LANGUAGE');
-  }
-
   const imageStyle = options?.imageStyle?.trim() ?? '';
   if (!imageStyle) {
     throw new AppError(

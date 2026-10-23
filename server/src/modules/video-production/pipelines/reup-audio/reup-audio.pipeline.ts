@@ -276,14 +276,6 @@ export class ReupAudioPipeline {
       throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
     }
 
-    if (destination.language !== 'ja') {
-      throw new AppError(
-        'Regenerate metadata is only supported for Japanese channels',
-        400,
-        'UNSUPPORTED_LANGUAGE',
-      );
-    }
-
     const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
     if (videoType !== 'si' && videoType !== 'ai') {
       throw new AppError(
@@ -623,14 +615,6 @@ export class ReupAudioPipeline {
   ): Promise<CreateReupVideosResult> {
     if (!isReupAudioPipeline(destination.pipelineType) && destination.pipelineType !== 'reup') {
       throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
-    }
-
-    if (destination.language !== 'ja') {
-      throw new AppError(
-        'Recreate metadata from URL is only supported for Japanese channels',
-        400,
-        'UNSUPPORTED_LANGUAGE',
-      );
     }
 
     const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
@@ -1044,14 +1028,8 @@ export class ReupAudioPipeline {
       const assets: VisualAssets = {};
       let updatedSrtPath: string | undefined;
 
-      /**
-       * Only Japanese channels run the LLM transcript rewrite, and metadata +
-       * thumbnail depend on that rewrite. Other languages skip straight to
-       * assembly using the cleaned SRT and a fallback output basename.
-       */
-      const needsLlmEnrichment = destination.language === 'ja';
-
-      if (needsLlmEnrichment) {
+      /** Only Japanese channels rewrite the transcript with the LLM; other languages use the cleaned SRT. */
+      if (destination.language === 'ja') {
         activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
         startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
         updatedSrtPath = await runUpdateTranscript(srtPath, destination.language, log, stepTimer);
@@ -1059,25 +1037,25 @@ export class ReupAudioPipeline {
 
         ctx.subtitlePath = updatedSrtPath;
         ctx.workDir = path.dirname(updatedSrtPath);
+      }
 
-        if (isRenderable) {
-          activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
-          startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
-          if (taskJobId) taskQueueRepository.setLivePhase(taskJobId, 'metadata');
-          ctx.videoMeta = await runMetadataStep(ctx);
-          completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+      if (isRenderable) {
+        activeStageId = CREATE_VIDEO_STAGE_IDS.metadata;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
+        if (taskJobId) taskQueueRepository.setLivePhase(taskJobId, 'metadata');
+        ctx.videoMeta = await runMetadataStep(ctx);
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
 
-          activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
-          startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
+        activeStageId = CREATE_VIDEO_STAGE_IDS.thumbnail;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);
 
-          const thumbnail = await runThumbnailStep(ctx, strategy);
-          Object.assign(assets, {
-            ...(thumbnail.reupThumbnailPath ? { reupThumbnailPath: thumbnail.reupThumbnailPath } : {}),
-            ...(thumbnail.heroImagePath ? { heroImagePath: thumbnail.heroImagePath } : {}),
-          });
+        const thumbnail = await runThumbnailStep(ctx, strategy);
+        Object.assign(assets, {
+          ...(thumbnail.reupThumbnailPath ? { reupThumbnailPath: thumbnail.reupThumbnailPath } : {}),
+          ...(thumbnail.heroImagePath ? { heroImagePath: thumbnail.heroImagePath } : {}),
+        });
 
-          Object.assign(assets, await strategy.prepareEnrichedVisuals(ctx, assets, thumbnail.flow));
-        }
+        Object.assign(assets, await strategy.prepareEnrichedVisuals(ctx, assets, thumbnail.flow));
       } else {
         skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.metadata);
         skipCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.thumbnail);

@@ -51,14 +51,6 @@ export async function runTwoStepNicheMetadata(
     );
   }
 
-  if (language !== 'ja') {
-    throw new AppError(
-      `${config.logLabel} metadata generation is only supported for Japanese`,
-      400,
-      'UNSUPPORTED_LANGUAGE',
-    );
-  }
-
   const imageStyle = options?.imageStyle?.trim() ?? '';
   if (!imageStyle) {
     throw new AppError(
