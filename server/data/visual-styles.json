@@ -1,6 +1,86 @@
 {
   "styles": [
     {
+      "id": "5f4d4657-a4cf-40ca-9dbb-ed3eed406964",
+      "name": "Acuarela Cálida ES",
+      "rule": "Warm watercolor illustration of everyday Spanish life, soft wet-on-wet washes with gentle ink outlines, Mediterranean afternoon light, palette of terracotta, ochre, cream, olive green and soft blue, Spanish apartment interiors with tiled floors and balconies full of potted plants, Spanish characters aged 55 to 80 with kind expressive faces, visible paper grain, calm and hopeful mood, the same main character drawn consistently in every scene, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tây Ban Nha: tâm lý, ý nghĩa sống sau hưu, quan hệ gia đình, sức khỏe cảm xúc (người lớn tuổi); tranh màu nước ấm",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "id": "f61da576-2611-46a6-9ad4-b6663965d9c9",
+      "name": "Luz de Atardecer Pictórica ES",
+      "rule": "Soft painterly cinematic illustration (not photographic) of quiet Spanish everyday places at golden hour or dusk, warm ochre and terracotta light against muted blue shadows, gentle brush texture, soft background glow, plenty of calm negative space, a single warm light source in every scene as a symbol of hope, Spanish characters aged 60 to 80, peaceful melancholic mood without distress, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tây Ban Nha: cô đơn không mong muốn, sống một mình, buổi tối, bình yên; tranh sơn dầu điện ảnh dịu (không phải ảnh chụp)",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "id": "bbf7b3c2-feaa-4013-acfa-896cef915b29",
+      "name": "Gouache Retro Nostalgia ES",
+      "rule": "Retro gouache illustration in the spirit of 1960s to 1980s Spanish magazine and school-book art, flat matte colors with visible paper grain, slightly faded warm palette of mustard, brick red, teal and cream, simple shapes, everyday scenes such as a corner shop, a village square, a radio on a table and a family dinner, characters with simple friendly faces, nostalgic cozy mood, no real brands, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tây Ban Nha: hoài niệm, ký ức thập niên 60-80, làng xóm, ẩm thực và lễ hội đời thường; tranh gouache retro",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "id": "da3d8ef1-48b7-45c9-a675-5a0f541b2b07",
+      "name": "Bienestar Pastel Plano ES",
+      "rule": "Clean flat vector illustration, soft pastel palette of mint, peach, sky blue and butter yellow, simple rounded shapes, thin or no outlines, generous empty space, friendly Spanish characters aged 60 to 75 in comfortable clothes, calm daily-routine scenes such as walking in a park, preparing a simple Mediterranean meal, resting by a window, gentle morning light, safe and soothing mood, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tây Ban Nha: sức khỏe, lão hóa chủ động, giấc ngủ, ăn uống, vận động nhẹ; minh họa phẳng pastel",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "id": "12de0542-5ef7-4c55-930f-36dd4a9079ca",
+      "name": "Explicativa Clara ES",
+      "rule": "Clear explanatory flat illustration with bold simple shapes and high contrast, warm neutral background with navy, teal and orange accents, large calm empty areas in the center or on one side left free for graphics added later, Spanish characters aged 60 to 75 with friendly attentive faces, simple props such as a phone drawn as a plain colored rectangle, a calendar as a plain grid without numbers, a house, a piggy bank, a shield, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tây Ban Nha: công nghệ, chống lừa đảo, lương hưu, thủ tục; minh họa giải thích rõ, chừa khoảng trống cho đồ họa",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "id": "de6d6299-403d-48e1-8605-1791776da8f9",
+      "name": "Warm Webtoon Healing KR",
+      "rule": "Soft Korean webtoon illustration of everyday Korean home and neighborhood settings, clean thin outlines, flat colors with gentle shading, warm palette of cream, peach, muted coral and sage green, soft window light, cozy apartment interiors with ondol floor, slightly rounded faces of Korean characters aged 50 to 70, expressive but calm emotions shown through posture and light, subtle paper texture, consistent main character in every scene, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tâm lý Hàn Quốc: quan hệ độc hại tuổi trung niên, gia đình, cha mẹ - con cái, mẹ chồng nàng dâu (50-60대); webtoon Hàn ấm áp",
+      "createdAt": "2026-10-22T16:51:00.881Z",
+      "updatedAt": "2026-10-22T16:51:00.881Z"
+    },
+    {
+      "id": "679aa180-b24f-4177-bc92-745fb689dd6e",
+      "name": "Quiet Cinematic Realism KR",
+      "rule": "Photoreal cinematic still of Korean everyday life, natural film grain, shallow depth of field, muted teal and warm amber grading, soft golden-hour or overcast light, lots of negative space, 35mm lens look, Korean characters aged 50 to 70, calm melancholic mood without dramatic distress, settings such as small kitchen, bus stop, Han River park, subway and hanok courtyard, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tâm lý Hàn Quốc: nỗi cô đơn tuổi già, sống một mình (1인 가구), buông bỏ, bình yên; ảnh điện ảnh tả thực",
+      "createdAt": "2026-10-22T16:51:00.881Z",
+      "updatedAt": "2026-10-22T16:51:00.881Z"
+    },
+    {
+      "id": "e36ea674-43bb-4ebb-a891-26b4e3611f71",
+      "name": "Pastel Minimal Flat KR",
+      "rule": "Minimal flat vector illustration, pastel blue, lavender and soft yellow palette, simple geometric shapes, generous empty space, night sky and moon motifs for sleep themes, simple round Korean characters, no harsh contrast, soothing and safe feeling, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tâm lý Hàn Quốc: mất ngủ, lo âu, kiệt sức, chăm sóc tinh thần; minh họa phẳng pastel dịu, không gây căng thẳng",
+      "createdAt": "2026-10-22T16:51:00.881Z",
+      "updatedAt": "2026-10-22T16:51:00.881Z"
+    },
+    {
+      "id": "920e0408-4c41-4d11-973f-720bb9537b31",
+      "name": "Ink Wash Reflection KR",
+      "rule": "Korean ink wash painting (suhmuk-hwa) style, black ink on warm hanji paper texture, a single red seal accent, misty mountains, pine trees, a lone figure, calligraphic brush strokes, large empty space, contemplative and quiet mood, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Triết lý nửa sau cuộc đời (인생 후반): Stoic, Schopenhauer, Pháp Đảnh, buông bỏ; tranh thủy mặc Hàn, trầm lắng",
+      "createdAt": "2026-10-22T16:51:00.881Z",
+      "updatedAt": "2026-10-22T16:51:00.881Z"
+    },
+    {
+      "id": "af8ba003-2290-4cfd-89dd-75cfc01ea1c7",
+      "name": "Conversational Cartoon KR",
+      "rule": "Friendly 2D cartoon, bold simple outlines, saturated but warm colors, exaggerated facial expressions, clear body language, simple Korean characters, bright neutral background, easy to read at small size, simple props that explain the idea, no text, no letters, no numbers, no speech bubbles, no watermark",
+      "niche": "Tâm lý Hàn Quốc: lời ăn tiếng nói, thói quen cảm xúc, câu nên tránh, kiểu người; hoạt hình 2D thân thiện dễ đọc",
+      "createdAt": "2026-10-22T16:51:00.881Z",
+      "updatedAt": "2026-10-22T16:51:00.881Z"
+    },
+    {
       "id": "6baf3bf6-b4f7-466d-ab3a-cac1660820cf",
       "name": "Money Psych White Figure",
       "rule": "Rich warm painterly illustration of cozy Japanese everyday settings bathed in golden-hour window light with soft bokeh, layered depth, detailed props and green plants, warm amber, honey and cream palette, containing one very simple minimalist white character (perfectly round plain white head, dot eyes, tiny smile, short plump pear-shaped chibi body with a big head, short stubby limbs, small red-orange scarf, no blush) drawn flat and simple in contrast to the detailed background, no text, no letters, no numbers, no speech bubbles, no watermark",

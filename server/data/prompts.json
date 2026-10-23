@@ -1,6 +1,522 @@
 {
   "promptSets": [
     {
+      "id": "all:es_pension_scenes",
+      "baseKey": "es_pension_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh ES – Hưu trí & lương hưu – Tây Ban Nha (jubilación · pensiones · Seguridad Social)",
+      "category": "image",
+      "niche": "86b7d3fe-8320-4508-954e-74bea3927817",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "bff5cfec-552b-4bb7-b674-5f3cf83015d9",
+          "key": "es_pension_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:metadata_es_pension",
+      "baseKey": "metadata_es_pension",
+      "language": "es",
+      "name": "Metadata ES – Hưu trí & lương hưu – Tây Ban Nha (jubilación · pensiones · Seguridad Social)",
+      "category": "meta",
+      "niche": "86b7d3fe-8320-4508-954e-74bea3927817",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "584157a4-3fbb-4b56-8b0b-e2e6a381f9fe",
+          "key": "metadata_es_pension_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "bc655aa3-e258-47aa-8e00-c5d79b13d4cc",
+          "key": "metadata_es_pension_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:es_tech_scenes",
+      "baseKey": "es_tech_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh ES – Công nghệ & chống lừa đảo cho người lớn tuổi – Tây Ban Nha (estafas · móvil · banca online)",
+      "category": "image",
+      "niche": "2e1715e4-884f-4f21-98ac-f461a0f2779d",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "b93d9520-177f-4070-a7ba-a7bbddb4b961",
+          "key": "es_tech_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:metadata_es_tech",
+      "baseKey": "metadata_es_tech",
+      "language": "es",
+      "name": "Metadata ES – Công nghệ & chống lừa đảo cho người lớn tuổi – Tây Ban Nha (estafas · móvil · banca online)",
+      "category": "meta",
+      "niche": "2e1715e4-884f-4f21-98ac-f461a0f2779d",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "7dd72da2-7345-4ee4-868a-249f3569750b",
+          "key": "metadata_es_tech_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "a466c0aa-b9b0-41b6-8229-ad9b4b530512",
+          "key": "metadata_es_tech_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:es_health_scenes",
+      "baseKey": "es_health_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh ES – Sức khỏe & lão hóa chủ động – Tây Ban Nha (envejecimiento activo · sueño · alimentación)",
+      "category": "image",
+      "niche": "b0738767-b8a1-44e0-9550-54755bf08caf",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "3ed3c111-cdfe-427e-bb6c-6e293c242bba",
+          "key": "es_health_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:metadata_es_health",
+      "baseKey": "metadata_es_health",
+      "language": "es",
+      "name": "Metadata ES – Sức khỏe & lão hóa chủ động – Tây Ban Nha (envejecimiento activo · sueño · alimentación)",
+      "category": "meta",
+      "niche": "b0738767-b8a1-44e0-9550-54755bf08caf",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "34d8f1de-5cad-4ccc-8263-1fd0b2176072",
+          "key": "metadata_es_health_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "50a17559-f044-47c4-ad80-2e74c80696eb",
+          "key": "metadata_es_health_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:es_nostalgia_scenes",
+      "baseKey": "es_nostalgia_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh ES – Hoài niệm & văn hóa đời thường – Tây Ban Nha (nostalgia · recuerdos · años 60-80)",
+      "category": "image",
+      "niche": "f7bdc38d-cd76-4563-b348-7e3a0377cfa1",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "3d9a67bf-26e9-40d3-be83-2bee9ef842b7",
+          "key": "es_nostalgia_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:metadata_es_nostalgia",
+      "baseKey": "metadata_es_nostalgia",
+      "language": "es",
+      "name": "Metadata ES – Hoài niệm & văn hóa đời thường – Tây Ban Nha (nostalgia · recuerdos · años 60-80)",
+      "category": "meta",
+      "niche": "f7bdc38d-cd76-4563-b348-7e3a0377cfa1",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "3e99ae1f-8898-4a6f-9bf8-65fc3bfd5789",
+          "key": "metadata_es_nostalgia_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "bb0f2f09-bb43-44ff-b244-f68073966568",
+          "key": "metadata_es_nostalgia_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:es_lonely_scenes",
+      "baseKey": "es_lonely_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh ES – Cô đơn không mong muốn & sống một mình – Tây Ban Nha (soledad no deseada · vivir solo)",
+      "category": "image",
+      "niche": "e24dbee3-bfa0-46e9-88a9-b3899f0d4a36",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "cfb27a97-8073-4ccc-b958-1d0001486f79",
+          "key": "es_lonely_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:metadata_es_lonely",
+      "baseKey": "metadata_es_lonely",
+      "language": "es",
+      "name": "Metadata ES – Cô đơn không mong muốn & sống một mình – Tây Ban Nha (soledad no deseada · vivir solo)",
+      "category": "meta",
+      "niche": "e24dbee3-bfa0-46e9-88a9-b3899f0d4a36",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "d2cc1b3e-f4f6-46a1-946b-49f9d011a54b",
+          "key": "metadata_es_lonely_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "a4b73f50-75d4-4b4c-af00-e244afa790a2",
+          "key": "metadata_es_lonely_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:es_psy_scenes",
+      "baseKey": "es_psy_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh ES – Tâm lý & ý nghĩa sống sau hưu – người lớn tuổi Tây Ban Nha (bienestar emocional · sentido de vida)",
+      "category": "image",
+      "niche": "a2d59421-c301-49b1-acdd-7ed5236ba7e2",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "f61ecd2c-1faa-43b6-8e0a-6b8caee6bf17",
+          "key": "es_psy_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:metadata_es_psy",
+      "baseKey": "metadata_es_psy",
+      "language": "es",
+      "name": "Metadata ES – Tâm lý & ý nghĩa sống sau hưu – người lớn tuổi Tây Ban Nha (bienestar emocional · sentido de vida)",
+      "category": "meta",
+      "niche": "a2d59421-c301-49b1-acdd-7ed5236ba7e2",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-10-22T17:29:07.893Z",
+      "steps": [
+        {
+          "id": "dc556d35-e547-415d-85d5-e3662ee1a26f",
+          "key": "metadata_es_psy_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "ed02a52a-b0a4-4317-987a-199088f9d7e5",
+          "key": "metadata_es_psy_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:kr_wisdom_scenes",
+      "baseKey": "kr_wisdom_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh KR – Triết lý nửa sau cuộc đời: buông bỏ & bình yên (인생 후반 철학 · 비움 · 내려놓기)",
+      "category": "image",
+      "niche": "a6d5a8a1-70ca-4adc-916b-44a35efc3b13",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "c034753b-5aff-4344-ba7e-c1c9d28d2b90",
+          "key": "kr_wisdom_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:metadata_kr_wisdom",
+      "baseKey": "metadata_kr_wisdom",
+      "language": "ko",
+      "name": "Metadata KR – Triết lý nửa sau cuộc đời: buông bỏ & bình yên (인생 후반 철학 · 비움 · 내려놓기)",
+      "category": "meta",
+      "niche": "a6d5a8a1-70ca-4adc-916b-44a35efc3b13",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "ad8f406d-8d64-467b-9f9b-1690c5238e8f",
+          "key": "metadata_kr_wisdom_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "4321dd17-0a50-4d01-b9c7-dd4cdfe0e803",
+          "key": "metadata_kr_wisdom_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:kr_speech_scenes",
+      "baseKey": "kr_speech_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh KR – Tâm lý lời nói & thói quen cảm xúc (말투 · 감정 습관 · 품격 있는 말)",
+      "category": "image",
+      "niche": "18f1bb67-139f-4934-b060-a6ef6ab9ab17",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "9f09a57f-6c79-4603-b906-8466c802737e",
+          "key": "kr_speech_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:metadata_kr_speech",
+      "baseKey": "metadata_kr_speech",
+      "language": "ko",
+      "name": "Metadata KR – Tâm lý lời nói & thói quen cảm xúc (말투 · 감정 습관 · 품격 있는 말)",
+      "category": "meta",
+      "niche": "18f1bb67-139f-4934-b060-a6ef6ab9ab17",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "6816d177-0381-4533-aa68-fa10d3892b11",
+          "key": "metadata_kr_speech_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "7023216a-c966-431e-956d-768d117444f1",
+          "key": "metadata_kr_speech_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:kr_mind_scenes",
+      "baseKey": "kr_mind_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh KR – Tâm lý sức khỏe tinh thần: giấc ngủ, lo âu, kiệt sức (마음 건강 · 불면 · 불안)",
+      "category": "image",
+      "niche": "c59a24c4-2076-40f9-b621-67e65e6455bf",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "18e18bc6-c2ba-4b10-a9ee-069a1884ae26",
+          "key": "kr_mind_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:metadata_kr_mind",
+      "baseKey": "metadata_kr_mind",
+      "language": "ko",
+      "name": "Metadata KR – Tâm lý sức khỏe tinh thần: giấc ngủ, lo âu, kiệt sức (마음 건강 · 불면 · 불안)",
+      "category": "meta",
+      "niche": "c59a24c4-2076-40f9-b621-67e65e6455bf",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "b382212b-9356-4452-8280-48bfd3197df1",
+          "key": "metadata_kr_mind_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "f8829bff-687a-418a-bb92-ba5c1f3b094e",
+          "key": "metadata_kr_mind_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:kr_family_scenes",
+      "baseKey": "kr_family_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh KR – Tâm lý gia đình: cha mẹ – con cái – mẹ chồng nàng dâu (가족 관계 · 자식 · 고부)",
+      "category": "image",
+      "niche": "cebaf838-3093-49f3-adae-ecac2a77b2db",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "b01fc13b-5895-438d-966f-5021905f297f",
+          "key": "kr_family_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:metadata_kr_family",
+      "baseKey": "metadata_kr_family",
+      "language": "ko",
+      "name": "Metadata KR – Tâm lý gia đình: cha mẹ – con cái – mẹ chồng nàng dâu (가족 관계 · 자식 · 고부)",
+      "category": "meta",
+      "niche": "cebaf838-3093-49f3-adae-ecac2a77b2db",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "61c9ab2b-d346-4106-ae8e-f9e6a38cd83e",
+          "key": "metadata_kr_family_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "2a37f69c-bb25-4538-93b3-45db4efa31d5",
+          "key": "metadata_kr_family_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:kr_lonely_scenes",
+      "baseKey": "kr_lonely_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh KR – Tâm lý cô đơn tuổi già & sống một mình (노후 외로움 · 1인 가구)",
+      "category": "image",
+      "niche": "20013055-0b1d-44f6-825b-107df365bfe9",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "8a725aa1-e9b4-48e3-9248-dd0a4f250af6",
+          "key": "kr_lonely_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:metadata_kr_lonely",
+      "baseKey": "metadata_kr_lonely",
+      "language": "ko",
+      "name": "Metadata KR – Tâm lý cô đơn tuổi già & sống một mình (노후 외로움 · 1인 가구)",
+      "category": "meta",
+      "niche": "20013055-0b1d-44f6-825b-107df365bfe9",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "652d8d61-bcee-4de7-a041-675a577aff86",
+          "key": "metadata_kr_lonely_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "2a2c3113-a2e1-4f0a-ba56-95769889a60d",
+          "key": "metadata_kr_lonely_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "all:kr_rel_scenes",
+      "baseKey": "kr_rel_scenes",
+      "language": "all",
+      "name": "Ảnh theo cảnh KR – Tâm lý quan hệ & cắt giảm người độc hại (인간관계 정리 · 50대 60대)",
+      "category": "image",
+      "niche": "1de14c5e-61d7-4782-bcb6-41ae38b04dc2",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "b53906e1-c4f6-4579-a6dc-c83946851fe8",
+          "key": "kr_rel_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:metadata_kr_rel",
+      "baseKey": "metadata_kr_rel",
+      "language": "ko",
+      "name": "Metadata KR – Tâm lý quan hệ & cắt giảm người độc hại (인간관계 정리 · 50대 60대)",
+      "category": "meta",
+      "niche": "1de14c5e-61d7-4782-bcb6-41ae38b04dc2",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-10-22T16:56:42.776Z",
+      "steps": [
+        {
+          "id": "925ede89-dc03-4285-93b1-d07cf00a268a",
+          "key": "metadata_kr_rel_step_1",
+          "step": 1,
+          "outputType": "text"
+        },
+        {
+          "id": "44bc6d8a-df0a-42c6-b573-606251cc1947",
+          "key": "metadata_kr_rel_step_2",
+          "step": 2,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
       "id": "ja:metadata_money_psych",
       "baseKey": "metadata_money_psych",
       "language": "ja",

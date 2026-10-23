@@ -1,6 +1,66 @@
 {
   "niches": [
     {
+      "key": "86b7d3fe-8320-4508-954e-74bea3927817",
+      "label": "Hưu trí & lương hưu – Tây Ban Nha (jubilación · pensiones · Seguridad Social)",
+      "createdAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "key": "2e1715e4-884f-4f21-98ac-f461a0f2779d",
+      "label": "Công nghệ & chống lừa đảo cho người lớn tuổi – Tây Ban Nha (estafas · móvil · banca online)",
+      "createdAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "key": "b0738767-b8a1-44e0-9550-54755bf08caf",
+      "label": "Sức khỏe & lão hóa chủ động – Tây Ban Nha (envejecimiento activo · sueño · alimentación)",
+      "createdAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "key": "f7bdc38d-cd76-4563-b348-7e3a0377cfa1",
+      "label": "Hoài niệm & văn hóa đời thường – Tây Ban Nha (nostalgia · recuerdos · años 60-80)",
+      "createdAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "key": "e24dbee3-bfa0-46e9-88a9-b3899f0d4a36",
+      "label": "Cô đơn không mong muốn & sống một mình – Tây Ban Nha (soledad no deseada · vivir solo)",
+      "createdAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "key": "a2d59421-c301-49b1-acdd-7ed5236ba7e2",
+      "label": "Tâm lý & ý nghĩa sống sau hưu – người lớn tuổi Tây Ban Nha (bienestar emocional · sentido de vida)",
+      "createdAt": "2026-10-22T17:29:07.893Z"
+    },
+    {
+      "key": "a6d5a8a1-70ca-4adc-916b-44a35efc3b13",
+      "label": "Triết lý nửa sau cuộc đời: buông bỏ & bình yên (인생 후반 철학 · 비움 · 내려놓기)",
+      "createdAt": "2026-10-22T16:56:42.776Z"
+    },
+    {
+      "key": "18f1bb67-139f-4934-b060-a6ef6ab9ab17",
+      "label": "Tâm lý lời nói & thói quen cảm xúc (말투 · 감정 습관 · 품격 있는 말)",
+      "createdAt": "2026-10-22T16:56:42.776Z"
+    },
+    {
+      "key": "c59a24c4-2076-40f9-b621-67e65e6455bf",
+      "label": "Tâm lý sức khỏe tinh thần: giấc ngủ, lo âu, kiệt sức (마음 건강 · 불면 · 불안)",
+      "createdAt": "2026-10-22T16:56:42.776Z"
+    },
+    {
+      "key": "cebaf838-3093-49f3-adae-ecac2a77b2db",
+      "label": "Tâm lý gia đình: cha mẹ – con cái – mẹ chồng nàng dâu (가족 관계 · 자식 · 고부)",
+      "createdAt": "2026-10-22T16:56:42.776Z"
+    },
+    {
+      "key": "20013055-0b1d-44f6-825b-107df365bfe9",
+      "label": "Tâm lý cô đơn tuổi già & sống một mình (노후 외로움 · 1인 가구)",
+      "createdAt": "2026-10-22T16:56:42.776Z"
+    },
+    {
+      "key": "1de14c5e-61d7-4782-bcb6-41ae38b04dc2",
+      "label": "Tâm lý quan hệ & cắt giảm người độc hại (인간관계 정리 · 50대 60대)",
+      "createdAt": "2026-10-22T16:56:42.776Z"
+    },
+    {
       "key": "734a1790-b5e8-45cc-9fce-296a74d64b67",
       "label": "Tâm lý học tiền bạc & lối sống tiết kiệm (お金の心理・50代60代)",
       "createdAt": "2026-10-19T00:00:00.000Z"
