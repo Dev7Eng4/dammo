@@ -5,8 +5,10 @@ import { AppLayout } from './layouts/AppLayout';
 import { AssetsPage } from './pages/AssetsPage';
 import { ChromeProfilesPage } from './pages/ChromeProfilesPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { FacebookPagesPage } from './pages/FacebookPagesPage';
 import { GpmManagerPage } from './pages/GpmManagerPage';
 import { MailAccountsPage } from './pages/MailAccountsPage';
+import { MonetizationRoadmapPage } from './pages/MonetizationRoadmapPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProxiesPage } from './pages/ProxiesPage';
 import { PromptsPage } from './pages/PromptsPage';
@@ -32,9 +34,11 @@ export default function App() {
               <Route path="mail-accounts" element={<MailAccountsPage />} />
               <Route path="youtube-channels" element={<YoutubeChannelsPage />} />
               <Route path="youtube-channels/:id" element={<YoutubeChannelDetailPage />} />
+              <Route path="facebook-pages" element={<FacebookPagesPage />} />
               <Route path="source-channels" element={<SourceChannelsPage />} />
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
               <Route path="radar" element={<RadarPage />} />
+              <Route path="monetization" element={<MonetizationRoadmapPage />} />
               <Route path="prompts" element={<PromptsPage />} />
               <Route path="visual-styles" element={<VisualStylesPage />} />
               <Route path="chrome-profiles" element={<ChromeProfilesPage />} />

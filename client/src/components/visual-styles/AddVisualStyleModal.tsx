@@ -1,8 +1,9 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createVisualStyle } from '../../api/visualStyles';
-import { Button, Input, Modal, Textarea } from '../ui';
+import { PROMPT_FORM_LANGUAGE_OPTIONS } from '../../constants/promptForm';
+import { Button, DropdownSelect, Input, Modal, Textarea } from '../ui';
 import type { VisualStyleFormValues } from '../../types/visualStyle';
 
 interface AddVisualStyleModalProps {
@@ -16,6 +17,7 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -23,6 +25,7 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
     defaultValues: {
       name: '',
       niche: '',
+      language: 'all',
       rule: '',
     },
   });
@@ -39,6 +42,7 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
       await createVisualStyle({
         name: values.name,
         niche: values.niche,
+        language: values.language,
         rule: values.rule,
       });
       reset();
@@ -90,6 +94,27 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
             {...register('niche', { required: t('visual.form.nicheRequired') })}
           />
           {errors.niche ? <p className="mt-1 text-xs text-danger">{errors.niche.message}</p> : null}
+        </div>
+
+        <div>
+          <label htmlFor="style-language" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            {t('visual.form.language')}
+          </label>
+          <Controller
+            control={control}
+            name="language"
+            render={({ field }) => (
+              <DropdownSelect
+                id="style-language"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                className="w-full"
+                triggerClassName="h-10 w-full rounded-lg"
+              />
+            )}
+          />
         </div>
 
         <div>

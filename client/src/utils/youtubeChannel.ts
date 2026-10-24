@@ -97,7 +97,7 @@ export interface ReupAudioVideoStyleOption {
 
 export async function loadReupAudioVideoStyleOptions(
   videoType: ReupAudioVideoType | '',
-  _language?: string,
+  language?: string,
   options?: { signal?: AbortSignal },
 ): Promise<ReupAudioVideoStyleOption[]> {
   if (!videoType) {
@@ -105,7 +105,9 @@ export async function loadReupAudioVideoStyleOptions(
   }
 
   const { items } = await fetchVisualStyles(options);
-  return items.map((item) => ({ value: item.id, label: `${item.name} (${item.niche})` }));
+  return items
+    .filter((item) => !language || item.language === 'all' || item.language === language)
+    .map((item) => ({ value: item.id, label: `${item.name} (${item.niche})` }));
 }
 
 export function getReupAudioVideoStylePlaceholder(

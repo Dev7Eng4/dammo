@@ -1,0 +1,75 @@
+{
+  "page": {
+    "title": "Facebook Page",
+    "subtitle": "Quản lý Page theo chủ đề, tạo Page và đăng bài/video tự động qua profile GPM.",
+    "add": "Thêm Page",
+    "search": "Tìm theo tên, chủ đề, email…",
+    "empty": "Chưa có Page nào.",
+    "loadError": "Không tải được danh sách Page"
+  },
+  "status": {
+    "all": "Tất cả",
+    "draft": "Nháp",
+    "created": "Đã tạo",
+    "active": "Đang hoạt động",
+    "paused": "Tạm dừng"
+  },
+  "table": {
+    "name": "Page",
+    "topic": "Chủ đề",
+    "email": "Email / profile",
+    "status": "Trạng thái",
+    "lastPost": "Đăng gần nhất",
+    "actions": "Thao tác"
+  },
+  "row": {
+    "createOnFacebook": "Tạo trên Facebook",
+    "creating": "Đang tạo…",
+    "createdOnFacebook": "Đã tạo Page trên Facebook",
+    "createError": "Tạo Page thất bại",
+    "post": "Đăng bài",
+    "uploadVideo": "Đăng video / Reel",
+    "open": "Mở Page"
+  },
+  "form": {
+    "addTitle": "Thêm Facebook Page",
+    "editTitle": "Sửa Facebook Page",
+    "name": "Tên Page",
+    "email": "Email (profile GPM)",
+    "emailPlaceholder": "Chọn email",
+    "topic": "Chủ đề",
+    "topicPlaceholder": "Chọn chủ đề",
+    "topicHint": "Dùng để gợi ý hạng mục Facebook khi để trống ô hạng mục.",
+    "category": "Hạng mục Facebook",
+    "categoryPlaceholder": "Ví dụ: Education, Digital creator",
+    "bio": "Giới thiệu (tối đa 255 ký tự)",
+    "pageUrl": "URL Page",
+    "pageUrlHint": "Để trống nếu muốn Dammo tự tạo Page trên Facebook.",
+    "required": "Cần nhập tên Page và chọn email",
+    "saved": "Đã lưu",
+    "saveError": "Không lưu được Page",
+    "emailLoading": "Đang tải email…",
+    "emailEmpty": "Không còn email khả dụng",
+    "emailSearch": "Tìm email"
+  },
+  "publish": {
+    "postTitle": "Đăng bài lên Page",
+    "videoTitle": "Đăng video / Reel lên Page",
+    "hint": "Tự động thao tác trên profile GPM của Page \"{{name}}\". Quá trình có thể mất vài phút.",
+    "text": "Nội dung bài viết",
+    "caption": "Mô tả video",
+    "imageFile": "Ảnh đính kèm (tùy chọn)",
+    "videoFile": "File video",
+    "fileHint": "Đường dẫn tương đối trong thư mục data của server.",
+    "submit": "Bắt đầu đăng",
+    "running": "Đang đăng…",
+    "done": "Đã đăng lên Facebook",
+    "error": "Đăng thất bại"
+  },
+  "delete": {
+    "title": "Xóa Page",
+    "body": "Xóa \"{{name}}\" khỏi danh sách? Page trên Facebook không bị xóa.",
+    "done": "Đã xóa",
+    "error": "Không xóa được Page"
+  }
+}

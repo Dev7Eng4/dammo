@@ -1,7 +1,11 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { ensureUuid, isUuid } from '../../shared/id.js';
+import type { PromptLanguage } from '../prompts/prompts.types.js';
 import type { VisualStyle, VisualStylesStore } from './visual-styles.types.js';
+
+/** Styles saved before the language field existed apply to every language. */
+const DEFAULT_LANGUAGE: PromptLanguage = 'all';
 
 const EMPTY_STORE: VisualStylesStore = { styles: [] };
 
@@ -10,13 +14,16 @@ type LegacyStore = VisualStylesStore & { nextId?: number };
 function normalizeStore(raw: LegacyStore | null): VisualStylesStore {
   if (!raw?.styles) return EMPTY_STORE;
 
-  const needsMigration = raw.nextId !== undefined || raw.styles.some((item) => !isUuid(item.id));
+  const needsMigration =
+    raw.nextId !== undefined ||
+    raw.styles.some((item) => !isUuid(item.id) || item.language === undefined);
   if (!needsMigration) return { styles: raw.styles };
 
   return {
     styles: raw.styles.map((item) => ({
       ...item,
       id: ensureUuid(item.id),
+      language: item.language ?? DEFAULT_LANGUAGE,
     })),
   };
 }
@@ -30,7 +37,11 @@ function loadStore(): VisualStylesStore {
 
   const normalized = normalizeStore(raw);
   const needsPersist =
-    raw.nextId !== undefined || raw.styles.some((item, i) => item.id !== normalized.styles[i]?.id);
+    raw.nextId !== undefined ||
+    raw.styles.some(
+      (item, i) =>
+        item.id !== normalized.styles[i]?.id || item.language !== normalized.styles[i]?.language,
+    );
 
   if (needsPersist) {
     writeJson(paths.visualStyles, normalized);

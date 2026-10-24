@@ -1,0 +1,119 @@
+{
+  "page": {
+    "title": "Monetization roadmap",
+    "subtitle": "Next revenue streams, scored by earning potential, AI automation fit, speed to first income and platform risk.",
+    "disclaimer": "Scores are estimates for prioritising, not income promises. Program requirements (beta access, country, follower thresholds) change often — verify in your account before investing."
+  },
+  "score": {
+    "earn": "Earning potential",
+    "aiFit": "AI fit",
+    "speed": "Speed to income",
+    "safety": "Platform safety",
+    "total": "Total"
+  },
+  "tier": {
+    "now": "Do now",
+    "next": "Do next",
+    "later": "Later"
+  },
+  "pick": {
+    "title": "Quick verdict",
+    "body": "Start with TikTok Shop Affiliate: it is where AI helps most (high-volume product review videos), pays fastest and needs no inventory. Keep YouTube as the base and add affiliate links to descriptions/bios to monetize existing traffic. TikTok Creator Rewards and Facebook Reels pay per view — pursue them only with original, higher-quality content. Leave organic dropshipping for last because it needs real operations (suppliers, support, returns)."
+  },
+  "table": {
+    "title": "Comparison",
+    "track": "Track",
+    "tier": "Priority"
+  },
+  "detail": {
+    "title": "Track analysis",
+    "summary": "Overview",
+    "aiRole": "What AI can do",
+    "steps": "Direction",
+    "risk": "Risks to avoid"
+  },
+  "phase": {
+    "title": "Phased roadmap",
+    "p1": {
+      "name": "Phase 1 · Days 0–30",
+      "body": "Set up the TikTok Shop affiliate workflow and add affiliate links to existing YouTube channels. Goal: first orders and a signal on which products/niches convert."
+    },
+    "p2": {
+      "name": "Phase 2 · Days 30–90",
+      "body": "Scale what works: more accounts in the converting niche, cross-post to Facebook Reels, and trial TikTok Creator Rewards with an original 1-minute+ series."
+    },
+    "p3": {
+      "name": "Phase 3 · Day 90+",
+      "body": "Only with sales data in hand: test organic dropshipping with the 1–2 best-selling affiliate products, so demand is proven before you buy stock."
+    }
+  },
+  "ai": {
+    "title": "Mapped to existing Dammo modules",
+    "radar": "Viral radar → find exploding products/topics to make videos about and pick affiliate items.",
+    "prompts": "Prompts + Visual styles → generate review scripts, 3-second hooks and CTAs per niche.",
+    "production": "Video production + Task queue → batch-render 9:16 videos for TikTok, Reels and Shorts from one script.",
+    "accounts": "Chrome/GPM + Proxies + YouTube channels → manage separate accounts, one niche each, to avoid duplicate posting."
+  },
+  "track": {
+    "tiktokAffiliate": {
+      "name": "TikTok Shop Affiliate",
+      "summary": "Make videos promoting other sellers' products on TikTok Shop and earn a commission per order (typically a few percent up to ~20% depending on category). No capital, no inventory. It has the highest income ceiling for a mass video production model.",
+      "aiRole": "Very high: review scripts, voiceover, product scene assembly, captions, and many render variants of one product to test hooks.",
+      "step1": "Pick 1–2 niches with repeat demand (home, beauty, kitchen) instead of chasing everything.",
+      "step2": "Use Radar and best-seller lists to choose 10–20 products and make 3–5 hook variants per product.",
+      "step3": "Post 2–3 videos/day/account, measure orders per video, clone winning hooks and drop products with no orders after about a week.",
+      "step4": "When a niche is stable, open more accounts in it; consider expanding to other supported countries.",
+      "risk": "Repetitive, spammy or misleading promo videos lose reach or the affiliate privilege. Label AI-generated content as required and avoid misleading product visuals."
+    },
+    "affiliateBio": {
+      "name": "Affiliate in descriptions/bio (Amazon, SaaS, ClickBank…)",
+      "summary": "Put affiliate links in YouTube descriptions, Pinterest and TikTok/Instagram bios. It monetizes traffic you already have at almost no extra cost. Recurring SaaS commissions can pay steadier than physical goods.",
+      "aiRole": "High: auto-write per-video CTAs and link descriptions, and produce tool/book comparison videos.",
+      "step1": "Pick programs that fit the channel niche (psychology/money channels → books, courses, tools).",
+      "step2": "Add links and CTAs to older video descriptions in one bulk update.",
+      "step3": "Make a few top-tools/books videos aimed at search keywords — content that stays alive on YouTube.",
+      "step4": "Track clicks and orders per link and keep the programs that convert.",
+      "risk": "Disclose the affiliate relationship as the platform requires; never misstate commissions or product benefits."
+    },
+    "fbReels": {
+      "name": "Facebook Reels (Content Monetization)",
+      "summary": "Meta pays by Reels performance for eligible Pages, and you can also add affiliate links. The same vertical video works on TikTok and Shorts so the extra cost is low. Eligibility and payouts vary by country and program round.",
+      "aiRole": "High for production; lower for differentiation since Meta demotes reposted or near-identical content.",
+      "step1": "Create a dedicated Page (not a personal profile) and check its monetization eligibility.",
+      "step2": "Cross-post existing vertical videos, but change the hook/title and remove other platforms' watermarks.",
+      "step3": "Track for 4–6 weeks: turn high-retention videos into a series, drop the rest.",
+      "step4": "Use Reels as a funnel to affiliate or your own product instead of relying on view payouts alone.",
+      "risk": "Unoriginal or reposted content can lose monetization or distribution. Music/image copyright strikes are a common failure."
+    },
+    "youtubeCore": {
+      "name": "YouTube (current base)",
+      "summary": "Existing Shorts and long-form channels are the base traffic source and the most durable platform. Ad income is slow because of monetization thresholds, but long-form videos have long lifespans.",
+      "aiRole": "Very high: the current Dammo pipeline (script → visuals → voice → render) already serves this track.",
+      "step1": "Keep a steady cadence and focus on niches with good retention instead of spreading across more channels.",
+      "step2": "Use the channels as a traffic pool for affiliate (track above) rather than living on ad revenue alone.",
+      "step3": "Turn well-performing Shorts into long-form videos aimed at search keywords for lasting traffic.",
+      "step4": "Favour quality over volume: YouTube cracks down on repetitive, mass-produced, low-value content.",
+      "risk": "Templated mass-produced content can be treated as inauthentic and lose monetization. Vary structure, visuals and voice between videos."
+    },
+    "tiktokBeta": {
+      "name": "TikTok Creator Rewards (beta)",
+      "summary": "A program paying by qualified views on original videos of 1 minute or longer, with RPM typically much higher than short clips. Requirements usually include a minimum follower count, 30-day views, age and a supported country. It is still a pilot, so it can change at any time.",
+      "aiRole": "Medium: AI helps with scripts, visuals and voice, but content must be original, valuable and non-templated to qualify.",
+      "step1": "Check Creator Center for account/country eligibility before investing.",
+      "step2": "Pick one storytelling/educational niche and make 1–3 minute videos, each with its own angle.",
+      "step3": "Grow followers and views with short clips, then move to long videos once eligible.",
+      "step4": "Measure real RPM after 30 days, then decide whether to scale.",
+      "risk": "Videos judged unoriginal, repetitive or low quality earn nothing. For AI content, label it as required."
+    },
+    "dropshipOrganic": {
+      "name": "Organic dropshipping",
+      "summary": "Sell without holding stock using organic video traffic (TikTok Shop, Facebook). Margin per order is higher than affiliate, but you own the customer experience: fulfilment, delivery, refunds and complaints.",
+      "aiRole": "Medium: AI handles videos and product copy well, but success depends on suppliers, pricing and support — which AI cannot replace.",
+      "step1": "Start only after affiliate shows which products have real demand.",
+      "step2": "Pick 1–2 best sellers and order samples to check quality and delivery time.",
+      "step3": "Choose suppliers with clear delivery times and a return policy; price in platform fees, shipping and returns.",
+      "step4": "Scale only when margin after costs stays positive for several weeks in a row.",
+      "risk": "Late delivery, defective goods and many refunds lower shop score and can get the Shop banned. This has the highest platform and operational risk."
+    }
+  }
+}

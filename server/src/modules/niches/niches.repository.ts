@@ -1,6 +1,10 @@
 import { paths } from '../../config/paths.js';
 import { readJson, updateJson, writeJson } from '../../infrastructure/storage/json-store.js';
+import type { PromptLanguage } from '../prompts/prompts.types.js';
 import type { Niche, NichesStore } from './niches.types.js';
+
+/** Niches saved before the language field existed apply to every language. */
+const DEFAULT_LANGUAGE: PromptLanguage = 'all';
 
 const EMPTY_STORE: NichesStore = { niches: [] };
 
@@ -10,7 +14,13 @@ function loadStore(): NichesStore {
     writeJson(paths.niches, EMPTY_STORE);
     return EMPTY_STORE;
   }
-  return { niches: raw.niches };
+  if (raw.niches.every((item) => item.language !== undefined)) return { niches: raw.niches };
+
+  const normalized: NichesStore = {
+    niches: raw.niches.map((item) => ({ ...item, language: item.language ?? DEFAULT_LANGUAGE })),
+  };
+  writeJson(paths.niches, normalized);
+  return normalized;
 }
 
 export class NichesRepository {

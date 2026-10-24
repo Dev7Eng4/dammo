@@ -13,6 +13,7 @@ export const paths = {
   renderOutputDir: path.join(env.dataDir, 'renders', 'output'),
   importsDir: path.join(env.dataDir, 'imports'),
   youtubeChannels: path.join(env.dataDir, 'youtube-channels.json'),
+  facebookPages: path.join(env.dataDir, 'facebook-pages.json'),
   youtubeChannelsDir: path.join(env.dataDir, 'youtube-channels'),
   sourceChannels: path.join(env.dataDir, 'source-channels.json'),
   radarStore: path.join(env.dataDir, 'radar.json'),

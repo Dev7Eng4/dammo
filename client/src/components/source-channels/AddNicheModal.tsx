@@ -1,8 +1,10 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createNiche, deleteNiche, fetchNicheUsage, fetchNiches, updateNiche } from '../../api/niches';
-import { Button, Input, Modal } from '../ui';
+import { PROMPT_FORM_LANGUAGE_OPTIONS, PROMPT_LANGUAGE_LABELS } from '../../constants/promptForm';
+import { Button, DropdownSelect, Input, Modal } from '../ui';
+import type { PromptLanguage } from '../../types/prompt';
 import type { AddNicheFormValues, Niche, NicheMutationAction, NicheUsage } from '../../types/niche';
 import { NicheInUseModal } from './NicheInUseModal';
 
@@ -55,17 +57,19 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
   const [nichesLoading, setNichesLoading] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
+  const [editingLanguage, setEditingLanguage] = useState<PromptLanguage>('all');
   const [rowBusyKey, setRowBusyKey] = useState<string | null>(null);
   const [inUseWarning, setInUseWarning] = useState<{ label: string; usage: NicheUsage } | null>(
     null,
   );
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<AddNicheFormValues>({
-    defaultValues: { label: '' },
+    defaultValues: { label: '', language: 'all' },
   });
 
   useEffect(() => {
@@ -95,7 +99,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
   }, [open]);
 
   function handleClose() {
-    reset({ label: '' });
+    reset({ label: '', language: 'all' });
     setApiError(null);
     setEditingKey(null);
     setEditingLabel('');
@@ -107,8 +111,8 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
   async function onSubmit(values: AddNicheFormValues) {
     setApiError(null);
     try {
-      const { item } = await createNiche({ label: values.label.trim() });
-      reset({ label: '' });
+      const { item } = await createNiche({ label: values.label.trim(), language: values.language });
+      reset({ label: '', language: 'all' });
       setNiches((prev) => [item, ...prev.filter((n) => n.key !== item.key)]);
       onSuccess?.('create');
     } catch (err) {
@@ -120,6 +124,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
     setApiError(null);
     setEditingKey(niche.key);
     setEditingLabel(niche.label);
+    setEditingLanguage(niche.language ?? 'all');
   }
 
   function cancelEdit() {
@@ -137,7 +142,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
     setApiError(null);
     setRowBusyKey(key);
     try {
-      const { item } = await updateNiche(key, { label });
+      const { item } = await updateNiche(key, { label, language: editingLanguage });
       setNiches((prev) => prev.map((n) => (n.key === key ? item : n)));
       setEditingKey(null);
       setEditingLabel('');
@@ -220,6 +225,26 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
             />
             {errors.label ? <p className="mt-1 text-xs text-danger">{errors.label.message}</p> : null}
           </div>
+          <div>
+            <label htmlFor="niche-language" className="mb-1.5 block text-xs font-medium text-neutral-400">
+              {t('niche.language')}
+            </label>
+            <Controller
+              control={control}
+              name="language"
+              render={({ field }) => (
+                <DropdownSelect
+                  id="niche-language"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                  className="w-full"
+                  triggerClassName="h-10 w-full rounded-lg"
+                />
+              )}
+            />
+          </div>
           {apiError ? <p className="text-xs text-danger">{apiError}</p> : null}
 
           <div>
@@ -261,10 +286,25 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                             }}
                           />
                         ) : (
-                          <span className="min-w-0 flex-1 truncate text-sm text-neutral-200">
-                            {niche.label}
-                          </span>
+                          <>
+                            <span className="min-w-0 flex-1 truncate text-sm text-neutral-200">
+                              {niche.label}
+                            </span>
+                            <span className="shrink-0 font-mono text-xs text-neutral-400">
+                              {PROMPT_LANGUAGE_LABELS[niche.language] ?? PROMPT_LANGUAGE_LABELS.all}
+                            </span>
+                          </>
                         )}
+                        {isEditing ? (
+                          <DropdownSelect
+                            value={editingLanguage}
+                            onChange={setEditingLanguage}
+                            options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                            disabled={isBusy}
+                            className="w-24 shrink-0"
+                            triggerClassName="h-8 w-full rounded-lg"
+                          />
+                        ) : null}
 
                         <div className="flex shrink-0 items-center gap-1">
                           {isEditing ? (

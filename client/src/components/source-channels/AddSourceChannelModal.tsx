@@ -39,10 +39,14 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     handleSubmit,
     control,
     reset,
+    watch,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<AddSourceChannelFormValues>({
     defaultValues,
   });
+  const language = watch('language');
 
   useEffect(() => {
     if (!open) return;
@@ -96,10 +100,19 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
     onClose();
   }
 
-  const nicheOptions = niches.map((item) => ({
-    value: item.key,
-    label: item.label,
-  }));
+  const nicheOptions = niches
+    .filter((item) => !language || item.language === 'all' || item.language === language)
+    .map((item) => ({
+      value: item.key,
+      label: item.label,
+    }));
+
+  useEffect(() => {
+    const current = getValues('niche');
+    if (current && niches.length > 0 && !nicheOptions.some((o) => o.value === current)) {
+      setValue('niche', '');
+    }
+  }, [language, niches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Modal

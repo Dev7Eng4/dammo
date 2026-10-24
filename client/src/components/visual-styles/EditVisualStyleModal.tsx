@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { updateVisualStyle } from '../../api/visualStyles';
-import { Button, Input, Modal, Textarea } from '../ui';
+import { PROMPT_FORM_LANGUAGE_OPTIONS } from '../../constants/promptForm';
+import { Button, DropdownSelect, Input, Modal, Textarea } from '../ui';
 import type { VisualStyle, VisualStyleFormValues } from '../../types/visualStyle';
 
 interface EditVisualStyleModalProps {
@@ -22,6 +23,7 @@ export function EditVisualStyleModal({
   const [apiError, setApiError] = useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -32,6 +34,7 @@ export function EditVisualStyleModal({
     reset({
       name: style.name,
       niche: style.niche,
+      language: style.language ?? 'all',
       rule: style.rule,
     });
   }, [style, reset]);
@@ -49,6 +52,7 @@ export function EditVisualStyleModal({
       await updateVisualStyle(style.id, {
         name: values.name,
         niche: values.niche,
+        language: values.language,
         rule: values.rule,
       });
       onSuccess();
@@ -103,6 +107,27 @@ export function EditVisualStyleModal({
             {...register('niche', { required: t('visual.form.nicheRequired') })}
           />
           {errors.niche ? <p className="mt-1 text-xs text-danger">{errors.niche.message}</p> : null}
+        </div>
+
+        <div>
+          <label htmlFor="edit-style-language" className="mb-1.5 block text-xs font-medium text-neutral-400">
+            {t('visual.form.language')}
+          </label>
+          <Controller
+            control={control}
+            name="language"
+            render={({ field }) => (
+              <DropdownSelect
+                id="edit-style-language"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                className="w-full"
+                triggerClassName="h-10 w-full rounded-lg"
+              />
+            )}
+          />
         </div>
 
         <div>

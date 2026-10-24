@@ -27,6 +27,7 @@ export class VisualStylesService {
       name: input.name.trim(),
       rule: input.rule.trim(),
       niche: input.niche.trim(),
+      language: input.language,
       createdAt: now,
       updatedAt: now,
     };
@@ -43,6 +44,7 @@ export class VisualStylesService {
       name: input.name?.trim() ?? style.name,
       rule: input.rule?.trim() ?? style.rule,
       niche: input.niche?.trim() ?? style.niche,
+      language: input.language ?? style.language,
       updatedAt: now,
     }));
 

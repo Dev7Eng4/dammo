@@ -3,6 +3,7 @@ import {
   Clapperboard,
   Construction,
   Database,
+  Flag,
   Factory,
   FileCode2,
   FileSpreadsheet,
@@ -19,6 +20,7 @@ import {
   Rocket,
   Settings,
   Shield,
+  TrendingUp,
   UserPlus,
   type LucideIcon,
 } from 'lucide-react'
@@ -50,6 +52,8 @@ const iconMap: Record<NavIcon, LucideIcon> = {
   'task-queue': ListTodo,
   logs: FileCode2,
   settings: Settings,
+  roadmap: TrendingUp,
+  facebook: Flag,
 }
 
 export function PlaceholderPage() {

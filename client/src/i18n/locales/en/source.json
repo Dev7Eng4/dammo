@@ -116,6 +116,7 @@
   },
   "niche": {
     "modalTitle": "Add niche",
+    "language": "Language",
     "name": "Niche name",
     "nameRequired": "Niche name is required",
     "existing": "Existing niches",

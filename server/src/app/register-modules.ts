@@ -19,6 +19,7 @@ import { createTaskQueueRoutes } from '../modules/task-queue/task-queue.routes.j
 import { createNichesRoutes } from '../modules/niches/niches.routes.js';
 import { createVisualStylesRoutes } from '../modules/visual-styles/visual-styles.routes.js';
 import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube-channels.routes.js';
+import { createFacebookPagesRoutes } from '../modules/facebook-pages/facebook-pages.routes.js';
 import { createAssetsRoutes } from '../modules/assets/assets.routes.js';
 import { createCelebritiesRoutes } from '../modules/celebrities/celebrities.routes.js';
 import { createMascotsRoutes } from '../modules/mascots/mascots.routes.js';
@@ -31,6 +32,7 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/proxies`, createProxiesRoutes());
   app.route(`${prefix}/search`, createSearchRoutes());
   app.route(`${prefix}/youtube-channels`, createYoutubeChannelsRoutes());
+  app.route(`${prefix}/facebook-pages`, createFacebookPagesRoutes());
   app.route(`${prefix}/source-channels`, createSourceChannelsRoutes());
   app.route(`${prefix}/radar`, createRadarRoutes());
   app.route(`${prefix}/render-queue`, createRenderQueueRoutes());

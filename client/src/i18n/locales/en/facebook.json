@@ -1,0 +1,75 @@
+{
+  "page": {
+    "title": "Facebook Pages",
+    "subtitle": "Manage topic-based Pages, create Pages and publish posts/videos automatically through GPM profiles.",
+    "add": "Add Page",
+    "search": "Search by name, topic, email…",
+    "empty": "No Pages yet.",
+    "loadError": "Could not load Pages"
+  },
+  "status": {
+    "all": "All",
+    "draft": "Draft",
+    "created": "Created",
+    "active": "Active",
+    "paused": "Paused"
+  },
+  "table": {
+    "name": "Page",
+    "topic": "Topic",
+    "email": "Email / profile",
+    "status": "Status",
+    "lastPost": "Last post",
+    "actions": "Actions"
+  },
+  "row": {
+    "createOnFacebook": "Create on Facebook",
+    "creating": "Creating…",
+    "createdOnFacebook": "Page created on Facebook",
+    "createError": "Failed to create Page",
+    "post": "Publish post",
+    "uploadVideo": "Upload video / Reel",
+    "open": "Open Page"
+  },
+  "form": {
+    "addTitle": "Add Facebook Page",
+    "editTitle": "Edit Facebook Page",
+    "name": "Page name",
+    "email": "Email (GPM profile)",
+    "emailPlaceholder": "Select an email",
+    "topic": "Topic",
+    "topicPlaceholder": "Select a topic",
+    "topicHint": "Used to suggest a Facebook category when the category is left empty.",
+    "category": "Facebook category",
+    "categoryPlaceholder": "e.g. Education, Digital creator",
+    "bio": "Bio (max 255 characters)",
+    "pageUrl": "Page URL",
+    "pageUrlHint": "Leave empty to let Dammo create the Page on Facebook.",
+    "required": "Page name and email are required",
+    "saved": "Saved",
+    "saveError": "Could not save Page",
+    "emailLoading": "Loading emails…",
+    "emailEmpty": "No available emails",
+    "emailSearch": "Search email"
+  },
+  "publish": {
+    "postTitle": "Publish a post to the Page",
+    "videoTitle": "Upload a video / Reel to the Page",
+    "hint": "Runs automatically in the GPM profile of Page \"{{name}}\". This can take a few minutes.",
+    "text": "Post text",
+    "caption": "Video description",
+    "imageFile": "Attached image (optional)",
+    "videoFile": "Video file",
+    "fileHint": "Path relative to the server data directory.",
+    "submit": "Start publishing",
+    "running": "Publishing…",
+    "done": "Published to Facebook",
+    "error": "Publishing failed"
+  },
+  "delete": {
+    "title": "Delete Page",
+    "body": "Remove \"{{name}}\" from the list? The Facebook Page itself is not deleted.",
+    "done": "Deleted",
+    "error": "Could not delete Page"
+  }
+}

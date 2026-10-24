@@ -109,6 +109,7 @@
     "table": {
       "col": {
         "name": "NAME",
+        "language": "LANGUAGE",
         "theme": "THEME",
         "rules": "RULES",
         "actions": "ACTIONS"
@@ -123,6 +124,7 @@
     "deleteDeleting": "Deleting...",
     "form": {
       "name": "Name",
+      "language": "Language",
       "niche": "Theme",
       "rule": "Rules",
       "nameRequired": "Please enter a name",

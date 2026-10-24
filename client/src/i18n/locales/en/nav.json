@@ -4,11 +4,13 @@
     "browser": "BROWSER",
     "sources": "SOURCES",
     "content": "CONTENT",
+    "growth": "GROWTH",
     "videoFactory": "VIDEO FACTORY"
   },
   "item": {
     "mail": "Email",
     "youtube": "YouTube",
+    "facebook": "Facebook Pages",
     "chromeProfiles": "Chrome profiles",
     "gpmManager": "GPM manager",
     "proxies": "Proxies",
@@ -17,6 +19,7 @@
     "prompts": "Prompts",
     "visualStyles": "Visual styles",
     "assets": "Assets",
+    "monetization": "Monetization roadmap",
     "taskQueue": "Running tasks",
     "videoProduction": "Video production",
     "settings": "Settings"

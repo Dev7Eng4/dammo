@@ -109,6 +109,7 @@
     "table": {
       "col": {
         "name": "TÊN",
+        "language": "NGÔN NGỮ",
         "theme": "CHỦ ĐỀ",
         "rules": "QUY TẮC",
         "actions": "THAO TÁC"
@@ -123,6 +124,7 @@
     "deleteDeleting": "Đang xóa...",
     "form": {
       "name": "Tên",
+      "language": "Ngôn ngữ",
       "niche": "Chủ đề",
       "rule": "Quy tắc",
       "nameRequired": "Vui lòng nhập tên",

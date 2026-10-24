@@ -35,6 +35,7 @@ export class NichesService {
     const niche: Niche = {
       key: generateId(),
       label,
+      language: input.language,
       createdAt: new Date().toISOString(),
     };
 
@@ -52,6 +53,7 @@ export class NichesService {
     const updated = nichesRepository.update(key, (niche) => ({
       ...niche,
       label,
+      language: input.language ?? niche.language,
     }));
 
     if (!updated) {

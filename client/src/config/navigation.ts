@@ -20,7 +20,9 @@ export type NavIcon =
   | 'task-queue'
   | 'queue'
   | 'logs'
-  | 'settings';
+  | 'settings'
+  | 'roadmap'
+  | 'facebook';
 
 export interface NavItem {
   id: string;
@@ -44,6 +46,7 @@ export const navSections: NavSection[] = [
     items: [
       { id: 'mail', labelKey: 'item.mail', path: '/mail-accounts', icon: 'mail' },
       { id: 'youtube', labelKey: 'item.youtube', path: '/youtube-channels', icon: 'youtube' },
+      { id: 'facebook', labelKey: 'item.facebook', path: '/facebook-pages', icon: 'facebook' },
     ],
   },
   {
@@ -70,6 +73,13 @@ export const navSections: NavSection[] = [
       { id: 'prompts', labelKey: 'item.prompts', path: '/prompts', icon: 'prompt' },
       { id: 'visual-styles', labelKey: 'item.visualStyles', path: '/visual-styles', icon: 'visual-styles' },
       { id: 'assets', labelKey: 'item.assets', path: '/assets', icon: 'assets' },
+    ],
+  },
+  {
+    id: 'growth',
+    labelKey: 'section.growth',
+    items: [
+      { id: 'monetization', labelKey: 'item.monetization', path: '/monetization', icon: 'roadmap' },
     ],
   },
   {

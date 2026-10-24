@@ -4,11 +4,13 @@
     "browser": "TRÌNH DUYỆT",
     "sources": "NGUỒN",
     "content": "NỘI DUNG",
+    "growth": "NÂNG CAO DOANH THU",
     "videoFactory": "NHÀ MÁY VIDEO"
   },
   "item": {
     "mail": "Email",
     "youtube": "YouTube",
+    "facebook": "Facebook Page",
     "chromeProfiles": "Hồ sơ Chrome",
     "gpmManager": "Quản lý GPM",
     "proxies": "Proxy",
@@ -17,6 +19,7 @@
     "prompts": "Prompt",
     "visualStyles": "Phong cách hình ảnh",
     "assets": "Tài nguyên",
+    "monetization": "Lộ trình kiếm tiền",
     "taskQueue": "Công việc đang chạy",
     "videoProduction": "Sản xuất video",
     "settings": "Cài đặt"

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import type { VisualStyle } from '../../types/visualStyle';
+import { PROMPT_LANGUAGE_LABELS } from '../../constants/promptForm';
 import { Button, DataTable } from '../ui';
 
 interface VisualStylesTableProps {
@@ -32,6 +33,15 @@ export function VisualStylesTable({
         header: t('visual.table.col.name'),
         cell: ({ getValue }) => (
           <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: 'language',
+        header: t('visual.table.col.language'),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-neutral-300">
+            {PROMPT_LANGUAGE_LABELS[row.original.language] ?? PROMPT_LANGUAGE_LABELS.all}
+          </span>
         ),
       },
       {

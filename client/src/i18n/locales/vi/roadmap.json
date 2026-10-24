@@ -1,0 +1,119 @@
+{
+  "page": {
+    "title": "Lộ trình kiếm tiền",
+    "subtitle": "Các hướng mở rộng doanh thu tiếp theo, chấm điểm theo khả năng kiếm tiền, mức tự động hóa bằng AI, tốc độ ra tiền và rủi ro nền tảng.",
+    "disclaimer": "Điểm số là ước tính để ưu tiên hướng đi, không phải cam kết thu nhập. Điều kiện chương trình (beta, quốc gia, số follower) thay đổi thường xuyên — kiểm tra lại trong tài khoản trước khi đầu tư."
+  },
+  "score": {
+    "earn": "Tiềm năng thu nhập",
+    "aiFit": "Hợp với AI",
+    "speed": "Tốc độ ra tiền",
+    "safety": "An toàn nền tảng",
+    "total": "Tổng"
+  },
+  "tier": {
+    "now": "Làm ngay",
+    "next": "Làm tiếp",
+    "later": "Để sau"
+  },
+  "pick": {
+    "title": "Kết luận nhanh",
+    "body": "Ưu tiên TikTok Shop Affiliate: AI làm tốt nhất ở đây (video review sản phẩm số lượng lớn), ra tiền nhanh và không cần tồn kho. Giữ YouTube làm nền và gắn affiliate vào mô tả/bio để tận dụng lưu lượng sẵn có. TikTok Creator Rewards và Facebook Reels là hướng thưởng theo lượt xem — chỉ làm với nội dung gốc, đầu tư chất lượng. Dropship organic để sau cùng vì cần vận hành thật (nhà cung cấp, chăm sóc khách, hoàn hàng)."
+  },
+  "table": {
+    "title": "Bảng so sánh",
+    "track": "Hướng đi",
+    "tier": "Ưu tiên"
+  },
+  "detail": {
+    "title": "Phân tích từng hướng",
+    "summary": "Tổng quan",
+    "aiRole": "AI làm được gì",
+    "steps": "Hướng đi",
+    "risk": "Rủi ro cần tránh"
+  },
+  "phase": {
+    "title": "Lộ trình theo giai đoạn",
+    "p1": {
+      "name": "Giai đoạn 1 · 0–30 ngày",
+      "body": "Dựng quy trình affiliate trên TikTok Shop và gắn link affiliate vào các kênh YouTube hiện có. Mục tiêu: có đơn hàng đầu tiên, biết sản phẩm/ngách nào ra đơn."
+    },
+    "p2": {
+      "name": "Giai đoạn 2 · 30–90 ngày",
+      "body": "Nhân bản phần thắng: tăng số tài khoản cho ngách ra đơn, đăng chéo Facebook Reels, và thử TikTok Creator Rewards bằng series nội dung gốc từ 1 phút."
+    },
+    "p3": {
+      "name": "Giai đoạn 3 · 90 ngày trở đi",
+      "body": "Chỉ khi đã có dữ liệu bán hàng: thử dropship organic với 1–2 sản phẩm bán chạy nhất từ affiliate — đã có bằng chứng nhu cầu trước khi nhập hàng."
+    }
+  },
+  "ai": {
+    "title": "Gắn vào module Dammo hiện có",
+    "radar": "Radar video nổ → tìm sản phẩm/chủ đề đang bùng nổ để làm video và chọn món hàng affiliate.",
+    "prompts": "Prompt + Phong cách hình ảnh → sinh kịch bản review, hook 3 giây, CTA theo từng ngách.",
+    "production": "Sản xuất video + Công việc đang chạy → render hàng loạt video dọc 9:16 cho TikTok, Reels, Shorts từ cùng một kịch bản.",
+    "accounts": "Chrome/GPM + Proxy + Kênh YouTube → quản lý nhiều tài khoản tách biệt; mỗi tài khoản một ngách, tránh đăng trùng nội dung."
+  },
+  "track": {
+    "tiktokAffiliate": {
+      "name": "TikTok Shop Affiliate",
+      "summary": "Làm video giới thiệu sản phẩm của người khác trên TikTok Shop, ăn hoa hồng mỗi đơn (thường vài % đến ~20% tùy ngành hàng). Không cần vốn, không tồn kho. Đây là hướng có trần thu nhập cao nhất cho mô hình sản xuất video hàng loạt.",
+      "aiRole": "Rất cao: sinh kịch bản review, giọng đọc, ghép cảnh sản phẩm, phụ đề, render nhiều biến thể cùng một sản phẩm để test hook.",
+      "step1": "Chọn 1–2 ngách có nhu cầu lặp lại (gia dụng, làm đẹp, đồ nhà bếp) thay vì chạy theo đủ loại.",
+      "step2": "Dùng Radar và danh sách sản phẩm bán chạy để chọn 10–20 sản phẩm, làm 3–5 biến thể hook cho mỗi sản phẩm.",
+      "step3": "Đăng 2–3 video/ngày/tài khoản, đo đơn theo video, nhân bản hook thắng và bỏ sản phẩm không ra đơn sau khoảng 1 tuần.",
+      "step4": "Khi một ngách ổn định thì mở thêm tài khoản cùng ngách; cân nhắc mở rộng theo quốc gia được hỗ trợ.",
+      "risk": "Video lặp, spam hoặc quảng cáo sai sự thật bị giảm hiển thị hoặc khóa quyền affiliate. Nội dung do AI tạo cần gắn nhãn đúng quy định, không dùng hình ảnh sản phẩm gây hiểu lầm."
+    },
+    "affiliateBio": {
+      "name": "Affiliate trong mô tả/bio (Amazon, SaaS, ClickBank…)",
+      "summary": "Gắn link affiliate vào mô tả video YouTube, Pinterest, bio TikTok/Instagram. Tận dụng lưu lượng đang có, chi phí thêm gần như bằng 0. Hoa hồng SaaS định kỳ có thể cho thu nhập đều hơn bán hàng vật lý.",
+      "aiRole": "Cao: tự viết đoạn CTA, mô tả có link theo từng video, và làm video so sánh/đánh giá công cụ.",
+      "step1": "Chọn chương trình phù hợp ngách kênh (kênh tâm lý/tiền → sách, khóa học, công cụ).",
+      "step2": "Thêm link và CTA vào mô tả các video cũ bằng một đợt cập nhật hàng loạt.",
+      "step3": "Làm vài video dạng top công cụ/sách nhắm từ khóa tìm kiếm — loại nội dung sống lâu trên YouTube.",
+      "step4": "Theo dõi click và đơn theo từng link để giữ lại chương trình có tỉ lệ chuyển đổi tốt.",
+      "risk": "Phải công bố quan hệ affiliate đúng quy định nền tảng; không nói sai về hoa hồng hay lợi ích sản phẩm."
+    },
+    "fbReels": {
+      "name": "Facebook Reels (Content Monetization)",
+      "summary": "Meta trả tiền theo hiệu suất Reels cho Page đủ điều kiện, ngoài ra có thể gắn link affiliate. Cùng một video dọc dùng được cho TikTok và Shorts nên chi phí thêm thấp. Điều kiện và mức thưởng thay đổi theo quốc gia và từng đợt chương trình.",
+      "aiRole": "Cao ở khâu sản xuất; thấp hơn ở khâu tạo khác biệt vì Meta hạ phân phối nội dung đăng lại/giống nhau.",
+      "step1": "Mở Page riêng (không dùng profile cá nhân), kiểm tra mục kiếm tiền xem Page có đủ điều kiện không.",
+      "step2": "Đăng chéo video dọc đã có, nhưng đổi hook/tiêu đề và bỏ watermark của nền tảng khác.",
+      "step3": "Theo dõi 4–6 tuần: video nào giữ chân tốt thì làm series, còn lại bỏ.",
+      "step4": "Dùng Reels làm cửa dẫn vào affiliate hoặc sản phẩm riêng thay vì chỉ trông vào tiền thưởng lượt xem.",
+      "risk": "Nội dung không gốc hoặc đăng lại có thể mất quyền kiếm tiền hoặc giảm phân phối. Vi phạm bản quyền nhạc/hình ảnh là lỗi thường gặp."
+    },
+    "youtubeCore": {
+      "name": "YouTube (nền tảng hiện tại)",
+      "summary": "Kênh Shorts và video dài hiện có là nguồn lưu lượng nền và là nền tảng bền nhất. Thu nhập quảng cáo ra chậm vì phải đạt ngưỡng kiếm tiền, nhưng video dài có tuổi thọ cao.",
+      "aiRole": "Rất cao: toàn bộ pipeline Dammo hiện tại (kịch bản → hình ảnh → giọng → render) đã phục vụ hướng này.",
+      "step1": "Giữ nhịp đăng ổn định và tập trung vào ngách có retention tốt thay vì mở thêm kênh dàn trải.",
+      "step2": "Dùng kênh làm bể lưu lượng cho affiliate (hướng ở trên) thay vì chỉ sống bằng tiền quảng cáo.",
+      "step3": "Chuyển Shorts hiệu quả thành video dài nhắm từ khóa tìm kiếm để có lưu lượng dài hạn.",
+      "step4": "Tăng chất lượng thay vì số lượng: YouTube xử lý nặng nội dung lặp, hàng loạt, ít giá trị gia tăng.",
+      "risk": "Nội dung hàng loạt lặp mẫu có thể bị coi là nội dung không xác thực và mất khả năng kiếm tiền. Cần thay đổi cấu trúc, hình ảnh và giọng giữa các video."
+    },
+    "tiktokBeta": {
+      "name": "TikTok Creator Rewards (beta)",
+      "summary": "Chương trình trả tiền theo lượt xem hợp lệ cho video gốc dài từ 1 phút trở lên, RPM thường cao hơn nhiều so với video ngắn. Điều kiện thường gồm số follower tối thiểu, lượt xem 30 ngày, độ tuổi và quốc gia được hỗ trợ. Còn ở dạng thử nghiệm nên có thể thay đổi bất cứ lúc nào.",
+      "aiRole": "Trung bình: AI hỗ trợ kịch bản, hình ảnh, giọng đọc, nhưng cần nội dung gốc, có giá trị và không lặp mẫu để đủ điều kiện.",
+      "step1": "Kiểm tra trong Creator Center xem tài khoản/quốc gia có đủ điều kiện không trước khi đầu tư.",
+      "step2": "Chọn một ngách kể chuyện/giáo dục làm video 1–3 phút, mỗi video một góc nhìn riêng.",
+      "step3": "Tăng follower và lượt xem bằng video ngắn, rồi chuyển sang video dài khi đủ điều kiện.",
+      "step4": "Đo RPM thực tế sau 30 ngày rồi quyết định mở rộng.",
+      "risk": "Video bị chấm là không gốc, lặp lại hoặc chất lượng thấp sẽ không được tính tiền. Với nội dung AI, phải gắn nhãn đúng quy định."
+    },
+    "dropshipOrganic": {
+      "name": "Dropship organic",
+      "summary": "Bán hàng không giữ kho bằng lưu lượng tự nhiên từ video (TikTok Shop, Facebook). Lợi nhuận trên đơn cao hơn affiliate nhưng bạn chịu trách nhiệm với khách: đóng gói, giao hàng, hoàn tiền, khiếu nại.",
+      "aiRole": "Trung bình: AI lo video và mô tả sản phẩm tốt, nhưng thắng thua nằm ở nhà cung cấp, giá và chăm sóc khách — những thứ AI không thay được.",
+      "step1": "Chỉ bắt đầu sau khi affiliate cho thấy sản phẩm nào có nhu cầu thật.",
+      "step2": "Chọn 1–2 sản phẩm bán chạy nhất, đặt hàng mẫu để kiểm tra chất lượng và thời gian giao.",
+      "step3": "Chọn nhà cung cấp có thời gian giao rõ ràng và chính sách đổi trả; tính đủ phí sàn, ship, hoàn hàng vào giá.",
+      "step4": "Chỉ mở rộng khi biên lợi nhuận sau chi phí vẫn dương trong ít nhất vài tuần liên tục.",
+      "risk": "Giao chậm, hàng lỗi, hoàn tiền nhiều làm điểm shop giảm và có thể bị khóa Shop. Đây là hướng có rủi ro nền tảng và vận hành cao nhất."
+    }
+  }
+}

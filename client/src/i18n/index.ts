@@ -11,6 +11,8 @@ import contentVi from './locales/vi/content.json';
 import factoryVi from './locales/vi/factory.json';
 import dashboardVi from './locales/vi/dashboard.json';
 import radarVi from './locales/vi/radar.json';
+import facebookVi from './locales/vi/facebook.json';
+import roadmapVi from './locales/vi/roadmap.json';
 
 import commonEn from './locales/en/common.json';
 import navEn from './locales/en/nav.json';
@@ -22,6 +24,8 @@ import contentEn from './locales/en/content.json';
 import factoryEn from './locales/en/factory.json';
 import dashboardEn from './locales/en/dashboard.json';
 import radarEn from './locales/en/radar.json';
+import facebookEn from './locales/en/facebook.json';
+import roadmapEn from './locales/en/roadmap.json';
 
 export const LOCALES = ['vi', 'en'] as const;
 export type AppLocale = (typeof LOCALES)[number];
@@ -40,6 +44,8 @@ export const namespaces = [
   'factory',
   'dashboard',
   'radar',
+  'roadmap',
+  'facebook',
 ] as const;
 
 export type AppNamespace = (typeof namespaces)[number];
@@ -56,6 +62,8 @@ const resources = {
     factory: factoryVi,
     dashboard: dashboardVi,
     radar: radarVi,
+    roadmap: roadmapVi,
+    facebook: facebookVi,
   },
   en: {
     common: commonEn,
@@ -68,6 +76,8 @@ const resources = {
     factory: factoryEn,
     dashboard: dashboardEn,
     radar: radarEn,
+    roadmap: roadmapEn,
+    facebook: facebookEn,
   },
 };
 

@@ -116,6 +116,7 @@
   },
   "niche": {
     "modalTitle": "Thêm niche",
+    "language": "Ngôn ngữ",
     "name": "Tên niche",
     "nameRequired": "Tên niche là bắt buộc",
     "existing": "Niche hiện có",
