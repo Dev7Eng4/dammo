@@ -50,7 +50,8 @@
     "saveError": "Could not save Page",
     "emailLoading": "Loading emails…",
     "emailEmpty": "No available emails",
-    "emailSearch": "Search email"
+    "emailSearch": "Search email",
+    "loadOptionsError": "Could not load emails/topics"
   },
   "publish": {
     "postTitle": "Publish a post to the Page",

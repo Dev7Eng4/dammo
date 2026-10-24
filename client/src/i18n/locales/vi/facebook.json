@@ -50,7 +50,8 @@
     "saveError": "Không lưu được Page",
     "emailLoading": "Đang tải email…",
     "emailEmpty": "Không còn email khả dụng",
-    "emailSearch": "Tìm email"
+    "emailSearch": "Tìm email",
+    "loadOptionsError": "Không tải được danh sách email/chủ đề"
   },
   "publish": {
     "postTitle": "Đăng bài lên Page",

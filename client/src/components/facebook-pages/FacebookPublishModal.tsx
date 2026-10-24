@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { postToFacebookPage, uploadFacebookPageVideo } from '../../api/facebookPages'
 import { Button, Input, Modal, Textarea, useToast } from '../ui'
@@ -13,7 +13,17 @@ interface FacebookPublishModalProps {
   onDone: () => void
 }
 
-export function FacebookPublishModal({ page, mode, onClose, onDone }: FacebookPublishModalProps) {
+export function FacebookPublishModal(props: FacebookPublishModalProps) {
+  if (!props.page) return null
+  return <FacebookPublishForm key={`${props.page.id}:${props.mode}`} {...props} page={props.page} />
+}
+
+function FacebookPublishForm({
+  page,
+  mode,
+  onClose,
+  onDone,
+}: FacebookPublishModalProps & { page: FacebookPage }) {
   const { t } = useTranslation('facebook')
   const { t: tCommon } = useTranslation('common')
   const { toast } = useToast()
@@ -21,15 +31,7 @@ export function FacebookPublishModal({ page, mode, onClose, onDone }: FacebookPu
   const [file, setFile] = useState('')
   const [running, setRunning] = useState(false)
 
-  useEffect(() => {
-    if (page) {
-      setText('')
-      setFile('')
-    }
-  }, [page, mode])
-
   async function handleSubmit() {
-    if (!page) return
     if (mode === 'post' && !text.trim()) return
     if (mode === 'video' && !file.trim()) return
     setRunning(true)
@@ -51,7 +53,7 @@ export function FacebookPublishModal({ page, mode, onClose, onDone }: FacebookPu
 
   return (
     <Modal
-      open={page !== null}
+      open
       onClose={running ? () => undefined : onClose}
       title={mode === 'post' ? t('publish.postTitle') : t('publish.videoTitle')}
       className="max-w-lg"
@@ -67,7 +69,7 @@ export function FacebookPublishModal({ page, mode, onClose, onDone }: FacebookPu
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t('publish.hint', { name: page?.name ?? '' })}</p>
+        <p className="text-sm text-muted-foreground">{t('publish.hint', { name: page.name })}</p>
         <label className="block space-y-1.5">
           <span className="text-xs font-medium text-muted-foreground">
             {mode === 'post' ? t('publish.text') : t('publish.caption')}

@@ -26,29 +26,49 @@ const EMPTY_VALUES: FacebookPageFormValues = {
   notes: '',
 }
 
-export function FacebookPageFormModal({ open, page, onClose, onSaved }: FacebookPageFormModalProps) {
+export function FacebookPageFormModal(props: FacebookPageFormModalProps) {
+  // Remount per open/page so form state resets without syncing it from effects.
+  if (!props.open) return null
+  return <FacebookPageForm key={props.page?.id ?? 'new'} {...props} />
+}
+
+function FacebookPageForm({ open, page, onClose, onSaved }: FacebookPageFormModalProps) {
   const { t } = useTranslation('facebook')
   const { t: tCommon } = useTranslation('common')
   const { toast } = useToast()
-  const [values, setValues] = useState<FacebookPageFormValues>(EMPTY_VALUES)
+  const [values, setValues] = useState<FacebookPageFormValues>(() =>
+    page
+      ? {
+          name: page.name,
+          topic: page.topic,
+          category: page.category,
+          bio: page.bio,
+          mailAccountId: '',
+          pageUrl: page.pageUrl,
+          notes: page.notes ?? '',
+        }
+      : EMPTY_VALUES,
+  )
   const [mailAccounts, setMailAccounts] = useState<MailAccount[]>([])
   const [niches, setNiches] = useState<Niche[]>([])
   const [usedEmails, setUsedEmails] = useState<Set<string>>(() => new Set())
-  const [optionsLoading, setOptionsLoading] = useState(false)
+  const [optionsLoading, setOptionsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!open) return
     const controller = new AbortController()
     const { signal } = controller
-    setOptionsLoading(true)
     void Promise.all([
-      fetchMailAccounts('', 1, 200, { signal }),
+      fetchMailAccounts('', 1, 100, { signal }),
       fetchNiches({ signal }),
       fetchFacebookPages('all', '', { signal }),
     ])
       .then(([mail, nicheList, pages]) => {
         setMailAccounts(mail.items)
+        if (page) {
+          const owner = mail.items.find((m) => m.email === page.linkedEmail)
+          if (owner) setValues((prev) => ({ ...prev, mailAccountId: owner.id }))
+        }
         setNiches(nicheList.items)
         setUsedEmails(
           new Set(
@@ -58,29 +78,14 @@ export function FacebookPageFormModal({ open, page, onClose, onSaved }: Facebook
           ),
         )
       })
-      .catch(() => undefined)
+      .catch((err) => {
+        if (!signal.aborted) toast.error(err instanceof Error ? err.message : t('form.loadOptionsError'))
+      })
       .finally(() => {
         if (!signal.aborted) setOptionsLoading(false)
       })
     return () => controller.abort()
-  }, [open, page?.id])
-
-  useEffect(() => {
-    if (!open) return
-    setValues(
-      page
-        ? {
-            name: page.name,
-            topic: page.topic,
-            category: page.category,
-            bio: page.bio,
-            mailAccountId: mailAccounts.find((m) => m.email === page.linkedEmail)?.id ?? '',
-            pageUrl: page.pageUrl,
-            notes: page.notes ?? '',
-          }
-        : EMPTY_VALUES,
-    )
-  }, [open, page, mailAccounts])
+  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function set<K extends keyof FacebookPageFormValues>(key: K, value: FacebookPageFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }))
