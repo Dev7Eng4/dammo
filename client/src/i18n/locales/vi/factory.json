@@ -304,7 +304,6 @@
     "scenePromptConcurrency": "Concurrency scene prompt",
     "scenePromptConcurrencyDesc": "Số Chrome profile chạy song song khi tạo scene prompt (1–8). Giá trị 1 = tuần tự. Lớn hơn 1 cần đủ số sub profile tương ứng.",
     "sceneDensity": "Thời lượng tối đa mỗi cảnh (giây) — mặc định toàn hệ thống. Kênh YouTube vẫn có thể ghi đè riêng.",
-    "sceneDensityReset": "Mặc định ({{high}}/{{medium}}/{{low}}s)",
     "sceneStart": "Đầu video",
     "sceneMiddle": "Giữa video",
     "sceneEnd": "Cuối video",

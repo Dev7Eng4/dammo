@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RotateCcw, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { fetchAppSettings, updateAppSettings } from '../api/appSettings'
 import { PageHeader, PageShell } from '../components/layout'
 import { Button, Input, PageTabs, Select, Switch, useToast } from '../components/ui'
@@ -163,8 +163,13 @@ export function SettingsPage() {
     }))
   }
 
-  function resetDensity() {
-    setSettings((prev) => ({ ...prev, aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC } }))
+  /** Video tab: back to the 12/20/30s scene-density defaults. Other tabs: reload saved settings. */
+  function handleReset() {
+    if (activeTab === 'video') {
+      setSettings((prev) => ({ ...prev, aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC } }))
+      return
+    }
+    setRefreshKey((k) => k + 1)
   }
 
   return (
@@ -321,24 +326,7 @@ export function SettingsPage() {
 
           {activeTab === 'video' ? (
             <section className="space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{t('settings.sceneDensity')}</p>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  size="sm"
-                  className="shrink-0"
-                  disabled={saving}
-                  onClick={resetDensity}
-                >
-                  <RotateCcw className="size-4" aria-hidden />
-                  {t('settings.sceneDensityReset', {
-                    high: DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
-                    medium: DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
-                    low: DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
-                  })}
-                </Button>
-              </div>
+              <p className="text-sm text-muted-foreground">{t('settings.sceneDensity')}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <label className="block space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">
@@ -482,7 +470,7 @@ export function SettingsPage() {
               type="button"
               variant="outlined"
               disabled={saving || loading}
-              onClick={() => setRefreshKey((k) => k + 1)}
+              onClick={handleReset}
             >
               {t('settings.reset')}
             </Button>
