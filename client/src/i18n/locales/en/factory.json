@@ -304,6 +304,7 @@
     "scenePromptConcurrency": "Scene prompt concurrency",
     "scenePromptConcurrencyDesc": "How many Chrome profiles run scene-prompt LLM chunks at once (1–8). Value 1 = sequential. Values above 1 require that many sub profiles.",
     "sceneDensity": "Max duration per scene (seconds) — system default. YouTube channels can still override per channel.",
+    "sceneDensityReset": "Default ({{high}}/{{medium}}/{{low}}s)",
     "sceneStart": "Start of video",
     "sceneMiddle": "Middle of video",
     "sceneEnd": "End of video",

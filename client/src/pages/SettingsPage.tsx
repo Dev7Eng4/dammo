@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Settings } from 'lucide-react'
+import { RotateCcw, Settings } from 'lucide-react'
 import { fetchAppSettings, updateAppSettings } from '../api/appSettings'
 import { PageHeader, PageShell } from '../components/layout'
 import { Button, Input, PageTabs, Select, Switch, useToast } from '../components/ui'
 import { useAbortableEffect } from '../hooks'
 import type { AppSettings, AiScenePromptChromeProfileRole, SettingsTab } from '../types/appSettings'
+import { DEFAULT_AI_SCENE_DENSITY_MAX_SEC } from '../types/youtubeChannel'
 
 const DEFAULT_WATERMARK_PROMPT =
   'Xóa watermark (dấu sao) góc phải, giữ nguyên hình ảnh và text. Chỉ trả 1 ảnh duy nhất'
@@ -15,7 +16,7 @@ const EMPTY_SETTINGS: AppSettings = {
   kenBurnsOnPrepare: false,
   enableImageTransitions: true,
   chromeBackgroundUseOffscreen: true,
-  aiSceneDensityMaxSec: { high: 12, medium: 20, low: 30 },
+  aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
@@ -118,9 +119,10 @@ export function SettingsPage() {
         enableImageTransitions: settings.enableImageTransitions,
         chromeBackgroundUseOffscreen: settings.chromeBackgroundUseOffscreen,
         aiSceneDensityMaxSec: {
-          high: Math.round(Number(settings.aiSceneDensityMaxSec.high)) || 12,
-          medium: Math.round(Number(settings.aiSceneDensityMaxSec.medium)) || 20,
-          low: Math.round(Number(settings.aiSceneDensityMaxSec.low)) || 30,
+          high: Math.round(Number(settings.aiSceneDensityMaxSec.high)) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
+          medium:
+            Math.round(Number(settings.aiSceneDensityMaxSec.medium)) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
+          low: Math.round(Number(settings.aiSceneDensityMaxSec.low)) || DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
         },
         taskQueueConcurrency: Math.min(
           8,
@@ -159,6 +161,10 @@ export function SettingsPage() {
         [key]: Number.isFinite(parsed) ? parsed : prev.aiSceneDensityMaxSec[key],
       },
     }))
+  }
+
+  function resetDensity() {
+    setSettings((prev) => ({ ...prev, aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC } }))
   }
 
   return (
@@ -315,7 +321,24 @@ export function SettingsPage() {
 
           {activeTab === 'video' ? (
             <section className="space-y-3">
-              <p className="text-sm text-muted-foreground">{t('settings.sceneDensity')}</p>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm text-muted-foreground">{t('settings.sceneDensity')}</p>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={saving}
+                  onClick={resetDensity}
+                >
+                  <RotateCcw className="size-4" aria-hidden />
+                  {t('settings.sceneDensityReset', {
+                    high: DEFAULT_AI_SCENE_DENSITY_MAX_SEC.high,
+                    medium: DEFAULT_AI_SCENE_DENSITY_MAX_SEC.medium,
+                    low: DEFAULT_AI_SCENE_DENSITY_MAX_SEC.low,
+                  })}
+                </Button>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <label className="block space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">
