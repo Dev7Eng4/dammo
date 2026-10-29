@@ -154,7 +154,9 @@ export function FacebookPagesPage() {
                 <tr key={page.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{page.name}</p>
-                    <p className="text-xs text-muted-foreground">{page.category}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {page.category} · {page.videoFormat ?? '9:16'}
+                    </p>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{page.topic || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{page.linkedEmail}</td>

@@ -13,6 +13,7 @@ import {
 } from '../../infrastructure/gpm/gpm-api.client.js';
 import { resolveGpmProfileIdByEmail } from '../../infrastructure/gpm/gpm-playwright.connector.js';
 import { AppError } from '../../shared/http/errors.js';
+import { proxiesService } from '../proxies/proxies.service.js';
 import { gpmGroupsRepository } from './gpm-groups.repository.js';
 import {
   gpmProfileCapabilitiesRepository,
@@ -60,6 +61,7 @@ export class GpmManagerService {
     return {
       ...profile,
       group_id: caps.groupId ?? '',
+      raw_proxy: proxiesService.getAssignedRawProxy(profile.id),
       flowEnabled: caps.flowEnabled,
       metaEnabled: caps.metaEnabled,
     };

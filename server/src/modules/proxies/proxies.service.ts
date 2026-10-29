@@ -331,6 +331,13 @@ export class ProxiesService {
     return { created, skipped, errors };
   }
 
+  getAssignedRawProxy(profileId: string): string {
+    const proxy = proxiesRepository
+      .findAll()
+      .find((item) => isActive(item) && item.assignedProfileIds.includes(profileId));
+    return proxy ? buildRawProxy(proxy) : '';
+  }
+
   setProfileAssignment(profileId: string, proxyId: string | null): void {
     if (proxyId) {
       const target = proxiesRepository.findById(proxyId);

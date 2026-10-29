@@ -35,7 +35,22 @@ export interface RenderClipOptions {
   onLog?: (msg: string) => void;
 }
 
+/** The slide's video clip when one is set and exists on disk. */
+function activeVideoPath(slide: SlideSpec): string | undefined {
+  return slide.videoPath && fs.existsSync(slide.videoPath) ? slide.videoPath : undefined;
+}
+
+/** Cover-fit the clip to the canvas and freeze its last frame to fill `durationSec`. */
+function videoClipFilter(slide: SlideSpec, opts: RenderClipOptions): string {
+  return appendPixelFormatToVideoFilter(
+    `scale=${opts.width}:${opts.height}:force_original_aspect_ratio=increase,` +
+      `crop=${opts.width}:${opts.height},setsar=1,fps=${opts.fps},` +
+      `tpad=stop_mode=clone:stop_duration=${slide.durationSec}`,
+  );
+}
+
 function slideClipFilter(slide: SlideSpec, opts: RenderClipOptions): string {
+  if (activeVideoPath(slide)) return videoClipFilter(slide, opts);
   const fit = slide.fit ?? 'cover';
   const maxAnimSec = slide.maxKenBurnsAnimationSec ?? SS_MAX_KEN_BURNS_ANIMATION_SEC;
   const animSec = resolveKenBurnsAnimationSec(slide.durationSec, maxAnimSec);
@@ -64,10 +79,11 @@ function slideClipFilter(slide: SlideSpec, opts: RenderClipOptions): string {
 }
 
 function cacheKeyFor(slide: SlideSpec, opts: RenderClipOptions, filter: string): string {
-  let imageTag = slide.imagePath;
+  const sourcePath = activeVideoPath(slide) ?? slide.imagePath;
+  let imageTag = sourcePath;
   try {
-    const st = fs.statSync(slide.imagePath);
-    imageTag = `${slide.imagePath}:${st.mtimeMs}:${st.size}`;
+    const st = fs.statSync(sourcePath);
+    imageTag = `${sourcePath}:${st.mtimeMs}:${st.size}`;
   } catch {
     // fall back to path-only tag (renderer will fail later if truly missing)
   }
@@ -124,15 +140,13 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   };
   const pixFmt = resolveOutputPixelFormat();
 
+  const videoPath = activeVideoPath(slide);
   const args = [
     '-hide_banner',
     '-loglevel',
     'error',
     '-y',
-    '-loop',
-    '1',
-    '-i',
-    slide.imagePath,
+    ...(videoPath ? ['-i', videoPath] : ['-loop', '1', '-i', slide.imagePath]),
     '-t',
     String(slide.durationSec),
     '-vf',
@@ -147,7 +161,7 @@ export async function renderSlideClip(slide: SlideSpec, opts: RenderClipOptions)
   ];
 
   emitDetailLog(
-    `[slideshow] rendering clip ${path.basename(slide.imagePath)} (${slide.durationSec}s)`,
+    `[slideshow] rendering ${videoPath ? 'video ' : ''}clip ${path.basename(videoPath ?? slide.imagePath)} (${slide.durationSec}s)`,
     opts.onLog,
   );
   await runFfmpeg(args, { encodeOpts, onLog: opts.onLog, label: 'slideshow-clip' });

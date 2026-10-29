@@ -1,4 +1,4 @@
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createNiche, deleteNiche, fetchNicheUsage, fetchNiches, updateNiche } from '../../api/niches';
@@ -71,6 +71,13 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
   } = useForm<AddNicheFormValues>({
     defaultValues: { label: '', language: 'all' },
   });
+
+  const selectedLanguage = useWatch({ control, name: 'language' });
+  // `all` shows every niche; a specific language shows its niches plus the shared `all` ones.
+  const visibleNiches =
+    selectedLanguage === 'all'
+      ? niches
+      : niches.filter((n) => (n.language ?? 'all') === selectedLanguage || (n.language ?? 'all') === 'all');
 
   useEffect(() => {
     if (!open) return;
@@ -250,18 +257,18 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
           <div>
             <p className="mb-1.5 text-xs font-medium text-neutral-400">
               {t('niche.existing')}
-              {!nichesLoading && niches.length > 0 ? (
-                <span className="ml-1 font-normal text-neutral-500">({niches.length})</span>
+              {!nichesLoading && visibleNiches.length > 0 ? (
+                <span className="ml-1 font-normal text-neutral-500">({visibleNiches.length})</span>
               ) : null}
             </p>
             <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-900">
               {nichesLoading ? (
                 <p className="px-3 py-2.5 text-xs text-neutral-500">{t('niche.loading')}</p>
-              ) : niches.length === 0 ? (
+              ) : visibleNiches.length === 0 ? (
                 <p className="px-3 py-2.5 text-xs text-neutral-500">{t('niche.empty')}</p>
               ) : (
                 <ul className="divide-y divide-neutral-800">
-                  {niches.map((niche) => {
+                  {visibleNiches.map((niche) => {
                     const isEditing = editingKey === niche.key;
                     const isBusy = rowBusyKey === niche.key;
 

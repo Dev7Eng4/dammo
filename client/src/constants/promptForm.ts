@@ -3,6 +3,7 @@ import type {
   PromptCategory,
   PromptLanguage,
   PromptOutputType,
+  PromptPlatform,
   ImageBrowserProvider,
   VideoBrowserProvider,
   SpecificPromptLanguage,
@@ -22,6 +23,16 @@ export const PROMPT_NICHE_ALL_OPTION = {
   value: PROMPT_NICHE_ALL,
   label: 'Tất cả',
 } as const;
+
+/** Platform a prompt targets; `all` (default) applies to every platform. */
+export const PROMPT_PLATFORM_ALL: PromptPlatform = 'all';
+
+export const PROMPT_PLATFORM_OPTIONS: { value: PromptPlatform; label: string }[] = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'tiktok', label: 'TikTok' },
+];
 
 export const PROMPT_LANGUAGE_OPTIONS: { value: SpecificPromptLanguage; label: string }[] = [
   { value: 'en', label: 'Tiếng Anh' },

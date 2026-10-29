@@ -2,7 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { isFlowDailyQuotaError, isFlowPolicyViolationError, isFlowProfileSwitchError } from './api/flow-api-errors.js';
 import type { LlmBrowserResponse, LlmMediaAsset } from '../core/types.js';
-import type { FlowGenerateImageOptions, FlowGenerateImagesViaToolOptions, FlowToolVisual } from './flow.types.js';
+import type {
+  FlowGenerateImageOptions,
+  FlowGenerateImagesViaToolOptions,
+  FlowGenerateVideosOptions,
+  FlowGenerateVideosResult,
+  FlowImageToVideoJob,
+  FlowToolVisual,
+} from './flow.types.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { closeChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
@@ -224,6 +231,82 @@ export async function generateImageWithFailover(
       profile = nextProfiles[0];
       emitDetailLog(`[flow-quota] switching to profile ${profile.name}, 1 image remaining`);
       failoverOpts?.onProfileSwitch?.(from, profile, 1);
+    }
+  }
+}
+
+/**
+ * Generate image-to-video clips, switching to the next Chrome main profile when daily
+ * Flow quota is exhausted. Only retries jobs whose clip is missing and that Flow did not reject.
+ */
+export async function generateVideosFromImagesWithFailover(
+  jobs: FlowImageToVideoJob[],
+  options: FlowGenerateVideosOptions,
+  failoverOpts?: FlowProfileFailoverOptions,
+): Promise<FlowGenerateVideosResult> {
+  if (jobs.length === 0) {
+    throw new AppError('generateVideosFromImagesWithFailover requires at least one job', 400, 'INVALID_INPUT');
+  }
+
+  const outputDir = path.resolve(options.outputDir);
+  const exhausted = new Set<string>(failoverOpts?.excludeProfileIds ?? []);
+  let profile = pickStartProfile(failoverOpts?.startProfileId, exhausted);
+  const triedNames: string[] = [];
+  const failed = new Map<string, string>();
+
+  const pendingJobs = async (): Promise<FlowImageToVideoJob[]> => {
+    const pending: FlowImageToVideoJob[] = [];
+    for (const job of jobs) {
+      if (failed.has(job.name)) continue;
+      if (await fileExists(path.join(outputDir, `${job.name}.mp4`))) continue;
+      pending.push(job);
+    }
+    return pending;
+  };
+  const finish = async (): Promise<FlowGenerateVideosResult> => {
+    const savedNames: string[] = [];
+    for (const job of jobs) {
+      if (await fileExists(path.join(outputDir, `${job.name}.mp4`))) savedNames.push(job.name);
+    }
+    return { savedNames, failed: [...failed].map(([name, reason]) => ({ name, reason })) };
+  };
+
+  while (true) {
+    const pending = await pendingJobs();
+    if (pending.length === 0) return finish();
+
+    failoverOpts?.openedProfileIds?.add(profile.id);
+    emitDetailLog(`[flow-quota] using profile ${profile.name} (${profile.id}), ${pending.length} video(s) remaining`);
+
+    try {
+      const response = await flowBrowserService.generateVideosFromImages(profile.id, pending, options);
+      for (const entry of response.failed) failed.set(entry.name, entry.reason);
+      return finish();
+    } catch (err) {
+      if (isFlowPolicyViolationError(err) || !isFlowProfileSwitchError(err)) throw err;
+
+      console.warn(`[flow-quota] profile ${profile.name} video generation blocked — switching profile`);
+      if (isFlowDailyQuotaError(err)) {
+        chromeProfilesService.markMainProfileLimited(profile.id);
+      }
+      exhausted.add(profile.id);
+      triedNames.push(profile.name);
+      await closeChromeProfile(profile.id).catch(() => undefined);
+
+      const nextProfiles = listAvailableFlowMainProfiles(exhausted);
+      if (nextProfiles.length === 0) {
+        const stillMissing = (await pendingJobs()).map(job => job.name);
+        throw new AppError(
+          `Flow profile failover exhausted on all main profiles (${triedNames.join(', ')}). ` +
+            `Missing videos: ${stillMissing.join(', ') || '(none)'}`,
+          isFlowDailyQuotaError(err) ? 429 : 502,
+          isFlowDailyQuotaError(err) ? 'FLOW_DAILY_QUOTA_EXHAUSTED' : 'FLOW_BROWSER_TILE_ERROR',
+        );
+      }
+
+      const from = profile;
+      profile = nextProfiles[0];
+      failoverOpts?.onProfileSwitch?.(from, profile, (await pendingJobs()).length);
     }
   }
 }

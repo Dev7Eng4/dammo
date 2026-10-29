@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
 import { sourceChannelVideoDir } from '../../config/paths.js';
+import { getPlatformDownloader } from '../../infrastructure/download/download-platform.registry.js';
 import { downloadYoutubeVideo } from '../../infrastructure/youtube/youtube-video-downloader.js';
 import { AppError } from '../../shared/http/errors.js';
 import { downloadSourceAudioAssets } from '../video-production/shared/assets/asset-downloader.js';
 import { taskQueueRepository } from '../task-queue/task-queue.repository.js';
+import type { TranscriptLanguage } from '../../infrastructure/youtube/youtube-transcript-downloader.js';
 import { sourceChannelsRepository } from './source-channels.repository.js';
 import type { SourcePurpose, SourceVideoRecord } from './source-channels.types.js';
 import {
@@ -50,8 +52,8 @@ export class SourceDownloadService {
       throw new AppError('Source channel not found', 404, 'NOT_FOUND');
     }
 
-    if (source.platform !== 'youtube') {
-      throw new AppError('Only YouTube sources can be downloaded', 400, 'UNSUPPORTED_PLATFORM');
+    if (source.platform !== 'youtube' && source.platform !== 'facebook') {
+      throw new AppError('Only YouTube and Facebook sources can be downloaded', 400, 'UNSUPPORTED_PLATFORM');
     }
 
     if (!DOWNLOADABLE_PURPOSES.has(source.purpose)) {
@@ -94,6 +96,7 @@ export class SourceDownloadService {
 
     const modeLabel =
       source.purpose === 'background_footage' ? 'video mp4' : 'audio, thumbnail, transcript';
+    const isFacebook = source.platform === 'facebook';
 
     log(
       options?.taskJobId,
@@ -113,15 +116,31 @@ export class SourceDownloadService {
         await fs.mkdir(outputDir, { recursive: true });
 
         if (source.purpose === 'background_footage') {
-          const videoPath = await downloadYoutubeVideo(video.url, outputDir, {
-            outputBasename: 'video',
-            onLog: msg => log(options?.taskJobId, 'info', msg),
-          });
+          const videoPath = isFacebook
+            ? await getPlatformDownloader('facebook').downloadVideo(video.url, outputDir)
+            : await downloadYoutubeVideo(video.url, outputDir, {
+                outputBasename: 'video',
+                onLog: msg => log(options?.taskJobId, 'info', msg),
+              });
 
           sourceVideosRepository.markVideoDownloaded(sourceId, video.id);
           result.downloaded.push(video.id);
 
           log(options?.taskJobId, 'ok', `Downloaded → ${videoPath}`);
+        } else if (isFacebook) {
+          const downloader = getPlatformDownloader('facebook');
+          await downloader.downloadAudio(video.url, outputDir);
+          await downloader.downloadThumbnail(video.url, outputDir);
+          await downloader.downloadTranscript(
+            video.url,
+            outputDir,
+            DEFAULT_SOURCE_TRANSCRIPT_LANGUAGE as TranscriptLanguage,
+          );
+
+          sourceVideosRepository.markVideoDownloaded(sourceId, video.id);
+          result.downloaded.push(video.id);
+
+          log(options?.taskJobId, 'ok', `Downloaded → ${outputDir} (audio, thumbnail, transcript)`);
         } else {
           const downloaded = await downloadSourceAudioAssets(
             video.url,

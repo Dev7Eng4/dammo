@@ -1,6 +1,12 @@
 {
   "niches": [
     {
+      "key": "13208c44-0a31-43a1-b542-60af590cdb01",
+      "label": "TEST – Người già Nhật Bản: Tâm lý & Lối sống (老後の心理・暮らし)",
+      "language": "ja",
+      "createdAt": "2026-10-29T12:00:00.000Z"
+    },
+    {
       "key": "86b7d3fe-8320-4508-954e-74bea3927817",
       "label": "Hưu trí & lương hưu – Tây Ban Nha (jubilación · pensiones · Seguridad Social)",
       "language": "es",
@@ -179,6 +185,12 @@
       "label": "DRAMA",
       "language": "ja",
       "createdAt": "2026-07-17T15:59:55.986Z"
+    },
+    {
+      "key": "99a316de-be8f-41f2-a209-f85890bf0a3f",
+      "label": "Ngụ ngôn tâm lý động vật – Shorts EN (psychology fables · ranh giới · người độc hại · niềm tin · chiến trận nội tâm)",
+      "language": "en",
+      "createdAt": "2026-10-26T17:20:39.000Z"
     }
   ]
 }

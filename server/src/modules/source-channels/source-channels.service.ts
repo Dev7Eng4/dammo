@@ -8,6 +8,9 @@ import {
   parseSourceUrl,
 } from '../../shared/platform/url-parser.js';
 import { paginate } from '../../shared/types/pagination.js';
+import { fetchFacebookReels } from '../../infrastructure/facebook/facebook-reels-fetcher.js';
+import { fetchYoutubeVideoComments } from '../../infrastructure/youtube/youtube-video-comments-fetcher.js';
+import type { YoutubeVideoComment } from '../../infrastructure/youtube/youtube-comment.types.js';
 import { fetchYoutubeChannelMetadata } from '../../infrastructure/youtube/youtube-channel-fetcher.js';
 import {
   fetchAllYoutubeChannelVideos,
@@ -201,6 +204,25 @@ export class SourceChannelsService {
     return paginate(filtered, page, limit);
   }
 
+  async getVideoComments(id: string, videoId: string): Promise<{ items: YoutubeVideoComment[] }> {
+    const source = this.getById(id);
+    if (source.platform !== 'youtube') {
+      throw new AppError('Comments are only available for YouTube sources', 400, 'COMMENTS_UNSUPPORTED');
+    }
+
+    const known = sourceVideosRepository.read(id)?.videos.some(video => video.id === videoId);
+    if (!known) {
+      throw new AppError('Video not found', 404, 'NOT_FOUND');
+    }
+
+    try {
+      return { items: await fetchYoutubeVideoComments(videoId) };
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(`Failed to fetch YouTube video comments: ${detail}`, 502, 'YOUTUBE_FETCH_FAILED');
+    }
+  }
+
   deleteDownloadedVideos(id: string, videoIds: string[]): { deleted: string[] } {
     this.getById(id);
 
@@ -224,11 +246,36 @@ export class SourceChannelsService {
     return { deleted };
   }
 
+  private async refreshFacebook(source: SourceChannel): Promise<{ item: SourceChannel; videos: SourceVideoRecord[] }> {
+    try {
+      const { name, reels, complete, loggedOut } = await fetchFacebookReels(source.url);
+      if (!complete) console.warn(`[source-channels] ${source.url}: Facebook list may be incomplete (loggedOut=${loggedOut})`);
+
+      const store = sourceVideosRepository.mergeVideosOnRefresh(source.id, reels);
+      const updated = sourceChannelsRepository.update(source.id, (current) => ({
+        ...current,
+        name,
+        videoCount: reels.length,
+        metadataFetchedAt: new Date().toISOString(),
+      }));
+      if (!updated) throw new AppError('Source channel not found', 404, 'NOT_FOUND');
+      return { item: updated, videos: store.videos };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      throw new AppError(`Failed to update source: ${detail}`, 502, 'SOURCE_REFRESH_FAILED');
+    }
+  }
+
   async refresh(id: string): Promise<{ item: SourceChannel; videos: SourceVideoRecord[] }> {
     const source = this.getById(id);
 
+    if (source.platform === 'facebook') {
+      return this.refreshFacebook(source);
+    }
+
     if (source.platform !== 'youtube') {
-      throw new AppError('Only YouTube sources can be updated', 400, 'UNSUPPORTED_PLATFORM');
+      throw new AppError('Only YouTube and Facebook sources can be updated', 400, 'UNSUPPORTED_PLATFORM');
     }
 
     try {
@@ -326,6 +373,30 @@ export class SourceChannelsService {
           502,
           'YOUTUBE_FETCH_FAILED',
         );
+      }
+    } else if (platform === 'facebook') {
+      try {
+        const result = await fetchFacebookReels(url);
+        if (result.reels.length === 0) {
+          throw new AppError('No reels found on this Facebook page', 404, 'FACEBOOK_NO_REELS');
+        }
+        if (!result.complete) {
+          console.warn(`[source-channels] ${url}: Facebook list may be incomplete (loggedOut=${result.loggedOut})`);
+        }
+
+        name = result.name;
+        videoCount = result.reels.length;
+        metadataFetchedAt = new Date().toISOString();
+
+        sourceVideosRepository.write(id, {
+          sourceId: id,
+          fetchedAt: metadataFetchedAt,
+          videos: toSourceVideoRecords(result.reels),
+        });
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        throw new AppError(`Failed to fetch Facebook reels: ${detail}`, 502, 'FACEBOOK_FETCH_FAILED');
       }
     } else {
       name = buildMinimalName(url, platform);

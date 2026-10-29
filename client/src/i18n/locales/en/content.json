@@ -45,6 +45,7 @@
       "language": "Language",
       "category": "Category",
       "niche": "Niche",
+      "platform": "Platform",
       "imageFlowMode": "Scene image flow",
       "imageFlowReference": "With reference image (2 steps)",
       "imageFlowReferenceDesc": "Step 1 character design · Step 2 scene prompts with references",

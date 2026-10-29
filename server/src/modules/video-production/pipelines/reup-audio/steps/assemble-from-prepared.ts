@@ -8,6 +8,7 @@ import {
 import { AI_SLIDES_DIRNAME } from '../../../shared/ai-video/ai-video.constants.js';
 import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../../../shared/ai-video/ai-video.types.js';
 import type { VisualAssets } from '../strategies/index.js';
+import { isAiSceneVideoType, type ReupAudioVideoType } from '../../../../youtube-channels/youtube-channels.types.js';
 
 export const PREPARED_AUDIO_FILE = 'audio.mp3';
 /** Prefer LLM-updated SRT (matches main pipeline), then cleaned SRT. */
@@ -82,13 +83,13 @@ async function loadAiScenesForAssemble(workDir: string): Promise<AiVideoScenePro
  */
 export async function collectVisualAssetsFromDisk(
   workDir: string,
-  videoType: 'si' | 'ai',
+  videoType: ReupAudioVideoType,
   backgroundImage: string,
 ): Promise<{ assets: VisualAssets; missingFiles: string[] }> {
   const assets: VisualAssets = {};
   const missingFiles: string[] = [];
 
-  if (videoType === 'ai') {
+  if (isAiSceneVideoType(videoType)) {
     const scenes = await loadAiScenesForAssemble(workDir);
     if (scenesWithImagePaths(scenes).length === 0) {
       missingFiles.push(`${AI_SLIDES_DIRNAME}/*.jpg`);

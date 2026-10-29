@@ -9,8 +9,22 @@ import {
 } from '../../../shared/ai-video/index.js';
 import { resolveAiRenderConfig } from '../../../shared/ai-video/ai-render-config.js';
 import type { AiVideoScenePrompt } from '../../../shared/ai-video/ai-video.types.js';
+import { resolveAiSceneDensityMaxSec, type AiSceneDensityMaxSec } from '../../../shared/ai-video/ai-video.constants.js';
 import { isKenBurnsEnabled } from '../../../shared/slideshow/slideshow.constants.js';
 import { toOnLog, type VideoTaskContext } from '../video-task.context.js';
+
+function capSceneDensity(
+  configured: Partial<AiSceneDensityMaxSec> | undefined,
+  maxSceneSec: number | undefined,
+): AiSceneDensityMaxSec | undefined {
+  if (maxSceneSec === undefined) return configured as AiSceneDensityMaxSec | undefined;
+  const resolved = resolveAiSceneDensityMaxSec(configured);
+  return {
+    high: Math.min(resolved.high, maxSceneSec),
+    medium: Math.min(resolved.medium, maxSceneSec),
+    low: Math.min(resolved.low, maxSceneSec),
+  };
+}
 
 export interface SceneAssetsResult {
   scenes: AiVideoScenePrompt[];
@@ -24,7 +38,8 @@ export interface SceneAssetsResult {
  */
 export async function runSceneAssetsStep(
   ctx: VideoTaskContext,
-  options: { label: string; maxTranscriptSec?: number },
+  /** `maxSceneSec` caps every density tier's max scene length (e.g. one Flow video clip). */
+  options: { label: string; maxTranscriptSec?: number; maxSceneSec?: number },
 ): Promise<SceneAssetsResult> {
   const { destination, downloaded, subtitlePath, workDir, log, stepTimer } = ctx;
 
@@ -71,7 +86,7 @@ export async function runSceneAssetsStep(
         language: destination.language,
         detectedNiche: ctx.videoMeta?.detected_niche?.trim() ?? '',
         maxTranscriptSec: options.maxTranscriptSec,
-        densityMaxSceneSec: destination.aiSceneDensityMaxSec,
+        densityMaxSceneSec: capSceneDensity(destination.aiSceneDensityMaxSec, options.maxSceneSec),
         useReferenceImage,
         sceneImageFlow,
         onLog: toOnLog(log),

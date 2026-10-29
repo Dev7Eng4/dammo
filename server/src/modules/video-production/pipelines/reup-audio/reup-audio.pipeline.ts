@@ -5,6 +5,7 @@ import {
   resolveYoutubeChannelUploadedVideoDir,
   resolveYoutubeChannelVideoDir,
 } from '../../../../config/paths.js';
+import { isCaptionDisabled } from '../../shared/render-core/caption-styles.js';
 import { assertMediaFileComplete } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import { readJson } from '../../../../infrastructure/storage/json-store.js';
 import { downloadYoutubeTranscript } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
@@ -16,7 +17,7 @@ import type { TimedStepOptions } from '../../../../shared/timing/step-timer.js';
 import { timedStep } from '../../../../shared/timing/step-timer.js';
 import { resolveChannelAvatarForVideoAssembly } from '../../../youtube-channels/resolve-channel-avatar.js';
 import { videoPrepareRepository } from '../../../youtube-channels/video-prepare.repository.js';
-import type { ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
+import { isAiSceneVideoType, type ReupAudioVideoType } from '../../../youtube-channels/youtube-channels.types.js';
 import { findOldThumbnailPath } from '../../../youtube-upload/upload-assets.js';
 import { sanitizeVideoOutputBasename } from '../../shared/render-core/video-output-file.js';
 import { sourceCatalogAdapter } from '../../adapters/source-catalog.adapter.js';
@@ -154,7 +155,7 @@ async function findFirstExisting(...paths: string[]): Promise<string | null> {
 
 function supportsSceneAssetRegeneration(destination: ProductionDestination): boolean {
   const videoType = destination.reupAudioVideoType;
-  if (videoType === 'ai') return true;
+  if (isAiSceneVideoType(videoType)) return true;
   if (videoType === 'si') {
     return (destination.reupAudioBackgroundImage ?? 'one_image') === 'multi_image';
   }
@@ -984,11 +985,13 @@ export class ReupAudioPipeline {
   ): Promise<ReupVideoOutputItem> {
     const { taskJobId, log, stepTimer } = run;
     let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.download;
+    /** Only Japanese channels rewrite the transcript, and only when captions are shown. */
+    const shouldUpdateTranscript = destination.language === 'ja' && !isCaptionDisabled(destination.captionStyleKey);
 
     if (taskJobId) {
       initCreateVideoStages(taskJobId, {
         copyingAssets: task.sourceStatus === 'Downloaded',
-        includeUpdateTranscript: destination.language === 'ja',
+        includeUpdateTranscript: shouldUpdateTranscript,
       });
       startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
       taskQueueRepository.setLivePhase(taskJobId, 'downloading');
@@ -999,7 +1002,7 @@ export class ReupAudioPipeline {
       const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
       const strategy = resolveVideoTypeStrategy(videoType);
       /* Only these two produce an mp4; anything else stops after the transcript. */
-      const isRenderable = videoType === 'si' || videoType === 'ai';
+      const isRenderable = videoType === 'si' || isAiSceneVideoType(videoType);
 
       if (downloaded.thumbnailPath) {
         log.ok(`Source thumbnail saved → ${downloaded.thumbnailPath}`);
@@ -1028,8 +1031,8 @@ export class ReupAudioPipeline {
       const assets: VisualAssets = {};
       let updatedSrtPath: string | undefined;
 
-      /** Only Japanese channels rewrite the transcript with the LLM; other languages use the cleaned SRT. */
-      if (destination.language === 'ja') {
+      /** Other languages, or channels without captions, use the cleaned SRT as is. */
+      if (shouldUpdateTranscript) {
         activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
         startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
         updatedSrtPath = await runUpdateTranscript(srtPath, destination.language, log, stepTimer);

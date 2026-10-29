@@ -27,6 +27,8 @@ export interface AiVideoScenePrompt {
   references?: string[];
   /** Relative path under workDir when image exists, e.g. images/scene-001.jpg */
   path?: string;
+  /** Relative path under workDir to the Flow image-to-video clip, e.g. videos/scene-001.mp4 */
+  videoPath?: string;
 }
 
 export interface AiVideoCharacterReference {

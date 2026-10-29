@@ -15,13 +15,15 @@ import {
   SourceChannelDetailHeader,
   SourceChannelDetailHeaderSkeleton,
 } from '../components/source-channels/SourceChannelDetailHeader';
+import { SourceVideoModal } from '../components/source-channels/SourceVideoModal';
 import { SourceChannelVideosTable } from '../components/source-channels/SourceChannelVideosTable';
 import { SourceChannelVideosToolbar } from '../components/source-channels/SourceChannelVideosToolbar';
 import { useToast } from '../components/ui';
 import { useAbortableEffect, usePaginatedList } from '../hooks';
 import { useTaskQueue } from '../hooks/useTaskQueue';
 import type { Niche } from '../types/niche';
-import type { SourceChannel, SourceVideoDurationFilter } from '../types/sourceChannel';
+import type { SourceChannel, SourceChannelVideo, SourceVideoDurationFilter } from '../types/sourceChannel';
+import { isDownloadablePlatform } from '../types/sourceChannel';
 
 export function SourceChannelDetailPage() {
   const { t, i18n } = useTranslation('source');
@@ -48,6 +50,7 @@ export function SourceChannelDetailPage() {
   const [limit, setLimit] = useState(20);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingVideos, setDeletingVideos] = useState(false);
+  const [openedVideo, setOpenedVideo] = useState<SourceChannelVideo | null>(null);
 
   const videos = usePaginatedList({
     fetcher: ({ page, limit: pageLimit, duration, signal }) =>
@@ -92,7 +95,7 @@ export function SourceChannelDetailPage() {
   const canDownload =
     selectedIds.size > 0 &&
     source != null &&
-    source.platform === 'youtube' &&
+    isDownloadablePlatform(source.platform) &&
     (source.purpose === 'reup' || source.purpose === 'background_footage');
 
   const downloadDisabledReason =
@@ -100,7 +103,7 @@ export function SourceChannelDetailPage() {
       ? t('hint.selectVideos')
       : source == null
         ? undefined
-        : source.platform !== 'youtube'
+        : !isDownloadablePlatform(source.platform)
           ? t('hint.youtubeOnly')
           : source.purpose !== 'reup' && source.purpose !== 'background_footage'
             ? t('hint.reupOrBgOnly')
@@ -221,7 +224,7 @@ export function SourceChannelDetailPage() {
         </div>
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
-          {source?.platform === 'youtube' || videos.loading ? (
+          {source?.platform === 'youtube' || source?.platform === 'facebook' || videos.loading ? (
             <>
               <div className="shrink-0">
                 <SourceChannelVideosToolbar
@@ -243,6 +246,7 @@ export function SourceChannelDetailPage() {
                   selectedIds={selectedIds}
                   onToggleRow={handleToggleRow}
                   onToggleAll={handleToggleAll}
+                  onOpenVideo={setOpenedVideo}
                 />
               </div>
               <div className="shrink-0">
@@ -273,6 +277,10 @@ export function SourceChannelDetailPage() {
           )}
         </div>
       </div>
+
+      {source ? (
+        <SourceVideoModal source={source} video={openedVideo} onClose={() => setOpenedVideo(null)} />
+      ) : null}
 
       <DeleteSourceVideosModal
         open={showDeleteConfirm}

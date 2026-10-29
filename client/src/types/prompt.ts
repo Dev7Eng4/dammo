@@ -31,6 +31,9 @@ export interface UpdatePromptsSettingsPayload {
   defaultVideoProvider?: VideoBrowserProvider;
 }
 
+/** Platform a prompt targets; `all` applies to every platform. */
+export type PromptPlatform = 'all' | 'youtube' | 'facebook' | 'tiktok';
+
 export interface Prompt {
   id: string;
   key: string;
@@ -39,6 +42,7 @@ export interface Prompt {
   category: PromptCategory;
   /** Niche key from niches catalog, or `all` for every niche. */
   niche: string;
+  platform?: PromptPlatform;
   outputType?: PromptOutputType;
   description?: string;
   isSystem?: boolean;
@@ -64,6 +68,7 @@ export interface CreatePromptPayload {
   template: string;
   category?: PromptCategory;
   niche?: string;
+  platform?: PromptPlatform;
   outputType?: PromptOutputType;
   description?: string;
   key?: string;
@@ -77,6 +82,7 @@ export interface UpdatePromptPayload {
   template?: string;
   category?: PromptCategory;
   niche?: string;
+  platform?: PromptPlatform;
   outputType?: PromptOutputType;
   description?: string;
   useReferenceImage?: boolean;
@@ -130,6 +136,7 @@ export interface PromptFormDraft {
   name: string;
   category: PromptCategory;
   niche: string;
+  platform: PromptPlatform;
   isSystem?: boolean;
   steps: PromptStepDraft[];
 }

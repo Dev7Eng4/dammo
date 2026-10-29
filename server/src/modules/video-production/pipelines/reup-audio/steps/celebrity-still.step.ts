@@ -9,6 +9,7 @@ import { msToSrtTimestamp } from '../../../shared/ai-video/ai-video-scene-timing
 import { persistAiScenePromptsFile } from '../../../shared/ai-video/ai-video-scene-prompts-store.js';
 import type { AiVideoScenePrompt } from '../../../shared/ai-video/ai-video.types.js';
 import { pickRandomCelebrityImagePath } from '../../../shared/celebrity-image.js';
+import { isAiSceneVideoType } from '../../../../youtube-channels/youtube-channels.types.js';
 import { isCelebrityWisdomNiche } from '../../../shared/meta/metadata.types.js';
 import type { ProductionDestination } from '../../../ports/production-destination.port.js';
 import { toOnLog, type VideoTaskContext } from '../video-task.context.js';
@@ -23,7 +24,7 @@ const STILL_SCENE_RELATIVE_PATH = path.posix.join(AI_SLIDES_DIRNAME, 'scene-001.
 export function usesCelebrityStillBackground(
   destination: Pick<ProductionDestination, 'reupAudioVideoType' | 'niche'>,
 ): boolean {
-  return destination.reupAudioVideoType === 'ai' && isCelebrityWisdomNiche(destination.niche);
+  return isAiSceneVideoType(destination.reupAudioVideoType) && isCelebrityWisdomNiche(destination.niche);
 }
 
 /**

@@ -6,6 +6,10 @@ export type SpecificPromptLanguage = 'en' | 'ko' | 'ja' | 'es';
 export type PromptLanguage = SpecificPromptLanguage | 'all';
 export type CreatePromptLanguage = PromptLanguage;
 
+/** Platform a prompt targets; `all` applies to every platform. */
+export type PromptPlatform = 'all' | 'youtube' | 'facebook' | 'tiktok';
+export const PROMPT_PLATFORMS: readonly PromptPlatform[] = ['all', 'youtube', 'facebook', 'tiktok'];
+
 export interface Prompt {
   id: string;
   key: string;
@@ -14,6 +18,8 @@ export interface Prompt {
   category: PromptCategory;
   /** Niche key from niches catalog, or `all` for every niche. */
   niche: string;
+  /** Missing on legacy records; treated as `all`. */
+  platform?: PromptPlatform;
   outputType?: PromptOutputType;
   description?: string;
   isSystem?: boolean;
@@ -40,6 +46,7 @@ export interface PromptSet {
   name: string;
   category: PromptCategory;
   niche: string;
+  platform?: PromptPlatform;
   isSystem?: boolean;
   /**
    * Meta 2-step only: when true, step-2 must include general_background.prompt.
@@ -61,6 +68,7 @@ export interface CreatePromptInput {
   template: string;
   category?: PromptCategory;
   niche?: string;
+  platform?: PromptPlatform;
   outputType?: PromptOutputType;
   description?: string;
   isSystem?: boolean;
@@ -75,6 +83,7 @@ export interface UpdatePromptInput {
   template?: string;
   category?: PromptCategory;
   niche?: string;
+  platform?: PromptPlatform;
   outputType?: PromptOutputType;
   description?: string;
   useReferenceImage?: boolean;

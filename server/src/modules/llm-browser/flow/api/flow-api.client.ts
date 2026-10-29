@@ -428,6 +428,73 @@ export async function callBatchGenerateImagesOnPage(
   return result;
 }
 
+export interface CallFlowApiWithRecaptchaOptions {
+  url: string;
+  /** Body whose `clientContext.recaptchaContext.token` is filled in-page after reCAPTCHA execute. */
+  bodyTemplate: Record<string, unknown>;
+  siteKey: string;
+  recaptchaAction: string;
+  recaptchaTimeoutMs?: number;
+}
+
+/** Generic reCAPTCHA-protected Flow POST (same in-page execute + fetch as batchGenerateImages). */
+export async function callFlowApiWithRecaptchaOnPage(
+  page: Page,
+  bearerToken: string,
+  options: CallFlowApiWithRecaptchaOptions,
+): Promise<CallBatchGenerateImagesResult> {
+  if (!bearerToken.trim()) {
+    throw new AppError('Missing Bearer token for Flow API call', 502, 'FLOW_API_NO_BEARER');
+  }
+  if (!options.siteKey.trim()) {
+    throw new AppError('FLOW_RECAPTCHA_SITE_KEY is not configured', 502, 'FLOW_API_RECAPTCHA_FAILED');
+  }
+
+  const { authorization: _auth, ...apiHeaders } = FLOW_API_REQUEST_HEADERS;
+  try {
+    return await page.evaluate(batchGeneratePageFunction, {
+      key: options.siteKey,
+      act: options.recaptchaAction,
+      timeout: options.recaptchaTimeoutMs ?? 60_000,
+      url: options.url,
+      bearerToken: bearerToken.trim(),
+      apiHeaders,
+      bodyTemplate: options.bodyTemplate,
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new AppError(`Flow API browser fetch error: ${detail}`, 502, 'FLOW_API_NETWORK_ERROR');
+  }
+}
+
+/** Plain authenticated POST (no reCAPTCHA), e.g. polling async operations. */
+export async function postFlowApi(
+  accessToken: string,
+  url: string,
+  body: Record<string, unknown>,
+): Promise<CallBatchGenerateImagesResult> {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { ...FLOW_API_REQUEST_HEADERS, authorization: `Bearer ${accessToken.trim()}` },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new AppError(`Flow API network error: ${detail}`, 502, 'FLOW_API_NETWORK_ERROR');
+  }
+
+  const bodyText = await response.text();
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    parsed = null;
+  }
+  return { ok: response.ok, status: response.status, statusText: response.statusText, bodyText, body: parsed };
+}
+
 export async function callBatchGenerateImages(
   recaptchaToken: string,
   bearerToken: string,

@@ -85,6 +85,23 @@ export function buildFlowToolUrl(projectId: string, toolId: string = MAVID_EDITO
   return `${FLOW_BASE_URL}/project/${projectId}/tool/${toolId}`;
 }
 
+export function buildBatchGenerateVideoUrl(): string {
+  return `${FLOW_AISANDBOX_BASE}/video:batchAsyncGenerateVideoStartImage`;
+}
+
+export function buildBatchCheckVideoStatusUrl(): string {
+  return `${FLOW_AISANDBOX_BASE}/video:batchCheckAsyncVideoGenerationStatus`;
+}
+
+/** Poll interval while Flow renders a video (ms). */
+export const FLOW_VIDEO_POLL_INTERVAL_MS = 10_000;
+
+/** Max time to wait for one video batch to finish (ms). */
+export const FLOW_VIDEO_TIMEOUT_MS = 900_000;
+
+/** Videos started per request round before polling (keeps within Flow rate limits). */
+export const FLOW_VIDEO_START_BATCH_SIZE = 4;
+
 export function buildBatchGenerateImagesUrl(projectId: string): string {
   return `${FLOW_AISANDBOX_BASE}/projects/${projectId}/flowMedia:batchGenerateImages`;
 }

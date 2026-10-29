@@ -27,6 +27,7 @@ import type {
   SourceLanguageFilter,
   SourcePurposeFilter,
 } from '../types/sourceChannel';
+import { isDownloadablePlatform } from '../types/sourceChannel';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -123,7 +124,7 @@ export function SourceChannelsPage() {
     selectedIds.size > 0 &&
     selectedSources.every(
       source =>
-        source.platform === 'youtube' &&
+        isDownloadablePlatform(source.platform) &&
         (source.purpose === 'reup' || source.purpose === 'background_footage'),
     );
 
@@ -131,7 +132,7 @@ export function SourceChannelsPage() {
     selectedIds.size === 0
       ? t('hint.selectToDownload')
       : !canDownload
-        ? selectedSources.some(source => source.platform !== 'youtube')
+        ? selectedSources.some(source => !isDownloadablePlatform(source.platform))
           ? t('hint.youtubeOnly')
           : t('hint.reupOrBgOnly')
         : undefined;
@@ -218,7 +219,7 @@ export function SourceChannelsPage() {
     }
 
     if (!selectedSource) return;
-    if (selectedSource.platform !== 'youtube') return;
+    if (!isDownloadablePlatform(selectedSource.platform)) return;
 
     void enqueueTask({
       type: 'download_source',

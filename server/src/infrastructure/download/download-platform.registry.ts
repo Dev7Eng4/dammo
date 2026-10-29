@@ -1,4 +1,10 @@
 import { AppError } from '../../shared/http/errors.js';
+import {
+  downloadFacebookAudio,
+  downloadFacebookThumbnail,
+  downloadFacebookTranscript,
+  downloadFacebookVideo,
+} from '../facebook/facebook-downloader.js';
 import { downloadYoutubeAudio } from '../youtube/youtube-audio-downloader.js';
 import { downloadYoutubeThumbnail } from '../youtube/youtube-thumbnail-downloader.js';
 import {
@@ -19,8 +25,18 @@ const youtubeDownloader: PlatformDownloader = {
   downloadThumbnail: downloadYoutubeThumbnail,
 };
 
+const facebookDownloader: PlatformDownloader = {
+  downloadVideo: downloadFacebookVideo,
+  downloadAudio: downloadFacebookAudio,
+  downloadTranscript(url, outputDir, language) {
+    return downloadFacebookTranscript(url, outputDir, language as TranscriptLanguage);
+  },
+  downloadThumbnail: downloadFacebookThumbnail,
+};
+
 const downloaders: Partial<Record<DownloadPlatform, PlatformDownloader>> = {
   youtube: youtubeDownloader,
+  facebook: facebookDownloader,
 };
 
 export function getPlatformDownloader(platform: DownloadPlatform): PlatformDownloader {

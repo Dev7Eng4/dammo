@@ -13,6 +13,7 @@ import type {
   UpdateSourceChannelPayload,
   SourceChannelUsage,
 } from '../types/sourceChannel';
+import type { YoutubeVideoCommentsResponse } from '../types/youtubeChannel';
 
 export function fetchSourceChannels(
   platform: SourcePlatformFilter = 'all',
@@ -109,4 +110,11 @@ export async function deleteSourceChannel(id: string) {
         : `Request failed: ${res.status}`;
     throw new Error(error);
   }
+}
+
+export function fetchSourceVideoComments(id: string, videoId: string, options?: FetchOptions) {
+  return fetchJson<YoutubeVideoCommentsResponse>(
+    `${API_V1}/source-channels/${id}/videos/${encodeURIComponent(videoId)}/comments`,
+    withSignal(undefined, options),
+  );
 }

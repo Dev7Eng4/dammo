@@ -1,6 +1,15 @@
 {
   "styles": [
     {
+      "id": "24551aa0-9bd9-40d9-bde9-9a7dbb60a79c",
+      "name": "Người Già Nhật Bản",
+      "rule": "Japanese slice-of-life anime film still about the everyday inner life of elderly people in Japan, clean confident line art with crisp cel shading and soft two-tone shadows, naturalistic semi-realistic character design, Japanese seniors aged 65 to 85 with realistic proportions, natural posture, honest wrinkles, age spots and thinning grey or white hair, each character with a distinct face, hairstyle and outfit colour, modest everyday Japanese clothes, authentic ordinary Japanese homes and towns of the Showa and Heisei era such as tatami room, kotatsu, butsudan, genkan, narrow kitchen, veranda, residential street, local station, supermarket and clinic waiting room, cinematic composition with clear foreground, midground and background depth, varied camera distance from wide establishing shots to close-ups of hands and objects, motivated natural lighting where colour follows the mood: soft warm sunlight for peace and hope, cool blue-grey overcast or dim evening light with desaturated colours for loneliness, worry and regret, neutral clear daylight for explanation, restrained realistic palette without a constant golden filter, uncluttered backgrounds with only a few meaningful props, no text, no letters, no numbers, no speech bubbles, no watermark, masterpiece, highly detailed",
+      "niche": "Tâm lý & lối sống người cao tuổi Nhật (老後・定年後・おひとりさま・家族関係・終活); anime đời thường điện ảnh, mood theo cảnh (TEST)",
+      "language": "ja",
+      "createdAt": "2026-10-29T12:00:00.000Z",
+      "updatedAt": "2026-10-29T12:00:00.000Z"
+    },
+    {
       "id": "5f4d4657-a4cf-40ca-9dbb-ed3eed406964",
       "name": "Acuarela Cálida ES",
       "rule": "Warm watercolor illustration of everyday Spanish life, soft wet-on-wet washes with gentle ink outlines, Mediterranean afternoon light, palette of terracotta, ochre, cream, olive green and soft blue, Spanish apartment interiors with tiled floors and balconies full of potted plants, Spanish characters aged 55 to 80 with kind expressive faces, visible paper grain, calm and hopeful mood, the same main character drawn consistently in every scene, no text, no letters, no numbers, no speech bubbles, no watermark",
@@ -251,6 +260,24 @@
       "language": "ja",
       "createdAt": "2026-10-18T00:00:00.000Z",
       "updatedAt": "2026-10-18T00:00:00.000Z"
+    },
+    {
+      "id": "63b66f3a-fd12-4c66-b71a-3b2beb4cec78",
+      "name": "Psychlume Warm Fable EN",
+      "rule": "Flat 2D storybook illustration with thin clean dark outlines and soft painterly color fills, warm earthy desert-and-farmland palette of beige, sand, ochre, terracotta, muted olive green and dusty sky blue, soft golden-hour or late-afternoon light, richly detailed natural backgrounds with layered depth. Animals are drawn with careful detail, expressive eyes and natural proportions, while any human is a minimalist white stick figure with a round plain white head drawn flat and simple against the detailed background. Calm, fable-like, hopeful mood, plenty of open space in the lower third of the vertical 9:16 frame. The image contains only drawings, with no text, no letters, no numbers, no speech bubbles, no watermark.",
+      "niche": "Psychology fables (EN Shorts): tông sáng ấm, truyện ngụ ngôn động vật, hy vọng",
+      "language": "en",
+      "createdAt": "2026-10-26T17:20:39.000Z",
+      "updatedAt": "2026-10-26T17:20:39.000Z"
+    },
+    {
+      "id": "c0e20007-c342-428c-b474-93031cd6279f",
+      "name": "Psychlume Dark Ember EN",
+      "rule": "Flat 2D storybook illustration with thin clean dark outlines and soft painterly shading, a dark cinematic night palette of deep blue-black and dark brown with a single glowing red-orange light source such as a lantern, fire or red moon that casts long dramatic shadows across worn hexagonal stone ground, rough wooden barns and bare twisted trees, layered depth and subtle mist. Animals are drawn with careful detail and expressive eyes, while any human is a minimalist white stick figure with a round plain white head drawn flat against the moody background. Tense, ominous but tasteful mood conveyed only by light, shadow and posture, plenty of open space in the lower third of the vertical 9:16 frame. The image contains only drawings, with no text, no letters, no numbers, no speech bubbles, no watermark.",
+      "niche": "Psychology fables (EN Shorts): tông tối, ánh sáng đỏ cam, người độc hại / phản bội / căng thẳng",
+      "language": "en",
+      "createdAt": "2026-10-26T17:20:39.000Z",
+      "updatedAt": "2026-10-26T17:20:39.000Z"
     }
   ]
 }

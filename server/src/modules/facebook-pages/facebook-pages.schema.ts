@@ -7,6 +7,7 @@ const pageFields = {
   topic: z.string().trim().max(100).default(''),
   category: z.string().trim().max(100).default(''),
   bio: z.string().trim().max(255).default(''),
+  videoFormat: z.enum(['9:16', '16:9']).default('9:16'),
   mailAccountId: z.string().min(1),
   pageUrl: z.string().trim().max(500).default(''),
   notes: z.string().max(2000).optional(),

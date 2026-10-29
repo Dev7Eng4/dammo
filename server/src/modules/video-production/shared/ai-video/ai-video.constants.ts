@@ -126,3 +126,12 @@ export const CHARACTER_REFERENCES_FILENAME = 'character-references.json';
 
 /** Max scenes per Flow tool batch call (mavid editor). */
 export const AI_FLOW_TOOL_BATCH_SIZE = 10;
+
+/** Subdirectory under workDir for Flow image-to-video clips (`scene-001.mp4`). */
+export const AI_VIDEOS_DIRNAME = 'videos';
+
+/** `ai_intro_video`: scenes starting before this many seconds become video clips, the rest stay images. */
+export const AI_INTRO_VIDEO_SEC = 30;
+
+/** Length of one Flow video clip; longer scenes hold the last frame. */
+export const AI_VIDEO_CLIP_SEC = 8;

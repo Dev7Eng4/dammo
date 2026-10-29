@@ -20,6 +20,7 @@ import type { AssembleContext } from '../modules/video-production/pipelines/reup
 import { videoPrepareRepository } from '../modules/youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import { resolveChannelAvatarForVideoAssembly } from '../modules/youtube-channels/resolve-channel-avatar.js';
+import { isAiSceneVideoType, type ReupAudioVideoType } from '../modules/youtube-channels/youtube-channels.types.js';
 import type { StoredYoutubeChannelType, YoutubeChannel } from '../modules/youtube-channels/youtube-channels.types.js';
 import { formatElapsedMs } from '../shared/timing/step-timer.js';
 import { pickReupChannels } from './lib/reup-channel-picker.js';
@@ -124,13 +125,13 @@ interface AssembleResult {
  */
 async function collectVisualAssetsFromDisk(
   workDir: string,
-  videoType: 'si' | 'ai',
+  videoType: ReupAudioVideoType,
   backgroundImage: string,
 ): Promise<{ assets: VisualAssets; missingFiles: string[] }> {
   const assets: VisualAssets = {};
   const missingFiles: string[] = [];
 
-  if (videoType === 'ai') {
+  if (isAiSceneVideoType(videoType)) {
     const scenes = await loadAiScenesForAssemble(workDir);
     if (scenesWithImagePaths(scenes).length === 0) {
       missingFiles.push(`${AI_SLIDES_DIRNAME}/*.jpg`);

@@ -7,6 +7,7 @@ import {
   PROMPT_FORM_LANGUAGE_OPTIONS,
   PROMPT_NICHE_ALL,
   PROMPT_NICHE_ALL_OPTION,
+  PROMPT_PLATFORM_OPTIONS,
 } from '../../constants/promptForm';
 import { useAbortableEffect } from '../../hooks';
 import { derivePromptKeyFromName } from '../../utils/promptVariables';
@@ -220,7 +221,7 @@ export function PromptEditorPanel({
             ) : null}
           </label>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block space-y-1.5">
               <FieldLabel>{t('prompts.editor.language')}</FieldLabel>
               <DropdownSelect
@@ -238,6 +239,17 @@ export function PromptEditorPanel({
                 value={draft.category}
                 onChange={(category) => onChange({ category })}
                 options={PROMPT_CATEGORY_OPTIONS}
+                disabled={readOnly}
+                className="w-full"
+                triggerClassName="h-10 w-full rounded-lg"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <FieldLabel>{t('prompts.editor.platform')}</FieldLabel>
+              <DropdownSelect
+                value={draft.platform || 'all'}
+                onChange={(platform) => onChange({ platform })}
+                options={PROMPT_PLATFORM_OPTIONS}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"

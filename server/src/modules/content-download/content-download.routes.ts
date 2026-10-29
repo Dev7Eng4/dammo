@@ -34,6 +34,18 @@ export function createContentDownloadRoutes() {
     return c.json({ item });
   });
 
+  for (const assetType of ['video', 'audio', 'thumbnail'] as const) {
+    app.post(`/facebook/${assetType}`, zValidator('json', downloadYoutubeUrlSchema), async (c) => {
+      const item = await contentDownloadService.downloadFacebookAsset(assetType, c.req.valid('json'));
+      return c.json({ item });
+    });
+  }
+
+  app.post('/facebook/transcript', zValidator('json', downloadYoutubeTranscriptSchema), async (c) => {
+    const item = await contentDownloadService.downloadFacebookAsset('transcript', c.req.valid('json'));
+    return c.json({ item });
+  });
+
   app.onError((err, c) => {
     if (isAppError(err)) {
       return c.json({ error: err.message, code: err.code }, err.statusCode as 400);

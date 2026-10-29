@@ -26,7 +26,12 @@ export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'li
 export type HealthScore = 'high' | 'medium' | 'low';
 export type YoutubeChannelStatus = 'init' | 'created' | 'active' | 'paused' | 'deleted';
 
-export type ReupAudioVideoType = 'si' | 'ai';
+export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video';
+
+/** Types that build scenes from AI images: the plain `ai` flow and the two video variants. */
+export function isAiSceneVideoType(type: ReupAudioVideoType | string | undefined): boolean {
+  return type === 'ai' || type === 'ai_full_video' || type === 'ai_intro_video';
+}
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image' | 'celebrity';
 

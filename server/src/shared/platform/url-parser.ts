@@ -38,8 +38,31 @@ function normalizeYoutubePath(path: string): { url: string; fullUrl: string } {
   };
 }
 
+/**
+ * Reduces any Facebook page URL to its profile path: `/psychlume/reels/?x=1` -> `/psychlume`,
+ * `/profile.php?id=123/reels` -> `/profile.php?id=123`, `/pages/Name/123/videos` -> `/pages/Name/123`.
+ */
+export function normalizeFacebookPath(raw: string): string {
+  const withoutHash = raw.trim().split('#')[0] ?? '';
+  const withoutHost = withoutHash
+    .replace(/^https?:\/\//i, '')
+    .replace(/^(www\.|m\.|web\.|mbasic\.)?(facebook|fb)\.com/i, '');
+  const [pathPart = '', query = ''] = withoutHost.split('?');
+  const segments = pathPart.split('/').filter(Boolean).map(decodeUrlSegment);
+
+  if (segments[0]?.toLowerCase() === 'profile.php') {
+    const id = /^\d+/.exec(new URLSearchParams(query).get('id') ?? '')?.[0];
+    return id ? `/profile.php?id=${id}` : '/profile.php';
+  }
+  if (segments[0]?.toLowerCase() === 'pages' && segments.length >= 3) {
+    return `/${segments.slice(0, 3).join('/')}`;
+  }
+  return `/${segments[0] ?? ''}`;
+}
+
 export function canonicalizeSourceUrl(url: string): string {
-  const trimmed = stripQueryAndHash(url.trim());
+  const trimmedWithQuery = url.trim();
+  const trimmed = stripQueryAndHash(trimmedWithQuery);
   const lower = trimmed.toLowerCase();
   const withoutProtocol = lower.replace(/^https?:\/\//, '');
   const withoutWww = withoutProtocol.replace(/^www\./, '');
@@ -64,11 +87,7 @@ export function canonicalizeSourceUrl(url: string): string {
   }
 
   if (withoutWww.startsWith('facebook.com/') || withoutWww.startsWith('fb.com/')) {
-    const path = decodeUrlSegment(
-      withoutWww.replace(/^facebook\.com/, '').replace(/^fb\.com/, '').replace(/\/$/, ''),
-    );
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    return `https://facebook.com${normalizedPath}`.toLowerCase();
+    return `https://facebook.com${normalizeFacebookPath(trimmedWithQuery)}`.toLowerCase();
   }
 
   if (lower.startsWith('@')) {
@@ -139,16 +158,11 @@ export function normalizeSourceUrl(raw: string, platform?: SourcePlatform): Norm
     };
   }
 
-  value = value.replace(/^(www\.)?facebook\.com\/?/i, '');
-  value = value.replace(/^(www\.)?fb\.com\/?/i, '');
-  value = decodeUrlSegment(value);
-  if (!value.startsWith('/')) {
-    value = `/${value.replace(/^\//, '')}`;
-  }
+  const facebookPath = normalizeFacebookPath(raw);
   return {
     platform: 'facebook',
-    url: value,
-    fullUrl: `https://facebook.com${value}`,
+    url: facebookPath,
+    fullUrl: `https://facebook.com${facebookPath}`,
   };
 }
 

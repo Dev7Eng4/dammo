@@ -11,6 +11,7 @@ interface SourceChannelVideosTableProps {
   selectedIds: Set<string>;
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
+  onOpenVideo: (video: SourceChannelVideo) => void;
 }
 
 function formatDuration(seconds?: number): string {
@@ -43,6 +44,7 @@ export function SourceChannelVideosTable({
   selectedIds,
   onToggleRow,
   onToggleAll,
+  onOpenVideo,
 }: SourceChannelVideosTableProps) {
   const { t } = useTranslation('source');
 
@@ -50,8 +52,17 @@ export function SourceChannelVideosTable({
     {
       accessorKey: 'title',
       header: t('videos.col.title'),
-      cell: ({ getValue }) => (
-        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className="cursor-pointer text-left font-medium text-neutral-100 hover:text-primary-400 hover:underline"
+          onClick={event => {
+            event.stopPropagation();
+            onOpenVideo(row.original);
+          }}
+        >
+          {row.original.title}
+        </button>
       ),
     },
     {

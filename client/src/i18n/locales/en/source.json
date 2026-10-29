@@ -78,7 +78,7 @@
   "hint": {
     "selectToDownload": "Select a source to download",
     "selectVideos": "Select videos to download",
-    "youtubeOnly": "Downloads are only supported for YouTube sources",
+    "youtubeOnly": "Downloads are only supported for YouTube and Facebook sources",
     "reupOrBgOnly": "Downloads are only supported for Reup or Background footage sources",
     "selectDownloaded": "Select downloaded videos to delete"
   },
@@ -160,5 +160,13 @@
     "nicheCreated": "Niche added",
     "nicheUpdated": "Niche updated",
     "nicheDeleted": "Niche deleted"
+  },
+  "videoModal": {
+    "title": "Video details",
+    "views": "views",
+    "openOnYoutube": "Open on YouTube",
+    "openOriginal": "Open original video",
+    "retry": "Retry",
+    "noPreview": "This source does not support in-app video preview or comments."
   }
 }

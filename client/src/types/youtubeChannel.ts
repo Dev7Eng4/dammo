@@ -7,11 +7,12 @@ export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannel
 
 export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
 
-export type ReupAudioVideoType = 'si' | 'ai';
+export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video';
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image' | 'celebrity';
 
 export type CaptionStyleKey =
+  | 'none'
   | 'default'
   | 'noto_sans_red_white'
   | 'noto_sans_red_white_box'

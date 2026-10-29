@@ -10,7 +10,7 @@ import { AppError } from '../../shared/http/errors.js';
 import { facebookPagesRepository } from '../facebook-pages/facebook-pages.repository.js';
 import { facebookPagesService } from '../facebook-pages/facebook-pages.service.js';
 import type { FacebookPage } from '../facebook-pages/facebook-pages.types.js';
-import { createFacebookPage, publishPagePost, publishReel } from './facebook-flow.js';
+import { createFacebookPage, publishLandscapeVideo, publishPagePost, publishReel } from './facebook-flow.js';
 import { probeFacebookSelectors, type SelectorProbeResult } from './facebook-probe.js';
 
 /** Only files under the app data dir may be uploaded (blocks arbitrary-file reads via the API). */
@@ -74,7 +74,8 @@ export class FacebookAutomationService {
     const page = facebookPagesService.get(id);
     const pageUrl = requirePageUrl(page);
     const videoPath = resolveDataFile(input.videoFile);
-    await withPage(page, (p) => publishReel(p, pageUrl, { videoPath, caption: input.caption }));
+    const publish = page.videoFormat === '16:9' ? publishLandscapeVideo : publishReel;
+    await withPage(page, (p) => publish(p, pageUrl, { videoPath, caption: input.caption }));
     return this.markPosted(id);
   }
 

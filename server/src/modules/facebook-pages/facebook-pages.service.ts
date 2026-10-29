@@ -3,13 +3,14 @@ import { generateId } from '../../shared/id.js';
 import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repository.js';
 import { suggestFacebookCategory } from '../facebook-automation/topic-categories.js';
 import { facebookPagesRepository } from './facebook-pages.repository.js';
-import type { FacebookPage, FacebookPageStats } from './facebook-pages.types.js';
+import type { FacebookPage, FacebookPageStats, FacebookVideoFormat } from './facebook-pages.types.js';
 
 export interface CreateFacebookPageInput {
   name: string;
   topic: string;
   category: string;
   bio: string;
+  videoFormat: FacebookVideoFormat;
   mailAccountId: string;
   pageUrl: string;
   notes?: string;
@@ -63,6 +64,7 @@ export class FacebookPagesService {
       topic: input.topic,
       category: input.category || suggestFacebookCategory(input.topic),
       bio: input.bio,
+      videoFormat: input.videoFormat,
       linkedEmail,
       pageUrl: input.pageUrl,
       status: input.pageUrl ? 'created' : 'draft',

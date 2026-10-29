@@ -27,7 +27,14 @@ export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType; label: s
 export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType; label: string }[] = [
   { value: 'si', label: 'Video kho + hình ảnh' },
   { value: 'ai', label: 'Tạo chuyển động cho ảnh (AI)' },
+  { value: 'ai_full_video', label: 'Toàn bộ là video (AI)' },
+  { value: 'ai_intro_video', label: 'Video mở đầu, sau đó là ảnh (AI)' },
 ];
+
+/** Video types that build scenes from AI images (the plain `ai` flow and the two video variants). */
+export function isAiSceneVideoType(videoType: string | undefined): boolean {
+  return videoType === 'ai' || videoType === 'ai_full_video' || videoType === 'ai_intro_video';
+}
 
 export const REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS: {
   value: Exclude<ReupAudioBackgroundImage, 'celebrity' | 'local_image'>;
@@ -75,6 +82,7 @@ export function toSiBackgroundImageFormValue(
 }
 
 export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] = [
+  { value: 'none', label: 'No captions' },
   { value: 'default', label: 'Default' },
   { value: 'noto_sans_red_white', label: 'Noto Sans Red text + White stroke' },
   { value: 'noto_sans_red_white_box', label: 'Noto Sans Red text + White stroke + Box' },

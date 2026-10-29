@@ -60,6 +60,9 @@ export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]
 
     const slide: SlideSpec = {
       imagePath: resolveSceneImageAbsolutePath(workDir, scene),
+      ...(scene.videoPath?.trim()
+        ? { videoPath: path.isAbsolute(scene.videoPath) ? scene.videoPath : path.join(workDir, scene.videoPath) }
+        : {}),
       durationSec,
       kenBurns: { ...KEN_BURNS_PRESETS[presetName] },
       fit: 'cover',

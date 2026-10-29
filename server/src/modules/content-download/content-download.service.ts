@@ -3,6 +3,7 @@ import path from 'node:path';
 import { mediaDownloadDir, paths } from '../../config/paths.js';
 import { getPlatformDownloader } from '../../infrastructure/download/download-platform.registry.js';
 import type { DownloadAssetType, DownloadPlatform } from '../../infrastructure/download/download.types.js';
+import { requireFacebookVideoId } from '../../infrastructure/facebook/facebook-url.js';
 import { extractYoutubeVideoId } from '../../infrastructure/youtube/youtube-url.js';
 import { DEFAULT_TRANSCRIPT_LANGUAGE } from '../../infrastructure/youtube/youtube-transcript-downloader.js';
 import { AppError } from '../../shared/http/errors.js';
@@ -104,6 +105,30 @@ export class ContentDownloadService {
     const downloader = getPlatformDownloader(platform);
     const filePath = await downloader.downloadThumbnail(input.url, outputDir);
     return buildArtifact(platform, videoId, 'thumbnail', filePath, null);
+  }
+
+  async downloadFacebookAsset(
+    assetType: DownloadAssetType,
+    input: DownloadYoutubeUrlInput & { language?: TranscriptLanguage },
+  ): Promise<DownloadArtifact> {
+    const platform: DownloadPlatform = 'facebook';
+    const videoId = requireFacebookVideoId(input.url);
+    const outputDir = this.resolveOutputDir(platform, videoId);
+    const downloader = getPlatformDownloader(platform);
+
+    switch (assetType) {
+      case 'video':
+        return buildArtifact(platform, videoId, 'video', await downloader.downloadVideo(input.url, outputDir), null);
+      case 'audio':
+        return buildArtifact(platform, videoId, 'audio', await downloader.downloadAudio(input.url, outputDir), null);
+      case 'thumbnail':
+        return buildArtifact(platform, videoId, 'thumbnail', await downloader.downloadThumbnail(input.url, outputDir), null);
+      case 'transcript': {
+        const language = input.language ?? DEFAULT_TRANSCRIPT_LANGUAGE;
+        const filePath = await downloader.downloadTranscript(input.url, outputDir, language);
+        return buildArtifact(platform, videoId, 'transcript', filePath, language);
+      }
+    }
   }
 }
 

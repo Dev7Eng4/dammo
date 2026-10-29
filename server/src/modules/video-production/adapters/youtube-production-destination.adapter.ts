@@ -1,6 +1,7 @@
 import { youtubeChannelVideoDir } from '../../../config/paths.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { resolveReupAudioVisualStyle } from '../../youtube-channels/reup-audio-visual-style.js';
+import { isAiSceneVideoType } from '../../youtube-channels/youtube-channels.types.js';
 import type {
   ReupAudioBackgroundImage,
   StoredYoutubeChannelType,
@@ -34,7 +35,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
   const siBackgroundImage =
     channel.reupAudioVideoType === 'si' ? resolveSiBackgroundImage(channel) : undefined;
   const requiresVisualStyle =
-    channel.reupAudioVideoType === 'ai' ||
+    isAiSceneVideoType(channel.reupAudioVideoType) ||
     siBackgroundImage === 'multi_image' ||
     channel.useReferenceImage === true;
 
@@ -52,7 +53,7 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
 
   return {
     reupAudioVideoType: channel.reupAudioVideoType,
-    ...(channel.reupAudioVideoType === 'si' || channel.reupAudioVideoType === 'ai'
+    ...(channel.reupAudioVideoType === 'si' || isAiSceneVideoType(channel.reupAudioVideoType)
       ? {
           showSmallVideo: channel.showSmallVideo === true || Boolean(channel.smallVideoFile?.trim()),
           ...(channel.smallVideoFile?.trim() ? { smallVideoFile: channel.smallVideoFile.trim() } : {}),

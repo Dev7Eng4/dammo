@@ -45,6 +45,7 @@
       "language": "Ngôn ngữ",
       "category": "Danh mục",
       "niche": "Ngách",
+      "platform": "Nền tảng",
       "imageFlowMode": "Luồng tạo ảnh scene",
       "imageFlowReference": "Có ảnh tham chiếu (2 bước)",
       "imageFlowReferenceDesc": "Bước 1 thiết kế nhân vật · Bước 2 tạo scene prompt có references",

@@ -6,7 +6,11 @@ import { AppError } from '../../../../shared/http/errors.js';
 export const CAPTION_FONT_SIZE_WITH_BOX = 60;
 export const CAPTION_FONT_SIZE_WITHOUT_BOX = 55;
 
+/** `none` burns no captions into the video (and skips the transcript rewrite step). */
+export const CAPTION_NONE_KEY = 'none';
+
 export const CAPTION_STYLE_KEYS = [
+  'none',
   'default',
   'noto_sans_red_white',
   'noto_sans_red_white_box',
@@ -233,7 +237,7 @@ const CAPTION_STYLE_DUAL_BASES: CaptionStyleBase[] = [
   },
 ];
 
-export const CAPTION_STYLE_PRESETS: Record<CaptionStyleKey, CaptionStylePreset> = {
+export const CAPTION_STYLE_PRESETS: Record<Exclude<CaptionStyleKey, typeof CAPTION_NONE_KEY>, CaptionStylePreset> = {
   default: {
     key: 'default',
     label: 'Default',
@@ -313,8 +317,14 @@ export function assertValidCaptionStyleKey(key: string | undefined, required = f
   return trimmed;
 }
 
+export function isCaptionDisabled(key?: string | null): boolean {
+  return resolveCaptionStyleKey(key) === CAPTION_NONE_KEY;
+}
+
+/** `none` has no preset of its own; it falls back to `default` so font asset checks still work. */
 export function getCaptionStylePreset(key?: string | null): CaptionStylePreset {
-  return CAPTION_STYLE_PRESETS[resolveCaptionStyleKey(key)];
+  const resolved = resolveCaptionStyleKey(key);
+  return CAPTION_STYLE_PRESETS[resolved === CAPTION_NONE_KEY ? 'default' : resolved];
 }
 
 export interface CaptionFontAssets {

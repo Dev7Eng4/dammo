@@ -189,6 +189,7 @@ export class PromptsService {
       name: name,
       category,
       niche,
+      platform: input.platform ?? 'all',
       outputType: input.outputType ?? 'text',
       ...(input.isSystem ? { isSystem: true } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
@@ -248,6 +249,7 @@ export class PromptsService {
       if (input.name !== undefined) next.name = input.name.trim();
       if (input.category !== undefined) next.category = input.category;
       if (input.niche !== undefined) next.niche = normalizePromptNiche(input.niche);
+      if (input.platform !== undefined) next.platform = input.platform;
       if (input.outputType !== undefined) next.outputType = input.outputType;
 
       const nextCategory = next.category;

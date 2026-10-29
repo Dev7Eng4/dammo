@@ -37,6 +37,11 @@ export function createSourceChannelsRoutes() {
     return c.json(result);
   });
 
+  app.get('/:id/videos/:videoId/comments', async (c) => {
+    const result = await sourceChannelsService.getVideoComments(c.req.param('id'), c.req.param('videoId'));
+    return c.json(result);
+  });
+
   app.delete('/:id/videos', zValidator('json', deleteSourceVideosSchema), (c) => {
     const { videoIds } = c.req.valid('json');
     const result = sourceChannelsService.deleteDownloadedVideos(c.req.param('id'), videoIds);

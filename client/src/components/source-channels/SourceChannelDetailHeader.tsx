@@ -62,7 +62,7 @@ export function SourceChannelDetailHeader({
           </div>
         </div>
 
-        {source.platform === 'youtube' && onRefresh ? (
+        {(source.platform === 'youtube' || source.platform === 'facebook') && onRefresh ? (
           <div className='shrink-0'>
             <Button className='rounded-lg' disabled={refreshing} onClick={onRefresh}>
               {refreshing ? t('detail.refreshing') : t('detail.refresh')}

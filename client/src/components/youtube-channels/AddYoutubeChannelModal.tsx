@@ -29,6 +29,7 @@ import {
   YOUTUBE_CHANNEL_LANGUAGE_OPTIONS,
   YOUTUBE_CHANNEL_TYPE_OPTIONS,
   CELEBRITY_EMPTY_SENTINEL,
+  isAiSceneVideoType,
   parseSiBackgroundImageValue,
   toSiBackgroundImageFormValue,
 } from '../../constants/youtubeChannelForm';
@@ -146,6 +147,8 @@ function buildAudioVideoTypeOptions(t: TFunc) {
     label: {
       si: t('form.videoSi'),
       ai: t('form.videoAi'),
+      ai_full_video: t('form.videoAiFull'),
+      ai_intro_video: t('form.videoAiIntro'),
     }[option.value],
   }));
 }
@@ -168,7 +171,7 @@ function buildBackgroundImagePayload(
   formValue: string,
 ): { reupAudioBackgroundImage?: ReupAudioBackgroundImage; celebrityId?: string } {
   const { mode, celebrityId } = parseSiBackgroundImageValue(formValue);
-  if (videoType === 'ai') return mode === 'celebrity' && celebrityId ? { celebrityId } : {};
+  if (isAiSceneVideoType(videoType)) return mode === 'celebrity' && celebrityId ? { celebrityId } : {};
   if (videoType !== 'si' || !mode) return {};
   if (mode === 'celebrity') return celebrityId ? { reupAudioBackgroundImage: mode, celebrityId } : {};
   return { reupAudioBackgroundImage: mode };
@@ -209,9 +212,11 @@ function buildVideoCreationOrderOptions(t: TFunc) {
 }
 
 function buildCaptionStyleOptions(t: TFunc) {
-  return CAPTION_STYLE_OPTIONS.map(option =>
-    option.value === 'default' ? { ...option, label: t('form.default') } : option,
-  );
+  return CAPTION_STYLE_OPTIONS.map(option => {
+    if (option.value === 'none') return { ...option, label: t('form.captionNone') };
+    if (option.value === 'default') return { ...option, label: t('form.default') };
+    return option;
+  });
 }
 
 function getVideoStylePlaceholder(t: TFunc, videoType: string, loading: boolean, optionCount: number) {
@@ -404,7 +409,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const language = watch('language') as YoutubeChannelLanguage | '';
   const reupAudioVideoType = watch('reupAudioVideoType');
   /** SI picks its background (incl. celebrity); AI can only pick a celebrity for celebrity-wisdom videos. */
-  const usesCelebrityPicker = isReupAudio && (reupAudioVideoType === 'si' || reupAudioVideoType === 'ai');
+  const usesCelebrityPicker = isReupAudio && (reupAudioVideoType === 'si' || isAiSceneVideoType(reupAudioVideoType));
   const reupAudioBackgroundImage = watch('reupAudioBackgroundImage');
   const parsedBackgroundImage = useMemo(
     () => parseSiBackgroundImageValue(reupAudioBackgroundImage),
@@ -413,7 +418,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const useReferenceImage = watch('useReferenceImage');
   const useMascot = watch('useMascot');
   const canEditSceneDensity =
-    isReupAudio && (reupAudioVideoType === 'ai' || parsedBackgroundImage.mode === 'multi_image');
+    isReupAudio && (isAiSceneVideoType(reupAudioVideoType) || parsedBackgroundImage.mode === 'multi_image');
   const showDisclaimer = watch('showDisclaimer');
   const uploadFrequency = watch('uploadFrequency');
   const thumbnailStyleKey = watch('thumbnailStyleKey');
@@ -450,7 +455,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     /* AI videos have no image-count modes: only a celebrity can be picked. */
     const options: SelectOption[] = audioBackgroundImageOptions.map(option => ({
       ...option,
-      disabled: reupAudioVideoType === 'ai',
+      disabled: isAiSceneVideoType(reupAudioVideoType),
     }));
     if (reupAudioVideoType === 'si' && parsedBackgroundImage.mode === 'local_image') {
       options.push(localImageLegacyOption);
@@ -588,7 +593,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
   useEffect(() => {
     if (!formReady || !isReupAudio || !reupAudioVideoType) return;
-    if (reupAudioVideoType === 'ai') {
+    if (isAiSceneVideoType(reupAudioVideoType)) {
       if (parseSiBackgroundImageValue(getValues('reupAudioBackgroundImage')).mode !== 'celebrity') {
         setValue('reupAudioBackgroundImage', '');
       }
@@ -816,7 +821,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           ? buildBackgroundImagePayload(values.reupAudioVideoType, values.reupAudioBackgroundImage)
           : {}),
         ...(values.type === 'reup_audio' &&
-        (values.reupAudioVideoType === 'ai' ||
+        (isAiSceneVideoType(values.reupAudioVideoType) ||
           parseSiBackgroundImageValue(values.reupAudioBackgroundImage).mode === 'multi_image')
           ? {
               aiSceneDensityMaxSec: {
@@ -833,7 +838,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             }
           : {}),
         ...(values.type === 'reup_audio' &&
-        (values.reupAudioVideoType === 'si' || values.reupAudioVideoType === 'ai')
+        (values.reupAudioVideoType === 'si' || isAiSceneVideoType(values.reupAudioVideoType))
           ? {
               ...(values.smallVideoFile
                 ? { smallVideoFile: values.smallVideoFile, showSmallVideo: true }
@@ -1137,7 +1142,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                           id='reup-audio-background-image'
                           options={backgroundImageOptions}
                           value={field.value}
-                          clearable={reupAudioVideoType === 'ai'}
+                          clearable={isAiSceneVideoType(reupAudioVideoType)}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
                           placeholder={celebritiesLoading ? t('form.imagesLoading') : t('form.imagesPlaceholder')}
@@ -1194,7 +1199,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   rules={{
                     required:
                       isReupAudio &&
-                      (reupAudioVideoType === 'ai' ||
+                      (isAiSceneVideoType(reupAudioVideoType) ||
                         parsedBackgroundImage.mode === 'multi_image' ||
                         useReferenceImage)
                         ? t('form.visualStyleRequired')

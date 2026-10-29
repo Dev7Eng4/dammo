@@ -20,6 +20,19 @@ export const FACEBOOK_URL = {
 } as const;
 
 export const FACEBOOK_SELECTOR = {
+  // --- Login ---------------------------------------------------------------
+  loginEmailInput: ['input[name="email"]'],
+  loginPasswordInput: ['input[name="pass"]'],
+
+  // --- Signup --------------------------------------------------------------
+  signupEmailInput: ['input[name="reg_email__"]'],
+  signupPasswordInput: ['input[name="reg_passwd__"]'],
+  signupBirthdayDayInput: ['input[name="reg_dmy__day"]'],
+  signupBirthdayMonthInput: ['input[name="reg_dmy__month"]'],
+  signupBirthdayYearInput: ['input[name="reg_dmy__year"]'],
+  signupGenderInput: ['input[name="reg_gender"]'],
+  signupSubmitButton: ['button[name="websubmit"]'],
+
   // --- Create page ---------------------------------------------------------
   pageNameInput: [
     '#BUSINESS_SUPERCATEGORYPageNameInput',
@@ -47,11 +60,7 @@ export const FACEBOOK_SELECTOR = {
     'button:has-text("Continue")',
   ],
   /** Present once the page exists and Facebook shows the page-setup wizard. */
-  pageCreatedMarker: [
-    'a[href*="/profile.php?id="]',
-    'div[aria-label="Switch Now"][role="button"]',
-    'div[role="main"] h1',
-  ],
+  pageCreatedMarker: ['a[href*="/profile.php?id="]', 'div[aria-label="Switch Now"][role="button"]', 'div[role="main"] h1'],
 
   // --- Switch acting identity to the page (needed to post/upload as page) ---
   switchNowButton: [
@@ -62,7 +71,7 @@ export const FACEBOOK_SELECTOR = {
 
   // --- Text / photo post ----------------------------------------------------
   composerOpen: [
-    "div[role=\"button\"]:has-text(\"What's on your mind\")",
+    'div[role="button"]:has-text("What\'s on your mind")',
     'div[role="button"]:has-text("Bạn đang nghĩ gì")',
     'div[role="button"]:has-text("Create post")',
   ],
@@ -71,10 +80,7 @@ export const FACEBOOK_SELECTOR = {
     'div[role="dialog"] div[role="textbox"][contenteditable="true"]',
     'div[role="dialog"] div[contenteditable="true"][aria-label*="mind"]',
   ],
-  composerPhotoVideoInput: [
-    'div[role="dialog"] input[type="file"][accept*="image"]',
-    'div[role="dialog"] input[type="file"]',
-  ],
+  composerPhotoVideoInput: ['div[role="dialog"] input[type="file"][accept*="image"]', 'div[role="dialog"] input[type="file"]'],
   composerPostButton: [
     'div[role="dialog"] div[aria-label="Post"][role="button"]',
     'div[role="dialog"] div[aria-label="Đăng"][role="button"]',
@@ -82,11 +88,7 @@ export const FACEBOOK_SELECTOR = {
 
   // --- Reel / video upload --------------------------------------------------
   reelFileInput: ['input[type="file"][accept*="video"]', 'input[type="file"]'],
-  reelNextButton: [
-    'div[aria-label="Next"][role="button"]',
-    'div[aria-label="Tiếp"][role="button"]',
-    'div[role="button"]:has-text("Next")',
-  ],
+  reelNextButton: ['div[aria-label="Next"][role="button"]', 'div[aria-label="Tiếp"][role="button"]', 'div[role="button"]:has-text("Next")'],
   reelDescriptionTextbox: [
     'div[role="textbox"][contenteditable="true"][aria-label*="escription"]',
     'div[role="textbox"][contenteditable="true"][aria-label*="Mô tả"]',

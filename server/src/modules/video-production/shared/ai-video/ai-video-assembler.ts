@@ -13,6 +13,7 @@ import { pruneSlideshowCache } from '../slideshow/slideshow-cache.js';
 import {
   getCaptionStylePreset,
   resolveCaptionFont,
+  isCaptionDisabled,
   resolveCaptionStyleKey,
 } from '../render-core/caption-styles.js';
 import {
@@ -204,18 +205,24 @@ export async function assembleReupAiSlideshowVideo(
 
   const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
   const resolvedCaptionStyleKey = resolveCaptionStyleKey(captionStyleKey);
-  convertSrtToAss(activeSubtitlePath, tempAssPath, {
-    captionStyleKey: resolvedCaptionStyleKey,
-    japaneseStyle: useJaSubtitleStyle,
-    fontFile: assets.fontPath,
-    showDisclaim,
-    disclaimerText,
-  });
+  const captionsEnabled = !isCaptionDisabled(captionStyleKey);
+  if (captionsEnabled) {
+    convertSrtToAss(activeSubtitlePath, tempAssPath, {
+      captionStyleKey: resolvedCaptionStyleKey,
+      japaneseStyle: useJaSubtitleStyle,
+      fontFile: assets.fontPath,
+      showDisclaim,
+      disclaimerText,
+    });
+  }
   const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
   const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);
   const captionPreset = getCaptionStylePreset(resolvedCaptionStyleKey);
   const subFilter = `subtitles='${subPathEscaped}:fontsdir=${fontsDirEscaped}'`;
-  const videoFilters = captionPreset.showBackgroundBox
+  /* `null` is ffmpeg's pass-through filter: no captions are burned in. */
+  const videoFilters = !captionsEnabled
+    ? 'null'
+    : captionPreset.showBackgroundBox
     ? (() => {
         const subtitleBoxHeight = Math.floor(CANVAS_H / 3);
         const boxY = CANVAS_H - subtitleBoxHeight - SUBTITLE_MARGIN_BOTTOM_PX;

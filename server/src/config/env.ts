@@ -74,8 +74,16 @@ export const env = {
 
   /** Đường dẫn yt-dlp.exe tùy chỉnh; fallback về binary bundled nếu không tồn tại */
   ytDlpPath: process.env.YT_DLP_PATH ?? 'D:\\yt-dlp.exe',
+  /** Email of a logged-in Facebook GPM profile used to list all reels of a page (otherwise only ~10 load logged-out). */
+  facebookScrapeEmail: process.env.FACEBOOK_SCRAPE_EMAIL ?? '',
   gpmApiBaseUrl: process.env.GPM_API_BASE_URL ?? 'http://127.0.0.1:19995/api/v3',
   /** reCAPTCHA Enterprise site key — inspect Network tab on labs.google/fx when Flow loads */
   flowRecaptchaSiteKey: process.env.FLOW_RECAPTCHA_SITE_KEY ?? '6LdsFiUsAAAAAIjVDZcuLhaHiDn5nnHVXVRQGeMV',
   flowRecaptchaAction: process.env.FLOW_RECAPTCHA_ACTION ?? 'IMAGE_GENERATE',
+  /** reCAPTCHA action used when starting a Flow image-to-video generation. */
+  flowVideoRecaptchaAction: process.env.FLOW_VIDEO_RECAPTCHA_ACTION ?? 'VIDEO_GENERATION',
+  /** Flow video model key (Veo image-to-video). Check the Flow web client request if generation is rejected. */
+  flowVideoModelKey: process.env.FLOW_VIDEO_MODEL_KEY ?? 'veo_3_1_i2v_s_fast_ultra',
+  /** Flow account tier sent with video requests. */
+  flowVideoPaygateTier: process.env.FLOW_VIDEO_PAYGATE_TIER ?? 'PAYGATE_TIER_TWO',
 };

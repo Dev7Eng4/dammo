@@ -1,7 +1,8 @@
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
-import { assembleReupAiSlideshowVideo } from '../../../shared/ai-video/index.js';
+import { assembleReupAiSlideshowVideo, AI_VIDEO_CLIP_SEC } from '../../../shared/ai-video/index.js';
 import { runCelebrityStillStep, usesCelebrityStillBackground } from '../steps/celebrity-still.step.js';
 import { runSceneAssetsStep } from '../steps/scene-assets.step.js';
+import { resolveSceneVideoMode, runSceneVideoClipsStep } from '../steps/scene-video-clips.step.js';
 import { toOnLog, type AssembleContext } from '../video-task.context.js';
 import type { AssembleReadiness, VideoTypeStrategy, VisualAssets } from './video-type.strategy.js';
 
@@ -22,12 +23,21 @@ export const aiStrategy: VideoTypeStrategy = {
   },
 
   async prepareSceneAssets(ctx) {
+    const videoMode = resolveSceneVideoMode(ctx.destination.reupAudioVideoType);
     const result = usesCelebrityStillBackground(ctx.destination)
       ? await runCelebrityStillStep(ctx)
-      : await runSceneAssetsStep(ctx, { label: 'AI' });
+      : await runSceneAssetsStep(ctx, {
+          label: 'AI',
+          ...(videoMode === 'full' ? { maxSceneSec: AI_VIDEO_CLIP_SEC } : {}),
+        });
+
+    const scenes =
+      videoMode && !usesCelebrityStillBackground(ctx.destination)
+        ? await runSceneVideoClipsStep(ctx, result.scenes, videoMode)
+        : result.scenes;
 
     return {
-      aiScenePrompts: result.scenes,
+      aiScenePrompts: scenes,
       aiScenePromptsPath: result.promptsPath,
       aiSlidesDir: result.slidesDir,
     };

@@ -66,6 +66,7 @@ import type {
   YoutubeChannelStats,
   YoutubeChannelType,
 } from './youtube-channels.types.js';
+import { isAiSceneVideoType } from './youtube-channels.types.js';
 
 const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -291,7 +292,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
       mascotId = selectedMascotId;
     }
 
-    if (input.reupAudioVideoType === 'ai') {
+    if (isAiSceneVideoType(input.reupAudioVideoType)) {
       if (!input.reupAudioVisualStyleId?.trim()) {
         throw new AppError('Video style is required for Animate Images (AI)', 400, 'VALIDATION_ERROR');
       }
@@ -1310,7 +1311,7 @@ export class YoutubeChannelsService {
           delete next.audioBarFile;
         }
         if (
-          (config.reupAudioVideoType === 'si' || config.reupAudioVideoType === 'ai') &&
+          (config.reupAudioVideoType === 'si' || isAiSceneVideoType(config.reupAudioVideoType)) &&
           config.showSmallVideo
         ) {
           next.showSmallVideo = true;
@@ -1318,7 +1319,7 @@ export class YoutubeChannelsService {
           delete next.showSmallVideo;
         }
         if (
-          (config.reupAudioVideoType === 'si' || config.reupAudioVideoType === 'ai') &&
+          (config.reupAudioVideoType === 'si' || isAiSceneVideoType(config.reupAudioVideoType)) &&
           config.smallVideoFile
         ) {
           next.smallVideoFile = config.smallVideoFile;

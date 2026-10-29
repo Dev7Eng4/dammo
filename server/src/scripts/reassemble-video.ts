@@ -16,6 +16,7 @@ import {
 import { createConsoleTaskLogger } from '../modules/video-production/pipelines/reup-audio/task-logger.js';
 import type { AssembleContext } from '../modules/video-production/pipelines/reup-audio/video-task.context.js';
 import { assertMediaFileComplete } from '../infrastructure/ffmpeg/ffmpeg-probe.js';
+import { isAiSceneVideoType } from '../modules/youtube-channels/youtube-channels.types.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import { resolveChannelAvatarForVideoAssembly } from '../modules/youtube-channels/resolve-channel-avatar.js';
 import { formatElapsedMs } from '../shared/timing/step-timer.js';
@@ -105,7 +106,7 @@ async function main() {
   const backgroundImage = destination.reupAudioBackgroundImage ?? 'one_image';
 
   const assets: VisualAssets = {};
-  if (videoType === 'ai') {
+  if (isAiSceneVideoType(videoType)) {
     assets.aiScenePrompts = await loadAiScenes(workDir);
   } else if (backgroundImage === 'one_image') {
     const heroImagePath = path.join(workDir, CENTER_IMAGE_FILE);

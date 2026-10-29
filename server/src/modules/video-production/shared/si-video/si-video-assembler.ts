@@ -61,7 +61,7 @@ import {
 } from './si-multi-image.js';
 // import { getPrebakedNoiseMov } from './si-prebake.js'; // TODO: re-enable SI noise
 import type { CaptionStyleKey } from '../render-core/caption-styles.js';
-import { getCaptionStylePreset, resolveCaptionStyleKey } from '../render-core/caption-styles.js';
+import { getCaptionStylePreset, isCaptionDisabled, resolveCaptionStyleKey } from '../render-core/caption-styles.js';
 import {
   convertSrtToAss,
   escapePathForFfmpegSubtitles,
@@ -487,13 +487,16 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
 
       const useJaSubtitleStyle = resolveJapaneseSubtitleStyle(activeSubtitlePath, language);
       const resolvedCaptionStyleKey = resolveCaptionStyleKey(captionStyleKey);
-      convertSrtToAss(activeSubtitlePath, tempAssPath, {
-        captionStyleKey: resolvedCaptionStyleKey,
-        japaneseStyle: useJaSubtitleStyle,
-        fontFile: assets.fontPath,
-        showDisclaim,
-        disclaimerText,
-      });
+      const captionsEnabled = !isCaptionDisabled(captionStyleKey);
+      if (captionsEnabled) {
+        convertSrtToAss(activeSubtitlePath, tempAssPath, {
+          captionStyleKey: resolvedCaptionStyleKey,
+          japaneseStyle: useJaSubtitleStyle,
+          fontFile: assets.fontPath,
+          showDisclaim,
+          disclaimerText,
+        });
+      }
       const subPathEscaped = escapePathForFfmpegSubtitles(tempAssPath);
       const fontsDirEscaped = escapePathForFfmpegSubtitles(assets.fontDir);
       const captionPreset = getCaptionStylePreset(resolvedCaptionStyleKey);
@@ -501,7 +504,10 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
       const hwEncoder = resolveFfmpegHwEncoder();
       const videoMapLabel = isHardwareEncoder(hwEncoder) ? 'venc' : 'vout_final';
       const finalFormat = isHardwareEncoder(hwEncoder) ? ',format=nv12' : '';
-      const videoFilters = captionPreset.showBackgroundBox
+      /* `null` is ffmpeg's pass-through filter: no captions are burned in. */
+      const videoFilters = !captionsEnabled
+        ? 'null'
+        : captionPreset.showBackgroundBox
         ? (() => {
             const subtitleBoxHeight = Math.floor(CANVAS_H / 3);
             const boxY = CANVAS_H - subtitleBoxHeight - SUBTITLE_MARGIN_BOTTOM_PX;

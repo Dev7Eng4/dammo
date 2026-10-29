@@ -56,6 +56,7 @@ const EMPTY_DRAFT: PromptFormDraft = {
   name: '',
   category: 'meta',
   niche: 'all',
+  platform: 'all',
   steps: [createEmptyStepDraft()],
 };
 
@@ -65,6 +66,7 @@ function serializeDraft(draft: PromptFormDraft): string {
     name: draft.name,
     category: draft.category,
     niche: draft.niche,
+    platform: draft.platform,
     steps: draft.steps.map((step) => ({
       id: step.id,
       key: step.key,
@@ -364,6 +366,7 @@ export function PromptsPage() {
         name: prompt.name,
         category: prompt.category,
         niche: prompt.niche || 'all',
+        platform: prompt.platform || 'all',
         isSystem: siblings.some((item) => item.isSystem),
         steps,
       };
@@ -568,6 +571,7 @@ export function PromptsPage() {
           name,
           category: currentDraft.category,
           niche: currentDraft.niche || 'all',
+          platform: currentDraft.platform || 'all',
           outputType: sourceStep.outputType,
           description: sourceStep.description || undefined,
           template: templatePayload,
@@ -589,6 +593,7 @@ export function PromptsPage() {
           name,
           category: currentDraft.category,
           niche: currentDraft.niche || 'all',
+          platform: currentDraft.platform || 'all',
           outputType: sourceStep.outputType,
           description: sourceStep.description || undefined,
           template: templatePayload,
@@ -665,6 +670,7 @@ export function PromptsPage() {
         name,
         category: draft.category,
         niche: draft.niche || 'all',
+        platform: draft.platform || 'all',
         isSystem: false,
         steps: nextSteps,
       };
@@ -693,6 +699,7 @@ export function PromptsPage() {
       name: copyName,
       category: draft.category,
       niche: draft.niche || 'all',
+      platform: draft.platform || 'all',
       isSystem: false,
       steps: draft.steps.map((step) => ({
         ...step,

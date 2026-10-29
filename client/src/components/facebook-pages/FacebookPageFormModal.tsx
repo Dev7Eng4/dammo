@@ -4,7 +4,7 @@ import { fetchMailAccounts } from '../../api/mailAccounts'
 import { fetchNiches } from '../../api/niches'
 import { createFacebookPage, fetchFacebookPages, updateFacebookPage } from '../../api/facebookPages'
 import { Button, Input, Modal, Select, Textarea, useToast } from '../ui'
-import type { FacebookPage, FacebookPageFormValues } from '../../types/facebookPage'
+import type { FacebookPage, FacebookPageFormValues, FacebookVideoFormat } from '../../types/facebookPage'
 import type { MailAccount } from '../../types/mailAccount'
 import type { Niche } from '../../types/niche'
 
@@ -21,6 +21,7 @@ const EMPTY_VALUES: FacebookPageFormValues = {
   topic: '',
   category: '',
   bio: '',
+  videoFormat: '9:16',
   mailAccountId: '',
   pageUrl: '',
   notes: '',
@@ -43,6 +44,7 @@ function FacebookPageForm({ open, page, onClose, onSaved }: FacebookPageFormModa
           topic: page.topic,
           category: page.category,
           bio: page.bio,
+          videoFormat: page.videoFormat ?? '9:16',
           mailAccountId: '',
           pageUrl: page.pageUrl,
           notes: page.notes ?? '',
@@ -113,6 +115,10 @@ function FacebookPageForm({ open, page, onClose, onSaved }: FacebookPageFormModa
   const mailOptions = mailAccounts
     .filter((m) => m.platformLinks.facebook !== 'deleted' && !usedEmails.has(m.email.toLowerCase()))
     .map((m) => ({ value: m.id, label: m.email }))
+  const videoFormatOptions = [
+    { value: '9:16', label: t('form.videoFormatVertical') },
+    { value: '16:9', label: t('form.videoFormatHorizontal') },
+  ]
   const nicheOptions = niches.map((n) => ({ value: n.key, label: n.label }))
 
   return (
@@ -178,6 +184,16 @@ function FacebookPageForm({ open, page, onClose, onSaved }: FacebookPageFormModa
             onChange={(e) => set('category', e.target.value)}
           />
         </label>
+
+        <div className="space-y-1.5">
+          <span className="text-xs font-medium text-muted-foreground">{t('form.videoFormat')}</span>
+          <Select
+            options={videoFormatOptions}
+            value={values.videoFormat}
+            onChange={(v) => set('videoFormat', v as FacebookVideoFormat)}
+          />
+          <p className="text-xs text-muted-foreground">{t('form.videoFormatHint')}</p>
+        </div>
 
         <label className="block space-y-1.5">
           <span className="text-xs font-medium text-muted-foreground">{t('form.bio')}</span>

@@ -115,3 +115,8 @@ export const SOURCE_CHANNEL_LANGUAGE_LABELS: Record<SourceChannelLanguage, strin
   ja: 'Tiếng Nhật',
   es: 'Tiếng Tây Ban Nha',
 };
+
+/** Platforms whose videos can be downloaded (audio, video, transcript, thumbnail). */
+export function isDownloadablePlatform(platform: SourcePlatform): boolean {
+  return platform === 'youtube' || platform === 'facebook';
+}

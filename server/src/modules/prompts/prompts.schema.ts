@@ -5,6 +5,8 @@ const promptOutputTypeSchema = z.enum(['text', 'image', 'video']);
 const specificPromptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
 const promptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es', 'all']);
 
+const promptPlatformSchema = z.enum(['all', 'youtube', 'facebook', 'tiktok']);
+
 const promptNicheSchema = z.string().min(1).max(100);
 
 export const createPromptSchema = z.object({
@@ -13,6 +15,7 @@ export const createPromptSchema = z.object({
   template: z.string().min(1),
   category: promptCategorySchema.default('meta'),
   niche: promptNicheSchema.default('all'),
+  platform: promptPlatformSchema.default('all'),
   outputType: promptOutputTypeSchema.default('text'),
   description: z.string().max(500).optional(),
   key: z.string().min(1).max(100).optional(),
@@ -27,6 +30,7 @@ export const updatePromptSchema = z
     template: z.string().min(1).optional(),
     category: promptCategorySchema.optional(),
     niche: promptNicheSchema.optional(),
+    platform: promptPlatformSchema.optional(),
     outputType: promptOutputTypeSchema.optional(),
     description: z.string().max(500).optional(),
     useReferenceImage: z.boolean().optional(),

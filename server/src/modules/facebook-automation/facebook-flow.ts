@@ -132,6 +132,31 @@ export async function publishPagePost(page: Page, pageUrl: string, input: PostIn
   await delay(4000, 6000);
 }
 
+/**
+ * Landscape (16:9) videos are published as a regular page post with the video attached,
+ * because Reels only accept vertical video.
+ */
+export async function publishLandscapeVideo(page: Page, pageUrl: string, input: ReelInput): Promise<void> {
+  if (!fs.existsSync(input.videoPath)) {
+    throw new AppError('Video file not found', 400, 'FILE_NOT_FOUND');
+  }
+
+  await openPageAsPage(page, pageUrl);
+  await clickElement(page, await requireVisible(page, FACEBOOK_SELECTOR.composerOpen, 'composer opener'));
+  await requireVisible(page, FACEBOOK_SELECTOR.composerDialog, 'composer dialog');
+
+  if (input.caption) {
+    await typeInto(page, await requireVisible(page, FACEBOOK_SELECTOR.composerTextbox, 'composer textbox'), input.caption);
+  }
+
+  const fileInput = page.locator(FACEBOOK_SELECTOR.composerPhotoVideoInput.join(', ')).first();
+  await fileInput.setInputFiles(input.videoPath);
+  await delay(5000, 8000);
+
+  await clickElement(page, await requireVisible(page, FACEBOOK_SELECTOR.composerPostButton, 'post button', 60_000));
+  await delay(5000, 8000);
+}
+
 export interface ReelInput {
   videoPath: string;
   caption: string;

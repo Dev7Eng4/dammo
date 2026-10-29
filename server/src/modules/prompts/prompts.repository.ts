@@ -42,6 +42,7 @@ function flattenPromptSet(set: PromptSet): Prompt[] {
       name: set.name,
       category: set.category,
       niche: set.niche || 'all',
+      platform: set.platform || 'all',
       outputType: step.outputType,
       description: step.description,
       isSystem: set.isSystem,
@@ -85,6 +86,7 @@ function migrateLegacyPrompts(prompts: StoredPrompt[]): PromptsStore {
         name: prompt.name,
         category: prompt.category,
         niche: prompt.niche || 'all',
+        platform: prompt.platform || 'all',
         isSystem: prompt.isSystem,
         createdAt: prompt.createdAt,
         updatedAt: prompt.updatedAt,
@@ -96,6 +98,7 @@ function migrateLegacyPrompts(prompts: StoredPrompt[]): PromptsStore {
     existing.name = prompt.name;
     existing.category = prompt.category;
     existing.niche = prompt.niche || existing.niche || 'all';
+    existing.platform = prompt.platform || existing.platform || 'all';
     existing.isSystem = prompt.isSystem ?? existing.isSystem;
     existing.updatedAt = nextUpdatedAt;
     existing.steps.push(stepRecord);
@@ -117,6 +120,7 @@ function sanitizeStore(raw: PromptsStore | LegacyStore | null): PromptsStore {
         ...set,
         baseKey: normalizeKey(set.baseKey),
         niche: set.niche || 'all',
+        platform: set.platform || 'all',
         ...(typeof set.requireGeneralBackground === 'boolean'
           ? { requireGeneralBackground: set.requireGeneralBackground }
           : {}),
@@ -261,6 +265,7 @@ export class PromptsRepository {
             name: prompt.name,
             category: prompt.category,
             niche: prompt.niche || 'all',
+            platform: prompt.platform || 'all',
             isSystem: prompt.isSystem,
             createdAt: prompt.createdAt,
             updatedAt: prompt.updatedAt,
@@ -273,6 +278,7 @@ export class PromptsRepository {
         set.name = prompt.name;
         set.category = prompt.category;
         set.niche = prompt.niche || 'all';
+        set.platform = prompt.platform || 'all';
         set.isSystem = prompt.isSystem ?? set.isSystem;
         set.createdAt = set.createdAt || prompt.createdAt;
         set.updatedAt = prompt.updatedAt;
@@ -340,6 +346,7 @@ export class PromptsRepository {
             name: updated.name,
             category: updated.category,
             niche: updated.niche || 'all',
+            platform: updated.platform || 'all',
             isSystem: updated.isSystem,
             createdAt: updated.createdAt,
             updatedAt: updated.updatedAt,
@@ -352,6 +359,7 @@ export class PromptsRepository {
         targetSet.name = updated.name;
         targetSet.category = updated.category;
         targetSet.niche = updated.niche || 'all';
+        targetSet.platform = updated.platform || 'all';
         targetSet.isSystem = updated.isSystem ?? targetSet.isSystem;
         targetSet.updatedAt = updated.updatedAt;
         targetSet.steps = [nextStep, ...targetSet.steps.filter((stepItem) => stepItem.id !== updated!.id)].sort(

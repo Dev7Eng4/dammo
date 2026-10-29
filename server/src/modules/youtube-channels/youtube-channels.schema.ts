@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CAPTION_STYLE_KEYS } from '../video-production/shared/render-core/caption-styles.js';
 import { getPublishTimeSlotCount } from './upload-schedule.js';
+import { isAiSceneVideoType } from './youtube-channels.types.js';
 
 const uploadFrequencySchema = z.enum([
   'every_5_days',
@@ -30,7 +31,7 @@ const channelConfigFields = {
   thumbnailStyleKey: z.string().optional(),
   thumbnailBackgroundFile: z.string().optional(),
   captionStyleKey: z.enum(CAPTION_STYLE_KEYS).optional(),
-  reupAudioVideoType: z.enum(['si', 'ai']).optional(),
+  reupAudioVideoType: z.enum(['si', 'ai', 'ai_full_video', 'ai_intro_video']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),
   reupAudioBackgroundImage: z
     .enum(['no_image', 'local_image', 'one_image', 'multi_image', 'celebrity'])
@@ -96,7 +97,7 @@ function applyChannelConfigRefine(
         path: ['reupAudioVideoType'],
       });
     }
-    if (data.reupAudioVideoType === 'ai' && !data.reupAudioVisualStyleId?.trim()) {
+    if (isAiSceneVideoType(data.reupAudioVideoType) && !data.reupAudioVisualStyleId?.trim()) {
       ctx.addIssue({
         code: 'custom',
         message: 'Video style is required for Animate Images (AI)',

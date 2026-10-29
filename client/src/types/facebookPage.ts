@@ -1,4 +1,5 @@
 export type FacebookPageStatus = 'draft' | 'created' | 'active' | 'paused';
+export type FacebookVideoFormat = '9:16' | '16:9';
 export type FacebookPageStatusFilter = 'all' | FacebookPageStatus;
 
 export interface FacebookPage {
@@ -7,6 +8,8 @@ export interface FacebookPage {
   topic: string;
   category: string;
   bio: string;
+  /** Missing on older records; treated as 9:16. */
+  videoFormat?: FacebookVideoFormat;
   linkedEmail: string;
   pageUrl: string;
   status: FacebookPageStatus | 'deleted';
@@ -26,6 +29,7 @@ export interface FacebookPageFormValues {
   topic: string;
   category: string;
   bio: string;
+  videoFormat: FacebookVideoFormat;
   mailAccountId: string;
   pageUrl: string;
   notes: string;

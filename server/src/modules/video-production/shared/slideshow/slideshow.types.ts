@@ -71,6 +71,12 @@ export interface KenBurnsAdaptConfig {
 export interface SlideSpec {
   imagePath: string;
   /**
+   * Optional video clip for this slide. When the file exists it replaces the Ken Burns image
+   * motion (the last frame is held if the clip is shorter than `durationSec`); `imagePath` stays
+   * as the fallback when the clip is missing.
+   */
+  videoPath?: string;
+  /**
    * Ken Burns (or static) duration in seconds. Holds are extra still time and
    * are not part of this value, so a longer hold does not re-encode the zoom.
    */
