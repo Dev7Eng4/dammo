@@ -20,9 +20,14 @@ export interface TranscriptCue {
 }
 
 export interface AiVideoScenePrompt {
+  /** Empty for `title` scenes. */
   prompt: string;
   startTime: string;
   endTime: string;
+  /** `title`: chapter/section heading shown as a locally rendered text card instead of an AI image. */
+  type?: 'title';
+  /** Heading text of a `title` scene. */
+  title?: string;
   /** Character ids from image_scenes_with_references_step_2 (scene-with-reference) output. */
   references?: string[];
   /** Relative path under workDir when image exists, e.g. images/scene-001.jpg */

@@ -48,9 +48,9 @@ export interface AiSceneDensityMaxSec {
 }
 
 export const DEFAULT_AI_SCENE_DENSITY_MAX_SEC: AiSceneDensityMaxSec = {
-  high: 8,
-  medium: 30,
-  low: 60,
+  high: 12,
+  medium: 20,
+  low: 30,
 };
 
 /** SI overlay picker: random asset at video assemble time. */

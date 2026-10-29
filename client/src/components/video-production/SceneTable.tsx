@@ -416,15 +416,24 @@ export function SceneTable({
                   </div>
                 </td>
                 <td className="px-3 py-3">
-                  <ScenePromptEditor
-                    key={`${scene.index}:${scene.prompt}:${(scene.references ?? []).join(',')}`}
-                    channelId={channelId}
-                    videoId={videoId}
-                    scene={scene}
-                    characters={characters}
-                    onScenesUpdated={onScenesUpdated}
-                    imagesUpdate={(data) => keepCacheBustedUrls(data, scenes)}
-                  />
+                  {scene.type === 'title' ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium uppercase text-muted-foreground">
+                        {t('production.scene.titleCard')}
+                      </p>
+                      <p className="text-base font-semibold">{scene.title}</p>
+                    </div>
+                  ) : (
+                    <ScenePromptEditor
+                      key={`${scene.index}:${scene.prompt}:${(scene.references ?? []).join(',')}`}
+                      channelId={channelId}
+                      videoId={videoId}
+                      scene={scene}
+                      characters={characters}
+                      onScenesUpdated={onScenesUpdated}
+                      imagesUpdate={(data) => keepCacheBustedUrls(data, scenes)}
+                    />
+                  )}
                 </td>
                 <td className="w-[500px] px-3 py-3">
                   <SceneImageCell

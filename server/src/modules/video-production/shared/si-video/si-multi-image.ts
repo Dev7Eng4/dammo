@@ -5,6 +5,9 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { assembleSlideshow } from '../slideshow/slideshow-assembler.js';
 import { pickAutoEffects } from '../slideshow/slideshow-presets.js';
 import { SS_CACHE_DIRNAME, SS_DEFAULT_TRANSITION_DURATION } from '../slideshow/slideshow.constants.js';
+import { resolveAiScenePromptsFilePath } from '../ai-video/ai-video-scene-prompts-store.js';
+import { isTitleScene } from '../ai-video/ai-video-title-card.js';
+import type { AiVideoScenePrompt } from '../ai-video/ai-video.types.js';
 import { FPS } from '../render-core/canvas.constants.js';
 import { SI_MULTI_IMAGE_SLIDESHOW_BASENAME } from '../render-core/output-artifacts.constants.js';
 import {
@@ -22,13 +25,34 @@ import {
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
 
-/** List image files under `workDir/images`, sorted numeric-aware. */
+/**
+ * File names of title-card scenes (`scene-NNN.jpg`). The SI slideshow is not timed to the
+ * narration, so a heading card would show at a random moment: it is left out.
+ */
+async function listTitleCardImageNames(workDir: string): Promise<Set<string>> {
+  try {
+    const raw = JSON.parse(await fs.readFile(resolveAiScenePromptsFilePath(workDir), 'utf8')) as {
+      scenes?: AiVideoScenePrompt[];
+    };
+    const names = new Set<string>();
+    (raw.scenes ?? []).forEach((scene, index) => {
+      if (isTitleScene(scene)) names.add(`scene-${String(index + 1).padStart(3, '0')}.jpg`);
+    });
+    return names;
+  } catch {
+    return new Set();
+  }
+}
+
+/** List image files under `workDir/images` (title cards excluded), sorted numeric-aware. */
 export async function listSiMultiImagePaths(workDir: string): Promise<string[]> {
   const imagesDir = path.join(workDir, SI_MULTI_IMAGE_DIRNAME);
   try {
     const entries = await fs.readdir(imagesDir, { withFileTypes: true });
+    const titleCardNames = await listTitleCardImageNames(workDir);
     return entries
       .filter(entry => entry.isFile() && IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+      .filter(entry => !titleCardNames.has(entry.name))
       .map(entry => path.join(imagesDir, entry.name))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
   } catch {

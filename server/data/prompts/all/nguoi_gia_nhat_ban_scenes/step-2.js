@@ -21,6 +21,18 @@ INPUT
 - Giữ nguyên định dạng thời gian HH:MM:SS,mmm, khớp chính xác với object đầu/cuối.
 
 ====================================================
+1b. CẢNH TIÊU ĐỀ (TITLE) - KHÔNG TẠO ẢNH
+====================================================
+Dòng thoại chỉ đọc tên chương, tên phần hoặc tên một mục trong danh sách là CẢNH TIÊU ĐỀ. App sẽ tự hiện chữ tiêu đề trên nền tối trong khoảng thời gian đó, không tạo ảnh AI.
+- Ví dụ là tiêu đề: "第1章 定年後に孤独になる人の特徴", "その1、子どもにお金の話をしすぎる", "1つ目は、『昔はよかった』が口ぐせになることです。", "最後に、心を軽くする3つの習慣".
+- KHÔNG phải tiêu đề: câu vừa nêu mục vừa giải thích nội dung trong cùng một object transcript (ví dụ "1つ目は口ぐせです。ある70代の女性は毎日…"); câu hỏi gợi tò mò; câu chuyển ý thông thường ("では、次の話に移りましょう"). Những câu này là cảnh ảnh bình thường.
+- Cảnh tiêu đề gồm đúng các object transcript chỉ chứa phần tiêu đề (thường 1 object, 2-5 giây). Nội dung giải thích phía sau là cảnh ảnh riêng.
+- "title": viết lại ngắn gọn bằng đúng ngôn ngữ của transcript, giữ số thứ tự, bỏ từ đệm (それでは, さて, まず…), tối đa khoảng 30 ký tự. Ví dụ "1つ目は、『昔はよかった』が口ぐせになることです。" → "その1　『昔はよかった』が口ぐせ".
+- Tiêu đề nằm trong 10 giây đầu video (startTime trước 00:00:10,000): KHÔNG tạo cảnh tiêu đề, gộp vào cảnh hook bằng hình.
+- Nếu không chắc một câu có phải tiêu đề không: coi là cảnh ảnh bình thường.
+- Cảnh tiêu đề không tính vào các quy tắc chống lặp ở mục 4. Cảnh ảnh ngay sau tiêu đề nên là cảnh mở chương: wide shot hoặc một đạo cụ biểu tượng lớn, đổi hẳn địa điểm hoặc thời gian so với chương trước.
+
+====================================================
 2. BASE IDENTITY VÀ REFERENCES (QUAN TRỌNG TỐI ĐA)
 ====================================================
 BƯỚC 1 - Xác định mục nào trong characters xuất hiện ở cảnh (cả nhân vật lẫn địa điểm có id bắt đầu bằng "loc_"):
@@ -116,10 +128,18 @@ Chỉ trả về DUY NHẤT một mảng JSON hợp lệ. Không markdown, khôn
     "references": ["sato_fumiko", "loc_tatami_room"],
     "startTime": "00:00:00,000",
     "endTime": "00:00:05,300"
+  },
+  {
+    "type": "title",
+    "title": "その1　『昔はよかった』が口ぐせ",
+    "startTime": "00:01:12,400",
+    "endTime": "00:01:15,900"
   }
 ]
 
 Quy tắc Output:
+- Cảnh ảnh: có "prompt", "references", "startTime", "endTime" (không có "type").
+- Cảnh tiêu đề: CHỈ có "type": "title", "title", "startTime", "endTime" (không có "prompt", không có "references").
 - references chỉ chứa id tồn tại trong characters (có thể là mảng rỗng).
 - startTime và endTime khớp chính xác với object đầu/cuối của cảnh.
 - Mọi object transcript phải thuộc về một cảnh; các cảnh liền nhau, không chồng lấn.

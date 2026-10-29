@@ -28,6 +28,7 @@ import {
   sceneDurationSec,
   scenesWithImagePaths,
 } from './ai-video-scene-timing.js';
+import { isTitleScene } from './ai-video-title-card.js';
 import type { AiVideoScenePrompt } from './ai-video.types.js';
 import type { RenderClipOptions } from '../slideshow/slideshow-clip-renderer.js';
 import { SS_CACHE_DIRNAME } from '../slideshow/slideshow.constants.js';
@@ -41,6 +42,14 @@ export function parseSceneAbsoluteIndex(sceneName: string): number {
 function parseSceneIndexFromRelativePath(relativePath: string): number {
   const base = path.basename(relativePath, path.extname(relativePath));
   return parseSceneAbsoluteIndex(base);
+}
+
+/** Title cards stay still so the heading text is never cropped by pan/zoom. */
+function sceneKenBurns(
+  scene: AiVideoScenePrompt,
+  presetName: keyof typeof KEN_BURNS_PRESETS,
+): Pick<SlideSpec, 'kenBurns'> {
+  return isTitleScene(scene) ? {} : { kenBurns: { ...KEN_BURNS_PRESETS[presetName] } };
 }
 
 export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]): SlideSpec[] {
@@ -64,7 +73,7 @@ export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]
         ? { videoPath: path.isAbsolute(scene.videoPath) ? scene.videoPath : path.join(workDir, scene.videoPath) }
         : {}),
       durationSec,
-      kenBurns: { ...KEN_BURNS_PRESETS[presetName] },
+      ...sceneKenBurns(scene, presetName),
       fit: 'cover',
     };
 
@@ -210,7 +219,7 @@ export function buildProvisionalAiSlideSpec(
   return {
     imagePath: path.join(workDir, AI_SLIDES_DIRNAME, `${sceneName}.jpg`),
     durationSec,
-    kenBurns: { ...KEN_BURNS_PRESETS[presetName] },
+    ...sceneKenBurns(scene, presetName),
     fit: 'cover',
   };
 }

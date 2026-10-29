@@ -15,9 +15,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   enableImageTransitions: true,
   chromeBackgroundUseOffscreen: true,
   aiSceneDensityMaxSec: {
-    high: 8,
-    medium: 30,
-    low: 60,
+    high: 12,
+    medium: 20,
+    low: 30,
   },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,

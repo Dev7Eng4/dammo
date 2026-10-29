@@ -15,7 +15,7 @@ const EMPTY_SETTINGS: AppSettings = {
   kenBurnsOnPrepare: false,
   enableImageTransitions: true,
   chromeBackgroundUseOffscreen: true,
-  aiSceneDensityMaxSec: { high: 8, medium: 30, low: 60 },
+  aiSceneDensityMaxSec: { high: 12, medium: 20, low: 30 },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
   aiScenePromptChromeProfileRole: 'main',
@@ -118,9 +118,9 @@ export function SettingsPage() {
         enableImageTransitions: settings.enableImageTransitions,
         chromeBackgroundUseOffscreen: settings.chromeBackgroundUseOffscreen,
         aiSceneDensityMaxSec: {
-          high: Math.round(Number(settings.aiSceneDensityMaxSec.high)) || 8,
-          medium: Math.round(Number(settings.aiSceneDensityMaxSec.medium)) || 30,
-          low: Math.round(Number(settings.aiSceneDensityMaxSec.low)) || 60,
+          high: Math.round(Number(settings.aiSceneDensityMaxSec.high)) || 12,
+          medium: Math.round(Number(settings.aiSceneDensityMaxSec.medium)) || 20,
+          low: Math.round(Number(settings.aiSceneDensityMaxSec.low)) || 30,
         },
         taskQueueConcurrency: Math.min(
           8,

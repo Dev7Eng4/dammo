@@ -27,12 +27,37 @@ function parseReferenceIds(value: unknown): string[] | null {
   return references;
 }
 
+/** Chapter/section heading: no image prompt, no references; the title text becomes a text card. */
+function validateTitleScene(value: Record<string, unknown>): AiVideoScenePrompt | null {
+  const title = typeof value.title === 'string' ? value.title.trim() : '';
+  if (!title) {
+    return null;
+  }
+
+  if (!isValidTimestamp(value.startTime) || !isValidTimestamp(value.endTime)) {
+    return null;
+  }
+
+  return {
+    type: 'title',
+    title,
+    prompt: '',
+    startTime: value.startTime.trim(),
+    endTime: value.endTime.trim(),
+    references: [],
+  };
+}
+
 function validateScenePrompt(
   value: unknown,
   options?: { requireReferences?: boolean },
 ): AiVideoScenePrompt | null {
   if (!isRecord(value)) {
     return null;
+  }
+
+  if (value.type === 'title') {
+    return validateTitleScene(value);
   }
 
   const prompt = typeof value.prompt === 'string' ? value.prompt.trim() : '';

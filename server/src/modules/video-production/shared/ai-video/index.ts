@@ -48,6 +48,7 @@ export {
   persistAiScenePromptsFile,
   resolveAiScenePromptsFilePath,
 } from './ai-video-scene-prompts-store.js';
+export { isTitleScene, renderTitleCardImage } from './ai-video-title-card.js';
 export {
   attachSceneImagePaths,
   redistributeMissingSceneTimes,

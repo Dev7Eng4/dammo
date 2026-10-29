@@ -18,6 +18,7 @@ import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import { buildProvisionalAiSlideSpec, resolveAiSlideRenderOptions } from './ai-video-slide-spec.js';
 import { emitDetailLog } from '../video-log.js';
 import { attachSceneImagePaths, scenesWithImagePaths } from './ai-video-scene-timing.js';
+import { isTitleScene, renderTitleCardImage } from './ai-video-title-card.js';
 import type {
   AiVideoScenePrompt,
   GenerateAiSceneSlideImagesInput,
@@ -37,6 +38,8 @@ interface SceneVisualJob {
   /** New image is written here first. The scene jpg is replaced only after this file exists. */
   writePath?: string;
   referenceIds?: string[];
+  /** Set for `title` scenes: rendered locally as a text card instead of an AI image. */
+  title?: string;
 }
 
 function buildSceneName(index: number): string {
@@ -82,6 +85,7 @@ function buildSceneVisualJobs(scenes: AiVideoScenePrompt[], slidesDir: string): 
       prompt: scene.prompt.trim(),
       outputPath: path.join(slidesDir, `${name}.jpg`),
       ...(scene.references?.length ? { referenceIds: scene.references } : {}),
+      ...(isTitleScene(scene) ? { title: scene.title?.trim() ?? '' } : {}),
     };
   });
 }
@@ -122,7 +126,11 @@ async function resolvePendingJobs(
       skippedCount += 1;
       continue;
     }
-    if (!job.prompt) {
+    if (job.title !== undefined) {
+      if (!job.title) {
+        throw new AppError(`Title scene ${job.name} has an empty title`, 400, 'AI_SCENE_IMAGE_EMPTY_TITLE');
+      }
+    } else if (!job.prompt) {
       throw new AppError(`Scene ${job.name} has an empty prompt`, 400, 'AI_SCENE_IMAGE_EMPTY_PROMPT');
     }
     pending.push(job);
@@ -182,6 +190,35 @@ async function finishPrebake(pool: AiClipPrebakePool | null): Promise<void> {
 
 function jobWriteDir(job: SceneVisualJob): string {
   return path.dirname(job.writePath ?? job.outputPath);
+}
+
+async function renderTitleCardJobs(
+  pending: SceneVisualJob[],
+  totalScenes: number,
+  log: (msg: string) => void,
+  onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
+  onImageSaved?: (jobName: string) => void,
+): Promise<{ generatedCount: number; failedCount: number }> {
+  let generatedCount = 0;
+  let failedCount = 0;
+
+  for (const job of pending) {
+    onProgress?.({ sceneIndex: job.index + 1, totalScenes, sceneName: job.name, status: 'generating' });
+    try {
+      await renderTitleCardImage(job.title ?? '', job.writePath ?? job.outputPath, log);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log(`[ai-video] ${job.name}: title card render failed — ${reason}`);
+      // Forced jobs are counted by commitForcedSceneImages.
+      if (!job.writePath) failedCount += 1;
+      continue;
+    }
+    if (job.writePath) continue;
+    generatedCount += 1;
+    onImageSaved?.(job.name);
+  }
+
+  return { generatedCount, failedCount };
 }
 
 async function generateFlowSceneImages(
@@ -460,51 +497,70 @@ export async function generateAiSceneSlideImages(
     };
   }
 
-  log(
-    `[ai-video] Generating ${pending.length} scene image(s) via ${imageProvider}` +
-      (imageProvider === 'meta' ? ` mode=${metaConcurrency}` : '') +
-      ` (${skippedCount} skipped) → ${slidesDir}` +
-      (kenBurnsPrebake ? ' (Ken Burns prebake on save, max 4 concurrent)' : ''),
-  );
+  const titlePending = pending.filter(job => job.title !== undefined);
+  const aiPending = pending.filter(job => job.title === undefined);
 
   let generatedCount = 0;
   let failedCount = 0;
 
-  if (imageProvider === 'flow') {
-    const mains = chromeProfilesService.listMainProfiles();
-    log(
-      `[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`,
-    );
-    try {
-      const flowResult = await generateFlowSceneImages(
-        pending,
-        input.scenes.length,
-        log,
-        input.onProgress,
-        enqueuePrebake,
-      );
-      generatedCount = flowResult.generatedCount;
-      failedCount = flowResult.failedCount;
-    } finally {
-      const closedIds = await closeChromeProfiles(mains.map(profile => profile.id));
-      for (const profileId of closedIds) {
-        const name = mains.find(profile => profile.id === profileId)?.name ?? profileId;
-        log(`[ai-video] Closed Chrome profile ${name} after scene images`);
-      }
-    }
-  } else {
-    const metaResult = await generateMetaSceneImages(
-      input.workDir,
-      slidesDir,
-      pending,
+  if (titlePending.length > 0) {
+    log(`[ai-video] Rendering ${titlePending.length} title card(s) locally → ${slidesDir}`);
+    const titleResult = await renderTitleCardJobs(
+      titlePending,
       input.scenes.length,
       log,
       input.onProgress,
-      metaConcurrency,
       enqueuePrebake,
     );
-    generatedCount = metaResult.generatedCount;
-    failedCount = metaResult.failedCount;
+    generatedCount += titleResult.generatedCount;
+    failedCount += titleResult.failedCount;
+  }
+
+  // Only title cards pending: no image provider (and no Chrome profile) is needed.
+  if (aiPending.length > 0) {
+    log(
+      `[ai-video] Generating ${aiPending.length} scene image(s) via ${imageProvider}` +
+        (imageProvider === 'meta' ? ` mode=${metaConcurrency}` : '') +
+        ` (${skippedCount} skipped) → ${slidesDir}` +
+        (kenBurnsPrebake ? ' (Ken Burns prebake on save, max 4 concurrent)' : ''),
+    );
+
+    if (imageProvider === 'flow') {
+      const mains = chromeProfilesService.listMainProfiles();
+      log(
+        `[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`,
+      );
+      try {
+        const flowResult = await generateFlowSceneImages(
+          aiPending,
+          input.scenes.length,
+          log,
+          input.onProgress,
+          enqueuePrebake,
+        );
+        generatedCount += flowResult.generatedCount;
+        failedCount += flowResult.failedCount;
+      } finally {
+        const closedIds = await closeChromeProfiles(mains.map(profile => profile.id));
+        for (const profileId of closedIds) {
+          const name = mains.find(profile => profile.id === profileId)?.name ?? profileId;
+          log(`[ai-video] Closed Chrome profile ${name} after scene images`);
+        }
+      }
+    } else {
+      const metaResult = await generateMetaSceneImages(
+        input.workDir,
+        slidesDir,
+        aiPending,
+        input.scenes.length,
+        log,
+        input.onProgress,
+        metaConcurrency,
+        enqueuePrebake,
+      );
+      generatedCount += metaResult.generatedCount;
+      failedCount += metaResult.failedCount;
+    }
   }
 
   const forced = pending.filter(job => job.writePath);

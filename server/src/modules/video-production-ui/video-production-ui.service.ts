@@ -13,6 +13,7 @@ import {
   IMAGE_REFERENCES_DIRNAME,
   findOverlappingScenes,
   generateAiSceneSlideImages,
+  isTitleScene,
   loadAiRenderConfig,
   resolveAiScenePromptsFilePath,
   resolveCharacterReferencesFilePath,
@@ -332,6 +333,7 @@ export class VideoProductionUiService {
       return {
         index,
         prompt: typeof scene.prompt === 'string' ? scene.prompt : '',
+        ...(isTitleScene(scene) ? { type: 'title' as const, title: scene.title ?? '' } : {}),
         startTime: scene.startTime,
         endTime: scene.endTime,
         durationSec: sceneDurationSec(scene),
@@ -523,7 +525,7 @@ export class VideoProductionUiService {
     }
 
     const prompt = typeof scene.prompt === 'string' ? scene.prompt.trim() : '';
-    if (!prompt) {
+    if (!prompt && !isTitleScene(scene)) {
       throw new AppError('Scene has an empty prompt', 400, 'AI_SCENE_IMAGE_EMPTY_PROMPT');
     }
 

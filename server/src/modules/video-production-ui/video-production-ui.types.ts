@@ -20,6 +20,9 @@ export interface ProductionSceneItem {
   durationSec: number;
   imageUrl: string | null;
   references?: string[];
+  /** `title`: chapter heading rendered as a text card (no AI prompt). */
+  type?: 'title';
+  title?: string;
 }
 
 export interface ProductionScenesResponse {

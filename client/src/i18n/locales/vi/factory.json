@@ -135,6 +135,7 @@
       "saveError": "Không thể thêm character"
     },
     "scene": {
+      "titleCard": "Tiêu đề chương (ảnh chữ, không tạo ảnh AI)",
       "noImage": "Chưa có ảnh",
       "noPrompt": "Không có prompt",
       "references": "Ảnh tham chiếu",

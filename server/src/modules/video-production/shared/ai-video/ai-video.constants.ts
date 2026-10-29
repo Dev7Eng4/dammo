@@ -70,9 +70,9 @@ export const AI_VIDEO_DENSITY_TIERS: AiVideoDensityTier[] = [
 ];
 
 export const AI_VIDEO_DENSITY_MAX_SCENE_SEC = {
-  high: 8,
-  medium: 30,
-  low: 60,
+  high: 12,
+  medium: 20,
+  low: 30,
 } as const;
 
 export type AiVideoDensityLevel = keyof typeof AI_VIDEO_DENSITY_MAX_SCENE_SEC;

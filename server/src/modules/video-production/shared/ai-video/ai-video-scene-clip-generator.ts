@@ -9,6 +9,7 @@ import { emitDetailLog } from '../video-log.js';
 import { AI_INTRO_VIDEO_SEC, AI_VIDEOS_DIRNAME } from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import { resolveSceneImageAbsolutePath } from './ai-video-scene-timing.js';
+import { isTitleScene } from './ai-video-title-card.js';
 import type { AiVideoScenePrompt } from './ai-video.types.js';
 
 export type AiSceneVideoMode = 'full' | 'intro';
@@ -25,7 +26,7 @@ export function buildSceneMotionPrompt(scenePrompt: string): string {
   );
 }
 
-/** Scenes that should become video clips for the given mode (only scenes that already have an image). */
+/** Scenes that should become video clips for the given mode (only scenes that already have an image; never title cards). */
 export function selectScenesForVideo(
   scenes: AiVideoScenePrompt[],
   mode: AiSceneVideoMode,
@@ -33,7 +34,7 @@ export function selectScenesForVideo(
 ): number[] {
   const indexes: number[] = [];
   scenes.forEach((scene, index) => {
-    if (!scene.path?.trim()) return;
+    if (!scene.path?.trim() || isTitleScene(scene)) return;
     if (mode === 'intro' && srtTimestampToMs(scene.startTime) >= introSec * 1_000) return;
     indexes.push(index);
   });

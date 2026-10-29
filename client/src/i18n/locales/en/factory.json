@@ -135,6 +135,7 @@
       "saveError": "Could not add character"
     },
     "scene": {
+      "titleCard": "Chapter title (text card, no AI image)",
       "noImage": "No image yet",
       "noPrompt": "No prompt",
       "references": "Reference images",

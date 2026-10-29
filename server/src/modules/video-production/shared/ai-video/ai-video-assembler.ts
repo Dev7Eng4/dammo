@@ -60,6 +60,11 @@ import {
   scaleSceneTimestamps,
   scenesWithImagePaths,
 } from './ai-video-scene-timing.js';
+import {
+  buildOutsideTitleCardsExpr,
+  resolveTitleCardRanges,
+  stripSrtCuesOnTitleCards,
+} from './ai-video-title-card.js';
 import { emitDetailLog } from '../video-log.js';
 import type { AssembleReupAiSlideshowVideoInput } from './ai-video.types.js';
 
@@ -133,6 +138,16 @@ export async function assembleReupAiSlideshowVideo(
     scaledSrtPath = path.join(workDir, 'ai_temp_scaled_sub.srt');
     scaleSrtTimestamps(subtitlePath, scaledSrtPath, speed);
     activeSubtitlePath = scaledSrtPath;
+  }
+
+  const titleCardRanges = stillBackground ? [] : resolveTitleCardRanges(scaledScenes);
+  let titleFreeSrtPath: string | null = null;
+  if (titleCardRanges.length > 0) {
+    titleFreeSrtPath = path.join(workDir, 'ai_temp_sub_no_titles.srt');
+    const srtContent = await fs.readFile(activeSubtitlePath, 'utf8');
+    await fs.writeFile(titleFreeSrtPath, stripSrtCuesOnTitleCards(srtContent, titleCardRanges), 'utf8');
+    activeSubtitlePath = titleFreeSrtPath;
+    log(`[ai-video] ${titleCardRanges.length} title card(s): captions and caption box hidden while they show`);
   }
 
   log(
@@ -226,7 +241,11 @@ export async function assembleReupAiSlideshowVideo(
     ? (() => {
         const subtitleBoxHeight = Math.floor(CANVAS_H / 3);
         const boxY = CANVAS_H - subtitleBoxHeight - SUBTITLE_MARGIN_BOTTOM_PX;
-        const drawboxFilter = `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SUBTITLE_BOX_OPACITY}:t=fill`;
+        const enableOutsideTitles =
+          titleCardRanges.length > 0 ? `:enable='${buildOutsideTitleCardsExpr(titleCardRanges)}'` : '';
+        const drawboxFilter =
+          `drawbox=x=0:y=${boxY}:w=iw:h=${subtitleBoxHeight}:color=black@${SUBTITLE_BOX_OPACITY}:t=fill` +
+          enableOutsideTitles;
         return `${drawboxFilter},${subFilter}`;
       })()
     : subFilter;
@@ -316,6 +335,9 @@ export async function assembleReupAiSlideshowVideo(
 
   await fs.unlink(filterScriptPath).catch(() => undefined);
   await fs.unlink(tempAssPath).catch(() => undefined);
+  if (titleFreeSrtPath) {
+    await fs.unlink(titleFreeSrtPath).catch(() => undefined);
+  }
   if (scaledSrtPath) {
     await fs.unlink(scaledSrtPath).catch(() => undefined);
   }
