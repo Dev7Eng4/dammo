@@ -17,8 +17,6 @@ export interface ResolvedMetaImageUrl {
 
 const HTTP_FBCDN_PRIORITY = 100;
 const HTTP_SCONTENT_PRIORITY = 95;
-const HTTP_OTHER_PRIORITY = 80;
-const BLOB_PRIORITY = 10;
 
 export function isHttpUrl(url: string): boolean {
   const trimmed = url.trim();
@@ -40,27 +38,24 @@ export function isIgnoredImageUrl(url: string): boolean {
   return false;
 }
 
+/** Only Meta CDN hosts are accepted as a generated image source. */
+export function isMetaCdnImageUrl(url: string): boolean {
+  const lower = url.trim().toLowerCase();
+  return isHttpUrl(lower) && (lower.includes('fbcdn.net') || lower.includes('scontent.'));
+}
+
 export function classifyMetaImageUrl(url: string): MetaImageUrlKind {
   const trimmed = url.trim();
   if (!trimmed || isIgnoredImageUrl(trimmed)) return 'unsupported';
-  if (isHttpUrl(trimmed)) return 'http';
+  if (isHttpUrl(trimmed)) return isMetaCdnImageUrl(trimmed) ? 'http' : 'unsupported';
   if (isBlobUrl(trimmed)) return 'blob';
   if (isDataUrl(trimmed)) return 'data';
   return 'unsupported';
 }
 
-function scoreHttpUrl(url: string): number {
-  const lower = url.toLowerCase();
-  if (lower.includes('fbcdn.net')) return HTTP_FBCDN_PRIORITY;
-  if (lower.includes('scontent.')) return HTTP_SCONTENT_PRIORITY;
-  return HTTP_OTHER_PRIORITY;
-}
-
 export function scoreMetaImageUrl(url: string): number {
-  const kind = classifyMetaImageUrl(url);
-  if (kind === 'http') return scoreHttpUrl(url);
-  if (kind === 'blob') return BLOB_PRIORITY;
-  return 0;
+  if (classifyMetaImageUrl(url) !== 'http') return 0;
+  return url.toLowerCase().includes('fbcdn.net') ? HTTP_FBCDN_PRIORITY : HTTP_SCONTENT_PRIORITY;
 }
 
 /** Parse srcset and return URLs ordered by declared width (descending). */
@@ -91,8 +86,9 @@ export function collectImageUrlCandidates(
   const addUrl = (raw: string) => {
     const url = raw.trim();
     if (!url || seen.has(url)) return;
+    // Only http(s) fbcdn.net / scontent. URLs are downloadable; blob/data/other hosts are rejected.
     const kind = classifyMetaImageUrl(url);
-    if (kind === 'unsupported' || kind === 'data') return;
+    if (kind !== 'http') return;
     seen.add(url);
     candidates.push({ url, kind, priority: scoreMetaImageUrl(url) });
   };
@@ -112,12 +108,7 @@ export function pickBestMetaImageUrl(
 ): MetaImageUrlCandidate | null {
   if (candidates.length === 0) return null;
 
-  const sorted = [...candidates].sort((a, b) => {
-    if (b.priority !== a.priority) return b.priority - a.priority;
-    if (a.kind === 'http' && b.kind !== 'http') return -1;
-    if (b.kind === 'http' && a.kind !== 'http') return 1;
-    return 0;
-  });
+  const sorted = [...candidates].sort((a, b) => b.priority - a.priority);
 
   return sorted[0] ?? null;
 }
@@ -165,8 +156,9 @@ export interface ResolveMetaImageSourceUrlOptions {
 }
 
 /**
- * Poll assistant message images and return the best candidate as soon as one exists:
- * an HTTP URL is preferred (higher priority), but a blob URL is accepted immediately too.
+ * Poll assistant message images and return the best fbcdn.net / scontent. URL as soon as one
+ * exists. Any other source (blob, data, other hosts) never resolves, so the call times out and
+ * the image is treated as not generated.
  */
 export async function resolveMetaImageSourceUrl(
   assistant: Locator,
@@ -176,9 +168,14 @@ export async function resolveMetaImageSourceUrl(
   const deadline = Date.now() + timeoutMs;
   const pollDelayMs = options?.pollDelayMs ?? 400;
   let lastCandidateCount = 0;
+  let lastRejectedUrls: string[] = [];
 
   while (Date.now() < deadline) {
     const inputs = await collectAssistantImageInputs(assistant);
+    lastRejectedUrls = inputs
+      .flatMap(input => [input.src ?? '', ...(input.srcset ? parseSrcsetUrls(input.srcset) : [])])
+      .map(url => url.trim())
+      .filter(url => url && !isMetaCdnImageUrl(url));
     const best = pickBestMetaImageUrlFromInputs(inputs);
     lastCandidateCount = inputs.reduce(
       (count, input) => count + collectImageUrlCandidates(input.src, input.srcset).length,
@@ -193,5 +190,8 @@ export async function resolveMetaImageSourceUrl(
     await new Promise(resolve => setTimeout(resolve, pollDelayMs));
   }
 
-  throw new Error('No downloadable image URL found in assistant message');
+  const rejected = lastRejectedUrls.length
+    ? ` (rejected non-fbcdn/scontent URLs: ${lastRejectedUrls.map(url => url.slice(0, 80)).join(', ')})`
+    : '';
+  throw new Error(`No fbcdn.net/scontent image URL found in assistant message${rejected}`);
 }

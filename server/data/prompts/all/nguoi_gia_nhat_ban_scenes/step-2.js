@@ -16,7 +16,7 @@ INPUT
 1. CHIA CẢNH
 ====================================================
 - Gom các object liên tiếp trong transcript thành cảnh theo ý nghĩa hình ảnh.
-- RÀNG BUỘC THỜI GIAN NGHIÊM NGẶT: mỗi cảnh KHÔNG vượt quá ${maxDuration} giây.
+- RÀNG BUỘC THỜI GIAN NGHIÊM NGẶT: mỗi cảnh ảnh KHÔNG vượt quá ${maxDuration} giây. Đây là giới hạn trên, không phải độ dài bắt buộc. Cảnh tiêu đề không theo giới hạn này (xem mục 1b).
   scene.startTime = startTime của object đầu; scene.endTime = endTime của object cuối.
 - Giữ nguyên định dạng thời gian HH:MM:SS,mmm, khớp chính xác với object đầu/cuối.
 
@@ -24,12 +24,17 @@ INPUT
 1b. CẢNH TIÊU ĐỀ (TITLE) - KHÔNG TẠO ẢNH
 ====================================================
 Dòng thoại chỉ đọc tên chương, tên phần hoặc tên một mục trong danh sách là CẢNH TIÊU ĐỀ. App sẽ tự hiện chữ tiêu đề trên nền tối trong khoảng thời gian đó, không tạo ảnh AI.
+- Dấu hiệu tiêu đề: object BẮT ĐẦU bằng số thứ tự của chương/phần/mục, ví dụ 第1章, 第二部, その1, 1つ目, 2番目, ポイント3, 第5位, 【4】, 五つ目, まず一つ目, 次に二つ目, 最後に/最後の○つ目. Số có thể viết bằng chữ số Ả Rập, chữ số toàn góc (１２３) hoặc chữ Hán (一二三).
 - Ví dụ là tiêu đề: "第1章 定年後に孤独になる人の特徴", "その1、子どもにお金の話をしすぎる", "1つ目は、『昔はよかった』が口ぐせになることです。", "最後に、心を軽くする3つの習慣".
-- KHÔNG phải tiêu đề: câu vừa nêu mục vừa giải thích nội dung trong cùng một object transcript (ví dụ "1つ目は口ぐせです。ある70代の女性は毎日…"); câu hỏi gợi tò mò; câu chuyển ý thông thường ("では、次の話に移りましょう"). Những câu này là cảnh ảnh bình thường.
-- Cảnh tiêu đề gồm đúng các object transcript chỉ chứa phần tiêu đề (thường 1 object, 2-5 giây). Nội dung giải thích phía sau là cảnh ảnh riêng.
+- Object bắt đầu bằng dấu hiệu tiêu đề nhưng có thêm một đoạn nội dung ngắn phía sau (ví dụ "5つ目は、昔の自慢話です。これは…"): VẪN là cảnh tiêu đề nếu phần tên mục chiếm khoảng một nửa object trở lên. Chỉ coi là cảnh ảnh khi tên mục rất ngắn so với phần giải thích dài phía sau.
+- KHÔNG phải tiêu đề: câu hỏi gợi tò mò; câu chuyển ý không có số thứ tự ("では、次の話に移りましょう"); câu nhắc lại một mục đã nói ("先ほどの2つ目のように…").
+- Cảnh tiêu đề gồm đúng object chứa tên mục (thường 1 object, 2-6 giây). Nội dung giải thích phía sau là cảnh ảnh riêng.
+- THỜI GIAN CỦA CẢNH TIÊU ĐỀ: startTime và endTime lấy ĐÚNG startTime/endTime của object tiêu đề, giữ nguyên độ dài thật của câu đó (dù chỉ 2 giây). maxDuration KHÔNG áp dụng cho cảnh tiêu đề: không kéo dài cho đủ maxDuration, không cộng thêm object phía trước hoặc phía sau để lấp thời gian.
+- Cảnh tiêu đề LUÔN tách riêng, kể cả khi maxDuration lớn (20-30 giây): KHÔNG gộp object tiêu đề vào cảnh ảnh đứng trước hoặc sau nó. Cảnh ảnh trước tiêu đề kết thúc đúng tại startTime của tiêu đề; cảnh ảnh sau tiêu đề bắt đầu đúng tại endTime của tiêu đề.
+- ĐẦY ĐỦ THEO SỐ THỨ TỰ: trước khi trả kết quả, tự liệt kê mọi số thứ tự mục/chương xuất hiện trong transcript của lần này (ví dụ 5, 6, 7) và kiểm tra MỖI số đều có đúng một cảnh tiêu đề. Không được bỏ sót một số ở giữa dãy.
 - "title": viết lại ngắn gọn bằng đúng ngôn ngữ của transcript, giữ số thứ tự, bỏ từ đệm (それでは, さて, まず…), tối đa khoảng 30 ký tự. Ví dụ "1つ目は、『昔はよかった』が口ぐせになることです。" → "その1　『昔はよかった』が口ぐせ".
 - Tiêu đề nằm trong 10 giây đầu video (startTime trước 00:00:10,000): KHÔNG tạo cảnh tiêu đề, gộp vào cảnh hook bằng hình.
-- Nếu không chắc một câu có phải tiêu đề không: coi là cảnh ảnh bình thường.
+- Với câu KHÔNG có số thứ tự mà không chắc có phải tiêu đề không: coi là cảnh ảnh bình thường.
 - Cảnh tiêu đề không tính vào các quy tắc chống lặp ở mục 4. Cảnh ảnh ngay sau tiêu đề nên là cảnh mở chương: wide shot hoặc một đạo cụ biểu tượng lớn, đổi hẳn địa điểm hoặc thời gian so với chương trước.
 
 ====================================================
@@ -103,7 +108,7 @@ Khi câu thoại trừu tượng, KHÔNG vẽ cảnh người ngồi suy nghĩ; 
 ====================================================
 6. BỐ CỤC
 ====================================================
-- Chừa khoảng trống ở phần ba dưới khung hình cho phụ đề; không đặt mặt nhân vật ở phần ba dưới.
+- Ảnh dùng TOÀN BỘ khung hình: nội dung trải kín từ trên xuống dưới, KHÔNG chừa dải trống, dải màu trơn hay khoảng trống cho phụ đề ở bất kỳ cạnh nào.
 - Cảnh đầu tiên (hook) phải ấn tượng nhất: biểu cảm mạnh hoặc hình ảnh ẩn dụ gây tò mò, rõ chủ thể.
 - Cảnh hai nhân vật: tách rõ trái-phải, không chồng lên nhau.
 
@@ -111,8 +116,10 @@ Khi câu thoại trừu tượng, KHÔNG vẽ cảnh người ngồi suy nghĩ; 
 7. CÔNG THỨC PROMPT
 ====================================================
 Mọi prompt viết bằng TIẾNG ANH, một chuỗi duy nhất, theo công thức (ngăn cách bằng dấu phẩy):
-[Shot type] + [Subject(s) + Base Identity] + [Action, Pose & Expression] + [Environment, Time of day, Weather & Props] + [Composition, bottom third kept clear for subtitles] + [Lighting, Color Palette & Mood A/B/C] + [Style Modifiers].
+[Shot type] + [Subject(s) + Base Identity] + [Action, Pose & Expression] + [Environment, Time of day, Weather & Props] + [Composition, full-frame] + [Lighting, Color Palette & Mood] + [Style Modifiers].
 
+- Các ký hiệu nội bộ ở trên CHỈ để bạn lập kế hoạch, KHÔNG được xuất hiện trong prompt: không viết "(W)", "(M)", "(C)", "(H)", "(B)", "(O)", "(T)", "(E)", không viết "mood A", "mood B", "mood C", "Tâm trạng A". Thay bằng mô tả tiếng Anh tự nhiên (ví dụ "close-up of hands", "wide establishing shot", "calm hopeful atmosphere").
+- KHÔNG viết các cụm như "bottom third kept clear", "space for subtitles", "empty area for text", "copy space".
 - Phần Lighting & Mood PHẢI đúng tâm trạng đã chọn. Cảnh B phải có các từ như "cool blue-grey light", "desaturated colors", "overcast" hoặc "dim evening light".
 - Style Modifiers: dựa trên style "${style}"; giữ cách vẽ của style, nhưng phần ánh sáng và màu LUÔN theo tâm trạng của cảnh. Kết thúc bằng: masterpiece, highly detailed, sharp focus.
 - KHÔNG có chữ trong ảnh: no text, no letters, no numbers, no readable writing, no typography, no speech bubbles, no watermark. Giấy tờ, màn hình, biển hiệu, đồng hồ chỉ là hình khối, không có chữ hay số đọc được.

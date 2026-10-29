@@ -6,6 +6,7 @@ import {
   isBlobUrl,
   isHttpUrl,
   isIgnoredImageUrl,
+  isMetaCdnImageUrl,
   parseSrcsetUrls,
   pickBestMetaImageUrl,
   pickBestMetaImageUrlFromInputs,
@@ -14,6 +15,7 @@ import {
 
 const FBCDN_URL =
   'https://scontent.xx.fbcdn.net/v/t39.105495-1/788019520_1626258532277052_8483277982140937533_n.webp?_nc_ht=scontent.xx.fbcdn.net';
+const SCONTENT_URL = 'https://scontent.cdninstagram.com/v/image.jpg';
 const BLOB_URL = 'blob:https://www.meta.ai/abc-123-def';
 
 describe('isHttpUrl / isBlobUrl', () => {
@@ -37,9 +39,20 @@ describe('isIgnoredImageUrl', () => {
   });
 });
 
+describe('isMetaCdnImageUrl', () => {
+  test('accepts only http(s) fbcdn.net / scontent. URLs', () => {
+    assert.equal(isMetaCdnImageUrl(FBCDN_URL), true);
+    assert.equal(isMetaCdnImageUrl(SCONTENT_URL), true);
+    assert.equal(isMetaCdnImageUrl('https://example.com/a.jpg'), false);
+    assert.equal(isMetaCdnImageUrl(BLOB_URL), false);
+  });
+});
+
 describe('classifyMetaImageUrl', () => {
   test('classifies supported URL kinds', () => {
     assert.equal(classifyMetaImageUrl(FBCDN_URL), 'http');
+    assert.equal(classifyMetaImageUrl(SCONTENT_URL), 'http');
+    assert.equal(classifyMetaImageUrl('https://example.com/a.jpg'), 'unsupported');
     assert.equal(classifyMetaImageUrl(BLOB_URL), 'blob');
     assert.equal(classifyMetaImageUrl('data:image/png;base64,abc'), 'data');
     assert.equal(classifyMetaImageUrl(''), 'unsupported');
@@ -63,16 +76,15 @@ describe('parseSrcsetUrls', () => {
 });
 
 describe('collectImageUrlCandidates', () => {
-  test('collects src and srcset without duplicates', () => {
+  test('collects only fbcdn/scontent URLs without duplicates', () => {
     const candidates = collectImageUrlCandidates(
       BLOB_URL,
-      `${FBCDN_URL} 1280w, ${FBCDN_URL} 640w`,
+      `${FBCDN_URL} 1280w, ${FBCDN_URL} 640w, https://example.com/a.jpg 320w`,
     );
 
-    assert.equal(candidates.length, 2);
     assert.deepEqual(
       candidates.map(candidate => candidate.url),
-      [BLOB_URL, FBCDN_URL],
+      [FBCDN_URL],
     );
   });
 
@@ -93,9 +105,9 @@ describe('pickBestMetaImageUrl', () => {
     assert.equal(best.kind, 'http');
   });
 
-  test('prefers fbcdn over generic https', () => {
+  test('prefers fbcdn over scontent', () => {
     const candidates = collectImageUrlCandidates(null, [
-      'https://example.com/image.jpg 1280w',
+      `${SCONTENT_URL} 1280w`,
       `${FBCDN_URL} 1280w`,
     ].join(', '));
 
@@ -104,11 +116,12 @@ describe('pickBestMetaImageUrl', () => {
     assert.equal(best.url, FBCDN_URL);
   });
 
-  test('falls back to blob when no http candidate exists', () => {
-    const best = pickBestMetaImageUrl(collectImageUrlCandidates(BLOB_URL, null));
-    assert.ok(best);
-    assert.equal(best.kind, 'blob');
-    assert.equal(best.url, BLOB_URL);
+  test('returns null when only blob or other hosts exist', () => {
+    assert.equal(pickBestMetaImageUrl(collectImageUrlCandidates(BLOB_URL, null)), null);
+    assert.equal(
+      pickBestMetaImageUrl(collectImageUrlCandidates('https://example.com/a.jpg', null)),
+      null,
+    );
   });
 });
 
@@ -125,8 +138,9 @@ describe('pickBestMetaImageUrlFromInputs', () => {
 });
 
 describe('scoreMetaImageUrl', () => {
-  test('scores fbcdn highest among http hosts', () => {
-    assert.ok(scoreMetaImageUrl(FBCDN_URL) > scoreMetaImageUrl('https://example.com/a.jpg'));
-    assert.ok(scoreMetaImageUrl(FBCDN_URL) > scoreMetaImageUrl(BLOB_URL));
+  test('scores fbcdn above scontent and rejects everything else', () => {
+    assert.ok(scoreMetaImageUrl(FBCDN_URL) > scoreMetaImageUrl(SCONTENT_URL));
+    assert.equal(scoreMetaImageUrl('https://example.com/a.jpg'), 0);
+    assert.equal(scoreMetaImageUrl(BLOB_URL), 0);
   });
 });

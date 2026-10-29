@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { deleteVisualStyle, fetchVisualStyles } from '../api/visualStyles';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddVisualStyleModal } from '../components/visual-styles/AddVisualStyleModal';
 import { EditVisualStyleModal } from '../components/visual-styles/EditVisualStyleModal';
 import { VisualStylesTable } from '../components/visual-styles/VisualStylesTable';
-import { Button, Modal, useToast } from '../components/ui';
+import { Button, DropdownSelect, Modal, useToast } from '../components/ui';
+import type { PromptListLanguageFilter } from '../components/prompts/PromptsListPanel';
+import { PROMPT_LANGUAGE_OPTIONS } from '../constants/promptForm';
 import { useAbortableEffect } from '../hooks';
 import type { VisualStyle } from '../types/visualStyle';
 import { Palette } from 'lucide-react';
@@ -21,6 +23,23 @@ export function VisualStylesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<VisualStyle | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [languageFilter, setLanguageFilter] = useState<PromptListLanguageFilter>('any');
+
+  const languageFilterOptions = useMemo(
+    () => [
+      { value: 'any' as const, label: t('prompts.filter.allLanguages') },
+      ...PROMPT_LANGUAGE_OPTIONS,
+    ],
+    [t],
+  );
+
+  const filteredStyles = useMemo(
+    () =>
+      languageFilter === 'any'
+        ? styles
+        : styles.filter((style) => style.language === languageFilter),
+    [styles, languageFilter],
+  );
 
   useAbortableEffect(
     async (signal) => {
@@ -78,9 +97,18 @@ export function VisualStylesPage() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-            <span className="text-sm text-neutral-400">
-              {t('visual.count', { count: styles.length.toLocaleString() })}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <DropdownSelect
+                value={languageFilter}
+                onChange={setLanguageFilter}
+                options={languageFilterOptions}
+                className="w-48"
+                triggerClassName="h-9 w-full rounded-lg text-xs"
+              />
+              <span className="text-sm text-neutral-400">
+                {t('visual.count', { count: filteredStyles.length.toLocaleString() })}
+              </span>
+            </div>
             <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
               {t('visual.add')}
             </Button>
@@ -90,7 +118,7 @@ export function VisualStylesPage() {
         <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden card-surface px-5 pt-3 pb-4">
           <div className="min-h-0 flex-1 overflow-auto">
             <VisualStylesTable
-              styles={styles}
+              styles={filteredStyles}
               loading={loading}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
