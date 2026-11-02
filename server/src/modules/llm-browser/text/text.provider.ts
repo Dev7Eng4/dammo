@@ -1,5 +1,8 @@
-import type { Page } from 'playwright';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import type { Locator, Page } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
+import { normalizeReferenceImagePaths } from '../core/reference-images.js';
 import { getLlmProviderConfig } from './text.config.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
@@ -75,6 +78,98 @@ async function waitForFirstVisible(page: Page, provider: LlmTextProvider, select
     provider,
     `No visible element for selectors: ${selectors.join(' | ')} (${lastError instanceof Error ? lastError.message : 'timeout'})`
   );
+}
+
+const ATTACHMENT_READY_TIMEOUT_MS = 60_000;
+
+function imageMimeType(filePath: string): string {
+  switch (path.extname(filePath).toLowerCase()) {
+    case '.png':
+      return 'image/png';
+    case '.webp':
+      return 'image/webp';
+    default:
+      return 'image/jpeg';
+  }
+}
+
+/** Simulate dropping files onto the prompt (for providers without a reachable file input). */
+async function dropFilesOnPrompt(input: Locator, imagePaths: string[]): Promise<void> {
+  const files = await Promise.all(
+    imagePaths.map(async filePath => ({
+      name: path.basename(filePath),
+      mimeType: imageMimeType(filePath),
+      base64: (await fs.readFile(filePath)).toString('base64'),
+    })),
+  );
+  await input.evaluate((target, payload) => {
+    const dataTransfer = new DataTransfer();
+    for (const file of payload) {
+      const bytes = Uint8Array.from(atob(file.base64), char => char.charCodeAt(0));
+      dataTransfer.items.add(new File([bytes], file.name, { type: file.mimeType }));
+    }
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      target.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer }));
+    }
+  }, files);
+}
+
+async function isSendButtonEnabled(page: Page, config: LlmProviderConfig): Promise<boolean> {
+  for (const candidate of config.selectors.sendButton.split(',').map(part => part.trim())) {
+    const button = page.locator(candidate).first();
+    if (await button.isVisible().catch(() => false)) {
+      return button.isEnabled().catch(() => false);
+    }
+  }
+  return false;
+}
+
+/** Wait until the attachment previews are shown and the upload no longer blocks sending. */
+async function waitForAttachmentsReady(
+  page: Page,
+  provider: LlmTextProvider,
+  config: LlmProviderConfig,
+  previewBaseline: number,
+  expected: number,
+): Promise<void> {
+  const deadline = Date.now() + ATTACHMENT_READY_TIMEOUT_MS;
+  const previewSelector = config.selectors.attachmentPreview;
+  await randomDelay(1_500, 2_500);
+
+  while (Date.now() < deadline) {
+    const previewsShown = previewSelector
+      ? (await page.locator(previewSelector).count()) - previewBaseline >= expected
+      : true;
+    if (previewsShown && (await isSendButtonEnabled(page, config))) return;
+    await randomDelay(500, 900);
+  }
+
+  throw domTimeoutError(provider, `${expected} attachment(s) not ready within ${ATTACHMENT_READY_TIMEOUT_MS / 1000}s`);
+}
+
+/** Attach local images to the chat composer (call after the prompt is pasted). */
+async function attachImages(
+  page: Page,
+  provider: LlmTextProvider,
+  config: LlmProviderConfig,
+  input: Locator,
+  imagePaths: string[],
+): Promise<void> {
+  for (const imagePath of imagePaths) {
+    await fs.access(imagePath);
+  }
+  const previewBaseline = config.selectors.attachmentPreview
+    ? await page.locator(config.selectors.attachmentPreview).count()
+    : 0;
+
+  const fileInput = config.selectors.fileInput ? page.locator(config.selectors.fileInput).first() : null;
+  if (fileInput && (await fileInput.count()) > 0) {
+    await fileInput.setInputFiles(imagePaths);
+  } else {
+    await dropFilesOnPrompt(input, imagePaths);
+  }
+  console.log(`[llm-browser] attached ${imagePaths.length} image(s) (${provider}), waiting for upload...`);
+  await waitForAttachmentsReady(page, provider, config, previewBaseline, imagePaths.length);
 }
 
 async function isGenerating(page: Page, config: LlmProviderConfig): Promise<boolean> {
@@ -246,6 +341,11 @@ export function createLlmProviderHandler(provider: LlmTextProvider): LlmBrowserP
       const input = await waitForFirstVisible(page, provider, config.selectors.promptInput);
       await humanFocusAndClear(page, input);
       await humanPaste(page, input, prompt);
+
+      const imagePaths = normalizeReferenceImagePaths(options?.referenceImagePaths);
+      if (imagePaths.length > 0) {
+        await attachImages(page, provider, config, input, imagePaths);
+      }
 
       const baselineBlockCount = await countResponseBlocks(page, config);
 

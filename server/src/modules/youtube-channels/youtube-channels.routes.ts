@@ -31,6 +31,7 @@ import {
 } from './thumbnail-backgrounds.service.js';
 import {
   channelAvatarsService,
+  channelMascotImagesService,
   type ChannelAvatarContentType,
   type ChannelAvatarUpload,
 } from './channel-avatars.service.js';
@@ -241,6 +242,23 @@ export function createYoutubeChannelsRoutes() {
     return streamFileAsset(c.req.raw, asset);
   });
 
+  app.post('/mascot-images/temp/:sessionId', async (c) => {
+    const sessionId = c.req.param('sessionId');
+    const body = await c.req.parseBody();
+    const parsed = await parseChannelAvatarUpload(body);
+    if (!parsed.ok) {
+      return c.json({ error: parsed.error }, parsed.status);
+    }
+    const urlPrefix = `/api/v1/youtube-channels/mascot-images/temp/${encodeURIComponent(sessionId)}`;
+    const item = await channelMascotImagesService.uploadTemp(sessionId, parsed.upload, urlPrefix);
+    return c.json({ item }, 201);
+  });
+
+  app.get('/mascot-images/temp/:sessionId/:filename', (c) => {
+    const asset = channelMascotImagesService.getTempAsset(c.req.param('sessionId'), c.req.param('filename'));
+    return streamFileAsset(c.req.raw, asset);
+  });
+
   app.get('/:id/thumbnail-backgrounds', (c) => {
     const id = c.req.param('id');
     youtubeChannelsService.getById(id);
@@ -286,6 +304,41 @@ export function createYoutubeChannelsRoutes() {
     const id = c.req.param('id');
     youtubeChannelsService.getById(id);
     const asset = channelAvatarsService.getChannelAsset(id, c.req.param('filename'));
+    return streamFileAsset(c.req.raw, asset);
+  });
+
+  app.get('/:id/mascot-images', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/mascot-image`;
+    const item = channelMascotImagesService.findForChannel(id, urlPrefix);
+    return c.json({ items: item ? [item] : [] });
+  });
+
+  app.post('/:id/mascot-image', async (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const body = await c.req.parseBody();
+    const parsed = await parseChannelAvatarUpload(body);
+    if (!parsed.ok) {
+      return c.json({ error: parsed.error }, parsed.status);
+    }
+    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/mascot-image`;
+    const item = await channelMascotImagesService.uploadForChannel(id, parsed.upload, urlPrefix);
+    return c.json({ item }, 201);
+  });
+
+  app.delete('/:id/mascot-image', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    channelMascotImagesService.deleteForChannel(id);
+    return c.json({ ok: true });
+  });
+
+  app.get('/:id/mascot-image/:filename', (c) => {
+    const id = c.req.param('id');
+    youtubeChannelsService.getById(id);
+    const asset = channelMascotImagesService.getChannelAsset(id, c.req.param('filename'));
     return streamFileAsset(c.req.raw, asset);
   });
 

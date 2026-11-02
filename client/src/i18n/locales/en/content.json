@@ -157,8 +157,7 @@
       "fonts": "Fonts",
       "smallVideo": "Small stock video",
       "siLocalStock": "Background footage",
-      "celebrities": "Celebrities",
-      "mascots": "Mascots"
+      "celebrities": "Celebrities"
     },
     "table": {
       "col": {
@@ -195,41 +194,6 @@
       "colorDone": "Processed {{color}}: {{name}}",
       "colorAlready": "{{name}} was already processed for {{color}}",
       "colorError": "Could not process color"
-    },
-    "mascots": {
-      "count": "{{count}} mascots",
-      "add": "+ Add mascot",
-      "addTitle": "Add mascot",
-      "editTitle": "Edit mascot",
-      "addSubmit": "Add",
-      "saveSubmit": "Save",
-      "name": "Mascot name",
-      "namePlaceholder": "e.g. Orange mochi",
-      "nameRequired": "Please enter a name",
-      "prompt": "Mascot image prompt",
-      "promptPlaceholder": "Describe the mascot: shape, colors, signature detail, art style...",
-      "promptRequired": "Please enter a prompt",
-      "image": "Canonical mascot image",
-      "noImage": "No image",
-      "uploadImage": "Upload image",
-      "replaceImage": "Replace image",
-      "removeImage": "Remove image",
-      "imageHint": "Generate images from the prompt in Flow/Meta, pick the best one and upload it. JPG, PNG or WebP, up to 20 MB.",
-      "needsImage": "No image yet",
-      "copyPrompt": "Copy prompt",
-      "saveError": "Could not save mascot",
-      "loading": "Loading list…",
-      "empty": "No mascots yet. Click \"Add mascot\" to start.",
-      "deleteTitle": "Delete mascot?",
-      "deleteBody": "Delete mascot {{name}} and its image?",
-      "toast": {
-        "added": "Mascot added",
-        "saved": "Mascot saved",
-        "deleted": "Mascot deleted",
-        "deleteError": "Could not delete mascot",
-        "copied": "Prompt copied",
-        "copyError": "Could not copy"
-      }
     },
     "celebrities": {
       "count": "{{count}} celebrities",
@@ -301,6 +265,48 @@
         "fileDeleted": "Deleted 1 file",
         "fileDeleteError": "Could not delete file"
       }
+    }
+  },
+  "downloadTest": {
+    "title": "Manual video",
+    "subtitle": "Download a source video's transcript, then remake it into a new script with an LLM in a Chrome profile",
+    "platform": "Platform",
+    "language": "Language",
+    "url": "Video URL",
+    "download": "Download transcript",
+    "downloading": "Downloading...",
+    "success": "Transcript downloaded",
+    "failed": "Transcript download failed",
+    "videoId": "Video ID",
+    "file": "File",
+    "size": "Size",
+    "remake": {
+      "title": "Remake script",
+      "hint": "Opens a sub Chrome profile and runs the \"Remake script\" prompts in ChatGPT/Gemini: an outline first, then each chapter in the same chat. Edit the prompts on the Prompts page.",
+      "promptSet": "Prompt set",
+      "noPromptSet": "No remake prompt set for this language yet",
+      "provider": "LLM",
+      "notes": "Extra notes (optional)",
+      "notesPlaceholder": "e.g. aim at people over 60 living alone, avoid medical topics…",
+      "start": "Remake",
+      "running": "Remaking {{progress}}",
+      "profile": "Profile: {{name}}",
+      "done": "Remake finished",
+      "failed": "Remake failed",
+      "angle": "Angle",
+      "hook": "Hook",
+      "stats": "{{chars}} chars ≈ {{minutes}} min",
+      "similarity": "Wording overlap with source: 8-gram {{gram8}}% · 15-gram {{gram15}}%",
+      "pass": "pass",
+      "over": "over limit",
+      "copy": "Copy script",
+      "copied": "Copied",
+      "saved": "Saved",
+      "logs": "Log",
+      "length": "Length",
+      "lengthValue": "Chosen by the LLM, between 12 and 30 minutes",
+      "lengthChosen": "The LLM chose {{minutes}} min",
+      "planned": "Length chosen by the LLM: {{minutes}} min"
     }
   }
 }

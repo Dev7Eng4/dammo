@@ -66,7 +66,10 @@ export interface GenerateAiVideoImagesResult {
 
 export interface GenerateAiVideoImagesInput {
   workDir: string;
-  /** Channel id; enables the channel mascot store (`mascots/` folder) for the reference flow. */
+  /**
+   * Channel id; enables the channel mascot store (`mascots/` folder) for the reference flow, and the
+   * channel mascot image (`mascot.*`), which makes every scene prompt revolve around the mascot.
+   */
   channelId?: string;
   youtubeVideoId: string;
   visualStyle: AiVideoVisualStyle;
@@ -128,6 +131,8 @@ export interface AssembleReupAiSlideshowVideoInput {
 
 export interface GenerateAiSceneSlideImagesInput {
   workDir: string;
+  /** Channel id; its mascot image (when uploaded) is attached as the first reference of every scene. */
+  channelId?: string;
   youtubeVideoId: string;
   scenes: AiVideoScenePrompt[];
   /**

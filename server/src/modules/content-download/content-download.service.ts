@@ -65,7 +65,21 @@ function resolveYoutubeVideoId(url: string): string {
   return videoId;
 }
 
+const MAX_TEXT_PREVIEW_BYTES = 2 * 1024 * 1024;
+
 export class ContentDownloadService {
+  async readTextArtifact(relativePath: string): Promise<string> {
+    const resolved = path.resolve(paths.dataDir, relativePath);
+    const root = path.resolve(paths.dataDir) + path.sep;
+    if (!resolved.startsWith(root) || !['.vtt', '.srt', '.txt'].includes(path.extname(resolved).toLowerCase())) {
+      throw new AppError('Invalid file path', 400, 'INVALID_FILE_PATH');
+    }
+    const stat = await fs.stat(resolved).catch(() => null);
+    if (!stat?.isFile()) throw new AppError('File not found', 404, 'FILE_NOT_FOUND');
+    if (stat.size > MAX_TEXT_PREVIEW_BYTES) throw new AppError('File too large to preview', 413, 'FILE_TOO_LARGE');
+    return fs.readFile(resolved, 'utf8');
+  }
+
   private resolveOutputDir(platform: DownloadPlatform, mediaId: string): string {
     return mediaDownloadDir(platform, mediaId);
   }

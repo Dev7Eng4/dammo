@@ -135,3 +135,21 @@ export const AI_INTRO_VIDEO_SEC = 30;
 
 /** Length of one Flow video clip; longer scenes hold the last frame. */
 export const AI_VIDEO_CLIP_SEC = 8;
+
+/** Max reference images attached to one scene image when the channel has a mascot (mascot first). */
+export const AI_SCENE_MAX_REFERENCE_IMAGES = 3;
+
+/**
+ * Appended to the visual style passed to scene-prompt templates when the channel has a mascot,
+ * so the LLM writes every scene around the mascot instead of inventing a protagonist.
+ */
+export const AI_MASCOT_STYLE_NOTE = [
+  'CHANNEL MASCOT (mandatory): this channel has one fixed mascot character, attached as a reference image to every scene image.',
+  'The mascot is the main character of every scene that shows a person; do not create another protagonist.',
+  'Refer to it only as "the mascot character from the reference image" and describe its pose, expression, action, props and setting.',
+  'Never describe or change its appearance (body shape, face, colors, outfit). Other people are simple background figures or soft silhouettes.',
+].join(' ');
+
+/** Prepended to every scene image prompt of a mascot channel (the mascot is always the first reference image). */
+export const AI_MASCOT_IMAGE_PROMPT_PREFIX =
+  'Main character: the character in the first reference image. Keep it exactly as shown (same body shape, face, colors, outfit and art style); do not redesign it. ';

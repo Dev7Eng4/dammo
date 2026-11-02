@@ -1,6 +1,33 @@
 {
   "promptSets": [
     {
+      "id": "ja:remake_script",
+      "baseKey": "remake_script",
+      "language": "ja",
+      "name": "Remake kịch bản (dàn ý → từng chương)",
+      "category": "remake",
+      "niche": "all",
+      "platform": "all",
+      "createdAt": "2026-10-31T12:09:33.589Z",
+      "updatedAt": "2026-10-31T15:21:30.374Z",
+      "steps": [
+        {
+          "id": "3693f445-bcd7-44c4-88fc-c10df8a00cab",
+          "key": "remake_script_step_1",
+          "step": 1,
+          "outputType": "text",
+          "description": "Đọc transcript nguồn, lập dàn ý video mới (JSON)."
+        },
+        {
+          "id": "77c6c2bc-1d57-4096-ab1c-7617233b674d",
+          "key": "remake_script_step_2",
+          "step": 2,
+          "outputType": "text",
+          "description": "Gửi một lần cho mỗi chương, trong cùng cuộc chat."
+        }
+      ]
+    },
+    {
       "id": "all:nguoi_gia_nhat_ban_scenes",
       "baseKey": "nguoi_gia_nhat_ban_scenes",
       "language": "all",

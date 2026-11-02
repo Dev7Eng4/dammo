@@ -13,6 +13,8 @@ import dashboardVi from './locales/vi/dashboard.json';
 import radarVi from './locales/vi/radar.json';
 import facebookVi from './locales/vi/facebook.json';
 import roadmapVi from './locales/vi/roadmap.json';
+import agentVi from './locales/vi/agent.json';
+import manualVi from './locales/vi/manual.json';
 
 import commonEn from './locales/en/common.json';
 import navEn from './locales/en/nav.json';
@@ -26,6 +28,8 @@ import dashboardEn from './locales/en/dashboard.json';
 import radarEn from './locales/en/radar.json';
 import facebookEn from './locales/en/facebook.json';
 import roadmapEn from './locales/en/roadmap.json';
+import agentEn from './locales/en/agent.json';
+import manualEn from './locales/en/manual.json';
 
 export const LOCALES = ['vi', 'en'] as const;
 export type AppLocale = (typeof LOCALES)[number];
@@ -46,6 +50,8 @@ export const namespaces = [
   'radar',
   'roadmap',
   'facebook',
+  'agent',
+  'manual',
 ] as const;
 
 export type AppNamespace = (typeof namespaces)[number];
@@ -64,6 +70,8 @@ const resources = {
     radar: radarVi,
     roadmap: roadmapVi,
     facebook: facebookVi,
+    agent: agentVi,
+    manual: manualVi,
   },
   en: {
     common: commonEn,
@@ -78,6 +86,8 @@ const resources = {
     radar: radarEn,
     roadmap: roadmapEn,
     facebook: facebookEn,
+    agent: agentEn,
+    manual: manualEn,
   },
 };
 

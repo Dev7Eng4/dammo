@@ -9,3 +9,7 @@ export const downloadYoutubeTranscriptSchema = z.object({
   url: z.string().min(1),
   language: z.enum(['en', 'ko', 'ja', 'es']).default(DEFAULT_TRANSCRIPT_LANGUAGE),
 });
+
+export const readTextArtifactSchema = z.object({
+  relativePath: z.string().min(1),
+});

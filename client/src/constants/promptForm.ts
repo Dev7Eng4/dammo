@@ -14,6 +14,7 @@ export const PROMPT_CATEGORY_OPTIONS: { value: PromptCategory; label: string }[]
   { value: 'transcript', label: 'Bản ghi' },
   { value: 'meta', label: 'Meta' },
   { value: 'image', label: 'Hình ảnh' },
+  { value: 'remake', label: 'Remake kịch bản' },
 ];
 
 /** Sentinel for prompts that apply to every niche. */
@@ -72,6 +73,7 @@ export const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
   transcript: 'Bản ghi',
   meta: 'Meta',
   image: 'Hình ảnh',
+  remake: 'Remake kịch bản',
 };
 
 export const PROMPT_LANGUAGE_LABELS: Record<PromptLanguage, string> = {

@@ -1,9 +1,11 @@
 import {
   BookOpen,
+  BrainCircuit,
   Clapperboard,
   Construction,
   Database,
   Flag,
+  FlaskConical,
   Factory,
   FileCode2,
   FileSpreadsheet,
@@ -16,6 +18,7 @@ import {
   ListTodo,
   Mail,
   Palette,
+  PenLine,
   Radar,
   Rocket,
   Settings,
@@ -54,6 +57,9 @@ const iconMap: Record<NavIcon, LucideIcon> = {
   settings: Settings,
   roadmap: TrendingUp,
   facebook: Flag,
+  test: FlaskConical,
+  agent: BrainCircuit,
+  manual: PenLine,
 }
 
 export function PlaceholderPage() {

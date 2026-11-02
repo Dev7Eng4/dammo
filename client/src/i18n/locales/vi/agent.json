@@ -1,0 +1,137 @@
+{
+  "page": {
+    "title": "Agent tạo video",
+    "subtitle": "Claude đọc video nguồn đang nổi, viết kịch bản mới cho kênh Nhật, đọc giọng VOICEVOX, vẽ scene và dựng video",
+    "newRun": "Lượt mới",
+    "loadError": "Không tải được danh sách lượt chạy"
+  },
+  "status": {
+    "draft": "Nháp",
+    "queued": "Đang chờ",
+    "running": "Đang chạy",
+    "awaiting_approval": "Chờ duyệt",
+    "interrupted": "Bị ngắt",
+    "completed": "Hoàn tất",
+    "failed": "Lỗi",
+    "cancelled": "Đã huỷ"
+  },
+  "stage": {
+    "source": "Nguồn",
+    "script": "Kịch bản",
+    "approval": "Duyệt",
+    "voice": "Giọng đọc",
+    "scenes": "Scene & ảnh",
+    "video": "Dựng video",
+    "motion": "Ảnh → video"
+  },
+  "health": {
+    "claude": "Bộ não",
+    "claudeMissing": "chưa thấy ANTHROPIC_API_KEY",
+    "voicevox": "VOICEVOX",
+    "voicevoxOk": "đang chạy",
+    "voicevoxDown": "chưa mở"
+  },
+  "list": {
+    "empty": "Chưa có lượt nào. Bấm \"Lượt mới\" để giao việc cho agent.",
+    "untitled": "Chưa có tiêu đề"
+  },
+  "form": {
+    "title": "Giao việc cho agent",
+    "sources": "Video nguồn",
+    "sourcesHint": "Mỗi dòng một link YouTube (1–5 video). Nên dùng 2–3 video cùng đề tài để agent tổng hợp, ít rủi ro bản quyền hơn.",
+    "channel": "Kênh đích",
+    "channelPlaceholder": "Chọn kênh",
+    "noVisualStyle": "chưa có visual style",
+    "voice": "Giọng VOICEVOX",
+    "voiceUnavailable": "VOICEVOX chưa chạy — dùng giọng mặc định #{{id}}",
+    "speed": "Tốc độ đọc",
+    "notes": "Ghi chú cho agent",
+    "notesPlaceholder": "Ví dụ: tập trung vào người 60+ sống một mình, tránh chủ đề y tế…",
+    "approval": "Duyệt kịch bản trước khi đọc giọng",
+    "approvalHint": "Agent sẽ dừng lại chờ bạn duyệt hoặc góp ý",
+    "submit": "Bắt đầu",
+    "submitting": "Đang tạo…",
+    "cancel": "Đóng",
+    "created": "Đã giao việc cho agent",
+    "invalidSources": "Nhập ít nhất một link YouTube",
+    "length": "Độ dài",
+    "lengthValue": "Agent tự quyết, trong khoảng 12–30 phút",
+    "lengthHint": "Agent đọc transcript nguồn và chọn độ dài theo lượng chất liệu thật sự có. Lý do hiện trong tab Kịch bản."
+  },
+  "detail": {
+    "cancel": "Huỷ",
+    "resume": "Chạy tiếp",
+    "delete": "Xoá",
+    "deleteConfirm": "Xoá lượt này và toàn bộ file đã tạo?",
+    "turns": "Lượt agent",
+    "cost": "Chi phí Claude",
+    "costHint": "ước tính theo giá niêm yết",
+    "tokens": "Token vào/ra",
+    "audio": "Thời lượng",
+    "scenes": "Scene",
+    "sources": "Nguồn",
+    "timeline": "Diễn biến",
+    "script": "Kịch bản",
+    "result": "Kết quả",
+    "noScript": "Agent chưa viết kịch bản.",
+    "noVideo": "Chưa có video.",
+    "finalSummary": "Báo cáo của agent",
+    "files": "Thư mục làm việc",
+    "selectRun": "Chọn một lượt bên trái để xem chi tiết.",
+    "chars": "{{count}} ký tự",
+    "minutes": "≈ {{value}} phút",
+    "angle": "Góc nhìn",
+    "hook": "Hook",
+    "plannedLength": "Độ dài agent chọn",
+    "lengthReason": "Lý do"
+  },
+  "approval": {
+    "title": "Agent đang chờ bạn duyệt kịch bản",
+    "feedback": "Góp ý (tuỳ chọn khi duyệt, bắt buộc khi yêu cầu sửa)",
+    "feedbackPlaceholder": "Ví dụ: chương 3 ví dụ chưa cụ thể, rút ngắn phần kết…",
+    "approve": "Duyệt, đọc giọng",
+    "reject": "Yêu cầu sửa",
+    "rejectNeedsFeedback": "Hãy ghi góp ý để agent biết cần sửa gì",
+    "similarity": "Độ trùng với nguồn",
+    "pass": "đạt",
+    "fail": "vượt ngưỡng"
+  },
+  "step": {
+    "thinking": "Suy nghĩ",
+    "message": "Agent",
+    "tool_call": "Gọi tool",
+    "tool_result": "Kết quả",
+    "system": "Hệ thống",
+    "error": "Lỗi"
+  },
+  "review": {
+    "title": "Biên tập viên AI",
+    "needsWork": "cần sửa",
+    "source": "Nguồn {{index}}: trùng {{percent}}% trình tự ý",
+    "reused": "dùng lại ví dụ",
+    "noRepetition": "Không có ý/ví dụ lặp giữa các chương",
+    "repetition": "Lặp ý chương {{a}} và {{b}}",
+    "smooth": "{{count}} chỗ chuyển chương đều mượt",
+    "weak": "Chuyển chương {{from}}→{{to}} còn gượng",
+    "arcOk": "Mạch video tăng dần",
+    "arcWeak": "Mạch video chưa tăng dần",
+    "chapter": "Chương {{n}}",
+    "explanation": "chủ yếu giải thích",
+    "generic": "chung chung, thiếu chi tiết cụ thể",
+    "formBroken": "không theo đúng hình thức đã định",
+    "original": "Yếu tố gốc",
+    "notWritten": "chưa viết vào kịch bản",
+    "inSource": "đã có trong nguồn",
+    "thread": "Sợi xuyên suốt"
+  },
+  "freshness": {
+    "title": "So với {{count}} video cũ của kênh",
+    "clean": "Không trùng lời văn, công thức tiêu đề hay khuôn chương với video cũ.",
+    "kind": {
+      "content": "lời văn",
+      "title": "tiêu đề",
+      "structure": "khuôn chương",
+      "claim": "khẳng định"
+    }
+  }
+}

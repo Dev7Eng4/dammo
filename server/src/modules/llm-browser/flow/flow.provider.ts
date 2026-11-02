@@ -549,7 +549,7 @@ async function attachReferenceFile(page: Page, imagePath: string, _index: number
   console.log(`[flow] selected reference image via file input: ${imagePath}`);
 }
 
-async function uploadReferenceImage(page: Page, imagePath: string, index: number): Promise<void> {
+export async function uploadReferenceImage(page: Page, imagePath: string, index: number): Promise<void> {
   await fs.access(imagePath);
 
   await attachReferenceFile(page, imagePath, index);

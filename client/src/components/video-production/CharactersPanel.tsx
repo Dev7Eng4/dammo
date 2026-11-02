@@ -25,7 +25,7 @@ function CharacterImage({ character }: { character: ProductionCharacterItem }) {
           src={character.imageUrl ?? undefined}
           alt={character.name}
           loading="lazy"
-          className="size-full object-cover"
+          className={`size-full ${character.isMascot ? 'object-contain' : 'object-cover'}`}
           onError={() => setFailed(true)}
         />
       ) : (
@@ -67,19 +67,25 @@ export function CharactersPanel({ characters, loading, error, leadingItem, flush
       {leadingItem}
       {characters.map((character) => (
         <article
-          key={character.id}
-          className="overflow-hidden rounded-xl border border-border bg-surface"
+          key={character.isMascot ? `mascot:${character.id}` : character.id}
+          className={`overflow-hidden rounded-xl border bg-surface ${
+            character.isMascot ? 'border-primary-400/50' : 'border-border'
+          }`}
         >
           <CharacterImage character={character} />
           <div className="space-y-2 p-3">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">{character.name}</h3>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                {character.isMascot ? t('production.characters.mascotBadge') : character.name}
+              </h3>
               {character.description ? (
                 <p className="mt-1 text-sm text-muted-foreground">{character.description}</p>
               ) : null}
             </div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
-              {character.prompt || t('production.characters.noPrompt')}
+              {character.isMascot
+                ? t('production.characters.mascotHint')
+                : character.prompt || t('production.characters.noPrompt')}
             </p>
           </div>
         </article>

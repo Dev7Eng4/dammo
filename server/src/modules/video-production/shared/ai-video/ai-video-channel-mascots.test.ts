@@ -97,3 +97,17 @@ describe('channel mascot store', () => {
     assert.equal(await fs.readFile(path.join(workDir, 'image-references', 'haru.png'), 'utf8'), 'haru-v2');
   });
 });
+
+describe('channel mascot image', () => {
+  test('resolves mascot.* from the channel folder, independent of the mascots/ store', async () => {
+    const channelDir = path.join(dataDir, 'youtube-channels', 'ch-mascot');
+    await fs.mkdir(channelDir, { recursive: true });
+
+    assert.equal(await mascots.resolveChannelMascotImagePath('ch-mascot'), undefined);
+    assert.equal(await mascots.resolveChannelMascotImagePath(undefined), undefined);
+
+    await fs.writeFile(path.join(channelDir, 'mascot.png'), 'img');
+    assert.equal(await mascots.resolveChannelMascotImagePath('ch-mascot'), path.join(channelDir, 'mascot.png'));
+    assert.equal(await mascots.isChannelMascotStoreEnabled('ch-mascot'), false);
+  });
+});

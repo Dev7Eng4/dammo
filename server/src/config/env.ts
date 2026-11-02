@@ -86,4 +86,12 @@ export const env = {
   flowVideoModelKey: process.env.FLOW_VIDEO_MODEL_KEY ?? 'veo_3_1_i2v_s_fast_ultra',
   /** Flow account tier sent with video requests. */
   flowVideoPaygateTier: process.env.FLOW_VIDEO_PAYGATE_TIER ?? 'PAYGATE_TIER_TWO',
+  /** Claude model driving the video agent (brain + script writer). Key comes from ANTHROPIC_API_KEY. */
+  videoAgentModel: process.env.VIDEO_AGENT_MODEL ?? 'claude-opus-5-5',
+  /** Hard cap on agent turns per run, so a confused run cannot loop forever. */
+  videoAgentMaxTurns: optionalNumber(process.env.VIDEO_AGENT_MAX_TURNS) ?? 40,
+  /** Local VOICEVOX Engine (https://voicevox.hiroshiba.jp/). */
+  voicevoxUrl: process.env.VOICEVOX_URL ?? 'http://127.0.0.1:50021',
+  /** Default VOICEVOX style id (see GET /speakers). Remember the voice credit when publishing. */
+  voicevoxSpeaker: optionalNumber(process.env.VOICEVOX_SPEAKER) ?? 13,
 };

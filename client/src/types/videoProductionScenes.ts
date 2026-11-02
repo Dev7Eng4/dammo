@@ -57,6 +57,8 @@ export interface ProductionCharacterItem {
   description: string;
   prompt: string;
   imageUrl: string | null;
+  /** The channel mascot (channel-level image, not part of this video's generated cast). */
+  isMascot?: boolean;
 }
 
 export interface ProductionCharactersResponse {

@@ -132,7 +132,9 @@
       "cancel": "Hủy",
       "nameRequired": "Nhập tên character",
       "saved": "Đã thêm character",
-      "saveError": "Không thể thêm character"
+      "saveError": "Không thể thêm character",
+      "mascotBadge": "Mascot kênh",
+      "mascotHint": "Ảnh mascot của kênh. Đổi ảnh trong phần sửa kênh."
     },
     "scene": {
       "titleCard": "Tiêu đề chương (ảnh chữ, không tạo ảnh AI)",

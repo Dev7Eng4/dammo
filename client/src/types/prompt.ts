@@ -1,4 +1,4 @@
-export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image';
+export type PromptCategory = 'thumbnail' | 'transcript' | 'meta' | 'image' | 'remake';
 
 export type PromptOutputType = 'text' | 'image' | 'video';
 

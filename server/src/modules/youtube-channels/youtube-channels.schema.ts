@@ -37,7 +37,6 @@ const channelConfigFields = {
     .enum(['no_image', 'local_image', 'one_image', 'multi_image', 'celebrity'])
     .optional(),
   celebrityId: z.string().uuid().optional(),
-  mascotId: z.string().uuid().optional(),
   aiSceneDensityMaxSec: z
     .object({
       high: z.number().int().min(1).max(300),
@@ -158,6 +157,7 @@ export const createYoutubeChannelSchema = z
     channelUrl: z.string().optional(),
     thumbnailBackgroundTempSessionId: z.string().min(8).max(64).optional(),
     avatarTempSessionId: z.string().min(8).max(64).optional(),
+    mascotTempSessionId: z.string().min(8).max(64).optional(),
   })
   .superRefine(applyChannelConfigRefine);
 

@@ -72,8 +72,6 @@ export interface YoutubeChannel {
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   /** Required when reupAudioBackgroundImage is `celebrity` */
   celebrityId?: string;
-  /** Mascot from the Assets library; its image is the channel's character reference. */
-  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -143,13 +141,12 @@ export interface CreateYoutubeChannelInput {
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
   avatarTempSessionId?: string;
+  mascotTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   celebrityId?: string;
-  /** Mascot from the Assets library; its image is the channel's character reference. */
-  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -183,8 +180,6 @@ export interface UpdateYoutubeChannelInput {
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   celebrityId?: string;
-  /** Mascot from the Assets library; its image is the channel's character reference. */
-  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;

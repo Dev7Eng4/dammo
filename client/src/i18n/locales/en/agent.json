@@ -1,0 +1,137 @@
+{
+  "page": {
+    "title": "Video agent",
+    "subtitle": "Claude studies trending source videos, writes a new script for a Japanese channel, voices it with VOICEVOX, draws scenes and renders the video",
+    "newRun": "New run",
+    "loadError": "Could not load runs"
+  },
+  "status": {
+    "draft": "Draft",
+    "queued": "Queued",
+    "running": "Running",
+    "awaiting_approval": "Awaiting approval",
+    "interrupted": "Interrupted",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "stage": {
+    "source": "Sources",
+    "script": "Script",
+    "approval": "Approval",
+    "voice": "Voice",
+    "scenes": "Scenes",
+    "video": "Render",
+    "motion": "Image → video"
+  },
+  "health": {
+    "claude": "Brain",
+    "claudeMissing": "ANTHROPIC_API_KEY not found",
+    "voicevox": "VOICEVOX",
+    "voicevoxOk": "running",
+    "voicevoxDown": "not running"
+  },
+  "list": {
+    "empty": "No runs yet. Click \"New run\" to brief the agent.",
+    "untitled": "Untitled"
+  },
+  "form": {
+    "title": "Brief the agent",
+    "sources": "Source videos",
+    "sourcesHint": "One YouTube link per line (1–5). Two or three videos on the same topic give the agent more to synthesize and lower copyright risk.",
+    "channel": "Target channel",
+    "channelPlaceholder": "Pick a channel",
+    "noVisualStyle": "no visual style",
+    "voice": "VOICEVOX voice",
+    "voiceUnavailable": "VOICEVOX is not running — default voice #{{id}} will be used",
+    "speed": "Speech speed",
+    "notes": "Notes for the agent",
+    "notesPlaceholder": "e.g. focus on people over 60 living alone, avoid medical topics…",
+    "approval": "Approve the script before voicing",
+    "approvalHint": "The agent pauses for your approval or feedback",
+    "submit": "Start",
+    "submitting": "Creating…",
+    "cancel": "Close",
+    "created": "Run started",
+    "invalidSources": "Enter at least one YouTube link",
+    "length": "Length",
+    "lengthValue": "Chosen by the agent, between 12 and 30 minutes",
+    "lengthHint": "The agent reads the source transcripts and picks the length from the material that is really there. The reason appears in the Script tab."
+  },
+  "detail": {
+    "cancel": "Cancel",
+    "resume": "Resume",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this run and every file it produced?",
+    "turns": "Agent turns",
+    "cost": "Claude cost",
+    "costHint": "estimate from list prices",
+    "tokens": "Tokens in/out",
+    "audio": "Duration",
+    "scenes": "Scenes",
+    "sources": "Sources",
+    "timeline": "Timeline",
+    "script": "Script",
+    "result": "Result",
+    "noScript": "No script yet.",
+    "noVideo": "No video yet.",
+    "finalSummary": "Agent report",
+    "files": "Working folder",
+    "selectRun": "Select a run on the left to see details.",
+    "chars": "{{count}} chars",
+    "minutes": "≈ {{value}} min",
+    "angle": "Angle",
+    "hook": "Hook",
+    "plannedLength": "Length chosen by the agent",
+    "lengthReason": "Reason"
+  },
+  "approval": {
+    "title": "The agent is waiting for your approval",
+    "feedback": "Feedback (optional to approve, required to request changes)",
+    "feedbackPlaceholder": "e.g. chapter 3 needs a more concrete example, shorten the ending…",
+    "approve": "Approve and voice",
+    "reject": "Request changes",
+    "rejectNeedsFeedback": "Tell the agent what to change",
+    "similarity": "Similarity to sources",
+    "pass": "pass",
+    "fail": "over limit"
+  },
+  "step": {
+    "thinking": "Thinking",
+    "message": "Agent",
+    "tool_call": "Tool call",
+    "tool_result": "Result",
+    "system": "System",
+    "error": "Error"
+  },
+  "review": {
+    "title": "AI editor",
+    "needsWork": "needs work",
+    "source": "Source {{index}}: shares {{percent}}% of its point order",
+    "reused": "reused examples",
+    "noRepetition": "No idea or example repeated across chapters",
+    "repetition": "Repeated in chapters {{a}} and {{b}}",
+    "smooth": "All {{count}} chapter hand-offs are smooth",
+    "weak": "Hand-off {{from}}→{{to}} is weak",
+    "arcOk": "The video builds",
+    "arcWeak": "The video does not build",
+    "chapter": "Chapter {{n}}",
+    "explanation": "mostly explanation",
+    "generic": "generic, no concrete detail",
+    "formBroken": "does not follow its planned form",
+    "original": "Original element",
+    "notWritten": "not written into the script",
+    "inSource": "already in a source",
+    "thread": "Recurring thread"
+  },
+  "freshness": {
+    "title": "Against {{count}} earlier videos of this channel",
+    "clean": "No repeated wording, title formula or chapter mould.",
+    "kind": {
+      "content": "wording",
+      "title": "title",
+      "structure": "chapter mould",
+      "claim": "claim"
+    }
+  }
+}

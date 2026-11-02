@@ -132,7 +132,9 @@
       "cancel": "Cancel",
       "nameRequired": "Enter a character name",
       "saved": "Character added",
-      "saveError": "Could not add character"
+      "saveError": "Could not add character",
+      "mascotBadge": "Channel mascot",
+      "mascotHint": "The channel's mascot image. Change it when editing the channel."
     },
     "scene": {
       "titleCard": "Chapter title (text card, no AI image)",

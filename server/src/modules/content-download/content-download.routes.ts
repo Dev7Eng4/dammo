@@ -4,6 +4,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import {
   downloadYoutubeTranscriptSchema,
   downloadYoutubeUrlSchema,
+  readTextArtifactSchema,
 } from './content-download.schema.js';
 import { contentDownloadService } from './content-download.service.js';
 
@@ -44,6 +45,11 @@ export function createContentDownloadRoutes() {
   app.post('/facebook/transcript', zValidator('json', downloadYoutubeTranscriptSchema), async (c) => {
     const item = await contentDownloadService.downloadFacebookAsset('transcript', c.req.valid('json'));
     return c.json({ item });
+  });
+
+  app.get('/text', zValidator('query', readTextArtifactSchema), async (c) => {
+    const content = await contentDownloadService.readTextArtifact(c.req.valid('query').relativePath);
+    return c.json({ content });
   });
 
   app.onError((err, c) => {

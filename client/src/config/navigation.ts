@@ -22,7 +22,10 @@ export type NavIcon =
   | 'logs'
   | 'settings'
   | 'roadmap'
-  | 'facebook';
+  | 'facebook'
+  | 'test'
+  | 'agent'
+  | 'manual';
 
 export interface NavItem {
   id: string;
@@ -47,6 +50,17 @@ export const navSections: NavSection[] = [
       { id: 'mail', labelKey: 'item.mail', path: '/mail-accounts', icon: 'mail' },
       { id: 'youtube', labelKey: 'item.youtube', path: '/youtube-channels', icon: 'youtube' },
       { id: 'facebook', labelKey: 'item.facebook', path: '/facebook-pages', icon: 'facebook' },
+    ],
+  },
+  {
+    id: 'video-factory',
+    labelKey: 'section.videoFactory',
+    items: [
+      { id: 'video-agent', labelKey: 'item.videoAgent', path: '/video-agent', icon: 'agent' },
+      { id: 'manual-video', labelKey: 'item.manualVideo', path: '/manual-video', icon: 'manual' },
+      { id: 'task-queue', labelKey: 'item.taskQueue', path: '/task-queue', icon: 'task-queue' },
+      { id: 'video-production', labelKey: 'item.videoProduction', path: '/video-production', icon: 'factory' },
+      { id: 'settings', labelKey: 'item.settings', path: '/settings', icon: 'settings' },
     ],
   },
   {
@@ -80,15 +94,6 @@ export const navSections: NavSection[] = [
     labelKey: 'section.growth',
     items: [
       { id: 'monetization', labelKey: 'item.monetization', path: '/monetization', icon: 'roadmap' },
-    ],
-  },
-  {
-    id: 'video-factory',
-    labelKey: 'section.videoFactory',
-    items: [
-      { id: 'task-queue', labelKey: 'item.taskQueue', path: '/task-queue', icon: 'task-queue' },
-      { id: 'video-production', labelKey: 'item.videoProduction', path: '/video-production', icon: 'factory' },
-      { id: 'settings', labelKey: 'item.settings', path: '/settings', icon: 'settings' },
     ],
   },
 ];

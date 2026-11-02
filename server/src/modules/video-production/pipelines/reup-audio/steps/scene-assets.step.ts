@@ -128,6 +128,7 @@ export async function runSceneAssetsStep(
     () =>
       generateAiSceneSlideImages({
         workDir,
+        channelId: destination.id,
         youtubeVideoId: downloaded.youtubeVideoId,
         scenes: promptResult.scenes,
         audioSpeed,

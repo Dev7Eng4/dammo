@@ -1,0 +1,250 @@
+{
+  "page": {
+    "title": "Tạo video từng bước",
+    "subtitle": "Cùng pipeline với Agent nhưng bạn bấm từng bước: nguồn → kịch bản → duyệt → giọng đọc → scene & ảnh → dựng video. Mọi file nằm trong thư mục của dự án.",
+    "newProject": "Dự án mới"
+  },
+  "tabs": {
+    "projects": "Dự án",
+    "library": "Tất cả video"
+  },
+  "list": {
+    "empty": "Chưa có dự án nào. Bấm \"Dự án mới\" để bắt đầu.",
+    "untitled": "Chưa có tiêu đề"
+  },
+  "state": {
+    "done": "Xong",
+    "running": "Đang chạy",
+    "ready": "Sẵn sàng",
+    "locked": "Chưa mở"
+  },
+  "lock": {
+    "source": "Cần tải transcript nguồn trước.",
+    "script": "Cần có kịch bản trước.",
+    "approval": "Cần duyệt kịch bản trước (nút Duyệt ở cuối tab Kịch bản).",
+    "voice": "Cần đọc giọng trước.",
+    "scenes": "Cần tạo scene & ảnh trước.",
+    "motion": "Cần tạo scene & ảnh trước."
+  },
+  "form": {
+    "title": "Dự án video mới",
+    "close": "Đóng",
+    "sources": "Video nguồn",
+    "sourcesHint": "Mỗi dòng một link YouTube (1–5 video). Nên dùng 2–3 video cùng đề tài.",
+    "channel": "Kênh đích",
+    "channelPlaceholder": "Chọn kênh",
+    "noVisualStyle": "chưa có visual style",
+    "voice": "Giọng VOICEVOX",
+    "voiceUnavailable": "VOICEVOX chưa chạy — dùng giọng mặc định #{{id}}",
+    "speed": "Tốc độ đọc",
+    "notes": "Ghi chú",
+    "notesPlaceholder": "Ví dụ: hướng tới người 60+ sống một mình, tránh chủ đề y tế…",
+    "submit": "Tạo dự án",
+    "submitting": "Đang tạo…",
+    "created": "Đã tạo dự án",
+    "invalidSources": "Nhập ít nhất một link YouTube"
+  },
+  "detail": {
+    "select": "Chọn một dự án bên trái, hoặc tạo dự án mới.",
+    "storedAt": "Lưu tại",
+    "storedAtHint": "thư mục dự án {{id}} (video xuất hiện ở đây khi dựng xong)",
+    "openFolder": "Mở thư mục",
+    "copy": "Sao chép đường dẫn",
+    "copied": "Đã sao chép",
+    "openVideo": "Mở video ở tab mới",
+    "cancel": "Huỷ bước đang chạy",
+    "delete": "Xoá dự án",
+    "deleteConfirm": "Xoá dự án này và toàn bộ file đã tạo (transcript, giọng đọc, ảnh, video)?",
+    "timeline": "Nhật ký"
+  },
+  "step": {
+    "source": {
+      "title": "Nguồn",
+      "desc": "Tải transcript tiếng Nhật của các video nguồn.",
+      "load": "Tải transcript",
+      "reload": "Tải lại",
+      "chars": "{{count}} ký tự"
+    },
+    "script": {
+      "title": "Kịch bản",
+      "desc": "Remake bằng ChatGPT/Gemini từ transcript nguồn, hoặc tự soạn/dán kịch bản. Xem lại rồi bấm Duyệt ở cuối tab để mở bước Giọng đọc và Scene."
+    },
+    "approval": {
+      "title": "Duyệt kịch bản",
+      "desc": "Quyết định kịch bản có đủ tốt để đọc giọng không. Xem danh sách kiểm tra, kết quả đo và đọc lại toàn văn bên dưới rồi mới duyệt.",
+      "approve": "Duyệt kịch bản",
+      "done": "Đã duyệt",
+      "checklist": "Kiểm tra trước khi duyệt",
+      "checks": {
+        "similarity": "Lời văn không chép từ nguồn",
+        "similarityDetail": "(trùng cao nhất {{value}}% ở 8 ký tự liên tiếp, giới hạn 5%)",
+        "notMeasured": "(chưa đo vì chưa tải transcript nguồn)",
+        "channel": "Không lặp video cũ của kênh",
+        "channelDetail": "(đã so với {{count}} video cũ: lời văn, công thức tiêu đề)",
+        "noEarlier": "(kênh chưa có video cũ để so)",
+        "length": "Độ dài nằm trong khoảng cho phép",
+        "lengthDetail": "(≈ {{minutes}} phút, cho phép {{min}}–{{max}} phút)"
+      },
+      "read": "Đọc lại kịch bản",
+      "readHint": "Duyệt nghĩa là bạn đã đọc và chấp nhận bản này. Chưa ổn thì quay lại tab Kịch bản để sửa.",
+      "chapterChars": "{{count}} ký tự",
+      "effect": "Sau khi duyệt, tab Giọng đọc và Scene & ảnh được mở. Nếu bạn lưu lại kịch bản sau đó, việc duyệt (và giọng đọc, ảnh đã làm) bị huỷ để phải duyệt lại."
+    },
+    "voice": {
+      "title": "Giọng đọc",
+      "desc": "VOICEVOX đọc từng câu và tạo phụ đề từ chính thời lượng thật. Nếu đã có ảnh scene, thời gian scene tự khớp lại theo giọng mới.",
+      "run": "Đọc giọng",
+      "again": "Đọc lại",
+      "unavailable": "Chưa kết nối được VOICEVOX ({{url}}). Trang tự kiểm tra lại mỗi 10 giây.",
+      "result": "Đọc xong: {{duration}} ({{actual}} phút), kế hoạch {{planned}} phút, cho phép {{min}}–{{max}} phút.",
+      "outside": "ngoài khoảng cho phép — sửa kịch bản ngắn/dài lại rồi đọc lại",
+      "recheck": "Kiểm tra lại"
+    },
+    "scenes": {
+      "title": "Scene & ảnh",
+      "desc": "Chia kịch bản thành scene và vẽ ảnh theo visual style của kênh. Không cần chờ giọng đọc: nếu chưa đọc giọng, scene được chia theo thời lượng ước tính rồi tự khớp lại khi đọc xong. Có thể mất rất lâu.",
+      "run": "Tạo scene & ảnh",
+      "again": "Tạo lại",
+      "result": "{{scenes}} scene · {{images}} ảnh",
+      "timing": {
+        "provisional": "Thời gian scene đang tạm tính theo kịch bản. Khi đọc giọng xong, scene sẽ tự khớp lại theo giọng thật.",
+        "voice": "Thời gian scene đã khớp với giọng đọc thật."
+      },
+      "redoConfirm": "Tạo lại toàn bộ sẽ chia cảnh lại từ đầu và vẽ lại tất cả {{count}} ảnh (ảnh hiện có bị xoá). Muốn sửa vài cảnh thì dùng \"Vẽ lại\" ở từng cảnh bên dưới. Tiếp tục?"
+    },
+    "video": {
+      "title": "Dựng video",
+      "desc": "Ghép ảnh, giọng đọc và phụ đề thành video 1080p. Cần có cả giọng đọc lẫn ảnh scene.",
+      "run": "Dựng video",
+      "again": "Dựng lại"
+    },
+    "motion": {
+      "title": "Ảnh → video",
+      "desc": "Tuỳ chọn: biến ảnh scene thành clip chuyển động ~8 giây bằng Google Flow (Veo), chạy qua Chrome và dùng lượt Flow của các profile chính. Cảnh có clip sẽ phát clip khi dựng video, cảnh còn lại vẫn là ảnh với Ken Burns. Bỏ qua bước này thì video ghép từ ảnh như cũ."
+    }
+  },
+  "status": {
+    "draft": "Nháp"
+  },
+  "script": {
+    "min": "phút",
+    "remake": {
+      "title": "Remake bằng ChatGPT / Gemini",
+      "hint": "Mở một Chrome profile phụ, chạy prompt \"Remake kịch bản\" trên các transcript nguồn. LLM tự chọn độ dài 12–30 phút. Sửa prompt ở trang Prompt.",
+      "promptSet": "Bộ prompt",
+      "noPromptSet": "Chưa có bộ prompt remake",
+      "provider": "LLM",
+      "notesPlaceholder": "Ghi chú thêm cho lượt remake này (tuỳ chọn)",
+      "start": "Bắt đầu remake",
+      "running": "Đang remake {{progress}}",
+      "needSources": "Cần tải transcript nguồn trước.",
+      "use": "Dùng kết quả làm kịch bản",
+      "imported": "Đã lấy kết quả remake làm kịch bản",
+      "logs": "Nhật ký remake",
+      "status": {
+        "running": "Đang chạy",
+        "done": "Remake xong",
+        "failed": "Remake lỗi"
+      }
+    },
+    "editor": {
+      "title": "Soạn / dán kịch bản",
+      "hint": "Dòng \"# Tiêu đề\", mỗi chương bắt đầu bằng \"## 1. Tên chương\", mỗi câu một dòng. Có thể dán kịch bản viết ở nơi khác (ví dụ theo hướng dẫn test tay).",
+      "save": "Lưu kịch bản",
+      "saved": "Đã lưu kịch bản",
+      "saveNote": "Lưu sẽ đo lại độ trùng và huỷ duyệt, giọng đọc, ảnh đã làm."
+    },
+    "summary": {
+      "title": "Kết quả đo",
+      "size": "{{chars}} ký tự ≈ {{minutes}} phút · {{chapters}} chương",
+      "planned": "Độ dài kế hoạch: {{minutes}} phút",
+      "pass": "đạt",
+      "over": "vượt ngưỡng",
+      "needsWork": "cần sửa",
+      "noSimilarity": "Chưa có transcript nguồn nên chưa đo độ trùng với nguồn.",
+      "freshness": "So với {{count}} video cũ của kênh",
+      "warn": "Có chỉ số chưa đạt. Bạn vẫn có thể duyệt, nhưng nên sửa để tránh bị coi là nội dung tái sử dụng hoặc lặp khuôn."
+    }
+  },
+  "library": {
+    "projectsRoot": "Dự án (agent & từng bước)",
+    "downloadsRoot": "Transcript tải lẻ",
+    "rootHint": "Mỗi dự án nằm trong thư mục riêng, tên là mã dự án. Transcript tải lẻ nằm trong thư mục theo mã video YouTube.",
+    "empty": "Chưa có gì trong mục này.",
+    "chars": "{{chars}} ký tự ≈ {{minutes}} phút",
+    "files": "File",
+    "filter": {
+      "all": "Tất cả",
+      "finished": "Đã dựng xong",
+      "inProgress": "Đang làm dở",
+      "download": "Mới tải transcript"
+    },
+    "kind": {
+      "agent": "Agent",
+      "manual": "Từng bước",
+      "download": "Tải lẻ"
+    },
+    "file": {
+      "transcript": "Transcript",
+      "script": "Kịch bản",
+      "remake": "Remake",
+      "audio": "Giọng đọc",
+      "subtitle": "Phụ đề",
+      "video": "Video"
+    },
+    "play": "Xem",
+    "openProject": "Mở dự án"
+  },
+  "voicePreview": {
+    "play": "Nghe thử",
+    "stop": "Dừng",
+    "loading": "Đang tạo…",
+    "failed": "Không nghe thử được — kiểm tra VOICEVOX đã chạy chưa"
+  },
+  "scenes": {
+    "title": "Danh sách scene ({{count}})",
+    "hint": "Bấm ảnh để xem lớn. \"Vẽ lại\" dùng prompt hiện tại; \"Sửa prompt\" để viết lại rồi vẽ.",
+    "open": "Xem lớn cảnh {{n}}",
+    "alt": "Ảnh cảnh {{n}}",
+    "cast": "Nhân vật: {{names}}",
+    "titleCard": "Thẻ tiêu đề chương: {{title}}",
+    "prompt": "Prompt",
+    "redraw": "Vẽ lại",
+    "edit": "Sửa prompt",
+    "redrawWithPrompt": "Vẽ lại với prompt này",
+    "cancelEdit": "Huỷ",
+    "redrawing": "Đang vẽ lại…"
+  },
+  "narration": {
+    "title": "Giọng đã đọc: {{chapters}} chương · {{sentences}} câu · {{duration}}",
+    "hint": "Bấm một câu để nghe riêng câu đó, bấm nút ở chương để nghe cả chương.",
+    "misaligned": "Giọng đọc không còn khớp với kịch bản hiện tại (kịch bản đã sửa sau khi đọc) — mốc thời gian chỉ gần đúng, nên đọc lại giọng.",
+    "playChapter": "Nghe chương {{n}}"
+  },
+  "channel": {
+    "change": "Đổi kênh",
+    "save": "Lưu",
+    "changed": "Đã đổi kênh",
+    "noStyle": "chưa có visual style — chưa tạo được scene",
+    "scenesConfirm": "Ảnh scene hiện có được vẽ theo style của kênh cũ. Đổi kênh vẫn giữ ảnh cũ; muốn đúng style kênh mới thì tạo lại scene & ảnh. Video đã dựng (nếu có) sẽ phải dựng lại. Tiếp tục?"
+  },
+  "motion": {
+    "mode": "Cảnh nào thành video",
+    "modes": {
+      "intro": "Chỉ intro ({{sec}}s đầu)",
+      "full": "Toàn bộ cảnh",
+      "scenes": "Tự chọn cảnh"
+    },
+    "channelImages": "Kênh này đang để kiểu video từ ảnh — chọn intro hoặc toàn bộ nếu muốn có chuyển động.",
+    "channelDefault": "Mặc định theo kiểu video của kênh: {{mode}}.",
+    "run": "Tạo video cho {{count}} cảnh",
+    "working": "Đang tạo clip…",
+    "summary": "{{targets}} cảnh được chọn, {{done}} đã có clip · cả dự án: {{clips}}/{{total}} cảnh là video",
+    "frozen": "{{count}} cảnh dài hơn {{clip}}s: clip chỉ dài {{clip}}s nên phần còn lại đứng hình ở khung cuối (tổng ~{{sec}}s). Với kiểu toàn bộ là video, nên dùng mật độ scene cao (cảnh ngắn) khi tạo scene.",
+    "badgeClip": "Clip",
+    "badgeImage": "Ảnh",
+    "remove": "Bỏ clip",
+    "one": "Tạo clip",
+    "titleCard": "Thẻ tiêu đề — giữ nguyên"
+  }
+}

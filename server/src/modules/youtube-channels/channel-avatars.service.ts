@@ -3,8 +3,10 @@ import path from 'node:path';
 import {
   youtubeChannelAvatarTempDir,
   youtubeChannelDir,
+  youtubeChannelMascotTempDir,
 } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
+import { CHANNEL_MASCOT_BASENAME } from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
 import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/render-core/canvas.constants.js';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
@@ -81,20 +83,20 @@ function contentTypeForExtension(ext: string): string {
   }
 }
 
-function removeExistingAvatarFiles(dir: string): void {
+function removeExistingAvatarFiles(dir: string, basename: string): void {
   ensureDir(dir);
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isFile()) continue;
     const parsed = path.parse(entry.name);
-    if (parsed.name.toLowerCase() !== CHANNEL_AVATAR_BASENAME.toLowerCase()) continue;
+    if (parsed.name.toLowerCase() !== basename.toLowerCase()) continue;
     const ext = parsed.ext.toLowerCase();
     if (!IMAGE_EXTENSIONS.has(ext)) continue;
     fs.unlinkSync(path.join(dir, entry.name));
   }
 }
 
-function writeAvatarFile(dir: string, upload: ChannelAvatarUpload): string {
+function writeAvatarFile(dir: string, upload: ChannelAvatarUpload, basename: string): string {
   if (upload.buffer.byteLength === 0) {
     throw new AppError('File is required', 400, 'VALIDATION_ERROR');
   }
@@ -105,15 +107,18 @@ function writeAvatarFile(dir: string, upload: ChannelAvatarUpload): string {
     throw new AppError('Image must be a JPEG, PNG, or WebP', 400, 'UNSUPPORTED_FILE_TYPE');
   }
   ensureDir(dir);
-  removeExistingAvatarFiles(dir);
-  const fileName = `${CHANNEL_AVATAR_BASENAME}${extensionForContentType(upload.contentType)}`;
+  removeExistingAvatarFiles(dir, basename);
+  const fileName = `${basename}${extensionForContentType(upload.contentType)}`;
   const targetPath = path.join(dir, fileName);
   fs.writeFileSync(targetPath, upload.buffer);
   return fileName;
 }
 
-function resolveAvatarAsset(dir: string, filename: string): ChannelAvatarAsset {
+function resolveAvatarAsset(dir: string, filename: string, basename: string): ChannelAvatarAsset {
   const safeName = sanitizeFileName(filename);
+  if (path.parse(safeName).name.toLowerCase() !== basename.toLowerCase()) {
+    throw new AppError('Image not found', 404, 'NOT_FOUND');
+  }
   const fullPath = path.join(dir, safeName);
   if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
     throw new AppError('Avatar not found', 404, 'NOT_FOUND');
@@ -125,7 +130,7 @@ function resolveAvatarAsset(dir: string, filename: string): ChannelAvatarAsset {
   };
 }
 
-function findAvatarFileName(dir: string): string | null {
+function findAvatarFileName(dir: string, basename: string): string | null {
   if (!fs.existsSync(dir)) return null;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const candidate = entries
@@ -134,51 +139,64 @@ function findAvatarFileName(dir: string): string | null {
     .find((name) => {
       const parsed = path.parse(name);
       return (
-        parsed.name.toLowerCase() === CHANNEL_AVATAR_BASENAME.toLowerCase() &&
+        parsed.name.toLowerCase() === basename.toLowerCase() &&
         IMAGE_EXTENSIONS.has(parsed.ext.toLowerCase())
       );
     });
   return candidate ?? null;
 }
 
+/**
+ * One image per channel stored as `<channel dir>/<basename>.<ext>` (avatar, mascot).
+ * New channels upload into a temp session folder that is moved on create.
+ */
 export class ChannelAvatarsService {
+  constructor(
+    private readonly basename: string,
+    private readonly tempDirFor: (sessionId: string) => string,
+  ) {}
+
   findForChannel(channelId: string, urlPrefix: string): ChannelAvatarItem | null {
-    const name = findAvatarFileName(youtubeChannelDir(channelId));
+    const name = findAvatarFileName(youtubeChannelDir(channelId), this.basename);
     if (!name) return null;
     return { name, url: `${urlPrefix}/${encodeURIComponent(name)}` };
   }
 
   async uploadForChannel(channelId: string, upload: ChannelAvatarUpload, urlPrefix: string): Promise<ChannelAvatarItem> {
     const dir = youtubeChannelDir(channelId);
-    const name = writeAvatarFile(dir, upload);
+    const name = writeAvatarFile(dir, upload, this.basename);
     return { name, url: `${urlPrefix}/${encodeURIComponent(name)}` };
   }
 
   async uploadTemp(sessionId: string, upload: ChannelAvatarUpload, urlPrefix: string): Promise<ChannelAvatarItem> {
     const safeSession = sanitizeSessionId(sessionId);
-    const dir = youtubeChannelAvatarTempDir(safeSession);
-    const name = writeAvatarFile(dir, upload);
+    const dir = this.tempDirFor(safeSession);
+    const name = writeAvatarFile(dir, upload, this.basename);
     return { name, url: `${urlPrefix}/${encodeURIComponent(name)}` };
   }
 
+  deleteForChannel(channelId: string): void {
+    removeExistingAvatarFiles(youtubeChannelDir(channelId), this.basename);
+  }
+
   getChannelAsset(channelId: string, filename: string): ChannelAvatarAsset {
-    return resolveAvatarAsset(youtubeChannelDir(channelId), filename);
+    return resolveAvatarAsset(youtubeChannelDir(channelId), filename, this.basename);
   }
 
   getTempAsset(sessionId: string, filename: string): ChannelAvatarAsset {
-    return resolveAvatarAsset(youtubeChannelAvatarTempDir(sanitizeSessionId(sessionId)), filename);
+    return resolveAvatarAsset(this.tempDirFor(sanitizeSessionId(sessionId)), filename, this.basename);
   }
 
   moveTempToChannel(sessionId: string, channelId: string): void {
     const safeSession = sanitizeSessionId(sessionId);
-    const tempDir = youtubeChannelAvatarTempDir(safeSession);
+    const tempDir = this.tempDirFor(safeSession);
     if (!fs.existsSync(tempDir)) return;
 
     const entries = fs.readdirSync(tempDir, { withFileTypes: true });
     const candidate = entries.find((entry) => {
       if (!entry.isFile()) return false;
       const parsed = path.parse(entry.name);
-      return parsed.name.toLowerCase() === CHANNEL_AVATAR_BASENAME.toLowerCase() && IMAGE_EXTENSIONS.has(parsed.ext.toLowerCase());
+      return parsed.name.toLowerCase() === this.basename.toLowerCase() && IMAGE_EXTENSIONS.has(parsed.ext.toLowerCase());
     });
     if (!candidate) return;
 
@@ -186,8 +204,8 @@ export class ChannelAvatarsService {
     const ext = path.extname(candidate.name).toLowerCase();
     const targetDir = youtubeChannelDir(channelId);
     ensureDir(targetDir);
-    removeExistingAvatarFiles(targetDir);
-    const targetPath = path.join(targetDir, `${CHANNEL_AVATAR_BASENAME}${ext}`);
+    removeExistingAvatarFiles(targetDir, this.basename);
+    const targetPath = path.join(targetDir, `${this.basename}${ext}`);
     try {
       fs.renameSync(sourcePath, targetPath);
     } catch {
@@ -197,4 +215,5 @@ export class ChannelAvatarsService {
   }
 }
 
-export const channelAvatarsService = new ChannelAvatarsService();
+export const channelAvatarsService = new ChannelAvatarsService(CHANNEL_AVATAR_BASENAME, youtubeChannelAvatarTempDir);
+export const channelMascotImagesService = new ChannelAvatarsService(CHANNEL_MASCOT_BASENAME, youtubeChannelMascotTempDir);

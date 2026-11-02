@@ -6,7 +6,11 @@ import { resolveYoutubeChannelVideoDir } from '../../config/paths.js';
 import { parseSrt } from '../../infrastructure/subtitle/srt-utils.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
 import { AppError } from '../../shared/http/errors.js';
-import { saveChannelMascotImage } from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
+import { channelMascotImagesService } from '../youtube-channels/channel-avatars.service.js';
+import {
+  CHANNEL_MASCOT_CHARACTER_ID,
+  saveChannelMascotImage,
+} from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
 import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 import {
   AI_SLIDES_DIRNAME,
@@ -534,6 +538,7 @@ export class VideoProductionUiService {
     const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
       generateAiSceneSlideImages({
         workDir,
+        channelId: safeChannelId,
         youtubeVideoId: safeVideoId,
         scenes: file.scenes,
         forceIndexes: [sceneIndex],
@@ -603,6 +608,7 @@ export class VideoProductionUiService {
     const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
       generateAiSceneSlideImages({
         workDir,
+        channelId: safeChannelId,
         youtubeVideoId: safeVideoId,
         scenes: file.scenes,
         forceIndexes: missing.map(({ index }) => index),
@@ -691,11 +697,28 @@ export class VideoProductionUiService {
       })
       .filter((character) => character.id.length > 0);
 
+    const mascot = channelMascotImagesService.findForChannel(
+      safeChannelId,
+      `/api/v1/youtube-channels/${encodeURIComponent(safeChannelId)}/mascot-image`,
+    );
+
     return {
       channelId: safeChannelId,
       videoId: safeVideoId,
       generatedAt: file?.generatedAt ?? null,
-      characters,
+      characters: mascot
+        ? [
+            {
+              id: CHANNEL_MASCOT_CHARACTER_ID,
+              name: 'Mascot',
+              description: '',
+              prompt: '',
+              imageUrl: mascot.url,
+              isMascot: true,
+            },
+            ...characters,
+          ]
+        : characters,
     };
   }
 

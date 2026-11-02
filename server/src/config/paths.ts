@@ -35,8 +35,6 @@ export const paths = {
   niches: path.join(env.dataDir, 'niches.json'),
   celebrities: path.join(env.dataDir, 'celebrities.json'),
   celebritiesDir: path.join(env.dataDir, 'celebrities'),
-  mascots: path.join(env.dataDir, 'mascots.json'),
-  mascotsDir: path.join(env.dataDir, 'mascot-library'),
   smallVideoGroups: path.join(env.dataDir, 'small-video-groups.json'),
   promptsDir: path.join(env.dataDir, 'prompts'),
   playgroundDir: path.join(env.dataDir, 'playground'),
@@ -46,14 +44,11 @@ export const paths = {
   siSmallVideoDir: path.join(env.dataDir, 'assets', 'small-video'),
   siSubscribeDir: path.join(env.dataDir, 'assets', 'subscribe'),
   siTempStockDir: path.join(env.dataDir, 'assets', 'temp_stock'),
+  videoAgentRunsDir: path.join(env.dataDir, 'video-agent', 'runs'),
 };
 
 export function celebrityDir(celebrityId: string): string {
   return path.join(paths.celebritiesDir, celebrityId);
-}
-
-export function mascotDir(mascotId: string): string {
-  return path.join(paths.mascotsDir, mascotId);
 }
 
 export function smallVideoGroupDir(groupId: string): string {
@@ -178,6 +173,10 @@ export function youtubeChannelThumbnailBackgroundsTempDir(sessionId: string): st
 
 export function youtubeChannelAvatarTempDir(sessionId: string): string {
   return path.join(paths.youtubeChannelsDir, '_temp', sessionId, 'avatar');
+}
+
+export function youtubeChannelMascotTempDir(sessionId: string): string {
+  return path.join(paths.youtubeChannelsDir, '_temp', sessionId, 'mascot');
 }
 
 function isDirectory(dirPath: string): boolean {
@@ -348,6 +347,7 @@ export function ensureDataDirs(): void {
     paths.reupVideoDownloadsDir,
     paths.reupVideoOutputDir,
     paths.taskQueueDir,
+    paths.videoAgentRunsDir,
     paths.mediaDownloadsDir,
     path.join(paths.mediaDownloadsDir, 'youtube', 'recreate-metadata'),
     paths.youtubeChannelsDir,
@@ -363,7 +363,6 @@ export function ensureDataDirs(): void {
     paths.siSubscribeDir,
     paths.siTempStockDir,
     paths.celebritiesDir,
-    paths.mascotsDir,
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) {

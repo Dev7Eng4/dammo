@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const promptCategorySchema = z.enum(['thumbnail', 'transcript', 'meta', 'image']);
+const promptCategorySchema = z.enum(['thumbnail', 'transcript', 'meta', 'image', 'remake']);
 const promptOutputTypeSchema = z.enum(['text', 'image', 'video']);
 const specificPromptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
 const promptLanguageSchema = z.enum(['en', 'ko', 'ja', 'es', 'all']);

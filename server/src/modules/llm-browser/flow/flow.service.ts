@@ -15,16 +15,15 @@ import {
   resolveFlowImageSavePath,
 } from './api/flow-api-response.js';
 import {
-  downloadFlowVideo,
-  pollFlowVideoOperations,
-  startFlowVideoFromImage,
-  toFlowVideoFailureError,
-  type FlowVideoOperation,
-} from './api/flow-video.client.js';
+  FLOW_VIDEO_CLIP_TIMEOUT_MS,
+  FLOW_VIDEO_DEFAULT_MODEL,
+  FLOW_VIDEO_SETTINGS_ONLY,
+  FLOW_VIDEO_SETTINGS_ONLY_REASON,
+  configureFlowVideoSettings,
+  generateFlowClipViaUi,
+} from './flow-video-ui.js';
 import { isFlowDailyQuotaError } from './api/flow-api-errors.js';
 import {
-  FLOW_VIDEO_START_BATCH_SIZE,
-  FLOW_VIDEO_TIMEOUT_MS,
   FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS,
   FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS,
   FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS,
@@ -57,7 +56,12 @@ import type {
 } from './flow.types.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { emitDetailLog } from '../../video-production/shared/video-log.js';
-import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
+import {
+  applyChromeBackgroundModeToOpenProfiles,
+  getChromeProfilePage,
+  isChromeProfileOpen,
+  openChromeProfile,
+} from '../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 import { recordFlowProjectUsage, resolveFlowProjectId } from './flow-project.service.js';
 
@@ -228,12 +232,12 @@ export class FlowBrowserService {
   }
 
   /**
-   * Turn scene images into short video clips (Flow image-to-video).
+   * Turn scene images into short video clips (Flow image-to-video) through the flow.google.com UI.
    *
-   * Uploads each start frame, starts the async video generations in small batches,
-   * polls until they finish and saves each as `${outputDir}/${name}.mp4`. Jobs Flow
-   * rejects (policy filter, render error) are reported in `failed`; a daily quota
-   * error aborts the batch so the caller can switch profile.
+   * Sets the prompt bar to Video · Frames · aspect · model · x1, then for each job uploads the start
+   * frame, types the motion prompt, generates and saves the clip as `${outputDir}/${name}.mp4`. One
+   * clip at a time so each result maps to its job. Clips Flow rejects or that time out are reported in
+   * `failed`; a quota/credits message aborts the batch so the caller can switch profile.
    */
   async generateVideosFromImages(
     profileId: string,
@@ -244,11 +248,10 @@ export class FlowBrowserService {
       throw new AppError('generateVideosFromImages requires at least one job', 400, 'INVALID_INPUT');
     }
 
-    const timeoutMs = options.timeoutMs ?? FLOW_VIDEO_TIMEOUT_MS;
     const outputDir = path.resolve(options.outputDir);
     const page = await ensureFlowChromeSession(profileId);
-    const bearerCapture = attachBearerCapture(page);
     const result: FlowGenerateVideosResult = { savedNames: [], failed: [] };
+    const uploadTag = Date.now().toString(36);
 
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
@@ -258,89 +261,47 @@ export class FlowBrowserService {
         skipInitialSetup: true,
       });
       if (options.projectId) {
-        const valid = await openFlowProjectPage(page, projectId, timeoutMs);
+        const valid = await openFlowProjectPage(page, projectId);
         if (!valid) {
           throw new AppError(`Flow project ${projectId} failed project open validation`, 502, 'FLOW_PROJECT_INVALID');
         }
       }
       await waitForFlowProjectReady(page);
-
-      let accessToken = '';
-      for (let attempt = 1; attempt <= FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS && !accessToken; attempt++) {
-        accessToken = (await getAccessTokenFromPage(page)) || bearerCapture.getBearerToken();
-        if (!accessToken && attempt < FLOW_API_ACCESS_TOKEN_MAX_ATTEMPTS) {
-          await sleep(FLOW_API_ACCESS_TOKEN_RETRY_DELAY_MS);
-        }
+      await configureFlowVideoSettings(page, {
+        model: options.model ?? FLOW_VIDEO_DEFAULT_MODEL,
+        aspectRatio: options.aspectRatio ?? '16:9',
+      }, { keepOpen: FLOW_VIDEO_SETTINGS_ONLY });
+      if (FLOW_VIDEO_SETTINGS_ONLY) {
+        const profile = chromeProfilesService.getById(profileId);
+        // Bring the (possibly off-screen) window on screen, popover still open.
+        await openChromeProfile(profile.id, profile.userDataDir, { background: false });
+        await applyChromeBackgroundModeToOpenProfiles().catch(() => undefined);
+        emitDetailLog(`[flow-video-ui] ${FLOW_VIDEO_SETTINGS_ONLY_REASON} — Chrome ${profile.name} left open`);
+        setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
+        return { savedNames: [], failed: jobs.map(job => ({ name: job.name, reason: FLOW_VIDEO_SETTINGS_ONLY_REASON })) };
       }
-      if (!accessToken) {
-        throw new AppError(
-          'Could not obtain Flow accessToken. Ensure the Chrome profile is logged into Google Flow.',
-          502,
-          'FLOW_API_NO_ACCESS_TOKEN',
-        );
-      }
-
       await fs.mkdir(outputDir, { recursive: true });
 
-      for (let from = 0; from < jobs.length; from += FLOW_VIDEO_START_BATCH_SIZE) {
-        const chunk = jobs.slice(from, from + FLOW_VIDEO_START_BATCH_SIZE);
-        const started: { job: FlowImageToVideoJob; operation: FlowVideoOperation }[] = [];
-
-        for (const job of chunk) {
-          try {
-            const mediaId = await uploadReferenceImageViaApi(accessToken, job.imagePath, projectId);
-            if (!mediaId) {
-              throw new AppError(`Flow start-frame upload failed: ${job.imagePath}`, 502, 'FLOW_API_REFERENCE_UPLOAD_FAILED');
-            }
-            await sleep(FLOW_API_DELAY_AFTER_ACCESS_TOKEN_MS);
-            const operation = await startFlowVideoFromImage(page, accessToken, {
-              projectId,
-              prompt: job.prompt,
-              startImageMediaId: mediaId,
-              timeoutMs,
-            });
-            emitDetailLog(`[flow-video] started ${job.name} → ${operation.name}`);
-            started.push({ job, operation });
-          } catch (err) {
-            if (isFlowDailyQuotaError(err)) throw err;
-            const reason = err instanceof Error ? err.message : String(err);
-            emitDetailLog(`[flow-video] could not start ${job.name}: ${reason}`);
-            result.failed.push({ name: job.name, reason });
-          }
-        }
-        if (started.length === 0) continue;
-
+      for (const [index, job] of jobs.entries()) {
+        const outputPath = path.join(outputDir, `${job.name}.mp4`);
+        emitDetailLog(`[flow-video-ui] clip ${index + 1}/${jobs.length}: ${job.name}`);
         setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
-        const polled = await pollFlowVideoOperations(
-          accessToken,
-          started.map(entry => entry.operation),
-          { timeoutMs, onLog: emitDetailLog },
-        );
-
-        for (const [index, entry] of polled.entries()) {
-          const { job } = started[index]!;
-          if (entry.state === 'failed') {
-            const error = toFlowVideoFailureError(entry.reason);
-            if (isFlowDailyQuotaError(error)) throw error;
-            emitDetailLog(`[flow-video] ${job.name} failed: ${entry.reason}`);
-            result.failed.push({ name: job.name, reason: entry.reason });
-            continue;
-          }
-          if (entry.state !== 'done') continue;
-
-          const outputPath = path.join(outputDir, `${job.name}.mp4`);
-          try {
-            await downloadFlowVideo(page, entry.videoUrl, outputPath);
-          } catch (err) {
-            const reason = err instanceof Error ? err.message : String(err);
-            result.failed.push({ name: job.name, reason });
-            continue;
-          }
-          emitDetailLog(`[flow-video] saved video → ${outputPath}`);
-          result.savedNames.push(job.name);
-          await options.onVideoSaved?.({ name: job.name, outputPath });
+        try {
+          await generateFlowClipViaUi(page, job, outputPath, {
+            uploadTag,
+            timeoutMs: options.timeoutMs ? Math.min(options.timeoutMs, FLOW_VIDEO_CLIP_TIMEOUT_MS) : undefined,
+          });
+        } catch (err) {
+          if (isFlowDailyQuotaError(err)) throw err;
+          const reason = err instanceof Error ? err.message : String(err);
+          emitDetailLog(`[flow-video-ui] ${job.name} failed: ${reason}`);
+          result.failed.push({ name: job.name, reason });
+          await page.keyboard.press('Escape').catch(() => undefined);
+          continue;
         }
-        setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
+        emitDetailLog(`[flow-video-ui] saved video → ${outputPath}`);
+        result.savedNames.push(job.name);
+        await options.onVideoSaved?.({ name: job.name, outputPath });
       }
 
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
@@ -348,9 +309,12 @@ export class FlowBrowserService {
       return result;
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'idle');
-      throw toFlowApiGenerationError(err);
-    } finally {
-      bearerCapture.dispose();
+      if (err instanceof AppError) throw err;
+      throw new AppError(
+        `Flow video generation failed: ${err instanceof Error ? err.message : String(err)}`,
+        502,
+        'FLOW_VIDEO_UI_FAILED',
+      );
     }
   }
 

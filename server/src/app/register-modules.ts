@@ -22,9 +22,11 @@ import { createYoutubeChannelsRoutes } from '../modules/youtube-channels/youtube
 import { createFacebookPagesRoutes } from '../modules/facebook-pages/facebook-pages.routes.js';
 import { createAssetsRoutes } from '../modules/assets/assets.routes.js';
 import { createCelebritiesRoutes } from '../modules/celebrities/celebrities.routes.js';
-import { createMascotsRoutes } from '../modules/mascots/mascots.routes.js';
 import { createSmallVideoGroupsRoutes } from '../modules/small-video-groups/small-video-groups.routes.js';
 import { createVideoProductionUiRoutes } from '../modules/video-production-ui/video-production-ui.routes.js';
+import { createVideoAgentRoutes } from '../modules/video-agent/video-agent.routes.js';
+import { createManualVideoRoutes } from '../modules/manual-video/manual-video.routes.js';
+import { createScriptRemakeRoutes } from '../modules/script-remake/script-remake.routes.js';
 
 function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/dashboard`, createDashboardRoutes());
@@ -47,9 +49,11 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/gpm`, createGpmManagerRoutes());
   app.route(`${prefix}/assets`, createAssetsRoutes());
   app.route(`${prefix}/celebrities`, createCelebritiesRoutes());
-  app.route(`${prefix}/mascots`, createMascotsRoutes());
   app.route(`${prefix}/small-video-groups`, createSmallVideoGroupsRoutes());
   app.route(`${prefix}/app-settings`, createAppSettingsRoutes());
+  app.route(`${prefix}/video-agent`, createVideoAgentRoutes());
+  app.route(`${prefix}/manual-video`, createManualVideoRoutes());
+  app.route(`${prefix}/script-remake`, createScriptRemakeRoutes());
 }
 
 export function registerModules(app: Hono) {

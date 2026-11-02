@@ -4,7 +4,6 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset, type PrepareKeyColor } from '../api/assets';
 import { PageHeader, PageShell } from '../components/layout';
 import { CelebritiesPanel } from '../components/celebrities/CelebritiesPanel';
-import { MascotsPanel } from '../components/mascots/MascotsPanel';
 import { SmallVideoPanel } from '../components/small-video-groups/SmallVideoPanel';
 import { Button, DataTable, Modal, PageTabs, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
@@ -19,7 +18,7 @@ const TAB_KINDS: { kind: AssetKind; accept: string }[] = [
   { kind: 'siLocalStock', accept: '.mp4,.mov,video/mp4,video/quicktime' },
 ];
 
-type AssetsPageTab = AssetKind | 'celebrities' | 'mascots';
+type AssetsPageTab = AssetKind | 'celebrities';
 
 function isVideoKind(kind: AssetKind): boolean {
   return kind !== 'fonts';
@@ -84,8 +83,7 @@ export function AssetsPage() {
   const [prepareKeyColor, setPrepareKeyColor] = useState<PrepareKeyColor>('green');
 
   const isCelebritiesTab = activeTabId === 'celebrities';
-  const isMascotsTab = activeTabId === 'mascots';
-  const isPanelTab = isCelebritiesTab || isMascotsTab;
+  const isPanelTab = isCelebritiesTab;
   const isSmallVideoTab = activeTabId === 'smallVideo';
   const activeKind: AssetKind = isPanelTab ? 'audioBar' : activeTabId;
   const showPrepareColor = !isPanelTab && !isSmallVideoTab && (activeKind === 'audioBar' || activeKind === 'subscribe');
@@ -263,7 +261,6 @@ export function AssetsPage() {
         items={[
           ...TAB_KINDS.map((tab) => ({ id: tab.kind, label: tabLabel(tab.kind) })),
           { id: 'celebrities', label: t('assets.tab.celebrities') },
-          { id: 'mascots', label: t('assets.tab.mascots') },
         ]}
       />
       </div>
@@ -271,10 +268,6 @@ export function AssetsPage() {
       {isCelebritiesTab ? (
         <div className='mt-4 min-h-0 flex-1 overflow-auto'>
           <CelebritiesPanel />
-        </div>
-      ) : isMascotsTab ? (
-        <div className='mt-4 min-h-0 flex-1 overflow-auto'>
-          <MascotsPanel />
         </div>
       ) : isSmallVideoTab ? (
         <div className='mt-4 min-h-0 flex-1 overflow-auto'>

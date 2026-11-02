@@ -160,8 +160,6 @@ export interface YoutubeChannel {
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   /** Required when reupAudioBackgroundImage is `celebrity` */
   celebrityId?: string;
-  /** Mascot from the Assets library, used as the channel's character reference. */
-  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -457,13 +455,12 @@ export interface CreateYoutubeChannelPayload {
   thumbnailBackgroundFile?: string;
   thumbnailBackgroundTempSessionId?: string;
   avatarTempSessionId?: string;
+  mascotTempSessionId?: string;
   captionStyleKey?: CaptionStyleKey;
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;
   reupAudioBackgroundImage?: ReupAudioBackgroundImage;
   celebrityId?: string;
-  /** Mascot from the Assets library, used as the channel's character reference. */
-  mascotId?: string;
   aiSceneDensityMaxSec?: AiSceneDensityMaxSec;
   useReferenceImage?: boolean;
   showAudioBar?: boolean;
@@ -482,7 +479,7 @@ export interface CreateYoutubeChannelPayload {
 
 export type UpdateYoutubeChannelPayload = Omit<
   CreateYoutubeChannelPayload,
-  'channelUrl' | 'thumbnailBackgroundTempSessionId' | 'avatarTempSessionId'
+  'channelUrl' | 'thumbnailBackgroundTempSessionId' | 'avatarTempSessionId' | 'mascotTempSessionId'
 > & {
   /** Allowed when the channel currently uses the default linked email. */
   channelUrl?: string;
@@ -506,8 +503,6 @@ export interface AddYoutubeChannelFormValues {
   reupAudioBackgroundImage: string;
   aiSceneDensityMaxSec: AiSceneDensityMaxSec;
   useReferenceImage: boolean;
-  useMascot: boolean;
-  mascotId: string;
   audioBarFile: string;
   showChannelAvatar: boolean;
   showSubscribe: boolean;

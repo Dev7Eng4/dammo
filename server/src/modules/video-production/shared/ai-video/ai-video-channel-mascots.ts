@@ -16,6 +16,12 @@ export const CHANNEL_MASCOTS_DIRNAME = 'mascots';
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'] as const;
 
+/** Channel mascot image uploaded with the channel: `<channel dir>/mascot.<ext>` (next to `avatar.*`). */
+export const CHANNEL_MASCOT_BASENAME = 'mascot';
+
+/** Character id of the channel mascot in scene references and the video Characters tab. */
+export const CHANNEL_MASCOT_CHARACTER_ID = 'mascot';
+
 export function resolveChannelMascotsDir(channelId: string): string {
   return path.join(youtubeChannelDir(channelId), CHANNEL_MASCOTS_DIRNAME);
 }
@@ -54,6 +60,13 @@ async function removeImagesByBase(dir: string, base: string): Promise<void> {
   for (const ext of IMAGE_EXTENSIONS) {
     await fs.rm(path.join(dir, `${base}${ext}`), { force: true });
   }
+}
+
+/** Absolute path of the channel mascot image, or undefined when the channel has none. */
+export async function resolveChannelMascotImagePath(channelId: string | undefined): Promise<string | undefined> {
+  const id = channelId?.trim();
+  if (!id) return undefined;
+  return findImageByBase(youtubeChannelDir(id), CHANNEL_MASCOT_BASENAME);
 }
 
 export async function isChannelMascotStoreEnabled(channelId: string | undefined): Promise<boolean> {

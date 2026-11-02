@@ -11,9 +11,16 @@ import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow/flo
 import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { resolveSlideClipCachePath } from '../slideshow/slideshow-clip-renderer.js';
+import { runFlowImageGenerations } from '../thumbnail/hero-image.js';
 import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';
+import { CHANNEL_MASCOT_CHARACTER_ID, resolveChannelMascotImagePath } from './ai-video-channel-mascots.js';
 import { AiClipPrebakePool } from './ai-video-clip-prebake.js';
-import { AI_FLOW_TOOL_BATCH_SIZE, AI_SLIDES_DIRNAME } from './ai-video.constants.js';
+import {
+  AI_FLOW_TOOL_BATCH_SIZE,
+  AI_MASCOT_IMAGE_PROMPT_PREFIX,
+  AI_SCENE_MAX_REFERENCE_IMAGES,
+  AI_SLIDES_DIRNAME,
+} from './ai-video.constants.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import { buildProvisionalAiSlideSpec, resolveAiSlideRenderOptions } from './ai-video-slide-spec.js';
 import { emitDetailLog } from '../video-log.js';
@@ -38,6 +45,8 @@ interface SceneVisualJob {
   /** New image is written here first. The scene jpg is replaced only after this file exists. */
   writePath?: string;
   referenceIds?: string[];
+  /** Local reference images attached to this scene (resolved before generation). */
+  referenceImagePaths?: string[];
   /** Set for `title` scenes: rendered locally as a text card instead of an AI image. */
   title?: string;
 }
@@ -221,6 +230,33 @@ async function renderTitleCardJobs(
   return { generatedCount, failedCount };
 }
 
+/**
+ * Resolve each job's reference images: the character ids chosen by the LLM, plus the channel mascot
+ * (when set) as the first reference of every scene, with a prompt prefix that points at it.
+ */
+async function attachSceneReferenceImages(
+  workDir: string,
+  jobs: SceneVisualJob[],
+  mascotImagePath: string | undefined,
+  log: (msg: string) => void,
+): Promise<void> {
+  for (const job of jobs) {
+    // The mascot is attached from the channel folder, not looked up in image-references.
+    const referenceIds = (job.referenceIds ?? []).filter(id => id !== CHANNEL_MASCOT_CHARACTER_ID);
+    const characterPaths = await resolveCharacterReferenceImagePaths(workDir, referenceIds, log);
+    if (referenceIds.length > 0 && characterPaths.length === 0) {
+      log(`[ai-video] ${job.name}: no reference images resolved — continuing with prompt only`);
+    }
+
+    if (mascotImagePath) {
+      job.referenceImagePaths = [mascotImagePath, ...characterPaths].slice(0, AI_SCENE_MAX_REFERENCE_IMAGES);
+      job.prompt = `${AI_MASCOT_IMAGE_PROMPT_PREFIX}${job.prompt}`;
+    } else if (characterPaths.length > 0) {
+      job.referenceImagePaths = characterPaths;
+    }
+  }
+}
+
 async function generateFlowSceneImages(
   pending: SceneVisualJob[],
   totalScenes: number,
@@ -304,8 +340,58 @@ async function generateFlowSceneImages(
   return { generatedCount, failedCount };
 }
 
+/**
+ * Flow scenes with reference images. The Flow tool batch cannot take local files, so each scene is
+ * generated on its own and its references are uploaded through the Flow UI.
+ */
+async function generateFlowReferencedSceneImages(
+  pending: SceneVisualJob[],
+  totalScenes: number,
+  log: (msg: string) => void,
+  onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
+  onImageSaved?: (jobName: string) => void,
+): Promise<{ generatedCount: number; failedCount: number }> {
+  let generatedCount = 0;
+  let failedCount = 0;
+
+  for (const job of pending) {
+    onProgress?.({ sceneIndex: job.index + 1, totalScenes, sceneName: job.name, status: 'generating' });
+    const outputDir = jobWriteDir(job);
+    await fs.mkdir(outputDir, { recursive: true });
+    try {
+      const [result] = await runFlowImageGenerations(outputDir, [
+        {
+          prompt: job.prompt,
+          fileName: `${job.name}.jpg`,
+          referenceImagePaths: job.referenceImagePaths,
+          logPrefix: `[ai-video] ${job.name}`,
+        },
+      ]);
+      if (result) {
+        await resizeImageFileInPlaceToFit(result.imagePath, META_IMAGE_WIDTH, META_IMAGE_HEIGHT).catch(err => {
+          const reason = err instanceof Error ? err.message : String(err);
+          log(`[ai-video] ${job.name}: resize to ${META_IMAGE_WIDTH}x${META_IMAGE_HEIGHT} failed, keeping original — ${reason}`);
+        });
+      }
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      log(`[ai-video] ${job.name}: Flow image with references failed — ${reason}`);
+    }
+
+    // Forced jobs are counted by commitForcedSceneImages.
+    if (job.writePath) continue;
+    if (await fileExists(job.outputPath)) {
+      generatedCount += 1;
+      onImageSaved?.(job.name);
+    } else {
+      failedCount += 1;
+    }
+  }
+
+  return { generatedCount, failedCount };
+}
+
 async function generateMetaSceneImages(
-  workDir: string,
   slidesDir: string,
   pending: SceneVisualJob[],
   totalScenes: number,
@@ -317,15 +403,7 @@ async function generateMetaSceneImages(
   const jobs: MetaMediaBatchJob[] = [];
 
   for (const job of pending) {
-    const referenceImagePaths = await resolveCharacterReferenceImagePaths(
-      workDir,
-      job.referenceIds ?? [],
-      log,
-    );
-    if ((job.referenceIds?.length ?? 0) > 0 && referenceImagePaths.length === 0) {
-      log(`[ai-video] ${job.name}: no reference images resolved — continuing with prompt only`);
-    }
-
+    const referenceImagePaths = job.referenceImagePaths ?? [];
     const writePath = job.writePath;
     if (writePath) await fs.mkdir(path.dirname(writePath), { recursive: true });
     jobs.push({
@@ -518,6 +596,12 @@ export async function generateAiSceneSlideImages(
 
   // Only title cards pending: no image provider (and no Chrome profile) is needed.
   if (aiPending.length > 0) {
+    const mascotImagePath = await resolveChannelMascotImagePath(input.channelId);
+    if (mascotImagePath) {
+      log(`[ai-video] Channel mascot attached as the first reference of every scene → ${mascotImagePath}`);
+    }
+    await attachSceneReferenceImages(input.workDir, aiPending, mascotImagePath, log);
+
     log(
       `[ai-video] Generating ${aiPending.length} scene image(s) via ${imageProvider}` +
         (imageProvider === 'meta' ? ` mode=${metaConcurrency}` : '') +
@@ -530,16 +614,35 @@ export async function generateAiSceneSlideImages(
       log(
         `[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`,
       );
+      const referencedJobs = aiPending.filter(job => (job.referenceImagePaths?.length ?? 0) > 0);
+      const plainJobs = aiPending.filter(job => (job.referenceImagePaths?.length ?? 0) === 0);
       try {
-        const flowResult = await generateFlowSceneImages(
-          aiPending,
-          input.scenes.length,
-          log,
-          input.onProgress,
-          enqueuePrebake,
-        );
-        generatedCount += flowResult.generatedCount;
-        failedCount += flowResult.failedCount;
+        if (plainJobs.length > 0) {
+          const flowResult = await generateFlowSceneImages(
+            plainJobs,
+            input.scenes.length,
+            log,
+            input.onProgress,
+            enqueuePrebake,
+          );
+          generatedCount += flowResult.generatedCount;
+          failedCount += flowResult.failedCount;
+        }
+        if (referencedJobs.length > 0) {
+          log(
+            `[ai-video] ${referencedJobs.length} scene(s) with reference images → Flow one image at a time ` +
+              '(slower than the batch tool; Meta takes references in batch)',
+          );
+          const referencedResult = await generateFlowReferencedSceneImages(
+            referencedJobs,
+            input.scenes.length,
+            log,
+            input.onProgress,
+            enqueuePrebake,
+          );
+          generatedCount += referencedResult.generatedCount;
+          failedCount += referencedResult.failedCount;
+        }
       } finally {
         const closedIds = await closeChromeProfiles(mains.map(profile => profile.id));
         for (const profileId of closedIds) {
@@ -549,7 +652,6 @@ export async function generateAiSceneSlideImages(
       }
     } else {
       const metaResult = await generateMetaSceneImages(
-        input.workDir,
         slidesDir,
         aiPending,
         input.scenes.length,

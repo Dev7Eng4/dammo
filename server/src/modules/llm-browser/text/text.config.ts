@@ -12,6 +12,8 @@ export const LLM_PROVIDER_CONFIGS: Record<LlmTextProvider, LlmProviderConfig> = 
       generatingIndicator: '[data-testid="stop-button"], button[aria-label="Stop streaming"]',
       conversationScrollContainer: 'main, [class*="overflow-y-auto"]',
       copyResponseButton: 'button[data-testid="copy-turn-action-button"]',
+      fileInput: 'input[type="file"]',
+      attachmentPreview: 'form [data-testid*="attachment"], form img[alt]:not([alt=""])',
     },
     setup: {
       modeButton: 'button[data-testid="model-switcher-dropdown-button"]',
@@ -30,6 +32,8 @@ export const LLM_PROVIDER_CONFIGS: Record<LlmTextProvider, LlmProviderConfig> = 
       generatingIndicator: 'button[aria-label="Stop"], .stop-button',
       conversationScrollContainer: 'main, .conversation-container, [class*="overflow-y-auto"]',
       copyResponseButton: 'copy-button button',
+      // Gemini adds its file input only after opening the upload menu, so files are dropped onto the prompt.
+      attachmentPreview: 'uploader-file-preview, .file-preview-container img',
     },
     setup: {
       modeButton: 'button[aria-label*="model"], button.mode-switcher',

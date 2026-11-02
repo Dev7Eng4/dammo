@@ -1,0 +1,250 @@
+{
+  "page": {
+    "title": "Step-by-step video",
+    "subtitle": "Same pipeline as the Agent, but you press each step: sources → script → approval → voice → scenes & images → render. Every file lives in the project folder.",
+    "newProject": "New project"
+  },
+  "tabs": {
+    "projects": "Projects",
+    "library": "All videos"
+  },
+  "list": {
+    "empty": "No projects yet. Click \"New project\" to start.",
+    "untitled": "Untitled"
+  },
+  "state": {
+    "done": "Done",
+    "running": "Running",
+    "ready": "Ready",
+    "locked": "Locked"
+  },
+  "lock": {
+    "source": "Load the source transcripts first.",
+    "script": "Write or import a script first.",
+    "approval": "Approve the script first (button at the bottom of the Script tab).",
+    "voice": "Voice the script first.",
+    "scenes": "Create scenes & images first.",
+    "motion": "Make scenes & images first."
+  },
+  "form": {
+    "title": "New video project",
+    "close": "Close",
+    "sources": "Source videos",
+    "sourcesHint": "One YouTube link per line (1–5). Two or three videos on the same topic work best.",
+    "channel": "Target channel",
+    "channelPlaceholder": "Pick a channel",
+    "noVisualStyle": "no visual style",
+    "voice": "VOICEVOX voice",
+    "voiceUnavailable": "VOICEVOX is not running — default voice #{{id}} will be used",
+    "speed": "Speech speed",
+    "notes": "Notes",
+    "notesPlaceholder": "e.g. aimed at people over 60 living alone, avoid medical topics…",
+    "submit": "Create project",
+    "submitting": "Creating…",
+    "created": "Project created",
+    "invalidSources": "Enter at least one YouTube link"
+  },
+  "detail": {
+    "select": "Pick a project on the left, or create a new one.",
+    "storedAt": "Stored at",
+    "storedAtHint": "project folder {{id}} (the video appears here once rendered)",
+    "openFolder": "Open folder",
+    "copy": "Copy path",
+    "copied": "Copied",
+    "openVideo": "Open video in a new tab",
+    "cancel": "Cancel running step",
+    "delete": "Delete project",
+    "deleteConfirm": "Delete this project and every file it produced (transcripts, voice, images, video)?",
+    "timeline": "Log"
+  },
+  "step": {
+    "source": {
+      "title": "Sources",
+      "desc": "Download the Japanese transcripts of the source videos.",
+      "load": "Load transcripts",
+      "reload": "Reload",
+      "chars": "{{count}} chars"
+    },
+    "script": {
+      "title": "Script",
+      "desc": "Remake it with ChatGPT/Gemini from the source transcripts, or write/paste your own. Review it, then approve at the bottom to unlock Voice and Scenes."
+    },
+    "approval": {
+      "title": "Approve script",
+      "desc": "Decide whether the script is good enough to voice. Review the checklist, the measurements and the full text below, then approve.",
+      "approve": "Approve script",
+      "done": "Approved",
+      "checklist": "Checks before approving",
+      "checks": {
+        "similarity": "Wording is not copied from the sources",
+        "similarityDetail": "(highest overlap {{value}}% on 8 consecutive characters, limit 5%)",
+        "notMeasured": "(not measured: source transcripts are not loaded)",
+        "channel": "Does not repeat the channel's earlier videos",
+        "channelDetail": "(compared with {{count}} earlier videos: wording, title formula)",
+        "noEarlier": "(no earlier videos on this channel to compare with)",
+        "length": "Length is inside the allowed window",
+        "lengthDetail": "(≈ {{minutes}} min, allowed {{min}}–{{max}} min)"
+      },
+      "read": "Read the script",
+      "readHint": "Approving means you read and accept this version. If it is not right, go back to the Script tab and edit it.",
+      "chapterChars": "{{count}} chars",
+      "effect": "Approving unlocks the Voice and Scenes tabs. Saving the script again afterwards cancels the approval (and the voice and images made) so it must be approved again."
+    },
+    "voice": {
+      "title": "Voice",
+      "desc": "VOICEVOX reads each sentence; subtitles come from the real audio timing. If scene images already exist, their timing is re-matched to the new voice.",
+      "run": "Voice it",
+      "again": "Voice again",
+      "unavailable": "Cannot reach VOICEVOX ({{url}}). The page re-checks every 10 seconds.",
+      "result": "Voiced: {{duration}} ({{actual}} min), planned {{planned}} min, allowed {{min}}–{{max}} min.",
+      "outside": "outside the allowed window — shorten or extend the script and voice again",
+      "recheck": "Check again"
+    },
+    "scenes": {
+      "title": "Scenes & images",
+      "desc": "Split the script into scenes and draw images in the channel's visual style. No need to wait for the voice: without it, scenes are cut on estimated timing and re-timed automatically once the voice exists. Can take a long time.",
+      "run": "Create scenes & images",
+      "again": "Create again",
+      "result": "{{scenes}} scenes · {{images}} images",
+      "timing": {
+        "provisional": "Scene timing is estimated from the script for now. Once the voice is made, scenes are re-timed to it automatically.",
+        "voice": "Scene timing matches the real voice."
+      },
+      "redoConfirm": "Redoing everything re-cuts the scenes and redraws all {{count}} images (current images are deleted). To fix a few scenes, use \"Redraw\" on each scene below. Continue?"
+    },
+    "video": {
+      "title": "Render video",
+      "desc": "Combine images, voice and subtitles into a 1080p video. Needs both the voice and the scene images.",
+      "run": "Render video",
+      "again": "Render again"
+    },
+    "motion": {
+      "title": "Image → video",
+      "desc": "Optional: animate scene images into ~8 s clips with Google Flow (Veo), run in Chrome on the main profiles' Flow quota. Scenes with a clip play it in the video; the rest stay images with Ken Burns. Skip this step to build the video from images as before."
+    }
+  },
+  "status": {
+    "draft": "Draft"
+  },
+  "script": {
+    "min": "min",
+    "remake": {
+      "title": "Remake with ChatGPT / Gemini",
+      "hint": "Opens a sub Chrome profile and runs the \"Remake script\" prompt over the source transcripts. The LLM picks a length of 12–30 minutes. Edit the prompt on the Prompts page.",
+      "promptSet": "Prompt set",
+      "noPromptSet": "No remake prompt set yet",
+      "provider": "LLM",
+      "notesPlaceholder": "Extra notes for this remake (optional)",
+      "start": "Start remake",
+      "running": "Remaking {{progress}}",
+      "needSources": "Load the source transcripts first.",
+      "use": "Use result as script",
+      "imported": "Remake result taken as the script",
+      "logs": "Remake log",
+      "status": {
+        "running": "Running",
+        "done": "Remake done",
+        "failed": "Remake failed"
+      }
+    },
+    "editor": {
+      "title": "Write / paste script",
+      "hint": "A \"# Title\" line, each chapter starting with \"## 1. Chapter name\", one sentence per line. You can paste a script written elsewhere (for example following the manual test guide).",
+      "save": "Save script",
+      "saved": "Script saved",
+      "saveNote": "Saving re-measures similarity and cancels any approval, voice and images already made."
+    },
+    "summary": {
+      "title": "Measurements",
+      "size": "{{chars}} chars ≈ {{minutes}} min · {{chapters}} chapters",
+      "planned": "Planned length: {{minutes}} min",
+      "pass": "pass",
+      "over": "over limit",
+      "needsWork": "needs work",
+      "noSimilarity": "No source transcripts yet, so similarity to the sources was not measured.",
+      "freshness": "Against {{count}} earlier videos of this channel",
+      "warn": "Some measurements fail. You can still approve, but fix them to avoid being treated as reused or templated content."
+    }
+  },
+  "library": {
+    "projectsRoot": "Projects (agent & step by step)",
+    "downloadsRoot": "Loose transcript downloads",
+    "rootHint": "Each project sits in its own folder named by the project id. Loose transcripts are in a folder per YouTube video id.",
+    "empty": "Nothing here yet.",
+    "chars": "{{chars}} chars ≈ {{minutes}} min",
+    "files": "Files",
+    "filter": {
+      "all": "All",
+      "finished": "Finished",
+      "inProgress": "In progress",
+      "download": "Transcript only"
+    },
+    "kind": {
+      "agent": "Agent",
+      "manual": "Step by step",
+      "download": "Loose download"
+    },
+    "file": {
+      "transcript": "Transcript",
+      "script": "Script",
+      "remake": "Remake",
+      "audio": "Voice",
+      "subtitle": "Subtitles",
+      "video": "Video"
+    },
+    "play": "Play",
+    "openProject": "Open project"
+  },
+  "voicePreview": {
+    "play": "Preview",
+    "stop": "Stop",
+    "loading": "Generating…",
+    "failed": "Preview failed — check that VOICEVOX is running"
+  },
+  "scenes": {
+    "title": "Scenes ({{count}})",
+    "hint": "Click an image to enlarge. \"Redraw\" uses the current prompt; \"Edit prompt\" to rewrite it first.",
+    "open": "Enlarge scene {{n}}",
+    "alt": "Scene {{n}} image",
+    "cast": "Cast: {{names}}",
+    "titleCard": "Chapter title card: {{title}}",
+    "prompt": "Prompt",
+    "redraw": "Redraw",
+    "edit": "Edit prompt",
+    "redrawWithPrompt": "Redraw with this prompt",
+    "cancelEdit": "Cancel",
+    "redrawing": "Redrawing…"
+  },
+  "narration": {
+    "title": "Narration: {{chapters}} chapters · {{sentences}} sentences · {{duration}}",
+    "hint": "Click a sentence to hear just that sentence, or a chapter button to hear the whole chapter.",
+    "misaligned": "The voice no longer matches the current script (edited after narration) — timings are approximate; regenerate the voice.",
+    "playChapter": "Play chapter {{n}}"
+  },
+  "channel": {
+    "change": "Change channel",
+    "save": "Save",
+    "changed": "Channel changed",
+    "noStyle": "no visual style — scenes cannot be made",
+    "scenesConfirm": "Existing scene images were drawn in the old channel's style. They are kept; regenerate scenes for the new style. Any rendered video must be rebuilt. Continue?"
+  },
+  "motion": {
+    "mode": "Which scenes become video",
+    "modes": {
+      "intro": "Intro only (first {{sec}}s)",
+      "full": "Every scene",
+      "scenes": "Pick scenes"
+    },
+    "channelImages": "This channel is set to image-based video — pick intro or every scene to add motion.",
+    "channelDefault": "Default from the channel's video type: {{mode}}.",
+    "run": "Make video for {{count}} scenes",
+    "working": "Making clips…",
+    "summary": "{{targets}} scenes selected, {{done}} already have a clip · project: {{clips}}/{{total}} scenes are video",
+    "frozen": "{{count}} scenes are longer than {{clip}}s: a clip lasts {{clip}}s, so the rest holds the last frame (~{{sec}}s in total). For all-video, use high scene density (short scenes) when making scenes.",
+    "badgeClip": "Clip",
+    "badgeImage": "Image",
+    "remove": "Remove clip",
+    "one": "Make clip",
+    "titleCard": "Title card — unchanged"
+  }
+}

@@ -16,6 +16,10 @@ export interface LlmDomSelectors {
   generatingIndicator?: string;
   conversationScrollContainer?: string;
   copyResponseButton?: string;
+  /** File input that accepts image attachments; files are dropped onto the prompt when it is missing. */
+  fileInput?: string;
+  /** Preview chip of an attached file, used to wait until every attachment is shown. */
+  attachmentPreview?: string;
 }
 export interface LlmProviderConfig {
   id: LlmTextProvider;
@@ -53,7 +57,7 @@ export interface MetaReceiveResponseOptions extends LlmTextReceiveResponseOption
 export type LlmReceiveResponseOptions = FlowReceiveResponseOptions & MetaReceiveResponseOptions;
 export interface LlmSendPromptOptions {
   submitWith?: 'enter' | 'button';
-  /** Local reference images (Flow browser/API + Meta), attached in order. */
+  /** Local images attached in order: references for Flow/Meta, chat attachments for GPT/Gemini. */
   referenceImagePaths?: string[];
 }
 export interface LlmTextChatOptions extends LlmTextReceiveResponseOptions, LlmSendPromptOptions {}

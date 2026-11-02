@@ -37,6 +37,8 @@ function categoryBadgeClass(category: PromptCategory): string {
       return 'bg-primary-400/15 text-primary-300 border-primary-400/30';
     case 'image':
       return 'bg-secondary-400/15 text-secondary-300 border-secondary-400/30';
+    case 'remake':
+      return 'bg-success/15 text-success border-success/30';
   }
 }
 

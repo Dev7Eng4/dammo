@@ -344,6 +344,44 @@ export function uploadYoutubeChannelAvatar(channelId: string, file: File) {
   );
 }
 
+export function fetchYoutubeChannelMascotImages(channelId: string, options?: FetchOptions) {
+  return fetchJson<{ items: ChannelAvatarItem[] }>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-images`,
+    withSignal(undefined, options),
+  );
+}
+
+export function uploadYoutubeChannelMascotImage(channelId: string, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return fetchJson<{ item: ChannelAvatarItem }>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-image`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+}
+
+export function uploadYoutubeChannelMascotImageTemp(sessionId: string, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return fetchJson<{ item: ChannelAvatarItem }>(
+    `${API_V1}/youtube-channels/mascot-images/temp/${encodeURIComponent(sessionId)}`,
+    {
+      method: 'POST',
+      body,
+    },
+  );
+}
+
+export function deleteYoutubeChannelMascotImage(channelId: string) {
+  return fetchJson<{ ok: true }>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-image`,
+    { method: 'DELETE' },
+  );
+}
+
 export function uploadYoutubeChannelAvatarTemp(sessionId: string, file: File) {
   const body = new FormData();
   body.append('file', file);

@@ -3,9 +3,11 @@ import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
+  BrainCircuit,
   Clapperboard,
   Database,
   Flag,
+  FlaskConical,
   Factory,
   FileCode2,
   FileSpreadsheet,
@@ -20,6 +22,7 @@ import {
   Palette,
   PanelLeft,
   PanelLeftClose,
+  PenLine,
   Radar,
   Rocket,
   Settings,
@@ -61,6 +64,9 @@ const iconMap: Record<NavIcon, LucideIcon> = {
   settings: Settings,
   roadmap: TrendingUp,
   facebook: Flag,
+  test: FlaskConical,
+  agent: BrainCircuit,
+  manual: PenLine,
 }
 
 function readStoredCollapsed(): boolean {

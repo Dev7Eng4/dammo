@@ -45,8 +45,11 @@ export interface FlowImageToVideoJob {
 export interface FlowGenerateVideosOptions {
   projectId?: string;
   outputDir: string;
-  /** Max wait for the whole batch to render (ms). */
+  /** Max wait for one clip to render (ms); capped at FLOW_VIDEO_CLIP_TIMEOUT_MS. */
   timeoutMs?: number;
+  /** Model name exactly as in Flow's model menu (default "Veo 3.1 - Lite"). */
+  model?: string;
+  aspectRatio?: '16:9' | '9:16';
   onVideoSaved?: (saved: { name: string; outputPath: string }) => void | Promise<void>;
 }
 

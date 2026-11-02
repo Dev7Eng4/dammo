@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
+import { ImageOff } from 'lucide-react';
 import { fetchAppSettings } from '../../api/appSettings';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchNiches } from '../../api/niches';
 import { fetchThumbnailStyles } from '../../api/prompts';
 import { fetchSourceChannels } from '../../api/sourceChannels';
 import { fetchCelebrities } from '../../api/celebrities';
-import { fetchMascots } from '../../api/mascots';
 import { fetchSmallVideoGroups } from '../../api/small-video-groups';
 import {
   createYoutubeChannel,
@@ -16,6 +16,10 @@ import {
   updateYoutubeChannel,
   uploadYoutubeChannelAvatar,
   uploadYoutubeChannelAvatarTemp,
+  deleteYoutubeChannelMascotImage,
+  fetchYoutubeChannelMascotImages,
+  uploadYoutubeChannelMascotImage,
+  uploadYoutubeChannelMascotImageTemp,
 } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
@@ -35,7 +39,6 @@ import {
 } from '../../constants/youtubeChannelForm';
 import { useAbortableEffect } from '../../hooks';
 import type { CelebrityListItem } from '../../types/celebrity';
-import type { MascotListItem } from '../../types/mascot';
 import type { SmallVideoGroupListItem } from '../../types/smallVideoGroup';
 import type { MailAccount } from '../../types/mailAccount';
 import type { Niche } from '../../types/niche';
@@ -243,8 +246,6 @@ const defaultValues: AddYoutubeChannelFormValues = {
   reupAudioBackgroundImage: '',
   aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC },
   useReferenceImage: false,
-  useMascot: false,
-  mascotId: '',
   audioBarFile: '',
   showChannelAvatar: false,
   showSubscribe: false,
@@ -294,8 +295,6 @@ function getChannelFormValues(
       low: channel.aiSceneDensityMaxSec?.low ?? densityDefaults.low,
     },
     useReferenceImage: channel.useReferenceImage === true,
-    useMascot: Boolean(channel.mascotId),
-    mascotId: channel.mascotId ?? '',
     audioBarFile: channel.audioBarFile ?? '',
     showChannelAvatar: channel.showChannelAvatar === true,
     showSubscribe: channel.showSubscribe === true,
@@ -352,6 +351,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const { t: tCommon } = useTranslation('common');
   const { toast } = useToast();
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const mascotInputRef = useRef<HTMLInputElement>(null);
   const channelTypeOptions = useMemo(() => buildChannelTypeOptions(t), [t]);
   const languageOptions = useMemo(() => buildLanguageOptions(t), [t]);
   const audioVideoTypeOptions = useMemo(() => buildAudioVideoTypeOptions(t), [t]);
@@ -374,8 +374,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [celebritiesWithMedia, setCelebritiesWithMedia] = useState<CelebrityListItem[]>([]);
   const [celebritiesLoading, setCelebritiesLoading] = useState(false);
   const [smallVideoGroups, setSmallVideoGroups] = useState<SmallVideoGroupListItem[]>([]);
-  const [mascots, setMascots] = useState<MascotListItem[]>([]);
-  const [mascotsLoading, setMascotsLoading] = useState(false);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
   const [tempBackgroundSessionId, setTempBackgroundSessionId] = useState(() => crypto.randomUUID());
   const [audioBarPickerOpen, setAudioBarPickerOpen] = useState(false);
@@ -385,6 +383,10 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [avatarTempSessionId, setAvatarTempSessionId] = useState(() => crypto.randomUUID());
   const [hasTempAvatar, setHasTempAvatar] = useState(false);
   const [hasChannelAvatar, setHasChannelAvatar] = useState(false);
+  const [mascotUploading, setMascotUploading] = useState(false);
+  const [mascotTempSessionId, setMascotTempSessionId] = useState(() => crypto.randomUUID());
+  /** Preview of the channel mascot (saved image when editing, temp upload when creating); null when none. */
+  const [mascotImageUrl, setMascotImageUrl] = useState<string | null>(null);
   const [sceneDensityDefaults, setSceneDensityDefaults] = useState<AiSceneDensityMaxSec>({
     ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
   });
@@ -416,7 +418,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     [reupAudioBackgroundImage],
   );
   const useReferenceImage = watch('useReferenceImage');
-  const useMascot = watch('useMascot');
   const canEditSceneDensity =
     isReupAudio && (isAiSceneVideoType(reupAudioVideoType) || parsedBackgroundImage.mode === 'multi_image');
   const showDisclaimer = watch('showDisclaimer');
@@ -444,10 +445,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
     ],
     [sources, niches],
-  );
-  const mascotOptions = useMemo(
-    () => mascots.map(item => ({ value: item.id, label: item.name })),
-    [mascots],
   );
   const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
 
@@ -534,6 +531,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setHasChannelAvatar(avatarExists);
           setHasTempAvatar(false);
 
+          try {
+            const mascotImages = await fetchYoutubeChannelMascotImages(channel.id, { signal });
+            setMascotImageUrl(mascotImages.items[0]?.url ?? null);
+          } catch {
+            setMascotImageUrl(null);
+          }
+
           const formValues = getChannelFormValues(channel, mailAccountId, densityDefaults);
           if (!avatarExists) {
             formValues.showChannelAvatar = false;
@@ -547,6 +551,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setMailOptions(availableMailOptions);
           setHasChannelAvatar(false);
           setHasTempAvatar(false);
+          setMascotImageUrl(null);
           reset({
             ...defaultValues,
             mailAccountId: availableMailOptions[0]?.value ?? '',
@@ -582,8 +587,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setValue('reupAudioVisualStyleId', '');
     setValue('reupAudioBackgroundImage', '');
     setValue('useReferenceImage', false);
-    setValue('useMascot', false);
-    setValue('mascotId', '');
     setValue('audioBarFile', '');
     setValue('smallVideoFile', '');
     setValue('subscribeFile', '');
@@ -641,34 +644,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     },
     [open, formReady, usesCelebrityPicker],
     { enabled: open && formReady && usesCelebrityPicker },
-  );
-
-  useAbortableEffect(
-    async signal => {
-      if (!open || !formReady || !isReupAudio || !useMascot) {
-        setMascots([]);
-        return;
-      }
-
-      setMascotsLoading(true);
-      try {
-        const { items } = await fetchMascots({ signal });
-        const withImage = items.filter(item => item.hasImage);
-        setMascots(withImage);
-
-        const current = getValues('mascotId');
-        if (current && !withImage.some(item => item.id === current)) {
-          setValue('mascotId', '');
-        }
-      } catch {
-        if (signal.aborted) return;
-        setMascots([]);
-      } finally {
-        if (!signal.aborted) setMascotsLoading(false);
-      }
-    },
-    [open, formReady, isReupAudio, useMascot],
-    { enabled: open && formReady && isReupAudio && useMascot },
   );
 
   useAbortableEffect(
@@ -768,6 +743,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setAvatarTempSessionId(crypto.randomUUID());
     setHasTempAvatar(false);
     setHasChannelAvatar(false);
+    setMascotTempSessionId(crypto.randomUUID());
+    setMascotImageUrl(null);
     onClose();
   }
 
@@ -789,6 +766,44 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
+
+  async function handleMascotUpload(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    setMascotUploading(true);
+    try {
+      const { item } =
+        isEdit && channel
+          ? await uploadYoutubeChannelMascotImage(channel.id, file)
+          : await uploadYoutubeChannelMascotImageTemp(mascotTempSessionId, file);
+      // Same file name on every upload, so bust the browser cache.
+      setMascotImageUrl(`${item.url}?v=${Date.now()}`);
+      toast.success(t('form.mascotUploadSuccess'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('form.mascotUploadError'));
+    } finally {
+      setMascotUploading(false);
+      if (mascotInputRef.current) mascotInputRef.current.value = '';
+    }
+  }
+
+  async function handleMascotRemove() {
+    if (!isEdit || !channel) {
+      // A new channel simply does not pick up the temp upload.
+      setMascotTempSessionId(crypto.randomUUID());
+      setMascotImageUrl(null);
+      return;
+    }
+    setMascotUploading(true);
+    try {
+      await deleteYoutubeChannelMascotImage(channel.id);
+      setMascotImageUrl(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('form.mascotRemoveError'));
+    } finally {
+      setMascotUploading(false);
     }
   }
 
@@ -814,9 +829,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
         ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
         ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
-        ...(values.type === 'reup_audio' && values.useMascot && values.mascotId
-          ? { mascotId: values.mascotId }
-          : {}),
         ...(values.type === 'reup_audio'
           ? buildBackgroundImagePayload(values.reupAudioVideoType, values.reupAudioBackgroundImage)
           : {}),
@@ -867,6 +879,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           channelUrl: values.channelUrl.trim(),
           thumbnailBackgroundTempSessionId: tempBackgroundSessionId,
           ...(hasTempAvatar ? { avatarTempSessionId } : {}),
+          ...(mascotImageUrl ? { mascotTempSessionId } : {}),
         });
         props.onSuccess();
       }
@@ -876,6 +889,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setAvatarTempSessionId(crypto.randomUUID());
       setHasTempAvatar(false);
       setHasChannelAvatar(false);
+      setMascotTempSessionId(crypto.randomUUID());
+      setMascotImageUrl(null);
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : isEdit ? t('form.updateError') : t('form.addError'));
@@ -1247,69 +1262,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 />
               </FormField>
 
-              <FormField label='' htmlFor='reup-audio-use-mascot' className='min-w-0 flex items-center'>
-                <Controller
-                  name='useMascot'
-                  control={control}
-                  render={({ field }) => (
-                    <label
-                      htmlFor='reup-audio-use-mascot'
-                      className='flex cursor-pointer items-center gap-2 text-sm text-neutral-200'
-                    >
-                      <input
-                        id='reup-audio-use-mascot'
-                        type='checkbox'
-                        checked={!!field.value}
-                        onChange={e => {
-                          field.onChange(e.target.checked);
-                          if (!e.target.checked) setValue('mascotId', '');
-                        }}
-                        onBlur={field.onBlur}
-                        disabled={isSubmitting}
-                        className='h-4 w-4 rounded border-neutral-600 bg-neutral-900'
-                      />
-                      {t('form.useMascot')}
-                    </label>
-                  )}
-                />
-              </FormField>
-
-              {useMascot ? (
-                <FormField
-                  label={t('form.mascot')}
-                  htmlFor='reup-audio-mascot'
-                  error={errors.mascotId?.message}
-                  className='min-w-0'
-                >
-                  <Controller
-                    name='mascotId'
-                    control={control}
-                    rules={{ validate: value => !useMascot || Boolean(value) || t('form.mascotRequired') }}
-                    render={({ field }) => (
-                      <Select
-                        id='reup-audio-mascot'
-                        options={mascotOptions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        placeholder={
-                          mascotsLoading
-                            ? t('form.mascotLoading')
-                            : mascotOptions.length === 0
-                              ? t('form.mascotEmpty')
-                              : t('form.mascotPlaceholder')
-                        }
-                        searchPlaceholder={t('form.mascotSearch')}
-                        searchable
-                        disabled={isSubmitting || mascotsLoading || mascotOptions.length === 0}
-                        className='w-full'
-                        triggerClassName={selectTriggerClass}
-                      />
-                    )}
-                  />
-                </FormField>
-              ) : null}
-
               <div className='min-w-0 sm:col-start-1 sm:col-span-2'>
                 <p className='mb-2 text-xs font-medium text-neutral-400'>{t('form.sceneDensity')}</p>
                 <div className='grid grid-cols-3 gap-3'>
@@ -1508,6 +1460,57 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 </div>
               )}
             />
+          </FormField>
+
+          <FormField label={t('form.channelMascot')} htmlFor='channel-mascot-upload' className='min-w-0'>
+            <div className='flex items-center gap-3'>
+              <div className='flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900'>
+                {mascotImageUrl ? (
+                  <img src={mascotImageUrl} alt={t('form.channelMascot')} className='size-full object-contain' />
+                ) : (
+                  <ImageOff className='size-5 text-neutral-500' aria-hidden='true' />
+                )}
+              </div>
+              <div className='min-w-0 space-y-1.5'>
+                <div className='flex items-center gap-2'>
+                  <input
+                    id='channel-mascot-upload'
+                    ref={mascotInputRef}
+                    type='file'
+                    accept='image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+                    className='hidden'
+                    onChange={e => {
+                      void handleMascotUpload(e.target.files);
+                    }}
+                  />
+                  <Button
+                    type='button'
+                    variant='outlined'
+                    size='sm'
+                    className='h-8 rounded-md px-2 text-xs'
+                    disabled={isSubmitting || mascotUploading}
+                    onClick={() => mascotInputRef.current?.click()}
+                  >
+                    {mascotUploading ? t('form.uploadingImage') : t('form.uploadImage')}
+                  </Button>
+                  {mascotImageUrl ? (
+                    <Button
+                      type='button'
+                      variant='outlined'
+                      size='sm'
+                      className='h-8 rounded-md px-2 text-xs'
+                      disabled={isSubmitting || mascotUploading}
+                      onClick={() => {
+                        void handleMascotRemove();
+                      }}
+                    >
+                      {t('form.removeImage')}
+                    </Button>
+                  ) : null}
+                </div>
+                <p className='text-[11px] leading-snug text-neutral-500'>{t('form.channelMascotHint')}</p>
+              </div>
+            </div>
           </FormField>
 
           <FormField

@@ -15,11 +15,13 @@ import {
 } from './ai-video-character-references.js';
 import {
   promoteImageReferencesToChannelMascots,
+  resolveChannelMascotImagePath,
   seedImageReferencesFromChannelMascots,
 } from './ai-video-channel-mascots.js';
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
+  AI_MASCOT_STYLE_NOTE,
   AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS,
   resolveAiSceneDensityMaxSec,
   CREATE_CHARACTERS_DESIGN_PROMPT_KEY,
@@ -464,10 +466,21 @@ export async function generateAiVideoImagesWithReference(
   };
 }
 
+/** Tell the scene-prompt LLM about the channel mascot through the visual style it already receives. */
+async function withChannelMascotStyle(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesInput> {
+  if (!(await resolveChannelMascotImagePath(input.channelId))) return input;
+  emitDetailLog('[ai-video] Channel mascot found → scene prompts are written around the mascot', input.onLog);
+  return {
+    ...input,
+    visualStyle: { ...input.visualStyle, rule: `${input.visualStyle.rule.trim()}\n\n${AI_MASCOT_STYLE_NOTE}` },
+  };
+}
+
 /** Shared entry for AI / SI multi_image scene prompt generation. */
 export async function generateAiScenePromptsForPipeline(
-  input: GenerateAiVideoImagesInput,
+  pipelineInput: GenerateAiVideoImagesInput,
 ): Promise<GenerateAiVideoImagesResult & { pauseBeforeSceneImages: boolean; characters?: AiVideoCharacterReference[] }> {
+  const input = await withChannelMascotStyle(pipelineInput);
   if (input.useReferenceImage) {
     const result = await generateAiVideoImagesWithReference(input);
     return {

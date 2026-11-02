@@ -33,6 +33,8 @@ const PROVIDER = 'meta' as const;
 /** Grace period to detect composer-stop-button after submit (fast generations may skip it). */
 const COMPOSER_STOP_GRACE_MS = 5_000;
 const ASSISTANT_IMAGE_POLL_MS = 15_000;
+/** Settle time after the image first appears: Meta briefly shows the reference image before swapping in the result. */
+const IMAGE_SETTLE_BEFORE_DOWNLOAD_MS = 1_000;
 /** Max wait for reference uploads to finish (send button enabled) before submitting. */
 const SEND_READY_TIMEOUT_MS = 60_000;
 /** Fixed idle time after the prompt is accepted, before polling for the generated image. */
@@ -618,6 +620,16 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         // the rest of the overall budget — at least ASSISTANT_IMAGE_POLL_MS.
         const remainingMs = Math.max(ASSISTANT_IMAGE_POLL_MS, timeoutMs - (Date.now() - startedAt));
         ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, remainingMs, baselineBlockCount));
+
+        // Wait for the generated image to finish loading, then re-read the URL instead of
+        // downloading the first one seen (which can still be the reference image).
+        metaLog(page, 'image', `waiting ${IMAGE_SETTLE_BEFORE_DOWNLOAD_MS}ms for image to settle`);
+        await new Promise(resolve => setTimeout(resolve, IMAGE_SETTLE_BEFORE_DOWNLOAD_MS));
+        const settled = await resolveMetaImageSourceUrl(assistant, ASSISTANT_IMAGE_POLL_MS, { pollDelayMs: 400 });
+        if (settled.url !== sourceUrl) {
+          metaLog(page, 'image', `image url changed after settle: ${settled.url.slice(0, 120)}`);
+          sourceUrl = settled.url;
+        }
       } catch (err) {
         metaLog(page, 'receive', `FAILED before download: ${errText(err)}`);
         await captureDebugScreenshot(page, metaOptions.debugScreenshotPath);
