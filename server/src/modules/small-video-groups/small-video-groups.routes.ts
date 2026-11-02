@@ -6,6 +6,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import {
   createSmallVideoGroupSchema,
   deleteSmallVideoGroupMediaSchema,
+  downloadSmallVideoSchema,
 } from './small-video-groups.schema.js';
 import { smallVideoGroupsService } from './small-video-groups.service.js';
 
@@ -61,6 +62,12 @@ export function createSmallVideoGroupsRoutes() {
   app.post('/', zValidator('json', createSmallVideoGroupSchema), (c) => {
     const body = c.req.valid('json');
     const item = smallVideoGroupsService.create(body);
+    return c.json({ item }, 201);
+  });
+
+  app.post('/download', zValidator('json', downloadSmallVideoSchema), async (c) => {
+    const body = c.req.valid('json');
+    const item = await smallVideoGroupsService.downloadMediaFromUrl(body.url, body.groupId || undefined);
     return c.json({ item }, 201);
   });
 

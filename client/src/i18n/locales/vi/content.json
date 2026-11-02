@@ -264,6 +264,20 @@
         "uploadError": "Không thể tải lên file",
         "fileDeleted": "Đã xóa 1 file",
         "fileDeleteError": "Không thể xóa file"
+      },
+      "download": {
+        "button": "Tải từ URL",
+        "title": "Tải video nhỏ từ URL",
+        "url": "URL video",
+        "urlPlaceholder": "https://www.youtube.com/watch?v=… hoặc link .mp4 trực tiếp",
+        "urlRequired": "Vui lòng nhập URL",
+        "urlInvalid": "URL phải bắt đầu bằng http:// hoặc https://",
+        "group": "Lưu vào",
+        "ungrouped": "Không thuộc nhóm",
+        "submit": "Tải về",
+        "downloading": "Đang tải…",
+        "hint": "Đang tải video. Video dài có thể mất một lúc.",
+        "error": "Không thể tải video"
       }
     }
   },

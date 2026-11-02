@@ -2,6 +2,7 @@ import { API_V1 } from './config';
 import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   CreateSmallVideoGroupInput,
+  DownloadSmallVideoInput,
   SmallVideoGroupListItem,
   SmallVideoGroupMediaItem,
 } from '../types/smallVideoGroup';
@@ -44,6 +45,18 @@ export function uploadSmallVideoGroupMedia(id: string, file: File) {
   return fetchJson<{ item: SmallVideoGroupMediaItem }>(
     `${API_V1}/small-video-groups/${encodeURIComponent(id)}/media`,
     { method: 'POST', body },
+  );
+}
+
+/** Download a video from a URL into a group, or into the ungrouped folder when `groupId` is omitted. */
+export function downloadSmallVideoFromUrl(input: DownloadSmallVideoInput) {
+  return fetchJson<{ item: SmallVideoGroupMediaItem & { groupId: string | null } }>(
+    `${API_V1}/small-video-groups/download`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
   );
 }
 

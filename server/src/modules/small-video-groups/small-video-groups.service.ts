@@ -3,6 +3,7 @@ import path from 'node:path';
 import { paths, smallVideoGroupDir } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
 import { generateId, isUuid } from '../../shared/id.js';
+import { downloadVideoFromUrlWithYtdlp } from '../../infrastructure/youtube/ytdlp/ytdlp-url-video-downloader.js';
 import { smallVideoGroupsRepository } from './small-video-groups.repository.js';
 import type {
   CreateSmallVideoGroupInput,
@@ -185,6 +186,43 @@ export class SmallVideoGroupsService {
       size: stat.size,
       updatedAt: stat.mtime.toISOString(),
     };
+  }
+
+  /** Download a video from `url` into the group folder, or the ungrouped small-video folder when no group. */
+  async downloadMediaFromUrl(
+    url: string,
+    groupId?: string,
+  ): Promise<SmallVideoGroupMediaItem & { groupId: string | null }> {
+    const group = groupId ? this.getById(groupId) : null;
+    const dir = group ? smallVideoGroupDir(group.id) : paths.siSmallVideoDir;
+    ensureDir(dir);
+
+    // Hidden temp dir so a half-finished download never shows up in listings.
+    const tempDir = path.join(paths.siSmallVideoDir, `.download-${generateId()}`);
+    try {
+      const downloaded = await downloadVideoFromUrlWithYtdlp(url, tempDir, 'video');
+      const ext = assertAllowedVideo(downloaded);
+      const fileName = nextMediaFileName(dir, group?.name ?? 'small', ext);
+      const destPath = path.join(dir, fileName);
+      fs.renameSync(downloaded, destPath);
+
+      if (group) {
+        smallVideoGroupsRepository.update(group.id, (item) => ({
+          ...item,
+          updatedAt: new Date().toISOString(),
+        }));
+      }
+
+      const stat = fs.statSync(destPath);
+      return {
+        name: fileName,
+        size: stat.size,
+        updatedAt: stat.mtime.toISOString(),
+        groupId: group?.id ?? null,
+      };
+    } finally {
+      removeDirRecursive(tempDir);
+    }
   }
 
   deleteMedia(id: string, names: string[]): { deleted: string[] } {

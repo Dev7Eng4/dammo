@@ -21,6 +21,17 @@ export interface CreateSmallVideoGroupInput {
   note?: string;
 }
 
+export interface DownloadSmallVideoInput {
+  url: string;
+  groupId?: string;
+}
+
+export interface DownloadSmallVideoFormValues {
+  url: string;
+  /** Empty string = save as ungrouped. */
+  groupId: string;
+}
+
 export interface SmallVideoGroupFormValues {
   name: string;
   note: string;

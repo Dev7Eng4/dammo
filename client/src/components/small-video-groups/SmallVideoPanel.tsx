@@ -14,6 +14,7 @@ import { useAbortableEffect } from '../../hooks';
 import type { AssetFileItem } from '../../types/asset';
 import type { SmallVideoGroupListItem, SmallVideoGroupMediaItem } from '../../types/smallVideoGroup';
 import { AddSmallVideoGroupModal } from './AddSmallVideoGroupModal';
+import { DownloadSmallVideoModal } from './DownloadSmallVideoModal';
 
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
@@ -55,6 +56,7 @@ export function SmallVideoPanel() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [selected, setSelected] = useState<SmallVideoGroupListItem | null>(null);
   const [media, setMedia] = useState<SmallVideoGroupMediaItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -149,6 +151,22 @@ export function SmallVideoPanel() {
     }
   }
 
+  function handleDownloaded(fileName: string) {
+    refreshList();
+    if (selected) refreshMedia();
+    toast.success(t('assets.smallVideo.toast.fileAdded', { name: fileName }));
+  }
+
+  const downloadModal = (
+    <DownloadSmallVideoModal
+      open={showDownloadModal}
+      groups={groups}
+      defaultGroupId={selected?.id ?? ''}
+      onClose={() => setShowDownloadModal(false)}
+      onSuccess={handleDownloaded}
+    />
+  );
+
   async function handleConfirmDeleteGroup() {
     if (!groupPendingDelete) return;
     setDeleting(true);
@@ -230,8 +248,19 @@ export function SmallVideoPanel() {
             >
               {uploading ? t('assets.uploading') : t('assets.smallVideo.addVideo')}
             </Button>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="rounded-lg"
+              disabled={uploading || deleting}
+              onClick={() => setShowDownloadModal(true)}
+            >
+              {t('assets.smallVideo.download.button')}
+            </Button>
           </div>
         </div>
+
+        {downloadModal}
 
         <div className="card-surface space-y-4 p-5">
           {mediaLoading ? (
@@ -372,6 +401,15 @@ export function SmallVideoPanel() {
           >
             {uploading ? t('assets.uploading') : t('assets.smallVideo.addVideo')}
           </Button>
+          <Button
+            variant="outlined"
+            size="sm"
+            className="rounded-lg"
+            disabled={uploading || deleting}
+            onClick={() => setShowDownloadModal(true)}
+          >
+            {t('assets.smallVideo.download.button')}
+          </Button>
           <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
             {t('assets.smallVideo.addGroup')}
           </Button>
@@ -477,6 +515,8 @@ export function SmallVideoPanel() {
           </>
         )}
       </div>
+
+      {downloadModal}
 
       <AddSmallVideoGroupModal
         open={showAddModal}
