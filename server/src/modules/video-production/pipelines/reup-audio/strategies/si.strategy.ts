@@ -129,8 +129,8 @@ export const siStrategy: VideoTypeStrategy = {
   },
 
   async prepareEnrichedVisuals(ctx, assets, thumbnailFlow: ThumbnailFlow) {
-    /* The niche-prompt and celebrity-wisdom flows already settled the background. */
-    if (thumbnailFlow !== 'legacy') return {};
+    /* The niche-prompt and celebrity-wisdom flows already settled the background; the mascot flow did not. */
+    if (thumbnailFlow !== 'legacy' && thumbnailFlow !== 'mascot') return {};
 
     const backgroundImage = resolveBackgroundImageMode(ctx.destination);
     if (backgroundImage !== 'one_image') {

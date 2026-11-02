@@ -3,20 +3,22 @@ import path from 'node:path';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
 import { hasNicheMetadataPrompt } from '../../../shared/meta/run-metadata.js';
-import { isCelebrityWisdomNiche } from '../../../shared/meta/metadata.types.js';
+import { isCelebrityWisdomNiche, type VideoMetaOutput } from '../../../shared/meta/metadata.types.js';
+import { resolveChannelMascotImagePath } from '../../../shared/ai-video/ai-video-channel-mascots.js';
 import { runDefaultFlowThumbnail } from '../../../shared/thumbnail/default-flow-thumbnail.js';
 import { resolveThumbnailImageProvider } from '../../../shared/thumbnail/hero-image.js';
 import { runCelebrityWisdomThumbnail } from '../../../shared/thumbnail/run-celebrity-wisdom-thumbnail.js';
+import { runMascotThumbnail } from '../../../shared/thumbnail/run-mascot-thumbnail.js';
 import { runNicheImagePromptThumbnail } from '../../../shared/thumbnail/run-niche-image-prompt-thumbnail.js';
 import { buildThumbnailReferenceImagePaths } from '../../../shared/thumbnail/thumbnail-reference-images.js';
 import type { VideoTypeStrategy } from '../strategies/video-type.strategy.js';
 import type { VideoTaskContext } from '../video-task.context.js';
 
 /**
- * Which of the three mutually exclusive thumbnail flows ran. The background
+ * Which of the mutually exclusive thumbnail flows ran. The background
  * image a video type needs afterwards depends on this.
  */
-export type ThumbnailFlow = 'celebrity_wisdom' | 'niche_prompt' | 'legacy';
+export type ThumbnailFlow = 'celebrity_wisdom' | 'mascot' | 'niche_prompt' | 'legacy';
 
 export interface ThumbnailStepResult {
   flow: ThumbnailFlow;
@@ -57,6 +59,14 @@ export async function runThumbnailStep(
 
   if (isCelebrityWisdomNiche(destination.niche)) {
     return runCelebrityWisdomFlow(ctx);
+  }
+
+  if (destination.mascotThumbnailCandidates) {
+    const mascotImagePath = await resolveChannelMascotImagePath(destination.id);
+    if (mascotImagePath) {
+      return runMascotFlow(ctx, mascotImagePath, destination.mascotThumbnailCandidates);
+    }
+    log.info('Mascot thumbnail is on but the channel has no mascot image — using the regular thumbnail flow');
   }
 
   if (hasNicheMetadataPrompt(destination.language, destination.niche)) {
@@ -138,6 +148,63 @@ export async function runThumbnailStep(
   }
 
   return { flow: 'legacy' };
+}
+
+function textOf(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+/** What the Thumbnail Director reads to find the hook: description and summary fields of the metadata. */
+function buildMascotThumbnailContext(meta: VideoMetaOutput): string {
+  const lines = [
+    ['Description', textOf(meta.metadata.description).slice(0, 1200)],
+    ['Topic', textOf(meta.detected_topic)],
+    ['Core promise', textOf(meta.core_promise)],
+    ['Framing', textOf(meta.framing)],
+    ['Hook angle', textOf(meta.metadata.hook_angle)],
+    ['Other title ideas', (meta.alternative_titles ?? []).map(textOf).filter(Boolean).join(' / ')],
+  ];
+  return lines
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}: ${value}`)
+    .join('\n');
+}
+
+async function runMascotFlow(
+  ctx: VideoTaskContext,
+  mascotImagePath: string,
+  count: number,
+): Promise<ThumbnailStepResult> {
+  const { destination, workDir, log, stepTimer } = ctx;
+  const meta = ctx.videoMeta!;
+  log.info(`Creating ${count} mascot thumbnail candidate(s) via ${resolveThumbnailImageProvider()}...`);
+
+  try {
+    const result = await timedStep(
+      `Mascot thumbnail (${resolveThumbnailImageProvider()}, ${count} candidates)`,
+      () =>
+        runMascotThumbnail({
+          workDir,
+          language: destination.language,
+          title: textOf(meta.metadata.title),
+          context: buildMascotThumbnailContext(meta),
+          count,
+          mascotImagePath,
+          onLog: log.enabled ? msg => log.info(msg) : undefined,
+        }),
+      stepTimer,
+    );
+
+    await cleanupImageDebugArtifacts(workDir);
+    const drawn = result.candidatesFile.candidates.filter(candidate => candidate.file).length;
+    log.ok(`Mascot thumbnail saved → thumbnail.jpg (${drawn} candidate(s), pick another in the video popup)`);
+    return { flow: 'mascot', reupThumbnailPath: result.thumbnailPath };
+  } catch (err) {
+    const message = nonFatalMessage(err, 'Mascot thumbnail generation failed');
+    console.warn(`[reup-video] mascot thumbnail skipped (non-fatal): ${message}`);
+    log.info(`Mascot thumbnail skipped: ${message}`);
+    return { flow: 'mascot' };
+  }
 }
 
 async function runCelebrityWisdomFlow(ctx: VideoTaskContext): Promise<ThumbnailStepResult> {

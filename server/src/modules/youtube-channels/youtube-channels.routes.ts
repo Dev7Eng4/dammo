@@ -468,6 +468,44 @@ export function createYoutubeChannelsRoutes() {
     });
   });
 
+  app.get('/:id/videos/:videoId/thumbnail-candidates', async (c) => {
+    const id = c.req.param('id');
+    const videoId = c.req.param('videoId');
+    const { items, judgeError } = await youtubeVideoContentService.listThumbnailCandidates(id, videoId);
+    const baseUrl = c.req.path;
+    return c.json({
+      judgeError,
+      items: items.map(item => ({
+        ...item,
+        url: item.file ? `${baseUrl}/${encodeURIComponent(item.file)}` : null,
+      })),
+    });
+  });
+
+  app.get('/:id/videos/:videoId/thumbnail-candidates/:file', (c) => {
+    const asset = youtubeVideoContentService.getThumbnailCandidateAsset(
+      c.req.param('id'),
+      c.req.param('videoId'),
+      c.req.param('file'),
+    );
+    return streamFileAsset(c.req.raw, asset);
+  });
+
+  app.post('/:id/videos/:videoId/thumbnail-candidates/:file/select', async (c) => {
+    const item = await youtubeVideoContentService.selectThumbnailCandidate(
+      c.req.param('id'),
+      c.req.param('videoId'),
+      c.req.param('file'),
+    );
+    const baseUrl = c.req.path.replace(/\/thumbnail-candidates\/[^/]+\/select$/, '/content');
+    return c.json({
+      ...item,
+      thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
+      oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+    });
+  });
+
   app.post('/:id/videos/:videoId/content/thumbnail/remove-watermark', async (c) => {
     const item = await youtubeVideoContentService.removeThumbnailWatermark(
       c.req.param('id'),

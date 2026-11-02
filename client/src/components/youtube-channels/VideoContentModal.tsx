@@ -22,6 +22,7 @@ import type { CreateVideoTaskPayload } from '../../types/taskQueue';
 import { Button, Image, Input, Modal, Textarea, useToast } from '../ui';
 import { RegenerateScenesConfirmModal } from '../video-production/RegenerateScenesConfirmModal';
 import { RegenerateMetadataConfirmModal } from './RegenerateMetadataConfirmModal';
+import { ThumbnailCandidates } from './ThumbnailCandidates';
 import { VideoProductionTabContent, type VideoProductionTab } from './VideoProductionTabContent';
 
 type ContentTab = 'video' | VideoProductionTab;
@@ -789,6 +790,19 @@ export function VideoContentModal({
                     <span className="text-sm font-medium">{t('videoContent.uploadThumb')}</span>
                   </button>
                 )}
+                <ThumbnailCandidates
+                  channelId={channelId}
+                  videoId={video.id}
+                  reloadKey={contentCacheBust}
+                  disabled={busy || thumbnailPreviewUrl !== null}
+                  disabledReason={thumbnailPreviewUrl !== null ? t('metadata.thumbnailCandidateUnsaved') : undefined}
+                  onSelected={updated => {
+                    // Refresh only the thumbnail, keeping unsaved title/description/tag edits.
+                    setContent(updated);
+                    setContentCacheBust(value => value + 1);
+                    onSaved(updated);
+                  }}
+                />
               </section>
             </div>
 

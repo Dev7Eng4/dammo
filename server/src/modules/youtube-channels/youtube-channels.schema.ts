@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  MAX_MASCOT_THUMBNAIL_CANDIDATES,
+  MIN_MASCOT_THUMBNAIL_CANDIDATES,
+} from '../video-production/shared/thumbnail/mascot-thumbnail.constants.js';
 import { CAPTION_STYLE_KEYS } from '../video-production/shared/render-core/caption-styles.js';
 import { getPublishTimeSlotCount } from './upload-schedule.js';
 import { isAiSceneVideoType } from './youtube-channels.types.js';
@@ -48,6 +52,7 @@ const channelConfigFields = {
   showAudioBar: z.boolean().optional(),
   audioBarFile: z.string().optional(),
   showChannelAvatar: z.boolean().optional(),
+  mascotThumbnailCandidates: z.number().int().min(MIN_MASCOT_THUMBNAIL_CANDIDATES).max(MAX_MASCOT_THUMBNAIL_CANDIDATES).optional(),
   showSubscribe: z.boolean().optional(),
   showSmallVideo: z.boolean().optional(),
   smallVideoFile: z.string().optional(),

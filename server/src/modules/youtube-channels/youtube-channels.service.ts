@@ -153,6 +153,7 @@ type ChannelConfigInput = Pick<
   | 'showAudioBar'
   | 'audioBarFile'
   | 'showChannelAvatar'
+  | 'mascotThumbnailCandidates'
   | 'showSubscribe'
   | 'showSmallVideo'
   | 'smallVideoFile'
@@ -209,6 +210,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
   showAudioBar?: boolean;
   audioBarFile?: string;
   showChannelAvatar?: boolean;
+  mascotThumbnailCandidates?: number;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
@@ -432,6 +434,7 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(showAudioBar ? { showAudioBar: true } : {}),
     ...(audioBarFile ? { audioBarFile } : {}),
     ...(showChannelAvatar ? { showChannelAvatar: true } : {}),
+    ...(input.mascotThumbnailCandidates ? { mascotThumbnailCandidates: input.mascotThumbnailCandidates } : {}),
     ...(showSubscribe ? { showSubscribe: true } : {}),
     ...(showSmallVideo ? { showSmallVideo: true } : {}),
     ...(smallVideoFile ? { smallVideoFile } : {}),
@@ -1059,6 +1062,9 @@ export class YoutubeChannelsService {
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
       ...(config.audioBarFile ? { audioBarFile: config.audioBarFile } : {}),
       ...(config.showChannelAvatar ? { showChannelAvatar: true } : {}),
+      ...(config.mascotThumbnailCandidates
+        ? { mascotThumbnailCandidates: config.mascotThumbnailCandidates }
+        : {}),
       ...(config.showSubscribe ? { showSubscribe: true } : {}),
       ...(config.showSmallVideo ? { showSmallVideo: true } : {}),
       ...(config.smallVideoFile ? { smallVideoFile: config.smallVideoFile } : {}),
@@ -1243,6 +1249,11 @@ export class YoutubeChannelsService {
         next.showChannelAvatar = true;
       } else {
         delete next.showChannelAvatar;
+      }
+      if (config.mascotThumbnailCandidates) {
+        next.mascotThumbnailCandidates = config.mascotThumbnailCandidates;
+      } else {
+        delete next.mascotThumbnailCandidates;
       }
       if (config.showSubscribe) {
         next.showSubscribe = true;

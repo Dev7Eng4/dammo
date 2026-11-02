@@ -165,6 +165,8 @@ export interface YoutubeChannel {
   showAudioBar?: boolean;
   audioBarFile?: string;
   showChannelAvatar?: boolean;
+  /** Mascot thumbnail mode: number of AI-designed candidates (2-4). Unset = off. */
+  mascotThumbnailCandidates?: number;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
@@ -466,6 +468,8 @@ export interface CreateYoutubeChannelPayload {
   showAudioBar?: boolean;
   audioBarFile?: string;
   showChannelAvatar?: boolean;
+  /** Mascot thumbnail mode: number of AI-designed candidates (2-4). Unset = off. */
+  mascotThumbnailCandidates?: number;
   showSubscribe?: boolean;
   showSmallVideo?: boolean;
   smallVideoFile?: string;
@@ -505,6 +509,8 @@ export interface AddYoutubeChannelFormValues {
   useReferenceImage: boolean;
   audioBarFile: string;
   showChannelAvatar: boolean;
+  /** '' = off, otherwise the candidate count. */
+  mascotThumbnailCandidates: string;
   showSubscribe: boolean;
   subscribeFile: string;
   smallVideoFile: string;

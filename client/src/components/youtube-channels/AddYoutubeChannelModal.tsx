@@ -248,6 +248,7 @@ const defaultValues: AddYoutubeChannelFormValues = {
   useReferenceImage: false,
   audioBarFile: '',
   showChannelAvatar: false,
+  mascotThumbnailCandidates: '',
   showSubscribe: false,
   subscribeFile: '',
   smallVideoFile: '',
@@ -297,6 +298,7 @@ function getChannelFormValues(
     useReferenceImage: channel.useReferenceImage === true,
     audioBarFile: channel.audioBarFile ?? '',
     showChannelAvatar: channel.showChannelAvatar === true,
+    mascotThumbnailCandidates: channel.mascotThumbnailCandidates ? String(channel.mascotThumbnailCandidates) : '',
     showSubscribe: channel.showSubscribe === true,
     subscribeFile: channel.subscribeFile ?? '',
     smallVideoFile: channel.smallVideoFile ?? '',
@@ -360,6 +362,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const uploadFrequencyOptions = useMemo(() => buildUploadFrequencyOptions(t), [t]);
   const videoCreationOrderOptions = useMemo(() => buildVideoCreationOrderOptions(t), [t]);
   const captionStyleOptions = useMemo(() => buildCaptionStyleOptions(t), [t]);
+  const mascotThumbnailOptions = useMemo(
+    () => [
+      { value: '', label: t('form.mascotThumbnailOff') },
+      ...['2', '3', '4'].map(count => ({ value: count, label: t('form.mascotThumbnailCount', { count: Number(count) }) })),
+    ],
+    [t],
+  );
   const [apiError, setApiError] = useState<string | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
@@ -446,7 +455,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     ],
     [sources, niches],
   );
-  const nicheOptions = useMemo(() => niches.map(item => ({ value: item.key, label: item.label })), [niches]);
+  const nicheOptions = useMemo(
+    () =>
+      niches
+        .filter(item => !language || item.language === 'all' || item.language === language)
+        .map(item => ({ value: item.key, label: item.label })),
+    [niches, language],
+  );
 
   const backgroundImageOptions = useMemo(() => {
     /* AI videos have no image-count modes: only a celebrity can be picked. */
@@ -859,6 +874,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           : {}),
         ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
         showChannelAvatar: values.showChannelAvatar === true && (isEdit ? hasChannelAvatar : hasTempAvatar),
+        ...(values.mascotThumbnailCandidates && mascotImageUrl
+          ? { mascotThumbnailCandidates: Number(values.mascotThumbnailCandidates) }
+          : {}),
         showDisclaimer: values.showDisclaimer,
         disclaimerText: values.disclaimerText,
         descriptionDisclaimerText: values.descriptionDisclaimerText,
@@ -988,7 +1006,14 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                   id='channel-language'
                   options={languageOptions}
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={next => {
+                    field.onChange(next);
+                    // Drop a niche that belongs to another language.
+                    const currentNiche = niches.find(item => item.key === getValues('niche'));
+                    if (currentNiche && currentNiche.language !== 'all' && currentNiche.language !== next) {
+                      setValue('niche', '');
+                    }
+                  }}
                   onBlur={field.onBlur}
                   placeholder={t('form.languagePlaceholder')}
                   disabled={isSubmitting}
@@ -1511,6 +1536,28 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 <p className='text-[11px] leading-snug text-neutral-500'>{t('form.channelMascotHint')}</p>
               </div>
             </div>
+          </FormField>
+
+          <FormField label={t('form.mascotThumbnail')} htmlFor='mascot-thumbnail' className='min-w-0'>
+            <Controller
+              name='mascotThumbnailCandidates'
+              control={control}
+              render={({ field }) => (
+                <Select
+                  id='mascot-thumbnail'
+                  options={mascotThumbnailOptions}
+                  value={mascotImageUrl ? field.value : ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting || !mascotImageUrl}
+                  className='w-full'
+                  triggerClassName={selectTriggerClass}
+                />
+              )}
+            />
+            <p className='mt-1 text-[11px] leading-snug text-neutral-500'>
+              {mascotImageUrl ? t('form.mascotThumbnailHint') : t('form.mascotThumbnailNeedsMascot')}
+            </p>
           </FormField>
 
           <FormField

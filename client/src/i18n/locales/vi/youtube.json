@@ -400,7 +400,12 @@
       "imgNone": "Không dùng ảnh",
       "imgOne": "Một ảnh",
       "imgMulti": "Nhiều ảnh"
-    }
+    },
+    "mascotThumbnail": "Thumbnail AI theo mascot",
+    "mascotThumbnailOff": "Tắt (dùng kiểu thumbnail thường)",
+    "mascotThumbnailCount": "Bật – {{count}} bản để chọn",
+    "mascotThumbnailHint": "AI tự thiết kế nhiều thumbnail có mascot, chấm điểm và dùng bản tốt nhất; đổi bản khác trong popup video.",
+    "mascotThumbnailNeedsMascot": "Tải ảnh mascot kênh trước để bật."
   },
   "metadata": {
     "title": "Tạo Metadata",
@@ -428,7 +433,18 @@
     "copySuccess": "Đã sao chép {{label}}",
     "copyError": "Không thể sao chép {{label}}",
     "folderPathLabel": "đường dẫn folder",
-    "fromLinkJobTitle": "Tạo metadata từ link video"
+    "fromLinkJobTitle": "Tạo metadata từ link video",
+    "thumbnailCandidates": "Các bản thumbnail AI",
+    "thumbnailCandidateSelected": "Đang dùng",
+    "thumbnailCandidateUse": "Dùng bản này",
+    "thumbnailCandidateFailed": "Không vẽ được",
+    "thumbnailCandidateSelectError": "Không đổi được thumbnail",
+    "thumbnailCandidateUnsaved": "Lưu hoặc bỏ ảnh đã chọn trước khi đổi sang bản AI khác",
+    "thumbnailCandidateAiPicked": "AI chọn",
+    "thumbnailTextCorrect": "Chữ đúng",
+    "thumbnailTextWrong": "Sai chữ: {{issues}}",
+    "thumbnailJudgeBreakdown": "Mascot {{mascotMatch}} · Dễ đọc {{readability}} · Tò mò {{curiosity}} · Hợp title {{titleFit}}",
+    "thumbnailJudgeFailed": "AI chưa chấm được các bản (đang dùng bản vẽ được đầu tiên)."
   },
   "regenerate": {
     "title": "Tạo lại metadata?",

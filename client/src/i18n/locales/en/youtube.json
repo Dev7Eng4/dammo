@@ -400,7 +400,12 @@
       "imgNone": "No images",
       "imgOne": "One image",
       "imgMulti": "Multiple images"
-    }
+    },
+    "mascotThumbnail": "Mascot AI thumbnail",
+    "mascotThumbnailOff": "Off (use the regular thumbnail style)",
+    "mascotThumbnailCount": "On – {{count}} candidates",
+    "mascotThumbnailHint": "AI designs several mascot thumbnails, scores them and uses the best; pick another one in the video popup.",
+    "mascotThumbnailNeedsMascot": "Upload a channel mascot image first."
   },
   "metadata": {
     "title": "Create metadata",
@@ -428,7 +433,18 @@
     "copySuccess": "Copied {{label}}",
     "copyError": "Could not copy {{label}}",
     "folderPathLabel": "folder path",
-    "fromLinkJobTitle": "Create metadata from video link"
+    "fromLinkJobTitle": "Create metadata from video link",
+    "thumbnailCandidates": "AI thumbnail candidates",
+    "thumbnailCandidateSelected": "In use",
+    "thumbnailCandidateUse": "Use this one",
+    "thumbnailCandidateFailed": "Could not be drawn",
+    "thumbnailCandidateSelectError": "Could not change the thumbnail",
+    "thumbnailCandidateUnsaved": "Save or discard the picked image before switching to another AI candidate",
+    "thumbnailCandidateAiPicked": "AI pick",
+    "thumbnailTextCorrect": "Text correct",
+    "thumbnailTextWrong": "Wrong text: {{issues}}",
+    "thumbnailJudgeBreakdown": "Mascot {{mascotMatch}} · Readability {{readability}} · Curiosity {{curiosity}} · Title fit {{titleFit}}",
+    "thumbnailJudgeFailed": "AI could not score the candidates (using the first one drawn)."
   },
   "regenerate": {
     "title": "Regenerate metadata?",

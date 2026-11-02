@@ -44,6 +44,8 @@ export interface ProductionDestination {
   showSubscribe?: boolean;
   subscribeFile?: string;
   showChannelAvatar?: boolean;
+  /** Mascot thumbnail mode: number of AI-designed candidates (2-4) drawn with the channel mascot. Unset = off. */
+  mascotThumbnailCandidates?: number;
   showDisclaimer?: boolean;
   disclaimerText?: string;
   descriptionDisclaimerText?: string;

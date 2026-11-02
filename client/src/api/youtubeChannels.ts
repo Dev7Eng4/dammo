@@ -344,6 +344,45 @@ export function uploadYoutubeChannelAvatar(channelId: string, file: File) {
   );
 }
 
+export interface ThumbnailCandidateItem {
+  file: string | null;
+  url: string | null;
+  angle: string;
+  hookLines: string[];
+  emphasis: string;
+  error: string | null;
+  selected: boolean;
+  /** Picked by the pipeline (AI judge winner). */
+  aiPicked: boolean;
+  judgement: ThumbnailCandidateJudgement | null;
+}
+
+export interface ThumbnailCandidateJudgement {
+  /** Weighted 0-10. */
+  score: number;
+  textCorrect: boolean;
+  textIssues: string;
+  mascotMatch: number;
+  readability: number;
+  curiosity: number;
+  titleFit: number;
+  reason: string;
+}
+
+export function fetchThumbnailCandidates(channelId: string, videoId: string, options?: FetchOptions) {
+  return fetchJson<{ items: ThumbnailCandidateItem[]; judgeError: string | null }>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(videoId)}/thumbnail-candidates`,
+    withSignal(undefined, options),
+  );
+}
+
+export function selectThumbnailCandidate(channelId: string, videoId: string, file: string) {
+  return fetchJson<YoutubeVideoContent>(
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(videoId)}/thumbnail-candidates/${encodeURIComponent(file)}/select`,
+    { method: 'POST' },
+  );
+}
+
 export function fetchYoutubeChannelMascotImages(channelId: string, options?: FetchOptions) {
   return fetchJson<{ items: ChannelAvatarItem[] }>(
     `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-images`,

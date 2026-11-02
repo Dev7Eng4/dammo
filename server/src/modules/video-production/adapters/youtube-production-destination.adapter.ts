@@ -97,6 +97,9 @@ export async function createYoutubeProductionDestination(
     ...(channel.videoCreationOrder ? { videoCreationOrder: channel.videoCreationOrder } : {}),
     backgroundFootageSources: channel.backgroundFootageSources,
     thumbnailStyleKey: channel.thumbnailStyleKey,
+    ...(channel.mascotThumbnailCandidates
+      ? { mascotThumbnailCandidates: channel.mascotThumbnailCandidates }
+      : {}),
     ...(channel.thumbnailBackgroundFile?.trim()
       ? { thumbnailBackgroundFile: channel.thumbnailBackgroundFile.trim() }
       : {}),

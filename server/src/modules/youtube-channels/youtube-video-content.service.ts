@@ -17,6 +17,11 @@ import { findFinalVideoMp4 } from '../video-production/shared/render-core/video-
 import { videoPrepareRepository } from './video-prepare.repository.js';
 import { appSettingsService } from '../app-settings/app-settings.service.js';
 import { generateThumbnailWithoutWatermark } from '../video-production/shared/thumbnail/remove-gemini-watermark.js';
+import {
+  readMascotThumbnailCandidatesFile,
+  resolveThumbnailCandidatesDir,
+  writeMascotThumbnailCandidatesFile,
+} from '../video-production/shared/thumbnail/run-mascot-thumbnail.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 
 const VIDEO_META_FILENAME = 'video-meta.json';
@@ -234,6 +239,42 @@ export async function replaceThumbnailJpeg(folderPath: string, stagedPath: strin
 
 const watermarkRemovalsInFlight = new Set<string>();
 
+const THUMBNAIL_CANDIDATE_FILE_PATTERN = /^candidate-\d+\.jpg$/;
+
+export interface ThumbnailCandidateItem {
+  file: string | null;
+  angle: string;
+  hookLines: string[];
+  emphasis: string;
+  error: string | null;
+  selected: boolean;
+  /** Picked by the pipeline (judge winner). */
+  aiPicked: boolean;
+  /** Judge verdict; null when the candidate was not judged. */
+  judgement: {
+    score: number;
+    textCorrect: boolean;
+    textIssues: string;
+    mascotMatch: number;
+    readability: number;
+    curiosity: number;
+    titleFit: number;
+    reason: string;
+  } | null;
+}
+
+export interface ThumbnailCandidatesResult {
+  items: ThumbnailCandidateItem[];
+  judgeError: string | null;
+}
+
+function assertCandidateFileName(file: string): string {
+  if (!THUMBNAIL_CANDIDATE_FILE_PATTERN.test(file)) {
+    throw new AppError('Invalid thumbnail candidate', 400, 'INVALID_THUMBNAIL_CANDIDATE');
+  }
+  return file;
+}
+
 export class YoutubeVideoContentService {
   get(channelId: string, videoId: string): YoutubeVideoContent {
     const folderPath = requireViewableVideoFolder(channelId, videoId);
@@ -339,6 +380,54 @@ export class YoutubeVideoContentService {
       watermarkRemovalsInFlight.delete(key);
       if (generatedPath) await fs.promises.rm(generatedPath, { force: true }).catch(() => undefined);
     }
+  }
+
+  /** Mascot thumbnail candidates of a video (empty when the video was not made with a mascot thumbnail). */
+  async listThumbnailCandidates(channelId: string, videoId: string): Promise<ThumbnailCandidatesResult> {
+    const folderPath = requireViewableVideoFolder(channelId, videoId);
+    const file = await readMascotThumbnailCandidatesFile(folderPath);
+    const items = (file?.candidates ?? []).map(candidate => ({
+      file: candidate.file ?? null,
+      angle: candidate.angle,
+      hookLines: candidate.hookLines,
+      emphasis: candidate.emphasis,
+      error: candidate.error ?? null,
+      selected: Boolean(candidate.file) && candidate.file === file?.selectedFile,
+      aiPicked: Boolean(candidate.file) && candidate.file === file?.aiPickedFile,
+      judgement: candidate.judgement ?? null,
+    }));
+    return { items, judgeError: file?.judgeError ?? null };
+  }
+
+  getThumbnailCandidateAsset(channelId: string, videoId: string, fileName: string): YoutubeVideoAsset {
+    const folderPath = requireViewableVideoFolder(channelId, videoId);
+    const filePath = path.join(resolveThumbnailCandidatesDir(folderPath), assertCandidateFileName(fileName));
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      throw new AppError('Thumbnail candidate not found', 404, 'THUMBNAIL_CANDIDATE_NOT_FOUND');
+    }
+    return { filePath, contentType: 'image/jpeg', size: fs.statSync(filePath).size };
+  }
+
+  /** Make a candidate the video thumbnail (copied over thumbnail.jpg). */
+  async selectThumbnailCandidate(channelId: string, videoId: string, fileName: string): Promise<YoutubeVideoContent> {
+    const folderPath = requireViewableVideoFolder(channelId, videoId);
+    const candidateFile = await readMascotThumbnailCandidatesFile(folderPath);
+    const safeName = assertCandidateFileName(fileName);
+    if (!candidateFile?.candidates.some(candidate => candidate.file === safeName)) {
+      throw new AppError('Thumbnail candidate not found', 404, 'THUMBNAIL_CANDIDATE_NOT_FOUND');
+    }
+    const asset = this.getThumbnailCandidateAsset(channelId, videoId, safeName);
+
+    const stagedPath = path.join(folderPath, `.thumbnail-candidate-${randomUUID()}.jpg`);
+    await fs.promises.copyFile(asset.filePath, stagedPath);
+    try {
+      await replaceThumbnailJpeg(folderPath, stagedPath);
+    } catch (error) {
+      await fs.promises.rm(stagedPath, { force: true }).catch(() => undefined);
+      throw error;
+    }
+    await writeMascotThumbnailCandidatesFile(folderPath, { ...candidateFile, selectedFile: safeName });
+    return this.get(channelId, videoId);
   }
 
   getAsset(channelId: string, videoId: string, kind: YoutubeVideoAssetKind): YoutubeVideoAsset {
