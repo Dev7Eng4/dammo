@@ -14,10 +14,12 @@ import { resolveSlideClipCachePath } from '../slideshow/slideshow-clip-renderer.
 import { runFlowImageGenerations } from '../thumbnail/hero-image.js';
 import { resolveCharacterReferenceImagePaths } from './ai-video-character-references.js';
 import { CHANNEL_MASCOT_CHARACTER_ID, resolveChannelMascotImagePath } from './ai-video-channel-mascots.js';
+import { scenePromptShowsMascot } from './ai-video-mascot-profile.js';
 import { AiClipPrebakePool } from './ai-video-clip-prebake.js';
 import {
   AI_FLOW_TOOL_BATCH_SIZE,
   AI_MASCOT_IMAGE_PROMPT_PREFIX,
+  AI_MASCOT_STYLE_ONLY_PROMPT_PREFIX,
   AI_SCENE_MAX_REFERENCE_IMAGES,
   AI_SLIDES_DIRNAME,
 } from './ai-video.constants.js';
@@ -249,8 +251,12 @@ async function attachSceneReferenceImages(
     }
 
     if (mascotImagePath) {
+      // Scenes without the mascot still get it as reference, only to keep the art style.
       job.referenceImagePaths = [mascotImagePath, ...characterPaths].slice(0, AI_SCENE_MAX_REFERENCE_IMAGES);
-      job.prompt = `${AI_MASCOT_IMAGE_PROMPT_PREFIX}${job.prompt}`;
+      const prefix = scenePromptShowsMascot(job.prompt)
+        ? AI_MASCOT_IMAGE_PROMPT_PREFIX
+        : AI_MASCOT_STYLE_ONLY_PROMPT_PREFIX;
+      job.prompt = `${prefix}${job.prompt}`;
     } else if (characterPaths.length > 0) {
       job.referenceImagePaths = characterPaths;
     }
@@ -598,7 +604,7 @@ export async function generateAiSceneSlideImages(
   if (aiPending.length > 0) {
     const mascotImagePath = await resolveChannelMascotImagePath(input.channelId);
     if (mascotImagePath) {
-      log(`[ai-video] Channel mascot attached as the first reference of every scene → ${mascotImagePath}`);
+      log(`[ai-video] Channel mascot attached as the first reference of every scene (character or style only) → ${mascotImagePath}`);
     }
     await attachSceneReferenceImages(input.workDir, aiPending, mascotImagePath, log);
 

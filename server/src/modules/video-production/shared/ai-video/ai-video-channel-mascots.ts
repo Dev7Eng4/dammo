@@ -19,6 +19,12 @@ const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'] as const;
 /** Channel mascot image uploaded with the channel: `<channel dir>/mascot.<ext>` (next to `avatar.*`). */
 export const CHANNEL_MASCOT_BASENAME = 'mascot';
 
+/**
+ * Optional character sheet of the mascot (poses, expressions): `<channel dir>/mascot-sheet.<ext>`.
+ * Only read by the LLM that writes the mascot profile; scene and thumbnail images use `mascot.*`.
+ */
+export const CHANNEL_MASCOT_SHEET_BASENAME = 'mascot-sheet';
+
 /** Character id of the channel mascot in scene references and the video Characters tab. */
 export const CHANNEL_MASCOT_CHARACTER_ID = 'mascot';
 
@@ -67,6 +73,13 @@ export async function resolveChannelMascotImagePath(channelId: string | undefine
   const id = channelId?.trim();
   if (!id) return undefined;
   return findImageByBase(youtubeChannelDir(id), CHANNEL_MASCOT_BASENAME);
+}
+
+/** Absolute path of the mascot character sheet, or undefined when the channel has none. */
+export async function resolveChannelMascotSheetPath(channelId: string | undefined): Promise<string | undefined> {
+  const id = channelId?.trim();
+  if (!id) return undefined;
+  return findImageByBase(youtubeChannelDir(id), CHANNEL_MASCOT_SHEET_BASENAME);
 }
 
 export async function isChannelMascotStoreEnabled(channelId: string | undefined): Promise<boolean> {

@@ -278,6 +278,16 @@
         "downloading": "Đang tải…",
         "hint": "Đang tải video. Video dài có thể mất một lúc.",
         "error": "Không thể tải video"
+      },
+      "move": {
+        "button": "Di chuyển",
+        "title": "Di chuyển video",
+        "to": "Chuyển đến",
+        "placeholder": "Chọn nhóm",
+        "submit": "Di chuyển",
+        "moving": "Đang di chuyển…",
+        "success": "Đã di chuyển {{name}}",
+        "error": "Không thể di chuyển video"
       }
     }
   },

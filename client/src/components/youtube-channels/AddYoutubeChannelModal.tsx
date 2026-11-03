@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
-import { ImageOff } from 'lucide-react';
 import { fetchAppSettings } from '../../api/appSettings';
 import { fetchMailAccounts } from '../../api/mailAccounts';
 import { fetchNiches } from '../../api/niches';
@@ -16,10 +15,7 @@ import {
   updateYoutubeChannel,
   uploadYoutubeChannelAvatar,
   uploadYoutubeChannelAvatarTemp,
-  deleteYoutubeChannelMascotImage,
   fetchYoutubeChannelMascotImages,
-  uploadYoutubeChannelMascotImage,
-  uploadYoutubeChannelMascotImageTemp,
 } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
@@ -68,6 +64,7 @@ import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
 import type { SelectOption } from '../ui';
 import { AudioBarPickerModal } from './AudioBarPickerModal';
+import { ChannelMascotImageField } from './ChannelMascotImageField';
 import { SmallVideoPickerModal } from './SmallVideoPickerModal';
 import { SubscribePickerModal } from './SubscribePickerModal';
 import { ThumbnailBackgroundPickerModal } from './ThumbnailBackgroundPickerModal';
@@ -353,7 +350,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const { t: tCommon } = useTranslation('common');
   const { toast } = useToast();
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const mascotInputRef = useRef<HTMLInputElement>(null);
   const channelTypeOptions = useMemo(() => buildChannelTypeOptions(t), [t]);
   const languageOptions = useMemo(() => buildLanguageOptions(t), [t]);
   const audioVideoTypeOptions = useMemo(() => buildAudioVideoTypeOptions(t), [t]);
@@ -392,10 +388,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [avatarTempSessionId, setAvatarTempSessionId] = useState(() => crypto.randomUUID());
   const [hasTempAvatar, setHasTempAvatar] = useState(false);
   const [hasChannelAvatar, setHasChannelAvatar] = useState(false);
-  const [mascotUploading, setMascotUploading] = useState(false);
   const [mascotTempSessionId, setMascotTempSessionId] = useState(() => crypto.randomUUID());
   /** Preview of the channel mascot (saved image when editing, temp upload when creating); null when none. */
   const [mascotImageUrl, setMascotImageUrl] = useState<string | null>(null);
+  /** Optional character sheet of the mascot (shares the mascot temp session). */
+  const [mascotSheetUrl, setMascotSheetUrl] = useState<string | null>(null);
   const [sceneDensityDefaults, setSceneDensityDefaults] = useState<AiSceneDensityMaxSec>({
     ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
   });
@@ -546,12 +543,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setHasChannelAvatar(avatarExists);
           setHasTempAvatar(false);
 
-          try {
-            const mascotImages = await fetchYoutubeChannelMascotImages(channel.id, { signal });
-            setMascotImageUrl(mascotImages.items[0]?.url ?? null);
-          } catch {
-            setMascotImageUrl(null);
-          }
+          const [mascotImages, mascotSheets] = await Promise.all(
+            (['mascot-image', 'mascot-sheet'] as const).map(kind =>
+              fetchYoutubeChannelMascotImages(kind, channel.id, { signal }).catch(() => ({ items: [] })),
+            ),
+          );
+          setMascotImageUrl(mascotImages?.items[0]?.url ?? null);
+          setMascotSheetUrl(mascotSheets?.items[0]?.url ?? null);
 
           const formValues = getChannelFormValues(channel, mailAccountId, densityDefaults);
           if (!avatarExists) {
@@ -567,6 +565,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setHasChannelAvatar(false);
           setHasTempAvatar(false);
           setMascotImageUrl(null);
+          setMascotSheetUrl(null);
           reset({
             ...defaultValues,
             mailAccountId: availableMailOptions[0]?.value ?? '',
@@ -760,6 +759,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setHasChannelAvatar(false);
     setMascotTempSessionId(crypto.randomUUID());
     setMascotImageUrl(null);
+    setMascotSheetUrl(null);
     onClose();
   }
 
@@ -781,44 +781,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
-    }
-  }
-
-  async function handleMascotUpload(fileList: FileList | null) {
-    const file = fileList?.[0];
-    if (!file) return;
-    setMascotUploading(true);
-    try {
-      const { item } =
-        isEdit && channel
-          ? await uploadYoutubeChannelMascotImage(channel.id, file)
-          : await uploadYoutubeChannelMascotImageTemp(mascotTempSessionId, file);
-      // Same file name on every upload, so bust the browser cache.
-      setMascotImageUrl(`${item.url}?v=${Date.now()}`);
-      toast.success(t('form.mascotUploadSuccess'));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('form.mascotUploadError'));
-    } finally {
-      setMascotUploading(false);
-      if (mascotInputRef.current) mascotInputRef.current.value = '';
-    }
-  }
-
-  async function handleMascotRemove() {
-    if (!isEdit || !channel) {
-      // A new channel simply does not pick up the temp upload.
-      setMascotTempSessionId(crypto.randomUUID());
-      setMascotImageUrl(null);
-      return;
-    }
-    setMascotUploading(true);
-    try {
-      await deleteYoutubeChannelMascotImage(channel.id);
-      setMascotImageUrl(null);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('form.mascotRemoveError'));
-    } finally {
-      setMascotUploading(false);
     }
   }
 
@@ -897,7 +859,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           channelUrl: values.channelUrl.trim(),
           thumbnailBackgroundTempSessionId: tempBackgroundSessionId,
           ...(hasTempAvatar ? { avatarTempSessionId } : {}),
-          ...(mascotImageUrl ? { mascotTempSessionId } : {}),
+          ...(mascotImageUrl || mascotSheetUrl ? { mascotTempSessionId } : {}),
         });
         props.onSuccess();
       }
@@ -909,6 +871,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setHasChannelAvatar(false);
       setMascotTempSessionId(crypto.randomUUID());
       setMascotImageUrl(null);
+      setMascotSheetUrl(null);
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : isEdit ? t('form.updateError') : t('form.addError'));
@@ -1487,56 +1450,28 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             />
           </FormField>
 
-          <FormField label={t('form.channelMascot')} htmlFor='channel-mascot-upload' className='min-w-0'>
-            <div className='flex items-center gap-3'>
-              <div className='flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-700 bg-neutral-900'>
-                {mascotImageUrl ? (
-                  <img src={mascotImageUrl} alt={t('form.channelMascot')} className='size-full object-contain' />
-                ) : (
-                  <ImageOff className='size-5 text-neutral-500' aria-hidden='true' />
-                )}
-              </div>
-              <div className='min-w-0 space-y-1.5'>
-                <div className='flex items-center gap-2'>
-                  <input
-                    id='channel-mascot-upload'
-                    ref={mascotInputRef}
-                    type='file'
-                    accept='image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
-                    className='hidden'
-                    onChange={e => {
-                      void handleMascotUpload(e.target.files);
-                    }}
-                  />
-                  <Button
-                    type='button'
-                    variant='outlined'
-                    size='sm'
-                    className='h-8 rounded-md px-2 text-xs'
-                    disabled={isSubmitting || mascotUploading}
-                    onClick={() => mascotInputRef.current?.click()}
-                  >
-                    {mascotUploading ? t('form.uploadingImage') : t('form.uploadImage')}
-                  </Button>
-                  {mascotImageUrl ? (
-                    <Button
-                      type='button'
-                      variant='outlined'
-                      size='sm'
-                      className='h-8 rounded-md px-2 text-xs'
-                      disabled={isSubmitting || mascotUploading}
-                      onClick={() => {
-                        void handleMascotRemove();
-                      }}
-                    >
-                      {t('form.removeImage')}
-                    </Button>
-                  ) : null}
-                </div>
-                <p className='text-[11px] leading-snug text-neutral-500'>{t('form.channelMascotHint')}</p>
-              </div>
-            </div>
-          </FormField>
+          <ChannelMascotImageField
+            kind='mascot-image'
+            label={t('form.channelMascot')}
+            hint={t('form.channelMascotHint')}
+            channelId={isEdit ? channel?.id : undefined}
+            tempSessionId={mascotTempSessionId}
+            imageUrl={mascotImageUrl}
+            onImageUrlChange={setMascotImageUrl}
+            disabled={isSubmitting}
+          />
+
+          <ChannelMascotImageField
+            kind='mascot-sheet'
+            label={t('form.channelMascotSheet')}
+            hint={t('form.channelMascotSheetHint')}
+            optional
+            channelId={isEdit ? channel?.id : undefined}
+            tempSessionId={mascotTempSessionId}
+            imageUrl={mascotSheetUrl}
+            onImageUrlChange={setMascotSheetUrl}
+            disabled={isSubmitting}
+          />
 
           <FormField label={t('form.mascotThumbnail')} htmlFor='mascot-thumbnail' className='min-w-0'>
             <Controller

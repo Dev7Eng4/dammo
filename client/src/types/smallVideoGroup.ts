@@ -26,6 +26,13 @@ export interface DownloadSmallVideoInput {
   groupId?: string;
 }
 
+export interface MoveSmallVideoInput {
+  name: string;
+  /** `null` = ungrouped folder. */
+  fromGroupId: string | null;
+  toGroupId: string | null;
+}
+
 export interface DownloadSmallVideoFormValues {
   url: string;
   /** Empty string = save as ungrouped. */

@@ -139,17 +139,18 @@ export const AI_VIDEO_CLIP_SEC = 8;
 /** Max reference images attached to one scene image when the channel has a mascot (mascot first). */
 export const AI_SCENE_MAX_REFERENCE_IMAGES = 3;
 
-/**
- * Appended to the visual style passed to scene-prompt templates when the channel has a mascot,
- * so the LLM writes every scene around the mascot instead of inventing a protagonist.
- */
-export const AI_MASCOT_STYLE_NOTE = [
-  'CHANNEL MASCOT (mandatory): this channel has one fixed mascot character, attached as a reference image to every scene image.',
-  'The mascot is the main character of every scene that shows a person; do not create another protagonist.',
-  'Refer to it only as "the mascot character from the reference image" and describe its pose, expression, action, props and setting.',
-  'Never describe or change its appearance (body shape, face, colors, outfit). Other people are simple background figures or soft silhouettes.',
-].join(' ');
+/** Scene-prompt template for channels with a mascot; replaces the niche / reference templates. */
+export const MASCOT_SCENES_PROMPT_KEY = 'mascot_scenes';
 
-/** Prepended to every scene image prompt of a mascot channel (the mascot is always the first reference image). */
+/** Vision prompt that turns the mascot image (+ character sheet) into the channel mascot profile. */
+export const MASCOT_PROFILE_PROMPT_KEY = 'mascot_profile';
+
+/** Prepended to scene image prompts that show the mascot (the mascot is always the first reference image). */
 export const AI_MASCOT_IMAGE_PROMPT_PREFIX =
-  'Main character: the character in the first reference image. Keep it exactly as shown (same body shape, face, colors, outfit and art style); do not redesign it. ';
+  'Main character: the character in the first reference image. Draw it exactly as shown (same head and body shape, face style, line art, colors and shading); do not redesign it. ' +
+  'Draw ONE single illustration of the scene below: not a character sheet, no turnaround or multiple poses of the same character, no text. Scene: ';
+
+/** Prepended to mascot-channel scene prompts without the mascot: the reference only sets the art style. */
+export const AI_MASCOT_STYLE_ONLY_PROMPT_PREFIX =
+  'Art style: match the first reference image exactly (same line art, colors and shading), but do NOT draw the character from the reference image. ' +
+  'Draw ONE single illustration of the scene below, no text. Scene: ';

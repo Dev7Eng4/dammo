@@ -225,6 +225,53 @@ export class SmallVideoGroupsService {
     }
   }
 
+  /**
+   * Move a video between groups / the ungrouped folder (`null` = ungrouped).
+   * Keeps the file name; adds a `_n` suffix only on a name clash in the target.
+   */
+  moveMedia(
+    name: string,
+    fromGroupId: string | null,
+    toGroupId: string | null,
+  ): SmallVideoGroupMediaItem & { groupId: string | null } {
+    if ((fromGroupId ?? null) === (toGroupId ?? null)) {
+      throw new AppError('Source and target are the same', 400, 'SAME_LOCATION');
+    }
+    const fromGroup = fromGroupId ? this.getById(fromGroupId) : null;
+    const toGroup = toGroupId ? this.getById(toGroupId) : null;
+    const fromDir = fromGroup ? smallVideoGroupDir(fromGroup.id) : paths.siSmallVideoDir;
+    const toDir = toGroup ? smallVideoGroupDir(toGroup.id) : paths.siSmallVideoDir;
+
+    const safeName = sanitizeFileName(name);
+    const ext = assertAllowedVideo(safeName);
+    const sourcePath = path.join(fromDir, safeName);
+    if (!fs.existsSync(sourcePath) || !fs.statSync(sourcePath).isFile()) {
+      throw new AppError('Media not found', 404, 'NOT_FOUND');
+    }
+
+    ensureDir(toDir);
+    const stem = path.basename(safeName, ext);
+    let fileName = safeName;
+    for (let index = 1; fs.existsSync(path.join(toDir, fileName)); index += 1) {
+      fileName = `${stem}_${index}${ext}`;
+    }
+    const destPath = path.join(toDir, fileName);
+    fs.renameSync(sourcePath, destPath);
+
+    const now = new Date().toISOString();
+    for (const group of [fromGroup, toGroup]) {
+      if (group) smallVideoGroupsRepository.update(group.id, (item) => ({ ...item, updatedAt: now }));
+    }
+
+    const stat = fs.statSync(destPath);
+    return {
+      name: fileName,
+      size: stat.size,
+      updatedAt: stat.mtime.toISOString(),
+      groupId: toGroup?.id ?? null,
+    };
+  }
+
   deleteMedia(id: string, names: string[]): { deleted: string[] } {
     this.getById(id);
     const dir = smallVideoGroupDir(id);

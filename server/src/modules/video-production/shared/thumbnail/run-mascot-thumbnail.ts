@@ -1,13 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { AppError } from '../../../../shared/http/errors.js';
-import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
-import type { LlmBrowserResponse } from '../../../llm-browser/core/types.js';
-import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
-import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { emitDetailLog } from '../video-log.js';
-import { extractJsonText } from '../meta/llm-parse-result.js';
+import { chatForJsonOnSubProfile, type SubProfileJsonChatOptions } from '../sub-profile-json-chat.js';
 import { runBrowserImageGeneration, resolveThumbnailImageProvider } from './hero-image.js';
 import {
   MASCOT_THUMBNAIL_DIRECTOR_PROMPT_KEY,
@@ -19,7 +15,6 @@ import {
 import { removeGeminiWatermarkIfEnabled } from './remove-gemini-watermark.js';
 
 const THUMBNAIL_FILENAME = 'thumbnail.jpg';
-const LLM_MAX_RETRIES = 3;
 const DIRECTOR_TIMEOUT_MS = 240_000;
 /** The judge also uploads every image before answering. */
 const JUDGE_TIMEOUT_MS = 300_000;
@@ -223,55 +218,9 @@ export async function writeMascotThumbnailCandidatesFile(
   await fs.writeFile(path.join(dir, THUMBNAIL_CANDIDATES_FILENAME), JSON.stringify(file, null, 2), 'utf8');
 }
 
-/** One chat on a sub profile with retries until `parse` accepts the JSON answer. */
-async function chatForJson<T>(options: {
-  label: string;
-  prompt: string;
-  attachments?: string[];
-  timeoutMs: number;
-  parse: (jsonText: string) => T;
-  log: (msg: string) => void;
-}): Promise<T> {
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const profile = chromeProfilesService.pickSubProfile();
-  options.log(
-    `[mascot-thumbnail] ${options.label} via ${provider} on ${profile.name}` +
-      (options.attachments?.length ? ` (${options.attachments.length} image(s) attached)` : '') +
-      '...',
-  );
-
-  let lastReason = 'unknown error';
-  try {
-    await llmBrowserService.open(profile.id, provider);
-    for (let attempt = 1; attempt <= LLM_MAX_RETRIES; attempt += 1) {
-      let response: LlmBrowserResponse;
-      try {
-        response = await llmBrowserService.chat(profile.id, provider, options.prompt, undefined, {
-          submitWith: 'enter',
-          timeoutMs: options.timeoutMs,
-          ...(options.attachments?.length ? { referenceImagePaths: options.attachments } : {}),
-        });
-      } catch (err) {
-        lastReason = err instanceof Error ? err.message : String(err);
-        options.log(`[mascot-thumbnail] ${options.label} attempt ${attempt} failed: ${lastReason}`);
-        continue;
-      }
-      try {
-        return options.parse(extractJsonText(response));
-      } catch (err) {
-        lastReason = err instanceof Error ? err.message : String(err);
-        options.log(`[mascot-thumbnail] ${options.label} attempt ${attempt}: ${lastReason}`);
-      }
-    }
-  } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
-  }
-
-  throw new AppError(
-    `${options.label} failed after ${LLM_MAX_RETRIES} attempts: ${lastReason}`,
-    502,
-    'MASCOT_THUMBNAIL_LLM_FAILED',
-  );
+/** Director and Judge chats share one retry loop and error code. */
+function chatForJson<T>(options: Omit<SubProfileJsonChatOptions<T>, 'logTag' | 'errorCode'>): Promise<T> {
+  return chatForJsonOnSubProfile({ ...options, logTag: '[mascot-thumbnail]', errorCode: 'MASCOT_THUMBNAIL_LLM_FAILED' });
 }
 
 async function askDirector(input: RunMascotThumbnailInput, log: (msg: string) => void): Promise<MascotThumbnailConcept[]> {

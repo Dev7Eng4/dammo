@@ -15,6 +15,7 @@ import type { AssetFileItem } from '../../types/asset';
 import type { SmallVideoGroupListItem, SmallVideoGroupMediaItem } from '../../types/smallVideoGroup';
 import { AddSmallVideoGroupModal } from './AddSmallVideoGroupModal';
 import { DownloadSmallVideoModal } from './DownloadSmallVideoModal';
+import { MoveSmallVideoModal, type SmallVideoMoveTarget } from './MoveSmallVideoModal';
 
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
@@ -44,6 +45,16 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
+function MoveIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 7h6l2 2h10v10H3z" />
+      <path d="M12 14h6" />
+      <path d="M15 11l3 3-3 3" />
+    </svg>
+  );
+}
+
 const VIDEO_ACCEPT = '.mp4,.mov,video/mp4,video/quicktime';
 
 export function SmallVideoPanel() {
@@ -57,6 +68,7 @@ export function SmallVideoPanel() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [moveTarget, setMoveTarget] = useState<SmallVideoMoveTarget | null>(null);
   const [selected, setSelected] = useState<SmallVideoGroupListItem | null>(null);
   const [media, setMedia] = useState<SmallVideoGroupMediaItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -156,6 +168,21 @@ export function SmallVideoPanel() {
     if (selected) refreshMedia();
     toast.success(t('assets.smallVideo.toast.fileAdded', { name: fileName }));
   }
+
+  function handleMoved(fileName: string) {
+    refreshList();
+    if (selected) refreshMedia();
+    toast.success(t('assets.smallVideo.move.success', { name: fileName }));
+  }
+
+  const moveModal = (
+    <MoveSmallVideoModal
+      target={moveTarget}
+      groups={groups}
+      onClose={() => setMoveTarget(null)}
+      onSuccess={handleMoved}
+    />
+  );
 
   const downloadModal = (
     <DownloadSmallVideoModal
@@ -261,6 +288,7 @@ export function SmallVideoPanel() {
         </div>
 
         {downloadModal}
+        {moveModal}
 
         <div className="card-surface space-y-4 p-5">
           {mediaLoading ? (
@@ -295,6 +323,14 @@ export function SmallVideoPanel() {
                           onClick={() => setPreviewUrl(src)}
                         >
                           <EyeIcon className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          title={t('assets.smallVideo.move.button')}
+                          className="rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800"
+                          onClick={() => setMoveTarget({ name: item.name, fromGroupId: selected.id })}
+                        >
+                          <MoveIcon className="size-4" />
                         </button>
                         <button
                           type="button"
@@ -494,6 +530,14 @@ export function SmallVideoPanel() {
                             </button>
                             <button
                               type="button"
+                              title={t('assets.smallVideo.move.button')}
+                              className="rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800"
+                              onClick={() => setMoveTarget({ name: item.name, fromGroupId: null })}
+                            >
+                              <MoveIcon className="size-4" />
+                            </button>
+                            <button
+                              type="button"
                               title={t('common:actions.delete')}
                               className="rounded-full bg-rose-600/90 p-2 text-white hover:bg-rose-500"
                               onClick={() => setUngroupedPendingDelete(item.name)}
@@ -517,6 +561,7 @@ export function SmallVideoPanel() {
       </div>
 
       {downloadModal}
+      {moveModal}
 
       <AddSmallVideoGroupModal
         open={showAddModal}

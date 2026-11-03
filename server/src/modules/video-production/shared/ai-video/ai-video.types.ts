@@ -3,6 +3,7 @@ import type { MetaConcurrencyMode } from '../../../llm-browser/meta/meta.types.j
 import type { CaptionStyleKey } from '../render-core/caption-styles.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { ImageSceneFlow } from '../../../prompts/image-scene-flow.js';
+import type { MascotProfile } from './ai-video-mascot-profile.js';
 export type { MetaConcurrencyMode };
 
 /** @deprecated Use MetaConcurrencyMode — alias kept for existing ai-video callers. */
@@ -89,6 +90,11 @@ export interface GenerateAiVideoImagesInput {
    * When omitted, the default `all` keys (`image_scenes` / `image_scenes_with_references_step_*`) are used.
    */
   sceneImageFlow?: ImageSceneFlow;
+  /**
+   * Set by `generateAiScenePromptsForPipeline` when the channel has a mascot image: scene prompts then use the
+   * `mascot_scenes` template (instead of the niche / reference templates) and are checked to feature the mascot.
+   */
+  mascotProfile?: MascotProfile;
   onLog?: (msg: string) => void;
   onProgress?: (progress: {
     density: AiVideoDensityLevel;

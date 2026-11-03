@@ -6,7 +6,10 @@ import {
   youtubeChannelMascotTempDir,
 } from '../../config/paths.js';
 import { AppError } from '../../shared/http/errors.js';
-import { CHANNEL_MASCOT_BASENAME } from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
+import {
+  CHANNEL_MASCOT_BASENAME,
+  CHANNEL_MASCOT_SHEET_BASENAME,
+} from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
 import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/render-core/canvas.constants.js';
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
@@ -179,6 +182,11 @@ export class ChannelAvatarsService {
     removeExistingAvatarFiles(youtubeChannelDir(channelId), this.basename);
   }
 
+  deleteTemp(sessionId: string): void {
+    const dir = this.tempDirFor(sanitizeSessionId(sessionId));
+    if (fs.existsSync(dir)) removeExistingAvatarFiles(dir, this.basename);
+  }
+
   getChannelAsset(channelId: string, filename: string): ChannelAvatarAsset {
     return resolveAvatarAsset(youtubeChannelDir(channelId), filename, this.basename);
   }
@@ -217,3 +225,5 @@ export class ChannelAvatarsService {
 
 export const channelAvatarsService = new ChannelAvatarsService(CHANNEL_AVATAR_BASENAME, youtubeChannelAvatarTempDir);
 export const channelMascotImagesService = new ChannelAvatarsService(CHANNEL_MASCOT_BASENAME, youtubeChannelMascotTempDir);
+/** Optional mascot character sheet; shares the mascot temp folder (different basename). */
+export const channelMascotSheetsService = new ChannelAvatarsService(CHANNEL_MASCOT_SHEET_BASENAME, youtubeChannelMascotTempDir);

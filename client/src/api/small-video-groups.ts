@@ -3,6 +3,7 @@ import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   CreateSmallVideoGroupInput,
   DownloadSmallVideoInput,
+  MoveSmallVideoInput,
   SmallVideoGroupListItem,
   SmallVideoGroupMediaItem,
 } from '../types/smallVideoGroup';
@@ -52,6 +53,18 @@ export function uploadSmallVideoGroupMedia(id: string, file: File) {
 export function downloadSmallVideoFromUrl(input: DownloadSmallVideoInput) {
   return fetchJson<{ item: SmallVideoGroupMediaItem & { groupId: string | null } }>(
     `${API_V1}/small-video-groups/download`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+/** Move a video between groups; `null` group id = the ungrouped folder. */
+export function moveSmallVideo(input: MoveSmallVideoInput) {
+  return fetchJson<{ item: SmallVideoGroupMediaItem & { groupId: string | null } }>(
+    `${API_V1}/small-video-groups/move`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

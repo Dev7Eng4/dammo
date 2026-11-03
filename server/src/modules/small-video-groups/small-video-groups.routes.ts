@@ -7,6 +7,7 @@ import {
   createSmallVideoGroupSchema,
   deleteSmallVideoGroupMediaSchema,
   downloadSmallVideoSchema,
+  moveSmallVideoSchema,
 } from './small-video-groups.schema.js';
 import { smallVideoGroupsService } from './small-video-groups.service.js';
 
@@ -69,6 +70,12 @@ export function createSmallVideoGroupsRoutes() {
     const body = c.req.valid('json');
     const item = await smallVideoGroupsService.downloadMediaFromUrl(body.url, body.groupId || undefined);
     return c.json({ item }, 201);
+  });
+
+  app.post('/move', zValidator('json', moveSmallVideoSchema), (c) => {
+    const body = c.req.valid('json');
+    const item = smallVideoGroupsService.moveMedia(body.name, body.fromGroupId, body.toGroupId);
+    return c.json({ item });
   });
 
   app.get('/:id/media', (c) => {

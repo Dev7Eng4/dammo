@@ -15,14 +15,14 @@ import {
 } from './ai-video-character-references.js';
 import {
   promoteImageReferencesToChannelMascots,
-  resolveChannelMascotImagePath,
   seedImageReferencesFromChannelMascots,
 } from './ai-video-channel-mascots.js';
+import { ensureChannelMascotProfile, findMascotScenePromptIssue } from './ai-video-mascot-profile.js';
 import { tryParseAiVideoSceneResponse } from './ai-video-scene-response.js';
 import { prepareTranscriptDensityChunks } from './ai-video-transcript.js';
 import {
-  AI_MASCOT_STYLE_NOTE,
   AI_VIDEO_SCENE_PROMPT_TIMEOUT_MS,
+  MASCOT_SCENES_PROMPT_KEY,
   resolveAiSceneDensityMaxSec,
   CREATE_CHARACTERS_DESIGN_PROMPT_KEY,
   VIDEO_IMAGE_PROMPT_KEY,
@@ -130,6 +130,7 @@ function scenesOutsideChunkRange(
 }
 
 function resolvePlainScenePromptKey(input: GenerateAiVideoImagesInput): string {
+  if (input.mascotProfile) return MASCOT_SCENES_PROMPT_KEY;
   const flow = input.sceneImageFlow;
   return flow?.mode === 'plain' ? flow.stepKeys[0]! : VIDEO_IMAGE_PROMPT_KEY;
 }
@@ -143,7 +144,7 @@ function resolveReferenceFlowPromptKeys(input: GenerateAiVideoImagesInput): [str
 
 function describeSceneImageFlow(input: GenerateAiVideoImagesInput, keys: string[]): string {
   const flow = input.sceneImageFlow;
-  const label = flow ? `"${flow.setName}" (niche ${flow.niche})` : 'default';
+  const label = input.mascotProfile ? 'channel mascot' : flow ? `"${flow.setName}" (niche ${flow.niche})` : 'default';
   return `${label} → ${keys.join(' + ')}`;
 }
 
@@ -159,8 +160,9 @@ async function executeScenePromptChunk(
 ): Promise<AiVideoScenePrompt[]> {
   const promptKey = options?.promptKey ?? resolvePlainScenePromptKey(input);
   const niche = input.detectedNiche ?? '';
-  const args: unknown[] =
-    options?.charactersJson !== undefined
+  const args: unknown[] = input.mascotProfile
+    ? [JSON.stringify(job.transcriptChunk), input.visualStyle.rule, niche, job.maxDurationSec, input.mascotProfile]
+    : options?.charactersJson !== undefined
       ? [
           JSON.stringify(job.transcriptChunk),
           input.visualStyle.rule,
@@ -177,6 +179,8 @@ async function executeScenePromptChunk(
 
   let lastReason = 'unknown error';
   let lastResponsePath: string | undefined;
+  /** Mascot chunk that parsed but failed the mascot check; used when every attempt fails that check. */
+  let lastMascotFallback: AiVideoScenePrompt[] | undefined;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     input.onProgress?.({
@@ -202,13 +206,24 @@ async function executeScenePromptChunk(
         requireReferences: options?.requireReferences === true,
       });
 
-      if (parsed && !scenesOutsideChunkRange(parsed, chunkStartMs, chunkEndMs)) {
+      const inRange = parsed && !scenesOutsideChunkRange(parsed, chunkStartMs, chunkEndMs);
+      const mascotIssue = inRange && input.mascotProfile ? findMascotScenePromptIssue(parsed) : null;
+      if (inRange && !mascotIssue) {
         return parsed;
       }
+      if (inRange && mascotIssue) {
+        lastMascotFallback = parsed;
+        emitDetailLog(
+          `[ai-video] ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} attempt ${attempt}: ${mascotIssue} → asking again`,
+          input.onLog,
+        );
+      }
 
-      lastReason = parsed
-        ? 'scene timestamps outside chunk range (stale LLM response?)'
-        : 'invalid JSON or schema mismatch';
+      lastReason = mascotIssue
+        ? `mascot check: ${mascotIssue}`
+        : parsed
+          ? 'scene timestamps outside chunk range (stale LLM response?)'
+          : 'invalid JSON or schema mismatch';
       lastResponsePath = await persistLlmParseFailure({
         outputDir: input.workDir,
         label: `ai-scene-${job.density}-${job.chunkIndex}`,
@@ -219,6 +234,14 @@ async function executeScenePromptChunk(
     } catch (err) {
       lastReason = err instanceof Error ? err.message : 'unknown error';
     }
+  }
+
+  if (lastMascotFallback) {
+    emitDetailLog(
+      `[ai-video] WARNING: ${job.density} chunk ${job.chunkIndex + 1}/${job.totalChunks} kept despite the ${lastReason}`,
+      input.onLog,
+    );
+    return lastMascotFallback;
   }
 
   throw new AppError(
@@ -466,21 +489,27 @@ export async function generateAiVideoImagesWithReference(
   };
 }
 
-/** Tell the scene-prompt LLM about the channel mascot through the visual style it already receives. */
-async function withChannelMascotStyle(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesInput> {
-  if (!(await resolveChannelMascotImagePath(input.channelId))) return input;
-  emitDetailLog('[ai-video] Channel mascot found → scene prompts are written around the mascot', input.onLog);
-  return {
-    ...input,
-    visualStyle: { ...input.visualStyle, rule: `${input.visualStyle.rule.trim()}\n\n${AI_MASCOT_STYLE_NOTE}` },
-  };
+/**
+ * Mascot channels: build (or reuse) the mascot profile and switch to the mascot scene template.
+ * The reference flow is skipped — the mascot is the cast, and its image is the only reference.
+ */
+async function withChannelMascot(input: GenerateAiVideoImagesInput): Promise<GenerateAiVideoImagesInput> {
+  const log = (msg: string) => emitDetailLog(msg, input.onLog);
+  const mascotProfile = await ensureChannelMascotProfile(input.channelId, log);
+  if (!mascotProfile) return input;
+  log(
+    '[ai-video] Channel mascot found → scene prompts are written around the mascot (mascot_scenes template' +
+      (input.useReferenceImage ? ', character design step skipped' : '') +
+      ')',
+  );
+  return { ...input, mascotProfile, useReferenceImage: false };
 }
 
 /** Shared entry for AI / SI multi_image scene prompt generation. */
 export async function generateAiScenePromptsForPipeline(
   pipelineInput: GenerateAiVideoImagesInput,
 ): Promise<GenerateAiVideoImagesResult & { pauseBeforeSceneImages: boolean; characters?: AiVideoCharacterReference[] }> {
-  const input = await withChannelMascotStyle(pipelineInput);
+  const input = await withChannelMascot(pipelineInput);
   if (input.useReferenceImage) {
     const result = await generateAiVideoImagesWithReference(input);
     return {

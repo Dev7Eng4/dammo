@@ -32,9 +32,16 @@ import {
 import {
   channelAvatarsService,
   channelMascotImagesService,
+  channelMascotSheetsService,
   type ChannelAvatarContentType,
   type ChannelAvatarUpload,
 } from './channel-avatars.service.js';
+
+/** Channel mascot image (`mascot.*`) and its optional character sheet (`mascot-sheet.*`). */
+const CHANNEL_MASCOT_IMAGE_KINDS = [
+  { segment: 'mascot-image', listSegment: 'mascot-images', service: channelMascotImagesService },
+  { segment: 'mascot-sheet', listSegment: 'mascot-sheets', service: channelMascotSheetsService },
+] as const;
 
 const THUMBNAIL_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const THUMBNAIL_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -242,22 +249,29 @@ export function createYoutubeChannelsRoutes() {
     return streamFileAsset(c.req.raw, asset);
   });
 
-  app.post('/mascot-images/temp/:sessionId', async (c) => {
-    const sessionId = c.req.param('sessionId');
-    const body = await c.req.parseBody();
-    const parsed = await parseChannelAvatarUpload(body);
-    if (!parsed.ok) {
-      return c.json({ error: parsed.error }, parsed.status);
-    }
-    const urlPrefix = `/api/v1/youtube-channels/mascot-images/temp/${encodeURIComponent(sessionId)}`;
-    const item = await channelMascotImagesService.uploadTemp(sessionId, parsed.upload, urlPrefix);
-    return c.json({ item }, 201);
-  });
+  for (const kind of CHANNEL_MASCOT_IMAGE_KINDS) {
+    app.post(`/${kind.listSegment}/temp/:sessionId`, async (c) => {
+      const sessionId = c.req.param('sessionId');
+      const body = await c.req.parseBody();
+      const parsed = await parseChannelAvatarUpload(body);
+      if (!parsed.ok) {
+        return c.json({ error: parsed.error }, parsed.status);
+      }
+      const urlPrefix = `/api/v1/youtube-channels/${kind.listSegment}/temp/${encodeURIComponent(sessionId)}`;
+      const item = await kind.service.uploadTemp(sessionId, parsed.upload, urlPrefix);
+      return c.json({ item }, 201);
+    });
 
-  app.get('/mascot-images/temp/:sessionId/:filename', (c) => {
-    const asset = channelMascotImagesService.getTempAsset(c.req.param('sessionId'), c.req.param('filename'));
-    return streamFileAsset(c.req.raw, asset);
-  });
+    app.delete(`/${kind.listSegment}/temp/:sessionId`, (c) => {
+      kind.service.deleteTemp(c.req.param('sessionId'));
+      return c.json({ ok: true });
+    });
+
+    app.get(`/${kind.listSegment}/temp/:sessionId/:filename`, (c) => {
+      const asset = kind.service.getTempAsset(c.req.param('sessionId'), c.req.param('filename'));
+      return streamFileAsset(c.req.raw, asset);
+    });
+  }
 
   app.get('/:id/thumbnail-backgrounds', (c) => {
     const id = c.req.param('id');
@@ -307,40 +321,42 @@ export function createYoutubeChannelsRoutes() {
     return streamFileAsset(c.req.raw, asset);
   });
 
-  app.get('/:id/mascot-images', (c) => {
-    const id = c.req.param('id');
-    youtubeChannelsService.getById(id);
-    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/mascot-image`;
-    const item = channelMascotImagesService.findForChannel(id, urlPrefix);
-    return c.json({ items: item ? [item] : [] });
-  });
+  for (const kind of CHANNEL_MASCOT_IMAGE_KINDS) {
+    app.get(`/:id/${kind.listSegment}`, (c) => {
+      const id = c.req.param('id');
+      youtubeChannelsService.getById(id);
+      const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/${kind.segment}`;
+      const item = kind.service.findForChannel(id, urlPrefix);
+      return c.json({ items: item ? [item] : [] });
+    });
 
-  app.post('/:id/mascot-image', async (c) => {
-    const id = c.req.param('id');
-    youtubeChannelsService.getById(id);
-    const body = await c.req.parseBody();
-    const parsed = await parseChannelAvatarUpload(body);
-    if (!parsed.ok) {
-      return c.json({ error: parsed.error }, parsed.status);
-    }
-    const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/mascot-image`;
-    const item = await channelMascotImagesService.uploadForChannel(id, parsed.upload, urlPrefix);
-    return c.json({ item }, 201);
-  });
+    app.post(`/:id/${kind.segment}`, async (c) => {
+      const id = c.req.param('id');
+      youtubeChannelsService.getById(id);
+      const body = await c.req.parseBody();
+      const parsed = await parseChannelAvatarUpload(body);
+      if (!parsed.ok) {
+        return c.json({ error: parsed.error }, parsed.status);
+      }
+      const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/${kind.segment}`;
+      const item = await kind.service.uploadForChannel(id, parsed.upload, urlPrefix);
+      return c.json({ item }, 201);
+    });
 
-  app.delete('/:id/mascot-image', (c) => {
-    const id = c.req.param('id');
-    youtubeChannelsService.getById(id);
-    channelMascotImagesService.deleteForChannel(id);
-    return c.json({ ok: true });
-  });
+    app.delete(`/:id/${kind.segment}`, (c) => {
+      const id = c.req.param('id');
+      youtubeChannelsService.getById(id);
+      kind.service.deleteForChannel(id);
+      return c.json({ ok: true });
+    });
 
-  app.get('/:id/mascot-image/:filename', (c) => {
-    const id = c.req.param('id');
-    youtubeChannelsService.getById(id);
-    const asset = channelMascotImagesService.getChannelAsset(id, c.req.param('filename'));
-    return streamFileAsset(c.req.raw, asset);
-  });
+    app.get(`/:id/${kind.segment}/:filename`, (c) => {
+      const id = c.req.param('id');
+      youtubeChannelsService.getById(id);
+      const asset = kind.service.getChannelAsset(id, c.req.param('filename'));
+      return streamFileAsset(c.req.raw, asset);
+    });
+  }
 
   app.get('/:id/thumbnail-backgrounds/:filename', (c) => {
     const id = c.req.param('id');

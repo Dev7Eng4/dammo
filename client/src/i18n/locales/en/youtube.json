@@ -327,7 +327,7 @@
     "uploadImage": "Upload image",
     "uploadingImage": "Uploading...",
     "channelMascot": "Channel mascot",
-    "channelMascotHint": "The channel's mascot character, used as the reference image for thumbnails and scene images.",
+    "channelMascotHint": "Main mascot image: one character, one front-facing standing pose, plain background. Used as the reference when drawing thumbnails and scene images.",
     "removeImage": "Remove image",
     "thumbnailStyle": "Thumbnail style",
     "thumbnailNeedLang": "Select a language first",
@@ -405,7 +405,9 @@
     "mascotThumbnailOff": "Off (use the regular thumbnail style)",
     "mascotThumbnailCount": "On – {{count}} candidates",
     "mascotThumbnailHint": "AI designs several mascot thumbnails, scores them and uses the best; pick another one in the video popup.",
-    "mascotThumbnailNeedsMascot": "Upload a channel mascot image first."
+    "mascotThumbnailNeedsMascot": "Upload a channel mascot image first.",
+    "channelMascotSheet": "Mascot character sheet",
+    "channelMascotSheetHint": "Views, expressions and poses of the same mascot. Only read by the AI to learn how the mascot emotes; never drawn from."
   },
   "metadata": {
     "title": "Create metadata",

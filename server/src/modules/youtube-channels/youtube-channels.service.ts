@@ -48,7 +48,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
-import { channelAvatarsService, channelMascotImagesService } from './channel-avatars.service.js';
+import { channelAvatarsService, channelMascotImagesService, channelMascotSheetsService } from './channel-avatars.service.js';
 import { parseSmallVideoGroupId, OVERLAY_AUTO_SENTINEL } from '../video-production/shared/render-core/canvas.constants.js';
 import { celebritiesService } from '../celebrities/celebrities.service.js';
 import { smallVideoGroupsService } from '../small-video-groups/small-video-groups.service.js';
@@ -1087,6 +1087,7 @@ export class YoutubeChannelsService {
     }
     if (input.mascotTempSessionId?.trim()) {
       channelMascotImagesService.moveTempToChannel(input.mascotTempSessionId.trim(), channel.id);
+      channelMascotSheetsService.moveTempToChannel(input.mascotTempSessionId.trim(), channel.id);
     }
 
     const selectedBackground = input.thumbnailBackgroundFile?.trim();

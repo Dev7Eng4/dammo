@@ -5,8 +5,8 @@ Nhiệm vụ: chia transcript thành các cảnh hợp lý và viết prompt ả
 INPUT
 ====================================================
 {
-  "niche": "${niche}",
-  "style": "${style}",
+  "niche": ${JSON.stringify(niche ?? "")},
+  "style": ${JSON.stringify(style ?? "")},
   "maxDuration": ${maxDuration},
   "characters": ${characters},
   "transcript": ${transcript}

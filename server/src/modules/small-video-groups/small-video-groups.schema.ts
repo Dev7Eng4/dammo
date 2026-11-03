@@ -14,6 +14,13 @@ export const downloadSmallVideoSchema = z.object({
   groupId: z.string().trim().optional(),
 });
 
+/** `null` group id = the ungrouped folder. */
+export const moveSmallVideoSchema = z.object({
+  name: z.string().trim().min(1),
+  fromGroupId: z.string().trim().min(1).nullable(),
+  toGroupId: z.string().trim().min(1).nullable(),
+});
+
 export const deleteSmallVideoGroupMediaSchema = z.object({
   names: z.array(z.string().min(1)).min(1),
 });

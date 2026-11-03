@@ -6,8 +6,8 @@ Nhiệm vụ của bạn là phân tích transcript, chia thành các cảnh h�
 INPUT
 ====================================================
 {
-  "niche": "${niche}",
-  "style": "${style}",
+  "niche": ${JSON.stringify(niche ?? "")},
+  "style": ${JSON.stringify(style ?? "")},
   "maxDuration": ${maxDuration},
   "characters": ${characters},
   "transcript": ${transcript}

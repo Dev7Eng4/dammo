@@ -327,7 +327,7 @@
     "uploadImage": "Tải ảnh",
     "uploadingImage": "Đang tải...",
     "channelMascot": "Mascot kênh",
-    "channelMascotHint": "Ảnh nhân vật mascot của kênh, dùng làm ảnh tham chiếu cho thumbnail và ảnh cảnh.",
+    "channelMascotHint": "Ảnh chính của mascot: 1 nhân vật, 1 tư thế đứng chính diện, nền trơn. Dùng làm ảnh tham chiếu khi vẽ thumbnail và ảnh cảnh.",
     "removeImage": "Xoá ảnh",
     "thumbnailStyle": "Kiểu ảnh thu nhỏ",
     "thumbnailNeedLang": "Chọn ngôn ngữ trước",
@@ -405,7 +405,9 @@
     "mascotThumbnailOff": "Tắt (dùng kiểu thumbnail thường)",
     "mascotThumbnailCount": "Bật – {{count}} bản để chọn",
     "mascotThumbnailHint": "AI tự thiết kế nhiều thumbnail có mascot, chấm điểm và dùng bản tốt nhất; đổi bản khác trong popup video.",
-    "mascotThumbnailNeedsMascot": "Tải ảnh mascot kênh trước để bật."
+    "mascotThumbnailNeedsMascot": "Tải ảnh mascot kênh trước để bật.",
+    "channelMascotSheet": "Bảng nhân vật mascot",
+    "channelMascotSheetHint": "Ảnh nhiều góc nhìn, biểu cảm, tư thế của cùng mascot. Chỉ để AI học cách mascot biểu cảm, không dùng để vẽ."
   },
   "metadata": {
     "title": "Tạo Metadata",

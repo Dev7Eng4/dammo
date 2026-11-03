@@ -278,6 +278,16 @@
         "downloading": "Downloading…",
         "hint": "Downloading the video. This can take a while for long videos.",
         "error": "Could not download video"
+      },
+      "move": {
+        "button": "Move",
+        "title": "Move video",
+        "to": "Move to",
+        "placeholder": "Select a group",
+        "submit": "Move",
+        "moving": "Moving…",
+        "success": "Moved {{name}}",
+        "error": "Could not move video"
       }
     }
   },
