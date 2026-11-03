@@ -426,6 +426,23 @@ export function uploadYoutubeChannelMascotImageTemp(kind: ChannelMascotImageKind
   );
 }
 
+/** Copy a Assets → Mascot library image into the channel (`channelId`) or the new-channel temp session. */
+export function pickYoutubeChannelMascotImageFromLibrary(
+  kind: ChannelMascotImageKind,
+  target: { channelId: string } | { sessionId: string },
+  name: string,
+) {
+  const url =
+    'channelId' in target
+      ? `${API_V1}/youtube-channels/${encodeURIComponent(target.channelId)}/${kind}/from-library`
+      : `${API_V1}/youtube-channels/${MASCOT_IMAGE_LIST_SEGMENT[kind]}/temp/${encodeURIComponent(target.sessionId)}/from-library`;
+  return fetchJson<{ item: ChannelAvatarItem }>(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}
+
 export function deleteYoutubeChannelMascotImage(kind: ChannelMascotImageKind, channelId: string) {
   return fetchJson<{ ok: true }>(
     `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/${kind}`,

@@ -406,6 +406,10 @@
     "mascotThumbnailCount": "On – {{count}} candidates",
     "mascotThumbnailHint": "AI designs several mascot thumbnails, scores them and uses the best; pick another one in the video popup.",
     "mascotThumbnailNeedsMascot": "Upload a channel mascot image first.",
+    "mascotPickFromLibrary": "From library",
+    "mascotLibraryTitle": "Pick an image for {{label}}",
+    "mascotLibraryEmpty": "The mascot library is empty. Upload images in Assets → Mascot.",
+    "mascotLibraryError": "Could not load the mascot library",
     "channelMascotSheet": "Mascot character sheet",
     "channelMascotSheetHint": "Views, expressions and poses of the same mascot. Only read by the AI to learn how the mascot emotes; never drawn from."
   },

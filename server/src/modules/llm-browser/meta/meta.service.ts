@@ -18,6 +18,13 @@ import {
   openMetaWorkerPool,
   type MetaMediaWorker,
 } from './meta-media-workers.js';
+import {
+  isMetaProfileQuotaExhausted,
+  isMetaQuotaExhaustedError,
+  markMetaProfileQuotaExhausted,
+  META_QUOTA_COOLDOWN_MS,
+  metaQuotaExhaustedError,
+} from './meta-quota.js';
 
 const META_PROVIDER = 'meta' as const;
 
@@ -77,6 +84,10 @@ export class MetaBrowserService {
   }
 
   async generateMedia(profileId: string, prompt: string, options?: MetaGenerateMediaOptions): Promise<LlmBrowserResponse> {
+    if (isMetaProfileQuotaExhausted(profileId)) {
+      throw metaQuotaExhaustedError();
+    }
+
     if (!getLlmBrowserSession(profileId, META_PROVIDER)) {
       await this.open(profileId);
     }
@@ -96,6 +107,7 @@ export class MetaBrowserService {
       return response;
     } catch (err) {
       setLlmBrowserSessionStatus(profileId, META_PROVIDER, 'idle');
+      if (isMetaQuotaExhaustedError(err)) markMetaProfileQuotaExhausted(profileId);
       throw err;
     }
   }
@@ -154,9 +166,20 @@ export class MetaBrowserService {
     const pool = await openMetaWorkerPool(jobs.length, log, concurrency);
     const { workers } = pool;
     let nextJobIndex = 0;
+    /** Jobs handed back by a worker whose profile ran out of quota; picked up before new ones. */
+    const requeuedJobIndexes: number[] = [];
+    const finishedJobIndexes = new Set<number>();
     const results: MetaMediaBatchJobResult[] = jobs.map(job => ({ id: job.id, ok: false }));
     let generatedCount = 0;
     let failedCount = 0;
+
+    const takeNextJobIndex = (): number | undefined => {
+      const requeued = requeuedJobIndexes.shift();
+      if (requeued !== undefined) return requeued;
+      if (nextJobIndex >= jobs.length) return undefined;
+      nextJobIndex += 1;
+      return nextJobIndex - 1;
+    };
 
     log(
       `[meta] ${concurrency}: ${workers.length} worker(s) ` +
@@ -165,9 +188,14 @@ export class MetaBrowserService {
 
     const runWorker = async (worker: MetaMediaWorker): Promise<void> => {
       while (true) {
-        const jobIndex = nextJobIndex;
-        nextJobIndex += 1;
-        if (jobIndex >= jobs.length) return;
+        // Every tab of a profile shares one Meta account, so one exhausted tab stops them all.
+        if (isMetaProfileQuotaExhausted(worker.profileId)) {
+          log(`[meta] worker ${worker.workerIndex + 1} (${worker.label}) dừng: profile đã hết quota tạo ảnh`);
+          return;
+        }
+
+        const jobIndex = takeNextJobIndex();
+        if (jobIndex === undefined) return;
 
         const job = jobs[jobIndex];
         options?.onJobProgress?.({
@@ -183,6 +211,7 @@ export class MetaBrowserService {
 
         let lastError = 'unknown error';
         let succeeded = false;
+        let quotaExhausted = false;
 
         for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
           try {
@@ -206,6 +235,7 @@ export class MetaBrowserService {
             }
 
             results[jobIndex] = { id: job.id, ok: true, localPath };
+            finishedJobIndexes.add(jobIndex);
             generatedCount += 1;
             succeeded = true;
             options?.onJobProgress?.({
@@ -217,6 +247,10 @@ export class MetaBrowserService {
             break;
           } catch (err) {
             lastError = err instanceof Error ? err.message : String(err);
+            if (isMetaQuotaExhaustedError(err)) {
+              quotaExhausted = true;
+              break;
+            }
             if (attempt === maxRetries) {
               log(`[meta] bỏ qua ${job.id} sau ${maxRetries} lần: ${lastError}`);
             } else {
@@ -225,8 +259,19 @@ export class MetaBrowserService {
           }
         }
 
+        if (quotaExhausted) {
+          markMetaProfileQuotaExhausted(worker.profileId);
+          requeuedJobIndexes.push(jobIndex);
+          log(
+            `[meta] ${worker.label} hết quota tạo ảnh → không tải ảnh, dừng profile này ` +
+              `(bỏ qua ${Math.round(META_QUOTA_COOLDOWN_MS / 3_600_000)}h), trả ${job.id} lại hàng đợi`,
+          );
+          return;
+        }
+
         if (!succeeded) {
           results[jobIndex] = { id: job.id, ok: false, error: lastError };
+          finishedJobIndexes.add(jobIndex);
           failedCount += 1;
           options?.onJobProgress?.({
             jobId: job.id,
@@ -240,6 +285,18 @@ export class MetaBrowserService {
 
     try {
       await Promise.all(workers.map(worker => runWorker(worker)));
+
+      // Every profile ran out of quota before these jobs could run.
+      jobs.forEach((job, jobIndex) => {
+        if (finishedJobIndexes.has(jobIndex)) return;
+        results[jobIndex] = { id: job.id, ok: false, error: metaQuotaExhaustedError().message };
+        failedCount += 1;
+        options?.onJobProgress?.({ jobId: job.id, index: jobIndex + 1, total: jobs.length, status: 'failed' });
+      });
+      if (requeuedJobIndexes.length > 0 || nextJobIndex < jobs.length) {
+        log('[meta] Tất cả profile đã hết quota tạo ảnh — các job còn lại bị bỏ qua');
+      }
+
       return { results, generatedCount, failedCount };
     } finally {
       await cleanupMetaWorkerPool(pool, log);

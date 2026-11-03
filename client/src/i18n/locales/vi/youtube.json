@@ -406,6 +406,10 @@
     "mascotThumbnailCount": "Bật – {{count}} bản để chọn",
     "mascotThumbnailHint": "AI tự thiết kế nhiều thumbnail có mascot, chấm điểm và dùng bản tốt nhất; đổi bản khác trong popup video.",
     "mascotThumbnailNeedsMascot": "Tải ảnh mascot kênh trước để bật.",
+    "mascotPickFromLibrary": "Chọn từ kho",
+    "mascotLibraryTitle": "Chọn ảnh cho {{label}}",
+    "mascotLibraryEmpty": "Kho mascot trống. Tải ảnh lên ở Tài nguyên → Mascot.",
+    "mascotLibraryError": "Không tải được kho mascot",
     "channelMascotSheet": "Bảng nhân vật mascot",
     "channelMascotSheetHint": "Ảnh nhiều góc nhìn, biểu cảm, tư thế của cùng mascot. Chỉ để AI học cách mascot biểu cảm, không dùng để vẽ."
   },

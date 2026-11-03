@@ -43,6 +43,7 @@ export const paths = {
   siAudioBarDir: path.join(env.dataDir, 'assets', 'audioBar'),
   siSmallVideoDir: path.join(env.dataDir, 'assets', 'small-video'),
   siSubscribeDir: path.join(env.dataDir, 'assets', 'subscribe'),
+  mascotLibraryDir: path.join(env.dataDir, 'assets', 'mascots'),
   siTempStockDir: path.join(env.dataDir, 'assets', 'temp_stock'),
   videoAgentRunsDir: path.join(env.dataDir, 'video-agent', 'runs'),
 };

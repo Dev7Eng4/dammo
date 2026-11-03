@@ -17,6 +17,7 @@ import {
 import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../chrome-profiles/chrome-profiles.types.js';
 import { gpmManagerService } from '../../gpm-manager/gpm-manager.service.js';
+import { isMetaProfileQuotaExhausted } from './meta-quota.js';
 
 export const META_MEDIA_TABS_PER_MAIN_PROFILE = 5;
 export const META_MEDIA_DEFAULT_TIMEOUT_MS = 300_000;
@@ -144,6 +145,18 @@ async function openGpmMetaWorkers(
   return { workers, connections };
 }
 
+/** Drop profiles that recently ran out of Meta image quota, logging which ones were skipped. */
+function withoutQuotaExhausted<T extends { id: string; name: string }>(
+  profiles: T[],
+  log: (msg: string) => void,
+): T[] {
+  const skipped = profiles.filter(profile => isMetaProfileQuotaExhausted(profile.id));
+  if (skipped.length > 0) {
+    log(`[meta] Bỏ qua profile hết quota tạo ảnh: ${skipped.map(profile => profile.name).join(', ')}`);
+  }
+  return profiles.filter(profile => !isMetaProfileQuotaExhausted(profile.id));
+}
+
 export async function openMetaWorkerPool(
   pendingCount: number,
   log: (msg: string) => void,
@@ -157,7 +170,7 @@ export async function openMetaWorkerPool(
 
 /** Exactly 1 tab on 1 profile (Chrome main first, else first GPM meta). */
 async function openMetaWorkerPoolSingle(log: (msg: string) => void): Promise<MetaMediaWorkerPool> {
-  const mains = chromeProfilesService.listMainProfiles();
+  const mains = withoutQuotaExhausted(chromeProfilesService.listMainProfiles(), log);
   const firstMain = mains[0];
 
   log(
@@ -189,7 +202,7 @@ async function openMetaWorkerPoolSingle(log: (msg: string) => void): Promise<Met
 
   let gpmCandidates: GpmProfile[] = [];
   try {
-    gpmCandidates = await gpmManagerService.listMetaEnabledProfiles();
+    gpmCandidates = withoutQuotaExhausted(await gpmManagerService.listMetaEnabledProfiles(), log);
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     const code = err instanceof AppError ? err.code : undefined;
@@ -224,14 +237,14 @@ async function openMetaWorkerPoolBatch(
   log: (msg: string) => void,
 ): Promise<MetaMediaWorkerPool> {
   const tabsPerMain = META_MEDIA_TABS_PER_MAIN_PROFILE;
-  const mains = chromeProfilesService.listMainProfiles();
+  const mains = withoutQuotaExhausted(chromeProfilesService.listMainProfiles(), log);
   const chromeTabProfiles = allocateChromeMetaTabProfiles(mains, pendingCount, tabsPerMain);
   const remainingAfterChrome = Math.max(0, pendingCount - chromeTabProfiles.length);
 
   let gpmCandidates: GpmProfile[] = [];
   if (remainingAfterChrome > 0) {
     try {
-      gpmCandidates = await gpmManagerService.listMetaEnabledProfiles();
+      gpmCandidates = withoutQuotaExhausted(await gpmManagerService.listMetaEnabledProfiles(), log);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       const code = err instanceof AppError ? err.code : undefined;

@@ -16,12 +16,13 @@ const TAB_KINDS: { kind: AssetKind; accept: string }[] = [
   { kind: 'fonts', accept: '.ttf,.otf,.woff,.woff2' },
   { kind: 'smallVideo', accept: '.mp4,.mov,video/mp4,video/quicktime' },
   { kind: 'siLocalStock', accept: '.mp4,.mov,video/mp4,video/quicktime' },
+  { kind: 'mascot', accept: '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp' },
 ];
 
 type AssetsPageTab = AssetKind | 'celebrities';
 
 function isVideoKind(kind: AssetKind): boolean {
-  return kind !== 'fonts';
+  return kind !== 'fonts' && kind !== 'mascot';
 }
 
 function formatBytes(size: number): string {
@@ -124,7 +125,8 @@ export function AssetsPage() {
 
   const activeTabMeta = TAB_KINDS.find(tab => tab.kind === activeKind) ?? TAB_KINDS[0];
   const activeTabLabel = tabLabel(activeKind);
-  const showVideoGrid = !isPanelTab && !isSmallVideoTab && isVideoKind(activeKind);
+  const isImageKind = activeKind === 'mascot';
+  const showVideoGrid = !isPanelTab && !isSmallVideoTab && (isVideoKind(activeKind) || isImageKind);
 
   useAbortableEffect(
     async signal => {
@@ -328,14 +330,23 @@ export function AssetsPage() {
                 return (
                   <div key={item.name} className='group overflow-hidden rounded-xl border-2 border-neutral-800 transition hover:border-neutral-600'>
                     <div className='relative aspect-square w-full bg-neutral-950'>
-                      <video
-                        src={src}
-                        muted
-                        playsInline
-                        preload='metadata'
-                        className='pointer-events-none h-full w-full object-contain'
-                        tabIndex={-1}
-                      />
+                      {isImageKind ? (
+                        <img
+                          src={src}
+                          alt={item.name}
+                          loading='lazy'
+                          className='pointer-events-none h-full w-full object-contain'
+                        />
+                      ) : (
+                        <video
+                          src={src}
+                          muted
+                          playsInline
+                          preload='metadata'
+                          className='pointer-events-none h-full w-full object-contain'
+                          tabIndex={-1}
+                        />
+                      )}
                       <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
                         <button
                           type='button'
@@ -512,13 +523,17 @@ export function AssetsPage() {
             onClick={() => setPreviewUrl(null)}
           />
           <div className='relative z-10 max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface shadow-xl'>
-            <video
-              src={previewUrl}
-              controls
-              autoPlay
-              playsInline
-              className='max-h-[85vh] w-full bg-black object-contain'
-            />
+            {isImageKind ? (
+              <img src={previewUrl} alt='' className='max-h-[85vh] w-full bg-black object-contain' />
+            ) : (
+              <video
+                src={previewUrl}
+                controls
+                autoPlay
+                playsInline
+                className='max-h-[85vh] w-full bg-black object-contain'
+              />
+            )}
             <button
               type='button'
               className='absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-neutral-100 hover:bg-black'

@@ -1,8 +1,10 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
-import { isAppError } from '../../shared/http/errors.js';
+import { z } from 'zod';
+import { AppError, isAppError } from '../../shared/http/errors.js';
+import { readMascotLibraryImage } from '../assets/assets.service.js';
 import {
   createVideosBatchSchema,
   createYoutubeChannelSchema,
@@ -117,6 +119,18 @@ async function parseThumbnailBackgroundUpload(body: Record<string, unknown>): Pr
       originalName: file.name || 'background',
     },
   };
+}
+
+const fromLibrarySchema = z.object({ name: z.string().min(1) });
+
+/** Body `{ name }` → that mascot library image as a channel image upload. */
+async function parseMascotLibraryPick(c: Context): Promise<ChannelAvatarUpload> {
+  const parsed = fromLibrarySchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    throw new AppError('Library image name is required', 400, 'VALIDATION_ERROR');
+  }
+  const image = readMascotLibraryImage(parsed.data.name);
+  return { buffer: image.buffer, contentType: image.contentType as ChannelAvatarContentType };
 }
 
 async function parseChannelAvatarUpload(body: Record<string, unknown>): Promise<
@@ -262,6 +276,14 @@ export function createYoutubeChannelsRoutes() {
       return c.json({ item }, 201);
     });
 
+    app.post(`/${kind.listSegment}/temp/:sessionId/from-library`, async (c) => {
+      const sessionId = c.req.param('sessionId');
+      const upload = await parseMascotLibraryPick(c);
+      const urlPrefix = `/api/v1/youtube-channels/${kind.listSegment}/temp/${encodeURIComponent(sessionId)}`;
+      const item = await kind.service.uploadTemp(sessionId, upload, urlPrefix);
+      return c.json({ item }, 201);
+    });
+
     app.delete(`/${kind.listSegment}/temp/:sessionId`, (c) => {
       kind.service.deleteTemp(c.req.param('sessionId'));
       return c.json({ ok: true });
@@ -340,6 +362,15 @@ export function createYoutubeChannelsRoutes() {
       }
       const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/${kind.segment}`;
       const item = await kind.service.uploadForChannel(id, parsed.upload, urlPrefix);
+      return c.json({ item }, 201);
+    });
+
+    app.post(`/:id/${kind.segment}/from-library`, async (c) => {
+      const id = c.req.param('id');
+      youtubeChannelsService.getById(id);
+      const upload = await parseMascotLibraryPick(c);
+      const urlPrefix = `/api/v1/youtube-channels/${encodeURIComponent(id)}/${kind.segment}`;
+      const item = await kind.service.uploadForChannel(id, upload, urlPrefix);
       return c.json({ item }, 201);
     });
 

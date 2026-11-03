@@ -7,6 +7,13 @@ import { getPreparedColorAssetPath, type PrepareColorKind } from '../video-produ
 
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.mov']);
 const FONT_EXTENSIONS = new Set(['.ttf', '.otf', '.woff', '.woff2']);
+const IMAGE_CONTENT_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+};
+const IMAGE_EXTENSIONS = new Set(Object.keys(IMAGE_CONTENT_TYPES));
 const BLOCKED_NAMES = new Set(['usage.json']);
 
 function resolveKindDir(kind: AssetKind): string {
@@ -21,11 +28,15 @@ function resolveKindDir(kind: AssetKind): string {
       return paths.siLocalStockDir;
     case 'subscribe':
       return paths.siSubscribeDir;
+    case 'mascot':
+      return paths.mascotLibraryDir;
   }
 }
 
 function allowedExtensions(kind: AssetKind): Set<string> {
-  return kind === 'fonts' ? FONT_EXTENSIONS : VIDEO_EXTENSIONS;
+  if (kind === 'fonts') return FONT_EXTENSIONS;
+  if (kind === 'mascot') return IMAGE_EXTENSIONS;
+  return VIDEO_EXTENSIONS;
 }
 
 function ensureDir(dir: string): void {
@@ -180,7 +191,7 @@ export class AssetsService {
     }
 
     const ext = path.extname(safeName).toLowerCase();
-    const contentType = ext === '.mov' ? 'video/quicktime' : 'video/mp4';
+    const contentType = IMAGE_CONTENT_TYPES[ext] ?? (ext === '.mov' ? 'video/quicktime' : 'video/mp4');
     return {
       filePath,
       contentType,
@@ -190,3 +201,9 @@ export class AssetsService {
 }
 
 export const assetsService = new AssetsService();
+
+/** Mascot library image, read for copying into a YouTube channel. */
+export function readMascotLibraryImage(name: string): { buffer: Buffer; contentType: string } {
+  const asset = assetsService.getAsset('mascot', name);
+  return { buffer: fs.readFileSync(asset.filePath), contentType: asset.contentType };
+}

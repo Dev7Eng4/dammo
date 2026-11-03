@@ -1,14 +1,17 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageOff } from 'lucide-react';
+import { assetFileUrl, fetchAssets } from '../../api/assets';
 import {
   deleteYoutubeChannelMascotImage,
   deleteYoutubeChannelMascotImageTemp,
+  pickYoutubeChannelMascotImageFromLibrary,
   uploadYoutubeChannelMascotImage,
   uploadYoutubeChannelMascotImageTemp,
   type ChannelMascotImageKind,
 } from '../../api/youtubeChannels';
-import { Button, useToast } from '../ui';
+import type { AssetFileItem } from '../../types/asset';
+import { Button, Modal, useToast } from '../ui';
 
 interface ChannelMascotImageFieldProps {
   kind: ChannelMascotImageKind;
@@ -21,6 +24,11 @@ interface ChannelMascotImageFieldProps {
   imageUrl: string | null;
   onImageUrlChange: (url: string | null) => void;
   disabled?: boolean;
+}
+
+/** Every upload keeps the same file name, so bust the browser cache. */
+function cacheBustedUrl(url: string): string {
+  return `${url}?v=${Date.now()}`;
 }
 
 /** Upload / preview / remove one channel mascot image (the mascot itself or its character sheet). */
@@ -41,6 +49,38 @@ export function ChannelMascotImageField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const inputId = `channel-${kind}-upload`;
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryItems, setLibraryItems] = useState<AssetFileItem[] | null>(null);
+
+  async function openLibrary() {
+    setLibraryOpen(true);
+    setLibraryItems(null);
+    try {
+      const { items } = await fetchAssets('mascot');
+      setLibraryItems(items);
+    } catch (err) {
+      setLibraryItems([]);
+      toast.error(err instanceof Error ? err.message : t('form.mascotLibraryError'));
+    }
+  }
+
+  async function handlePickFromLibrary(name: string) {
+    setLibraryOpen(false);
+    setBusy(true);
+    try {
+      const { item } = await pickYoutubeChannelMascotImageFromLibrary(
+        kind,
+        channelId ? { channelId } : { sessionId: tempSessionId },
+        name,
+      );
+      onImageUrlChange(cacheBustedUrl(item.url));
+      toast.success(t('form.mascotUploadSuccess'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('form.mascotUploadError'));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleUpload(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -50,8 +90,7 @@ export function ChannelMascotImageField({
       const { item } = channelId
         ? await uploadYoutubeChannelMascotImage(kind, channelId, file)
         : await uploadYoutubeChannelMascotImageTemp(kind, tempSessionId, file);
-      // Same file name on every upload, so bust the browser cache.
-      onImageUrlChange(`${item.url}?v=${Date.now()}`);
+      onImageUrlChange(cacheBustedUrl(item.url));
       toast.success(t('form.mascotUploadSuccess'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('form.mascotUploadError'));
@@ -113,6 +152,18 @@ export function ChannelMascotImageField({
             >
               {busy ? t('form.uploadingImage') : t('form.uploadImage')}
             </Button>
+            <Button
+              type='button'
+              variant='outlined'
+              size='sm'
+              className='h-8 rounded-md px-2 text-xs'
+              disabled={disabled || busy}
+              onClick={() => {
+                void openLibrary();
+              }}
+            >
+              {t('form.mascotPickFromLibrary')}
+            </Button>
             {imageUrl ? (
               <Button
                 type='button'
@@ -131,6 +182,42 @@ export function ChannelMascotImageField({
           <p className='text-[11px] leading-snug text-neutral-500'>{hint}</p>
         </div>
       </div>
+      <Modal
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        title={t('form.mascotLibraryTitle', { label })}
+        className='max-w-2xl'
+      >
+        {libraryItems === null ? (
+          <p className='py-8 text-center text-sm text-neutral-500'>{tCommon('actions.loading')}</p>
+        ) : libraryItems.length === 0 ? (
+          <p className='py-8 text-center text-sm text-neutral-500'>{t('form.mascotLibraryEmpty')}</p>
+        ) : (
+          <div className='grid max-h-[60vh] grid-cols-3 gap-2 overflow-auto sm:grid-cols-4'>
+            {libraryItems.map(item => (
+              <button
+                key={item.name}
+                type='button'
+                title={item.name}
+                className='overflow-hidden rounded-xl border-2 border-neutral-800 text-left transition hover:border-emerald-500'
+                onClick={() => {
+                  void handlePickFromLibrary(item.name);
+                }}
+              >
+                <div className='aspect-square w-full bg-neutral-950'>
+                  <img
+                    src={assetFileUrl('mascot', item.name)}
+                    alt={item.name}
+                    loading='lazy'
+                    className='size-full object-contain'
+                  />
+                </div>
+                <p className='truncate border-t border-neutral-800 px-2 py-1.5 text-[11px] text-neutral-300'>{item.name}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

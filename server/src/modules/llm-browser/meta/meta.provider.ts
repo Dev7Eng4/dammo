@@ -6,6 +6,7 @@ import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, 
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
 import { normalizeReferenceImagePaths } from '../core/reference-images.js';
 import { resolveMetaImageSourceUrl } from './meta-image-url.js';
+import { isMetaQuotaExhaustedOnPage, metaQuotaExhaustedError } from './meta-quota.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
   LlmBrowserResponse,
@@ -376,6 +377,12 @@ async function extractFirstAssistantImage(
       );
     }
 
+    // Out of quota, Meta echoes the reference image next to an upgrade card — never treat that as the result.
+    if (await isMetaQuotaExhaustedOnPage(page)) {
+      metaLog(page, 'image', `QUOTA EXHAUSTED after ${Date.now() - startedAt}ms - not downloading`);
+      throw metaQuotaExhaustedError();
+    }
+
     // Only look at messages created by this prompt — never reuse an older image in the chat.
     if ((await countMessageItems(page)) <= baseline) {
       await randomDelay(400, 800);
@@ -629,6 +636,11 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         if (settled.url !== sourceUrl) {
           metaLog(page, 'image', `image url changed after settle: ${settled.url.slice(0, 120)}`);
           sourceUrl = settled.url;
+        }
+        // The upgrade card can render a moment after the (reference) image shows up.
+        if (await isMetaQuotaExhaustedOnPage(page)) {
+          metaLog(page, 'image', 'QUOTA EXHAUSTED after settle - not downloading');
+          throw metaQuotaExhaustedError();
         }
       } catch (err) {
         metaLog(page, 'receive', `FAILED before download: ${errText(err)}`);
