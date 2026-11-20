@@ -20,11 +20,14 @@ import { isKenBurnsEnabled } from '../video-production/shared/slideshow/slidesho
 import { resolveChannelAvatarForVideoAssembly } from '../youtube-channels/resolve-channel-avatar.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import { checkChannelFreshness } from './channel-freshness.js';
+import { resolveNarrationVoice } from '../voice/narration-voice.js';
 import { synthesizeNarration, writeProvisionalSubtitle } from './narration.js';
 import { retimeScenesToSubtitle, SCENES_FILE, snapshotSceneTiming } from './scene-retime.js';
 import { validateOutline } from './outline-rules.js';
 import { NARRATION_CHARS_PER_MIN, reviseChapter, writeScript, type ScriptSource } from './script-writer.js';
 import { reviewScript, STRUCTURE_FAIL_PERCENT } from './script-review.js';
+import { transcriptToPlainText } from '../script-remake/script-remake.service.js';
+import { cleanSourceTranscript, readSourceTranscript } from './source-transcript.js';
 import { ngramContainment, SIMILARITY_LIMITS } from './similarity.js';
 import { videoAgentRepository } from './video-agent.repository.js';
 import {
@@ -125,7 +128,7 @@ async function fetchSourceTitle(url: string, videoId: string): Promise<string> {
 async function loadScriptSources(run: VideoAgentRun): Promise<ScriptSource[]> {
   const sources: ScriptSource[] = [];
   for (const info of run.artifacts.sources) {
-    sources.push({ title: info.title, text: await fs.readFile(info.transcriptPath, 'utf8') });
+    sources.push({ title: info.title, text: await readSourceTranscript(info) });
   }
   return sources;
 }
@@ -308,15 +311,9 @@ const tools = [
           fetchSourceTitle(url, videoId),
           downloadYoutubeTranscript(url, path.join(sourcesDir, videoId), 'ja'),
         ]);
-        const text = (await fs.readFile(vttPath, 'utf8'))
-          .split(/\r?\n/)
-          .filter(line => line.trim() && !line.includes('-->') && line.trim() !== 'WEBVTT' && !/^\d+$/.test(line.trim()))
-          .join('')
-          .replace(/<[^>]+>/g, '')
-          // Caption cues such as [音楽] / [拍手] are not narration.
-          .replace(/\[[^\]]{1,10}\]/g, '');
-        const transcriptPath = path.join(sourcesDir, `${videoId}.txt`);
-        await fs.writeFile(transcriptPath, text, 'utf8');
+        // Same as Reup audio: VTT → clean SRT (kept as the source transcript); prose only for the report.
+        const transcriptPath = await cleanSourceTranscript(vttPath);
+        const text = transcriptToPlainText(await fs.readFile(transcriptPath, 'utf8'));
         sources.push({ url, videoId, title, transcriptChars: text.length, transcriptPath, text });
       }
       ctx.run.artifacts.sources = sources.map(({ text: _text, ...info }) => info);
@@ -498,8 +495,15 @@ const tools = [
       const result = await synthesizeNarration({
         workDir: ctx.workDir,
         chapters: run.script.chapters,
-        speaker: run.input.voicevoxSpeaker,
-        speedScale: run.input.speedScale,
+        voice: resolveNarrationVoice(
+          {
+            provider: run.input.voiceProvider,
+            presetId: run.input.voicePresetId,
+            custom: run.input.voiceCustom,
+            voicevoxSpeaker: run.input.voicevoxSpeaker,
+          },
+          run.input.speedScale,
+        ),
         signal: ctx.signal,
         onProgress: (done, total) => {
           if (done === total || Date.now() - lastNote > 15000) {

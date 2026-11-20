@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ToastProvider } from './components/ui';
 import { TaskQueueProvider } from './contexts/TaskQueueContext';
 import { AppLayout } from './layouts/AppLayout';
+import { BrainsPage } from './pages/BrainsPage';
 import { AssetsPage } from './pages/AssetsPage';
 import { ChromeProfilesPage } from './pages/ChromeProfilesPage';
 import { ManualVideoPage } from './pages/ManualVideoPage';
@@ -15,7 +16,6 @@ import { ProxiesPage } from './pages/ProxiesPage';
 import { PromptsPage } from './pages/PromptsPage';
 import { RadarPage } from './pages/RadarPage';
 import { VideoAgentPage } from './pages/VideoAgentPage';
-import { VideoProductionPage } from './pages/VideoProductionPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SourceChannelDetailPage } from './pages/SourceChannelDetailPage';
 import { SourceChannelsPage } from './pages/SourceChannelsPage';
@@ -40,6 +40,7 @@ export default function App() {
               <Route path="source-channels" element={<SourceChannelsPage />} />
               <Route path="source-channels/:id" element={<SourceChannelDetailPage />} />
               <Route path="radar" element={<RadarPage />} />
+              <Route path="brains" element={<BrainsPage />} />
               <Route path="monetization" element={<MonetizationRoadmapPage />} />
               <Route path="prompts" element={<PromptsPage />} />
               <Route path="visual-styles" element={<VisualStylesPage />} />
@@ -53,10 +54,10 @@ export default function App() {
               <Route path="assets" element={<AssetsPage />} />
               <Route path="video-factory" element={<VideoFactoryPage />} />
               <Route path="video-factory/templates" element={<PlaceholderPage />} />
-              <Route path="video-production" element={<VideoProductionPage />} />
+              <Route path="video-production" element={<Navigate to="/manual-video" replace />} />
               <Route path="video-agent" element={<VideoAgentPage />} />
               <Route path="video-agent/:id" element={<VideoAgentPage />} />
-              <Route path="render-queue" element={<Navigate to="/video-production" replace />} />
+              <Route path="render-queue" element={<Navigate to="/manual-video" replace />} />
               <Route path="task-queue" element={<TaskQueuePage />} />
               <Route path="excel-import-export" element={<PlaceholderPage />} />
               <Route path="logs" element={<PlaceholderPage />} />

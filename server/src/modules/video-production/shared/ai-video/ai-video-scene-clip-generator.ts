@@ -16,10 +16,31 @@ export type AiSceneVideoMode = 'full' | 'intro';
 
 const MOTION_PROMPT_CONTEXT_CHARS = 400;
 
+export type SceneCameraMotion = 'static' | 'gentle_push_in';
+
+/** Wide framings have room to move in; close/medium framings (big character) would crop it. */
+const WIDE_SHOT_RE = /\b(?:wide|extreme long|long|establishing|full[- ]body|aerial|panoramic)\s+shot\b|\bwide angle\b|\bsmall in the (?:frame|distance)\b/i;
+
+/**
+ * Camera for a scene clip: the clip is about the character's motion, so the camera stays still
+ * unless the image is a wide shot, which may get a very slight push-in.
+ */
+export function resolveSceneCameraMotion(scenePrompt: string): SceneCameraMotion {
+  return WIDE_SHOT_RE.test(scenePrompt) ? 'gentle_push_in' : 'static';
+}
+
+const CAMERA_INSTRUCTIONS: Record<SceneCameraMotion, string> = {
+  static: 'Camera: locked-off and completely still (no zoom, no pan, no push-in); only the characters and small details move.',
+  gentle_push_in:
+    'Camera: an extremely subtle, barely noticeable slow drift forward (at most about 2% closer over the whole clip, the framing should look almost unchanged from start to end), no pan, no zoom-in on any character.',
+};
+
 export function buildSceneMotionPrompt(scenePrompt: string): string {
   const context = scenePrompt.replace(/\s+/g, ' ').trim().slice(0, MOTION_PROMPT_CONTEXT_CHARS);
   return (
-    'Animate this illustration with gentle, natural motion: subtle character movement and a slow camera push-in. ' +
+    'Animate this illustration with gentle, natural character motion (expressions, gestures, small body movement). ' +
+    `${CAMERA_INSTRUCTIONS[resolveSceneCameraMotion(scenePrompt)]} ` +
+    'Keep every character fully inside the frame as in the start frame; never crop heads or bodies. ' +
     'Keep the exact art style, colors and composition of the start frame. ' +
     'No cuts, no text, no new characters, no sudden changes. ' +
     `Scene: ${context}`
@@ -94,7 +115,7 @@ export async function generateAiSceneVideoClips(
 
   log(`[ai-video] Generating ${jobs.length} video clip(s) via Flow (mode=${input.mode}) → ${videosDir}`);
 
-  const mains = chromeProfilesService.listMainProfiles();
+  const mains = chromeProfilesService.listProfilesForLlm('video', 'flow');
   try {
     const result = await generateVideosFromImagesWithFailover(jobs, { outputDir: videosDir }, {
       onProfileSwitch: (from, to, remaining) =>

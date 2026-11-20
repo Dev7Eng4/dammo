@@ -19,10 +19,11 @@ import { isAbortError } from '../../api/http';
 import { useTaskQueue } from '../../hooks';
 import type { YoutubeChannelVideo, YoutubeVideoContent } from '../../types/youtubeChannel';
 import type { CreateVideoTaskPayload } from '../../types/taskQueue';
+import type { ProductionTranscriptCue } from '../../types/videoProductionScenes';
+import { cuesToPlainText } from '../../lib/transcriptText';
 import { Button, Image, Input, Modal, Textarea, useToast } from '../ui';
 import { RegenerateScenesConfirmModal } from '../video-production/RegenerateScenesConfirmModal';
 import { RegenerateMetadataConfirmModal } from './RegenerateMetadataConfirmModal';
-import { ThumbnailCandidates } from './ThumbnailCandidates';
 import { VideoProductionTabContent, type VideoProductionTab } from './VideoProductionTabContent';
 
 type ContentTab = 'video' | VideoProductionTab;
@@ -136,6 +137,7 @@ export function VideoContentModal({
   const [confirmRegenerateScenesOpen, setConfirmRegenerateScenesOpen] = useState(false);
   const [enqueueingRegenerateScenes, setEnqueueingRegenerateScenes] = useState(false);
   const [scenesReloadKey, setScenesReloadKey] = useState(0);
+  const [transcriptCues, setTranscriptCues] = useState<ProductionTranscriptCue[]>([]);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const thumbnailPreviewUrlRef = useRef<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -423,7 +425,18 @@ export function VideoContentModal({
   }
 
   async function handleAssembleVideo() {
-    if (video.status !== 'Prepared' || busy) return;
+    if ((video.status !== 'Prepared' && video.status !== 'Created') || busy) return;
+    const rerender = video.status === 'Created';
+
+    // Re-render overwrites video.mp4: release the player's file handle first (Windows locks it).
+    if (rerender) {
+      const videoElement = videoRef.current;
+      if (videoElement) {
+        videoElement.pause();
+        videoElement.removeAttribute('src');
+        videoElement.load();
+      }
+    }
 
     setEnqueueingAssemble(true);
     setError(null);
@@ -431,7 +444,9 @@ export function VideoContentModal({
       await enqueueTask(
         {
           type: 'create_video',
-          title: t('videoContent.assembleJobTitle', { title: video.title || video.id }),
+          title: t(rerender ? 'videoContent.rerenderJobTitle' : 'videoContent.assembleJobTitle', {
+            title: video.title || video.id,
+          }),
           subtitle: video.id,
           payload: {
             channelId,
@@ -444,7 +459,9 @@ export function VideoContentModal({
             onVideoCreated?.(video.id);
             void reloadContent()
               .then(() => {
-                if (mountedRef.current) toast.success(t('videoContent.assembleSuccess'));
+                if (!mountedRef.current) return;
+                setContentCacheBust(value => value + 1);
+                toast.success(t(rerender ? 'videoContent.rerenderSuccess' : 'videoContent.assembleSuccess'));
               })
               .catch(err => {
                 const message =
@@ -460,7 +477,7 @@ export function VideoContentModal({
           },
         },
       );
-      toast.success(t('videoContent.assembleQueued'));
+      toast.success(t(rerender ? 'videoContent.rerenderQueued' : 'videoContent.assembleQueued'));
     } catch {
       // enqueueTask already toasts
     } finally {
@@ -499,6 +516,15 @@ export function VideoContentModal({
       toast.success(t('videoContent.copyFolderSuccess'));
     } catch {
       toast.error(t('videoContent.copyFolderError'));
+    }
+  }
+
+  async function handleCopyScript() {
+    try {
+      await navigator.clipboard.writeText(cuesToPlainText(transcriptCues));
+      toast.success(tFactory('production.transcript.copySuccess'));
+    } catch {
+      toast.error(tFactory('production.transcript.copyError'));
     }
   }
 
@@ -541,15 +567,26 @@ export function VideoContentModal({
         bodyClassName="h-[calc(100svh-11.5rem)] overflow-y-auto"
         footer={
           <>
-            <Button
-              variant="secondary"
-              className="mr-auto"
-              onClick={() => void handleCopyVideoFolderPath()}
-              disabled={!content?.videoFolderPath || busy}
-              title={t('videoContent.copyFolderTitle')}
-            >
-              Copy path
-            </Button>
+            <div className="mr-auto flex items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => void handleCopyVideoFolderPath()}
+                disabled={!content?.videoFolderPath || busy}
+                title={t('videoContent.copyFolderTitle')}
+              >
+                Copy path
+              </Button>
+              {activeTab === 'script' ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => void handleCopyScript()}
+                  disabled={transcriptCues.length === 0}
+                >
+                  <Copy className="size-4" aria-hidden="true" />
+                  {tFactory('production.transcript.copy')}
+                </Button>
+              ) : null}
+            </div>
             {activeTab === 'characters' ? (
               <Button
                 variant="outlined"
@@ -589,6 +626,16 @@ export function VideoContentModal({
                 disabled={loading || busy || !content}
               >
                 {assembleInProgress || enqueueingAssemble ? t('videoContent.creating') : t('videoContent.createVideo')}
+              </Button>
+            ) : null}
+            {video.status === 'Created' ? (
+              <Button
+                variant="outlined"
+                onClick={() => void handleAssembleVideo()}
+                disabled={loading || busy || !content}
+                title={t('videoContent.rerenderTitle')}
+              >
+                {assembleInProgress || enqueueingAssemble ? t('videoContent.rerendering') : t('videoContent.rerender')}
               </Button>
             ) : null}
             {video.status === 'Created' ? (
@@ -675,8 +722,8 @@ export function VideoContentModal({
                 {content.videoUrl ? (
                   <video
                     ref={videoRef}
-                    key={content.videoUrl}
-                    src={content.videoUrl}
+                    key={withCacheBust(content.videoUrl) ?? content.videoUrl}
+                    src={withCacheBust(content.videoUrl) ?? content.videoUrl}
                     controls
                     preload="metadata"
                     className="aspect-video w-full rounded-xl border border-border bg-black object-contain"
@@ -790,19 +837,6 @@ export function VideoContentModal({
                     <span className="text-sm font-medium">{t('videoContent.uploadThumb')}</span>
                   </button>
                 )}
-                <ThumbnailCandidates
-                  channelId={channelId}
-                  videoId={video.id}
-                  reloadKey={contentCacheBust}
-                  disabled={busy || thumbnailPreviewUrl !== null}
-                  disabledReason={thumbnailPreviewUrl !== null ? t('metadata.thumbnailCandidateUnsaved') : undefined}
-                  onSelected={updated => {
-                    // Refresh only the thumbnail, keeping unsaved title/description/tag edits.
-                    setContent(updated);
-                    setContentCacheBust(value => value + 1);
-                    onSaved(updated);
-                  }}
-                />
               </section>
             </div>
 
@@ -904,6 +938,7 @@ export function VideoContentModal({
               reloadKey={scenesReloadKey}
               addingCharacter={addingCharacter}
               onAddingCharacterChange={setAddingCharacter}
+              onTranscriptCuesChange={setTranscriptCues}
             />
           </div>
         ) : null}

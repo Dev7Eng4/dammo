@@ -31,6 +31,7 @@ import type {
   AiVideoVisualStyle,
   MetaImageConcurrencyMode,
 } from './ai-video.types.js';
+import { contentTaskProvider } from '../../../prompts/content-task.js';
 
 const MAX_LLM_RETRIES = 3;
 const FLOW_TOOL_TIMEOUT_MS = 300_000;
@@ -166,14 +167,14 @@ async function generateCharacterPromptsViaLlm(
   let lastResponsePath: string | undefined;
 
   try {
-    await llmBrowserService.open(profile.id, promptsSettingsService.get().defaultLlmProvider);
+    await llmBrowserService.open(profile.id, contentTaskProvider('scenePrompt'));
 
     for (let attempt = 1; attempt <= MAX_LLM_RETRIES; attempt += 1) {
       log(`[ai-video] Character design LLM attempt ${attempt}/${MAX_LLM_RETRIES}...`);
       try {
         const response = await llmBrowserService.chat(
           profile.id,
-          promptsSettingsService.get().defaultLlmProvider,
+          contentTaskProvider('scenePrompt'),
           userPrompt,
           undefined,
           {
@@ -198,7 +199,7 @@ async function generateCharacterPromptsViaLlm(
       }
     }
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 
   throw new AppError(
@@ -322,7 +323,7 @@ export interface GenerateCharacterReferenceImagesFromListInput {
   /** Meta only. Default `single`. */
   metaConcurrency?: MetaImageConcurrencyMode;
   /** Flow only. Main profiles in use by concurrent work (e.g. scene prompts); not used or closed here. */
-  excludeMainProfileIds?: string[];
+  excludeFlowProfileIds?: string[];
   onLog?: (msg: string) => void;
 }
 
@@ -373,11 +374,9 @@ export async function generateCharacterReferenceImagesFromList(
 
     if (pendingCount > 0) {
       if (imageProvider === 'flow') {
-        const excludeProfileIds = input.excludeMainProfileIds ?? [];
-        const mains = chromeProfilesService
-          .listMainProfiles()
-          .filter(profile => !excludeProfileIds.includes(profile.id));
-        log(`[ai-video] Flow character images via main profile(s): ${mains.map(p => p.name).join(', ')}`);
+        const excludeProfileIds = input.excludeFlowProfileIds ?? [];
+        const mains = chromeProfilesService.listProfilesForLlm('image', 'flow', { excludeIds: excludeProfileIds });
+        log(`[ai-video] Flow character images via Flow profile(s): ${mains.map(p => p.name).join(', ')}`);
         try {
           const flowResult = await generateCharacterImagesViaFlow(
             characters,

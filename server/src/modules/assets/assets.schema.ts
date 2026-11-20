@@ -10,6 +10,10 @@ export const deleteAssetsSchema = z.object({
   names: z.array(z.string().min(1)).min(1),
 });
 
+export const renameAssetSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+});
+
 export const prepareColorSchema = z.object({
   keyColor: z.enum(['green', 'black']).default('green'),
 });

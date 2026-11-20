@@ -1,103 +1,105 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '../../lib/cn';
-import type { ChromeProfile } from '../../types/chromeProfile';
-import { DataTable } from '../ui';
+import {
+  LLM_CONTENT_OPTIONS,
+  LLM_IMAGE_OPTIONS,
+  LLM_VIDEO_OPTIONS,
+  type ChromeProfile,
+  type ChromeProfileLlmField,
+} from '../../types/chromeProfile';
+import { DataTable, MultiSelect } from '../ui';
 
 interface ChromeProfilesTableProps {
   profiles: ChromeProfile[];
   selectedId: string | null;
   loading?: boolean;
-  settingRole?: boolean;
   onSelect: (id: string) => void;
-  onRoleChange: (id: string, role: ChromeProfile['role']) => void;
+  onLlmChange: (id: string, field: ChromeProfileLlmField, value: string[]) => void;
 }
+
+const LLM_LABELS: Record<string, string> = {
+  chatgpt: 'ChatGPT',
+  gemini: 'Gemini',
+  claude: 'Claude',
+  meta: 'Meta',
+  flow: 'Flow',
+};
+
+const LLM_COLUMNS: {
+  field: ChromeProfileLlmField;
+  options: readonly string[];
+}[] = [
+  { field: 'llmContent', options: LLM_CONTENT_OPTIONS },
+  { field: 'llmImage', options: LLM_IMAGE_OPTIONS },
+  { field: 'llmVideo', options: LLM_VIDEO_OPTIONS },
+];
 
 export function ChromeProfilesTable({
   profiles,
   selectedId,
   loading,
-  settingRole,
   onSelect,
-  onRoleChange,
+  onLlmChange,
 }: ChromeProfilesTableProps) {
-  const { t, i18n } = useTranslation('browser');
-  const dateLocale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
+  const { t } = useTranslation('browser');
 
-  function formatCreatedAt(value: string): string {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleString(dateLocale);
-  }
+  // flexRender mounts each cell as a component, so new cell functions on every render would
+  // remount cells (and close an open LLM menu). Keep columns stable; read callbacks via a ref.
+  const handlersRef = useRef({ onLlmChange });
+  handlersRef.current = { onLlmChange };
 
-  const columns: ColumnDef<ChromeProfile, unknown>[] = [
-    {
-      id: 'role',
-      header: t('chrome.table.col.role'),
-      cell: ({ row }) => {
-        const profile = row.original;
-        return (
-          <label
-            className="inline-flex cursor-pointer items-center gap-2"
-            onClick={e => e.stopPropagation()}
-          >
-            <input
-              type="checkbox"
-              checked={profile.role === 'main'}
-              disabled={settingRole}
-              onChange={e => onRoleChange(profile.id, e.target.checked ? 'main' : 'sub')}
-              className="size-3.5 rounded border-border bg-surface accent-primary-500"
-            />
-            <span
-              className={cn(
-                'text-xs font-medium',
-                profile.role === 'main' ? 'text-primary-400' : 'text-neutral-500',
-              )}
-            >
-              {profile.role === 'main' ? t('chrome.table.roleMain') : t('chrome.table.roleSecondary')}
+  const columns = useMemo<ColumnDef<ChromeProfile, unknown>[]>(() => {
+    return [
+      {
+        accessorKey: 'name',
+        header: t('chrome.table.col.name'),
+        cell: ({ getValue }) => {
+          const name = getValue<string>();
+          return (
+            <span className="block truncate font-medium text-neutral-100" title={name}>
+              {name}
             </span>
-          </label>
-        );
+          );
+        },
       },
-    },
-    {
-      accessorKey: 'name',
-      header: t('chrome.table.col.name'),
-      cell: ({ getValue }) => (
-        <span className="font-medium text-neutral-100">{getValue<string>()}</span>
-      ),
-    },
-    {
-      id: 'usageOrder',
-      header: t('chrome.table.col.order'),
-      cell: ({ row }) => {
-        const order = row.original.usageOrder;
-        return (
-          <span className="font-mono text-xs text-neutral-300">
-            {typeof order === 'number' ? order : '—'}
-          </span>
-        );
+      ...LLM_COLUMNS.map(({ field, options }): ColumnDef<ChromeProfile, unknown> => ({
+        id: field,
+        header: t(`chrome.table.col.${field}`),
+        cell: ({ row }) => {
+          const profile = row.original;
+          return (
+            // Stop clicks (incl. the portaled menu, which bubbles through React) from selecting the row.
+            <div onClick={e => e.stopPropagation()}>
+              <MultiSelect
+                options={options.map(option => ({
+                  value: option,
+                  label: LLM_LABELS[option] ?? option,
+                }))}
+                value={profile[field] ?? []}
+                onChange={value => handlersRef.current.onLlmChange(profile.id, field, value)}
+                placeholder={t('chrome.table.llmNone')}
+                className="w-full"
+                triggerClassName="min-h-7 py-1 text-xs"
+              />
+            </div>
+          );
+        },
+      })),
+      {
+        accessorKey: 'id',
+        header: t('chrome.table.col.profileId'),
+        cell: ({ getValue }) => {
+          const id = getValue<string>();
+          return (
+            <span className="block truncate font-mono text-xs text-neutral-300" title={id}>
+              {id}
+            </span>
+          );
+        },
       },
-    },
-    {
-      accessorKey: 'id',
-      header: t('chrome.table.col.profileId'),
-      cell: ({ getValue }) => {
-        const id = getValue<string>();
-        return (
-          <span className="max-w-[12rem] truncate font-mono text-xs text-neutral-300" title={id}>
-            {id}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('chrome.table.col.createdAt'),
-      cell: ({ getValue }) => (
-        <span className="text-neutral-300">{formatCreatedAt(getValue<string>())}</span>
-      ),
-    },
-  ];
+    ];
+  }, [t]);
 
   return (
     <DataTable
@@ -108,6 +110,7 @@ export function ChromeProfilesTable({
       activeRowId={selectedId}
       onRowClick={profile => onSelect(profile.id)}
       emptyMessage={t('chrome.table.empty')}
+      layout="fixed"
     />
   );
 }

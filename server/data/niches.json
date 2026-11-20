@@ -1,6 +1,72 @@
 {
   "niches": [
     {
+      "key": "ja-psy-k1",
+      "label": "Tâm lý JP · K1 Hạnh phúc tuổi già (① + ⑧)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k2",
+      "label": "Tâm lý JP · K2 Não tuổi già (① + ②)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k3",
+      "label": "Tâm lý JP · K3 Tiền tuổi già (① + ③)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k4",
+      "label": "Tâm lý JP · K4 Người thông minh (② + ⑦)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k5",
+      "label": "Tâm lý JP · K5 Tài năng bị ẩn (② + ⑥)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k6",
+      "label": "Tâm lý JP · K6 Tâm lý người giàu (③ + ⑦)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k7",
+      "label": "Tâm lý JP · K7 Dọn dẹp và buông bỏ (③ + ①)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k8",
+      "label": "Tâm lý JP · K8 Ranh giới quan hệ (④ + ⑤)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k9",
+      "label": "Tâm lý JP · K9 Gia đình (⑤ + ①)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k10",
+      "label": "Tâm lý JP · K10 Một mình, hướng nội (⑥ + ①)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
+      "key": "ja-psy-k11",
+      "label": "Tâm lý JP · K11 Lời dạy chữa lành (⑧ + ①)",
+      "language": "ja",
+      "createdAt": "2026-11-06T15:18:45.000Z"
+    },
+    {
       "key": "13208c44-0a31-43a1-b542-60af590cdb01",
       "label": "TEST – Người già Nhật Bản: Tâm lý & Lối sống (老後の心理・暮らし)",
       "language": "ja",

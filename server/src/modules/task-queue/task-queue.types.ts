@@ -140,6 +140,8 @@ export interface EnqueueTaskInput {
 export const CREATE_VIDEO_STAGE_IDS = {
   download: 'download',
   cleanTranscript: 'clean_transcript',
+  remakeScript: 'remake_script',
+  narration: 'narration',
   updateTranscript: 'update_transcript',
   metadata: 'metadata',
   thumbnail: 'thumbnail',
@@ -151,6 +153,8 @@ export type CreateVideoStageId = (typeof CREATE_VIDEO_STAGE_IDS)[keyof typeof CR
 export function buildCreateVideoStages(options?: {
   copyingAssets?: boolean;
   includeUpdateTranscript?: boolean;
+  /** Remake channels: remake the script and read it with VOICEVOX instead of updating the transcript. */
+  includeRemake?: boolean;
 }): TaskStage[] {
   const downloadLabel = options?.copyingAssets ? 'Sao chép tài nguyên' : 'Đang tải';
   const stages: TaskStage[] = [
@@ -158,7 +162,12 @@ export function buildCreateVideoStages(options?: {
     { id: CREATE_VIDEO_STAGE_IDS.cleanTranscript, label: 'Làm sạch transcript', status: 'pending' },
   ];
 
-  if (options?.includeUpdateTranscript !== false) {
+  if (options?.includeRemake) {
+    stages.push(
+      { id: CREATE_VIDEO_STAGE_IDS.remakeScript, label: 'Remake kịch bản', status: 'pending' },
+      { id: CREATE_VIDEO_STAGE_IDS.narration, label: 'Đọc giọng VOICEVOX', status: 'pending' },
+    );
+  } else if (options?.includeUpdateTranscript !== false) {
     stages.push({
       id: CREATE_VIDEO_STAGE_IDS.updateTranscript,
       label: 'Cập nhật transcript',

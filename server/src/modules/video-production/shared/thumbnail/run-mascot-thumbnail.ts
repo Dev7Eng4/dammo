@@ -8,6 +8,7 @@ import { runBrowserImageGeneration, resolveThumbnailImageProvider } from './hero
 import {
   MASCOT_THUMBNAIL_DIRECTOR_PROMPT_KEY,
   MASCOT_THUMBNAIL_DRAW_ROUNDS,
+  MASCOT_THUMBNAIL_JUDGE_ENABLED,
   MASCOT_THUMBNAIL_JUDGE_PROMPT_KEY,
   THUMBNAIL_CANDIDATES_DIRNAME,
   THUMBNAIL_CANDIDATES_FILENAME,
@@ -76,6 +77,10 @@ export interface RunMascotThumbnailInput {
   title: string;
   /** Description / summary lines the Director reads to find the hook. */
   context: string;
+  /** Channel niche label (topic / audience hint for the Director); '' when unknown. */
+  niche?: string;
+  /** Cluster niche: look, composition and rule overrides of the format the meta prompt picked for this video. */
+  formatBrief?: string;
   count: number;
   mascotImagePath: string;
   onLog?: (msg: string) => void;
@@ -229,6 +234,8 @@ async function askDirector(input: RunMascotThumbnailInput, log: (msg: string) =>
     input.title,
     input.context,
     input.count,
+    input.niche ?? '',
+    input.formatBrief ?? '',
   ]);
   return chatForJson({
     label: `Thumbnail Director (${input.count} concept(s))`,
@@ -322,32 +329,51 @@ async function drawCandidates(
 }
 
 /**
+ * Judge step: the Judge (LLM with images) scores the drawn candidates in place; when no candidate has
+ * correct text, every concept is drawn once more (up to MASCOT_THUMBNAIL_DRAW_ROUNDS).
+ * Returns the candidates to pick from and the judge error, if scoring failed.
+ */
+async function evaluateMascotThumbnailCandidates(
+  input: RunMascotThumbnailInput,
+  concepts: MascotThumbnailConcept[],
+  firstRound: MascotThumbnailCandidate[],
+  log: (msg: string) => void,
+): Promise<{ candidates: MascotThumbnailCandidate[]; judgeError?: string }> {
+  let candidates = firstRound;
+  for (let round = 1; round <= MASCOT_THUMBNAIL_DRAW_ROUNDS; round += 1) {
+    if (round > 1) {
+      log(`[mascot-thumbnail] No candidate has correct text → drawing again (round ${round})`);
+      candidates = await drawCandidates(input, concepts, log, candidates);
+    }
+    if (!candidates.some(candidate => candidate.file)) break;
+
+    try {
+      await judgeCandidates(input, candidates, log);
+    } catch (err) {
+      // Without scores there is nothing to compare: keep this round and fall back to the first drawn.
+      const judgeError = err instanceof Error ? err.message : String(err);
+      log(`[mascot-thumbnail] Judge failed, using the first drawn candidate: ${judgeError}`);
+      return { candidates, judgeError };
+    }
+    if (candidates.some(candidate => candidate.judgement?.textCorrect)) break;
+  }
+  return { candidates };
+}
+
+/**
  * Mascot thumbnail: the Director (LLM) designs N different thumbnails, each is drawn with the channel
- * mascot as reference into `thumbnail-candidates/`, the Judge (LLM with images) scores them, and the
- * best one becomes thumbnail.jpg. When no candidate has correct text, everything is drawn once more.
+ * mascot as reference into `thumbnail-candidates/`, and one becomes thumbnail.jpg — the judge winner
+ * when MASCOT_THUMBNAIL_JUDGE_ENABLED, otherwise the first drawn candidate.
  * Another candidate can be picked later from the video popup.
  */
 export async function runMascotThumbnail(input: RunMascotThumbnailInput): Promise<RunMascotThumbnailResult> {
   const log = (msg: string) => emitDetailLog(msg, input.onLog);
   const concepts = await askDirector(input, log);
 
-  let candidates: MascotThumbnailCandidate[] = [];
+  let candidates = await drawCandidates(input, concepts, log);
   let judgeError: string | undefined;
-  for (let round = 1; round <= MASCOT_THUMBNAIL_DRAW_ROUNDS; round += 1) {
-    if (round > 1) log(`[mascot-thumbnail] No candidate has correct text → drawing again (round ${round})`);
-    candidates = await drawCandidates(input, concepts, log, round > 1 ? candidates : undefined);
-    if (!candidates.some(candidate => candidate.file)) break;
-
-    try {
-      await judgeCandidates(input, candidates, log);
-      judgeError = undefined;
-    } catch (err) {
-      // Without scores there is nothing to compare: keep this round and fall back to the first drawn.
-      judgeError = err instanceof Error ? err.message : String(err);
-      log(`[mascot-thumbnail] Judge failed, using the first drawn candidate: ${judgeError}`);
-      break;
-    }
-    if (candidates.some(candidate => candidate.judgement?.textCorrect)) break;
+  if (MASCOT_THUMBNAIL_JUDGE_ENABLED) {
+    ({ candidates, judgeError } = await evaluateMascotThumbnailCandidates(input, concepts, candidates, log));
   }
 
   const picked = pickBestMascotThumbnailCandidate(candidates);

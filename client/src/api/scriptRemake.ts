@@ -5,12 +5,14 @@ import { fetchJson, withSignal, type FetchOptions } from './http';
 
 const BASE = `${API_V1}/script-remake`;
 
-export type RemakeProvider = 'gpt' | 'gemini';
+export type RemakeProvider = 'gpt' | 'gemini' | 'claude';
 
 export interface RemakeOutline {
   title: string;
   angle: string;
   hook: string;
+  /** The named person whose story runs through the video. */
+  story?: string;
   chapters: { heading: string; keyPoints: string[] }[];
 }
 
@@ -22,6 +24,8 @@ export interface RemakeResult {
   totalChars: number;
   estimatedMinutes: number;
   similarity: { gram8: number; gram15: number };
+  /** Problems the per-chapter check still found after one rewrite. */
+  qualityWarnings?: string[];
   outputPath: string;
   relativeOutputPath: string;
 }
@@ -52,8 +56,10 @@ export interface StartRemakePayload {
   provider?: RemakeProvider;
 }
 
-export function fetchRemakePromptSets(language: TranscriptLanguage, options?: FetchOptions) {
-  return fetchJson<{ items: RemakePromptSet[] }>(`${BASE}/prompts?language=${language}`, withSignal(undefined, options));
+/** Remake prompt sets; with `channelId`, sets made for that channel's niche come first (the screens pick the first). */
+export function fetchRemakePromptSets(language: TranscriptLanguage, options?: FetchOptions, channelId?: string) {
+  const query = new URLSearchParams({ language, ...(channelId ? { channelId } : {}) });
+  return fetchJson<{ items: RemakePromptSet[] }>(`${BASE}/prompts?${query}`, withSignal(undefined, options));
 }
 
 export function startRemake(payload: StartRemakePayload) {

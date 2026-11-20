@@ -2,8 +2,8 @@ import { AppError } from '../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 import type { LlmBrowserResponse } from '../../llm-browser/core/types.js';
 import { llmBrowserService } from '../../llm-browser/text/text.service.js';
-import { promptsSettingsService } from '../../prompts/prompts-settings.service.js';
 import { extractJsonText } from './meta/llm-parse-result.js';
+import { contentTaskProvider, pickContentTaskProfile } from '../../prompts/content-task.js';
 
 const LLM_MAX_RETRIES = 3;
 
@@ -21,10 +21,10 @@ export interface SubProfileJsonChatOptions<T> {
   errorCode: string;
 }
 
-/** One chat on a sub profile with retries until `parse` accepts the JSON answer. */
+/** One chat on a profile logged into the default text LLM, with retries until `parse` accepts the JSON answer. */
 export async function chatForJsonOnSubProfile<T>(options: SubProfileJsonChatOptions<T>): Promise<T> {
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const profile = chromeProfilesService.pickSubProfile();
+  const provider = contentTaskProvider('content');
+  const profile = pickContentTaskProfile('content', provider);
   options.log(
     `${options.logTag} ${options.label} via ${provider} on ${profile.name}` +
       (options.attachments?.length ? ` (${options.attachments.length} image(s) attached)` : '') +
@@ -55,7 +55,7 @@ export async function chatForJsonOnSubProfile<T>(options: SubProfileJsonChatOpti
       }
     }
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 
   throw new AppError(`${options.label} failed after ${LLM_MAX_RETRIES} attempts: ${lastReason}`, 502, options.errorCode);

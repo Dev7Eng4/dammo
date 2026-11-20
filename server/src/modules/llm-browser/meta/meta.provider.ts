@@ -5,7 +5,7 @@ import { AppError } from '../../../shared/http/errors.js';
 import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from './meta.config.js';
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
 import { normalizeReferenceImagePaths } from '../core/reference-images.js';
-import { resolveMetaImageSourceUrl } from './meta-image-url.js';
+import { assertMetaGeneratedImageUrl, resolveMetaImageSourceUrl } from './meta-image-url.js';
 import { isMetaQuotaExhaustedOnPage, metaQuotaExhaustedError } from './meta-quota.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
@@ -402,7 +402,7 @@ async function extractFirstAssistantImage(
         metaLog(
           page,
           'image',
-          `resolved image url (${resolved.kind}, candidates=${resolved.candidateCount}) after ${Date.now() - startedAt}ms: ${resolved.url.slice(0, 120)}`,
+          `resolved image src (candidates=${resolved.candidates.length}) after ${Date.now() - startedAt}ms: ${resolved.url.slice(0, 120)}`,
         );
         return { assistant, sourceUrl: resolved.url };
       } catch (err) {
@@ -641,6 +641,14 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         if (await isMetaQuotaExhaustedOnPage(page)) {
           metaLog(page, 'image', 'QUOTA EXHAUSTED after settle - not downloading');
           throw metaQuotaExhaustedError();
+        }
+        // Only https://scontent.xx.fbcdn.net/ src values are generated images; anything else
+        // (e.g. the echoed reference upload) is treated as a failure so the job is retried.
+        try {
+          assertMetaGeneratedImageUrl(sourceUrl);
+        } catch (err) {
+          metaLog(page, 'image', `INVALID image src - not downloading: ${sourceUrl.slice(0, 120)}`);
+          throw err;
         }
       } catch (err) {
         metaLog(page, 'receive', `FAILED before download: ${errText(err)}`);

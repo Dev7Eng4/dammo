@@ -11,9 +11,21 @@ export interface ModalProps {
   footer?: ReactNode
   className?: string
   bodyClassName?: string
+  /** Width preset: md (default, ~28rem), lg (~64rem), xl (~80rem), 2xl (90rem), full (whole screen minus a 1.5rem margin). */
+  size?: ModalSize
 }
 
-export function Modal({ open, onClose, title, children, footer, className, bodyClassName }: ModalProps) {
+export type ModalSize = 'md' | 'lg' | 'xl' | '2xl' | 'full'
+
+const SIZE_CLASS: Record<ModalSize, string> = {
+  md: 'max-w-md',
+  lg: 'max-w-5xl',
+  xl: 'max-w-7xl',
+  '2xl': 'max-w-[1440px]',
+  full: 'w-[calc(100vw-3rem)] max-w-none',
+}
+
+export function Modal({ open, onClose, title, children, footer, className, bodyClassName, size = 'md' }: ModalProps) {
   return (
     <Dialog.Root
       open={open}
@@ -30,7 +42,8 @@ export function Modal({ open, onClose, title, children, footer, className, bodyC
         />
         <Dialog.Content
           className={cn(
-            'fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2',
+            'fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2',
+            SIZE_CLASS[size],
             'rounded-2xl border border-border bg-surface shadow-xl outline-none',
             'data-[state=open]:ui-dialog-open data-[state=closed]:ui-dialog-closed',
             className,

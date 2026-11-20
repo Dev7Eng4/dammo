@@ -5,7 +5,6 @@ import { appSettingsService } from '../../../app-settings/app-settings.service.j
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
-import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { persistLlmParseFailure } from '../meta/persist-llm-failure.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
 import {
@@ -45,6 +44,7 @@ import type {
   GenerateAiVideoImagesWithCharactersResult,
   TranscriptCue,
 } from './ai-video.types.js';
+import { contentTaskProvider } from '../../../prompts/content-task.js';
 
 const MAX_RETRIES = 3;
 
@@ -193,7 +193,7 @@ async function executeScenePromptChunk(
     try {
       const response = await llmBrowserService.chat(
         profileId,
-        promptsSettingsService.get().defaultLlmProvider,
+        contentTaskProvider('scenePrompt'),
         userPrompt,
         undefined,
         {
@@ -272,11 +272,11 @@ async function generateScenePromptsFromJobs(
   );
   const profiles = options?.profiles ?? resolveAiScenePromptProfiles(requestedConcurrency);
   const profileIds = profiles.map(profile => profile.id);
-  const provider = promptsSettingsService.get().defaultLlmProvider;
+  const provider = contentTaskProvider('scenePrompt');
 
   if (profiles.length < requestedConcurrency) {
     log(
-      `[ai-video] Scene prompt concurrency clamped ${requestedConcurrency} → ${profiles.length} (available sub profiles)`,
+      `[ai-video] Scene prompt concurrency clamped ${requestedConcurrency} → ${profiles.length} (available chat profiles)`,
     );
   }
 
@@ -340,7 +340,7 @@ async function generateScenePromptsFromJobs(
 
     return { scenes: allScenes, filePath };
   } finally {
-    await chromeProfilesService.closeSubProfiles(profileIds);
+    await chromeProfilesService.closeProfiles(profileIds);
   }
 }
 
@@ -425,9 +425,7 @@ export async function generateAiVideoImagesWithReference(
   );
 
   const parallelProfiles = resolveParallelScenePromptProfiles(appSettingsService.get().aiScenePromptConcurrency);
-  const excludeMainProfileIds = parallelProfiles?.reservedMainProfileId
-    ? [parallelProfiles.reservedMainProfileId]
-    : [];
+  const excludeFlowProfileIds = parallelProfiles?.reservedFlowProfileIds ?? [];
 
   const runCharacterImages = async (): Promise<GenerateCharacterReferencesResult> => {
     const mascotSync = {
@@ -441,7 +439,7 @@ export async function generateAiVideoImagesWithReference(
       workDir: input.workDir,
       youtubeVideoId: input.youtubeVideoId,
       characters,
-      excludeMainProfileIds,
+      excludeFlowProfileIds,
       onLog: input.onLog,
     });
     await promoteImageReferencesToChannelMascots(mascotSync);
@@ -462,7 +460,7 @@ export async function generateAiVideoImagesWithReference(
     log(
       `[ai-video] Character images + scene prompts running in parallel ` +
         `(scene profile(s): ${parallelProfiles.profiles.map(p => p.name).join(', ')}` +
-        (parallelProfiles.reservedMainProfileId ? ', reserved from character images' : '') +
+        (parallelProfiles.reservedFlowProfileIds.length > 0 ? ', reserved from character images' : '') +
         ')',
     );
     const [characterSettled, sceneSettled] = await Promise.allSettled([runCharacterImages(), runScenePrompts()]);
@@ -471,7 +469,7 @@ export async function generateAiVideoImagesWithReference(
     characterResult = characterSettled.value;
     sceneResult = sceneSettled.value;
   } else {
-    log('[ai-video] Only one main Chrome profile — character images then scene prompts (sequential)');
+    log('[ai-video] No chat profile free from character images — character images then scene prompts (sequential)');
     characterResult = await runCharacterImages();
     sceneResult = await runScenePrompts();
   }

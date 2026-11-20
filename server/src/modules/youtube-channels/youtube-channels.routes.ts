@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { z } from 'zod';
 import { AppError, isAppError } from '../../shared/http/errors.js';
-import { readMascotLibraryImage } from '../assets/assets.service.js';
+import { hashMascotLibraryImages, readMascotLibraryImage } from '../assets/assets.service.js';
 import {
   createVideosBatchSchema,
   createYoutubeChannelSchema,
@@ -18,6 +18,7 @@ import {
 } from './youtube-channels.schema.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelsService } from './youtube-channels.service.js';
+import { channelRefOf, youtubeApiKeyService } from './youtube-api-key.service.js';
 import { uploadVideosBatchSchema, uploadVideosSchema } from '../youtube-upload/youtube-upload.schema.js';
 import { youtubeUploadService } from '../youtube-upload/youtube-upload.service.js';
 import {
@@ -34,15 +35,14 @@ import {
 import {
   channelAvatarsService,
   channelMascotImagesService,
-  channelMascotSheetsService,
   type ChannelAvatarContentType,
   type ChannelAvatarUpload,
 } from './channel-avatars.service.js';
+import { isReupAudioFamilyType } from './youtube-channels.types.js';
 
-/** Channel mascot image (`mascot.*`) and its optional character sheet (`mascot-sheet.*`). */
+/** Channel mascot image (`mascot.*`). */
 const CHANNEL_MASCOT_IMAGE_KINDS = [
   { segment: 'mascot-image', listSegment: 'mascot-images', service: channelMascotImagesService },
-  { segment: 'mascot-sheet', listSegment: 'mascot-sheets', service: channelMascotSheetsService },
 ] as const;
 
 const THUMBNAIL_MAX_SIZE_BYTES = 10 * 1024 * 1024;
@@ -161,6 +161,43 @@ export function createYoutubeChannelsRoutes() {
 
   app.get('/stats', (c) => c.json(youtubeChannelsService.getStats()));
 
+  // --- YouTube Data API v3 key per channel (read by the "Chỉ số kênh" brain) ---
+  const apiKeyBody = z.object({ apiKey: z.string().trim().min(20).max(200) });
+
+  /** Tries a key before the channel exists (Add modal): 1 quota unit. */
+  app.post(
+    '/youtube-api/test',
+    zValidator('json', apiKeyBody.extend({ channelUrl: z.string().trim().max(500).optional(), channelId: z.string().trim().max(100).optional() })),
+    async (c) => {
+      const { apiKey, channelUrl, channelId } = c.req.valid('json');
+      const ref = channelRefOf({ channelId, handle: '', youtubeUrl: channelUrl ?? '' });
+      return c.json(await youtubeApiKeyService.test(apiKey, ref.channelId || ref.handle ? ref : undefined));
+    },
+  );
+
+  app.get('/:id/youtube-api', (c) => c.json({ item: youtubeApiKeyService.getStatus(c.req.param('id')) }));
+
+  app.put('/:id/youtube-api', zValidator('json', apiKeyBody), async (c) =>
+    c.json({ item: await youtubeApiKeyService.setKey(c.req.param('id'), c.req.valid('json').apiKey) }),
+  );
+
+  app.delete('/:id/youtube-api', (c) => {
+    youtubeApiKeyService.removeKey(c.req.param('id'));
+    return c.json({ item: { configured: false } });
+  });
+
+  app.post('/:id/youtube-api/check', async (c) =>
+    c.json({ item: await youtubeApiKeyService.checkKey(c.req.param('id')) }),
+  );
+
+  /** Channel totals + latest uploads (views / likes / comments / duration) via the Data API. */
+  app.get(
+    '/:id/youtube-api/metrics',
+    zValidator('query', z.object({ maxVideos: z.coerce.number().int().min(1).max(500).optional() })),
+    async (c) =>
+      c.json(await youtubeApiKeyService.getChannelMetrics(c.req.param('id'), c.req.valid('query').maxVideos ?? 50)),
+  );
+
   app.post('/', zValidator('json', createYoutubeChannelSchema), async (c) => {
     const body = c.req.valid('json');
     const item = await youtubeChannelsService.create(body);
@@ -184,6 +221,7 @@ export function createYoutubeChannelsRoutes() {
 
   app.delete('/:id', (c) => {
     youtubeChannelsService.deleteChannel(c.req.param('id'));
+    youtubeApiKeyService.removeKey(c.req.param('id'));
     return c.body(null, 204);
   });
 
@@ -261,6 +299,24 @@ export function createYoutubeChannelsRoutes() {
   app.get('/avatars/temp/:sessionId/:filename', (c) => {
     const asset = channelAvatarsService.getTempAsset(c.req.param('sessionId'), c.req.param('filename'));
     return streamFileAsset(c.req.raw, asset);
+  });
+
+  /** Mascot library images already used as another channel's mascot (`?excludeChannelId=` = the channel being edited). */
+  app.get('/mascot-images/library-in-use', async (c) => {
+    const excludeChannelId = c.req.query('excludeChannelId')?.trim();
+    const usedHashes = new Set<string>();
+    for (const channel of youtubeChannelsRepository.findAll()) {
+      if (channel.id === excludeChannelId) continue;
+      const hash = channelMascotImagesService.hashForChannel(channel.id);
+      if (hash) usedHashes.add(hash);
+    }
+    const names: string[] = [];
+    if (usedHashes.size > 0) {
+      for (const [name, hash] of await hashMascotLibraryImages()) {
+        if (usedHashes.has(hash)) names.push(name);
+      }
+    }
+    return c.json({ names });
   });
 
   for (const kind of CHANNEL_MASCOT_IMAGE_KINDS) {
@@ -657,7 +713,7 @@ export function createYoutubeChannelsRoutes() {
 
     const allReupIds = youtubeChannelsRepository
       .findAll()
-      .filter(ch => ch.type === 'reup_audio' || ch.type === 'reup_video')
+      .filter(ch => isReupAudioFamilyType(ch.type) || ch.type === 'reup_video')
       .map(ch => ch.id);
 
     const result = await youtubeUploadService.uploadChannels(allReupIds, { maxUploads, videoIds });

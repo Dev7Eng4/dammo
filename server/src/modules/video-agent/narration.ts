@@ -3,8 +3,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { runFfmpeg } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
 import { serializeSrt, type SrtBlock } from '../../infrastructure/subtitle/srt-utils.js';
-import { synthesizeVoicevox } from '../../infrastructure/tts/voicevox.client.js';
 import { encodeWav, parseWav, silencePcm, wavDurationSec, type PcmWav } from '../../infrastructure/tts/wav.js';
+import type { NarrationVoice } from '../voice/narration-voice.js';
 import type { VideoAgentScriptChapter } from './video-agent.types.js';
 
 /**
@@ -134,8 +134,8 @@ export async function writeProvisionalSubtitle(params: {
 export async function synthesizeNarration(params: {
   workDir: string;
   chapters: VideoAgentScriptChapter[];
-  speaker: number;
-  speedScale: number;
+  /** Saved VOICEVOX / ElevenLabs voice (or a bare VOICEVOX speaker), see resolveNarrationVoice. */
+  voice: NarrationVoice;
   signal?: AbortSignal;
   onProgress?: (done: number, total: number) => void;
 }): Promise<NarrationResult> {
@@ -157,7 +157,7 @@ export async function synthesizeNarration(params: {
       const pause = sentencePauseSec(sentence);
       const key = crypto
         .createHash('sha1')
-        .update(`v${PACING_VERSION}|${params.speaker}|${params.speedScale}|${pause}|${sentence}`)
+        .update(`v${PACING_VERSION}|${params.voice.cacheKey}|${pause}|${sentence}`)
         .digest('hex')
         .slice(0, 16);
       const wavPath = path.join(voiceDir, `${key}.wav`);
@@ -166,7 +166,7 @@ export async function synthesizeNarration(params: {
       try {
         wavBytes = await fs.readFile(wavPath);
       } catch {
-        wavBytes = await synthesizeVoicevox(sentence, narrationVoiceOptions(params.speaker, params.speedScale, pause));
+        wavBytes = await params.voice.synthesize(sentence, pause);
         await fs.writeFile(wavPath, wavBytes);
       }
 

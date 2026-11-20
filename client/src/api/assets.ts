@@ -30,6 +30,17 @@ export function deleteAssets(kind: AssetKind, names: string[]) {
   });
 }
 
+export function renameAsset(kind: AssetKind, filename: string, name: string) {
+  return fetchJson<{ item: AssetFileItem }>(
+    `${API_V1}/assets/${encodeURIComponent(kind)}/${encodeURIComponent(filename)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
 export type PrepareKeyColor = 'green' | 'black';
 
 export function prepareAssetColor(kind: AssetKind, filename: string, keyColor: PrepareKeyColor = 'green') {
@@ -40,5 +51,13 @@ export function prepareAssetColor(kind: AssetKind, filename: string, keyColor: P
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keyColor }),
     },
+  );
+}
+
+/** Mascot only: regenerate the image through Meta without the watermark, overwriting the same file. */
+export function removeAssetWatermark(kind: AssetKind, filename: string) {
+  return fetchJson<{ item: AssetFileItem }>(
+    `${API_V1}/assets/${encodeURIComponent(kind)}/${encodeURIComponent(filename)}/remove-watermark`,
+    { method: 'POST' },
   );
 }

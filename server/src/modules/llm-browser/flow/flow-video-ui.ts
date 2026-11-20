@@ -12,16 +12,20 @@ import { emitDetailLog } from '../../video-production/shared/video-log.js';
 /**
  * Image → video through the flow.google.com UI (the old labs.google token endpoint answers 410).
  *
- * Prompt-bar settings popover: Video · Ingredients · aspect · model · x1, then the scene image is
+ * Prompt-bar settings popover: Video · Ingredients · aspect · model · 360p · x1 (length untouched), then the scene image is
  * attached as the only ingredient (+ → Upload media → asset → Add to prompt, as for image references).
  */
 
-export const FLOW_VIDEO_DEFAULT_MODEL = 'Veo 3.1 - Lite';
+export const FLOW_VIDEO_DEFAULT_MODEL = 'Omni 1.2 Flash';
 export type FlowVideoAspectRatio = '16:9' | '9:16';
+export type FlowVideoResolution = '360p' | '720p';
+export const FLOW_VIDEO_DEFAULT_RESOLUTION: FlowVideoResolution = '360p';
 
 export interface FlowVideoUiSettings {
   model: string;
   aspectRatio: FlowVideoAspectRatio;
+  /** Default 360p; skipped when the chosen model has no resolution toggle. */
+  resolution?: FlowVideoResolution;
 }
 
 /**
@@ -91,9 +95,20 @@ export async function configureFlowVideoSettings(
   }
 
   await sleep(600);
+  // Resolution toggle shows only for some models (e.g. Omni); its label may carry an info icon.
+  const resolution = settings.resolution ?? FLOW_VIDEO_DEFAULT_RESOLUTION;
+  const resolutionToggle = overlay(page).getByRole('radio', { name: new RegExp(`^\\s*${resolution}`) }).first();
+  if (await resolutionToggle.isVisible().catch(() => false)) {
+    await pickToggle(page, new RegExp(`^\\s*${resolution}`));
+    await sleep(600);
+  } else {
+    emitDetailLog(`[flow-video-ui] no ${resolution} option for ${settings.model}, keeping Flow's default resolution`);
+  }
+
+  // Length slider is left as Flow sets it.
   await pickToggle(page, /^x1$/);
   if (options.keepOpen) {
-    emitDetailLog(`[flow-video-ui] settings picked (popover left open): Video · Ingredients · ${settings.aspectRatio} · ${settings.model} · x1`);
+    emitDetailLog(`[flow-video-ui] settings picked (popover left open): Video · Ingredients · ${settings.aspectRatio} · ${settings.model} · ${resolution} · x1`);
     return;
   }
   await page.keyboard.press('Escape');

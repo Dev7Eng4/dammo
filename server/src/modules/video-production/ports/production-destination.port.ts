@@ -2,6 +2,7 @@ import type { ChannelLanguage } from '../../youtube-channels/channel-language.js
 import type {
   CaptionStyleKey,
   ReupAudioBackgroundImage,
+  RemakeAutoConfig,
   ReupAudioVideoType,
   AiSceneDensityMaxSec,
   VideoCreationOrder,
@@ -25,11 +26,17 @@ export interface ProductionDestination {
   /** Channel niche key, or `all` when unset. */
   niche: string;
   sourceChannels: string[];
+  /** `trend_brain` = take the trend brain's hot videos instead of `sourceChannels`. */
+  sourceMode?: 'channels' | 'trend_brain';
+  /** trend_brain only: K-clusters to take videos from (empty = all). */
+  trendClusters?: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
   thumbnailBackgroundFile?: string;
   captionStyleKey?: CaptionStyleKey;
+  /** remake_video channels with auto remake on: remake the script + VOICEVOX narration before metadata/scenes. */
+  remakeAuto?: RemakeAutoConfig;
   /** Set for reup_audio channels only */
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;

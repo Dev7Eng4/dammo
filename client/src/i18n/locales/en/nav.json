@@ -15,15 +15,15 @@
     "gpmManager": "GPM manager",
     "proxies": "Proxies",
     "radar": "Breakout radar",
+    "brains": "AI brain map",
     "source": "Source channels",
     "prompts": "Prompts",
     "visualStyles": "Visual styles",
     "assets": "Assets",
     "monetization": "Monetization roadmap",
     "videoAgent": "Video agent",
-    "manualVideo": "Step-by-step video",
+    "manualVideo": "Video production",
     "taskQueue": "Running tasks",
-    "videoProduction": "Video production",
     "settings": "Settings"
   }
 }

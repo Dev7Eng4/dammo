@@ -16,6 +16,7 @@ import {
   uploadYoutubeChannelAvatar,
   uploadYoutubeChannelAvatarTemp,
   fetchYoutubeChannelMascotImages,
+  saveYoutubeApiKey,
 } from '../../api/youtubeChannels';
 import {
   createEmptyPublishTimes,
@@ -59,15 +60,18 @@ import {
   LOCAL_STOCK_SENTINEL,
   normalizeBackgroundFootageSourceIds,
 } from '../../utils/backgroundFootage';
+import { PSY_CLUSTERS } from '../../constants/psyClusters';
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
 import type { SelectOption } from '../ui';
 import { AudioBarPickerModal } from './AudioBarPickerModal';
 import { ChannelMascotImageField } from './ChannelMascotImageField';
+import { RemakeAutoFields } from './RemakeAutoFields';
 import { SmallVideoPickerModal } from './SmallVideoPickerModal';
 import { SubscribePickerModal } from './SubscribePickerModal';
 import { ThumbnailBackgroundPickerModal } from './ThumbnailBackgroundPickerModal';
+import { YoutubeApiKeyField } from './YoutubeApiKeyField';
 
 interface YoutubeChannelModalCommonProps {
   open: boolean;
@@ -113,6 +117,14 @@ function buildAvailableMailOptions(
 
 type TFunc = (key: string, options?: Record<string, unknown>) => string;
 
+/** Saved style key; legacy mascot settings (candidate count, removed `mascot_2`) map to `mascot_1` / `mascot_3`. */
+function toThumbnailStyleFormValue(channel: YoutubeChannel): string {
+  const key = channel.thumbnailStyleKey;
+  const legacyCount = key === 'mascot_2' ? 2 : !key ? channel.mascotThumbnailCandidates : undefined;
+  if (legacyCount) return legacyCount <= 1 ? 'mascot_1' : 'mascot_3';
+  return key ?? '';
+}
+
 function buildDefaultThumbnailStyleOption(t: TFunc) {
   return { value: '', label: t('form.thumbnailReuseOld') };
 }
@@ -125,6 +137,7 @@ function buildChannelTypeOptions(t: TFunc) {
       reup_audio: t('form.typeReupAudio'),
       reup_video: t('form.typeReupVideo'),
       content_sale: t('form.typeContentSale'),
+      remake_video: t('form.typeRemakeVideo'),
     }[option.value],
   }));
 }
@@ -233,6 +246,13 @@ const defaultValues: AddYoutubeChannelFormValues = {
   language: '',
   niche: '',
   sourceChannels: [],
+  sourceMode: 'channels',
+  trendClusters: [],
+  remakeAutoEnabled: true,
+  remakeProvider: '',
+  remakePromptSetId: '',
+  remakeVoicePresetId: '',
+  remakeSpeedScale: '1',
   videoCreationOrder: 'oldest_first',
   backgroundFootageSources: [],
   thumbnailStyleKey: '',
@@ -245,7 +265,6 @@ const defaultValues: AddYoutubeChannelFormValues = {
   useReferenceImage: false,
   audioBarFile: '',
   showChannelAvatar: false,
-  mascotThumbnailCandidates: '',
   showSubscribe: false,
   subscribeFile: '',
   smallVideoFile: '',
@@ -276,9 +295,16 @@ function getChannelFormValues(
     language: parseStoredChannelLanguage(channel.language),
     niche: channel.niche ?? '',
     sourceChannels: channel.sourceChannels ?? [],
+    sourceMode: channel.sourceMode === 'trend_brain' ? 'trend_brain' : 'channels',
+    trendClusters: channel.trendClusters ?? [],
+    remakeAutoEnabled: channel.remakeAuto?.enabled !== false,
+    remakeProvider: channel.remakeAuto?.provider ?? '',
+    remakePromptSetId: channel.remakeAuto?.promptSetId ?? '',
+    remakeVoicePresetId: channel.remakeAuto?.voicePresetId ?? '',
+    remakeSpeedScale: String(channel.remakeAuto?.speedScale ?? 1),
     videoCreationOrder: channel.videoCreationOrder ?? 'oldest_first',
     backgroundFootageSources: channel.backgroundFootageSources ?? [],
-    thumbnailStyleKey: channel.thumbnailStyleKey ?? '',
+    thumbnailStyleKey: toThumbnailStyleFormValue(channel),
     thumbnailBackgroundFile: channel.thumbnailBackgroundFile ?? '',
     captionStyleKey: channel.captionStyleKey ?? 'default',
     reupAudioVideoType: channel.reupAudioVideoType ?? '',
@@ -295,7 +321,6 @@ function getChannelFormValues(
     useReferenceImage: channel.useReferenceImage === true,
     audioBarFile: channel.audioBarFile ?? '',
     showChannelAvatar: channel.showChannelAvatar === true,
-    mascotThumbnailCandidates: channel.mascotThumbnailCandidates ? String(channel.mascotThumbnailCandidates) : '',
     showSubscribe: channel.showSubscribe === true,
     subscribeFile: channel.subscribeFile ?? '',
     smallVideoFile: channel.smallVideoFile ?? '',
@@ -358,14 +383,20 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const uploadFrequencyOptions = useMemo(() => buildUploadFrequencyOptions(t), [t]);
   const videoCreationOrderOptions = useMemo(() => buildVideoCreationOrderOptions(t), [t]);
   const captionStyleOptions = useMemo(() => buildCaptionStyleOptions(t), [t]);
-  const mascotThumbnailOptions = useMemo(
+  const sourceModeOptions = useMemo(
     () => [
-      { value: '', label: t('form.mascotThumbnailOff') },
-      ...['2', '3', '4'].map(count => ({ value: count, label: t('form.mascotThumbnailCount', { count: Number(count) }) })),
+      { value: 'channels', label: t('form.sourceMode.channels') },
+      { value: 'trend_brain', label: t('form.sourceMode.trendBrain') },
     ],
     [t],
   );
+  const trendClusterOptions = useMemo(
+    () => PSY_CLUSTERS.map(cluster => ({ value: cluster.id, label: `${cluster.id} · ${cluster.name}` })),
+    [],
+  );
   const [apiError, setApiError] = useState<string | null>(null);
+  /** New YouTube Data API v3 key typed in the form; saved after the channel itself is saved. */
+  const [youtubeApiKeyDraft, setYoutubeApiKeyDraft] = useState('');
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [mailOptions, setMailOptions] = useState<{ value: string; label: string }[]>([]);
   const [sources, setSources] = useState<SourceChannel[]>([]);
@@ -391,8 +422,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const [mascotTempSessionId, setMascotTempSessionId] = useState(() => crypto.randomUUID());
   /** Preview of the channel mascot (saved image when editing, temp upload when creating); null when none. */
   const [mascotImageUrl, setMascotImageUrl] = useState<string | null>(null);
-  /** Optional character sheet of the mascot (shares the mascot temp session). */
-  const [mascotSheetUrl, setMascotSheetUrl] = useState<string | null>(null);
   const [sceneDensityDefaults, setSceneDensityDefaults] = useState<AiSceneDensityMaxSec>({
     ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC,
   });
@@ -413,6 +442,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
   const channelType = watch('type');
   const mailAccountId = watch('mailAccountId');
   const isReupType = isReupYoutubeChannelType(channelType);
+  const sourceMode = watch('sourceMode');
+  const fromTrendBrain = isReupType && sourceMode === 'trend_brain';
   const isReupAudio = isReupAudioChannelType(channelType);
   const language = watch('language') as YoutubeChannelLanguage | '';
   const reupAudioVideoType = watch('reupAudioVideoType');
@@ -543,13 +574,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setHasChannelAvatar(avatarExists);
           setHasTempAvatar(false);
 
-          const [mascotImages, mascotSheets] = await Promise.all(
-            (['mascot-image', 'mascot-sheet'] as const).map(kind =>
-              fetchYoutubeChannelMascotImages(kind, channel.id, { signal }).catch(() => ({ items: [] })),
-            ),
-          );
+          const mascotImages = await fetchYoutubeChannelMascotImages(channel.id, { signal }).catch(() => ({ items: [] }));
           setMascotImageUrl(mascotImages?.items[0]?.url ?? null);
-          setMascotSheetUrl(mascotSheets?.items[0]?.url ?? null);
 
           const formValues = getChannelFormValues(channel, mailAccountId, densityDefaults);
           if (!avatarExists) {
@@ -565,7 +591,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           setHasChannelAvatar(false);
           setHasTempAvatar(false);
           setMascotImageUrl(null);
-          setMascotSheetUrl(null);
           reset({
             ...defaultValues,
             mailAccountId: availableMailOptions[0]?.value ?? '',
@@ -747,6 +772,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
 
   function handleClose() {
     reset(defaultValues);
+    setYoutubeApiKeyDraft('');
     setFormReady(false);
     setApiError(null);
     setBackgroundPickerOpen(false);
@@ -759,7 +785,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     setHasChannelAvatar(false);
     setMascotTempSessionId(crypto.randomUUID());
     setMascotImageUrl(null);
-    setMascotSheetUrl(null);
     onClose();
   }
 
@@ -797,19 +822,35 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         uploadFrequency: values.uploadFrequency,
         publishTimes: values.publishTimes,
         ...(isReupYoutubeChannelType(values.type) ? { videoCreationOrder: values.videoCreationOrder } : {}),
-        ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
+        ...(values.type === 'remake_video'
+          ? {
+              remakeAuto: {
+                ...(values.remakeAutoEnabled ? {} : { enabled: false }),
+                ...(values.remakeProvider ? { provider: values.remakeProvider } : {}),
+                ...(values.remakePromptSetId ? { promptSetId: values.remakePromptSetId } : {}),
+                ...(values.remakeVoicePresetId ? { voicePresetId: values.remakeVoicePresetId } : {}),
+                ...(Number(values.remakeSpeedScale) !== 1 ? { speedScale: Number(values.remakeSpeedScale) } : {}),
+              },
+            }
+          : {}),
+        ...(isReupYoutubeChannelType(values.type) && values.sourceMode === 'trend_brain'
+          ? { sourceMode: 'trend_brain' as const, trendClusters: values.trendClusters, sourceChannels: [] }
+          : {
+              sourceMode: 'channels' as const,
+              ...(values.sourceChannels.length > 0 ? { sourceChannels: values.sourceChannels } : {}),
+            }),
         ...(values.backgroundFootageSources.length > 0
           ? { backgroundFootageSources: values.backgroundFootageSources }
           : {}),
         ...(values.thumbnailStyleKey ? { thumbnailStyleKey: values.thumbnailStyleKey } : {}),
         thumbnailBackgroundFile: values.thumbnailBackgroundFile || undefined,
-        ...(values.type === 'reup_audio' && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
-        ...(values.type === 'reup_audio' && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
-        ...(values.type === 'reup_audio' ? { useReferenceImage: values.useReferenceImage } : {}),
-        ...(values.type === 'reup_audio'
+        ...(isReupAudioChannelType(values.type) && values.reupAudioVideoType ? { reupAudioVideoType: values.reupAudioVideoType } : {}),
+        ...(isReupAudioChannelType(values.type) && values.reupAudioVisualStyleId ? { reupAudioVisualStyleId: values.reupAudioVisualStyleId } : {}),
+        ...(isReupAudioChannelType(values.type) ? { useReferenceImage: values.useReferenceImage } : {}),
+        ...(isReupAudioChannelType(values.type)
           ? buildBackgroundImagePayload(values.reupAudioVideoType, values.reupAudioBackgroundImage)
           : {}),
-        ...(values.type === 'reup_audio' &&
+        ...(isReupAudioChannelType(values.type) &&
         (isAiSceneVideoType(values.reupAudioVideoType) ||
           parseSiBackgroundImageValue(values.reupAudioBackgroundImage).mode === 'multi_image')
           ? {
@@ -820,13 +861,13 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               },
             }
           : {}),
-        ...(values.type === 'reup_audio' && values.reupAudioVideoType === 'si'
+        ...(isReupAudioChannelType(values.type) && values.reupAudioVideoType === 'si'
           ? {
               ...(values.audioBarFile ? { audioBarFile: values.audioBarFile, showAudioBar: true } : { showAudioBar: false }),
               ...(values.subscribeFile ? { subscribeFile: values.subscribeFile, showSubscribe: true } : { showSubscribe: false }),
             }
           : {}),
-        ...(values.type === 'reup_audio' &&
+        ...(isReupAudioChannelType(values.type) &&
         (values.reupAudioVideoType === 'si' || isAiSceneVideoType(values.reupAudioVideoType))
           ? {
               ...(values.smallVideoFile
@@ -834,11 +875,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 : { showSmallVideo: false }),
             }
           : {}),
-        ...(values.type === 'reup_audio' && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
+        ...(isReupAudioChannelType(values.type) && values.captionStyleKey ? { captionStyleKey: values.captionStyleKey } : {}),
         showChannelAvatar: values.showChannelAvatar === true && (isEdit ? hasChannelAvatar : hasTempAvatar),
-        ...(values.mascotThumbnailCandidates && mascotImageUrl
-          ? { mascotThumbnailCandidates: Number(values.mascotThumbnailCandidates) }
-          : {}),
         showDisclaimer: values.showDisclaimer,
         disclaimerText: values.disclaimerText,
         descriptionDisclaimerText: values.descriptionDisclaimerText,
@@ -852,18 +890,29 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           ...payload,
           ...(shouldUpdateChannelUrl ? { channelUrl: trimmedChannelUrl } : {}),
         });
+        if (youtubeApiKeyDraft.trim()) {
+          // Throws on an invalid key → the modal stays open with the error.
+          await saveYoutubeApiKey(item.id, youtubeApiKeyDraft.trim());
+        }
         props.onSuccess(item);
       } else {
-        await createYoutubeChannel({
+        const { item: created } = await createYoutubeChannel({
           ...payload,
           channelUrl: values.channelUrl.trim(),
           thumbnailBackgroundTempSessionId: tempBackgroundSessionId,
           ...(hasTempAvatar ? { avatarTempSessionId } : {}),
-          ...(mascotImageUrl || mascotSheetUrl ? { mascotTempSessionId } : {}),
+          ...(mascotImageUrl ? { mascotTempSessionId } : {}),
         });
+        if (youtubeApiKeyDraft.trim()) {
+          // The channel exists already, so a bad key only warns instead of failing the whole add.
+          await saveYoutubeApiKey(created.id, youtubeApiKeyDraft.trim()).catch((err: unknown) =>
+            toast.error(`${t('form.youtubeApi.saveError')}: ${err instanceof Error ? err.message : String(err)}`),
+          );
+        }
         props.onSuccess();
       }
       reset(defaultValues);
+      setYoutubeApiKeyDraft('');
       setBackgroundPickerOpen(false);
       setTempBackgroundSessionId(crypto.randomUUID());
       setAvatarTempSessionId(crypto.randomUUID());
@@ -871,7 +920,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       setHasChannelAvatar(false);
       setMascotTempSessionId(crypto.randomUUID());
       setMascotImageUrl(null);
-      setMascotSheetUrl(null);
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : isEdit ? t('form.updateError') : t('form.addError'));
@@ -886,8 +934,9 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
         open={open}
         onClose={handleClose}
         title={isEdit ? t('form.editTitle') : t('form.addTitle')}
-        className='max-h-[90vh] max-w-5xl flex flex-col'
-        bodyClassName='max-h-[60vh] overflow-y-auto'
+        size='2xl'
+        className='max-h-[92vh] flex flex-col'
+        bodyClassName='max-h-[74vh] overflow-y-auto'
         footer={
           <>
             <Button variant='outlined' size='sm' className='rounded-lg' onClick={handleClose} disabled={isSubmitting}>
@@ -953,10 +1002,20 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           <FormField label={t('form.channelUrl')} htmlFor='channel-url' optional error={errors.channelUrl?.message} className='min-w-0'>
             <Input
               id='channel-url'
+              autoComplete='off'
               placeholder={t('form.channelUrlPlaceholder')}
               className='h-10 rounded-lg font-mono text-sm'
               disabled={isSubmitting}
               {...register('channelUrl')}
+            />
+          </FormField>
+          <FormField label={t('form.youtubeApi.label')} htmlFor='youtube-api-key' optional className='min-w-0 sm:col-span-2 lg:col-span-3'>
+            <YoutubeApiKeyField
+              channelId={isEdit ? channel.id : undefined}
+              channelUrl={watch('channelUrl') || (isEdit ? channel.youtubeUrl : '')}
+              value={youtubeApiKeyDraft}
+              onChange={setYoutubeApiKeyDraft}
+              disabled={isSubmitting}
             />
           </FormField>
           <FormField label={t('form.language')} htmlFor='channel-language' error={errors.language?.message} className='min-w-0'>
@@ -1015,6 +1074,27 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           </FormField>
 
           {isReupType ? (
+            <FormField label={t('form.sourceMode.label')} htmlFor='source-mode' className='min-w-0'>
+              <Controller
+                name='sourceMode'
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    id='source-mode'
+                    options={sourceModeOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={isSubmitting}
+                    className='w-full'
+                    triggerClassName={selectTriggerClass}
+                  />
+                )}
+              />
+            </FormField>
+          ) : null}
+
+          {isReupType && !fromTrendBrain ? (
             <FormField
               label={t('form.videoOrder')}
               htmlFor='video-creation-order'
@@ -1024,7 +1104,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               <Controller
                 name='videoCreationOrder'
                 control={control}
-                rules={{ required: isReupType ? t('form.videoOrderRequired') : false }}
+                rules={{ required: isReupType && !fromTrendBrain ? t('form.videoOrderRequired') : false }}
                 render={({ field }) => (
                   <Select
                     id='video-creation-order'
@@ -1042,6 +1122,33 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             </FormField>
           ) : null}
 
+          {fromTrendBrain ? (
+            <FormField
+              label={t('form.sourceMode.clusters')}
+              htmlFor='trend-clusters'
+              optional
+              className='min-w-0 sm:col-start-1 sm:col-span-2 lg:col-span-3'
+            >
+              <Controller
+                name='trendClusters'
+                control={control}
+                render={({ field }) => (
+                  <MultiSelect
+                    id='trend-clusters'
+                    options={trendClusterOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={t('form.sourceMode.clustersPlaceholder')}
+                    disabled={isSubmitting}
+                    className='w-full'
+                    triggerClassName='min-h-10 w-full min-w-0 rounded-lg px-2 py-1.5'
+                  />
+                )}
+              />
+              <p className='mt-1 text-[11px] text-muted-foreground'>{t('form.sourceMode.trendHint')}</p>
+            </FormField>
+          ) : (
           <FormField
             label={t('form.sourceChannels')}
             htmlFor='source-channel'
@@ -1053,7 +1160,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               name='sourceChannels'
               control={control}
               rules={{
-                validate: value => !isReupType || value.length > 0 || t('form.sourceRequired'),
+                validate: value => !isReupType || fromTrendBrain || value.length > 0 || t('form.sourceRequired'),
               }}
               render={({ field }) => (
                 <MultiSelect
@@ -1072,6 +1179,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               )}
             />
           </FormField>
+          )}
 
           <FormField label={t('form.channelType')} htmlFor='channel-type' error={errors.type?.message} className='min-w-0 sm:col-start-1'>
             <Controller
@@ -1093,6 +1201,16 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
               )}
             />
           </FormField>
+
+          {channelType === 'remake_video' ? (
+            <RemakeAutoFields
+              control={control}
+              enabled={watch('remakeAutoEnabled')}
+              disabled={isSubmitting}
+              {...(channel ? { channelId: channel.id } : {})}
+              selectTriggerClass={selectTriggerClass}
+            />
+          ) : null}
 
           {isReupAudio ? (
             <>
@@ -1451,7 +1569,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
           </FormField>
 
           <ChannelMascotImageField
-            kind='mascot-image'
             label={t('form.channelMascot')}
             hint={t('form.channelMascotHint')}
             channelId={isEdit ? channel?.id : undefined}
@@ -1460,40 +1577,6 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
             onImageUrlChange={setMascotImageUrl}
             disabled={isSubmitting}
           />
-
-          <ChannelMascotImageField
-            kind='mascot-sheet'
-            label={t('form.channelMascotSheet')}
-            hint={t('form.channelMascotSheetHint')}
-            optional
-            channelId={isEdit ? channel?.id : undefined}
-            tempSessionId={mascotTempSessionId}
-            imageUrl={mascotSheetUrl}
-            onImageUrlChange={setMascotSheetUrl}
-            disabled={isSubmitting}
-          />
-
-          <FormField label={t('form.mascotThumbnail')} htmlFor='mascot-thumbnail' className='min-w-0'>
-            <Controller
-              name='mascotThumbnailCandidates'
-              control={control}
-              render={({ field }) => (
-                <Select
-                  id='mascot-thumbnail'
-                  options={mascotThumbnailOptions}
-                  value={mascotImageUrl ? field.value : ''}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  disabled={isSubmitting || !mascotImageUrl}
-                  className='w-full'
-                  triggerClassName={selectTriggerClass}
-                />
-              )}
-            />
-            <p className='mt-1 text-[11px] leading-snug text-neutral-500'>
-              {mascotImageUrl ? t('form.mascotThumbnailHint') : t('form.mascotThumbnailNeedsMascot')}
-            </p>
-          </FormField>
 
           <FormField
             label={t('form.thumbnailStyle')}
@@ -1532,6 +1615,11 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
                 />
               )}
             />
+            {thumbnailStyleKey?.startsWith('mascot_') ? (
+              <p className='mt-1 text-[11px] leading-snug text-neutral-500'>
+                {mascotImageUrl ? t('form.mascotThumbnailHint') : t('form.mascotThumbnailNeedsMascot')}
+              </p>
+            ) : null}
           </FormField>
 
           {showThumbnailBackgroundPicker ? (

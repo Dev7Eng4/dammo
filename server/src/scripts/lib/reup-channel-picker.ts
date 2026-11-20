@@ -1,6 +1,7 @@
 import checkbox from '@inquirer/checkbox';
 import { youtubeChannelsRepository } from '../../modules/youtube-channels/youtube-channels.repository.js';
 import type { StoredYoutubeChannelType } from '../../modules/youtube-channels/youtube-channels.types.js';
+import { isReupAudioFamilyType } from '../../modules/youtube-channels/youtube-channels.types.js';
 
 const ALL_VALUE = '__all__';
 
@@ -14,12 +15,12 @@ export type ReupChannelPickOptions = {
 };
 
 function isReupChannelType(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+  return isReupAudioFamilyType(type) || type === 'reup_video' || type === 'reup';
 }
 
 function formatChannelLabel(channel: { name: string; handle: string; type: StoredYoutubeChannelType; reupAudioVideoType?: string }) {
   const typeTag =
-    channel.type === 'reup_audio' && channel.reupAudioVideoType
+    isReupAudioFamilyType(channel.type) && channel.reupAudioVideoType
       ? ` [${channel.reupAudioVideoType.toUpperCase()}]`
       : '';
   return `${channel.name} (${channel.handle})${typeTag}`;

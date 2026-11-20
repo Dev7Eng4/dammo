@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildSceneMotionPrompt, selectScenesForVideo } from './ai-video-scene-clip-generator.js';
+import { buildSceneMotionPrompt, resolveSceneCameraMotion, selectScenesForVideo } from './ai-video-scene-clip-generator.js';
 import type { AiVideoScenePrompt } from './ai-video.types.js';
 
 function scene(startTime: string, withImage = true): AiVideoScenePrompt {
@@ -33,6 +33,21 @@ describe('buildSceneMotionPrompt', () => {
   test('keeps the scene context but bounds its length', () => {
     const prompt = buildSceneMotionPrompt(`  a   quiet   room ${'x'.repeat(1000)}`);
     assert.match(prompt, /Scene: a quiet room/);
-    assert.ok(prompt.length < 800);
+    assert.ok(prompt.length < 1100);
+  });
+});
+
+describe('scene camera motion', () => {
+  test('close and medium shots keep the camera still', () => {
+    assert.equal(resolveSceneCameraMotion('the mascot, close-up of its face, crying'), 'static');
+    assert.equal(resolveSceneCameraMotion('the mascot sitting at a table, medium shot'), 'static');
+    assert.equal(resolveSceneCameraMotion('the mascot waving'), 'static');
+    assert.match(buildSceneMotionPrompt('the mascot, close-up'), /no zoom/);
+  });
+
+  test('wide shots get only a slight push-in', () => {
+    assert.equal(resolveSceneCameraMotion('the mascot on a veranda, wide shot, autumn'), 'gentle_push_in');
+    assert.equal(resolveSceneCameraMotion('establishing shot of a small town'), 'gentle_push_in');
+    assert.match(buildSceneMotionPrompt('the mascot, wide shot'), /barely noticeable slow drift forward/);
   });
 });

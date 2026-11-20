@@ -88,7 +88,7 @@
       "referenceImageHint": "Flow / Meta cho tạo ảnh character reference.",
       "sceneImageHint": "Flow / Meta cho tạo ảnh scene slide AI.",
       "thumbHint": "Dùng cho thumbnail và general/one_image.",
-      "savedVideoDefault": "Đã lưu làm mặc định cho tạo video.",
+      "savedVideoDefault": "Google Flow (Veo) tạo clip chuyển động từ ảnh scene, ở bước \"Ảnh → video\".",
       "step": "Step",
       "stepLabel": "Bước {{n}}",
       "variables": "Biến",
@@ -97,7 +97,9 @@
       "valueFor": "Giá trị cho {{name}}",
       "running": "Đang chạy...",
       "run": "Chạy thử",
-      "imageAlt": "Xem trước ảnh thumbnail đã tạo"
+      "imageAlt": "Xem trước ảnh thumbnail đã tạo",
+      "providersMoved": "Chạy thử dùng nhà cung cấp mặc định.",
+      "openSettings": "Đổi ở Cài đặt → Công cụ AI"
     }
   },
   "visual": {
@@ -186,7 +188,13 @@
     "deleteOneBody": "Bạn có chắc muốn xóa file {{name}} trong mục {{tab}}?",
     "deleteManyBody": "Bạn có chắc muốn xóa {{count}} file đã chọn trong mục {{tab}}?",
     "closePreview": "Đóng xem video",
+    "rename": "Đổi tên",
+    "renameTitle": "Đổi tên mascot",
+    "renameLabel": "Tên mới",
+    "renameHint": "Phần mở rộng ({{ext}}) được giữ nguyên.",
     "toast": {
+      "renamed": "Đã đổi tên thành {{name}}",
+      "renameError": "Không thể đổi tên file",
       "added": "Đã thêm {{name}}",
       "uploadError": "Không thể tải lên file",
       "deletedOne": "Đã xóa 1 file",
@@ -194,7 +202,9 @@
       "deleteError": "Không thể xóa file",
       "colorDone": "Đã xử lý {{color}}: {{name}}",
       "colorAlready": "{{name}} đã được xử lý {{color}} trước đó",
-      "colorError": "Không thể xử lý màu"
+      "colorError": "Không thể xử lý màu",
+      "watermarkRemoved": "Đã xóa watermark: {{name}}",
+      "watermarkError": "Xóa watermark thất bại"
     },
     "celebrities": {
       "count": "{{count}} người nổi tiếng",
@@ -290,7 +300,9 @@
         "success": "Đã di chuyển {{name}}",
         "error": "Không thể di chuyển video"
       }
-    }
+    },
+    "removeWatermark": "Xóa watermark (Meta)",
+    "removingWatermark": "Đang xóa watermark…"
   },
   "downloadTest": {
     "title": "Tạo video tay",
@@ -307,7 +319,7 @@
     "size": "Dung lượng",
     "remake": {
       "title": "Remake kịch bản",
-      "hint": "Mở một Chrome profile phụ, chạy prompt \"Remake kịch bản\" trên ChatGPT/Gemini: lập dàn ý rồi viết từng chương trong cùng một cuộc chat. Sửa prompt ở trang Prompt.",
+      "hint": "Mở một Chrome profile có tick LLM chat, chạy prompt \"Remake kịch bản\" trên ChatGPT/Gemini/Claude: lập dàn ý rồi viết từng chương trong cùng một cuộc chat. Sửa prompt ở trang Prompt.",
       "promptSet": "Bộ prompt",
       "noPromptSet": "Chưa có bộ prompt remake cho ngôn ngữ này",
       "provider": "LLM",

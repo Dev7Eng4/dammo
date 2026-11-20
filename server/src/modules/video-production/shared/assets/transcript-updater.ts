@@ -13,13 +13,13 @@ import {
 } from '../../../../infrastructure/subtitle/srt-utils.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../prompts/prompts.repository.js';
-import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import type { TranscriptLanguage } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
+import { contentTaskProvider, pickContentTaskProfiles } from '../../../prompts/content-task.js';
 
 const BATCH_SIZE = 80;
 const MAX_CONCURRENT_PROFILES = 5;
@@ -200,9 +200,9 @@ export async function updateTranscriptWithLlm(
 
   const batches = chunkSrtBlocks(headBlocks, BATCH_SIZE);
   const totalBatches = batches.length;
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const workerCount = Math.min(MAX_CONCURRENT_PROFILES, totalBatches);
-  const profiles = chromeProfilesService.pickSubProfiles(workerCount);
+  const provider = contentTaskProvider('content');
+  const profiles = pickContentTaskProfiles('content', Math.min(MAX_CONCURRENT_PROFILES, totalBatches), provider);
+  const workerCount = profiles.length;
 
   console.log(`[transcript-batch] Mở ${workerCount} Chrome profile cho ${totalBatches} batch (${profiles.map(p => p.name).join(', ')})...`);
 
@@ -254,6 +254,6 @@ export async function updateTranscriptWithLlm(
 
     return updatedPath;
   } finally {
-    await chromeProfilesService.closeSubProfiles(profiles.map(profile => profile.id));
+    await chromeProfilesService.closeProfiles(profiles.map(profile => profile.id));
   }
 }

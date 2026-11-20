@@ -31,3 +31,30 @@ describe('remove Gemini watermark settings', () => {
     assert.equal(settings.taskQueueConcurrency, 1);
   });
 });
+
+describe('update transcript settings', () => {
+  test('defaults to true (enabled)', () => {
+    const settings = appSettingsService.get();
+    assert.equal(settings.enableUpdateTranscript, true);
+    assert.equal(settings.disabledUpdateTranscript, true);
+  });
+
+  test('can be disabled (false)', () => {
+    appSettingsService.update({ enableUpdateTranscript: false });
+    const settings = appSettingsService.get();
+    assert.equal(settings.enableUpdateTranscript, false);
+    assert.equal(settings.disabledUpdateTranscript, false);
+  });
+
+  test('can be updated via disabledUpdateTranscript alias', () => {
+    appSettingsService.update({ disabledUpdateTranscript: true });
+    let settings = appSettingsService.get();
+    assert.equal(settings.enableUpdateTranscript, true);
+    assert.equal(settings.disabledUpdateTranscript, true);
+
+    appSettingsService.update({ disabledUpdateTranscript: false });
+    settings = appSettingsService.get();
+    assert.equal(settings.enableUpdateTranscript, false);
+    assert.equal(settings.disabledUpdateTranscript, false);
+  });
+});

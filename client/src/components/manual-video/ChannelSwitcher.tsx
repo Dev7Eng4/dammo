@@ -7,6 +7,7 @@ import { useAbortableEffect } from '../../hooks'
 import type { VideoAgentRun } from '../../types/videoAgent'
 import type { YoutubeChannel } from '../../types/youtubeChannel'
 import { Button, Select, useToast } from '../ui'
+import { isReupAudioChannelType } from '../../types/youtubeChannel'
 
 interface ChannelSwitcherProps {
   run: VideoAgentRun
@@ -24,7 +25,7 @@ export function ChannelSwitcher({ run, disabled }: ChannelSwitcherProps) {
 
   useAbortableEffect(async (signal) => {
     const res = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal })
-    setChannels(res.items.filter((channel) => channel.type === 'reup_audio'))
+    setChannels(res.items.filter((channel) => isReupAudioChannelType(channel.type)))
   }, [])
 
   const current = channels?.find((channel) => channel.id === run.input.channelId)

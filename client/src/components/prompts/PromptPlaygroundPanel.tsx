@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Button, DropdownSelect, Input } from '../ui';
 import { IMAGE_PROVIDER_OPTIONS, PLAYGROUND_PROVIDER_OPTIONS, VIDEO_PROVIDER_OPTIONS } from '../../constants/promptForm';
 import {
@@ -21,30 +22,14 @@ export interface PromptPlaygroundPanelProps {
   stepCount: number;
   activeStepIndex: number;
   onActiveStepChange: (index: number) => void;
+  /** Saved defaults the run uses; they are changed in Settings → Chrome. */
   provider: PlaygroundProvider;
-  referenceImageProvider: ImageBrowserProvider;
   sceneImageProvider: ImageBrowserProvider;
-  thumbnailProvider: ImageBrowserProvider;
   videoProvider: VideoBrowserProvider;
-  providerSaving?: boolean;
-  referenceImageProviderSaving?: boolean;
-  sceneImageProviderSaving?: boolean;
-  thumbnailProviderSaving?: boolean;
-  videoProviderSaving?: boolean;
-  providerSettingsError?: string | null;
-  referenceImageProviderSettingsError?: string | null;
-  sceneImageProviderSettingsError?: string | null;
-  thumbnailProviderSettingsError?: string | null;
-  videoProviderSettingsError?: string | null;
   variableValues: Record<string, string>;
   running: boolean;
   result: PromptPlaygroundResult | null;
   error: string | null;
-  onProviderChange: (provider: PlaygroundProvider) => void;
-  onReferenceImageProviderChange: (provider: ImageBrowserProvider) => void;
-  onSceneImageProviderChange: (provider: ImageBrowserProvider) => void;
-  onThumbnailProviderChange: (provider: ImageBrowserProvider) => void;
-  onVideoProviderChange: (provider: VideoBrowserProvider) => void;
   onVariableChange: (name: string, value: string) => void;
   onRun: () => void;
 }
@@ -56,29 +41,12 @@ export function PromptPlaygroundPanel({
   activeStepIndex,
   onActiveStepChange,
   provider,
-  referenceImageProvider,
   sceneImageProvider,
-  thumbnailProvider,
   videoProvider,
-  providerSaving = false,
-  referenceImageProviderSaving = false,
-  sceneImageProviderSaving = false,
-  thumbnailProviderSaving = false,
-  videoProviderSaving = false,
-  providerSettingsError = null,
-  referenceImageProviderSettingsError = null,
-  sceneImageProviderSettingsError = null,
-  thumbnailProviderSettingsError = null,
-  videoProviderSettingsError = null,
   variableValues,
   running,
   result,
   error,
-  onProviderChange,
-  onReferenceImageProviderChange,
-  onSceneImageProviderChange,
-  onThumbnailProviderChange,
-  onVideoProviderChange,
   onVariableChange,
   onRun,
 }: PromptPlaygroundPanelProps) {
@@ -116,121 +84,17 @@ export function PromptPlaygroundPanel({
         <p className="mt-0.5 text-xs text-neutral-500">{t('prompts.playground.subtitle')}</p>
       </div>
 
-      <div className="space-y-3 border-b border-border p-4">
-        <div>
-          <p className="text-xs font-medium text-neutral-300">{t('prompts.playground.providers')}</p>
-          <p className="mt-0.5 text-[10px] text-neutral-500">{t('prompts.playground.providersDesc')}</p>
-        </div>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.contentGen')}</span>
-            {providerSaving ? (
-              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
-            ) : null}
-          </div>
-          <DropdownSelect
-            value={provider}
-            onChange={onProviderChange}
-            options={PLAYGROUND_PROVIDER_OPTIONS}
-            disabled={providerSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {providerSettingsError ? (
-            <p className="text-[10px] text-danger">{providerSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">{t('prompts.playground.savedContentDefault')}</p>
-          )}
-        </label>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.referenceImageGen')}</span>
-            {referenceImageProviderSaving ? (
-              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
-            ) : null}
-          </div>
-          <DropdownSelect
-            value={referenceImageProvider}
-            onChange={onReferenceImageProviderChange}
-            options={IMAGE_PROVIDER_OPTIONS}
-            disabled={referenceImageProviderSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {referenceImageProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{referenceImageProviderSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">{t('prompts.playground.referenceImageHint')}</p>
-          )}
-        </label>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.sceneImageGen')}</span>
-            {sceneImageProviderSaving ? (
-              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
-            ) : null}
-          </div>
-          <DropdownSelect
-            value={sceneImageProvider}
-            onChange={onSceneImageProviderChange}
-            options={IMAGE_PROVIDER_OPTIONS}
-            disabled={sceneImageProviderSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {sceneImageProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{sceneImageProviderSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">{t('prompts.playground.sceneImageHint')}</p>
-          )}
-        </label>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.thumbGen')}</span>
-            {thumbnailProviderSaving ? (
-              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
-            ) : null}
-          </div>
-          <DropdownSelect
-            value={thumbnailProvider}
-            onChange={onThumbnailProviderChange}
-            options={IMAGE_PROVIDER_OPTIONS}
-            disabled={thumbnailProviderSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {thumbnailProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{thumbnailProviderSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">{t('prompts.playground.thumbHint')}</p>
-          )}
-        </label>
-
-        <label className="block space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-neutral-400">{t('prompts.playground.videoGen')}</span>
-            {videoProviderSaving ? (
-              <span className="text-[10px] text-neutral-500">{t('common:actions.saving')}</span>
-            ) : null}
-          </div>
-          <DropdownSelect
-            value={videoProvider}
-            onChange={onVideoProviderChange}
-            options={VIDEO_PROVIDER_OPTIONS}
-            disabled={videoProviderSaving}
-            className="w-full"
-            triggerClassName="h-9 w-full rounded-lg text-sm"
-          />
-          {videoProviderSettingsError ? (
-            <p className="text-[10px] text-danger">{videoProviderSettingsError}</p>
-          ) : (
-            <p className="text-[10px] text-neutral-500">{t('prompts.playground.savedVideoDefault')}</p>
-          )}
-        </label>
+      <div className="space-y-1 border-b border-border p-4 text-xs">
+        <p className="font-medium text-neutral-300">{t('prompts.playground.providers')}</p>
+        <p className="text-neutral-400">
+          {PLAYGROUND_PROVIDER_OPTIONS.find((option) => option.value === provider)?.label ?? provider} · {IMAGE_PROVIDER_OPTIONS.find((option) => option.value === sceneImageProvider)?.label ?? sceneImageProvider} · {VIDEO_PROVIDER_OPTIONS.find((option) => option.value === videoProvider)?.label ?? videoProvider}
+        </p>
+        <p className="text-[10px] text-neutral-500">
+          {t('prompts.playground.providersMoved')}{' '}
+          <Link to="/settings?tab=ai-tools" className="text-secondary-400 hover:text-secondary-300">
+            {t('prompts.playground.openSettings')}
+          </Link>
+        </p>
       </div>
 
       <div className="scrollbar-thin flex-1 space-y-4 overflow-y-auto p-4">

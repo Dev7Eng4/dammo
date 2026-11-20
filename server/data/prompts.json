@@ -1,42 +1,362 @@
 {
   "promptSets": [
     {
-      "id": "ja:remake_script",
-      "baseKey": "remake_script",
+      "id": "ja:remake_k11",
+      "baseKey": "remake_k11",
       "language": "ja",
-      "name": "Remake kịch bản (dàn ý → từng chương)",
+      "name": "Remake K11 Lời dạy chữa lành (dàn ý → từng chương)",
       "category": "remake",
-      "niche": "all",
+      "niche": "ja-psy-k11",
       "platform": "all",
-      "createdAt": "2026-10-31T12:09:33.589Z",
-      "updatedAt": "2026-10-31T15:21:30.374Z",
+      "createdAt": "2026-11-15T13:36:35.546Z",
+      "updatedAt": "2026-11-15T13:36:35.576Z",
       "steps": [
         {
-          "id": "3693f445-bcd7-44c4-88fc-c10df8a00cab",
-          "key": "remake_script_step_1",
+          "id": "db97c87f-c6a3-4cb4-8f87-589dddcf013d",
+          "key": "remake_k11_step_1",
           "step": 1,
           "outputType": "text",
-          "description": "Đọc transcript nguồn, lập dàn ý video mới (JSON)."
+          "description": "K11: đọc transcript nguồn, lập dàn ý video lời dạy chữa lành (JSON)."
         },
         {
-          "id": "77c6c2bc-1d57-4096-ab1c-7617233b674d",
-          "key": "remake_script_step_2",
+          "id": "9d1fb532-6714-4003-832b-46345a799913",
+          "key": "remake_k11_step_2",
           "step": 2,
           "outputType": "text",
-          "description": "Gửi một lần cho mỗi chương, trong cùng cuộc chat."
+          "description": "K11: gửi một lần cho mỗi chương, trong cùng cuộc chat."
         }
       ]
     },
     {
-      "id": "all:nguoi_gia_nhat_ban_scenes",
+      "id": "ko:kr_speech_scenes",
+      "baseKey": "kr_speech_scenes",
+      "language": "ko",
+      "name": "Ảnh theo cảnh KR – Tâm lý lời nói & thói quen cảm xúc (말투 · 감정 습관 · 품격 있는 말)",
+      "category": "image",
+      "niche": "18f1bb67-139f-4934-b060-a6ef6ab9ab17",
+      "platform": "all",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-11-14T18:50:12.441Z",
+      "steps": [
+        {
+          "id": "9f09a57f-6c79-4603-b906-8466c802737e",
+          "key": "kr_speech_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:kr_rel_scenes",
+      "baseKey": "kr_rel_scenes",
+      "language": "ko",
+      "name": "Ảnh theo cảnh KR – Tâm lý quan hệ & cắt giảm người độc hại (인간관계 정리 · 50대 60대)",
+      "category": "image",
+      "niche": "1de14c5e-61d7-4782-bcb6-41ae38b04dc2",
+      "platform": "all",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-11-14T18:50:09.317Z",
+      "steps": [
+        {
+          "id": "b53906e1-c4f6-4579-a6dc-c83946851fe8",
+          "key": "kr_rel_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:kr_wisdom_scenes",
+      "baseKey": "kr_wisdom_scenes",
+      "language": "ko",
+      "name": "Ảnh theo cảnh KR – Triết lý nửa sau cuộc đời: buông bỏ & bình yên (인생 후반 철학 · 비움 · 내려놓기)",
+      "category": "image",
+      "niche": "a6d5a8a1-70ca-4adc-916b-44a35efc3b13",
+      "platform": "all",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-11-14T18:50:05.991Z",
+      "steps": [
+        {
+          "id": "c034753b-5aff-4344-ba7e-c1c9d28d2b90",
+          "key": "kr_wisdom_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:mochi_senior_scenes",
+      "baseKey": "mochi_senior_scenes",
+      "language": "ja",
+      "name": "Mochi Senior – Ảnh theo cảnh có tham chiếu (cast cố định)",
+      "category": "image",
+      "niche": "618665f9-bb6d-4b91-afa8-f3663ca6af17",
+      "platform": "all",
+      "createdAt": "2026-10-18T00:00:00.000Z",
+      "updatedAt": "2026-11-14T18:50:02.457Z",
+      "steps": [
+        {
+          "id": "87a5196c-e43c-47c9-a156-2ab8c57ea644",
+          "key": "mochi_senior_scenes_step_1",
+          "step": 1,
+          "outputType": "text",
+          "useReferenceImage": true
+        },
+        {
+          "id": "f929c151-25a6-4db6-9161-3b03a0846399",
+          "key": "mochi_senior_scenes_step_2",
+          "step": 2,
+          "outputType": "text",
+          "useReferenceImage": true
+        }
+      ]
+    },
+    {
+      "id": "ko:kr_mind_scenes",
+      "baseKey": "kr_mind_scenes",
+      "language": "ko",
+      "name": "Ảnh theo cảnh KR – Tâm lý sức khỏe tinh thần: giấc ngủ, lo âu, kiệt sức (마음 건강 · 불면 · 불안)",
+      "category": "image",
+      "niche": "c59a24c4-2076-40f9-b621-67e65e6455bf",
+      "platform": "all",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-11-14T18:49:58.798Z",
+      "steps": [
+        {
+          "id": "18e18bc6-c2ba-4b10-a9ee-069a1884ae26",
+          "key": "kr_mind_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:kr_lonely_scenes",
+      "baseKey": "kr_lonely_scenes",
+      "language": "ko",
+      "name": "Ảnh theo cảnh KR – Tâm lý cô đơn tuổi già & sống một mình (노후 외로움 · 1인 가구)",
+      "category": "image",
+      "niche": "20013055-0b1d-44f6-825b-107df365bfe9",
+      "platform": "all",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-11-14T18:49:53.108Z",
+      "steps": [
+        {
+          "id": "8a725aa1-e9b4-48e3-9248-dd0a4f250af6",
+          "key": "kr_lonely_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ko:kr_family_scenes",
+      "baseKey": "kr_family_scenes",
+      "language": "ko",
+      "name": "Ảnh theo cảnh KR – Tâm lý gia đình: cha mẹ – con cái – mẹ chồng nàng dâu (가족 관계 · 자식 · 고부)",
+      "category": "image",
+      "niche": "cebaf838-3093-49f3-adae-ecac2a77b2db",
+      "platform": "all",
+      "createdAt": "2026-10-22T16:56:42.776Z",
+      "updatedAt": "2026-11-14T18:49:49.478Z",
+      "steps": [
+        {
+          "id": "b01fc13b-5895-438d-966f-5021905f297f",
+          "key": "kr_family_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:es_psy_scenes",
+      "baseKey": "es_psy_scenes",
+      "language": "es",
+      "name": "Ảnh theo cảnh ES – Tâm lý & ý nghĩa sống sau hưu – người lớn tuổi Tây Ban Nha (bienestar emocional · sentido de vida)",
+      "category": "image",
+      "niche": "a2d59421-c301-49b1-acdd-7ed5236ba7e2",
+      "platform": "all",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-11-14T18:49:42.867Z",
+      "steps": [
+        {
+          "id": "f61ecd2c-1faa-43b6-8e0a-6b8caee6bf17",
+          "key": "es_psy_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:money_psych_scenes",
+      "baseKey": "money_psych_scenes",
+      "language": "ja",
+      "name": "Money Psych – Ảnh theo cảnh (người trắng tối giản, 1 bước)",
+      "category": "image",
+      "niche": "734a1790-b5e8-45cc-9fce-296a74d64b67",
+      "platform": "all",
+      "createdAt": "2026-10-19T00:00:00.000Z",
+      "updatedAt": "2026-11-14T18:49:30.788Z",
+      "steps": [
+        {
+          "id": "ae646406-7500-41c5-8856-9ba2fdce80ca",
+          "key": "money_psych_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "en:psychlume_scenes",
+      "baseKey": "psychlume_scenes",
+      "language": "en",
+      "name": "Psychlume – Ảnh theo cảnh Shorts (ngụ ngôn động vật + người que, 9:16)",
+      "category": "image",
+      "niche": "99a316de-be8f-41f2-a209-f85890bf0a3f",
+      "platform": "all",
+      "createdAt": "2026-10-26T17:20:39.000Z",
+      "updatedAt": "2026-11-14T18:49:17.006Z",
+      "steps": [
+        {
+          "id": "298cd673-ef43-4df5-94d5-6263558caaef",
+          "key": "psychlume_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:es_health_scenes",
+      "baseKey": "es_health_scenes",
+      "language": "es",
+      "name": "Ảnh theo cảnh ES – Sức khỏe & lão hóa chủ động – Tây Ban Nha (envejecimiento activo · sueño · alimentación)",
+      "category": "image",
+      "niche": "b0738767-b8a1-44e0-9550-54755bf08caf",
+      "platform": "all",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-11-14T18:49:07.633Z",
+      "steps": [
+        {
+          "id": "3ed3c111-cdfe-427e-bb6c-6e293c242bba",
+          "key": "es_health_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:es_pension_scenes",
+      "baseKey": "es_pension_scenes",
+      "language": "es",
+      "name": "Ảnh theo cảnh ES – Hưu trí & lương hưu – Tây Ban Nha (jubilación · pensiones · Seguridad Social)",
+      "category": "image",
+      "niche": "86b7d3fe-8320-4508-954e-74bea3927817",
+      "platform": "all",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-11-14T18:49:03.129Z",
+      "steps": [
+        {
+          "id": "bff5cfec-552b-4bb7-b674-5f3cf83015d9",
+          "key": "es_pension_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:es_nostalgia_scenes",
+      "baseKey": "es_nostalgia_scenes",
+      "language": "es",
+      "name": "Ảnh theo cảnh ES – Hoài niệm & văn hóa đời thường – Tây Ban Nha (nostalgia · recuerdos · años 60-80)",
+      "category": "image",
+      "niche": "f7bdc38d-cd76-4563-b348-7e3a0377cfa1",
+      "platform": "all",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-11-14T18:48:59.978Z",
+      "steps": [
+        {
+          "id": "3d9a67bf-26e9-40d3-be83-2bee9ef842b7",
+          "key": "es_nostalgia_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "es:es_tech_scenes",
+      "baseKey": "es_tech_scenes",
+      "language": "es",
+      "name": "Ảnh theo cảnh ES – Công nghệ & chống lừa đảo cho người lớn tuổi – Tây Ban Nha (estafas · móvil · banca online)",
+      "category": "image",
+      "niche": "2e1715e4-884f-4f21-98ac-f461a0f2779d",
+      "platform": "all",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-11-14T18:48:56.710Z",
+      "steps": [
+        {
+          "id": "b93d9520-177f-4070-a7ba-a7bbddb4b961",
+          "key": "es_tech_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia",
+      "baseKey": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia",
+      "language": "ja",
+      "name": "Ảnh Theo Cảnh Có Tham Chiếu - Cuộc Sống Người Già",
+      "category": "image",
+      "niche": "9577910e-042c-423b-9d06-5f2028655434",
+      "platform": "all",
+      "createdAt": "2026-10-09T00:00:00.000Z",
+      "updatedAt": "2026-11-14T18:50:40.335Z",
+      "steps": [
+        {
+          "id": "f14a000b-8b70-4719-94cd-8d463195ce75",
+          "key": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia_step_1",
+          "step": 1,
+          "outputType": "text",
+          "useReferenceImage": true
+        },
+        {
+          "id": "c21446e7-e1e8-4646-a0e8-071bb5773b81",
+          "key": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia_step_2",
+          "step": 2,
+          "outputType": "text",
+          "useReferenceImage": true
+        }
+      ]
+    },
+    {
+      "id": "es:es_lonely_scenes",
+      "baseKey": "es_lonely_scenes",
+      "language": "es",
+      "name": "Ảnh theo cảnh ES – Cô đơn không mong muốn & sống một mình – Tây Ban Nha (soledad no deseada · vivir solo)",
+      "category": "image",
+      "niche": "e24dbee3-bfa0-46e9-88a9-b3899f0d4a36",
+      "platform": "all",
+      "createdAt": "2026-10-22T17:29:07.893Z",
+      "updatedAt": "2026-11-14T18:48:42.655Z",
+      "steps": [
+        {
+          "id": "cfb27a97-8073-4ccc-b958-1d0001486f79",
+          "key": "es_lonely_scenes",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:nguoi_gia_nhat_ban_scenes",
       "baseKey": "nguoi_gia_nhat_ban_scenes",
-      "language": "all",
+      "language": "ja",
       "name": "TEST – Người Già Nhật Bản – Ảnh theo cảnh có tham chiếu (tâm lý & lối sống)",
       "category": "image",
       "niche": "13208c44-0a31-43a1-b542-60af590cdb01",
       "platform": "all",
       "createdAt": "2026-10-29T12:00:00.000Z",
-      "updatedAt": "2026-10-29T12:00:00.000Z",
+      "updatedAt": "2026-11-14T18:48:31.373Z",
       "steps": [
         {
           "id": "e39d2545-4953-40cf-a096-898146da3291",
@@ -55,21 +375,249 @@
       ]
     },
     {
-      "id": "all:psychlume_scenes",
-      "baseKey": "psychlume_scenes",
-      "language": "all",
-      "name": "Psychlume – Ảnh theo cảnh Shorts (ngụ ngôn động vật + người que, 9:16)",
-      "category": "image",
-      "niche": "99a316de-be8f-41f2-a209-f85890bf0a3f",
+      "id": "ja:metadata_tlnb_k11",
+      "baseKey": "metadata_tlnb_k11",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K11 Lời dạy chữa lành (⑧ + ①) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k11",
       "platform": "all",
-      "createdAt": "2026-10-26T17:20:39.000Z",
-      "updatedAt": "2026-10-26T17:20:39.000Z",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
       "steps": [
         {
-          "id": "298cd673-ef43-4df5-94d5-6263558caaef",
-          "key": "psychlume_scenes",
+          "id": "72ac3ad3-8cc0-4a54-8564-e88a408c629a",
+          "key": "metadata_tlnb_k11",
           "step": 1,
           "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k10",
+      "baseKey": "metadata_tlnb_k10",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K10 Một mình, hướng nội (⑥ + ①) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k10",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "178703a4-bb03-4e5e-9c5f-60a5b6ea7f47",
+          "key": "metadata_tlnb_k10",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k9",
+      "baseKey": "metadata_tlnb_k9",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K9 Gia đình (⑤ + ①) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k9",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "a3b0d7c3-ec47-410f-aea2-a8ae55104e41",
+          "key": "metadata_tlnb_k9",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k8",
+      "baseKey": "metadata_tlnb_k8",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K8 Ranh giới quan hệ (④ + ⑤) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k8",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "66ee62db-18c8-4fc4-b743-00b18e2013a1",
+          "key": "metadata_tlnb_k8",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k7",
+      "baseKey": "metadata_tlnb_k7",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K7 Dọn dẹp và buông bỏ (③ + ①) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k7",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "69785a31-00fe-487f-b7fb-75e3d519df3b",
+          "key": "metadata_tlnb_k7",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k6",
+      "baseKey": "metadata_tlnb_k6",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K6 Tâm lý người giàu (③ + ⑦) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k6",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "24ea2d21-cacc-4062-94c1-018a94384b72",
+          "key": "metadata_tlnb_k6",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k5",
+      "baseKey": "metadata_tlnb_k5",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K5 Tài năng bị ẩn (② + ⑥) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k5",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "e6f17613-297b-4fde-ae58-54384f4bedf9",
+          "key": "metadata_tlnb_k5",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k4",
+      "baseKey": "metadata_tlnb_k4",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K4 Người thông minh (② + ⑦) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k4",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "07e38f94-8995-48d1-ab7c-94ed1d04e7f5",
+          "key": "metadata_tlnb_k4",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k3",
+      "baseKey": "metadata_tlnb_k3",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K3 Tiền tuổi già (① + ③) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k3",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "6fbc2855-0ac9-4387-9aa6-f7f225b6a462",
+          "key": "metadata_tlnb_k3",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k2",
+      "baseKey": "metadata_tlnb_k2",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K2 Não tuổi già (① + ②) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k2",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "5904b6ce-0cae-4a27-8d60-4a6a729c2114",
+          "key": "metadata_tlnb_k2",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:metadata_tlnb_k1",
+      "baseKey": "metadata_tlnb_k1",
+      "language": "ja",
+      "name": "Metadata Tâm lý JP · K1 Hạnh phúc tuổi già (① + ⑧) (format title + thumbnail theo cụm)",
+      "category": "meta",
+      "niche": "ja-psy-k1",
+      "platform": "all",
+      "requireGeneralBackground": false,
+      "createdAt": "2026-11-06T15:18:45.000Z",
+      "updatedAt": "2026-11-06T15:18:45.000Z",
+      "steps": [
+        {
+          "id": "e50bcaa3-3d3d-4269-8023-ece6481eecee",
+          "key": "metadata_tlnb_k1",
+          "step": 1,
+          "outputType": "text"
+        }
+      ]
+    },
+    {
+      "id": "ja:remake_script",
+      "baseKey": "remake_script",
+      "language": "ja",
+      "name": "Remake kịch bản (dàn ý → từng chương)",
+      "category": "remake",
+      "niche": "all",
+      "platform": "all",
+      "createdAt": "2026-10-31T12:09:33.589Z",
+      "updatedAt": "2026-11-15T13:36:43.457Z",
+      "steps": [
+        {
+          "id": "3693f445-bcd7-44c4-88fc-c10df8a00cab",
+          "key": "remake_script_step_1",
+          "step": 1,
+          "outputType": "text",
+          "description": "Đọc transcript nguồn, lập dàn ý video mới (JSON)."
+        },
+        {
+          "id": "77c6c2bc-1d57-4096-ab1c-7617233b674d",
+          "key": "remake_script_step_2",
+          "step": 2,
+          "outputType": "text",
+          "description": "Gửi một lần cho mỗi chương, trong cùng cuộc chat."
         }
       ]
     },
@@ -95,25 +643,6 @@
           "id": "a527d73a-8819-4f67-9947-504dae27ee25",
           "key": "metadata_psychlume_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:es_pension_scenes",
-      "baseKey": "es_pension_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh ES – Hưu trí & lương hưu – Tây Ban Nha (jubilación · pensiones · Seguridad Social)",
-      "category": "image",
-      "niche": "86b7d3fe-8320-4508-954e-74bea3927817",
-      "platform": "all",
-      "createdAt": "2026-10-22T17:29:07.893Z",
-      "updatedAt": "2026-10-22T17:29:07.893Z",
-      "steps": [
-        {
-          "id": "bff5cfec-552b-4bb7-b674-5f3cf83015d9",
-          "key": "es_pension_scenes",
-          "step": 1,
           "outputType": "text"
         }
       ]
@@ -145,25 +674,6 @@
       ]
     },
     {
-      "id": "all:es_tech_scenes",
-      "baseKey": "es_tech_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh ES – Công nghệ & chống lừa đảo cho người lớn tuổi – Tây Ban Nha (estafas · móvil · banca online)",
-      "category": "image",
-      "niche": "2e1715e4-884f-4f21-98ac-f461a0f2779d",
-      "platform": "all",
-      "createdAt": "2026-10-22T17:29:07.893Z",
-      "updatedAt": "2026-10-22T17:29:07.893Z",
-      "steps": [
-        {
-          "id": "b93d9520-177f-4070-a7ba-a7bbddb4b961",
-          "key": "es_tech_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "es:metadata_es_tech",
       "baseKey": "metadata_es_tech",
       "language": "es",
@@ -185,25 +695,6 @@
           "id": "a466c0aa-b9b0-41b6-8229-ad9b4b530512",
           "key": "metadata_es_tech_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:es_health_scenes",
-      "baseKey": "es_health_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh ES – Sức khỏe & lão hóa chủ động – Tây Ban Nha (envejecimiento activo · sueño · alimentación)",
-      "category": "image",
-      "niche": "b0738767-b8a1-44e0-9550-54755bf08caf",
-      "platform": "all",
-      "createdAt": "2026-10-22T17:29:07.893Z",
-      "updatedAt": "2026-10-22T17:29:07.893Z",
-      "steps": [
-        {
-          "id": "3ed3c111-cdfe-427e-bb6c-6e293c242bba",
-          "key": "es_health_scenes",
-          "step": 1,
           "outputType": "text"
         }
       ]
@@ -235,25 +726,6 @@
       ]
     },
     {
-      "id": "all:es_nostalgia_scenes",
-      "baseKey": "es_nostalgia_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh ES – Hoài niệm & văn hóa đời thường – Tây Ban Nha (nostalgia · recuerdos · años 60-80)",
-      "category": "image",
-      "niche": "f7bdc38d-cd76-4563-b348-7e3a0377cfa1",
-      "platform": "all",
-      "createdAt": "2026-10-22T17:29:07.893Z",
-      "updatedAt": "2026-10-22T17:29:07.893Z",
-      "steps": [
-        {
-          "id": "3d9a67bf-26e9-40d3-be83-2bee9ef842b7",
-          "key": "es_nostalgia_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "es:metadata_es_nostalgia",
       "baseKey": "metadata_es_nostalgia",
       "language": "es",
@@ -275,25 +747,6 @@
           "id": "bb0f2f09-bb43-44ff-b244-f68073966568",
           "key": "metadata_es_nostalgia_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:es_lonely_scenes",
-      "baseKey": "es_lonely_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh ES – Cô đơn không mong muốn & sống một mình – Tây Ban Nha (soledad no deseada · vivir solo)",
-      "category": "image",
-      "niche": "e24dbee3-bfa0-46e9-88a9-b3899f0d4a36",
-      "platform": "all",
-      "createdAt": "2026-10-22T17:29:07.893Z",
-      "updatedAt": "2026-10-22T17:29:07.893Z",
-      "steps": [
-        {
-          "id": "cfb27a97-8073-4ccc-b958-1d0001486f79",
-          "key": "es_lonely_scenes",
-          "step": 1,
           "outputType": "text"
         }
       ]
@@ -325,25 +778,6 @@
       ]
     },
     {
-      "id": "all:es_psy_scenes",
-      "baseKey": "es_psy_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh ES – Tâm lý & ý nghĩa sống sau hưu – người lớn tuổi Tây Ban Nha (bienestar emocional · sentido de vida)",
-      "category": "image",
-      "niche": "a2d59421-c301-49b1-acdd-7ed5236ba7e2",
-      "platform": "all",
-      "createdAt": "2026-10-22T17:29:07.893Z",
-      "updatedAt": "2026-10-22T17:29:07.893Z",
-      "steps": [
-        {
-          "id": "f61ecd2c-1faa-43b6-8e0a-6b8caee6bf17",
-          "key": "es_psy_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "es:metadata_es_psy",
       "baseKey": "metadata_es_psy",
       "language": "es",
@@ -365,25 +799,6 @@
           "id": "ed02a52a-b0a4-4317-987a-199088f9d7e5",
           "key": "metadata_es_psy_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:kr_wisdom_scenes",
-      "baseKey": "kr_wisdom_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh KR – Triết lý nửa sau cuộc đời: buông bỏ & bình yên (인생 후반 철학 · 비움 · 내려놓기)",
-      "category": "image",
-      "niche": "a6d5a8a1-70ca-4adc-916b-44a35efc3b13",
-      "platform": "all",
-      "createdAt": "2026-10-22T16:56:42.776Z",
-      "updatedAt": "2026-10-22T16:56:42.776Z",
-      "steps": [
-        {
-          "id": "c034753b-5aff-4344-ba7e-c1c9d28d2b90",
-          "key": "kr_wisdom_scenes",
-          "step": 1,
           "outputType": "text"
         }
       ]
@@ -415,25 +830,6 @@
       ]
     },
     {
-      "id": "all:kr_speech_scenes",
-      "baseKey": "kr_speech_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh KR – Tâm lý lời nói & thói quen cảm xúc (말투 · 감정 습관 · 품격 있는 말)",
-      "category": "image",
-      "niche": "18f1bb67-139f-4934-b060-a6ef6ab9ab17",
-      "platform": "all",
-      "createdAt": "2026-10-22T16:56:42.776Z",
-      "updatedAt": "2026-10-22T16:56:42.776Z",
-      "steps": [
-        {
-          "id": "9f09a57f-6c79-4603-b906-8466c802737e",
-          "key": "kr_speech_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "ko:metadata_kr_speech",
       "baseKey": "metadata_kr_speech",
       "language": "ko",
@@ -455,25 +851,6 @@
           "id": "7023216a-c966-431e-956d-768d117444f1",
           "key": "metadata_kr_speech_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:kr_mind_scenes",
-      "baseKey": "kr_mind_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh KR – Tâm lý sức khỏe tinh thần: giấc ngủ, lo âu, kiệt sức (마음 건강 · 불면 · 불안)",
-      "category": "image",
-      "niche": "c59a24c4-2076-40f9-b621-67e65e6455bf",
-      "platform": "all",
-      "createdAt": "2026-10-22T16:56:42.776Z",
-      "updatedAt": "2026-10-22T16:56:42.776Z",
-      "steps": [
-        {
-          "id": "18e18bc6-c2ba-4b10-a9ee-069a1884ae26",
-          "key": "kr_mind_scenes",
-          "step": 1,
           "outputType": "text"
         }
       ]
@@ -505,25 +882,6 @@
       ]
     },
     {
-      "id": "all:kr_family_scenes",
-      "baseKey": "kr_family_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh KR – Tâm lý gia đình: cha mẹ – con cái – mẹ chồng nàng dâu (가족 관계 · 자식 · 고부)",
-      "category": "image",
-      "niche": "cebaf838-3093-49f3-adae-ecac2a77b2db",
-      "platform": "all",
-      "createdAt": "2026-10-22T16:56:42.776Z",
-      "updatedAt": "2026-10-22T16:56:42.776Z",
-      "steps": [
-        {
-          "id": "b01fc13b-5895-438d-966f-5021905f297f",
-          "key": "kr_family_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "ko:metadata_kr_family",
       "baseKey": "metadata_kr_family",
       "language": "ko",
@@ -550,25 +908,6 @@
       ]
     },
     {
-      "id": "all:kr_lonely_scenes",
-      "baseKey": "kr_lonely_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh KR – Tâm lý cô đơn tuổi già & sống một mình (노후 외로움 · 1인 가구)",
-      "category": "image",
-      "niche": "20013055-0b1d-44f6-825b-107df365bfe9",
-      "platform": "all",
-      "createdAt": "2026-10-22T16:56:42.776Z",
-      "updatedAt": "2026-10-22T16:56:42.776Z",
-      "steps": [
-        {
-          "id": "8a725aa1-e9b4-48e3-9248-dd0a4f250af6",
-          "key": "kr_lonely_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "ko:metadata_kr_lonely",
       "baseKey": "metadata_kr_lonely",
       "language": "ko",
@@ -590,25 +929,6 @@
           "id": "2a2c3113-a2e1-4f0a-ba56-95769889a60d",
           "key": "metadata_kr_lonely_step_2",
           "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:kr_rel_scenes",
-      "baseKey": "kr_rel_scenes",
-      "language": "all",
-      "name": "Ảnh theo cảnh KR – Tâm lý quan hệ & cắt giảm người độc hại (인간관계 정리 · 50대 60대)",
-      "category": "image",
-      "niche": "1de14c5e-61d7-4782-bcb6-41ae38b04dc2",
-      "platform": "all",
-      "createdAt": "2026-10-22T16:56:42.776Z",
-      "updatedAt": "2026-10-22T16:56:42.776Z",
-      "steps": [
-        {
-          "id": "b53906e1-c4f6-4579-a6dc-c83946851fe8",
-          "key": "kr_rel_scenes",
-          "step": 1,
           "outputType": "text"
         }
       ]
@@ -666,25 +986,6 @@
       ]
     },
     {
-      "id": "all:money_psych_scenes",
-      "baseKey": "money_psych_scenes",
-      "language": "all",
-      "name": "Money Psych – Ảnh theo cảnh (người trắng tối giản, 1 bước)",
-      "category": "image",
-      "niche": "734a1790-b5e8-45cc-9fce-296a74d64b67",
-      "platform": "all",
-      "createdAt": "2026-10-19T00:00:00.000Z",
-      "updatedAt": "2026-10-19T00:00:00.000Z",
-      "steps": [
-        {
-          "id": "ae646406-7500-41c5-8856-9ba2fdce80ca",
-          "key": "money_psych_scenes",
-          "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "ja:metadata_mochi_senior_psych",
       "baseKey": "metadata_mochi_senior_psych",
       "language": "ja",
@@ -705,58 +1006,6 @@
         {
           "id": "d2dd9880-6aa8-4be7-bd48-887e52752874",
           "key": "metadata_mochi_senior_psych_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "all:mochi_senior_scenes",
-      "baseKey": "mochi_senior_scenes",
-      "language": "all",
-      "name": "Mochi Senior – Ảnh theo cảnh có tham chiếu (cast cố định)",
-      "category": "image",
-      "niche": "618665f9-bb6d-4b91-afa8-f3663ca6af17",
-      "platform": "all",
-      "createdAt": "2026-10-18T00:00:00.000Z",
-      "updatedAt": "2026-10-18T00:00:00.000Z",
-      "steps": [
-        {
-          "id": "87a5196c-e43c-47c9-a156-2ab8c57ea644",
-          "key": "mochi_senior_scenes_step_1",
-          "step": 1,
-          "outputType": "text",
-          "useReferenceImage": true
-        },
-        {
-          "id": "f929c151-25a6-4db6-9161-3b03a0846399",
-          "key": "mochi_senior_scenes_step_2",
-          "step": 2,
-          "outputType": "text",
-          "useReferenceImage": true
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_tam_ly_hoc",
-      "baseKey": "metadata_tam_ly_hoc",
-      "language": "ja",
-      "name": "Metadata Tâm lý học",
-      "category": "meta",
-      "niche": "a456048f-0ad9-4052-931c-2f6d8dccd910",
-      "platform": "all",
-      "createdAt": "2026-10-07T14:39:16.517Z",
-      "updatedAt": "2026-10-07T14:48:05.112Z",
-      "steps": [
-        {
-          "id": "d5b20d0d-161c-4ba3-8f47-b6cea64f75f0",
-          "key": "metadata_tam_ly_hoc_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "10363403-645c-4e93-af44-38f764624c87",
-          "key": "metadata_tam_ly_hoc_step_2",
           "step": 2,
           "outputType": "text"
         }
@@ -796,156 +1045,6 @@
           "id": "12eab423-ade7-4e4d-847c-2a54a3d8827b",
           "key": "scene_image",
           "step": 1,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_loi_day_nguoi_noi_tieng",
-      "baseKey": "metadata_loi_day_nguoi_noi_tieng",
-      "language": "ja",
-      "name": "MetaData Lời dạy người nổi tiếng",
-      "category": "meta",
-      "niche": "a073ce74-07d7-4386-b59a-cb15a4fb2d99",
-      "platform": "all",
-      "createdAt": "2026-08-06T09:37:41.621Z",
-      "updatedAt": "2026-09-21T15:50:27.421Z",
-      "steps": [
-        {
-          "id": "6fae7f83-723c-415a-8fd4-e6b0eb553766",
-          "key": "metadata_loi_day_nguoi_noi_tieng_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "2be1d23e-b48d-431b-93d6-5f7bf162afbe",
-          "key": "metadata_loi_day_nguoi_noi_tieng_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_test",
-      "baseKey": "metadata_test",
-      "language": "ja",
-      "name": "Metadata Test",
-      "category": "meta",
-      "niche": "b26f9182-9962-4749-9e00-ef0c2d6c8eae",
-      "platform": "all",
-      "createdAt": "2026-09-06T08:46:59.691Z",
-      "updatedAt": "2026-09-27T11:21:16.835Z",
-      "steps": [
-        {
-          "id": "4fd21a4c-c3fe-4012-b8af-839336ba4cb0",
-          "key": "metadata_test_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "6fe13191-2d53-48d1-bc24-e198262b60a3",
-          "key": "metadata_test_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_cau_chuyen",
-      "baseKey": "metadata_cau_chuyen",
-      "language": "ja",
-      "name": "Metadata Câu Chuyện",
-      "category": "meta",
-      "niche": "e3f2ca32-964f-47a0-b0a9-3730b082d424",
-      "platform": "all",
-      "createdAt": "2026-09-05T18:12:31.466Z",
-      "updatedAt": "2026-09-27T11:20:46.776Z",
-      "steps": [
-        {
-          "id": "791b6879-7053-43b9-95e6-08f329b267cd",
-          "key": "metadata_cau_chuyen_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "250c5e78-0a41-41ef-a36c-13df4e3c57f1",
-          "key": "metadata_cau_chuyen_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_cuoc_song_nguoi_gia",
-      "baseKey": "metadata_cuoc_song_nguoi_gia",
-      "language": "ja",
-      "name": "Metadata Cuộc Sống Người Già",
-      "category": "meta",
-      "niche": "68020000-7a54-4cbd-abf8-b00b9587c0f8",
-      "platform": "all",
-      "createdAt": "2026-09-05T17:35:23.957Z",
-      "updatedAt": "2026-09-05T17:35:23.973Z",
-      "steps": [
-        {
-          "id": "df9d97c5-aa1e-4cbc-8651-95d13360fa7c",
-          "key": "metadata_cuoc_song_nguoi_gia_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "0a5ae174-13e8-4cdf-b46c-d716c3f9e93f",
-          "key": "metadata_cuoc_song_nguoi_gia_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_thuc_pham",
-      "baseKey": "metadata_thuc_pham",
-      "language": "ja",
-      "name": "Metadata Thực Phẩm",
-      "category": "meta",
-      "niche": "5b1354ab-37cb-4e0e-94ad-3a515d97eecc",
-      "platform": "all",
-      "createdAt": "2026-09-01T20:39:21.099Z",
-      "updatedAt": "2026-09-27T11:21:30.762Z",
-      "steps": [
-        {
-          "id": "ceccf887-b569-4f02-b38a-bb16f59d8c3f",
-          "key": "metadata_thuc_pham_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "86735236-8dda-48f6-b230-c3527bf727e7",
-          "key": "metadata_thuc_pham_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_nguoi_gia",
-      "baseKey": "metadata_nguoi_gia",
-      "language": "ja",
-      "name": "Metadata người già",
-      "category": "meta",
-      "niche": "3d637eb2-a255-4741-b885-ce46ec54aa70",
-      "platform": "all",
-      "createdAt": "2026-08-25T08:48:08.984Z",
-      "updatedAt": "2026-09-27T11:21:09.251Z",
-      "steps": [
-        {
-          "id": "9794ca0e-2f6a-4646-bd92-0298a9e80333",
-          "key": "metadata_nguoi_gia_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "5ce915e4-0004-4f7c-b97a-89729dc4c0e5",
-          "key": "metadata_nguoi_gia_step_2",
-          "step": 2,
           "outputType": "text"
         }
       ]
@@ -1001,58 +1100,6 @@
       ]
     },
     {
-      "id": "ja:metadata_triet_ly_chua_lanh_tam_hon",
-      "baseKey": "metadata_triet_ly_chua_lanh_tam_hon",
-      "language": "ja",
-      "name": "Metadata Triết lý & chữa lành tâm hồn",
-      "category": "meta",
-      "niche": "82ecb2a0-4491-4164-9d1d-ac25f15340e8",
-      "platform": "all",
-      "requireGeneralBackground": true,
-      "createdAt": "2026-08-15T16:12:45.458Z",
-      "updatedAt": "2026-08-16T07:42:59.360Z",
-      "steps": [
-        {
-          "id": "a144c63a-dcbe-4311-8fb2-bc315569d8b5",
-          "key": "metadata_triet_ly_chua_lanh_tam_hon_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "37953ea9-d976-42d7-8c8f-5dda8ef0d804",
-          "key": "metadata_triet_ly_chua_lanh_tam_hon_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
-      "id": "ja:metadata_tai_chinh_luong_huu",
-      "baseKey": "metadata_tai_chinh_luong_huu",
-      "language": "ja",
-      "name": "Metadata Tài chính lương hưu",
-      "category": "meta",
-      "niche": "1b760071-c53d-4696-9223-5106f1e853c2",
-      "platform": "all",
-      "requireGeneralBackground": false,
-      "createdAt": "2026-08-15T15:44:42.687Z",
-      "updatedAt": "2026-08-16T07:42:55.441Z",
-      "steps": [
-        {
-          "id": "6d6e59df-8637-458a-a9d9-88fe00bf0f52",
-          "key": "metadata_tai_chinh_luong_huu_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "5e46bf29-7a12-4830-8902-93b5350ed19d",
-          "key": "metadata_tai_chinh_luong_huu_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "ja:metadata_dinh_duong_va_phong_sach_song_nguoi_cao_tuoi",
       "baseKey": "metadata_dinh_duong_va_phong_sach_song_nguoi_cao_tuoi",
       "language": "ja",
@@ -1098,31 +1145,6 @@
       ]
     },
     {
-      "id": "ja:metadata_drama",
-      "baseKey": "metadata_drama",
-      "language": "ja",
-      "name": "MetaData Drama",
-      "category": "meta",
-      "niche": "9577910e-042c-423b-9d06-5f2028655434",
-      "platform": "all",
-      "createdAt": "2026-08-10T17:52:32.900Z",
-      "updatedAt": "2026-09-27T11:20:58.171Z",
-      "steps": [
-        {
-          "id": "363b7c5c-ae97-4832-9bec-888f234e8b6e",
-          "key": "metadata_drama_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "9f745f43-ef40-4be6-9f6f-e1d5b425147c",
-          "key": "metadata_drama_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
-    },
-    {
       "id": "all:image_scenes_with_references",
       "baseKey": "image_scenes_with_references",
       "language": "all",
@@ -1147,33 +1169,6 @@
         }
       ],
       "niche": "all",
-      "platform": "all"
-    },
-    {
-      "id": "all:anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia",
-      "baseKey": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia",
-      "language": "all",
-      "name": "Ảnh Theo Cảnh Có Tham Chiếu - Cuộc Sống Người Già",
-      "category": "image",
-      "createdAt": "2026-10-09T00:00:00.000Z",
-      "updatedAt": "2026-10-11T16:27:56.613Z",
-      "steps": [
-        {
-          "id": "f14a000b-8b70-4719-94cd-8d463195ce75",
-          "key": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia_step_1",
-          "step": 1,
-          "outputType": "text",
-          "useReferenceImage": true
-        },
-        {
-          "id": "c21446e7-e1e8-4646-a0e8-071bb5773b81",
-          "key": "anh_theo_canh_co_tham_chieu_cuoc_song_nguoi_gia_step_2",
-          "step": 2,
-          "outputType": "text",
-          "useReferenceImage": true
-        }
-      ],
-      "niche": "3b5a9d49-8834-4bae-aa97-427ed9f04828",
       "platform": "all"
     },
     {
@@ -1234,31 +1229,6 @@
       ],
       "niche": "all",
       "platform": "all"
-    },
-    {
-      "id": "ja:metadata_tam_ly_dai_chung",
-      "baseKey": "metadata_tam_ly_dai_chung",
-      "language": "ja",
-      "name": "Metadata Tâm lý học đại chúng",
-      "category": "meta",
-      "niche": "6a42e74d-6dd9-4229-bd47-c1b34fde8734",
-      "platform": "all",
-      "createdAt": "2026-10-18T00:00:00.000Z",
-      "updatedAt": "2026-10-18T00:00:00.000Z",
-      "steps": [
-        {
-          "id": "6cd03d13-16c0-4e2a-bb0c-af83b54511e7",
-          "key": "metadata_tam_ly_dai_chung_step_1",
-          "step": 1,
-          "outputType": "text"
-        },
-        {
-          "id": "0a46c6f0-ec0b-40a7-80fb-a40a2d5274d7",
-          "key": "metadata_tam_ly_dai_chung_step_2",
-          "step": 2,
-          "outputType": "text"
-        }
-      ]
     },
     {
       "id": "all:psych_scene",

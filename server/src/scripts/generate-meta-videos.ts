@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDirs, paths } from '../config/paths.js';
 import { AppError } from '../shared/http/errors.js';
-import { chromeProfilesService } from '../modules/chrome-profiles/chrome-profiles.service.js';
+import { chromeProfilesService, profileHasLlm } from '../modules/chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../modules/chrome-profiles/chrome-profiles.types.js';
 import { metaBrowserService } from '../modules/llm-browser/meta/meta.service.js';
 
@@ -79,12 +79,12 @@ function sanitizeFileName(name: string): string {
 function resolveMetaProfile(profileId?: string): ChromeProfile {
   if (profileId) {
     const profile = chromeProfilesService.getById(profileId);
-    if (profile.role !== 'main') {
-      throw new AppError('Meta AI video generation requires the main Chrome profile', 400, 'MAIN_PROFILE_REQUIRED');
+    if (!profileHasLlm(profile, 'image', 'meta')) {
+      throw new AppError('Meta AI video generation needs a Chrome profile with Meta ticked in LLM Image', 400, 'LLM_PROFILE_REQUIRED');
     }
     return profile;
   }
-  return chromeProfilesService.requireMainProfile();
+  return chromeProfilesService.requireProfileForLlm('image', 'meta');
 }
 
 function resolveOutputDir(outputDir?: string): string {

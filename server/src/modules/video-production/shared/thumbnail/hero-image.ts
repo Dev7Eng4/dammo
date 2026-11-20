@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { ImageBrowserProvider } from '../../../llm-browser/core/types.js';
 import { AppError } from '../../../../shared/http/errors.js';
-import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
+import { chromeProfilesService, profileHasLlm } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
 import { FLOW_MAX_RETRIES, runWithFlowRetries, type FlowRetryProgress } from '../../../llm-browser/flow/flow-retry.js';
 import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
@@ -80,12 +80,12 @@ export function buildFlowPrompt(mainPrompt: unknown, negativePrompt?: unknown): 
 function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
   if (options?.profileId) {
     const profile = chromeProfilesService.getById(options.profileId);
-    if (profile.role !== 'main') {
-      throw new AppError('Google Flow requires the main Chrome profile', 400, 'MAIN_PROFILE_REQUIRED');
+    if (!profileHasLlm(profile, 'image', 'flow')) {
+      throw new AppError('Google Flow needs a Chrome profile with Flow ticked in LLM Image', 400, 'LLM_PROFILE_REQUIRED');
     }
     return profile;
   }
-  return chromeProfilesService.requireMainProfile();
+  return chromeProfilesService.requireProfileForLlm('image', 'flow');
 }
 
 /**
@@ -150,7 +150,7 @@ export async function runFlowImageGenerations(
     return results;
   } finally {
     openedProfileIds.add(profile.id);
-    await chromeProfilesService.closeSubProfiles([...openedProfileIds]);
+    await chromeProfilesService.closeProfiles([...openedProfileIds]);
   }
 }
 
@@ -251,7 +251,7 @@ async function runMetaImageGenerations(
 
     return results;
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }
 

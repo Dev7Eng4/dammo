@@ -1,7 +1,7 @@
 import { youtubeChannelVideoDir } from '../../../config/paths.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { resolveReupAudioVisualStyle } from '../../youtube-channels/reup-audio-visual-style.js';
-import { isAiSceneVideoType } from '../../youtube-channels/youtube-channels.types.js';
+import { isAiSceneVideoType, isReupAudioFamilyType } from '../../youtube-channels/youtube-channels.types.js';
 import type {
   ReupAudioBackgroundImage,
   StoredYoutubeChannelType,
@@ -10,9 +10,12 @@ import type {
 import { videoPrepareRepository } from '../../youtube-channels/video-prepare.repository.js';
 import type { VideoPrepareItem } from '../../youtube-channels/video-prepare.types.js';
 import type { ProductionDestination, ProductionPipelineType } from '../ports/production-destination.port.js';
+import { parseMascotCandidateCountFromStyleKey } from '../../prompts/thumbnail-styles.js';
 
-function isReupPipelineType(type: StoredYoutubeChannelType): type is ProductionPipelineType {
-  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+/** Pipeline a channel type is produced with; `remake_video` channels run the Reup audio pipeline. */
+function toPipelineType(type: StoredYoutubeChannelType): ProductionPipelineType | null {
+  if (isReupAudioFamilyType(type)) return 'reup_audio';
+  return type === 'reup_video' || type === 'reup' ? type : null;
 }
 
 function resolveSiBackgroundImage(channel: YoutubeChannel): ReupAudioBackgroundImage {
@@ -20,7 +23,7 @@ function resolveSiBackgroundImage(channel: YoutubeChannel): ReupAudioBackgroundI
 }
 
 async function resolveReupAudioConfig(channel: YoutubeChannel) {
-  if (channel.type !== 'reup_audio') {
+  if (!isReupAudioFamilyType(channel.type)) {
     return {};
   }
 
@@ -81,7 +84,8 @@ async function resolveReupAudioConfig(channel: YoutubeChannel) {
 export async function createYoutubeProductionDestination(
   channel: YoutubeChannel,
 ): Promise<ProductionDestination> {
-  if (!isReupPipelineType(channel.type)) {
+  const pipelineType = toPipelineType(channel.type);
+  if (!pipelineType) {
     throw new AppError('Channel type does not support video production', 400, 'INVALID_CHANNEL_TYPE');
   }
 
@@ -90,10 +94,13 @@ export async function createYoutubeProductionDestination(
   return {
     id: channel.id,
     name: channel.name,
-    pipelineType: channel.type,
+    pipelineType,
     language: channel.language,
     niche: channel.niche?.trim() || 'all',
     sourceChannels: channel.sourceChannels ?? [],
+    ...(channel.sourceMode === 'trend_brain'
+      ? { sourceMode: 'trend_brain' as const, trendClusters: channel.trendClusters ?? [] }
+      : {}),
     ...(channel.videoCreationOrder ? { videoCreationOrder: channel.videoCreationOrder } : {}),
     backgroundFootageSources: channel.backgroundFootageSources,
     thumbnailStyleKey: channel.thumbnailStyleKey,
@@ -104,6 +111,10 @@ export async function createYoutubeProductionDestination(
       ? { thumbnailBackgroundFile: channel.thumbnailBackgroundFile.trim() }
       : {}),
     captionStyleKey: channel.captionStyleKey,
+    // Remake channels remake the script and narrate it unless switched off on the channel.
+    ...(channel.type === 'remake_video' && channel.remakeAuto?.enabled !== false
+      ? { remakeAuto: channel.remakeAuto ?? {} }
+      : {}),
     showDisclaimer: channel.showDisclaimer === true,
     ...(channel.showChannelAvatar === true ? { showChannelAvatar: true } : {}),
     disclaimerText: channel.disclaimerText,

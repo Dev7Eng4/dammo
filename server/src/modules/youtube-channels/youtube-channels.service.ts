@@ -2,6 +2,7 @@ import { AppError } from '../../shared/http/errors.js';
 import { generateId } from '../../shared/id.js';
 import {
   parseSourceUrl,
+  parseYoutubeChannelUrl,
   canonicalizeSourceUrl,
   buildMinimalName,
 } from '../../shared/platform/url-parser.js';
@@ -15,6 +16,12 @@ import { mailAccountsRepository } from '../mail-accounts/mail-accounts.repositor
 import { mailAccountsService } from '../mail-accounts/mail-accounts.service.js';
 import { nichesService } from '../niches/niches.service.js';
 import { sourceChannelsRepository } from '../source-channels/source-channels.repository.js';
+import {
+  listTrendSourceVideos,
+  TREND_CLUSTER_IDS,
+  trendVideoIdsClaimedByOthers,
+} from '../brains/trend-source-videos.js';
+import { youtubeApiKeyService } from './youtube-api-key.service.js';
 import { youtubeChannelsRepository } from './youtube-channels.repository.js';
 import { youtubeChannelVideosRepository } from './youtube-channel-videos.repository.js';
 import { videoProductionService } from '../video-production/video-production.service.js';
@@ -31,7 +38,7 @@ import {
 import { sourceCatalogAdapter } from '../video-production/adapters/source-catalog.adapter.js';
 import { normalizeChannelLanguage } from './channel-language.js';
 import { normalizeUploadSchedule } from './upload-schedule.js';
-import { assertValidThumbnailStyleKey } from '../prompts/thumbnail-styles.js';
+import { assertValidThumbnailStyleKey, parseMascotCandidateCountFromStyleKey } from '../prompts/thumbnail-styles.js';
 import { assertValidCaptionStyleKey } from '../video-production/shared/render-core/caption-styles.js';
 import { resolveAiSceneDensityMaxSec } from '../video-production/shared/ai-video/ai-video.constants.js';
 import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
@@ -48,7 +55,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { thumbnailBackgroundsService } from './thumbnail-backgrounds.service.js';
 import { assetsService } from '../assets/assets.service.js';
-import { channelAvatarsService, channelMascotImagesService, channelMascotSheetsService } from './channel-avatars.service.js';
+import { channelAvatarsService, channelMascotImagesService } from './channel-avatars.service.js';
 import { parseSmallVideoGroupId, OVERLAY_AUTO_SENTINEL } from '../video-production/shared/render-core/canvas.constants.js';
 import { celebritiesService } from '../celebrities/celebrities.service.js';
 import { smallVideoGroupsService } from '../small-video-groups/small-video-groups.service.js';
@@ -61,11 +68,14 @@ import type {
   ReupAudioVideoType,
   UpdateYoutubeChannelInput,
   VideoCreationOrder,
+  SourceMode,
   YoutubeChannel,
   YoutubeChannelStats,
   YoutubeChannelType,
+  RemakeAutoConfig,
 } from './youtube-channels.types.js';
 import { isAiSceneVideoType } from './youtube-channels.types.js';
+import { isReupAudioFamilyType } from './youtube-channels.types.js';
 
 const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -140,6 +150,9 @@ type ChannelConfigInput = Pick<
   | 'type'
   | 'language'
   | 'sourceChannels'
+  | 'sourceMode'
+  | 'trendClusters'
+  | 'remakeAuto'
   | 'videoCreationOrder'
   | 'backgroundFootageSources'
   | 'thumbnailStyleKey'
@@ -165,12 +178,23 @@ type ChannelConfigInput = Pick<
   | 'publishTimes'
 >;
 
+/** Drops empty fields so the stored object only holds what differs from the defaults. */
+function cleanRemakeAuto(input: RemakeAutoConfig): RemakeAutoConfig {
+  return {
+    ...(input.enabled === false ? { enabled: false } : {}),
+    ...(input.provider ? { provider: input.provider } : {}),
+    ...(input.promptSetId?.trim() ? { promptSetId: input.promptSetId.trim() } : {}),
+    ...(input.voicePresetId?.trim() ? { voicePresetId: input.voicePresetId.trim() } : {}),
+    ...(input.speedScale && input.speedScale !== 1 ? { speedScale: input.speedScale } : {}),
+  };
+}
+
 function isReupChannelType(type: YoutubeChannelType): boolean {
-  return type === 'reup_audio' || type === 'reup_video';
+  return isReupAudioFamilyType(type) || type === 'reup_video';
 }
 
 function isReupAudioChannelType(type: YoutubeChannelType): boolean {
-  return type === 'reup_audio';
+  return isReupAudioFamilyType(type);
 }
 
 function normalizeSourceIds(ids: string[] | undefined): string[] {
@@ -196,6 +220,9 @@ function resolveCelebrityWithMedia(celebrityId: string, kind?: 'image' | 'video'
 function validateChannelConfig(input: ChannelConfigInput): {
   linkedEmail: string;
   sourceChannels: string[];
+  sourceMode: SourceMode;
+  trendClusters?: string[];
+  remakeAuto?: RemakeAutoConfig;
   uploadSchedule: string[];
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
@@ -228,9 +255,15 @@ function validateChannelConfig(input: ChannelConfigInput): {
     linkedEmail = mailAccount.email;
   }
 
-  const sourceChannels = normalizeSourceIds(input.sourceChannels);
+  const sourceMode: SourceMode =
+    isReupChannelType(input.type) && input.sourceMode === 'trend_brain' ? 'trend_brain' : 'channels';
+  const sourceChannels = sourceMode === 'trend_brain' ? [] : normalizeSourceIds(input.sourceChannels);
+  const trendClusters =
+    sourceMode === 'trend_brain'
+      ? [...new Set((input.trendClusters ?? []).filter(id => TREND_CLUSTER_IDS.includes(id)))]
+      : [];
 
-  if (isReupChannelType(input.type)) {
+  if (isReupChannelType(input.type) && sourceMode === 'channels') {
     if (sourceChannels.length === 0) {
       throw new AppError('Reup channels require at least one source channel', 400, 'VALIDATION_ERROR');
     }
@@ -418,6 +451,9 @@ function validateChannelConfig(input: ChannelConfigInput): {
   return {
     linkedEmail,
     sourceChannels,
+    sourceMode,
+    ...(trendClusters.length > 0 ? { trendClusters } : {}),
+    ...(input.type === 'remake_video' && input.remakeAuto ? { remakeAuto: cleanRemakeAuto(input.remakeAuto) } : {}),
     uploadSchedule,
     ...(isReupChannelType(input.type)
       ? { videoCreationOrder: input.videoCreationOrder ?? 'oldest_first' }
@@ -434,7 +470,12 @@ function validateChannelConfig(input: ChannelConfigInput): {
     ...(showAudioBar ? { showAudioBar: true } : {}),
     ...(audioBarFile ? { audioBarFile } : {}),
     ...(showChannelAvatar ? { showChannelAvatar: true } : {}),
-    ...(input.mascotThumbnailCandidates ? { mascotThumbnailCandidates: input.mascotThumbnailCandidates } : {}),
+    ...((parseMascotCandidateCountFromStyleKey(thumbnailStyleKey) ?? input.mascotThumbnailCandidates)
+      ? {
+          mascotThumbnailCandidates:
+            parseMascotCandidateCountFromStyleKey(thumbnailStyleKey) ?? input.mascotThumbnailCandidates,
+        }
+      : {}),
     ...(showSubscribe ? { showSubscribe: true } : {}),
     ...(showSmallVideo ? { showSmallVideo: true } : {}),
     ...(smallVideoFile ? { smallVideoFile } : {}),
@@ -739,6 +780,21 @@ export class YoutubeChannelsService {
   getPendingSourceVideos(id: string): { items: YoutubeChannelVideo[] } {
     const channel = this.getById(id);
     const preparedIds = videoPrepareRepository.getPreparedVideoIds(id);
+    if (channel.sourceMode === 'trend_brain') {
+      const claimed = trendVideoIdsClaimedByOthers(id);
+      return {
+        items: listTrendSourceVideos({ clusters: channel.trendClusters })
+          .filter(video => !preparedIds.has(video.id) && !claimed.has(video.id))
+          .map(video => ({
+            id: video.id,
+            title: video.title,
+            url: video.url,
+            viewCount: video.viewCount,
+            duration: video.duration,
+            status: 'Pending' as const,
+          })),
+      };
+    }
     const sources = resolveSourceChannelsByIds(channel.sourceChannels ?? []);
 
     const items: YoutubeChannelVideo[] = [];
@@ -924,14 +980,68 @@ export class YoutubeChannelsService {
 
   async syncVideos(
     id: string,
-  ): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string }> {
+  ): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[]; fetchedAt: string; source: 'youtube_api' | 'ytdlp' }> {
     const channel = this.getById(id);
+    const viaApi = await this.syncViaDataApi(id);
+    if (viaApi) {
+      const fetchedAt = this.persistVideos(id, viaApi.videos);
+      return { item: viaApi.item, videos: this.mergeVideosWithPrepare(id, viaApi.videos, true), fetchedAt, source: 'youtube_api' };
+    }
     const [videos, item] = await Promise.all([
       this.fetchVideos(channel),
       this.refreshChannelMetadata(id, channel),
     ]);
     const fetchedAt = this.persistVideos(id, videos);
-    return { item, videos: this.mergeVideosWithPrepare(id, videos, true), fetchedAt };
+    return { item, videos: this.mergeVideosWithPrepare(id, videos, true), fetchedAt, source: 'ytdlp' };
+  }
+
+  /**
+   * Channel with its own YouTube Data API key: channel totals + every upload (up to 500) with views,
+   * likes, comments in a few quota units. null when there is no key or the API call fails, so the
+   * caller falls back to yt-dlp.
+   */
+  private async syncViaDataApi(
+    id: string,
+  ): Promise<{ item: YoutubeChannel; videos: YoutubeChannelVideo[] } | null> {
+    if (!youtubeApiKeyService.getApiKey(id)) return null;
+    let metrics;
+    try {
+      metrics = await youtubeApiKeyService.getChannelMetrics(id, 500);
+    } catch (err) {
+      console.warn(`[youtube-channels] Data API sync failed for ${id}, falling back to yt-dlp:`, err instanceof Error ? err.message : err);
+      return null;
+    }
+    const { channel: stats } = metrics;
+    const handle = stats.handle ? (stats.handle.startsWith('@') ? stats.handle : `@${stats.handle}`) : undefined;
+    const updated = youtubeChannelsRepository.update(id, (current) => ({
+      ...current,
+      ...(stats.title ? { name: stats.title } : {}),
+      ...(handle ? { handle } : {}),
+      channelId: stats.channelId,
+      ...(stats.subscriberCount !== null ? { subscribers: stats.subscriberCount } : {}),
+      statsUpdatedAt: metrics.fetchedAt,
+      ...(stats.thumbnailUrl ? { avatarUrl: stats.thumbnailUrl } : {}),
+    }));
+    if (!updated) throw new AppError('Channel not found', 404, 'NOT_FOUND');
+
+    const videos: YoutubeChannelVideo[] = metrics.videos.map((video) => ({
+      id: video.id,
+      title: video.title,
+      url: `https://www.youtube.com/watch?v=${video.id}`,
+      viewCount: video.viewCount,
+      ...(video.likeCount !== null ? { likeCount: video.likeCount } : {}),
+      ...(video.commentCount !== null ? { commentCount: video.commentCount } : {}),
+      duration: video.durationSeconds,
+      publishedAt: video.publishedAt,
+    }));
+    return {
+      item: {
+        ...updated,
+        language: normalizeChannelLanguage(updated.language),
+        nextUploadAt: getNextYoutubePublishSlot(updated)?.iso ?? null,
+      },
+      videos,
+    };
   }
 
   async getVideoComments(
@@ -968,7 +1078,7 @@ export class YoutubeChannelsService {
     let channelId: string | undefined = undefined;
 
     if (input.channelUrl && input.channelUrl.trim() !== '') {
-      const { platform, url, fullUrl } = parseSourceUrl(input.channelUrl);
+      const { platform, url, fullUrl } = parseYoutubeChannelUrl(input.channelUrl);
       if (platform !== 'youtube') {
         throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
       }
@@ -1040,6 +1150,9 @@ export class YoutubeChannelsService {
       linkedEmail: config.linkedEmail,
       uploadSchedule: config.uploadSchedule,
       sourceChannels: config.sourceChannels,
+      ...(config.sourceMode === 'trend_brain' ? { sourceMode: 'trend_brain' as const } : {}),
+      ...(config.trendClusters ? { trendClusters: config.trendClusters } : {}),
+      ...(config.remakeAuto ? { remakeAuto: config.remakeAuto } : {}),
       contentProjectId: buildProjectId(handle),
       createdAt: new Date().toISOString(),
       uploadFrequency: input.uploadFrequency,
@@ -1062,8 +1175,11 @@ export class YoutubeChannelsService {
       ...(config.showAudioBar ? { showAudioBar: true } : {}),
       ...(config.audioBarFile ? { audioBarFile: config.audioBarFile } : {}),
       ...(config.showChannelAvatar ? { showChannelAvatar: true } : {}),
-      ...(config.mascotThumbnailCandidates
-        ? { mascotThumbnailCandidates: config.mascotThumbnailCandidates }
+      ...((parseMascotCandidateCountFromStyleKey(config.thumbnailStyleKey) ?? config.mascotThumbnailCandidates)
+        ? {
+            mascotThumbnailCandidates:
+              parseMascotCandidateCountFromStyleKey(config.thumbnailStyleKey) ?? config.mascotThumbnailCandidates,
+          }
         : {}),
       ...(config.showSubscribe ? { showSubscribe: true } : {}),
       ...(config.showSmallVideo ? { showSmallVideo: true } : {}),
@@ -1087,7 +1203,6 @@ export class YoutubeChannelsService {
     }
     if (input.mascotTempSessionId?.trim()) {
       channelMascotImagesService.moveTempToChannel(input.mascotTempSessionId.trim(), channel.id);
-      channelMascotSheetsService.moveTempToChannel(input.mascotTempSessionId.trim(), channel.id);
     }
 
     const selectedBackground = input.thumbnailBackgroundFile?.trim();
@@ -1125,7 +1240,7 @@ export class YoutubeChannelsService {
     let channelUrlChanged = false;
 
     if (channelUrl) {
-      const { platform, url, fullUrl } = parseSourceUrl(channelUrl);
+      const { platform, url, fullUrl } = parseYoutubeChannelUrl(channelUrl);
       if (platform !== 'youtube') {
         throw new AppError('Channel URL must be a YouTube link', 400, 'INVALID_PLATFORM');
       }
@@ -1218,6 +1333,13 @@ export class YoutubeChannelsService {
         delete next.videoCreationOrder;
       }
 
+      if (config.sourceMode === 'trend_brain') next.sourceMode = 'trend_brain';
+      else delete next.sourceMode;
+      if (config.trendClusters) next.trendClusters = config.trendClusters;
+      else delete next.trendClusters;
+      if (config.remakeAuto) next.remakeAuto = config.remakeAuto;
+      else delete next.remakeAuto;
+
       delete (next as { backgroundFootageMode?: unknown }).backgroundFootageMode;
       if (config.backgroundFootageSources?.length) {
         next.backgroundFootageSources = config.backgroundFootageSources;
@@ -1251,7 +1373,10 @@ export class YoutubeChannelsService {
       } else {
         delete next.showChannelAvatar;
       }
-      if (config.mascotThumbnailCandidates) {
+      const mascotCandidates = parseMascotCandidateCountFromStyleKey(next.thumbnailStyleKey);
+      if (mascotCandidates) {
+        next.mascotThumbnailCandidates = mascotCandidates;
+      } else if (config.mascotThumbnailCandidates && !next.thumbnailStyleKey) {
         next.mascotThumbnailCandidates = config.mascotThumbnailCandidates;
       } else {
         delete next.mascotThumbnailCandidates;

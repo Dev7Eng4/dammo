@@ -1,12 +1,8 @@
 {
   "page": {
-    "title": "Step-by-step video",
-    "subtitle": "Same pipeline as the Agent, but you press each step: sources → script → approval → voice → scenes & images → render. Every file lives in the project folder.",
+    "title": "Video production",
+    "subtitle": "Create a project from source videos, then go through: sources → script → approval → voice → scenes & images → render. Pick a channel to see its projects and open its prepared / created videos. Every file lives in the project folder.",
     "newProject": "New project"
-  },
-  "tabs": {
-    "projects": "Projects",
-    "library": "All videos"
   },
   "list": {
     "empty": "No projects yet. Click \"New project\" to start.",
@@ -67,7 +63,7 @@
     },
     "script": {
       "title": "Script",
-      "desc": "Remake it with ChatGPT/Gemini from the source transcripts, or write/paste your own. Review it, then approve at the bottom to unlock Voice and Scenes."
+      "desc": "Remake it with ChatGPT/Gemini/Claude from the source transcripts, or write/paste your own. Review it, then approve at the bottom to unlock Voice and Scenes."
     },
     "approval": {
       "title": "Approve script",
@@ -92,7 +88,7 @@
     },
     "voice": {
       "title": "Voice",
-      "desc": "VOICEVOX reads each sentence; subtitles come from the real audio timing. If scene images already exist, their timing is re-matched to the new voice.",
+      "desc": "The saved voice (VOICEVOX or ElevenLabs) reads each sentence; subtitles come from the real audio timing. If scene images already exist, their timing is re-matched to the new voice.",
       "run": "Voice it",
       "again": "Voice again",
       "unavailable": "Cannot reach VOICEVOX ({{url}}). The page re-checks every 10 seconds.",
@@ -120,7 +116,14 @@
     },
     "motion": {
       "title": "Image → video",
-      "desc": "Optional: animate scene images into ~8 s clips with Google Flow (Veo), run in Chrome on the main profiles' Flow quota. Scenes with a clip play it in the video; the rest stay images with Ken Burns. Skip this step to build the video from images as before."
+      "desc": "Optional: animate scene images into ~8 s clips with Google Flow (Veo), run in Chrome on the Flow quota of profiles with Flow ticked in LLM Video. Scenes with a clip play it in the video; the rest stay images with Ken Burns. Skip this step to build the video from images as before."
+    },
+    "metadata": {
+      "title": "Metadata & thumbnail",
+      "desc": "Write the YouTube title, description and tags and draw the thumbnail with the channel's metadata prompts and thumbnail style (same as the channel's prepared videos). The metadata is written from the narration subtitles, so it does not wait for the render. Runs in Chrome and can take a few minutes.",
+      "run": "Create metadata & thumbnail",
+      "again": "Create again",
+      "redoConfirm": "Creating again overwrites the title, description, tags (including your edits) and the current thumbnail. Continue?"
     }
   },
   "status": {
@@ -130,7 +133,7 @@
     "min": "min",
     "remake": {
       "title": "Remake with ChatGPT / Gemini",
-      "hint": "Opens a sub Chrome profile and runs the \"Remake script\" prompt over the source transcripts. The LLM picks a length of 12–30 minutes. Edit the prompt on the Prompts page.",
+      "hint": "Opens a Chrome profile with the text LLM ticked and runs the \"Remake script\" prompt over the source transcripts. The LLM picks a length of 12–30 minutes. Edit the prompt on the Prompts page.",
       "promptSet": "Prompt set",
       "noPromptSet": "No remake prompt set yet",
       "provider": "LLM",
@@ -165,35 +168,6 @@
       "freshness": "Against {{count}} earlier videos of this channel",
       "warn": "Some measurements fail. You can still approve, but fix them to avoid being treated as reused or templated content."
     }
-  },
-  "library": {
-    "projectsRoot": "Projects (agent & step by step)",
-    "downloadsRoot": "Loose transcript downloads",
-    "rootHint": "Each project sits in its own folder named by the project id. Loose transcripts are in a folder per YouTube video id.",
-    "empty": "Nothing here yet.",
-    "chars": "{{chars}} chars ≈ {{minutes}} min",
-    "files": "Files",
-    "filter": {
-      "all": "All",
-      "finished": "Finished",
-      "inProgress": "In progress",
-      "download": "Transcript only"
-    },
-    "kind": {
-      "agent": "Agent",
-      "manual": "Step by step",
-      "download": "Loose download"
-    },
-    "file": {
-      "transcript": "Transcript",
-      "script": "Script",
-      "remake": "Remake",
-      "audio": "Voice",
-      "subtitle": "Subtitles",
-      "video": "Video"
-    },
-    "play": "Play",
-    "openProject": "Open project"
   },
   "voicePreview": {
     "play": "Preview",
@@ -246,5 +220,75 @@
     "remove": "Remove clip",
     "one": "Make clip",
     "titleCard": "Title card — unchanged"
+  },
+  "source": {
+    "none": "No group",
+    "channelProjects": "Channel projects",
+    "channelVideos": "Prepared / created videos"
+  },
+  "channelVideo": {
+    "status": {
+      "Prepared": "Prepared",
+      "Created": "Created"
+    },
+    "empty": "This channel has no prepared or created videos.",
+    "tabs": {
+      "characters": "Character reference"
+    },
+    "source": {
+      "hint": "The YouTube source video this video is remade from."
+    },
+    "script": {
+      "remakeHint": "Remake channel: rewrite the script from the source transcript with ChatGPT/Gemini/Claude (same prompt sets as projects), then press \"Use the result as the script\". You can edit it by hand below.",
+      "size": "{{chars}} chars"
+    },
+    "voice": {
+      "title": "VOICEVOX narration",
+      "hint": "Reads the script from the Script tab. The narration replaces the video's audio and subtitles; the source video's audio and transcript are kept in the source/ folder.",
+      "running": "Reading {{progress}}",
+      "done": "Narration finished",
+      "failed": "Narration failed",
+      "needScript": "A script is needed first.",
+      "rescenes": "Existing scenes still follow the old audio timing — press \"Regenerate scenes\" on the Scenes tab to match the new voice, then render again.",
+      "narration": "Narration ({{duration}})",
+      "source": "Source video's downloaded audio",
+      "sourceKept": "The source video's original audio is kept at source/audio.mp3."
+    }
+  },
+  "metadata": {
+    "empty": "No metadata yet. Use the button above to create it.",
+    "thumbnail": "Thumbnail",
+    "noThumbnail": "No thumbnail yet",
+    "title": "Title",
+    "description": "Description",
+    "tags": "Tags",
+    "tagsHint": "Separated by commas",
+    "save": "Save changes",
+    "saved": "Metadata saved"
+  },
+  "sourcePicker": {
+    "title": "Pick from the channel's sources",
+    "search": "Search by title",
+    "hint": "Videos from the target channel's source channels not processed yet: not prepared for the channel and not used as a source by another project of the channel. Pick one video at a time; picking another replaces the link in the box above.",
+    "empty": "No unprocessed source videos left. Check the source channels in the channel settings, or paste links above.",
+    "noMatch": "No video matches.",
+    "views_one": "{{formatted}} view",
+    "views_other": "{{formatted}} views",
+    "open": "Open the video on YouTube"
+  },
+  "voicePick": {
+    "label": "Voice",
+    "default": "default",
+    "none": "Pick a saved voice",
+    "loading": "Loading voices…",
+    "empty": "No saved {{provider}} voices yet.",
+    "openSettings": "Create one in Settings → Voice",
+    "custom": "Custom for this video…",
+    "customValue": "Custom: {{name}}",
+    "editCustom": "Edit",
+    "customTitle": "{{provider}} voice for this video",
+    "customHint": "Pick a voice and tune it for this video only — it is not added to the saved voices in Settings.",
+    "useCustom": "Use this voice",
+    "cancel": "Cancel"
   }
 }

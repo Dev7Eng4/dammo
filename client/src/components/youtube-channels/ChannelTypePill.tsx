@@ -30,6 +30,12 @@ const config: Record<
     text: 'text-warning',
     bg: 'bg-warning/10 border-warning/30',
   },
+  remake_video: {
+    labelKey: 'type.remakeVideo',
+    dot: 'bg-info',
+    text: 'text-info',
+    bg: 'bg-info/10 border-info/30',
+  },
   reup: {
     labelKey: 'type.reup',
     dot: 'bg-secondary-400',

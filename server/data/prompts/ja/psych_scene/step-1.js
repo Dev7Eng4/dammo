@@ -66,7 +66,8 @@ Mỗi cảnh chỉ dùng TỐI ĐA 2 biểu tượng/đồ vật, mô tả bằn
 - Cách phản ứng/lời giải: NHÂN VẬT CHÍNH điềm tĩnh khoanh tay, đối diện KẺ PHẢN DIỆN đang bực bội; hoặc cầm chìa khóa, đứng sau vạch đỏ hay khiên có dấu X.
 - Trước → sau (chuyển biến): hai nửa khung, bên trái nhân vật lo lắng/co ro, một mũi tên đỏ lớn ở giữa, bên phải cùng nhân vật đã tự tin, có vòng tròn đỏ quanh.
 - Tổng kết/thông điệp cuối: NHÂN VẬT CHÍNH đứng một mình ở một phần ba khung, tư thế thoải mái, khoảng trống rộng.
-Cứ khoảng 3–4 cảnh nên có 1 cảnh bố cục "Trước → sau", "đối đầu trái–phải" hoặc "chia đôi hai cách nhìn" để lặp lại chữ ký hình ảnh của kênh. Chừa khoảng trống trên cùng hoặc dưới cùng khung, vì phần mềm dựng sẽ chèn phụ đề ở đó.
+Cứ khoảng 3–4 cảnh nên có 1 cảnh bố cục "Trước → sau", "đối đầu trái–phải" hoặc "chia đôi hai cách nhìn" để lặp lại chữ ký hình ảnh của kênh.
+- Ảnh dùng TOÀN BỘ khung hình: nội dung trải kín từ trên xuống dưới, KHÔNG chừa dải trống, dải màu trơn hay khoảng trống cho phụ đề ở bất kỳ cạnh nào. KHÔNG viết các cụm như "bottom third kept clear", "empty top space", "space for subtitles", "copy space".
 
 === QUY TẮC VIẾT PHẦN CẢNH (mục 2) ===
 - Luôn nêu rõ: (a) nhân vật nào (vai gì, màu gì), (b) biểu cảm khuôn mặt chọn từ từ vựng trên, (c) tư thế cơ thể cụ thể, (d) biểu tượng nếu có, (e) vị trí trong khung (left third / right third / center / split frame).

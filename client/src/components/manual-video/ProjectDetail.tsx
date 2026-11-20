@@ -4,6 +4,7 @@ import {
   Check,
   CircleDot,
   Copy,
+  FileText,
   FolderOpen,
   Lock,
   Mic,
@@ -18,12 +19,16 @@ import {
   approveManualScript,
   cancelManualStep,
   deleteManualProject,
+  generateManualMetadata,
   openManualFolder,
   runManualStep,
   generateManualClips,
   removeManualClip,
   type ManualMotionMode,
   type ManualStep,
+  fetchManualScenes,
+  manualSceneImageUrl,
+  manualSceneClipUrl,
 } from '../../api/manualVideo'
 import { cn } from '../../lib/cn'
 import type { VideoAgentRun, VideoAgentStage, VoicevoxStatus } from '../../types/videoAgent'
@@ -32,18 +37,21 @@ import { Button, PageTabs, Select, StatusBadge, Textarea, useToast } from '../ui
 import { ApprovalStep } from './ApprovalStep'
 import { ChannelSwitcher } from './ChannelSwitcher'
 import { SceneGallery } from './SceneGallery'
+import { MetadataStep } from './MetadataStep'
 import { MotionStep } from './MotionStep'
+import { PendingSourcePicker } from './PendingSourcePicker'
+import { sourceIdsOf } from './sourceUrls'
 import { ScriptStep } from './ScriptStep'
-import { VoicePreviewButton } from './VoicePreviewButton'
+import { NarrationVoicePicker, type CustomNarrationVoice, type NarrationVoiceValue } from './NarrationVoicePicker'
 import { VoiceReview } from './VoiceReview'
 
 const SPEED_OPTIONS = ['0.9', '1', '1.1', '1.2']
 const MIN_MINUTES = 12
 const MAX_MINUTES = 30
 
-type StepId = 'source' | 'script' | 'approval' | 'voice' | 'scenes' | 'motion' | 'video'
+type StepId = 'source' | 'script' | 'approval' | 'voice' | 'scenes' | 'motion' | 'video' | 'metadata'
 /** Tabs; approval has none of its own, it sits at the foot of the script tab. */
-const STEP_IDS: readonly StepId[] = ['source', 'script', 'voice', 'scenes', 'motion', 'video']
+const STEP_IDS: readonly StepId[] = ['source', 'script', 'voice', 'scenes', 'motion', 'video', 'metadata']
 /** Steps a project may skip; they never hold up the next tab. */
 const OPTIONAL_STEPS: readonly StepId[] = ['motion']
 type TabId = StepId | 'log'
@@ -55,6 +63,7 @@ const STEP_STAGE: Record<StepId, VideoAgentStage> = {
   scenes: 'scenes',
   motion: 'motion',
   video: 'video',
+  metadata: 'metadata',
 }
 /** What a step needs before it can run, by stage. */
 /** Voice and images both open once the script is approved; images no longer wait for the voice. */
@@ -65,6 +74,8 @@ const REQUIRES: Partial<Record<StepId, StepId[]>> = {
   scenes: ['approval'],
   motion: ['scenes'],
   video: ['voice', 'scenes'],
+  // Written from the narration subtitles; does not need the rendered video.
+  metadata: ['voice'],
 }
 
 function formatDuration(sec?: number): string {
@@ -133,7 +144,11 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
   const { t, i18n } = useTranslation(['manual', 'agent'])
   const { toast } = useToast()
   const [urls, setUrls] = useState(run.input.sourceUrls.join('\n'))
-  const [speaker, setSpeaker] = useState(String(run.input.voicevoxSpeaker))
+  const [voice, setVoice] = useState<NarrationVoiceValue>({
+    provider: run.input.voiceProvider ?? 'voicevox',
+    presetId: run.input.voicePresetId ?? '',
+    custom: (run.input.voiceCustom as CustomNarrationVoice | undefined) ?? null,
+  })
   const [speed, setSpeed] = useState(String(run.input.speedScale))
   const [busy, setBusy] = useState(false)
   // Opens on the next step still to do, so the producer lands where the work is.
@@ -171,10 +186,6 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
   const folder = run.artifacts.videoPath ? run.artifacts.videoPath.replace(/[\\/][^\\/]+$/, '') : null
   const fit = run.artifacts.narrationFit
   const outsideWindow = fit ? fit.actualMinutes < MIN_MINUTES || fit.actualMinutes > MAX_MINUTES : false
-  const speakerOptions = (voicevox?.speakers ?? []).flatMap((s) =>
-    s.styles.map((style) => ({ value: String(style.id), label: `${s.name} · ${style.name} (#${style.id})` })),
-  )
-
   async function handleDelete() {
     if (!window.confirm(t('detail.deleteConfirm'))) return
     await act(async () => {
@@ -255,12 +266,23 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
 
       {tab === 'source' ? (
         <StepCard index={1} title={t('step.source.title')} description={t('step.source.desc')} state={stateOf('source')}>
-          <Textarea
-            rows={3}
-            value={urls}
+          <label className="block space-y-1.5">
+            <span className="section-label">{t('form.sources')}</span>
+            <Textarea
+              rows={3}
+              value={urls}
+              disabled={locked}
+              placeholder={t('form.sourcesHint')}
+              onChange={(event) => setUrls(event.target.value)}
+              className="font-mono text-xs"
+            />
+          </label>
+          <PendingSourcePicker
+            channelId={run.input.channelId}
+            runId={run.id}
+            selectedIds={sourceIdsOf(urls)}
             disabled={locked}
-            onChange={(event) => setUrls(event.target.value)}
-            className="font-mono text-xs"
+            onPick={(video) => setUrls(video.url)}
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -307,33 +329,18 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
           lockedHint={lockedHint('voice')}
         >
           <div className="grid gap-3 md:grid-cols-3">
-            <label className="space-y-1.5 md:col-span-2">
-              <span className="section-label">{t('form.voice')}</span>
-              {voicevox?.available ? (
-                <div className="flex items-center gap-2">
-                  <Select
-                    className="min-w-0 flex-1"
-                    options={speakerOptions}
-                    value={speaker}
-                    onChange={setSpeaker}
-                    searchable
-                    disabled={stepLocked('voice')}
-                  />
-                  <VoicePreviewButton
-                    speaker={Number(speaker)}
-                    speed={Number(speed)}
-                    sampleText={run.script?.chapters[0]?.sentences.slice(0, 2).join('')}
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs text-danger">{t('step.voice.unavailable', { url: voicevox?.url ?? '' })}</p>
-                  <Button size="sm" variant="secondary" onClick={onRefreshVoicevox}>
-                    {t('step.voice.recheck')}
-                  </Button>
-                </div>
-              )}
-            </label>
+            <div className="space-y-1.5 md:col-span-2">
+              <span className="section-label">{t('voicePick.label')}</span>
+              <NarrationVoicePicker
+                value={voice}
+                onChange={setVoice}
+                speed={Number(speed)}
+                sampleText={run.script?.chapters[0]?.sentences.slice(0, 2).join('')}
+                disabled={stepLocked('voice')}
+                voicevox={voicevox}
+                onRefreshVoicevox={onRefreshVoicevox}
+              />
+            </div>
             <label className="space-y-1.5">
               <span className="section-label">{t('form.speed')}</span>
               <Select
@@ -346,8 +353,17 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
           </div>
           <Button
             size="sm"
-            disabled={stepLocked('voice') || !voicevox?.available}
-            onClick={() => void runStep('voice', { voicevoxSpeaker: Number(speaker), speedScale: Number(speed) })}
+            disabled={
+              stepLocked('voice') || (!voice.custom && !voice.presetId) || (voice.provider === 'voicevox' && !voicevox?.available)
+            }
+            onClick={() =>
+              void runStep('voice', {
+                voiceProvider: voice.provider,
+                voicePresetId: voice.custom ? null : voice.presetId,
+                voiceCustom: voice.custom,
+                speedScale: Number(speed),
+              })
+            }
           >
             <Mic className="size-4" />
             {done('voice') ? t('step.voice.again') : t('step.voice.run')}
@@ -365,7 +381,7 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
             </p>
           ) : null}
           {done('voice') && !isActive('voice') ? (
-            <VoiceReview runId={run.id} version={`${run.artifacts.audioDurationSec ?? 0}-${run.input.voicevoxSpeaker}-${run.input.speedScale}`} />
+            <VoiceReview runId={run.id} version={`${run.artifacts.audioDurationSec ?? 0}-${run.input.voiceCustom ? JSON.stringify(run.input.voiceCustom) : (run.input.voicePresetId ?? run.input.voicevoxSpeaker)}-${run.input.speedScale}`} />
           ) : null}
         </StepCard>
       ) : null}
@@ -414,8 +430,10 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
         >
           {done('scenes') ? (
             <MotionStep
-              runId={run.id}
-              reloadKey={run.updatedAt}
+              loadScenes={async (signal) => (await fetchManualScenes(run.id, { signal })).items}
+              imageUrl={(scene) => manualSceneImageUrl(run.id, scene)}
+              clipUrl={(scene) => manualSceneClipUrl(run.id, scene)}
+              reloadKey={`${run.id}-${run.updatedAt}`}
               motionDefault={motionDefault}
               working={isActive('motion')}
               disabled={stepLocked('motion')}
@@ -457,6 +475,29 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
               </div>
             </div>
           ) : null}
+        </StepCard>
+      ) : null}
+
+      {tab === 'metadata' ? (
+        <StepCard
+          index={7}
+          title={t('step.metadata.title')}
+          description={t('step.metadata.desc')}
+          state={stateOf('metadata')}
+          lockedHint={lockedHint('metadata')}
+        >
+          <Button
+            size="sm"
+            disabled={stepLocked('metadata')}
+            onClick={() => {
+              if (done('metadata') && !window.confirm(t('step.metadata.redoConfirm'))) return
+              void act(() => generateManualMetadata(run.id))
+            }}
+          >
+            <FileText className="size-4" />
+            {done('metadata') ? t('step.metadata.again') : t('step.metadata.run')}
+          </Button>
+          <MetadataStep runId={run.id} reloadKey={run.updatedAt} disabled={busy || isActive('metadata')} />
         </StepCard>
       ) : null}
 

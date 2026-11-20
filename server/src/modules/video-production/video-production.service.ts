@@ -10,6 +10,7 @@ import type {
   ReupVideoOutputItem,
 } from './pipelines/reup-audio/reup-audio.types.js';
 import type { ProductionPipelineType } from './ports/production-destination.port.js';
+import { isReupAudioFamilyType } from '../youtube-channels/youtube-channels.types.js';
 
 interface CreateVideosOptions {
   taskJobId?: string;
@@ -24,8 +25,8 @@ interface CreateVideosOptions {
 
 const SKIP_ON_CREATE_CODES = new Set(['NO_SOURCE_MAPPING', 'SOURCE_NOT_FOUND', 'NO_SOURCE_VIDEOS', 'NO_UNPROCESSED_VIDEOS']);
 
-function isReupChannelType(type: string): type is ProductionPipelineType {
-  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+function isReupChannelType(type: string): boolean {
+  return isReupAudioFamilyType(type) || type === 'reup_video' || type === 'reup';
 }
 
 function isSkippableCreateError(err: unknown): err is AppError {

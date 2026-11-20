@@ -30,6 +30,8 @@ export const paths = {
   prompts: path.join(env.dataDir, 'prompts.json'),
   promptsSettings: path.join(env.dataDir, 'prompts-settings.json'),
   appSettings: path.join(env.dataDir, 'app-settings.json'),
+  voiceSettings: path.join(env.dataDir, 'voice-settings.json'),
+  youtubeApiKeys: path.join(env.dataDir, 'youtube-api-keys.json'),
 
   visualStyles: path.join(env.dataDir, 'visual-styles.json'),
   niches: path.join(env.dataDir, 'niches.json'),

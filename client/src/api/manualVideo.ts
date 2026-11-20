@@ -1,3 +1,4 @@
+import type { CustomNarrationVoice } from '../components/manual-video/NarrationVoicePicker'
 import type { VideoAgentRun, VideoAgentRunSummary } from '../types/videoAgent'
 import type { RemakeJob, RemakeProvider } from './scriptRemake'
 import { API_V1 } from './config'
@@ -14,38 +15,6 @@ export interface ManualProjectDetail {
   scriptText: string
   /** Image → video default from the channel's video type. */
   motionDefault: ManualMotionMode | 'none'
-}
-
-/** `download`: a transcript fetched on its own, not part of any project. */
-export type LibraryKind = 'agent' | 'manual' | 'download'
-export type LibraryPhase = 'finished' | 'in_progress' | 'download'
-export type LibraryFileKind = 'transcript' | 'script' | 'remake' | 'audio' | 'subtitle' | 'video'
-
-export interface LibraryFile {
-  kind: LibraryFileKind
-  path: string
-  sizeBytes: number
-}
-
-export interface ManualLibraryItem {
-  key: string
-  kind: LibraryKind
-  phase: LibraryPhase
-  runId?: string
-  videoId?: string
-  title: string
-  channelName?: string
-  createdAt: string
-  updatedAt: string
-  /** Pipeline stages reached: source, script, approval, voice, scenes, video. */
-  stagesDone: string[]
-  chars?: number
-  minutes?: number
-  durationSec?: number | null
-  folder: string
-  videoPath?: string
-  sizeBytes?: number
-  files: LibraryFile[]
 }
 
 export interface CreateManualProjectPayload {
@@ -72,10 +41,6 @@ export function fetchManualProject(id: string, options?: FetchOptions) {
   return fetchJson<ManualProjectDetail>(`${BASE}/projects/${id}`, withSignal(undefined, options))
 }
 
-export function fetchManualLibrary(options?: FetchOptions) {
-  return fetchJson<{ root: string; downloadsRoot: string; items: ManualLibraryItem[] }>(`${BASE}/library`, withSignal(undefined, options))
-}
-
 export function createManualProject(payload: CreateManualProjectPayload) {
   return send<VideoAgentRun>(`${BASE}/projects`, 'POST', payload)
 }
@@ -87,7 +52,14 @@ export function deleteManualProject(id: string) {
 export function runManualStep(
   id: string,
   step: ManualStep,
-  body: { urls?: string[]; voicevoxSpeaker?: number; speedScale?: number } = {},
+  body: {
+    urls?: string[]
+    voicevoxSpeaker?: number
+    speedScale?: number
+    voiceProvider?: 'voicevox' | 'elevenlabs'
+    voicePresetId?: string | null
+    voiceCustom?: CustomNarrationVoice | null
+  } = {},
 ) {
   return send<VideoAgentRun>(`${BASE}/projects/${id}/steps/${step}`, 'POST', body)
 }
@@ -160,6 +132,9 @@ export interface ManualNarrationSentence {
 export interface ManualNarration {
   durationSec: number
   speaker: number
+  voiceProvider: 'voicevox' | 'elevenlabs'
+  voicePresetId: string | null
+  voiceCustom: Record<string, unknown> | null
   speedScale: number
   /** False when the voice track no longer lines up with the script; times are then approximate. */
   aligned: boolean
@@ -188,4 +163,30 @@ export function removeManualClip(id: string, index: number) {
 
 export function manualSceneClipUrl(id: string, scene: Pick<ManualSceneItem, 'index' | 'clipVersion'>): string {
   return `${BASE}/projects/${id}/scenes/${scene.index}/clip?v=${scene.clipVersion}`
+}
+
+export interface ManualMetadata {
+  title: string
+  description: string
+  tags: string[]
+  hasThumbnail: boolean
+  /** Changes whenever the thumbnail file is replaced. */
+  thumbnailVersion: number
+}
+
+/** Title, description, tags and thumbnail made with the channel's own metadata prompts and thumbnail flow. */
+export function generateManualMetadata(id: string) {
+  return send<VideoAgentRun>(`${BASE}/projects/${id}/metadata`, 'POST', {})
+}
+
+export function fetchManualMetadata(id: string, options?: FetchOptions) {
+  return fetchJson<ManualMetadata>(`${BASE}/projects/${id}/metadata`, withSignal(undefined, options))
+}
+
+export function saveManualMetadata(id: string, body: { title: string; description: string; tags: string[] }) {
+  return send<ManualMetadata>(`${BASE}/projects/${id}/metadata`, 'PUT', body)
+}
+
+export function manualThumbnailUrl(id: string, version: number): string {
+  return `${BASE}/projects/${id}/thumbnail?v=${version}`
 }

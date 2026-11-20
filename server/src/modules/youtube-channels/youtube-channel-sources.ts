@@ -5,6 +5,9 @@ import type { SourceChannel } from '../source-channels/source-channels.types.js'
 import { LOCAL_STOCK_SENTINEL } from '../video-production/shared/stock-background/stock-background.constants.js';
 import type { YoutubeChannel } from './youtube-channels.types.js';
 
+/** Shown as the channel's source when it takes videos from the trend brain. */
+export const TREND_BRAIN_SOURCE_NAME = 'Bộ não săn xu hướng';
+
 export function resolveSourceChannelsFromMapping(sourceMapping: string): SourceChannel[] {
   const parts = sourceMapping
     .split(',')
@@ -65,6 +68,7 @@ export function resolveSourceChannelsByIds(ids: string[]): SourceChannel[] {
 }
 
 export function resolveSourceChannelNamesOnly(channel: YoutubeChannel): string[] {
+  if (channel.sourceMode === 'trend_brain') return [TREND_BRAIN_SOURCE_NAME];
   const names: string[] = [];
   const seen = new Set<string>();
 
@@ -96,7 +100,7 @@ export function resolveBackgroundFootageNamesOnly(channel: YoutubeChannel): stri
 }
 
 export function resolveSourceNamesForChannel(channel: YoutubeChannel): string[] {
-  const names: string[] = [];
+  const names: string[] = channel.sourceMode === 'trend_brain' ? [TREND_BRAIN_SOURCE_NAME] : [];
   const seen = new Set<string>();
 
   const add = (name: string) => {

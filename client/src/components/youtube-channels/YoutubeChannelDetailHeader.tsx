@@ -165,7 +165,7 @@ export function YoutubeChannelDetailHeader({
           icon={<Clapperboard className="size-4" />}
           asChild
         >
-          <Link to={`/video-production?channelId=${encodeURIComponent(channel.id)}`}>
+          <Link to={`/manual-video?channelId=${encodeURIComponent(channel.id)}`}>
             <Clapperboard className="size-4" />
           </Link>
         </IconAction>

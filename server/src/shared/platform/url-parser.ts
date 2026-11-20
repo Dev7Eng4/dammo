@@ -134,8 +134,9 @@ export function normalizeSourceUrl(raw: string, platform?: SourcePlatform): Norm
       return { platform: 'youtube', url, fullUrl };
     }
 
-    value = value.replace(/^(www\.)?youtube\.com\/?/i, '');
+    value = value.replace(/^(www\.|m\.|music\.)?youtube\.com\/?/i, '');
     value = value.replace(/^(www\.)?youtu\.be\/?/i, '');
+    value = stripYoutubeChannelTab(value);
 
     if (!value.startsWith('@') && !value.startsWith('channel/') && !value.startsWith('c/')) {
       value = `@${value.replace(/^@/, '')}`;
@@ -164,6 +165,41 @@ export function normalizeSourceUrl(raw: string, platform?: SourcePlatform): Norm
     url: facebookPath,
     fullUrl: `https://facebook.com${facebookPath}`,
   };
+}
+
+/** Channel page tabs to drop: `@x/videos` -> `@x`, `channel/UC…/shorts` -> `channel/UC…`. */
+const YOUTUBE_CHANNEL_TABS = /\/(videos|shorts|streams|featured|about|playlists|community|posts|podcasts|releases|live|search)\/?$/i;
+
+function stripYoutubeChannelTab(path: string): string {
+  return path.replace(/\/+$/, '').replace(YOUTUBE_CHANNEL_TABS, '');
+}
+
+/**
+ * Channel link for a managed YouTube channel. Also accepts a bare handle (`comicuniverselabs`),
+ * a UC… channel id, and links with a tab (`/videos`) or the mobile host; anything that is not
+ * YouTube gets a readable error naming the value.
+ */
+export function parseYoutubeChannelUrl(raw: string): NormalizedSourceUrl {
+  const value = raw.trim();
+  if (/^UC[\w-]{22}$/.test(value)) {
+    return { platform: 'youtube', url: `channel/${value}`, fullUrl: `https://youtube.com/channel/${value}` };
+  }
+  // Bare handle: letters, digits, . _ - (YouTube handle rules), no dots-only domain look.
+  const candidate = /^[\p{L}\p{N}._-]{3,30}$/u.test(value) && !/\.(com|net|org|be|tv)$/i.test(value) ? `@${value}` : value;
+  let platform: SourcePlatform;
+  try {
+    platform = detectPlatform(candidate);
+  } catch {
+    platform = 'facebook';
+  }
+  if (platform !== 'youtube') {
+    throw new AppError(
+      `URL kênh không phải link YouTube: «${value.slice(0, 120)}». Nhập dạng https://youtube.com/@tenkenh, @tenkenh hoặc ID kênh UC…`,
+      400,
+      'INVALID_YOUTUBE_CHANNEL_URL',
+    );
+  }
+  return normalizeSourceUrl(candidate, 'youtube');
 }
 
 export function parseSourceUrl(raw: string): NormalizedSourceUrl {

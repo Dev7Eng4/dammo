@@ -1,13 +1,7 @@
 import { Clapperboard, Film, ImageIcon, Undo2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  fetchManualScenes,
-  manualSceneClipUrl,
-  manualSceneImageUrl,
-  type ManualMotionMode,
-  type ManualSceneItem,
-} from '../../api/manualVideo'
+import type { ManualMotionMode, ManualSceneItem } from '../../api/manualVideo'
 import { useAbortableEffect } from '../../hooks'
 import { cn } from '../../lib/cn'
 import { Button } from '../ui'
@@ -26,8 +20,11 @@ function shortTime(srt: string): string {
   return srt.replace(/^00:/, '').replace(/,\d+$/, '')
 }
 
-interface MotionStepProps {
-  runId: string
+export interface MotionStepProps {
+  /** Loads the scene list (manual project or channel video). */
+  loadScenes: (signal: AbortSignal) => Promise<ManualSceneItem[]>
+  imageUrl: (scene: ManualSceneItem) => string
+  clipUrl: (scene: ManualSceneItem) => string
   /** Changes whenever the project changes, so the list reloads. */
   reloadKey: string
   motionDefault: ManualMotionMode | 'none'
@@ -39,7 +36,17 @@ interface MotionStepProps {
 }
 
 /** Turns scene images into short Flow (Veo) clips: the intro, every scene, or hand-picked ones. */
-export function MotionStep({ runId, reloadKey, motionDefault, working, disabled, onGenerate, onRemove }: MotionStepProps) {
+export function MotionStep({
+  loadScenes,
+  imageUrl,
+  clipUrl,
+  reloadKey,
+  motionDefault,
+  working,
+  disabled,
+  onGenerate,
+  onRemove,
+}: MotionStepProps) {
   const { t } = useTranslation('manual')
   const [scenes, setScenes] = useState<ManualSceneItem[] | null>(null)
   const [mode, setMode] = useState<ManualMotionMode>(motionDefault === 'none' ? 'intro' : motionDefault)
@@ -47,10 +54,11 @@ export function MotionStep({ runId, reloadKey, motionDefault, working, disabled,
 
   useAbortableEffect(
     async (signal) => {
-      const { items } = await fetchManualScenes(runId, { signal })
-      setScenes(items)
+      const items = await loadScenes(signal)
+      if (!signal.aborted) setScenes(items)
     },
-    [runId, reloadKey],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [reloadKey],
   )
 
   if (scenes === null) return <div className="h-24 animate-pulse rounded-lg bg-muted" />
@@ -117,8 +125,8 @@ export function MotionStep({ runId, reloadKey, motionDefault, working, disabled,
                 {scene.hasClip ? (
                   <video
                     className="h-full w-full object-cover"
-                    src={manualSceneClipUrl(runId, scene)}
-                    poster={scene.hasImage ? manualSceneImageUrl(runId, scene) : undefined}
+                    src={clipUrl(scene)}
+                    poster={scene.hasImage ? imageUrl(scene) : undefined}
                     muted
                     loop
                     playsInline
@@ -127,7 +135,7 @@ export function MotionStep({ runId, reloadKey, motionDefault, working, disabled,
                     onMouseLeave={(event) => event.currentTarget.pause()}
                   />
                 ) : scene.hasImage ? (
-                  <img src={manualSceneImageUrl(runId, scene)} alt={t('scenes.alt', { n: scene.index + 1 })} loading="lazy" className="h-full w-full object-cover" />
+                  <img src={imageUrl(scene)} alt={t('scenes.alt', { n: scene.index + 1 })} loading="lazy" className="h-full w-full object-cover" />
                 ) : null}
                 <span
                   className={cn(

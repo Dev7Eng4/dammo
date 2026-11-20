@@ -9,6 +9,29 @@ export interface ThumbnailStyleOption {
   useChannelBackgroundImage: boolean;
 }
 
+export const MASCOT_THUMBNAIL_STYLE_OPTIONS: ThumbnailStyleOption[] = [
+  { key: 'mascot_1', name: 'Mascot thumbnail - 1 option', useChannelBackgroundImage: false },
+  { key: 'mascot_3', name: 'Mascot thumbnail - 3 options', useChannelBackgroundImage: false },
+];
+
+export function parseMascotCandidateCountFromStyleKey(key: string | undefined): number | undefined {
+  if (!key) return undefined;
+  switch (key.trim()) {
+    case 'mascot_1':
+      return 1;
+    case 'mascot_2':
+      return 2;
+    case 'mascot_3':
+      return 3;
+    default:
+      return undefined;
+  }
+}
+
+export function isMascotThumbnailStyleKey(key: string | undefined): boolean {
+  return parseMascotCandidateCountFromStyleKey(key) !== undefined;
+}
+
 const STEP_SUFFIX_PATTERN = /_step_\d+$/;
 
 function toPromptLanguage(language: ChannelLanguage | PromptLanguage): PromptLanguage {
@@ -43,13 +66,15 @@ export function listThumbnailStyleOptions(language: ChannelLanguage | PromptLang
     groups.set(name, existing);
   }
 
-  return [...groups.entries()]
+  const promptOptions = [...groups.entries()]
     .map(([name, group]) => ({
       key: resolveCanonicalKey(group.keys),
       name,
       useChannelBackgroundImage: group.useChannelBackgroundImage,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  return [...MASCOT_THUMBNAIL_STYLE_OPTIONS, ...promptOptions];
 }
 
 export function validateThumbnailStyleKey(key: string, language: ChannelLanguage | PromptLanguage): boolean {
@@ -59,7 +84,7 @@ export function validateThumbnailStyleKey(key: string, language: ChannelLanguage
 }
 
 export function resolveDefaultThumbnailStyleKey(language: ChannelLanguage | PromptLanguage): string | undefined {
-  const options = listThumbnailStyleOptions(language);
+  const options = listThumbnailStyleOptions(language).filter(opt => !isMascotThumbnailStyleKey(opt.key));
   if (options.length === 0) return undefined;
 
   return options[0]?.key;

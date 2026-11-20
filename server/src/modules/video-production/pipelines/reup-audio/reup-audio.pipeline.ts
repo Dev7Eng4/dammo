@@ -6,6 +6,7 @@ import {
   resolveYoutubeChannelVideoDir,
 } from '../../../../config/paths.js';
 import { isCaptionDisabled } from '../../shared/render-core/caption-styles.js';
+import { appSettingsService } from '../../../app-settings/app-settings.service.js';
 import { assertMediaFileComplete } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import { readJson } from '../../../../infrastructure/storage/json-store.js';
 import { downloadYoutubeTranscript } from '../../../../infrastructure/youtube/youtube-transcript-downloader.js';
@@ -35,9 +36,11 @@ import {
 import { resolveReupAudioDownload, resolveReupVideoDownload } from './steps/download.step.js';
 import { runFinalizeStep } from './steps/finalize.step.js';
 import { runMetadataStep } from './steps/metadata.step.js';
-import { buildTasks, collectSourceVideos } from './steps/task-selection.js';
+import { buildTasks, collectSourceVideos, type SourceVideoWithSource } from './steps/task-selection.js';
+import { listTrendSourceVideos, trendVideoIdsClaimedByOthers } from '../../../brains/trend-source-videos.js';
 import { runThumbnailStep } from './steps/thumbnail.step.js';
-import { runCleanTranscript, runUpdateTranscript } from './steps/transcript.step.js';
+import { finalizeCleanTranscript, runCleanTranscript, runUpdateTranscript } from './steps/transcript.step.js';
+import { channelVideoRemakeService } from '../../../video-production-ui/channel-video-remake.service.js';
 import {
   PREPARED_AUDIO_FILE,
   PREPARED_SUBTITLE_FILES,
@@ -189,22 +192,41 @@ export class ReupAudioPipeline {
       throw new AppError('Pipeline only supports reup audio channels', 400, 'INVALID_CHANNEL_TYPE');
     }
 
-    if (destination.sourceChannels.length === 0) {
-      throw new AppError('Channel has no source mapping configured', 400, 'NO_SOURCE_MAPPING');
-    }
+    const fromTrendBrain = destination.sourceMode === 'trend_brain';
+    let allVideos: SourceVideoWithSource[];
+    if (fromTrendBrain) {
+      // Hot videos found by the trend brain, minus those another trend-mode channel already took.
+      const claimed = trendVideoIdsClaimedByOthers(destination.id);
+      allVideos = listTrendSourceVideos({ clusters: destination.trendClusters })
+        .filter(video => !claimed.has(video.id))
+        .map(({ id, title, url, viewCount, duration, sourceId }) => ({ id, title, url, viewCount, duration, sourceId }));
+      if (allVideos.length === 0) {
+        throw new AppError(
+          'Bộ não săn xu hướng chưa có video nào (cho các cụm đã chọn) — hãy chạy bộ não trước',
+          400,
+          'NO_TREND_VIDEOS',
+        );
+      }
+    } else {
+      if (destination.sourceChannels.length === 0) {
+        throw new AppError('Channel has no source mapping configured', 400, 'NO_SOURCE_MAPPING');
+      }
 
-    if (this.sourceCatalog.resolveSources(destination.sourceChannels).length === 0) {
-      throw new AppError('No source channels matched source mapping', 400, 'SOURCE_NOT_FOUND');
-    }
+      if (this.sourceCatalog.resolveSources(destination.sourceChannels).length === 0) {
+        throw new AppError('No source channels matched source mapping', 400, 'SOURCE_NOT_FOUND');
+      }
 
-    const allVideos = collectSourceVideos(this.sourceCatalog, destination.sourceChannels);
-    if (allVideos.length === 0) {
-      throw new AppError('No source videos available for mapped sources', 400, 'NO_SOURCE_VIDEOS');
+      allVideos = collectSourceVideos(this.sourceCatalog, destination.sourceChannels);
+      if (allVideos.length === 0) {
+        throw new AppError('No source videos available for mapped sources', 400, 'NO_SOURCE_VIDEOS');
+      }
     }
 
     const { tasks, targetCount } = buildTasks(destination, allVideos, {
       maxVideosPerChannel: options?.maxVideosPerChannel,
       videoIds: options?.videoIds,
+      // Trend videos come sorted hottest first; keep that order.
+      ...(fromTrendBrain ? { order: 'newest_first' as const } : {}),
     });
     if (tasks.length === 0) {
       throw new AppError('No unprocessed source videos available', 400, 'NO_UNPROCESSED_VIDEOS');
@@ -986,12 +1008,18 @@ export class ReupAudioPipeline {
     const { taskJobId, log, stepTimer } = run;
     let activeStageId: string | undefined = CREATE_VIDEO_STAGE_IDS.download;
     /** Only Japanese channels rewrite the transcript, and only when captions are shown. */
-    const shouldUpdateTranscript = destination.language === 'ja' && !isCaptionDisabled(destination.captionStyleKey);
+    const settings = appSettingsService.get();
+    const isUpdateTranscriptEnabled = settings.enableUpdateTranscript ?? settings.disabledUpdateTranscript ?? true;
+    /** Remake channels replace the source audio with a remade script read by VOICEVOX, so the transcript update is moot. */
+    const remakeAuto = destination.remakeAuto;
+    const shouldUpdateTranscript =
+      !remakeAuto && isUpdateTranscriptEnabled && destination.language === 'ja' && !isCaptionDisabled(destination.captionStyleKey);
 
     if (taskJobId) {
       initCreateVideoStages(taskJobId, {
         copyingAssets: task.sourceStatus === 'Downloaded',
         includeUpdateTranscript: shouldUpdateTranscript,
+        includeRemake: Boolean(remakeAuto),
       });
       startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.download);
       taskQueueRepository.setLivePhase(taskJobId, 'downloading');
@@ -1031,8 +1059,28 @@ export class ReupAudioPipeline {
       const assets: VisualAssets = {};
       let updatedSrtPath: string | undefined;
 
-      /** Other languages, or channels without captions, use the cleaned SRT as is. */
-      if (shouldUpdateTranscript) {
+      if (remakeAuto) {
+        // Remake channel: new script from the source transcript, then VOICEVOX narration replaces
+        // audio.mp3 / transcript.srt in this folder, so metadata, thumbnail and scenes follow the new script.
+        activeStageId = CREATE_VIDEO_STAGE_IDS.remakeScript;
+        startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.remakeScript);
+        const remade = await timedStep(
+          'Remake kịch bản + đọc giọng',
+          () =>
+            channelVideoRemakeService.autoRemakeFolder(path.dirname(srtPath), srtPath, remakeAuto, {
+              log: message => log.info(message),
+              onRemakeDone: () => {
+                completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.remakeScript);
+                activeStageId = CREATE_VIDEO_STAGE_IDS.narration;
+                startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.narration);
+              },
+            }),
+          stepTimer,
+        );
+        completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.narration);
+        log.ok(`Narration → ${remade.subtitlePath}`);
+        ctx.subtitlePath = remade.subtitlePath;
+      } else if (shouldUpdateTranscript) {
         activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
         startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
         updatedSrtPath = await runUpdateTranscript(srtPath, destination.language, log, stepTimer);
@@ -1040,6 +1088,8 @@ export class ReupAudioPipeline {
 
         ctx.subtitlePath = updatedSrtPath;
         ctx.workDir = path.dirname(updatedSrtPath);
+      } else {
+        ctx.subtitlePath = await finalizeCleanTranscript(srtPath, log);
       }
 
       if (isRenderable) {

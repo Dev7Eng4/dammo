@@ -20,6 +20,7 @@ import { isAiSceneVideoType } from '../modules/youtube-channels/youtube-channels
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import { resolveChannelAvatarForVideoAssembly } from '../modules/youtube-channels/resolve-channel-avatar.js';
 import { formatElapsedMs } from '../shared/timing/step-timer.js';
+import { isReupAudioFamilyType } from '../modules/youtube-channels/youtube-channels.types.js';
 
 const AUDIO_FILE = 'audio.mp3';
 const SUBTITLE_FILES = ['transcript.srt', 'transcript-updated.srt'];
@@ -83,7 +84,7 @@ async function main() {
     throw new Error(`Không tìm thấy channel ${channelId}`);
   }
 
-  const videoType = channel.type === 'reup_audio' ? channel.reupAudioVideoType : 'si';
+  const videoType = isReupAudioFamilyType(channel.type) ? channel.reupAudioVideoType : 'si';
   if (!videoType) {
     throw new Error(`Channel ${channel.name} là reup_audio nhưng thiếu reupAudioVideoType`);
   }

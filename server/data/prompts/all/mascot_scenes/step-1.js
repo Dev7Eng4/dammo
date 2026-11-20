@@ -29,7 +29,7 @@ Hiệu ứng cảm xúc theo phong cách mascot:
 ${list(mascot.effects)}
 Không bao giờ vẽ:
 ${list(mascot.avoid)}
-Người khác trong cảnh: ${mascot.supportingCastRule || 'cùng kiểu nhân vật và phong cách với mascot, phân biệt bằng một phụ kiện hoặc màu áo; không bao giờ là người thật.'}
+Gợi ý cho người khác trong cảnh (chỉ lấy phần phong cách nét vẽ; nếu mâu thuẫn thì luật ở mục 2 được ưu tiên): ${mascot.supportingCastRule || 'vẽ cùng phong cách nét vẽ với mascot nhưng là nhân vật khác hẳn; không bao giờ là người thật.'}
 
 ====================================================
 1. CHIA CẢNH
@@ -49,14 +49,18 @@ Người khác trong cảnh: ${mascot.supportingCastRule || 'cùng kiểu nhân 
   * 1 tư thế/hành động cụ thể (ưu tiên danh sách tư thế, có thể tạo tư thế mới hợp với cơ thể mascot).
   * Hiệu ứng cảm xúc nếu hợp (không bắt buộc).
 - Đổi biểu cảm và tư thế giữa các cảnh liền kề, không lặp cùng một kiểu nhiều cảnh liên tiếp.
-- Mỗi cảnh tối đa 3 nhân vật. Người khác vẽ theo quy tắc "Người khác trong cảnh"; tuyệt đối không có người thật, ảnh chụp hay nhân vật anime chi tiết.
+- CHỈ MỘT nhân vật trong cảnh là mascot (nhân vật mở đầu bằng IDENTITY PHRASE). Mascot không bao giờ xuất hiện 2 lần trong cùng một cảnh, và ảnh tham chiếu chỉ dùng cho nhân vật này.
+- Người khác (vợ/chồng, bạn bè, con cháu, hàng xóm, bác sĩ...) là nhân vật KHÁC HẲN mascot: khác tuổi hoặc giới tính, khác khuôn mặt, kiểu tóc, dáng người và quần áo. Ví dụ mascot là ông cụ thì người khác là bà cụ tóc bạc búi gọn, đứa cháu nhỏ, hoặc một ông cụ khác (râu bạc, mặt tròn hơn, đội mũ, áo màu khác). Họ được vẽ cùng phong cách nét vẽ (STYLE) nhưng KHÔNG được là bản sao hay "anh em sinh đôi" của mascot.
+- Tả mỗi người khác bằng một cụm riêng, cụ thể (tuổi, giới tính, tóc, khuôn mặt, quần áo), ví dụ "a different elderly woman with a silver hair bun, round cheeks and a green apron". KHÔNG dùng cho họ các cụm "same design family", "same character", "similar to the mascot", "another mascot", "copy of".
+- Mỗi cảnh tối đa 3 nhân vật; tuyệt đối không có người thật, ảnh chụp hay nhân vật anime chi tiết.
 - Cảnh KHÔNG có mascot (ẩn dụ đồ vật, cận cảnh đạo cụ, phong cảnh): KHÔNG dùng từ "mascot" trong prompt, vẫn vẽ theo đúng STYLE.
 
 ====================================================
 3. HÌNH ẢNH
 ====================================================
 - Bám sát niche để chọn bối cảnh, đạo cụ và ẩn dụ. Câu thoại trừu tượng (triết lý, số liệu, lời khuyên) → tạo ẩn dụ thị giác rõ ràng, có mascot tương tác với ẩn dụ đó (ví dụ mascot kéo một cái cân, đứng trước hai cánh cửa, ôm một chiếc đồng hồ cát lớn), không chỉ là "mascot đứng nói".
-- Bố cục đơn giản, một ý chính mỗi cảnh, nền sạch và ít chi tiết như phong cách của mascot, chừa khoảng trống.
+- Bố cục đơn giản, một ý chính mỗi cảnh, nền sạch và ít chi tiết như phong cách của mascot.
+- Ảnh dùng TOÀN BỘ khung hình: nội dung trải kín từ trên xuống dưới, KHÔNG chừa dải trống, dải màu trơn hay khoảng trống cho phụ đề ở bất kỳ cạnh nào. KHÔNG viết các cụm như "bottom third kept clear", "empty top space", "space for subtitles", "copy space".
 - Luân phiên góc máy giữa các cảnh liền kề: close-up biểu cảm, medium shot, wide shot thấy mascot nhỏ giữa không gian, góc thấp, góc từ trên xuống.
 - Không có chữ, số, bong bóng thoại hay ký hiệu viết trong ảnh.
 - KHÔNG dùng các từ: realistic, photorealistic, 8k, cinematic photo, trending on ArtStation, highly detailed skin.
@@ -66,7 +70,7 @@ Người khác trong cảnh: ${mascot.supportingCastRule || 'cùng kiểu nhân 
 ====================================================
 [IDENTITY PHRASE nếu có mascot] + [biểu cảm] + [tư thế/hành động, tương tác, đạo cụ] + [bối cảnh đơn giản] + [góc máy] + [ánh sáng/không khí] + [STYLE] + "single illustration, one scene, no text, no character sheet, no multiple poses of the same character"
 
-Ví dụ: "${identity}, eyes squeezed shut with blue tears streaming down, sitting alone hugging its knees on a small bench under a single street lamp at night, simple empty street background, wide shot with lots of empty space, soft dim lamp light, ${styleRule}, single illustration, one scene, no text, no character sheet, no multiple poses of the same character"
+Ví dụ: "${identity}, eyes squeezed shut with blue tears streaming down, sitting alone hugging its knees on a small bench under a single street lamp at night, simple empty street background, wide shot, soft dim lamp light, ${styleRule}, single illustration, one scene, no text, no character sheet, no multiple poses of the same character"
 
 ====================================================
 OUTPUT

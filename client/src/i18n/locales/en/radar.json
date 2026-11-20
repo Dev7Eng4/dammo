@@ -55,5 +55,33 @@
   "unit": {
     "hours": "{{value}} h",
     "days": "{{value}} d"
+  },
+  "tabs": {
+    "trends": "Trend hunt (K1–K11)",
+    "channels": "Source channels"
+  },
+  "trends": {
+    "subtitle": "Hot videos in the Japanese psychology niche found by the trend brain or the jp-psy-trends skill, tagged by cluster K1–K11.",
+    "intro": "Saved by the jp-psy-trends brain (Brains page) or the jp-psy-trends Claude Code skill. Numbers are as of capture.",
+    "lastRun": "Last run",
+    "openBrain": "Open brain",
+    "seenWithin": "Seen within",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "allClusters": "All",
+    "chipTitle": "Top {{top}} views/hour",
+    "heat": "Heat",
+    "cluster": "Cluster",
+    "channel": "Channel",
+    "ratio": "× channel",
+    "source": "Source",
+    "offNiche": "Off niche",
+    "untagged": "Untagged",
+    "from": {
+      "brain": "Brain",
+      "skill": "Skill",
+      "unknown": "—"
+    },
+    "empty": "No data yet. Run the Japanese psychology trend brain on the Brains page, or type \"trends\" in Claude Code and save the result."
   }
 }

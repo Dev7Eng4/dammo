@@ -6,11 +6,11 @@ import type { LlmBrowserResponse, LlmTextProvider } from '../../modules/llm-brow
 import type { ChromeProfile } from '../../modules/chrome-profiles/chrome-profiles.types.js';
 import { chromeProfilesService } from '../../modules/chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../modules/llm-browser/text/text.service.js';
-import { promptsSettingsService } from '../../modules/prompts/prompts-settings.service.js';
 import { extractJsonText } from '../../modules/video-production/shared/meta/meta-response.js';
 import { data } from './input.js';
 import { prompt as promptStep1 } from './prompts/whatIfOneStep1.js';
 import { prompt as promptStep2 } from './prompts/whatIfOneStep2.js';
+import { contentTaskProvider, pickContentTaskProfiles } from '../../modules/prompts/content-task.js';
 
 const MAX_CONCURRENT_PROFILES = 5;
 const MAX_RETRIES = 3;
@@ -141,12 +141,11 @@ export async function generateWhatIfPrompts(
   }
 
   const total = items.length;
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const workerCount = Math.min(MAX_CONCURRENT_PROFILES, total);
-  const profiles = chromeProfilesService.pickSubProfiles(workerCount);
+  const provider = contentTaskProvider('content');
+  const profiles = pickContentTaskProfiles('content', Math.min(MAX_CONCURRENT_PROFILES, total), provider);
 
   console.log(
-    `[whatif] Mở ${workerCount} Chrome profile cho ${total} item (${profiles.map(p => p.name).join(', ')})...`,
+    `[whatif] Mở ${profiles.length} Chrome profile cho ${total} item (${profiles.map(p => p.name).join(', ')})...`,
   );
 
   const results: WhatIfPromptResult[] = new Array(total);
@@ -172,7 +171,7 @@ export async function generateWhatIfPrompts(
 
     await Promise.all(profiles.map(workerProfile));
   } finally {
-    await chromeProfilesService.closeAllSubProfiles();
+    await chromeProfilesService.closeProfiles(profiles.map(profile => profile.id));
   }
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true });

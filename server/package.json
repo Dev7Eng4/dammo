@@ -7,7 +7,6 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "chrome:verify": "tsx src/infrastructure/chrome/verify-chrome.ts",
-    "chrome-profiles:reset-subs": "tsx src/scripts/reset-sub-profiles.ts",
     "download:video": "tsx src/scripts/download-video.ts",
     "download:audio": "tsx src/scripts/download-audio.ts",
     "download:transcript": "tsx src/scripts/download-transcript.ts",
@@ -34,13 +33,15 @@
     "prepare:si-local-stock": "tsx src/scripts/prepare-si-local-stock.ts",
     "create:thumbnail": "tsx src/scripts/create-thumbnail.ts",
     "test:flow-thumbnail": "tsx src/scripts/test-flow-thumbnail.ts",
+    "test:claude-chat": "tsx src/scripts/test-claude-chat.ts",
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts",
     "flow:generate-tool-images": "tsx src/scripts/generate-flow-tool-images.ts",
     "meta:generate-videos": "tsx src/scripts/generate-meta-videos.ts",
     "slideshow:demo": "tsx src/scripts/create-slideshow.ts",
     "assemble:short-card": "tsx src/scripts/assemble-short-card.ts",
     "whatif:generate-prompts": "tsx src/remotion/whatif/generate-prompts.ts",
-    "whatif:generate-images": "tsx src/remotion/whatif/generate-images.ts"
+    "whatif:generate-images": "tsx src/remotion/whatif/generate-images.ts",
+    "trends": "tsx src/scripts/trend-scan.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

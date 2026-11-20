@@ -1,14 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, uploadAsset, type PrepareKeyColor } from '../api/assets';
+import { assetFileUrl, deleteAssets, fetchAssets, prepareAssetColor, removeAssetWatermark, renameAsset, uploadAsset, type PrepareKeyColor } from '../api/assets';
 import { PageHeader, PageShell } from '../components/layout';
 import { CelebritiesPanel } from '../components/celebrities/CelebritiesPanel';
 import { SmallVideoPanel } from '../components/small-video-groups/SmallVideoPanel';
-import { Button, DataTable, Modal, PageTabs, useToast } from '../components/ui';
+import { Button, DataTable, Input, Modal, PageTabs, useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
 import type { AssetFileItem, AssetKind } from '../types/asset';
-import { Image } from 'lucide-react';
+import { Eraser, Image, Loader2, Pencil } from 'lucide-react';
 
 const TAB_KINDS: { kind: AssetKind; accept: string }[] = [
   { kind: 'audioBar', accept: '.mp4,.mov,video/mp4,video/quicktime' },
@@ -82,6 +82,10 @@ export function AssetsPage() {
   const [preparingItems, setPreparingItems] = useState<Set<string>>(() => new Set());
   const [prepareColorTarget, setPrepareColorTarget] = useState<string | null>(null);
   const [prepareKeyColor, setPrepareKeyColor] = useState<PrepareKeyColor>('green');
+  const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [removingWatermark, setRemovingWatermark] = useState<Set<string>>(() => new Set());
 
   const isCelebritiesTab = activeTabId === 'celebrities';
   const isPanelTab = isCelebritiesTab;
@@ -189,6 +193,60 @@ export function AssetsPage() {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(items.map(item => item.name)));
+    }
+  }
+
+  function splitExt(name: string): { stem: string; ext: string } {
+    const dot = name.lastIndexOf('.');
+    return dot > 0 ? { stem: name.slice(0, dot), ext: name.slice(dot) } : { stem: name, ext: '' };
+  }
+
+  function openRename(name: string) {
+    setRenameTarget(name);
+    setRenameValue(splitExt(name).stem);
+  }
+
+  async function handleRename() {
+    if (!renameTarget) return;
+    const stem = renameValue.trim();
+    if (!stem) return;
+    const nextName = `${stem}${splitExt(renameTarget).ext}`;
+    if (nextName === renameTarget) {
+      setRenameTarget(null);
+      return;
+    }
+    setRenaming(true);
+    try {
+      const { item } = await renameAsset(activeKind, renameTarget, nextName);
+      setItems(prev =>
+        prev
+          .map(it => (it.name === renameTarget ? { ...it, ...item } : it))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setRenameTarget(null);
+      toast.success(t('assets.toast.renamed', { name: item.name }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('assets.toast.renameError'));
+    } finally {
+      setRenaming(false);
+    }
+  }
+
+  async function handleRemoveWatermark(name: string) {
+    if (removingWatermark.has(name)) return;
+    setRemovingWatermark(prev => new Set(prev).add(name));
+    try {
+      const { item } = await removeAssetWatermark(activeKind, name);
+      setItems(prev => prev.map(it => (it.name === name ? { ...it, ...item } : it)));
+      toast.success(t('assets.toast.watermarkRemoved', { name }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('assets.toast.watermarkError'));
+    } finally {
+      setRemovingWatermark(prev => {
+        const next = new Set(prev);
+        next.delete(name);
+        return next;
+      });
     }
   }
 
@@ -326,7 +384,9 @@ export function AssetsPage() {
           ) : (
             <div className='grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8'>
               {items.map(item => {
-                const src = assetFileUrl(activeKind, item.name);
+                // updatedAt busts the browser cache after the file is rewritten (e.g. watermark removed).
+                const src = `${assetFileUrl(activeKind, item.name)}?v=${encodeURIComponent(item.updatedAt)}`;
+                const removing = removingWatermark.has(item.name);
                 return (
                   <div key={item.name} className='group overflow-hidden rounded-xl border-2 border-neutral-800 transition hover:border-neutral-600'>
                     <div className='relative aspect-square w-full bg-neutral-950'>
@@ -347,7 +407,16 @@ export function AssetsPage() {
                           tabIndex={-1}
                         />
                       )}
-                      <div className='pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
+                      {removing ? (
+                        <div
+                          className='absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-black/65 text-[11px] text-neutral-100'
+                          title={t('assets.removingWatermark')}
+                        >
+                          <Loader2 className='size-5 animate-spin' />
+                          {t('assets.removingWatermark')}
+                        </div>
+                      ) : null}
+                      <div className='pointer-events-none absolute inset-0 flex flex-wrap content-center items-center justify-center gap-1 bg-black/55 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100'>
                         <button
                           type='button'
                           title={t('assets.view')}
@@ -372,6 +441,28 @@ export function AssetsPage() {
                             ) : (
                               <PaletteIcon className='size-4' />
                             )}
+                          </button>
+                        )}
+                        {isImageKind && (
+                          <button
+                            type='button'
+                            title={t('assets.removeWatermark')}
+                            aria-label={t('assets.removeWatermark')}
+                            className='rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800 disabled:opacity-50'
+                            disabled={removing}
+                            onClick={() => void handleRemoveWatermark(item.name)}
+                          >
+                            <Eraser className='size-4' />
+                          </button>
+                        )}
+                        {isImageKind && (
+                          <button
+                            type='button'
+                            title={t('assets.rename')}
+                            className='rounded-full bg-neutral-900/90 p-2 text-neutral-100 hover:bg-neutral-800'
+                            onClick={() => openRename(item.name)}
+                          >
+                            <Pencil className='size-4' />
                           </button>
                         )}
                         <button
@@ -474,6 +565,55 @@ export function AssetsPage() {
             </span>
           </label>
         </div>
+      </Modal>
+
+      <Modal
+        open={renameTarget != null}
+        onClose={renaming ? () => undefined : () => setRenameTarget(null)}
+        title={t('assets.renameTitle')}
+        footer={
+          <>
+            <Button
+              variant='outlined'
+              size='sm'
+              className='rounded-lg'
+              disabled={renaming}
+              onClick={() => setRenameTarget(null)}
+            >
+              {t('common:actions.cancel')}
+            </Button>
+            <Button
+              size='sm'
+              className='rounded-lg'
+              disabled={renaming || !renameValue.trim()}
+              onClick={() => void handleRename()}
+            >
+              {t('common:actions.save')}
+            </Button>
+          </>
+        }
+      >
+        <form
+          className='space-y-2'
+          onSubmit={e => {
+            e.preventDefault();
+            void handleRename();
+          }}
+        >
+          <label className='block text-sm text-neutral-300' htmlFor='asset-rename-input'>
+            {t('assets.renameLabel')}
+          </label>
+          <Input
+            id='asset-rename-input'
+            autoFocus
+            value={renameValue}
+            disabled={renaming}
+            onChange={e => setRenameValue(e.target.value)}
+          />
+          <p className='text-xs text-neutral-500'>
+            {t('assets.renameHint', { ext: renameTarget ? splitExt(renameTarget).ext : '' })}
+          </p>
+        </form>
       </Modal>
 
       <Modal

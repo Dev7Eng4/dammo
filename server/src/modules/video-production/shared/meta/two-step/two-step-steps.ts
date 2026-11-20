@@ -1,10 +1,10 @@
+import { pickMetadataChromeProfile } from '../metadata-chrome-profile.js';
 import { writeFile } from 'node:fs/promises';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../../llm-browser/text/text.service.js';
 import { executePromptTemplate } from '../../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../../prompts/prompts.repository.js';
-import { promptsSettingsService } from '../../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
@@ -16,6 +16,7 @@ import {
 import { persistLlmParseFailure } from '../persist-llm-failure.js';
 import type { TwoStepNicheConfig } from './two-step-niche.config.js';
 import { parseTwoStepStep1Response, parseTwoStepStep2Response } from './two-step-response.js';
+import { contentTaskProvider } from '../../../../prompts/content-task.js';
 
 const MAX_RETRIES = 3;
 
@@ -199,8 +200,8 @@ export async function withTwoStepLlmSession<T>(
   config: TwoStepNicheConfig,
   fn: (session: MetaLlmSession) => Promise<T>,
 ): Promise<T> {
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const profile = chromeProfilesService.pickSubProfile();
+  const provider = contentTaskProvider('metadata');
+  const profile = pickMetadataChromeProfile();
 
   console.log(`[${config.logLabel}-metadata] open Chrome profile ${profile.name}`);
 
@@ -208,6 +209,6 @@ export async function withTwoStepLlmSession<T>(
     await llmBrowserService.open(profile.id, provider);
     return await fn({ profileId: profile.id, profileName: profile.name, provider });
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }

@@ -1,11 +1,11 @@
-export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
+export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale' | 'remake_video';
 
 /** @deprecated Legacy persisted value; mapped to reup_video in forms */
 export type LegacyYoutubeChannelType = 'reup';
 
 export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannelType;
 
-export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video';
+export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video' | 'remake_video';
 
 export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video';
 
@@ -70,15 +70,19 @@ export function encodeSmallVideoGroupSelection(groupId: string): string {
 }
 
 export function isReupYoutubeChannelType(type: YoutubeChannelType | ''): type is ReupYoutubeChannelType {
-  return type === 'reup_audio' || type === 'reup_video';
+  return isReupAudioChannelType(type) || type === 'reup_video';
 }
 
-export function isReupAudioChannelType(type: YoutubeChannelType | ''): type is 'reup_audio' {
-  return type === 'reup_audio';
+/**
+ * Types configured and produced like Reup audio. `remake_video` is the same pipeline under its own
+ * label, for channels whose videos are remade step by step on the Video production page.
+ */
+export function isReupAudioChannelType(type: StoredYoutubeChannelType | ''): type is 'reup_audio' | 'remake_video' {
+  return type === 'reup_audio' || type === 'remake_video';
 }
 
 export function isStoredReupChannelType(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+  return isReupAudioChannelType(type) || type === 'reup_video' || type === 'reup';
 }
 
 export type YoutubeChannelLanguage = 'en' | 'ko' | 'ja' | 'es';
@@ -146,6 +150,12 @@ export interface YoutubeChannel {
   linkedEmail: string;
   uploadSchedule: string[];
   sourceChannels: string[];
+  /** `trend_brain` = videos come from the trend brain's hot list instead of the source channels. */
+  sourceMode?: SourceMode;
+  /** trend_brain only: K-clusters to take videos from (empty = all). */
+  trendClusters?: string[];
+  /** remake_video only: auto script remake + VOICEVOX narration when preparing videos (missing = on, defaults). */
+  remakeAuto?: RemakeAutoConfig;
   /** Oldest unprocessed first vs newest first when creating/preparing videos */
   videoCreationOrder?: VideoCreationOrder;
   contentProjectId: string;
@@ -216,6 +226,7 @@ export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType | 'reup', st
   reup_audio: 'Đăng lại âm thanh',
   reup_video: 'Đăng lại video',
   content_sale: 'Bán nội dung',
+  remake_video: 'Remake video',
   reup: 'Đăng lại',
 };
 export type YoutubeMonetizationFilter = 'all' | MonetizationStatus;
@@ -451,6 +462,9 @@ export interface CreateYoutubeChannelPayload {
   language: YoutubeChannelLanguage;
   niche: string;
   sourceChannels?: string[];
+  sourceMode?: SourceMode;
+  trendClusters?: string[];
+  remakeAuto?: RemakeAutoConfig;
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;
@@ -489,6 +503,18 @@ export type UpdateYoutubeChannelPayload = Omit<
   channelUrl?: string;
 };
 
+/** Where reup videos come from: fixed source channels, or the trend brain's hot videos. */
+export type SourceMode = 'channels' | 'trend_brain';
+
+/** remake_video: auto remake + narration settings; unset fields follow Settings. */
+export interface RemakeAutoConfig {
+  enabled?: boolean;
+  provider?: 'gpt' | 'gemini' | 'claude';
+  promptSetId?: string;
+  voicePresetId?: string;
+  speedScale?: number;
+}
+
 export interface AddYoutubeChannelFormValues {
   mailAccountId: string;
   channelUrl: string;
@@ -496,6 +522,14 @@ export interface AddYoutubeChannelFormValues {
   language: YoutubeChannelLanguage | '';
   niche: string;
   sourceChannels: string[];
+  sourceMode: SourceMode;
+  trendClusters: string[];
+  remakeAutoEnabled: boolean;
+  remakeProvider: '' | 'gpt' | 'gemini' | 'claude';
+  remakePromptSetId: string;
+  remakeVoicePresetId: string;
+  /** Select value, e.g. "1" or "1.1". */
+  remakeSpeedScale: string;
   videoCreationOrder: VideoCreationOrder;
   backgroundFootageSources: string[];
   thumbnailStyleKey: string;
@@ -509,8 +543,6 @@ export interface AddYoutubeChannelFormValues {
   useReferenceImage: boolean;
   audioBarFile: string;
   showChannelAvatar: boolean;
-  /** '' = off, otherwise the candidate count. */
-  mascotThumbnailCandidates: string;
   showSubscribe: boolean;
   subscribeFile: string;
   smallVideoFile: string;

@@ -6,6 +6,7 @@ import {
 import { CAPTION_STYLE_KEYS } from '../video-production/shared/render-core/caption-styles.js';
 import { getPublishTimeSlotCount } from './upload-schedule.js';
 import { isAiSceneVideoType } from './youtube-channels.types.js';
+import { isReupAudioFamilyType } from './youtube-channels.types.js';
 
 const uploadFrequencySchema = z.enum([
   'every_5_days',
@@ -18,7 +19,7 @@ const uploadFrequencySchema = z.enum([
 
 const publishTimeSchema = z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format');
 
-const youtubeChannelTypeSchema = z.enum(['content', 'reup_audio', 'reup_video', 'content_sale']);
+const youtubeChannelTypeSchema = z.enum(['content', 'reup_audio', 'reup_video', 'content_sale', 'remake_video']);
 
 const channelLanguageSchema = z.enum(['en', 'ko', 'ja', 'es']);
 
@@ -28,6 +29,17 @@ const channelConfigFields = {
   language: channelLanguageSchema,
   niche: z.string().default(''),
   sourceChannels: z.array(z.string().min(1)).optional(),
+  sourceMode: z.enum(['channels', 'trend_brain']).optional(),
+  trendClusters: z.array(z.string().regex(/^K\d{1,2}$/)).max(11).optional(),
+  remakeAuto: z
+    .object({
+      enabled: z.boolean().optional(),
+      provider: z.enum(['gpt', 'gemini', 'claude']).optional(),
+      promptSetId: z.string().min(1).max(200).optional(),
+      voicePresetId: z.string().min(1).max(200).optional(),
+      speedScale: z.number().min(0.7).max(1.5).optional(),
+    })
+    .optional(),
   videoCreationOrder: z
     .enum(['oldest_first', 'newest_first', 'lowest_views_first', 'shortest_duration_first'])
     .optional(),
@@ -65,13 +77,14 @@ const channelConfigFields = {
 };
 
 function isReupChannelType(type: z.infer<typeof youtubeChannelTypeSchema>): boolean {
-  return type === 'reup_audio' || type === 'reup_video';
+  return isReupAudioFamilyType(type) || type === 'reup_video';
 }
 
 function applyChannelConfigRefine(
   data: {
     type: z.infer<typeof youtubeChannelTypeSchema>;
     sourceChannels?: string[];
+    sourceMode?: 'channels' | 'trend_brain';
     thumbnailStyleKey?: string;
     reupAudioVideoType?: z.infer<typeof channelConfigFields.reupAudioVideoType>;
     reupAudioVisualStyleId?: string;
@@ -83,7 +96,7 @@ function applyChannelConfigRefine(
   },
   ctx: z.RefinementCtx,
 ) {
-  if (isReupChannelType(data.type)) {
+  if (isReupChannelType(data.type) && data.sourceMode !== 'trend_brain') {
     if (!data.sourceChannels?.length) {
       ctx.addIssue({
         code: 'custom',
@@ -93,7 +106,7 @@ function applyChannelConfigRefine(
     }
   }
 
-  if (data.type === 'reup_audio') {
+  if (isReupAudioFamilyType(data.type)) {
     if (!data.reupAudioVideoType) {
       ctx.addIssue({
         code: 'custom',

@@ -7,6 +7,7 @@ import { useAbortableEffect } from '../../hooks'
 import type { YoutubeChannel } from '../../types/youtubeChannel'
 import type { VideoAgentRun, VoicevoxStatus } from '../../types/videoAgent'
 import { Button, Input, Select, Switch, Textarea, useToast } from '../ui'
+import { isReupAudioChannelType } from '../../types/youtubeChannel'
 
 const SPEED_OPTIONS = ['0.9', '1', '1.1', '1.2']
 
@@ -30,7 +31,7 @@ export function NewRunForm({ voicevox, onCreated, onClose }: NewRunFormProps) {
 
   useAbortableEffect(async (signal) => {
     const res = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal })
-    setChannels(res.items.filter((channel) => channel.type === 'reup_audio'))
+    setChannels(res.items.filter((channel) => isReupAudioChannelType(channel.type)))
   }, [])
 
   const channelOptions = channels.map((channel) => ({

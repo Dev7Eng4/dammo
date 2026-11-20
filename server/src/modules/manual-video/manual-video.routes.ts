@@ -4,7 +4,7 @@ import { Readable } from 'node:stream';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { downloadsRoot } from './manual-video.library.js';
+import { customNarrationVoiceSchema } from '../voice/voice.schema.js';
 import { manualVideoService, scriptToText } from './manual-video.service.js';
 
 /** Byte-range streaming so the browser can seek inside long audio. */
@@ -37,13 +37,18 @@ const createSchema = z.object({
 const stepSchema = z.object({
   urls: z.array(z.string().min(1)).min(1).max(5).optional(),
   voicevoxSpeaker: z.number().int().min(0).optional(),
+  voiceProvider: z.enum(['voicevox', 'elevenlabs']).optional(),
+  /** Saved voice of `voiceProvider`; null clears it (back to the bare VOICEVOX speaker). */
+  voicePresetId: z.string().trim().min(1).max(100).nullable().optional(),
+  /** Settings for this run only; null clears them (back to the saved voice). */
+  voiceCustom: customNarrationVoiceSchema.nullable().optional(),
   speedScale: z.number().min(0.7).max(1.5).optional(),
 });
 
 const scriptSchema = z.object({ text: z.string().min(1).max(200_000) });
 
 const remakeSchema = z.object({
-  provider: z.enum(['gpt', 'gemini']).optional(),
+  provider: z.enum(['gpt', 'gemini', 'claude']).optional(),
   promptSetId: z.string().optional(),
   notes: z.string().max(4000).optional(),
 });
@@ -55,7 +60,6 @@ export function createManualVideoRoutes() {
 
   app.get('/storage', c => c.json({ root: manualVideoService.storageRoot() }));
 
-  app.get('/library', c => c.json({ root: manualVideoService.storageRoot(), downloadsRoot: downloadsRoot(), items: manualVideoService.library() }));
 
   app.get('/projects', c => c.json({ items: manualVideoService.list() }));
 
@@ -82,6 +86,26 @@ export function createManualVideoRoutes() {
   app.post('/projects/:id/steps/:step', zValidator('json', stepSchema), c => {
     const step = z.enum(['sources', 'voice', 'scenes', 'video']).parse(c.req.param('step'));
     return c.json(manualVideoService.runStep(c.req.param('id'), step, c.req.valid('json')), 202);
+  });
+
+  app.post('/projects/:id/metadata', c => c.json(manualVideoService.generateMetadata(c.req.param('id')), 202));
+
+  app.get('/projects/:id/metadata', c => c.json(manualVideoService.metadata(c.req.param('id'))));
+
+  app.put(
+    '/projects/:id/metadata',
+    zValidator(
+      'json',
+      z.object({ title: z.string().max(500), description: z.string().max(10_000), tags: z.array(z.string().max(200)).max(100) }),
+    ),
+    async c => c.json(await manualVideoService.saveMetadata(c.req.param('id'), c.req.valid('json'))),
+  );
+
+  app.get('/projects/:id/thumbnail', async c => {
+    const file = manualVideoService.thumbnailFile(c.req.param('id'));
+    return new Response(new Uint8Array(await fsp.readFile(file)), {
+      headers: { 'Content-Type': file.endsWith('.png') ? 'image/png' : 'image/jpeg', 'Cache-Control': 'private, max-age=31536000, immutable' },
+    });
   });
 
   app.get('/projects/:id/narration', async c => c.json({ narration: await manualVideoService.narration(c.req.param('id')) }));

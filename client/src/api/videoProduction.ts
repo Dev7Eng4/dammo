@@ -1,4 +1,5 @@
 import { API_V1 } from './config';
+import type { RemakeJob, RemakeProvider } from './scriptRemake';
 import { fetchJson, withSignal, type FetchOptions } from './http';
 import type {
   ProductionCharactersResponse,
@@ -168,4 +169,105 @@ export function uploadProductionCharacterImage(
     `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}/characters/${encodeURIComponent(characterId)}/image`,
     { method: 'POST', body: form },
   );
+}
+
+function videoBase(channelId: string, videoId: string): string {
+  return `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}`;
+}
+
+/** Source audio of the video, or the VOICEVOX narration once a remake channel replaced it. */
+export function productionAudioUrl(channelId: string, videoId: string, version = ''): string {
+  return `${videoBase(channelId, videoId)}/audio${version ? `?v=${encodeURIComponent(version)}` : ''}`;
+}
+
+export interface ChannelVideoVoice {
+  speaker: number;
+  speedScale: number;
+  durationSec: number;
+  at: string;
+}
+
+export interface ChannelVideoScript {
+  text: string;
+  chars: number;
+  remakeJobId?: string;
+  voice?: ChannelVideoVoice;
+  voiceJob?: { status: 'running' | 'done' | 'failed'; progress?: string; error?: string };
+  sourceReplaced: boolean;
+}
+
+export function fetchChannelVideoScript(channelId: string, videoId: string, options?: FetchOptions) {
+  return fetchJson<ChannelVideoScript>(`${videoBase(channelId, videoId)}/script`, withSignal(undefined, options));
+}
+
+function sendJson<T>(url: string, method: 'POST' | 'PUT', body: unknown) {
+  return fetchJson<T>(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+export function saveChannelVideoScript(channelId: string, videoId: string, text: string) {
+  return sendJson<ChannelVideoScript>(`${videoBase(channelId, videoId)}/script`, 'PUT', { text });
+}
+
+export function startChannelVideoRemake(
+  channelId: string,
+  videoId: string,
+  body: { provider?: RemakeProvider; promptSetId?: string; notes?: string },
+) {
+  return sendJson<RemakeJob>(`${videoBase(channelId, videoId)}/script/remake`, 'POST', body);
+}
+
+export function importChannelVideoRemake(channelId: string, videoId: string, jobId?: string) {
+  return sendJson<ChannelVideoScript>(`${videoBase(channelId, videoId)}/script/import-remake`, 'POST', { jobId });
+}
+
+export function startChannelVideoVoice(channelId: string, videoId: string, body: { speaker: number; speedScale: number }) {
+  return sendJson<ChannelVideoScript>(`${videoBase(channelId, videoId)}/voice`, 'POST', body);
+}
+
+/** Ảnh → video for a channel video: scene list with clip status, plus the background job. */
+export interface ChannelVideoMotionState {
+  motionDefault: 'intro' | 'full' | 'scenes' | 'none';
+  scenes: import('./manualVideo').ManualSceneItem[];
+  job: { status: 'running' | 'done' | 'failed'; message?: string; error?: string } | null;
+}
+
+function productionVideoBase(channelId: string, videoId: string): string {
+  return `${API_V1}/video-production/videos/${encodeURIComponent(channelId)}/${encodeURIComponent(videoId)}`;
+}
+
+export function fetchChannelVideoMotion(channelId: string, videoId: string, options?: FetchOptions) {
+  return fetchJson<ChannelVideoMotionState>(`${productionVideoBase(channelId, videoId)}/motion`, withSignal(undefined, options));
+}
+
+export function generateChannelVideoClips(
+  channelId: string,
+  videoId: string,
+  mode: 'intro' | 'full' | 'scenes',
+  indexes?: number[],
+) {
+  return fetchJson<ChannelVideoMotionState>(`${productionVideoBase(channelId, videoId)}/motion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode, indexes }),
+  });
+}
+
+export function removeChannelVideoClip(channelId: string, videoId: string, index: number) {
+  return fetchJson<ChannelVideoMotionState>(`${productionVideoBase(channelId, videoId)}/motion/${index}`, { method: 'DELETE' });
+}
+
+export function channelVideoSceneClipUrl(
+  channelId: string,
+  videoId: string,
+  scene: { index: number; clipVersion: number },
+): string {
+  return `${productionVideoBase(channelId, videoId)}/scenes/${scene.index}/clip?v=${scene.clipVersion}`;
+}
+
+export function channelVideoSceneImageUrl(
+  channelId: string,
+  videoId: string,
+  scene: { index: number; imageVersion: number },
+): string {
+  return `${productionVideoBase(channelId, videoId)}/scenes/${scene.index}/image?v=${scene.imageVersion}`;
 }

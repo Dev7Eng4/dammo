@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { Settings } from 'lucide-react'
 import { fetchAppSettings, updateAppSettings } from '../api/appSettings'
 import { PageHeader, PageShell } from '../components/layout'
-import { Button, Input, PageTabs, Select, Switch, useToast } from '../components/ui'
+import { Button, Input, PageTabs, Switch, useToast } from '../components/ui'
 import { useAbortableEffect } from '../hooks'
-import type { AppSettings, AiScenePromptChromeProfileRole, SettingsTab } from '../types/appSettings'
+import { SETTINGS_TABS, type AppSettings, type SettingsTab } from '../types/appSettings'
 import { DEFAULT_AI_SCENE_DENSITY_MAX_SEC } from '../types/youtubeChannel'
+import { ProviderDefaultsSection } from '../components/settings/ProviderDefaultsSection'
+import { VoiceSettingsSection } from '../components/settings/VoiceSettingsSection'
 
 const DEFAULT_WATERMARK_PROMPT =
   'Xóa watermark (dấu sao) góc phải, giữ nguyên hình ảnh và text. Chỉ trả 1 ảnh duy nhất'
@@ -19,12 +22,13 @@ const EMPTY_SETTINGS: AppSettings = {
   aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
-  aiScenePromptChromeProfileRole: 'main',
   aiScenePromptConcurrency: 1,
   seedingEmailDays: 5,
   seedingYoutubeDays: 3,
   removeGeminiWatermark: false,
   removeGeminiWatermarkPrompt: DEFAULT_WATERMARK_PROMPT,
+  enableUpdateTranscript: true,
+  disabledUpdateTranscript: true,
 }
 
 function clampDays(value: unknown, fallback: number): number {
@@ -63,13 +67,20 @@ function SettingSwitch({
 export function SettingsPage() {
   const { t } = useTranslation('factory')
   const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState<SettingsTab>('video-ai')
+  // Other pages link to a tab with ?tab= (e.g. the Prompt playground → chrome).
+  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    const requested = searchParams.get('tab')
+    return SETTINGS_TABS.includes(requested as SettingsTab) ? (requested as SettingsTab) : 'video-ai'
+  })
   const [settings, setSettings] = useState<AppSettings>(EMPTY_SETTINGS)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const tabs: Array<{ id: SettingsTab; label: string }> = [
+    { id: 'ai-tools', label: t('settings.tab.aiTools') },
+    { id: 'voice', label: t('settings.tab.voice') },
     { id: 'video-ai', label: t('settings.tab.videoAi') },
     { id: 'chrome', label: t('settings.tab.chrome') },
     { id: 'video', label: t('settings.tab.video') },
@@ -89,8 +100,6 @@ export function SettingsPage() {
             ...EMPTY_SETTINGS.aiSceneDensityMaxSec,
             ...item.aiSceneDensityMaxSec,
           },
-          aiScenePromptChromeProfileRole:
-            item.aiScenePromptChromeProfileRole === 'sub' ? 'sub' : 'main',
           aiScenePromptConcurrency: Math.min(
             8,
             Math.max(1, Math.round(Number(item.aiScenePromptConcurrency)) || 1),
@@ -99,6 +108,10 @@ export function SettingsPage() {
           seedingYoutubeDays: clampDays(item.seedingYoutubeDays, EMPTY_SETTINGS.seedingYoutubeDays),
           removeGeminiWatermarkPrompt:
             item.removeGeminiWatermarkPrompt?.trim() || DEFAULT_WATERMARK_PROMPT,
+          enableUpdateTranscript:
+            item.enableUpdateTranscript ?? item.disabledUpdateTranscript ?? EMPTY_SETTINGS.enableUpdateTranscript,
+          disabledUpdateTranscript:
+            item.disabledUpdateTranscript ?? item.enableUpdateTranscript ?? EMPTY_SETTINGS.disabledUpdateTranscript,
         })
       }
     } catch (err) {
@@ -129,7 +142,6 @@ export function SettingsPage() {
           Math.max(1, Math.round(Number(settings.taskQueueConcurrency)) || 1),
         ),
         verboseVideoLogs: settings.verboseVideoLogs,
-        aiScenePromptChromeProfileRole: settings.aiScenePromptChromeProfileRole,
         aiScenePromptConcurrency: Math.min(
           8,
           Math.max(1, Math.round(Number(settings.aiScenePromptConcurrency)) || 1),
@@ -142,6 +154,8 @@ export function SettingsPage() {
         removeGeminiWatermark: settings.removeGeminiWatermark,
         removeGeminiWatermarkPrompt:
           settings.removeGeminiWatermarkPrompt.trim() || DEFAULT_WATERMARK_PROMPT,
+        enableUpdateTranscript: settings.enableUpdateTranscript,
+        disabledUpdateTranscript: settings.enableUpdateTranscript,
       })
       setSettings(item)
       toast.success(t('settings.toast.saved'))
@@ -166,7 +180,12 @@ export function SettingsPage() {
   /** Video tab: back to the 12/20/30s scene-density defaults. Other tabs: reload saved settings. */
   function handleReset() {
     if (activeTab === 'video') {
-      setSettings((prev) => ({ ...prev, aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC } }))
+      setSettings((prev) => ({
+        ...prev,
+        enableUpdateTranscript: EMPTY_SETTINGS.enableUpdateTranscript,
+        disabledUpdateTranscript: EMPTY_SETTINGS.disabledUpdateTranscript,
+        aiSceneDensityMaxSec: { ...DEFAULT_AI_SCENE_DENSITY_MAX_SEC },
+      }))
       return
     }
     setRefreshKey((k) => k + 1)
@@ -260,6 +279,18 @@ export function SettingsPage() {
             </section>
           ) : null}
 
+          {activeTab === 'ai-tools' ? (
+            <section className="space-y-3">
+              <ProviderDefaultsSection />
+            </section>
+          ) : null}
+
+          {activeTab === 'voice' ? (
+            <section className="space-y-3">
+              <VoiceSettingsSection />
+            </section>
+          ) : null}
+
           {activeTab === 'chrome' ? (
             <section className="space-y-3">
               <p className="text-sm text-muted-foreground">{t('settings.chrome.hint')}</p>
@@ -273,30 +304,6 @@ export function SettingsPage() {
                 }
                 disabled={saving}
               />
-              <div className="space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
-                <label htmlFor="scene-prompt-chrome-profile" className="text-sm font-medium text-foreground">
-                  {t('settings.scenePromptProfile')}
-                </label>
-                <p className="text-xs text-muted-foreground">{t('settings.scenePromptProfileDesc')}</p>
-                <Select
-                  id="scene-prompt-chrome-profile"
-                  disabled={saving || settings.aiScenePromptConcurrency > 1}
-                  value={settings.aiScenePromptChromeProfileRole}
-                  onChange={(value) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      aiScenePromptChromeProfileRole: value as AiScenePromptChromeProfileRole,
-                    }))
-                  }
-                  options={[
-                    { value: 'main', label: t('settings.scenePromptProfileMain') },
-                    { value: 'sub', label: t('settings.scenePromptProfileSub') },
-                  ]}
-                />
-                {settings.aiScenePromptConcurrency > 1 ? (
-                  <p className="text-xs text-muted-foreground">{t('settings.scenePromptProfileParallelHint')}</p>
-                ) : null}
-              </div>
               <label className="block max-w-xs space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
                 <span className="text-sm font-medium text-foreground">
                   {t('settings.scenePromptConcurrency')}
@@ -326,6 +333,20 @@ export function SettingsPage() {
 
           {activeTab === 'video' ? (
             <section className="space-y-3">
+              <SettingSwitch
+                id="enable-update-transcript"
+                label={t('settings.enableUpdateTranscript')}
+                description={t('settings.enableUpdateTranscriptDesc')}
+                checked={settings.enableUpdateTranscript}
+                onChange={(enableUpdateTranscript) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    enableUpdateTranscript,
+                    disabledUpdateTranscript: enableUpdateTranscript,
+                  }))
+                }
+                disabled={saving}
+              />
               <p className="text-sm text-muted-foreground">{t('settings.sceneDensity')}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <label className="block space-y-1.5">
@@ -462,6 +483,7 @@ export function SettingsPage() {
             </section>
           ) : null}
 
+          {activeTab === 'ai-tools' || activeTab === 'voice' ? null : (
           <div className="flex items-center gap-3 border-t border-border pt-4">
             <Button type="button" onClick={handleSave} disabled={saving || loading}>
               {saving ? t('settings.saving') : t('settings.save')}
@@ -475,6 +497,7 @@ export function SettingsPage() {
               {t('settings.reset')}
             </Button>
           </div>
+          )}
         </div>
       )}
     </PageShell>

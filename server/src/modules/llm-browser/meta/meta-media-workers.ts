@@ -170,7 +170,7 @@ export async function openMetaWorkerPool(
 
 /** Exactly 1 tab on 1 profile (Chrome main first, else first GPM meta). */
 async function openMetaWorkerPoolSingle(log: (msg: string) => void): Promise<MetaMediaWorkerPool> {
-  const mains = withoutQuotaExhausted(chromeProfilesService.listMainProfiles(), log);
+  const mains = withoutQuotaExhausted(chromeProfilesService.listProfilesForLlm('image', 'meta'), log);
   const firstMain = mains[0];
 
   log(
@@ -237,7 +237,7 @@ async function openMetaWorkerPoolBatch(
   log: (msg: string) => void,
 ): Promise<MetaMediaWorkerPool> {
   const tabsPerMain = META_MEDIA_TABS_PER_MAIN_PROFILE;
-  const mains = withoutQuotaExhausted(chromeProfilesService.listMainProfiles(), log);
+  const mains = withoutQuotaExhausted(chromeProfilesService.listProfilesForLlm('image', 'meta'), log);
   const chromeTabProfiles = allocateChromeMetaTabProfiles(mains, pendingCount, tabsPerMain);
   const remainingAfterChrome = Math.max(0, pendingCount - chromeTabProfiles.length);
 

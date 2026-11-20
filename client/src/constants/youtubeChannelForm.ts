@@ -22,6 +22,7 @@ export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType; label: s
   { value: 'content', label: 'Nội dung' },
   { value: 'reup_audio', label: 'Đăng lại âm thanh' },
   { value: 'reup_video', label: 'Đăng lại video' },
+  { value: 'remake_video', label: 'Remake video' },
 ];
 
 export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType; label: string }[] = [

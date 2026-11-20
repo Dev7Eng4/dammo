@@ -10,12 +10,14 @@ import type { LlmBrowserResponse, LlmTextProvider } from '../llm-browser/core/ty
 import { llmBrowserService } from '../llm-browser/text/text.service.js';
 import { executePromptTemplate } from '../prompts/prompts.file-store.js';
 import { promptsRepository } from '../prompts/prompts.repository.js';
-import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptLanguage, PromptSet } from '../prompts/prompts.types.js';
 import { validateLength } from '../video-agent/outline-rules.js';
 import { ngramContainment } from '../video-agent/similarity.js';
 import { VIDEO_MAX_MINUTES, VIDEO_MIN_MINUTES } from '../video-agent/video-agent.types.js';
-import { assertRemakeStep1Current, ensureDefaultRemakePrompts } from './script-remake.default-prompts.js';
+import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import { DEFAULT_REMAKE_BASE_KEY, assertRemakeStep1Current, ensureDefaultRemakePrompts } from './script-remake.default-prompts.js';
+import { chapterFixPrompt, chapterProblems } from './script-remake.quality.js';
+import { contentTaskProvider, pickContentTaskProfile } from '../prompts/content-task.js';
 
 /** Narration pace used for length planning (~330 chars/min, same as the video agent). */
 const CHARS_PER_MIN = 330;
@@ -37,6 +39,8 @@ const outlineSchema = z.object({
   title: z.string().min(1),
   angle: z.string().default(''),
   hook: z.string().default(''),
+  /** The named person whose story runs through the video, and how it moves chapter by chapter. */
+  story: z.string().default(''),
   /** Runtime the planner chose, VIDEO_MIN_MINUTES..VIDEO_MAX_MINUTES. */
   targetMinutes: z.coerce.number().int().optional(),
   lengthReason: z.string().default(''),
@@ -61,6 +65,8 @@ export interface RemakeResult {
   estimatedMinutes: number;
   /** % of the remake's character n-grams found in the source transcript. */
   similarity: { gram8: number; gram15: number };
+  /** Problems the per-chapter check still found after one rewrite, as "Chương n: …". */
+  qualityWarnings: string[];
   outputPath: string;
   relativeOutputPath: string;
 }
@@ -100,15 +106,31 @@ export interface StartRemakeInput {
   provider?: LlmTextProvider;
 }
 
-/** VTT/SRT → one plain block of text: drops headers, cue numbers, timings, tags and [音楽]-style cues. */
+/**
+ * VTT/SRT (or text already flattened from one) → one plain block of text: drops headers, cue numbers,
+ * timings, tags and [音楽]-style cues.
+ *
+ * YouTube auto-captions roll: every line is shown again in the next cue(s) — once with word timing
+ * tags, then plain — so consecutive identical lines are kept once. Without this a transcript comes
+ * out three times over.
+ */
 export function transcriptToPlainText(raw: string): string {
-  return raw
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => line && line !== 'WEBVTT' && !line.includes('-->') && !/^\d+$/.test(line) && !/^(Kind|Language):/.test(line))
-    .join('')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\[[^\]]{1,10}\]/g, '');
+  const lines: string[] = [];
+  for (const rawLine of raw.split(/\r?\n/)) {
+    const line = rawLine.replace(/<[^>]+>/g, '').trim();
+    if (!line || line === 'WEBVTT' || line.includes('-->') || /^\d+$/.test(line)) continue;
+    // Header lines only ("Kind: captions"); never a long line that merely starts with the header.
+    if (/^(Kind|Language):\s*\S*$/.test(line)) continue;
+    if (line === lines[lines.length - 1]) continue;
+    lines.push(line);
+  }
+  return (
+    lines
+      .join('')
+      // Transcripts flattened by an older loader kept the VTT header glued to the first sentence.
+      .replace(/^Kind:\s*captions\s*Language:\s*[a-z-]+/i, '')
+      .replace(/\[[^\]]{1,10}\]/g, '')
+  );
 }
 
 /** Prefers the last code block (prompts ask for one), falls back to the plain reply. */
@@ -144,19 +166,31 @@ function remakeText(outline: RemakeOutline, chapters: RemakeChapter[]): string {
   const body = chapters
     .map((chapter, index) => `## ${index + 1}. ${chapter.heading}\n${chapter.sentences.join('\n')}`)
     .join('\n\n');
-  return `${outline.title}\n\n切り口: ${outline.angle}\nフック: ${outline.hook}\n\n${body}\n`;
+  const story = outline.story ? `\n人物の物語: ${outline.story}` : '';
+  return `${outline.title}\n\n切り口: ${outline.angle}\nフック: ${outline.hook}${story}\n\n${body}\n`;
 }
 
 class ScriptRemakeService {
   private jobs = new Map<string, RemakeJob>();
   private activeJobId: string | null = null;
+  private finished = new Map<string, Promise<void>>();
 
-  async listPromptSets(language: PromptLanguage): Promise<PromptSet[]> {
+  /**
+   * Remake prompt sets for `language`, in the order the remake screens offer them (they pick the first):
+   * sets made for the channel's niche, then the general default set, then the rest.
+   */
+  async listPromptSets(language: PromptLanguage, channelId?: string): Promise<PromptSet[]> {
     await ensureDefaultRemakePrompts();
+    const channelNiche = channelId ? youtubeChannelsRepository.findById(channelId)?.niche : undefined;
+    const rank = (set: PromptSet) =>
+      channelNiche && set.niche === channelNiche ? 0 : set.baseKey === DEFAULT_REMAKE_BASE_KEY ? 1 : 2;
     return promptsRepository
       .findAllSets()
       .filter(set => set.category === 'remake' && (set.language === language || set.language === 'all'))
-      .filter(set => set.steps.some(step => step.step === 1) && set.steps.some(step => step.step === 2));
+      .filter(set => set.steps.some(step => step.step === 1) && set.steps.some(step => step.step === 2))
+      .map((set, index) => ({ set, index }))
+      .sort((a, b) => rank(a.set) - rank(b.set) || a.index - b.index)
+      .map(({ set }) => set);
   }
 
   get(id: string): RemakeJob {
@@ -197,14 +231,14 @@ class ScriptRemakeService {
       startedAt: new Date().toISOString(),
       relativePath: input.relativePath ?? '',
       language: input.language,
-      provider: input.provider ?? promptsSettingsService.get().defaultLlmProvider,
+      provider: input.provider ?? contentTaskProvider('scriptRemake'),
       promptSetName: set.name,
       logs: [],
     };
     this.jobs.set(job.id, job);
     this.activeJobId = job.id;
 
-    void this.run(job, set, transcript, input.notes?.trim() ?? '', input.outputDir)
+    const finished = this.run(job, set, transcript, input.notes?.trim() ?? '', input.outputDir)
       .catch(err => {
         job.status = 'failed';
         job.error = err instanceof Error ? err.message : String(err);
@@ -215,8 +249,20 @@ class ScriptRemakeService {
         job.progress = undefined;
         this.activeJobId = null;
       });
+    this.finished.set(job.id, finished);
 
     return job;
+  }
+
+  /** Resolves once the job is done or failed (never rejects); returns the job. */
+  async wait(id: string): Promise<RemakeJob> {
+    await this.finished.get(id);
+    return this.get(id);
+  }
+
+  /** True while a remake job is running (only one runs at a time). */
+  isBusy(): boolean {
+    return this.activeJobId !== null;
   }
 
   private lengthProblems(outline: RemakeOutline): string[] {
@@ -233,7 +279,8 @@ class ScriptRemakeService {
 
   private async run(job: RemakeJob, set: PromptSet, transcript: string, notes: string, outputDirOverride?: string): Promise<void> {
     const stepKey = (step: number) => set.steps.find(item => item.step === step)!.key;
-    const profile = chromeProfilesService.pickSubProfiles(1)[0]!;
+    // Settings → AI tools → Remake profile when it has this job's LLM ticked, else the first that does; closed after.
+    const profile = pickContentTaskProfile('scriptRemake', job.provider);
     job.profileName = profile.name;
     const chat = (prompt: string) =>
       llmBrowserService.chat(profile.id, job.provider, prompt, undefined, {
@@ -280,19 +327,43 @@ class ScriptRemakeService {
       this.log(job, `Dàn ý: "${outline.title}" — ${outline.chapters.length} chương, LLM chọn ${plannedMinutes} phút. Lý do: ${outline.lengthReason || '(không nêu)'}`);
 
       const chapterChars = Math.round((plannedMinutes * CHARS_PER_MIN) / outline.chapters.length);
+      if (outline.story) this.log(job, `Mạch nhân vật: ${outline.story}`);
       const chapters: RemakeChapter[] = [];
+      const qualityWarnings: string[] = [];
       for (const [index, chapter] of outline.chapters.entries()) {
         job.progress = `chương ${index + 1}/${outline.chapters.length}`;
         this.log(job, `Viết chương ${index + 1}/${outline.chapters.length}: ${chapter.heading}`);
+        // The chat holds the outline, but by chapter 5 the model loses it: hand over the next chapter
+        // and the story explicitly so each ending leads into what really comes next.
+        const next = outline.chapters[index + 1];
         const prompt = await executePromptTemplate(set.language, stepKey(2), [
           index + 1,
           outline.chapters.length,
           chapter.heading,
           chapter.keyPoints,
           chapterChars,
+          { hook: outline.hook, story: outline.story, nextHeading: next?.heading ?? '', nextKeyPoints: next?.keyPoints ?? [] },
         ]);
-        const sentences = splitSentences(responseBody(await chat(prompt)));
+        let sentences = splitSentences(responseBody(await chat(prompt)));
         if (sentences.length === 0) throw new AppError(`Chương ${index + 1} trả về rỗng`, 502, 'REMAKE_CHAPTER_EMPTY');
+
+        const previous = chapters.map(item => item.sentences);
+        let problems = chapterProblems({ sentences, previous, targetChars: chapterChars, source: transcript });
+        if (problems.length > 0) {
+          this.log(job, `Chương ${index + 1} chưa đạt (${problems.join(' | ')}) — nhờ LLM viết lại`);
+          const rewritten = splitSentences(responseBody(await chat(chapterFixPrompt(index + 1, problems))));
+          const rewrittenProblems = rewritten.length
+            ? chapterProblems({ sentences: rewritten, previous, targetChars: chapterChars, source: transcript })
+            : problems;
+          if (rewritten.length && rewrittenProblems.length <= problems.length) {
+            sentences = rewritten;
+            problems = rewrittenProblems;
+          }
+          if (problems.length > 0) {
+            qualityWarnings.push(...problems.map(problem => `Chương ${index + 1}: ${problem}`));
+            this.log(job, `Chương ${index + 1} vẫn còn: ${problems.join(' | ')}`);
+          }
+        }
         chapters.push({ heading: chapter.heading, sentences });
         this.log(job, `Xong chương ${index + 1}: ${sentences.join('').length} ký tự`);
       }
@@ -310,6 +381,7 @@ class ScriptRemakeService {
         totalChars: body.length,
         estimatedMinutes: Math.round((body.length / CHARS_PER_MIN) * 10) / 10,
         similarity: { gram8: ngramContainment(body, transcript, 8), gram15: ngramContainment(body, transcript, 15) },
+        qualityWarnings,
         outputPath,
         relativeOutputPath: path.relative(paths.dataDir, outputPath).split(path.sep).join('/'),
       };
@@ -320,7 +392,7 @@ class ScriptRemakeService {
       job.status = 'done';
       this.log(job, `Hoàn tất: ${result.totalChars} ký tự ≈ ${result.estimatedMinutes} phút → ${result.relativeOutputPath}`);
     } finally {
-      await chromeProfilesService.closeSubProfiles([profile.id]).catch(() => undefined);
+      await chromeProfilesService.closeProfiles([profile.id]).catch(() => undefined);
     }
   }
 }

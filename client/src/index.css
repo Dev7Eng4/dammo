@@ -78,6 +78,7 @@
   --color-muted-foreground: var(--app-muted-foreground);
   --color-border: var(--app-border);
   --color-ring: var(--app-ring);
+  --color-frame: var(--app-frame);
 
   --color-success: #10b981;
   --color-warning: #f59e0b;
@@ -100,6 +101,8 @@
     --app-muted-foreground: #8d9bb8;
     --app-border: #243250;
     --app-ring: #f0b90b;
+    --app-frame: #060a14;
+    --app-nav-active: #17223a;
     --scrollbar-size: 6px;
     --scrollbar-thumb: color-mix(in srgb, var(--color-neutral-500) 32%, transparent);
     --scrollbar-thumb-hover: var(--color-neutral-500);
@@ -118,6 +121,8 @@
     --app-muted-foreground: #474d57;
     --app-border: #eaecef;
     --app-ring: #b45309;
+    --app-frame: #eceef1;
+    --app-nav-active: #ffffff;
     --scrollbar-thumb: color-mix(in srgb, #848e9c 40%, transparent);
     --scrollbar-thumb-hover: #707a8a;
   }
@@ -383,3 +388,4 @@
 @utility ui-pop-closed {
   animation: ui-pop-out 100ms ease-in forwards;
 }
+

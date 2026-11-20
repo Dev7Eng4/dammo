@@ -59,7 +59,6 @@ export const navSections: NavSection[] = [
       { id: 'video-agent', labelKey: 'item.videoAgent', path: '/video-agent', icon: 'agent' },
       { id: 'manual-video', labelKey: 'item.manualVideo', path: '/manual-video', icon: 'manual' },
       { id: 'task-queue', labelKey: 'item.taskQueue', path: '/task-queue', icon: 'task-queue' },
-      { id: 'video-production', labelKey: 'item.videoProduction', path: '/video-production', icon: 'factory' },
       { id: 'settings', labelKey: 'item.settings', path: '/settings', icon: 'settings' },
     ],
   },
@@ -78,6 +77,7 @@ export const navSections: NavSection[] = [
     items: [
       { id: 'source', labelKey: 'item.source', path: '/source-channels', icon: 'source' },
       { id: 'radar', labelKey: 'item.radar', path: '/radar', icon: 'radar' },
+      { id: 'brains', labelKey: 'item.brains', path: '/brains', icon: 'agent' },
     ],
   },
   {

@@ -9,12 +9,14 @@ import {
   type RemakeProvider,
   type RemakePromptSet,
 } from '../../api/scriptRemake'
+import { fetchPromptSettings } from '../../api/prompts'
+import { TEXT_LLM_OPTIONS } from '../../constants/promptForm'
 import { useAbortableEffect } from '../../hooks'
 import type { VideoAgentRun } from '../../types/videoAgent'
 import { Button, Select, StatusBadge, Textarea, useToast } from '../ui'
 import { ScriptSummary } from './ScriptSummary'
 
-const PROVIDERS: RemakeProvider[] = ['gpt', 'gemini']
+const PROVIDERS = TEXT_LLM_OPTIONS
 const POLL_MS = 2000
 
 interface ScriptStepProps {
@@ -23,13 +25,18 @@ interface ScriptStepProps {
   disabled: boolean
 }
 
-/** Two ways to get a script: let ChatGPT/Gemini remake it from the sources, or type/paste it. */
+/** Two ways to get a script: let ChatGPT/Gemini/Claude remake it from the sources, or type/paste it. */
 export function ScriptStep({ run, scriptText, disabled }: ScriptStepProps) {
   const { t } = useTranslation('manual')
   const { toast } = useToast()
   const [promptSets, setPromptSets] = useState<RemakePromptSet[]>([])
   const [promptSetId, setPromptSetId] = useState('')
-  const [provider, setProvider] = useState<RemakeProvider>('gpt')
+  const [provider, setProvider] = useState<RemakeProvider>('gemini')
+  // Start from the remake LLM chosen in Settings → AI tools.
+  useAbortableEffect(async (signal) => {
+    const { item } = await fetchPromptSettings({ signal })
+    setProvider(item.scriptRemakeLlmProvider)
+  }, [])
   const [notes, setNotes] = useState('')
   const [job, setJob] = useState<RemakeJob | null>(null)
   const [busy, setBusy] = useState(false)
@@ -40,7 +47,7 @@ export function ScriptStep({ run, scriptText, disabled }: ScriptStepProps) {
   const sourcesReady = run.stagesDone.includes('source')
 
   useAbortableEffect(async (signal) => {
-    const { items } = await fetchRemakePromptSets('ja', { signal })
+    const { items } = await fetchRemakePromptSets('ja', { signal }, run.input.channelId)
     setPromptSets(items)
     setPromptSetId((current) => current || items[0]?.id || '')
   }, [])
@@ -103,7 +110,7 @@ export function ScriptStep({ run, scriptText, disabled }: ScriptStepProps) {
             <Select
               value={provider}
               onChange={(value) => setProvider(value as RemakeProvider)}
-              options={PROVIDERS.map((value) => ({ value, label: value === 'gpt' ? 'ChatGPT' : 'Gemini' }))}
+              options={PROVIDERS}
             />
           </label>
         </div>

@@ -1,6 +1,105 @@
 {
   "styles": [
     {
+      "id": "cf663567-c57a-440d-b17c-b41ced484edd",
+      "name": "Mascot · K1 Warm Golden Engawa",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of warm amber, cream, soft wood brown and muted leaf green; warm golden late-afternoon light with gentle rays and soft shadows; settings: everyday Japanese senior life: engawa veranda, tatami living room with a low table, quiet neighbourhood street, park bench, small garden; seasonal touches (persimmons, maple leaves, cherry petals); other people are simple figures in the same art style with muted clothing colors, always secondary to the mascot; recurring motifs: steaming teacup, wall calendar, family photo frame, reading glasses, potted plant; mood calm, hopeful and dignified; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K1 Hạnh phúc tuổi già (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "546da997-8f8b-4379-b9f4-01c9f2fac4ee",
+      "name": "Mascot · K2 Gentle Mind Glow",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of mid navy blue fading into soft teal with cyan glow accents and warm skin-tone highlights; never pitch black, scenes stay clearly lit; settings: two kinds of scenes: everyday senior moments (kitchen, morning walk, reading at a table) and 'inside the mind' scenes where the mascot stands among softly glowing neural lines and memory bubbles; other people are simple figures in the same art style in muted blue-gray tones; recurring motifs: simple glowing brain outline, memory bubbles holding one icon, clock, notebook, puzzle pieces; mood curious, reassuring, gently scientific; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K2 Não tuổi già (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "ac7b553d-90b4-4217-ac01-267aa06b1d35",
+      "name": "Mascot · K3 Clean Cream Ledger",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of bright cream and white with fresh green accents and warm light wood; clean daylight, soft shadows; settings: modest Japanese home, supermarket aisle, post office or bank counter, kitchen table with bills laid out; other people are simple figures in the same art style in beige and gray clothing; recurring motifs: bankbook with hidden numbers, coin purse, receipts, piggy jar, pension notebook, calculator; mood practical, calm, quietly reassuring; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K3 Tiền tuổi già (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "bcfe6beb-d4db-4024-8cd5-b68ff22820df",
+      "name": "Mascot · K4 Neon Thinking Room",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of deep purple and navy mid-tones with neon yellow and cyan accents; the mascot lit by the glow so it stays readable, never a flat black void; settings: symbolic spaces: a study at night, a maze seen from above, a library of floating books, split-world frames showing an ordinary view versus a hidden-pattern view; other people are simple figures in the same art style in desaturated violet tones; recurring motifs: chess piece, light bulb, magnifying glass, glowing connection lines, layered transparent panels; mood clever, intriguing, a little mysterious; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K4 Người thông minh (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "27f2ad3c-ea21-4a40-9675-311a913d0691",
+      "name": "Mascot · K5 Sepia Spotlight",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); desaturated sepia and warm gray world in which the mascot is the only fully saturated element, softly spotlighted; settings: office, classroom, train platform, crowded street, quiet bedroom desk; other people are plain gray silhouettes with simple shapes, the crowd never in color; recurring motifs: seed sprouting through soil, a small glowing core inside the mascot's chest, closed notebook leaking light, lamp in a quiet room; mood quiet, bittersweet, ending on a hint of hope; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K5 Tài năng bị ẩn (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "509cc150-903c-4446-8fe5-c6273b1ec220",
+      "name": "Mascot · K6 Warm Modest Wealth",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of warm beige, sand and soft brown with deep red accents; soft warm daylight; settings: modest but tidy Japanese house, parking lot with an old clean car, shopping street with luxury window displays the mascot ignores, simple café; other people are simple figures in the same art style; showy characters wear loud gold accessories, the mascot stays plain; recurring motifs: old clean car, worn leather wallet, simple watch, untouched luxury bag, shopping basket; mood observant, slightly witty, admiring of quiet wealth; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K6 Tâm lý người giàu (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "8864877d-3dc8-4808-9b65-bd8745b780fb",
+      "name": "Mascot · K7 Airy Pastel Room",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of soft mint, white and light wood with teal accents; bright airy daylight, lots of empty space; settings: minimal Japanese rooms, closets, entrance hallways; before / after pairs of the same room, cluttered corners turning tidy; other people are simple figures in the same art style in pastel clothing; recurring motifs: cardboard boxes, empty tidy shelf, folded clothes, garbage bags, a single cherished object; mood light, relieving, fresh; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K7 Dọn dẹp và buông bỏ (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "da0617bb-4727-4b84-b3e9-0395052b157b",
+      "name": "Mascot · K8 Cool Dusk Distance",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of slate blue, cool gray and dusk violet with small red accents; low side light that shapes the mascot clearly; settings: café table, office corridor, family gathering, apartment hallway, rainy street, a front gate with a neighbour; other people are gray silhouettes or simple gray figures whose posture shows the relationship (turning away, leaning in, crossing arms); recurring motifs: closing door, a line on the floor, widening gap between two figures, phone with unread message bubbles (no text), umbrella in the rain; mood tense but protective, ending in calm distance; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K8 Ranh giới quan hệ (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "f8b723e1-02f8-4456-b62c-1a7eb1da22e0",
+      "name": "Mascot · K9 Cozy Family Home",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of warm orange, honey and soft brown with cream highlights; warm indoor lamp light and sunset light; settings: family kitchen, dining table, genkan entrance, station platform farewell, living room during a visit; family members are simple figures in the same art style told apart by one accessory or clothing color (child, spouse, grandchild); recurring motifs: dining table set for many, phone call, suitcase at the entrance, grandchild drawing, omiyage bag; mood warm, sometimes bittersweet, always kind; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K9 Gia đình (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "426bfc8b-6949-4f72-85c3-2113855e311c",
+      "name": "Mascot · K10 Blue Hour Window",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of calm blue-hour tones (dusty blue, slate, soft lavender) with one warm lamp or window glow; settings: window seat, solo café counter, small apartment at night, rainy street seen from inside, quiet riverside walk; other people are distant soft silhouettes, crowds blurred and far away; recurring motifs: single cup of coffee, book by the window, phone turned face-down, headphones, potted plant; mood peaceful, introspective, comfortably alone; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K10 Một mình, hướng nội (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
+      "id": "d03f8612-00dd-494e-81b5-dc1414dd397d",
+      "name": "Mascot · K11 Dawn Temple Calm",
+      "rule": "Scene illustrations for a Japanese psychology YouTube channel whose main character is the channel mascot: draw the mascot exactly as in its reference image (same shape, colors, line weight and face style) and never redesign it; match the mascot's own art style for every element (if the mascot is flat 2D, keep the scene flat 2D; if it is soft-shaded, use the same soft shading); palette of muted gold, soft sage green and misty cream; soft dawn light with gentle bokeh and light mist; settings: temple garden, shoji-lit tatami room, stone path through bamboo, quiet pond, mountain at sunrise; other people are rare, small and serene (a monk or traveller seen from afar) in the same art style; recurring motifs: lotus flower, incense smoke, prayer beads, fallen leaves on water, a single candle; mood serene, spacious, healing; compositions: medium or wide shots with the mascot clearly readable at small size, one clear action or emotion per scene, generous empty space in the upper or lower third for subtitles, 16:9; no text or letters anywhere, no realistic humans, no photorealism.",
+      "niche": "Tâm lý JP · K11 Lời dạy chữa lành (kênh mascot, hợp mọi kiểu nhân vật mascot)",
+      "language": "ja",
+      "createdAt": "2026-11-07T01:39:52.000Z",
+      "updatedAt": "2026-11-07T01:39:52.000Z"
+    },
+    {
       "id": "24551aa0-9bd9-40d9-bde9-9a7dbb60a79c",
       "name": "Người Già Nhật Bản",
       "rule": "Japanese slice-of-life anime film still about the everyday inner life of elderly people in Japan, clean confident line art with crisp cel shading and soft two-tone shadows, naturalistic semi-realistic character design, Japanese seniors aged 65 to 85 with realistic proportions, natural posture, honest wrinkles, age spots and thinning grey or white hair, each character with a distinct face, hairstyle and outfit colour, modest everyday Japanese clothes, authentic ordinary Japanese homes and towns of the Showa and Heisei era such as tatami room, kotatsu, butsudan, genkan, narrow kitchen, veranda, residential street, local station, supermarket and clinic waiting room, cinematic composition with clear foreground, midground and background depth, varied camera distance from wide establishing shots to close-ups of hands and objects, motivated natural lighting where colour follows the mood: soft warm sunlight for peace and hope, cool blue-grey overcast or dim evening light with desaturated colours for loneliness, worry and regret, neutral clear daylight for explanation, restrained realistic palette without a constant golden filter, uncluttered backgrounds with only a few meaningful props, no text, no letters, no numbers, no speech bubbles, no watermark, masterpiece, highly detailed",
@@ -136,15 +235,6 @@
       "updatedAt": "2026-10-04T21:03:22.368Z"
     },
     {
-      "id": "ec1935b0-32c8-4b08-ac09-783cca59d1a5",
-      "name": "Anime Story Drama",
-      "rule": "Japanese anime story illustration for narrated drama, clean confident line art, cel shading with clear light and shadow separation, expressive adult faces readable in close and medium crops, natural adult proportions, uncluttered everyday Japanese settings, lighting and colour follow each scene's mood from warm and tender to cold and tense, anime key visual quality, masterpiece, highly detailed",
-      "niche": "Câu chuyện / drama, emotional, tình yêu, 修羅場, 泣ける話",
-      "language": "ja",
-      "createdAt": "2026-09-13T07:24:47.773Z",
-      "updatedAt": "2026-09-13T07:24:47.773Z"
-    },
-    {
       "id": "fa1db1d0-5eee-47a8-acc1-f985a15e338d",
       "name": "Anime Senior Life",
       "rule": "Japanese anime illustration for senior life storytelling, gentle semi-realistic anime design for elderly characters, soft rounded features with natural wrinkles and grey or silver hair, honest expressions from calm contentment to worry and regret, clean line art with soft cel shading, plain uncluttered Japanese interiors, lighting and colour follow each scene's mood from warm daylight to cool overcast, masterpiece, highly detailed",
@@ -161,15 +251,6 @@
       "language": "ja",
       "createdAt": "2026-09-06T07:09:17.056Z",
       "updatedAt": "2026-09-06T07:09:17.056Z"
-    },
-    {
-      "id": "ca184345-0cb4-4623-8d96-557ab180c276",
-      "name": "Audio Drama",
-      "rule": "Crisp commercial Japanese YouTube manga illustration style, clean anime cel-shading, highly expressive manga facial features, clear dynamic storytelling body language, high-contrast flat colors with sharp shadows, crisp thin line art, bright clear lighting, detailed but slightly out-of-focus everyday backgrounds, YouTube explainer video art style, masterpiece, highly detailed",
-      "niche": "Xung đột / 2ch / Sukatto",
-      "language": "ja",
-      "createdAt": "2026-09-06T07:08:57.906Z",
-      "updatedAt": "2026-09-06T07:08:57.906Z"
     },
     {
       "id": "a016f093-9677-4f55-bc9a-7a95dc71048c",
@@ -215,15 +296,6 @@
       "language": "ja",
       "createdAt": "2026-08-12T14:54:27.336Z",
       "updatedAt": "2026-08-12T14:54:27.336Z"
-    },
-    {
-      "id": "f233447d-5374-4e26-9072-c6dc5d866fc4",
-      "name": "Premium Cinematic Documentary",
-      "rule": "Japanese cinematic human drama, photorealistic Japanese documentary photography, authentic everyday Japanese environments, natural skin texture and realistic human expressions, soft directional cinematic lighting, moody and atmospheric, restrained contrast, rich but slightly muted film color grading, natural warm skin tones, shallow depth of field, organic bokeh, subtle anamorphic lens characteristics, large-format ARRI Alexa cinematic look, highly detailed, intimate emotional storytelling, understated and realistic, cinematic composition.",
-      "niche": "Phim tài liệu ngắn về nghệ nhân truyền thống (Shokunin), vlog du lịch cao cấp, giới thiệu ẩm thực/nhà hàng truyền thống, phỏng vấn chân dung nhân vật có chiều sâu.",
-      "language": "ja",
-      "createdAt": "2026-07-10T01:28:07.046Z",
-      "updatedAt": "2026-08-12T14:15:55.879Z"
     },
     {
       "id": "65d751d4-68ad-4eb4-af0e-d06739b801b2",

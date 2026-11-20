@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản đồ ngách tâm lý tiếng Nhật</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: summary table + adjacency map first, then one card per cluster, then the channel plan. */
+  --paper: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1c2230;
+  --muted: #5d6574;
+  --line: #d9dcd6;
+  --accent: #c8402b;      /* vermilion seal: primary cluster / emphasis */
+  --accent-soft: #f6dfd9;
+  --indigo: #2f4a86;      /* border (giáp ranh) clusters */
+  --indigo-soft: #dde4f2;
+  --fog: #8a909b;         /* not yet measured */
+  --font-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --font-jp: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14171d;
+    --surface: #1c2028;
+    --ink: #e8eaee;
+    --muted: #a1a8b5;
+    --line: #2f3542;
+    --accent: #ef6a52;
+    --accent-soft: #3a211d;
+    --indigo: #8fa8e0;
+    --indigo-soft: #222b40;
+    --fog: #7d8492;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14171d;
+  --surface: #1c2028;
+  --ink: #e8eaee;
+  --muted: #a1a8b5;
+  --line: #2f3542;
+  --accent: #ef6a52;
+  --accent-soft: #3a211d;
+  --indigo: #8fa8e0;
+  --indigo-soft: #222b40;
+  --fog: #7d8492;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.jp { font-family: var(--font-jp); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 32px 20px 64px; display: grid; gap: 20px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.25; margin: 0; }
+h1 { font-size: 30px; font-weight: 700; }
+h2 { font-size: 21px; font-weight: 700; }
+h3 { font-size: 17px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--indigo); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lead { color: var(--muted); }
+header { display: grid; gap: 12px; }
+.stats { display: flex; flex-wrap: wrap; gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 150px; }
+.stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+section { display: grid; gap: 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 1px 9px; white-space: nowrap; }
+.pill.measured { background: var(--accent-soft); color: var(--accent); }
+.pill.partial { background: var(--indigo-soft); color: var(--indigo); }
+.pill.fog { border: 1px dashed var(--fog); color: var(--fog); }
+.pill.warn { background: #f7e7c4; color: #7a5200; }
+.num-badge { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 14px; flex: none; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; align-content: start; scroll-margin-top: 16px; }
+.card-head { display: flex; gap: 10px; align-items: flex-start; }
+.card-head > div { display: grid; gap: 4px; }
+.card .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.sub { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.sub li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; }
+.sub li span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13px; }
+.sub li.added span:first-child::after { content: " · bổ sung"; color: var(--fog); font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-jp); font-size: 13px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px; }
+.titles { margin: 0; padding-left: 18px; font-family: var(--font-jp); font-size: 13.5px; display: grid; gap: 2px; }
+.adj { display: flex; flex-wrap: wrap; gap: 6px; }
+.adj a { font-size: 13px; text-decoration: none; border-radius: 6px; padding: 1px 8px; background: var(--indigo-soft); color: var(--indigo); }
+.note { font-size: 13px; color: var(--muted); }
+svg text { fill: var(--ink); font-family: var(--font-body); }
+svg .edge { stroke: var(--muted); stroke-width: 1.6; opacity: .55; }
+svg .edge.weak { stroke-dasharray: 4 5; opacity: .45; }
+svg .node.measured circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+svg .node.fog circle { fill: var(--surface); stroke: var(--fog); stroke-width: 1.6; stroke-dasharray: 5 4; }
+svg .node a:focus-visible circle { stroke-width: 4; }
+svg .nlabel { font-size: 13px; font-weight: 700; }
+svg .nval { font-size: 12px; fill: var(--muted); }
+.role-main { color: var(--accent); font-weight: 600; }
+.role-border { color: var(--indigo); font-weight: 600; }
+.caution { border-left: 4px solid #c9962e; }
+@media (max-width: 420px) {
+  h1 { font-size: 24px; }
+  .cards { grid-template-columns: 1fr; }
+}
+
+/* skill-tab css */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 600; font-size: 15px; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 8px 14px; cursor: pointer; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button:hover { color: var(--ink); }
+.tabpanel { display: grid; gap: 40px; }
+.tabpanel[hidden] { display: none; }
+code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .9em; background: var(--paper); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.cmds { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.cmd { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 12px; padding: 14px; display: grid; gap: 8px; align-content: start; }
+.cmd p { font-size: 14px; }
+.cmd-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cmd-top code { font-size: 14px; font-weight: 600; }
+.copy { font: inherit; font-size: 12px; font-weight: 600; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 6px; padding: 2px 9px; cursor: pointer; white-space: nowrap; }
+.copy:hover { color: var(--ink); border-color: var(--muted); }
+.copy.done { color: var(--accent); border-color: var(--accent); }
+.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 80ch; }
+.sheet-wrap { display: grid; grid-template-columns: minmax(260px, 480px) 1fr; gap: 16px; align-items: start; }
+.sheet { width: 100%; height: auto; display: block; }
+.sheet .paper { fill: #ffffff; stroke: var(--line); }
+.sheet .fig circle, .sheet .fig rect { fill: #dde4f2; stroke: #2f4a86; stroke-width: 1.5; }
+.sheet .div { stroke: #d9dcd6; stroke-dasharray: 4 4; }
+.sheet text.cap { fill: #5d6574; font-size: 12px; }
+.rules { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.jump { display: flex; flex-wrap: wrap; gap: 6px; }
+.jump a { text-decoration: none; font-weight: 600; font-size: 13px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 2px 10px; }
+.kbadge { display: inline-grid; place-items: center; min-width: 38px; height: 28px; border-radius: 8px; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 13px; flex: none; padding: 0 6px; }
+.mcard .card-head { align-items: center; }
+.mcard .card-head > div { flex: 1; }
+.mcard.serious { border-color: #c9962e; }
+.mrole { font-size: 14px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,.25); margin-right: 6px; vertical-align: -2px; flex: none; }
+.sw.none { background: repeating-linear-gradient(45deg, var(--line) 0 3px, transparent 3px 6px); }
+.en { font-size: 13px; color: var(--muted); }
+.designs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.designs li { border-bottom: 1px dotted var(--line); padding-bottom: 6px; display: grid; gap: 2px; }
+.dname { display: flex; align-items: center; flex-wrap: wrap; gap: 0; font-size: 14px; }
+.dname .sw + b { margin-left: 2px; }
+.item { font-size: 13px; color: var(--muted); }
+details summary { cursor: pointer; font-size: 13px; color: var(--indigo); }
+details .en { margin-top: 4px; }
+.more { border-top: 1px solid var(--line); padding-top: 8px; }
+.more[open] summary { margin-bottom: 8px; }
+.kv { display: grid; grid-template-columns: 82px 1fr; gap: 6px 10px; font-size: 14px; }
+.kv > span { font-size: 12px; font-weight: 600; color: var(--muted); padding-top: 2px; }
+.fmts { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
+.fmts li span { display: block; color: var(--muted); font-size: 12.5px; }
+.files { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.files li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.files li span { color: var(--muted); font-size: 13px; }
+@media (max-width: 720px) { .sheet-wrap { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1 class="top">Bản đồ ngách tâm lý học / khoa học não bộ tiếng Nhật</h1>
+
+<div class="tabs" role="tablist" aria-label="Nội dung">
+  <button type="button" role="tab" id="tab-map" aria-controls="panel-map" aria-selected="true" data-hash="ban-do">Bản đồ ngách</button>
+  <button type="button" role="tab" id="tab-skill" aria-controls="panel-skill" aria-selected="false" tabindex="-1" data-hash="skill-mascot">Skill mascot</button>
+</div>
+<div class="tabpanel" id="panel-map" role="tabpanel" aria-labelledby="tab-map">
+<header>
+  <p class="lead">Gom 31 vùng đề tài trên bản đồ chiến dịch và các ngách bổ sung thành 12 cụm. Mỗi kênh nên giữ <span class="role-main">1 cụm chính</span>, cộng tối đa <span class="role-border">1 cụm giáp ranh</span> (cùng khán giả hoặc cùng kiểu câu hỏi), để YouTube và người xem hiểu kênh nói về gì.</p>
+  <div class="stats">
+    <div class="stat"><b>153 tr</b><span>lượt xem/tháng cả ngách (ước tối thiểu)</span></div>
+    <div class="stat"><b>31</b><span>vùng đề tài đã đo trên bản đồ</span></div>
+    <div class="stat"><b>12</b><span>cụm: 7 có số đo, 5 chưa đo</span></div>
+    <div class="stat"><b>11</b><span>kênh đề xuất (cụm chính + giáp ranh)</span></div>
+  </div>
+  <p class="note">Nguồn: bản đồ "Chiến dịch thị phần" (cửa sổ 28 ngày, số liệu ngày 05/11). Ngách đánh dấu "bổ sung" lấy từ kiến thức về YouTube tâm lý tiếng Nhật, chưa có số đo: nên đo trên tool trước khi mở kênh.</p>
+</header>
+
+<section aria-labelledby="overview-h">
+  <h2 id="overview-h">Tổng quan các cụm</h2>
+  <div class="panel scroll">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Cụm</th><th>Lượt xem/tháng (đã đo)</th><th>Khán giả chính</th><th>Giáp ranh</th><th>Số kênh nên có</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><a href="#c1">①</a></td><td>Nửa sau cuộc đời <span class="jp">人生後半・老後</span></td><td class="num">≥ 51,6 tr</td><td>50–75 tuổi</td><td>②③⑤⑥⑧</td><td class="num">3</td></tr>
+        <tr><td><a href="#c3">③</a></td><td>Tiền, giá trị sống, buông bỏ <span class="jp">お金・持たない暮らし</span></td><td class="num">≈ 28,2 tr</td><td>40–70 tuổi</td><td>①⑦</td><td class="num">2</td></tr>
+        <tr><td><a href="#c2">②</a></td><td>Trí tuệ, IQ, não bộ <span class="jp">頭のいい人・脳科学</span></td><td class="num">≈ 18,8 tr</td><td>30–60 tuổi</td><td>①⑥⑦⑩</td><td class="num">2</td></tr>
+        <tr><td><a href="#c4">④</a></td><td>Người khó chịu và ranh giới <span class="jp">人間関係の境界線</span></td><td class="num">≈ 13,7 tr</td><td>35–70 tuổi</td><td>⑤⑥⑫</td><td class="num">1</td></tr>
+        <tr><td><a href="#c5">⑤</a></td><td>Gia đình <span class="jp">親子・夫婦・嫁姑</span></td><td class="num">≥ 8,9 tr</td><td>50–75 tuổi</td><td>①④⑫</td><td class="num">1</td></tr>
+        <tr><td><a href="#c6">⑥</a></td><td>Một mình, hướng nội <span class="jp">ひとり・内向型</span></td><td class="num">≈ 7,8 tr</td><td>35–70 tuổi</td><td>①②④⑧</td><td class="num">1</td></tr>
+        <tr><td><a href="#c7">⑦</a></td><td>Hành vi, thói quen đời thường <span class="jp">〜な人の正体</span></td><td class="num">≥ 2,6 tr</td><td>rộng</td><td>②③⑨</td><td class="num">0 (chủ đề phụ)</td></tr>
+        <tr><td><a href="#c8">⑧</a></td><td>Triết lý, lời dạy chữa lành <span class="jp">ブッダの教え・名言</span></td><td class="num">chưa đo</td><td>55–80 tuổi</td><td>①⑥⑩⑪</td><td class="num">1 (thử)</td></tr>
+        <tr><td><a href="#c9">⑨</a></td><td>Tính cách, phân loại người <span class="jp">性格診断・MBTI</span></td><td class="num">chưa đo</td><td>20–45 tuổi</td><td>⑦⑫⑪</td><td class="num">—</td></tr>
+        <tr><td><a href="#c10">⑩</a></td><td>Tự khẳng định, phát triển bản thân <span class="jp">自己肯定感</span></td><td class="num">chưa đo</td><td>25–55 tuổi</td><td>②⑧</td><td class="num">—</td></tr>
+        <tr><td><a href="#c11">⑪</a></td><td>Vận may và tâm lý <span class="jp">運・開運</span></td><td class="num">chưa đo</td><td>45–75 tuổi</td><td>⑧⑨</td><td class="num">—</td></tr>
+        <tr><td><a href="#c12">⑫</a></td><td>Tâm lý tình yêu <span class="jp">恋愛心理</span></td><td class="num">chưa đo (vùng sương mù)</td><td>20–50 tuổi</td><td>④⑤⑨</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="map-h">
+  <h2 id="map-h">Bản đồ giáp ranh</h2>
+  <p class="lead">Kích thước vòng tròn theo lượt xem đã đo. Nét liền: giáp ranh mạnh (cùng khán giả, dễ làm chung một kênh). Nét đứt: giáp ranh yếu (chỉ dùng làm video phụ). Bấm vào một cụm để xem chi tiết.</p>
+  <div class="legend">
+    <span><i style="background:var(--accent-soft);border:2px solid var(--accent)"></i>Đã đo</span>
+    <span><i style="border:1.6px dashed var(--fog)"></i>Chưa đo</span>
+  </div>
+  <div class="panel scroll">
+    <svg viewBox="0 0 960 540" width="100%" style="min-width:640px;display:block" role="img" aria-label="Sơ đồ 12 cụm ngách và quan hệ giáp ranh">
+      <g>
+        <line class="edge" x1="330" y1="280" x2="580" y2="160"/>
+        <line class="edge" x1="330" y1="280" x2="140" y2="130"/>
+        <line class="edge" x1="330" y1="280" x2="340" y2="470"/>
+        <line class="edge" x1="330" y1="280" x2="590" y2="390"/>
+        <line class="edge" x1="330" y1="280" x2="120" y2="410"/>
+        <line class="edge" x1="580" y1="160" x2="590" y2="390"/>
+        <line class="edge" x1="580" y1="160" x2="790" y2="100"/>
+        <line class="edge weak" x1="580" y1="160" x2="430" y2="60"/>
+        <line class="edge weak" x1="140" y1="130" x2="790" y2="100"/>
+        <line class="edge" x1="790" y1="420" x2="340" y2="470"/>
+        <line class="edge" x1="790" y1="420" x2="590" y2="390"/>
+        <line class="edge weak" x1="790" y1="420" x2="900" y2="320"/>
+        <line class="edge weak" x1="340" y1="470" x2="900" y2="320"/>
+        <line class="edge weak" x1="590" y1="390" x2="120" y2="410"/>
+        <line class="edge weak" x1="790" y1="100" x2="900" y2="210"/>
+        <line class="edge weak" x1="900" y1="210" x2="900" y2="320"/>
+        <line class="edge weak" x1="430" y1="60" x2="120" y2="410"/>
+        <line class="edge weak" x1="40" y1="280" x2="120" y2="410"/>
+        <line class="edge weak" x1="40" y1="280" x2="900" y2="210"/>
+      </g>
+      <g class="node measured"><a href="#c1"><circle cx="330" cy="280" r="64"/><text class="nlabel" x="330" y="274" text-anchor="middle">① Nửa sau cuộc đời</text><text class="nval" x="330" y="294" text-anchor="middle">≥ 51,6 tr</text></a></g>
+      <g class="node measured"><a href="#c3"><circle cx="140" cy="130" r="51"/><text class="nlabel" x="140" y="124" text-anchor="middle">③ Tiền, buông bỏ</text><text class="nval" x="140" y="144" text-anchor="middle">28,2 tr</text></a></g>
+      <g class="node measured"><a href="#c2"><circle cx="580" cy="160" r="44"/><text class="nlabel" x="580" y="154" text-anchor="middle">② Trí tuệ, IQ</text><text class="nval" x="580" y="174" text-anchor="middle">18,8 tr</text></a></g>
+      <g class="node measured"><a href="#c4"><circle cx="790" cy="420" r="40"/><text class="nlabel" x="790" y="414" text-anchor="middle">④ Người khó chịu</text><text class="nval" x="790" y="434" text-anchor="middle">13,7 tr</text></a></g>
+      <g class="node measured"><a href="#c5"><circle cx="340" cy="470" r="35"/><text class="nlabel" x="340" y="464" text-anchor="middle">⑤ Gia đình</text><text class="nval" x="340" y="484" text-anchor="middle">≥ 8,9 tr</text></a></g>
+      <g class="node measured"><a href="#c6"><circle cx="590" cy="390" r="34"/><text class="nlabel" x="590" y="384" text-anchor="middle">⑥ Một mình</text><text class="nval" x="590" y="404" text-anchor="middle">7,8 tr</text></a></g>
+      <g class="node measured"><a href="#c7"><circle cx="790" cy="100" r="25"/><text class="nlabel" x="790" y="146" text-anchor="middle">⑦ Hành vi đời thường</text><text class="nval" x="790" y="104" text-anchor="middle">≥ 2,6 tr</text></a></g>
+      <g class="node fog"><a href="#c8"><circle cx="120" cy="410" r="27"/><text class="nlabel" x="120" y="456" text-anchor="middle">⑧ Triết lý chữa lành</text><text class="nval" x="120" y="414" text-anchor="middle">chưa đo</text></a></g>
+      <g class="node fog"><a href="#c9"><circle cx="900" cy="210" r="27"/><text class="nlabel" x="900" y="256" text-anchor="middle">⑨ Tính cách</text><text class="nval" x="900" y="214" text-anchor="middle">chưa đo</text></a></g>
+      <g class="node fog"><a href="#c10"><circle cx="430" cy="60" r="27"/><text class="nlabel" x="430" y="106" text-anchor="middle">⑩ Tự khẳng định</text><text class="nval" x="430" y="64" text-anchor="middle">chưa đo</text></a></g>
+      <g class="node fog"><a href="#c11"><circle cx="40" cy="280" r="27"/><text class="nlabel" x="52" y="326" text-anchor="middle">⑪ Vận may</text><text class="nval" x="40" y="284" text-anchor="middle">chưa đo</text></a></g>
+      <g class="node fog"><a href="#c12"><circle cx="900" cy="320" r="27"/><text class="nlabel" x="900" y="366" text-anchor="middle">⑫ Tình yêu</text><text class="nval" x="900" y="324" text-anchor="middle">chưa đo</text></a></g>
+    </svg>
+  </div>
+</section>
+
+<section aria-labelledby="clusters-h">
+  <h2 id="clusters-h">Chi tiết từng cụm</h2>
+  <p class="lead">Số bên phải mỗi ngách là lượt xem/tháng trên bản đồ. "Sương mù" là vùng có trên bản đồ nhưng chưa có số. "Bổ sung" là ngách không có trên bản đồ.</p>
+  <div class="cards">
+
+    <article class="card" id="c1">
+      <div class="card-head"><span class="num-badge">①</span><div><h3>Nửa sau cuộc đời <span class="jp">人生後半・老後</span></h3><div class="meta"><span class="pill measured">≥ 51,6 tr/tháng</span><span class="pill partial">nên có 3 kênh</span></div></div></div>
+      <p class="note">Khán giả 50–75 tuổi. Cụm lớn nhất ngách, thị phần hiện tại gần 0 (0,04%). Video nóng: 「60代、周りに人が集まる性格が良い人の口癖」, 「実はもう隠れ貧困！50代が…」.</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Tuổi tác là nhân vật chính</span><span>51,6 tr</span></li>
+          <li><span>Tuổi tinh thần <span class="jp">精神年齢</span></span><span>sương mù</span></li>
+          <li><span>Hạnh phúc và phong cách sống</span><span>sương mù</span></li>
+          <li><span>Trí nhớ, não già</span><span>sương mù</span></li>
+          <li class="added"><span>Vợ chồng tuổi già, ly hôn tuổi xế chiều</span><span>—</span></li>
+          <li class="added"><span>Sống sau nghỉ hưu</span><span>—</span></li>
+          <li class="added"><span>Chuẩn bị cuối đời, cách nhìn sự sống chết</span><span>—</span></li>
+          <li class="added"><span>Hoài niệm thời Showa</span><span>—</span></li>
+          <li class="added"><span>Chăm sóc cha mẹ già</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">60代</span><span class="chip">70代</span><span class="chip">老後</span><span class="chip">年を重ねる</span><span class="chip">人生後半</span><span class="chip">定年後</span><span class="chip">熟年離婚</span><span class="chip">終活</span><span class="chip">死生観</span><span class="chip">昭和</span><span class="chip">介護</span><span class="chip">口癖</span><span class="chip">習慣</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>60代から幸せな人が手放したもの</li><li>年を重ねるほど品が出る人の口癖</li><li>定年後に居場所を失う人の共通点</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c2">② não già</a><a href="#c3">③ tiền tuổi già</a><a href="#c5">⑤ gia đình</a><a href="#c6">⑥ tuổi già một mình</a><a href="#c8">⑧ lời dạy</a></div></div>
+    </article>
+
+    <article class="card" id="c3">
+      <div class="card-head"><span class="num-badge">③</span><div><h3>Tiền, giá trị sống, buông bỏ <span class="jp">お金・持たない暮らし</span></h3><div class="meta"><span class="pill measured">≈ 28,2 tr/tháng</span><span class="pill partial">nên có 2 kênh</span></div></div></div>
+      <p class="note">Một trục giá trị chung: "ít mà đủ". Nên tách 2 kênh: tâm lý người giàu, chi tiêu (22,5 tr) và dọn dẹp, buông bỏ (khoảng 6 tr, đối thủ ít, thị phần ta 0%).</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Người giàu, không ham vật chất</span><span>22,5 tr</span></li>
+          <li><span>Dọn nhà, bỏ bớt đồ</span><span>2,9 tr</span></li>
+          <li><span>Dọn dẹp, nhà cửa</span><span>2,8 tr</span></li>
+          <li><span>Phòng bừa</span><span>sương mù</span></li>
+          <li class="added"><span>Tâm lý tiêu xài, tiết kiệm</span><span>—</span></li>
+          <li class="added"><span>Sống tối giản</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">富裕層</span><span class="chip">お金持ち</span><span class="chip">古い車</span><span class="chip">ブランド</span><span class="chip">浪費癖</span><span class="chip">見栄</span><span class="chip">年金だけで</span><span class="chip">断捨離</span><span class="chip">片付け</span><span class="chip">ミニマリスト</span><span class="chip">生前整理</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>お金持ちほど絶対に買わないもの</li><li>古い車に乗り続ける人の意外な心理</li><li>部屋が片付かない人に隠れた本当の理由</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c1">① tiền và đồ đạc tuổi già</a><a href="#c7">⑦ thói quen chi tiêu</a></div></div>
+    </article>
+
+    <article class="card" id="c2">
+      <div class="card-head"><span class="num-badge">②</span><div><h3>Trí tuệ, IQ, não bộ <span class="jp">頭のいい人・脳科学</span></h3><div class="meta"><span class="pill measured">≈ 18,8 tr/tháng</span><span class="pill partial">nên có 2 kênh</span></div></div></div>
+      <p class="note">Vùng có thị phần ta tốt nhất (0,44%). Tách 2 kênh: "người thông minh nhìn thế giới thế nào" và "tài năng bị ẩn, người bị đánh giá thấp".</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Trí tuệ, IQ</span><span>15,1 tr</span></li>
+          <li><span>Trí nhớ, điện thoại</span><span>3,1 tr</span></li>
+          <li><span>Tài năng bị ẩn</span><span>557 N</span></li>
+          <li><span>Học vấn, IQ không đo được</span><span>sương mù</span></li>
+          <li class="added"><span>Thiên kiến nhận thức, kinh tế học hành vi</span><span>—</span></li>
+          <li class="added"><span>Ảo giác, trắc nghiệm, câu đố tâm lý</span><span>—</span></li>
+          <li class="added"><span>Giấc ngủ, ăn uống, vận động và não</span><span>—</span></li>
+          <li class="added"><span>Phòng ngừa sa sút trí tuệ</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">IQ</span><span class="chip">頭がいい人</span><span class="chip">地頭</span><span class="chip">メタ認知</span><span class="chip">ギフテッド</span><span class="chip">スマホ脳</span><span class="chip">物忘れ</span><span class="chip">認知バイアス</span><span class="chip">心理テスト</span><span class="chip">認知症予防</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>IQが15違うと見えている世界はどう違うのか</li><li>本当は頭がいいのに気づかれない人の特徴</li><li>この図形が一瞬で分かる人の脳の仕組み</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c1">① não tuổi già</a><a href="#c6">⑥ người hướng nội có tài</a><a href="#c7">⑦ hành vi lộ trí tuệ</a><a href="#c10">⑩ phát triển bản thân</a></div></div>
+    </article>
+
+    <article class="card" id="c4">
+      <div class="card-head"><span class="num-badge">④</span><div><h3>Người khó chịu và ranh giới <span class="jp">人間関係の境界線</span></h3><div class="meta"><span class="pill measured">≈ 13,7 tr/tháng</span><span class="pill partial">nên có 1 kênh</span></div></div></div>
+      <p class="note">Mạch nội dung: người tốt bị lợi dụng, nhận ra người độc hại, rồi lặng lẽ rút lui. Video nóng nhất cả ngách ở đây (khoảng 72 N/ngày). Thị phần ta 0%.</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Người độc hại</span><span>10 tr</span></li>
+          <li><span>Cố gắng không được đền đáp</span><span>1,9 tr</span></li>
+          <li><span>Nhận diện người độc hại</span><span>1,8 tr</span></li>
+          <li><span>Lặng lẽ rời đi</span><span>sương mù</span></li>
+          <li class="added"><span>Ghen tị, khoe khoang, so bì</span><span>—</span></li>
+          <li class="added"><span>Nhận ra lời nói dối, đọc người</span><span>—</span></li>
+          <li class="added"><span>Tâm lý đen tối</span><span>—</span></li>
+          <li class="added"><span>Quan hệ nơi công sở</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">優しい人</span><span class="chip">距離を置く</span><span class="chip">境界線</span><span class="chip">静かに去る</span><span class="chip">否定してくる人</span><span class="chip">嫉妬</span><span class="chip">マウント</span><span class="chip">嘘を見抜く</span><span class="chip">サイコパス</span><span class="chip">職場</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>身近な人にほどキツく当たる人の心理</li><li>優しい人が静かに去る前に見せるサイン</li><li>何を言っても否定してくる人との距離の置き方</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c5">⑤ người khó chịu trong gia đình</a><a href="#c6">⑥ rút lui, giữ khoảng cách</a><a href="#c12">⑫ quan hệ tình cảm độc hại</a></div></div>
+    </article>
+
+    <article class="card" id="c5">
+      <div class="card-head"><span class="num-badge">⑤</span><div><h3>Gia đình <span class="jp">親子・夫婦・嫁姑</span></h3><div class="meta"><span class="pill measured">≥ 8,9 tr/tháng</span><span class="pill partial">nên có 1 kênh</span></div></div></div>
+      <p class="note">Nghiêng về cha mẹ lớn tuổi với con đã trưởng thành, nên sát cụm ①. Nuôi dạy con nhỏ là khán giả khác (cha mẹ trẻ): không gộp vào kênh này.</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Cha mẹ – con</span><span>8,9 tr</span></li>
+          <li class="added"><span>Mẹ chồng – nàng dâu</span><span>—</span></li>
+          <li class="added"><span>Vợ chồng tuổi già</span><span>—</span></li>
+          <li class="added"><span>Nuôi dạy con nhỏ (khán giả khác)</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">親子関係</span><span class="chip">大人になった子ども</span><span class="chip">帰省</span><span class="chip">実家</span><span class="chip">嫁姑</span><span class="chip">義実家</span><span class="chip">夫婦</span><span class="chip">孫</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>子どもが結婚したら親がやめるべき習慣</li><li>帰省の送り出しで言ってはいけない一言</li><li>子どもに一生味方だと思われる親の違い</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c1">① tuổi già</a><a href="#c4">④ người khó chịu trong nhà</a><a href="#c12">⑫ vợ chồng</a></div></div>
+    </article>
+
+    <article class="card" id="c6">
+      <div class="card-head"><span class="num-badge">⑥</span><div><h3>Một mình, hướng nội <span class="jp">ひとり・内向型</span></h3><div class="meta"><span class="pill measured">≈ 7,8 tr/tháng</span><span class="pill partial">chỉ nên 1 kênh</span></div></div></div>
+      <p class="note">Cụm gắn kết nhất nhưng nhỏ. Hiện có khoảng 4–5 kênh của ta cùng làm (đoán theo tên kênh). Thêm HSP để mở rộng.</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Một mình</span><span>4 tr</span></li>
+          <li><span>Mệt khi ở đám đông</span><span>2,1 tr</span></li>
+          <li><span>Ít bạn, giữ khoảng cách</span><span>1,5 tr</span></li>
+          <li><span>Thích ở một mình</span><span>215 N</span></li>
+          <li><span>Thích ở nhà, không ra ngoài</span><span>sương mù</span></li>
+          <li><span>Không dùng mạng xã hội</span><span>sương mù</span></li>
+          <li><span>Hay nói một mình</span><span>sương mù</span></li>
+          <li><span>Không hứng thú thể thao</span><span>sương mù</span></li>
+          <li class="added"><span>Người rất nhạy cảm (HSP)</span><span>—</span></li>
+          <li class="added"><span>Cô đơn ở tuổi già</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">ひとり時間</span><span class="chip">孤独</span><span class="chip">友達が少ない</span><span class="chip">内向型</span><span class="chip">HSP</span><span class="chip">繊細さん</span><span class="chip">気疲れ</span><span class="chip">おひとりさま</span><span class="chip">SNSをやめた</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>孤独を苦痛と感じない人の共通点</li><li>友達が少ない人ほど人生後半で幸せになる理由</li><li>人混みでどっと疲れる人の脳の特徴</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c1">① tuổi già một mình</a><a href="#c2">② người hướng nội có tài</a><a href="#c4">④ giữ khoảng cách</a><a href="#c8">⑧ tĩnh tâm</a></div></div>
+    </article>
+
+    <article class="card" id="c7">
+      <div class="card-head"><span class="num-badge">⑦</span><div><h3>Hành vi, thói quen đời thường <span class="jp">〜な人の正体</span></h3><div class="meta"><span class="pill measured">≥ 2,6 tr/tháng</span><span class="pill partial">chủ đề phụ</span></div></div></div>
+      <p class="note">Nhỏ để đứng riêng, nhưng dùng chung công thức title 「〜な人の正体」 với ② và ③. Dùng làm video phụ cho các kênh đó.</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li><span>Thói quen vô hại khác</span><span>2,6 tr</span></li>
+          <li><span>Thói quen vô hại khác (nhánh 2)</span><span>sương mù</span></li>
+          <li><span>Tâm lý hành vi con người</span><span>sương mù</span></li>
+          <li><span>Tam tính</span><span>sương mù</span></li>
+          <li class="added"><span>Tâm lý qua cách nói, câu cửa miệng</span><span>—</span></li>
+          <li class="added"><span>Phẩm cách, ấn tượng đầu tiên</span><span>—</span></li>
+          <li class="added"><span>Thú cưng và tâm lý con người</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">〜な人の正体</span><span class="chip">意外な特徴</span><span class="chip">口癖</span><span class="chip">話し方</span><span class="chip">品がある人</span><span class="chip">椅子を戻す人</span><span class="chip">犬猫に好かれる</span></div></div>
+      <div><div class="label">Hướng title</div><ol class="titles"><li>立つとき椅子を戻す人の本当の人柄</li><li>店員にありがとうと言える人の共通点</li><li>なぜ走る人ほど心が強くなるのか</li></ol></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c2">② trí tuệ</a><a href="#c3">③ chi tiêu</a><a href="#c9">⑨ tính cách</a></div></div>
+    </article>
+
+    <article class="card" id="c8">
+      <div class="card-head"><span class="num-badge">⑧</span><div><h3>Triết lý, lời dạy chữa lành <span class="jp">ブッダの教え・名言</span></h3><div class="meta"><span class="pill fog">chưa đo</span><span class="pill partial">1 kênh thử</span></div></div></div>
+      <p class="note">Rất mạnh với người già: kênh đối thủ 心がほっとする人生学 đang nổ khoảng 29 N/ngày với dạng này. Hợp định dạng đọc chậm, giọng ấm.</p>
+      <div><div class="label">Ngách nhỏ</div>
+        <ul class="sub">
+          <li class="added"><span>Lời Phật dạy, tâm lý Phật giáo</span><span>—</span></li>
+          <li class="added"><span>Triết học khắc kỷ</span><span>—</span></li>
+          <li class="added"><span>Danh ngôn người nổi tiếng</span><span>—</span></li>
+          <li class="added"><span>Buông bỏ lo âu</span><span>—</span></li>
+        </ul></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">ブッダの教え</span><span class="chip">仏教心理</span><span class="chip">ストア哲学</span><span class="chip">偉人の名言</span><span class="chip">不安を手放す</span><span class="chip">朗読</span></div></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c1">① tuổi già</a><a href="#c6">⑥ tĩnh tâm</a><a href="#c10">⑩ phát triển bản thân</a><a href="#c11">⑪ vận may</a></div></div>
+    </article>
+
+    <article class="card" id="c9">
+      <div class="card-head"><span class="num-badge">⑨</span><div><h3>Tính cách, phân loại người <span class="jp">性格診断・MBTI</span></h3><div class="meta"><span class="pill fog">chưa đo</span></div></div></div>
+      <p class="note">Người Nhật rất thích dạng này, nhưng khán giả trẻ hơn (20–45): lệch tệp người già của hệ thống mascot hiện tại.</p>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">MBTI</span><span class="chip">16タイプ</span><span class="chip">血液型</span><span class="chip">エニアグラム</span><span class="chip">性格診断</span></div></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c7">⑦ hành vi</a><a href="#c11">⑪ vận may</a><a href="#c12">⑫ tình yêu</a></div></div>
+    </article>
+
+    <article class="card" id="c10">
+      <div class="card-head"><span class="num-badge">⑩</span><div><h3>Tự khẳng định, phát triển bản thân <span class="jp">自己肯定感</span></h3><div class="meta"><span class="pill fog">chưa đo</span></div></div></div>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">自己肯定感</span><span class="chip">自己啓発</span><span class="chip">習慣化</span><span class="chip">やる気</span><span class="chip">メンタルが強い人</span></div></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c2">② trí tuệ</a><a href="#c8">⑧ lời dạy</a></div></div>
+    </article>
+
+    <article class="card" id="c11">
+      <div class="card-head"><span class="num-badge">⑪</span><div><h3>Vận may và tâm lý <span class="jp">運・開運</span></h3><div class="meta"><span class="pill fog">chưa đo</span></div></div></div>
+      <p class="note">Gần tâm linh, ví dụ video 「手のひらにM字がある人」. Dùng làm video phụ cho ⑧, không nên lập kênh riêng.</p>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">運がいい人</span><span class="chip">開運</span><span class="chip">手相</span><span class="chip">金運</span></div></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c8">⑧ lời dạy</a><a href="#c9">⑨ tính cách</a></div></div>
+    </article>
+
+    <article class="card" id="c12">
+      <div class="card-head"><span class="num-badge">⑫</span><div><h3>Tâm lý tình yêu <span class="jp">恋愛心理</span></h3><div class="meta"><span class="pill fog">sương mù trên bản đồ</span></div></div></div>
+      <p class="note">Khán giả trẻ và trung niên. Với người già chỉ hợp ở góc vợ chồng (gộp vào ⑤).</p>
+      <div><div class="label">Từ khoá</div><div class="chips"><span class="chip">恋愛心理</span><span class="chip">脈あり</span><span class="chip">男性心理</span><span class="chip">女性心理</span></div></div>
+      <div><div class="label">Giáp ranh</div><div class="adj"><a href="#c4">④ quan hệ độc hại</a><a href="#c5">⑤ vợ chồng</a><a href="#c9">⑨ tính cách</a></div></div>
+    </article>
+
+  </div>
+</section>
+
+<section aria-labelledby="plan-h">
+  <h2 id="plan-h">Đề xuất lập kênh</h2>
+  <p class="lead">Mỗi dòng là một kênh. Cụm chính chiếm khoảng 70–80% video, cụm giáp ranh khoảng 20–30%. Cột cuối là kênh hiện có có thể đặt vào, <b>đoán theo tên kênh</b> trên dashboard: cần kiểm tra lại nội dung thật.</p>
+  <div class="panel scroll">
+    <table>
+      <thead><tr><th>Kênh</th><th>Cụm chính</th><th>Cụm giáp ranh</th><th>Ngách trọng tâm</th><th>Kênh hiện có (đoán)</th></tr></thead>
+      <tbody>
+        <tr><td>K1 Hạnh phúc tuổi già</td><td class="role-main">①</td><td class="role-border">⑧</td><td>tuổi tác là nhân vật chính, tuổi tinh thần, hạnh phúc và lối sống</td><td class="jp">暮らしのたたみ方, 年輪の心理学</td></tr>
+        <tr><td>K2 Não tuổi già</td><td class="role-main">①</td><td class="role-border">②</td><td>trí nhớ và não già, trí nhớ và điện thoại, phòng ngừa sa sút trí tuệ</td><td class="jp">成熟の脳科学, 孤高の知恵・老後の脳科学</td></tr>
+        <tr><td>K3 Tiền tuổi già</td><td class="role-main">①</td><td class="role-border">③</td><td>tiền dưỡng già, sống bằng lương hưu, nghèo ngầm</td><td>— (chưa có)</td></tr>
+        <tr><td>K4 Người thông minh</td><td class="role-main">②</td><td class="role-border">⑦</td><td>IQ, nhận thức, câu đố, thiên kiến nhận thức</td><td class="jp">もうひとつのものさし, 脳の余白 LABO</td></tr>
+        <tr><td>K5 Tài năng bị ẩn</td><td class="role-main">②</td><td class="role-border">⑥</td><td>tài năng bị ẩn, học vấn không đo được, HSP có tài</td><td class="jp">静かなる才・日本</td></tr>
+        <tr><td>K6 Tâm lý người giàu</td><td class="role-main">③</td><td class="role-border">⑦</td><td>người giàu không ham vật chất, tiêu xài, tiết kiệm</td><td class="jp">心理のとまり木</td></tr>
+        <tr><td>K7 Dọn dẹp và buông bỏ</td><td class="role-main">③</td><td class="role-border">①</td><td>dọn nhà, bỏ bớt đồ, phòng bừa, sống tối giản, dọn đồ trước khi mất</td><td class="jp">片付け心理ラボ</td></tr>
+        <tr><td>K8 Ranh giới quan hệ</td><td class="role-main">④</td><td class="role-border">⑤</td><td>người độc hại, người tốt bị lợi dụng, lặng lẽ rời đi</td><td>— (chưa có, chuyển 1 kênh ⑥ sang)</td></tr>
+        <tr><td>K9 Gia đình</td><td class="role-main">⑤</td><td class="role-border">①</td><td>cha mẹ và con trưởng thành, mẹ chồng nàng dâu, vợ chồng tuổi già</td><td>— (chưa có)</td></tr>
+        <tr><td>K10 Một mình, hướng nội</td><td class="role-main">⑥</td><td class="role-border">①</td><td>một mình, ít bạn, mệt khi ở đám đông, HSP</td><td class="jp">凪の心理学, 孤高の心理ラボ, 智慧のひとり時間ラボ, 大人のソロ心理学 (quá đông: giữ 1–2)</td></tr>
+        <tr><td>K11 Lời dạy chữa lành (thử)</td><td class="role-main">⑧</td><td class="role-border">①</td><td>lời Phật dạy, triết học khắc kỷ, buông bỏ lo âu</td><td>— (chưa có)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="caution-h">
+  <h2 id="caution-h">Ngách cần cẩn thận</h2>
+  <div class="panel caution">
+    <p><b>Rối loạn phát triển</b> (<span class="jp">発達障害, ADHD, ASD, グレーゾーン, 境界知能</span>) và <b>sức khoẻ tâm thần</b> (<span class="jp">うつ, 不安障害, 自律神経</span>): nhu cầu cao, nhưng YouTube kiểm tra chặt nội dung y tế. Video kiểu "chẩn đoán" hoặc thông tin sai dễ bị giảm phân phối. Nếu làm thì đi theo góc đời sống và đồng cảm, không đóng vai chuyên gia điều trị.</p>
+  </div>
+</section>
+
+<section aria-labelledby="format-h">
+  <h2 id="format-h">Định dạng tạo khác biệt</h2>
+  <div class="panel">
+    <ul class="sub" style="gap:8px">
+      <li><span><b>Truyện tranh tâm lý</b> <span class="jp">【漫画】</span>: 2 trong 8 video nóng trên dashboard (人間のトリビア, 人生の知らせ)</span><span>mọi cụm</span></li>
+      <li><span><b>Đọc chậm, giọng ấm, nghe nền</b>: thời lượng xem dài, hợp người già</span><span>①⑤⑧</span></li>
+      <li><span><b>Câu đố, trắc nghiệm tâm lý</b>: tương tác cao</span><span>②⑨</span></li>
+    </ul>
+  </div>
+</section>
+
+</div>
+<!-- skill-tab:start -->
+<div class="tabpanel" id="panel-skill" role="tabpanel" aria-labelledby="tab-skill" hidden>
+
+<section aria-labelledby="skill-h">
+  <h2 id="skill-h">Skill <code>jp-psy-cluster</code> trong Claude Code</h2>
+  <p class="lead">Skill gom mọi thứ đã phân tích cho 11 cụm (khán giả, ngách nhỏ, format title + thumbnail, mascot, nhận diện kênh) để mascot, kênh, chủ đề và kịch bản của cùng một cụm luôn nhất quán với nhau và với luồng tạo video của dammo (niche <code>ja-psy-k1</code>…<code>ja-psy-k11</code>). Gõ <b>mã cụm + việc</b> trong Claude Code ở thư mục <code>D:\dammo</code>; skill cũng tự kích hoạt khi bạn hỏi về mascot, kênh hay kịch bản cho một cụm tâm lý Nhật.</p>
+  <div class="cmds">
+    <article class="cmd">
+      <div class="cmd-top"><code>K1 mascot</code><button class="copy" type="button" data-copy="K1 mascot">Chép</button></div>
+      <h3>3 prompt tạo mascot</h3>
+      <p>3 prompt tiếng Anh, mỗi prompt ra <b>một ảnh tham chiếu nhân vật</b> trên Google Flow, đúng bố cục mascot đang dùng trong dammo. Ảnh này tải lên làm mascot kênh để hệ thống viết hồ sơ mascot và vẽ thumbnail.</p>
+    </article>
+    <article class="cmd">
+      <div class="cmd-top"><code>K5 channel</code><button class="copy" type="button" data-copy="K5 channel">Chép</button></div>
+      <h3>3 bộ thông tin kênh</h3>
+      <p>Mỗi kênh một góc riêng trong cùng cụm: tên kênh 6–14 ký tự, handle (+ dự phòng), mô tả 400–800 ký tự, 15–25 tags, prompt avatar và prompt banner có chữ. Kênh thứ i dùng mascot thứ i.</p>
+    </article>
+    <article class="cmd">
+      <div class="cmd-top"><code>K8 videos</code><button class="copy" type="button" data-copy="K8 videos">Chép</button></div>
+      <h3>10 chủ đề video</h3>
+      <p>10 cặp title tiếng Nhật + summary tiếng Việt: 8 chủ đề cụm chính, 2 giáp ranh; mỗi format A–D ít nhất 2 lần; không quá 3 chủ đề cho một ngách nhỏ.</p>
+    </article>
+    <article class="cmd">
+      <div class="cmd-top"><code>K2 video &lt;title&gt; &lt;summary&gt;</code><button class="copy" type="button" data-copy="K2 video ">Chép</button></div>
+      <h3>Transcript 12–30 phút</h3>
+      <p>Lời đọc tiếng Nhật hoàn chỉnh, lưu vào <code>docs/transcripts/k2/…md</code>, tự đếm ký tự để khớp thời lượng. Title bắt buộc, summary có thể bỏ trống.</p>
+    </article>
+  </div>
+  <p class="note">Giải thích trả bằng tiếng Việt; nội dung cho người xem (title, mô tả kênh, tags, transcript, chữ trên banner) bằng tiếng Nhật; prompt tạo ảnh bằng tiếng Anh.</p>
+</section>
+
+<section aria-labelledby="flow-h">
+  <h2 id="flow-h">Quy trình mở một kênh mascot</h2>
+  <ol class="steps">
+    <li><b>Chọn cụm</b> theo bảng ở tab Bản đồ ngách (mỗi kênh 1 cụm chính ~80% + 1 giáp ranh ~20%).</li>
+    <li><b><code>K mascot</code></b> → dán prompt vào Google Flow (tạo ảnh, 16:9), bỏ bản nào có cảnh nền.</li>
+    <li><b><code>K channel</code></b> trong cùng cuộc trò chuyện → kênh i dùng mascot i; tạo avatar và banner kèm ảnh mascot, soát từng chữ Hán trên banner.</li>
+    <li><b>Thêm kênh trong dammo</b>: niche <code>ja-psy-kN</code>, tải ảnh mascot, chọn visual style <i>Mascot · KN …</i>.</li>
+    <li><b><code>K videos</code></b> → chọn chủ đề → <b><code>K video &lt;title&gt; &lt;summary&gt;</code></b> → transcript.</li>
+    <li>Dammo tự tạo metadata và thumbnail theo format A–D của cụm (AI tự chọn format, xoay vòng giữa các video).</li>
+  </ol>
+</section>
+
+<section aria-labelledby="sheet-h">
+  <h2 id="sheet-h">Ảnh tham chiếu mascot và luật thiết kế</h2>
+  <div class="sheet-wrap">
+    <div class="panel">
+<svg class="sheet" viewBox="0 0 480 270" role="img" aria-labelledby="sheet-t">
+  <title id="sheet-t">Bố cục ảnh tham chiếu mascot: 4 góc nhìn trên trái, 6 biểu cảm trên phải, 5 tư thế ở hàng dưới, nền trắng</title>
+  <rect class="paper" x="1" y="1" width="478" height="268" rx="8"/>
+  <g class="fig">
+    <g transform="translate(24,26)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="40" rx="8"/></g>
+    <g transform="translate(74,26)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="40" rx="8"/></g>
+    <g transform="translate(124,26)"><circle cx="18" cy="14" r="13"/><rect x="10" y="29" width="16" height="40" rx="7"/></g>
+    <g transform="translate(174,26)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="40" rx="8"/></g>
+  </g>
+  <text x="24" y="118" class="cap">4 góc nhìn: trước · ¾ · ngang · sau</text>
+  <g class="fig heads">
+    <circle cx="286" cy="40" r="17"/><circle cx="338" cy="40" r="17"/><circle cx="390" cy="40" r="17"/>
+    <circle cx="286" cy="88" r="17"/><circle cx="338" cy="88" r="17"/><circle cx="390" cy="88" r="17"/>
+  </g>
+  <text x="262" y="126" class="cap">6 biểu cảm (lưới 3×2)</text>
+  <line class="div" x1="20" y1="140" x2="460" y2="140"/>
+  <g class="fig">
+    <g transform="translate(38,156)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="38" rx="8"/></g>
+    <g transform="translate(124,156)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="38" rx="8"/></g>
+    <g transform="translate(210,156)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="38" rx="8"/></g>
+    <g transform="translate(296,166)"><circle cx="18" cy="14" r="13"/><rect x="6" y="29" width="24" height="26" rx="10"/></g>
+    <g transform="translate(382,156)"><circle cx="18" cy="14" r="13"/><rect x="8" y="29" width="20" height="38" rx="8"/></g>
+  </g>
+  <text x="24" y="256" class="cap">5 tư thế toàn thân · bóng xám dưới chân · không cảnh nền, không chữ</text>
+</svg></div>
+    <ul class="rules">
+      <li><b>Khác 3 thiết kế đã có</b> của cụm (bảng dưới), trừ khi bạn nói rõ muốn bản gốc.</li>
+      <li><b>3 nhân vật khác nhau rõ</b> về dáng, giới tính / độ tuổi gợi ý và màu chính, để mỗi kênh cùng cụm có mascot riêng.</li>
+      <li><b>Màu chính tương phản</b> với nền thumbnail của cụm (nền ấm → mascot lạnh và ngược lại), ghi mã màu kèm tên màu.</li>
+      <li><b>Đúng 1 món đồ đặc trưng</b> gắn với chủ đề cụm.</li>
+      <li><b>Tôn trọng người lớn tuổi</b>: dấu hiệu tuổi tinh tế (kính, cardigan, tóc bạc), không chế giễu.</li>
+      <li><b>Tránh kiểu đã phổ biến</b> trong ngách (đầu tròn màu cam, người que trắng) và nhân vật có bản quyền.</li>
+      <li><b>K11 không dùng mascot dễ thương</b>: nhân vật trang nghiêm, tỉ lệ người thật, chỉ dùng cho ảnh cảnh.</li>
+    </ul>
+  </div>
+  <p class="note">Flow hay vẽ thành cảnh: đính kèm mascot cũ làm mẫu bố cục và thêm câu đầu <code>Use the same sheet layout as the reference image, but draw this new character:</code>. Nếu mã màu bị vẽ thành chữ thì xoá mã, giữ tên màu.</p>
+</section>
+
+<section aria-labelledby="mc-h">
+  <h2 id="mc-h">Mascot theo từng cụm</h2>
+  <p class="lead">Ô màu cạnh vai trò là màu nhấn thumbnail của cụm; ô màu cạnh mỗi thiết kế là màu chính của mascot. Đặt hai màu cạnh nhau để thấy độ tương phản.</p>
+  <nav class="jump" aria-label="Nhảy tới cụm"><a href="#m-k1">K1</a><a href="#m-k2">K2</a><a href="#m-k3">K3</a><a href="#m-k4">K4</a><a href="#m-k5">K5</a><a href="#m-k6">K6</a><a href="#m-k7">K7</a><a href="#m-k8">K8</a><a href="#m-k9">K9</a><a href="#m-k10">K10</a><a href="#m-k11">K11</a></nav>
+  <div class="cards">
+    <article class="card mcard" id="m-k1">
+      <div class="card-head">
+        <span class="kbadge">K1</span>
+        <div><h3>Hạnh phúc tuổi già</h3><div class="note">① + ⑧</div></div>
+        <button class="copy" type="button" data-copy="K1 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#FFC93C" title="màu nhấn thumbnail"></i>mascot màu lạnh (chàm, xanh khói) để nổi trên nền ấm</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Soft warm 2D illustration, clean thick dark-brown outlines, gentle cel shading, slightly rounded shapes, Japanese picture-book feel.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#3B4A8C" title="#3B4A8C"></i><b>Ông cụ áo cardigan chàm</b></div><details><summary>Mô tả gốc (EN)</summary><p class="en">A gentle Japanese grandfather in his late 60s, kind and calm. Round soft head, small dot eyes, short white hair only on the sides, small round glasses, indigo cardigan (#3B4A8C) over a white shirt, beige trousers, about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#2F6F73" title="#2F6F73"></i><b>Bà cụ búi tóc</b></div><details><summary>Mô tả gốc (EN)</summary><p class="en">A gentle Japanese grandmother in her late 60s, warm and dignified. Round soft face, small white hair bun, round glasses on a thin chain, deep teal cardigan (#2F6F73) over a cream blouse, long navy skirt, about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#4E6A8F" title="#4E6A8F"></i><b>Người già mũ len (trung tính)</b></div><details><summary>Mô tả gốc (EN)</summary><p class="en">A gender-neutral senior character, cheerful and calm. Simple round head with dot eyes and rosy cheeks, smoky blue knit cap (#4E6A8F), matching soft scarf, gray padded vest, about 2.3 heads tall, very simple silhouette.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">content smile, deep thought, wistful, gentle laugh, worried, relieved sigh</p>
+          <span>5 tư thế</span><p class="en">waving warmly, hands clasped behind the back, a small polite bow, sitting on the ground hugging the knees, hand on chin thinking</p>
+          <span>Avatar</span><p><i class="sw" style="background:#3B4A8C" title="#3B4A8C"></i>#3B4A8C chàm đậm</p>
+          <span>Banner</span><p>hiên nhà kiểu Nhật, nắng chiều vàng; mascot vẫy tay hiền hậu</p>
+          <span>Khẩu hiệu</span><p class="jp">心理学で、人生後半をもっと軽く</p>
+          <span>Tránh</span><p>thuật ngữ katakana khó; thể suồng sã; hù doạ bệnh tật hay cái chết</p>
+        </div>
+        <ul class="fmts"><li><b>K1-A</b> Danh sách thói quen<span>danh sách, con số to</span></li><li><b>K1-B</b> Đối lập hai người tuổi già<span>chia đôi đối lập</span></li><li><b>K1-C</b> Điều then chốt được giấu<span>đạo cụ bị che, nhấn 「これ」</span></li><li><b>K1-D</b> Lời khuyên nhủ (giáp ranh ⑧)<span>tĩnh lặng, một câu lời dạy</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k2">
+      <div class="card-head">
+        <span class="kbadge">K2</span>
+        <div><h3>Não tuổi già</h3><div class="note">① + ②</div></div>
+        <button class="copy" type="button" data-copy="K2 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#3FD0FF" title="màu nhấn thumbnail"></i>mascot màu ấm (cam đào, vàng mù tạt, đỏ) để nổi trên nền navy</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Clean flat 2D illustration, thick dark outlines, simple cel shading, bright warm colors that pop on a dark background.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#F28C6B" title="#F28C6B"></i><b>Ông cụ kính trên trán</b></div><span class="item">Đồ đặc trưng: reading glasses pushed up on the forehead</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A friendly Japanese senior man around 70 who is always looking for his glasses. Round peach-colored head, dot eyes, reading glasses pushed up on the forehead (signature item), coral sweater vest (#F28C6B) over a light shirt, about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#E3A72F" title="#E3A72F"></i><b>Bà cụ sổ ghi nhớ</b></div><span class="item">Đồ đặc trưng: a small pocket notebook peeking from the pocket</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A lively Japanese senior woman who keeps notes to stay sharp. Short gray bob hair, round face, mustard cardigan (#E3A72F), a small pocket notebook peeking from the pocket (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#D9534F" title="#D9534F"></i><b>Ông cụ đi bộ khăn vắt cổ</b></div><span class="item">Đồ đặc trưng: white towel around the neck</span><details><summary>Mô tả gốc (EN)</summary><p class="en">An energetic senior who walks every day to keep the brain young. Round head with short gray hair, warm red windbreaker (#D9534F), white towel around the neck (signature item), sneakers, about 2.3 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">puzzled, sudden realisation, worried, surprised, relieved, embarrassed laugh</p>
+          <span>5 tư thế</span><p class="en">patting own pockets searching, tapping the head thinking, one finger up remembering, walking briskly, hands on cheeks surprised</p>
+          <span>Avatar</span><p><i class="sw" style="background:#14213D" title="#14213D"></i>#14213D navy</p>
+          <span>Banner</span><p>nền navy với đường sáng cyan, hình não mờ; mascot giơ một ngón tay &quot;à, nhớ ra rồi&quot;</p>
+          <span>Khẩu hiệu</span><p class="jp">脳科学で、毎日をいきいきと</p>
+          <span>Tránh</span><p>chẩn đoán bệnh; hứa chữa khỏi; hù doạ sa sút trí tuệ</p>
+        </div>
+        <ul class="fmts"><li><b>K2-A</b> Danh sách thói quen cho não<span>danh sách, con số to</span></li><li><b>K2-B</b> Gỡ mặc cảm về trí nhớ<span>gỡ mặc cảm, lo → nhẹ nhõm</span></li><li><b>K2-C</b> Não trẻ và não già<span>chia đôi đối lập</span></li><li><b>K2-D</b> Hành vi lộ cách não vận hành (giáp ranh ②)<span>chân dung hành vi</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k3">
+      <div class="card-head">
+        <span class="kbadge">K3</span>
+        <div><h3>Tiền tuổi già</h3><div class="note">① + ③</div></div>
+        <button class="copy" type="button" data-copy="K3 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#1E8A4C" title="màu nhấn thumbnail"></i>mascot màu đậm (navy, mận, nâu) để nổi trên nền kem; đạo cụ tiền bạc mới là nhân vật chính</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Clean flat 2D illustration, thick dark outlines, simple cel shading, tidy and trustworthy look.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#24365C" title="#24365C"></i><b>Ông cụ gile navy</b></div><span class="item">Đồ đặc trưng: a small gamaguchi coin purse</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A neat, careful Japanese retired man who manages money wisely. Neatly side-parted gray hair, round face, navy vest (#24365C) over a white shirt, holding a small gamaguchi coin purse (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#7A3E5A" title="#7A3E5A"></i><b>Bà cụ túi eco</b></div><span class="item">Đồ đặc trưng: a folded eco shopping bag over the arm</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A thrifty, sensible Japanese senior woman. Short permed gray hair, plum cardigan (#7A3E5A), a folded eco shopping bag over the arm (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#6B4A2E" title="#6B4A2E"></i><b>Ông cụ mũ hunting</b></div><span class="item">Đồ đặc trưng: a small calculator in hand</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A down-to-earth retired man who lives well on a pension. Brown flat cap (#6B4A2E), round glasses, beige knit, a small calculator in hand (signature item), about 2.5 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">worried, calculating with narrowed eyes, relieved, surprised, determined, content</p>
+          <span>5 tư thế</span><p class="en">arms crossed thinking, holding the signature item, sighing with slumped shoulders, fist clenched determined, pointing forward</p>
+          <span>Avatar</span><p><i class="sw" style="background:#1E8A4C" title="#1E8A4C"></i>#1E8A4C xanh lá</p>
+          <span>Banner</span><p>phòng khách sáng màu kem; mascot cầm ví <span class="jp">がま口</span>, cười yên tâm</p>
+          <span>Khẩu hiệu</span><p class="jp">心理学で、お金の不安を軽くする</p>
+          <span>Tránh</span><p>lời khuyên đầu tư cụ thể; hứa làm giàu; con số không có trong transcript</p>
+        </div>
+        <ul class="fmts"><li><b>K3-A</b> Con số / điều bị giấu<span>đạo cụ bị che, nhấn 「これ」</span></li><li><b>K3-B</b> Danh sách khoản chi<span>danh sách, con số to</span></li><li><b>K3-C</b> Hệ quả tiền bạc<span>hệ quả, bóng người rời đi</span></li><li><b>K3-D</b> Đối lập hai cách giữ tiền<span>chia đôi đối lập</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k4">
+      <div class="card-head">
+        <span class="kbadge">K4</span>
+        <div><h3>Người thông minh</h3><div class="note">② + ⑦</div></div>
+        <button class="copy" type="button" data-copy="K4 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#FFD400" title="màu nhấn thumbnail"></i>mascot sáng (trắng, xanh băng) có viền sáng để nổi trên nền tối; tránh đầu tròn màu cam đã phổ biến</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Crisp minimal vector illustration, bold dark outlines, flat colors with a subtle cyan rim light, sleek and smart.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw none" title="không ghi mã màu"></i><b>Đầu trắng tối giản, kính mảnh</b></div><span class="item">Đồ đặc trưng: thin rectangular glasses</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A sharp, quietly confident thinker. Smooth white rounded head, sharp half-lidded eyes, thin rectangular glasses (signature item), charcoal turtleneck, slim body about 3 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#BFE6FF" title="#BFE6FF"></i><b>Đầu xanh băng, tia ý tưởng</b></div><span class="item">Đồ đặc trưng: a tiny floating spark above the head</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A curious genius type with ideas popping up. Ice-blue round head (#BFE6FF), big focused eyes, a tiny floating spark above the head (signature item), black hoodie, about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#2BB39A" title="#2BB39A"></i><b>Mọt sách cà vạt ngọc</b></div><span class="item">Đồ đặc trưng: a book under the arm</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A slender bookish intellectual. Messy dark hair, calm eyes, white shirt with an emerald tie (#2BB39A), a book under the arm (signature item), about 3 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">knowing smirk, deep thought, piercing gaze, mild surprise, amused, calm</p>
+          <span>5 tư thế</span><p class="en">arms crossed, hand on chin, pointing at the temple, looking over the glasses, one hand in pocket confident</p>
+          <span>Avatar</span><p><i class="sw" style="background:#2A1B4A" title="#2A1B4A"></i>#2A1B4A tím than</p>
+          <span>Banner</span><p>nền tối có ánh neon, vài đạo cụ phát sáng; mascot khoanh tay, nhếch mép hiểu chuyện</p>
+          <span>Khẩu hiệu</span><p class="jp">賢い人の頭の中、のぞいてみませんか</p>
+          <span>Tránh</span><p>hạ thấp người IQ thấp; khẳng định khoa học không có căn cứ</p>
+        </div>
+        <ul class="fmts"><li><b>K4-A</b> Chân dung người thông minh<span>chân dung hành vi</span></li><li><b>K4-B</b> Đối lập thông minh / không<span>chia đôi đối lập</span></li><li><b>K4-C</b> Thế giới họ nhìn thấy<span>thế giới họ nhìn thấy</span></li><li><b>K4-D</b> Hành vi lộ trí tuệ (giáp ranh ⑦)<span>chân dung hành vi</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k5">
+      <div class="card-head">
+        <span class="kbadge">K5</span>
+        <div><h3>Tài năng bị ẩn</h3><div class="note">② + ⑥</div></div>
+        <button class="copy" type="button" data-copy="K5 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#F2B705" title="màu nhấn thumbnail"></i>mascot đúng một màu tươi (xanh ngọc, xanh trời, xanh lá)</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Simple flat 2D illustration, soft dark outlines, minimal shading, one vivid main color so it stands out in a gray world.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#1FA6A0" title="#1FA6A0"></i><b>Áo hoodie xanh ngọc, đốm sáng ngực</b></div><span class="item">Đồ đặc trưng: a soft glowing dot in the chest</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A shy, quiet person with a hidden talent. Small rounded body, oversized teal hoodie (#1FA6A0), slightly hunched shoulders, a soft glowing dot in the chest (signature item), about 2.3 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#4FA3E0" title="#4FA3E0"></i><b>Tóc mái dài, sổ phác thảo</b></div><span class="item">Đồ đặc trưng: a sketchbook</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A quiet creator who rarely shows their work. Long bangs half covering the eyes, sky-blue sweater (#4FA3E0), holding a sketchbook (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#5BBF5A" title="#5BBF5A"></i><b>Mầm cây trên đầu</b></div><span class="item">Đồ đặc trưng: a tiny sprout growing from the top of the head</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A small character whose potential is still growing. Round leaf-green body (#5BBF5A), dot eyes, a tiny sprout growing from the top of the head (signature item), about 2 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">shy, focused, quiet confidence, embarrassed, gentle smile, lonely</p>
+          <span>5 tư thế</span><p class="en">standing shyly with hands together, sitting on the ground hugging the knees, looking up hopefully, holding a small glowing light in both hands, peeking from behind own hands</p>
+          <span>Avatar</span><p><i class="sw" style="background:#5A5048" title="#5A5048"></i>#5A5048 nâu xám</p>
+          <span>Banner</span><p>thế giới nâu xám, ánh đèn chiếu vào mascot; mascot hai tay nâng đốm sáng</p>
+          <span>Khẩu hiệu</span><p class="jp">気づかれない才能に、光を</p>
+          <span>Tránh</span><p>chẩn đoán (<span class="jp">ギフテッド</span>, <span class="jp">発達障害</span>) cho người xem; chê người hướng ngoại</p>
+        </div>
+        <ul class="fmts"><li><b>K5-A</b> Chân dung người bị đánh giá thấp<span>chân dung hành vi</span></li><li><b>K5-B</b> Gỡ mặc cảm<span>gỡ mặc cảm, lo → nhẹ nhõm</span></li><li><b>K5-C</b> Danh sách tài năng<span>danh sách, con số to</span></li><li><b>K5-D</b> Người hướng nội có tài (giáp ranh ⑥)<span>chân dung hành vi</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k6">
+      <div class="card-head">
+        <span class="kbadge">K6</span>
+        <div><h3>Tâm lý người giàu</h3><div class="note">③ + ⑦</div></div>
+        <button class="copy" type="button" data-copy="K6 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#C8102E" title="màu nhấn thumbnail"></i>mascot màu trầm giản dị (navy, than, xám xanh); không dùng vàng hay ký hiệu tiền</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Clean flat 2D illustration, thick dark outlines, muted understated palette, calm and composed.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#1F2A44" title="#1F2A44"></i><b>Quý ông áo len navy</b></div><span class="item">Đồ đặc trưng: simple silver wristwatch</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A calm, quietly wealthy middle-aged man who lives simply. Neat gray hair, plain navy sweater (#1F2A44), simple silver wristwatch (signature item), about 2.7 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#3A3A3A" title="#3A3A3A"></i><b>Quý bà áo khoác than</b></div><span class="item">Đồ đặc trưng: a well-worn leather tote bag</span><details><summary>Mô tả gốc (EN)</summary><p class="en">An elegant, frugal senior woman. Short gray hair, simple charcoal coat (#3A3A3A), a well-worn leather tote bag (signature item), about 2.7 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#4A5A6A" title="#4A5A6A"></i><b>Ông lão áo khoác lao động</b></div><span class="item">Đồ đặc trưng: an old car key on a ring</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A humble self-made man who looks ordinary but is rich. Short white hair, slate work jacket (#4A5A6A), an old car key on a ring (signature item), about 2.5 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">knowing smile, calm, slight head shake, amused, unimpressed, satisfied</p>
+          <span>5 tư thế</span><p class="en">arms crossed calmly, hands in pockets, shaking head with a smile, walking relaxed, holding the signature item</p>
+          <span>Avatar</span><p><i class="sw" style="background:#C8102E" title="#C8102E"></i>#C8102E đỏ</p>
+          <span>Banner</span><p>minh hoạ ấm, giản dị; mascot tay đút túi, bình thản</p>
+          <span>Khẩu hiệu</span><p class="jp">お金持ちの「普通じゃない」心理</p>
+          <span>Tránh</span><p>lời khuyên đầu tư cụ thể; hứa làm giàu; chê bai người nghèo</p>
+        </div>
+        <ul class="fmts"><li><b>K6-A</b> Chân dung người giàu<span>chân dung hành vi</span></li><li><b>K6-B</b> Danh sách đồ không mua<span>danh sách, con số to</span></li><li><b>K6-C</b> Điều người giàu giữ lại<span>đạo cụ bị che, nhấn 「これ」</span></li><li><b>K6-D</b> Đối lập giàu / không giàu<span>chia đôi đối lập</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k7">
+      <div class="card-head">
+        <span class="kbadge">K7</span>
+        <div><h3>Dọn dẹp và buông bỏ</h3><div class="note">③ + ①</div></div>
+        <button class="copy" type="button" data-copy="K7 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#14A3A3" title="màu nhấn thumbnail"></i>mascot tối giản, một màu nhấn (xanh mòng két, san hô, navy) để hợp nền tối giản</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Minimal soft 2D illustration, rounded shapes, thin-to-medium dark outlines, airy light palette.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#14A3A3" title="#14A3A3"></i><b>Nhân vật kem tạp dề xanh</b></div><span class="item">Đồ đặc trưng: a folded furoshiki cloth</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A gentle tidy-up helper. Soft cream round body, dot eyes, teal apron (#14A3A3), a folded furoshiki cloth (signature item), about 2.2 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#F08A7E" title="#F08A7E"></i><b>Khăn tam giác san hô</b></div><details><summary>Mô tả gốc (EN)</summary><p class="en">A cheerful cleaner who loves an empty room. Simple round head, coral triangle head scarf (#F08A7E) (signature item), white long-sleeve top, about 2.3 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#2E4057" title="#2E4057"></i><b>Bà cụ tạp dề navy</b></div><span class="item">Đồ đặc trưng: a cardboard box</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A senior woman sorting her belongings for later life. Gray hair bun, navy work apron (#2E4057), holding a cardboard box (signature item), about 2.5 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">overwhelmed, determined, relieved, tired, satisfied, calm smile</p>
+          <span>5 tư thế</span><p class="en">rolling up sleeves determined, wiping sweat from the forehead, stretching arms up relieved, sitting on the ground resting, holding the signature item</p>
+          <span>Avatar</span><p><i class="sw" style="background:#14A3A3" title="#14A3A3"></i>#14A3A3 xanh mòng két</p>
+          <span>Banner</span><p>phòng pastel tối giản, thoáng; mascot vươn vai nhẹ nhõm</p>
+          <span>Khẩu hiệu</span><p class="jp">手放すほど、心は軽くなる</p>
+          <span>Tránh</span><p>chê người bừa bộn; chẩn đoán (ADHD...)</p>
+        </div>
+        <ul class="fmts"><li><b>K7-A</b> Danh sách đồ nên bỏ<span>danh sách, con số to</span></li><li><b>K7-B</b> Gỡ mặc cảm bừa bộn<span>gỡ mặc cảm, lo → nhẹ nhõm</span></li><li><b>K7-C</b> Lời dạy buông bỏ<span>tĩnh lặng, một câu lời dạy</span></li><li><b>K7-D</b> Dọn đồ tuổi già (giáp ranh ①)<span>đạo cụ bị che, nhấn 「これ」</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k8">
+      <div class="card-head">
+        <span class="kbadge">K8</span>
+        <div><h3>Ranh giới quan hệ</h3><div class="note">④ + ⑤</div></div>
+        <button class="copy" type="button" data-copy="K8 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#E0322B" title="màu nhấn thumbnail"></i>mascot màu ấm hiền (vàng bơ, đào, cam) đóng vai &quot;người tốt&quot;; người khó chịu luôn là bóng xám, không vẽ trong bảng</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Soft flat 2D illustration, thick dark outlines, gentle shading, kind and sympathetic look.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#F6D57A" title="#F6D57A"></i><b>Người hiền cardigan vàng bơ</b></div><span class="item">Đồ đặc trưng: small scarf</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A kind person who always gives way to others. Round soft head, kind droopy eyes, butter-yellow cardigan (#F6D57A), small scarf (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#F4A988" title="#F4A988"></i><b>Chị nhân viên văn phòng tốt bụng</b></div><span class="item">Đồ đặc trưng: a tote bag on the shoulder</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A considerate office worker in her 40s who is tired of difficult people. Peach round face (#F4A988), short brown hair, simple blouse, a tote bag on the shoulder (signature item), about 2.7 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#E8893C" title="#E8893C"></i><b>Ông cụ gile cam ôm cốc trà</b></div><span class="item">Đồ đặc trưng: a teacup</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A gentle senior man dealing with difficult relatives. Short white hair, warm orange knit vest (#E8893C), holding a teacup (signature item), about 2.5 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">tired, uneasy sideways glance, hurt, forced polite smile, calm resolve, relieved</p>
+          <span>5 tư thế</span><p class="en">walking away calmly, raising one hand gently to say stop, hands clasped worried, sitting on the ground hugging the knees, standing firm with a calm face</p>
+          <span>Avatar</span><p><i class="sw" style="background:#3C4A5C" title="#3C4A5C"></i>#3C4A5C xám xanh</p>
+          <span>Banner</span><p>chiều tối tông lạnh, bóng người xám phía xa; mascot đứng vững, mặt bình thản</p>
+          <span>Khẩu hiệu</span><p class="jp">優しい人が疲れないための心理学</p>
+          <span>Tránh</span><p>kích động trả thù; gán bệnh tâm lý cho người khác; từ ngữ thô tục</p>
+        </div>
+        <ul class="fmts"><li><b>K8-A</b> Hệ quả trong quan hệ<span>hệ quả, bóng người rời đi</span></li><li><b>K8-B</b> Danh sách hành vi<span>danh sách, con số to</span></li><li><b>K8-C</b> Chân dung người khó chịu<span>chân dung hành vi</span></li><li><b>K8-D</b> Gỡ mặc cảm người tốt<span>gỡ mặc cảm, lo → nhẹ nhõm</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k9">
+      <div class="card-head">
+        <span class="kbadge">K9</span>
+        <div><h3>Gia đình</h3><div class="note">⑤ + ①</div></div>
+        <button class="copy" type="button" data-copy="K9 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#F07B1A" title="màu nhấn thumbnail"></i>mascot chính màu lạnh (chàm, xanh lá) để nổi trên nền cam; con cháu vẽ thêm sau bằng cùng kiểu thiết kế, màu khác</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Warm soft 2D illustration, thick dark-brown outlines, gentle cel shading, homely and heartwarming.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#3D4F8F" title="#3D4F8F"></i><b>Mẹ khoảng 60 tuổi, tạp dề chàm</b></div><span class="item">Đồ đặc trưng: a simple apron</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A caring Japanese mother in her 60s whose children are grown up. Gray hair in a low bun, indigo cardigan (#3D4F8F) with a simple apron (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#3F7D5A" title="#3F7D5A"></i><b>Bố khoảng 65 tuổi, áo xanh lá</b></div><span class="item">Đồ đặc trưng: a newspaper tucked under the arm</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A quiet Japanese father in his mid 60s learning to talk with his adult children. Short gray hair, round glasses, forest-green knit sweater (#3F7D5A), a newspaper tucked under the arm (signature item), about 2.5 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#2E3D6B" title="#2E3D6B"></i><i class="sw" style="background:#2F6F73" title="#2F6F73"></i><b>Cặp vợ chồng già (dùng thận trọng)</b></div><details><summary>Mô tả gốc (EN)</summary><p class="en">An elderly Japanese couple shown together as one mascot pair. Husband: short white hair, navy cardigan (#2E3D6B). Wife: gray bun, teal cardigan (#2F6F73). They always appear side by side, same art style, about 2.5 heads tall each. In the sheet show the pair together in every view.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">warm smile, hurt, regretful, worried, gentle laugh, lonely</p>
+          <span>5 tư thế</span><p class="en">waving goodbye, hands clasped at the chest worried, a small bow, sitting on the ground looking down lonely, arms open welcoming</p>
+          <span>Avatar</span><p><i class="sw" style="background:#F07B1A" title="#F07B1A"></i>#F07B1A cam</p>
+          <span>Banner</span><p>lối vào / bàn ăn gia đình, ánh đèn ấm; mascot dang tay chào đón</p>
+          <span>Khẩu hiệu</span><p class="jp">親子の距離が、心地よくなる心理学</p>
+          <span>Tránh</span><p>đổ lỗi một phía cho con cái; chi tiết bạo lực gia đình</p>
+        </div>
+        <ul class="fmts"><li><b>K9-A</b> Câu nói không nên nói<span>hệ quả, bóng người rời đi</span></li><li><b>K9-B</b> Danh sách thói quen của cha mẹ<span>danh sách, con số to</span></li><li><b>K9-C</b> Đối lập hai kiểu cha mẹ<span>chia đôi đối lập</span></li><li><b>K9-D</b> Điều cha mẹ già nên biết (giáp ranh ①)<span>đạo cụ bị che, nhấn 「これ」</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard" id="m-k10">
+      <div class="card-head">
+        <span class="kbadge">K10</span>
+        <div><h3>Một mình, hướng nội</h3><div class="note">⑥ + ①</div></div>
+        <button class="copy" type="button" data-copy="K10 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#FFE27A" title="màu nhấn thumbnail"></i>mascot màu ấm (mù tạt, cam rỉ sét, nâu) để nổi trên nền xanh lạnh</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Cozy flat 2D illustration, soft dark outlines, warm muted palette, quiet and calm mood.</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw" style="background:#E0A526" title="#E0A526"></i><b>Áo len mù tạt, tai nghe</b></div><span class="item">Đồ đặc trưng: headphones around the neck</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A quiet introvert who enjoys time alone. Small rounded body, oversized mustard sweater (#E0A526), headphones around the neck (signature item), about 2.3 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#C8642D" title="#C8642D"></i><b>Hoodie cam rỉ sét, cầm sách</b></div><span class="item">Đồ đặc trưng: a book</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A calm person who recharges with books. Round soft head, rust-orange hoodie (#C8642D) with the hood half up, holding a book (signature item), about 2.3 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#8A5A3B" title="#8A5A3B"></i><b>Đàn ông trung niên đi một mình</b></div><span class="item">Đồ đặc trưng: a thermos flask</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A middle-aged man who loves solo walks and solo trips. Short dark hair with gray at the sides, warm brown jacket (#8A5A3B), a thermos flask (signature item), about 2.7 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">content alone, drained, calm small smile, sleepy, thoughtful, relieved</p>
+          <span>5 tư thế</span><p class="en">standing relaxed eyes closed, slumped and drained, stretching happily, sitting on the ground hugging the knees, walking with hands in pockets</p>
+          <span>Avatar</span><p><i class="sw" style="background:#2B3A55" title="#2B3A55"></i>#2B3A55 xanh giờ lam</p>
+          <span>Banner</span><p>cửa sổ chiều tối, một ngọn đèn ấm; mascot ôm cốc, mắt khép</p>
+          <span>Khẩu hiệu</span><p class="jp">ひとりの時間を、もっと好きになる</p>
+          <span>Tránh</span><p>coi cô đơn là bệnh; chẩn đoán HSP</p>
+        </div>
+        <ul class="fmts"><li><b>K10-A</b> Chân dung người thích một mình<span>chân dung hành vi</span></li><li><b>K10-B</b> Gỡ mặc cảm<span>gỡ mặc cảm, lo → nhẹ nhõm</span></li><li><b>K10-C</b> Nghịch lý đối lập<span>chia đôi đối lập</span></li><li><b>K10-D</b> Tuổi già một mình (giáp ranh ①)<span>danh sách, con số to</span></li></ul>
+      </details>
+    </article>
+    <article class="card mcard serious" id="m-k11">
+      <div class="card-head">
+        <span class="kbadge">K11</span>
+        <div><h3>Lời dạy chữa lành</h3><div class="note">⑧ + ①</div></div>
+        <button class="copy" type="button" data-copy="K11 mascot">Chép lệnh</button>
+      </div>
+      <p class="mrole"><i class="sw" style="background:#D4A017" title="màu nhấn thumbnail"></i>KHÔNG dùng mascot dễ thương; 3 phương án dưới là nhân vật trang nghiêm cho ảnh cảnh (không dùng luồng thumbnail mascot)</p>
+      <div><div class="label">Phong cách vẽ</div><p class="en">Gentle Japanese ink-wash and watercolor illustration, soft brush outlines, muted gold and green palette, serene and dignified (not cute, not chibi).</p></div>
+      <div><div class="label">3 thiết kế đã có (tạo mới phải khác)</div><ul class="designs"><li><div class="dname"><i class="sw none" title="không ghi mã màu"></i><b>Vị sư già trang nghiêm</b></div><span class="item">Đồ đặc trưng: prayer beads on the wrist</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A wise, kind elderly Japanese monk shown with respect (not a caricature, not the Buddha). Shaved head, gentle wrinkles, simple gray-brown robe, prayer beads on the wrist (signature item), realistic proportions about 6 heads tall.</p></details></li><li><div class="dname"><i class="sw none" title="không ghi mã màu"></i><b>Người già nhìn từ phía sau</b></div><details><summary>Mô tả gốc (EN)</summary><p class="en">An elderly person seen mostly from behind or in profile, quiet and reflective. Short white hair, plain beige kimono-style jacket, small figure; most views from behind or side, face shown only softly in the close-ups, realistic proportions about 6 heads tall.</p></details></li><li><div class="dname"><i class="sw" style="background:#6F7F5A" title="#6F7F5A"></i><b>Người phụ nữ lớn tuổi bình thản</b></div><span class="item">Đồ đặc trưng: a small teacup</span><details><summary>Mô tả gốc (EN)</summary><p class="en">A calm elderly Japanese woman who has let go of worries. Silver hair in a neat bun, soft moss-green cardigan (#6F7F5A), a small teacup (signature item), realistic proportions about 6 heads tall.</p></details></li></ul></div>
+      <details class="more"><summary>Biểu cảm, tư thế, kênh, format</summary>
+        <div class="kv">
+          <span>6 biểu cảm</span><p class="en">serene, gentle smile, eyes closed in meditation, attentive, compassionate, peaceful</p>
+          <span>5 tư thế</span><p class="en">standing with palms together, sitting cross-legged in meditation, walking slowly, a respectful bow, standing calmly with hands folded</p>
+          <span>Avatar</span><p><i class="sw" style="background:#4A5A3A" title="#4A5A3A"></i>#4A5A3A xanh rêu</p>
+          <span>Banner</span><p>vườn chùa bình minh, sương nhẹ; mascot chắp tay, an nhiên (nhân vật trang nghiêm)</p>
+          <span>Khẩu hiệu</span><p class="jp">心を軽くする、ブッダの教え</p>
+          <span>Tránh</span><p>truyền đạo; hứa phép màu; mê tín</p>
+        </div>
+        <ul class="fmts"><li><b>K11-A</b> Lời dạy<span>tĩnh lặng, một câu lời dạy</span></li><li><b>K11-B</b> Danh sách thay đổi<span>danh sách, con số to</span></li><li><b>K11-C</b> Điều Phật dặn<span>đạo cụ bị che, nhấn 「これ」</span></li><li><b>K11-D</b> Lời dạy cho tuổi già (giáp ranh ①)<span>tĩnh lặng, một câu lời dạy</span></li></ul>
+      </details>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="len-h">
+  <h2 id="len-h">Thời lượng transcript (<code>K video</code>)</h2>
+  <div class="panel scroll">
+    <table>
+      <thead><tr><th>Loại nội dung</th><th>Thời lượng</th><th>Số ký tự mục tiêu</th></tr></thead>
+      <tbody>
+        <tr><td>3–4 ý, hoặc một lời dạy / một nghịch lý</td><td class="num">12–15 phút</td><td class="num">3.600–4.500</td></tr>
+        <tr><td>5–7 ý, hoặc đối lập có ví dụ</td><td class="num">16–22 phút</td><td class="num">4.800–6.600</td></tr>
+        <tr><td>8–10 ý, hoặc chủ đề có nhiều tình huống</td><td class="num">23–30 phút</td><td class="num">6.900–9.000</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Tốc độ đọc tham chiếu ~300 ký tự/phút. Cấu trúc: hook 30–60 giây (không chào trước hook) → mở bài ngắn → từng ý (giải thích + tình huống đời thường kiểu 「68歳の佐藤さん」 + điều làm được) → câu giữ chân mỗi 4–5 phút → kết, câu hỏi kéo bình luận, mời đăng ký.</p>
+</section>
+
+<section aria-labelledby="skillrule-h">
+  <h2 id="skillrule-h">Luật chung và vị trí file</h2>
+  <div class="panel caution">
+    <p>Không bịa nghiên cứu, số liệu, tên chuyên gia; không chẩn đoán y tế hay tâm lý; không hứa làm giàu, chữa khỏi; không chế giễu tuổi già, không giọng dỗ trẻ con. Tên kênh mới không trùng hoặc na ná 24 tên kênh đã có trong ngách.</p>
+  </div>
+  <ul class="files">
+    <li><code>.claude/skills/jp-psy-cluster/SKILL.md</code><span>đọc lệnh, chọn file việc</span></li>
+    <li><code>references/common.md</code><span>bối cảnh, bảng cụm, tên kênh đã có, luật chung</span></li>
+    <li><code>references/clusters/k1.md … k11.md</code><span>dữ liệu từng cụm (nguồn của bảng mascot ở trên)</span></li>
+    <li><code>references/tasks/mascot · channel · videos · video.md</code><span>hướng dẫn và định dạng trả lời của từng lệnh</span></li>
+    <li><code>server/data/prompts/ja/metadata_tlnb_k*/step-1.js</code><span>prompt meta đang chạy; khi khác file cụm thì theo file này</span></li>
+  </ul>
+</section>
+
+</div>
+<!-- skill-tab:end -->
+</div>
+
+<script>
+/* skill-tab script: tabs routed on #ban-do / #skill-mascot; in-page anchors switch to the tab that holds them. */
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  function show(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+  }
+  function route() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var tab = tabs.filter(function (t) { return t.dataset.hash === id; })[0];
+    if (tab) { show(tab); window.scrollTo(0, 0); return; }
+    var el = id && document.getElementById(id);
+    var panel = el && el.closest('[role="tabpanel"]');
+    show(panel ? document.querySelector('[aria-controls="' + panel.id + '"]') : tabs[0]);
+    if (el) el.scrollIntoView();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { location.hash = t.dataset.hash; });
+    t.addEventListener('keydown', function (ev) {
+      var d = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      var next = tabs[(i + d + tabs.length) % tabs.length];
+      location.hash = next.dataset.hash;
+      next.focus();
+    });
+  });
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('.copy');
+    if (!b) return;
+    var done = function () { var old = b.textContent; b.textContent = 'Đã chép'; b.classList.add('done'); setTimeout(function () { b.textContent = old; b.classList.remove('done'); }, 1400); };
+    try { navigator.clipboard.writeText(b.dataset.copy).then(done, function () {}); } catch (e) {}
+  });
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
+</body>
+</html>

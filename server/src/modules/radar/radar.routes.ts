@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { listTrendRadar } from './radar-trends.js';
 import { radarService } from './radar.service.js';
 
 const listQuerySchema = z.object({
@@ -13,6 +14,15 @@ const listQuerySchema = z.object({
 
 export function createRadarRoutes() {
   const app = new Hono();
+
+  const trendsQuerySchema = z.object({
+    days: z.coerce.number().positive().max(90).optional(),
+    cluster: z.string().regex(/^(K([1-9]|1[01])|off|none)$/).optional(),
+    limit: z.coerce.number().int().min(1).max(600).optional(),
+  });
+
+  // Hot videos found by the jp-psy-trends brain / skill, tagged with their K1–K11 cluster.
+  app.get('/trends', zValidator('query', trendsQuerySchema), c => c.json(listTrendRadar(c.req.valid('query'))));
 
   app.get('/status', c => c.json(radarService.status()));
 

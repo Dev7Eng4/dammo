@@ -3,7 +3,16 @@ export type { ChannelLanguage } from './channel-language.js';
 import type { CaptionStyleKey } from '../video-production/shared/render-core/caption-styles.js';
 import type { YoutubeChannelVideo } from '../../infrastructure/youtube/youtube-channel.types.js';
 
-export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale';
+export type YoutubeChannelType = 'content' | 'reup_audio' | 'reup_video' | 'content_sale' | 'remake_video';
+
+/**
+ * Channel types configured and produced like Reup audio (VOICEVOX/TTS narration over AI scenes or a
+ * still). `remake_video` is the same pipeline under its own label, for channels whose videos are
+ * remade step by step on the Video production page.
+ */
+export function isReupAudioFamilyType(type: string | undefined): boolean {
+  return type === 'reup_audio' || type === 'remake_video';
+}
 
 /** @deprecated Legacy persisted value */
 export type LegacyYoutubeChannelType = 'reup';
@@ -24,6 +33,24 @@ export type VideoCreationOrder =
   | 'shortest_duration_first';
 export type MonetizationStatus = 'monetized' | 'in_review' | 'demonetized' | 'limited';
 export type HealthScore = 'high' | 'medium' | 'low';
+export type SourceMode = 'channels' | 'trend_brain';
+
+/**
+ * remake_video only: what "Chuẩn bị video" / "Tạo video" does before metadata, thumbnail and scenes —
+ * remake the source transcript into a new script (ChatGPT/Gemini) and read it with VOICEVOX, replacing
+ * the source audio. Unset fields fall back to Settings (AI tools → Remake, default VOICEVOX voice).
+ * Missing object = on with defaults; `enabled: false` = old behaviour (source audio kept).
+ */
+export interface RemakeAutoConfig {
+  enabled?: boolean;
+  provider?: 'gpt' | 'gemini' | 'claude';
+  promptSetId?: string;
+  /** Saved VOICEVOX voice (Settings → Giọng đọc); default voice when unset. */
+  voicePresetId?: string;
+  /** 0.7–1.5, default 1. */
+  speedScale?: number;
+}
+
 export type YoutubeChannelStatus = 'init' | 'created' | 'active' | 'paused' | 'deleted';
 
 export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video';
@@ -58,6 +85,15 @@ export interface YoutubeChannel {
   linkedEmail: string;
   uploadSchedule: string[];
   sourceChannels: string[];
+  /**
+   * Where reup videos come from: `channels` (default) = the source channels above;
+   * `trend_brain` = hot videos the trend brain (jp-psy-trends) found, hottest first.
+   */
+  sourceMode?: SourceMode;
+  /** trend_brain only: K-clusters to take videos from (empty = all clusters). */
+  trendClusters?: string[];
+  /** remake_video only: automatic script remake + VOICEVOX narration when preparing/creating videos. */
+  remakeAuto?: RemakeAutoConfig;
   /** Oldest unprocessed first vs newest first when creating/preparing videos */
   videoCreationOrder?: VideoCreationOrder;
   contentProjectId: string;
@@ -137,6 +173,9 @@ export interface CreateYoutubeChannelInput {
   language: ChannelLanguage;
   niche: string;
   sourceChannels?: string[];
+  sourceMode?: SourceMode;
+  trendClusters?: string[];
+  remakeAuto?: RemakeAutoConfig;
   videoCreationOrder?: VideoCreationOrder;
   backgroundFootageSources?: string[];
   thumbnailStyleKey?: string;

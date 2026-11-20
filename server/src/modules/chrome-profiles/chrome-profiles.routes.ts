@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { isAppError } from '../../shared/http/errors.js';
-import { createChromeProfileSchema, updateChromeProfileSchema } from './chrome-profiles.schema.js';
+import { createChromeProfileSchema, updateChromeProfileLlmsSchema, updateChromeProfileSchema } from './chrome-profiles.schema.js';
 import { chromeProfilesService } from './chrome-profiles.service.js';
 
 export function createChromeProfilesRoutes() {
@@ -15,9 +15,10 @@ export function createChromeProfilesRoutes() {
 
   app.get('/', (c) => c.json(chromeProfilesService.list()));
 
-  app.post('/reset-sub-profiles', async (c) => {
-    const result = await chromeProfilesService.resetSubProfiles();
-    return c.json(result);
+  app.patch('/:id/llms', zValidator('json', updateChromeProfileLlmsSchema), (c) => {
+    const body = c.req.valid('json');
+    const item = chromeProfilesService.updateLlms(c.req.param('id'), body);
+    return c.json({ item });
   });
 
   app.patch('/:id', zValidator('json', updateChromeProfileSchema), (c) => {
@@ -28,16 +29,6 @@ export function createChromeProfilesRoutes() {
 
   app.post('/:id/open', async (c) => {
     const item = await chromeProfilesService.open(c.req.param('id'));
-    return c.json({ item });
-  });
-
-  app.post('/:id/set-main', async (c) => {
-    const item = chromeProfilesService.setAsMain(c.req.param('id'));
-    return c.json({ item });
-  });
-
-  app.post('/:id/set-sub', async (c) => {
-    const item = chromeProfilesService.setAsSub(c.req.param('id'));
     return c.json({ item });
   });
 

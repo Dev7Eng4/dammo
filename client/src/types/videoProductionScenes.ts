@@ -3,6 +3,8 @@ export type ProductionVideoStatus = 'Prepared' | 'Created';
 export interface ProductionVideoListItem {
   channelId: string;
   channelName: string;
+  /** Remake channels remake the script and read it with VOICEVOX; others keep the source audio. */
+  channelType: string;
   videoId: string;
   title: string;
   status: ProductionVideoStatus;
@@ -77,7 +79,8 @@ export interface ProductionMetadataResponse {
   thumbnailUrl: string | null;
 }
 
-export type ProductionDetailTab = 'metadata' | 'video' | 'transcript' | 'scenes' | 'characters';
+/** Detail tabs in processing order, like a project's steps. */
+export type ProductionDetailTab = 'source' | 'script' | 'voice' | 'characters' | 'scenes' | 'motion' | 'video' | 'metadata';
 
 export function productionVideoKey(video: Pick<ProductionVideoListItem, 'channelId' | 'videoId'>): string {
   return `${video.channelId}:${video.videoId}`;

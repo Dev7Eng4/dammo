@@ -16,10 +16,11 @@ export const updateAppSettingsSchema = z.object({
     .optional(),
   taskQueueConcurrency: z.number().int().min(1).max(8).optional(),
   verboseVideoLogs: z.boolean().optional(),
-  aiScenePromptChromeProfileRole: z.enum(['main', 'sub']).optional(),
   aiScenePromptConcurrency: z.number().int().min(1).max(8).optional(),
   seedingEmailDays: z.number().int().min(1).max(365).optional(),
   seedingYoutubeDays: z.number().int().min(1).max(365).optional(),
   removeGeminiWatermark: z.boolean().optional(),
   removeGeminiWatermarkPrompt: z.string().max(1000).optional(),
+  enableUpdateTranscript: z.boolean().optional(),
+  disabledUpdateTranscript: z.boolean().optional(),
 });

@@ -1,9 +1,5 @@
 {
   "production": {
-    "page": {
-      "title": "Sản xuất video",
-      "subtitle": "Chọn kênh → chọn video → xem scene render"
-    },
     "loadVideosError": "Không tải được danh sách video",
     "loadScenesError": "Không tải được scene",
     "loadTranscriptError": "Không tải được kịch bản",
@@ -22,29 +18,9 @@
       "unsupported": "Trình duyệt không hỗ trợ phát video."
     },
     "toolbar": {
-      "step1": "1. Chọn kênh",
-      "step2": "2. Tìm video",
-      "channelLoading": "Đang tải kênh...",
-      "channelPlaceholder": "Chọn kênh YouTube",
-      "channelSearch": "Tìm kênh...",
-      "videoSearch": "Tìm theo tiêu đề video...",
-      "selectChannelFirst": "Chọn kênh trước",
-      "filterAll": "Tất cả",
-      "statusAll": "Tất cả",
-      "statusCreated": "Created",
-      "statusPrepared": "Prepared",
       "copyPath": "Copy path",
       "copyPathSuccess": "Đã sao chép đường dẫn folder video",
-      "copyPathError": "Không thể sao chép đường dẫn folder video",
-      "count": "{{total}} video",
-      "noChannel": "Chưa chọn kênh"
-    },
-    "list": {
-      "loading": "Đang tải video...",
-      "selectChannel": "Chọn kênh ở trên để xem danh sách video.",
-      "empty": "Kênh này không có video Prepared hoặc Created.",
-      "sceneCount": "{{count}} scene",
-      "noThumbnail": "Chưa có thumbnail"
+      "copyPathError": "Không thể sao chép đường dẫn folder video"
     },
     "detail": {
       "selectVideo": "Chọn một video trong danh sách để xem scene và ảnh.",
@@ -110,6 +86,9 @@
     "transcript": {
       "loading": "Đang tải kịch bản...",
       "empty": "Chưa có transcript.srt hoặc transcript-updated.srt cho video này.",
+      "copy": "Copy kịch bản",
+      "copySuccess": "Đã copy kịch bản",
+      "copyError": "Không copy được kịch bản",
       "col": {
         "index": "#",
         "timeline": "Timeline",
@@ -134,7 +113,12 @@
       "saved": "Đã thêm character",
       "saveError": "Không thể thêm character",
       "mascotBadge": "Mascot kênh",
-      "mascotHint": "Ảnh mascot của kênh. Đổi ảnh trong phần sửa kênh."
+      "mascotHint": "Ảnh mascot của kênh. Đổi ảnh trong phần sửa kênh.",
+      "replaceImage": "Đổi ảnh",
+      "uploading": "Đang tải lên…",
+      "replaced": "Đã đổi ảnh",
+      "mascotReplaceHint": "Ảnh mascot của kênh — đổi ở đây sẽ áp dụng cho mọi video của kênh.",
+      "mascotReplaceConfirm": "Đây là ảnh mascot của cả kênh: đổi sẽ áp dụng cho mọi video của kênh (ảnh và thumbnail tạo sau này). Tiếp tục?"
     },
     "scene": {
       "titleCard": "Tiêu đề chương (ảnh chữ, không tạo ảnh AI)",
@@ -279,7 +263,9 @@
       "chrome": "Chrome",
       "video": "Video",
       "taskQueue": "Hàng đợi",
-      "seeding": "Seeding"
+      "seeding": "Seeding",
+      "aiTools": "Công cụ AI",
+      "voice": "Giọng đọc"
     },
     "seedingHint": "Thời gian seeding mặc định (tính theo ngày).",
     "seedingEmailDays": "Thời gian seeding email (ngày)",
@@ -298,13 +284,8 @@
     },
     "chromeOffscreen": "Đưa cửa sổ Chrome nền ra ngoài màn hình",
     "chromeOffscreenDesc": "Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường.",
-    "scenePromptProfile": "Chrome profile cho scene prompt",
-    "scenePromptProfileDesc": "Dùng khi tạo scene prompt và character reference (LLM text). Không ảnh hưởng bước tạo ảnh. Khi concurrency scene prompt > 1, các chunk dùng sub profile.",
-    "scenePromptProfileMain": "Main profile",
-    "scenePromptProfileSub": "Sub profile",
-    "scenePromptProfileParallelHint": "Concurrency > 1: các chunk scene chạy trên sub profile. Role này vẫn dùng cho character design (1 profile).",
     "scenePromptConcurrency": "Concurrency scene prompt",
-    "scenePromptConcurrencyDesc": "Số Chrome profile chạy song song khi tạo scene prompt (1–8). Giá trị 1 = tuần tự. Lớn hơn 1 cần đủ số sub profile tương ứng.",
+    "scenePromptConcurrencyDesc": "Số Chrome profile chạy song song khi tạo scene prompt (1–8). Giá trị 1 = tuần tự. Dùng các profile có tick LLM chat mặc định ở cột LLM Content, tối đa bằng số profile có.",
     "sceneDensity": "Thời lượng tối đa mỗi cảnh (giây) — mặc định toàn hệ thống. Kênh YouTube vẫn có thể ghi đè riêng.",
     "sceneStart": "Đầu video",
     "sceneMiddle": "Giữa video",
@@ -323,6 +304,137 @@
       "loadError": "Không tải được cài đặt",
       "saved": "Đã lưu cài đặt",
       "saveError": "Lưu cài đặt thất bại"
+    },
+    "enableUpdateTranscript": "Cập nhật transcript (tiếng Nhật)",
+    "enableUpdateTranscriptDesc": "Bật (true): kiểm tra điều kiện (ngôn ngữ ja, có phụ đề) để chạy cập nhật transcript bằng LLM. Tắt (false): không thực hiện cập nhật transcript.",
+    "providersDesc": "Chọn LLM / công cụ trên trình duyệt và Chrome profile cho từng loại việc. Áp dụng cho mọi pipeline và phần chạy thử ở trang Prompt. Đổi là lưu ngay.",
+    "providerGroups": {
+      "content": {
+        "title": "Nội dung (văn bản)",
+        "desc": "LLM viết chữ — kịch bản, remake, scene prompt, character reference, metadata — và Chrome profile cho từng việc đó."
+      },
+      "image": {
+        "title": "Hình ảnh",
+        "desc": "Công cụ vẽ ảnh character reference, ảnh scene và thumbnail."
+      },
+      "video": {
+        "title": "Video",
+        "desc": "Công cụ tạo video (clip chuyển động từ ảnh)."
+      }
+    },
+    "contentTasks": {
+      "profileAuto": "Tự động (profile đầu tiên có LLM này)",
+      "profileMissing": "(profile đã xoá hoặc không tick LLM này — sẽ dùng tự động)",
+      "noProfile": "Chưa có Chrome profile nào tick LLM này — vào Hồ sơ Chrome để tick.",
+      "content": {
+        "label": "Tạo nội dung",
+        "hint": "Các việc viết chữ chung: cập nhật transcript, prompt JSON, chạy thử ở trang Prompt."
+      },
+      "scriptRemake": {
+        "label": "Remake kịch bản",
+        "hint": "Remake kịch bản cho dự án Sản xuất video và video kênh Remake."
+      },
+      "scenePrompt": {
+        "label": "Tạo prompt ảnh scene",
+        "hint": "Viết prompt ảnh cho từng scene và thiết kế nhân vật (character reference)."
+      },
+      "metadata": {
+        "label": "Metadata",
+        "hint": "Tiêu đề, mô tả, tag của video."
+      }
+    },
+    "voice": {
+      "hint": "Cấu hình giọng đọc: ElevenLabs (nhiều API key, tự xoay key khi hết quota) và VOICEVOX Engine chạy local.",
+      "keyPlaceholder": "ElevenLabs API key (sk_...)",
+      "addKey": "Thêm key",
+      "keyHint": "Key được kiểm tra với ElevenLabs trước khi lưu. Khi tạo giọng, server dùng key còn nhiều ký tự nhất và tự chuyển key nếu key lỗi/hết quota.",
+      "keyAdded": "Đã thêm ElevenLabs key",
+      "noKeys": "Chưa có API key nào.",
+      "checkAll": "Kiểm tra tất cả",
+      "checkKey": "Kiểm tra quota",
+      "deleteKey": "Xoá key",
+      "enabled": "Bật",
+      "charsLeft": "còn {{count}} ký tự",
+      "keyStatus": {
+        "ok": "Hoạt động",
+        "invalid": "Key sai",
+        "quota_exceeded": "Hết quota",
+        "error": "Lỗi",
+        "unknown": "Chưa kiểm tra"
+      },
+      "reloadVoices": "Tải lại voices",
+      "noVoice": "— Chưa chọn —",
+      "el": {
+        "voice": "Giọng",
+        "model": "Model",
+        "outputFormat": "Định dạng âm thanh",
+        "stability": "Stability",
+        "similarityBoost": "Similarity",
+        "style": "Style",
+        "speed": "Tốc độ"
+      },
+      "connected": "Đã kết nối",
+      "disconnected": "Không kết nối",
+      "checkConnection": "Kiểm tra",
+      "vv": {
+        "url": "VOICEVOX Engine URL",
+        "urlHint": "Để trống = dùng VOICEVOX_URL trong env. Đang dùng: {{url}}"
+      },
+      "test": "Nghe thử",
+      "play": "Tạo & phát",
+      "preset": {
+        "title": "Voices đã lưu",
+        "add": "Thêm voice",
+        "edit": "Sửa voice",
+        "delete": "Xoá voice",
+        "setDefault": "Đặt làm mặc định",
+        "default": "Mặc định",
+        "empty": "Chưa có voice nào — bấm \"Thêm voice\" để chọn giọng từ thư viện ElevenLabs và lưu lại với tên riêng.",
+        "needKey": "Thêm ít nhất một API key đang bật để chọn voice.",
+        "name": "Tên voice",
+        "namePlaceholder": "VD: Giọng nam trầm – kênh tâm lý",
+        "loadingVoices": "Đang tải voices...",
+        "sample": "Nghe mẫu của ElevenLabs",
+        "useDefault": "Voice mặc định",
+        "hint": {
+          "stability": "Thấp = biểu cảm, cao = đều và ổn định.",
+          "similarityBoost": "Mức bám sát giọng gốc.",
+          "style": "Phóng đại cảm xúc; 0 là ổn định nhất.",
+          "speed": "Tốc độ đọc (1 = bình thường)."
+        },
+        "needKeyForList": "API key đang tắt hoặc chưa có, nên không tải được danh sách giọng. Bật key ở danh sách phía trên rồi mở lại.",
+        "deleteMessage": "Voice này sẽ bị xoá khỏi danh sách đã lưu. Nếu đang là mặc định, voice kế tiếp sẽ thành mặc định."
+      },
+      "disabled": "Đang tắt",
+      "deleteKeyMessage": "Key này sẽ bị xoá khỏi danh sách và không được dùng để tạo giọng nữa.",
+      "format": {
+        "intro": "Kiểu file ElevenLabs trả về, dạng codec_tần-số-mẫu_bitrate. Áp dụng cho mọi voice.",
+        "items": {
+          "mp3_44100_128": "MP3 44.1 kHz, 128 kbps. Mặc định, đủ tốt cho video YouTube, file nhỏ.",
+          "mp3_44100_192": "MP3 44.1 kHz, 192 kbps. Nét hơn chút, file lớn hơn ~50%. Cần gói Creator trở lên.",
+          "mp3_22050_32": "MP3 22 kHz, 32 kbps. Rất nhẹ nhưng chất lượng thấp, chỉ để thử nhanh.",
+          "pcm_24000": "PCM 24 kHz, không nén. Chất lượng gốc, file rất lớn.",
+          "pcm_44100": "PCM 44.1 kHz, không nén. File rất lớn. Cần gói Pro trở lên."
+        },
+        "tierNote": "Gói FREE nên dùng mp3_44100_128."
+      },
+      "vvp": {
+        "speedScale": "Tốc độ",
+        "pitchScale": "Cao độ",
+        "intonationScale": "Ngữ điệu",
+        "volumeScale": "Âm lượng",
+        "pauseLengthScale": "Độ dài ngắt nghỉ",
+        "hint": {
+          "speedScale": "1 = bình thường; nhỏ hơn là đọc chậm.",
+          "pitchScale": "0 = giọng gốc; âm là trầm hơn, dương là cao hơn.",
+          "intonationScale": "Thấp = đều đều, cao = lên xuống nhiều.",
+          "volumeScale": "1 = bình thường.",
+          "pauseLengthScale": "Độ dài nghỉ ở dấu 、 (1 = mặc định)."
+        },
+        "empty": "Chưa có voice nào — bấm \"Thêm voice\" để chọn giọng VOICEVOX, chỉnh và lưu lại với tên riêng.",
+        "needEngine": "VOICEVOX Engine chưa chạy nên không tải được danh sách giọng. Mở VOICEVOX rồi bấm Kiểm tra.",
+        "namePlaceholder": "VD: Nữ nhẹ nhàng – kênh tâm lý"
+      }
     }
   },
   "videoFactory": {

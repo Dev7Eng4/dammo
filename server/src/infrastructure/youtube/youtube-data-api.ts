@@ -41,8 +41,13 @@ export function isYoutubeDataApiConfigured(): boolean {
   return env.youtubeApiKey.trim() !== '';
 }
 
-async function apiGet<T>(endpoint: string, params: Record<string, string>): Promise<ListResponse<T>> {
-  const key = env.youtubeApiKey.trim();
+/** `apiKey` = a channel's own key (set on the channel); falls back to the YOUTUBE_API_KEY env. */
+export async function apiGet<T>(
+  endpoint: string,
+  params: Record<string, string>,
+  apiKey?: string,
+): Promise<ListResponse<T> & { nextPageToken?: string }> {
+  const key = (apiKey ?? env.youtubeApiKey).trim();
   if (!key) {
     throw new AppError('YOUTUBE_API_KEY is not configured', 503, 'YOUTUBE_API_KEY_MISSING');
   }
@@ -51,15 +56,17 @@ async function apiGet<T>(endpoint: string, params: Record<string, string>): Prom
   for (const [name, value] of Object.entries({ ...params, key })) url.searchParams.set(name, value);
 
   const response = await fetch(url);
-  const body = (await response.json().catch(() => ({}))) as ListResponse<T>;
+  const body = (await response.json().catch(() => ({}))) as ListResponse<T> & { nextPageToken?: string };
   if (!response.ok) {
     const reason = body.error?.errors?.[0]?.reason;
     const quotaExceeded = reason === 'quotaExceeded' || reason === 'dailyLimitExceeded';
+    const invalidKey =
+      reason === 'keyInvalid' || reason === 'API_KEY_INVALID' || /api key not valid/i.test(body.error?.message ?? '');
     // The request URL (which carries the key) is deliberately kept out of the message.
     throw new AppError(
       `YouTube Data API ${endpoint} failed: ${body.error?.message ?? response.statusText}`,
-      quotaExceeded ? 429 : 502,
-      quotaExceeded ? 'YOUTUBE_API_QUOTA_EXCEEDED' : 'YOUTUBE_API_ERROR',
+      quotaExceeded ? 429 : invalidKey ? 400 : 502,
+      quotaExceeded ? 'YOUTUBE_API_QUOTA_EXCEEDED' : invalidKey ? 'YOUTUBE_API_KEY_INVALID' : 'YOUTUBE_API_ERROR',
     );
   }
   return body;

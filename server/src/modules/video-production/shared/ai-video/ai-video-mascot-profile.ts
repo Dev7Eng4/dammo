@@ -3,13 +3,13 @@ import path from 'node:path';
 import { youtubeChannelDir } from '../../../../config/paths.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { chatForJsonOnSubProfile } from '../sub-profile-json-chat.js';
-import { resolveChannelMascotImagePath, resolveChannelMascotSheetPath } from './ai-video-channel-mascots.js';
+import { resolveChannelMascotImagePath } from './ai-video-channel-mascots.js';
 import { MASCOT_PROFILE_PROMPT_KEY } from './ai-video.constants.js';
 
 /**
  * Channel mascot profile: what the scene-prompt LLM needs to know about the mascot (it never sees the image).
- * Written once by a vision LLM from `mascot.*` (+ `mascot-sheet.*`) and cached in `<channel dir>/mascot-profile.json`;
- * the cache is rebuilt whenever either image changes.
+ * Written once by a vision LLM from `mascot.*` and cached in `<channel dir>/mascot-profile.json`;
+ * the cache is rebuilt whenever the mascot image changes.
  */
 export const CHANNEL_MASCOT_PROFILE_FILENAME = 'mascot-profile.json';
 
@@ -60,7 +60,7 @@ export const FALLBACK_MASCOT_PROFILE: MascotProfile = {
   effects: [],
   avoid: ['realistic humans', 'photorealism', 'character sheet', 'multiple poses of the same character'],
   supportingCastRule:
-    'Other people are simple characters of the same design family as the mascot, told apart by one accessory or clothing color.',
+    'Other people are drawn in the same art style as the mascot but are clearly different characters (different age or gender, face, hairstyle, body shape and clothing), never copies of the mascot.',
 };
 
 function oneLine(value: unknown): string {
@@ -164,8 +164,7 @@ export function ensureChannelMascotProfile(
 async function buildChannelMascotProfile(channelId: string, log: (msg: string) => void): Promise<MascotProfile | undefined> {
   const mascotPath = await resolveChannelMascotImagePath(channelId);
   if (!mascotPath) return undefined;
-  const sheetPath = await resolveChannelMascotSheetPath(channelId);
-  const source = await fingerprint([mascotPath, sheetPath]);
+  const source = await fingerprint([mascotPath]);
 
   const stored = await readStored(channelId);
   if (stored?.source === source) {
@@ -174,12 +173,12 @@ async function buildChannelMascotProfile(channelId: string, log: (msg: string) =
   }
 
   try {
-    const prompt = await executePromptTemplate('all', MASCOT_PROFILE_PROMPT_KEY, [Boolean(sheetPath)]);
+    const prompt = await executePromptTemplate('all', MASCOT_PROFILE_PROMPT_KEY, []);
     const profile = await chatForJsonOnSubProfile({
       logTag: '[mascot-profile]',
       label: 'Mascot profile',
       prompt,
-      attachments: sheetPath ? [mascotPath, sheetPath] : [mascotPath],
+      attachments: [mascotPath],
       timeoutMs: PROFILE_TIMEOUT_MS,
       parse: parseMascotProfile,
       log,

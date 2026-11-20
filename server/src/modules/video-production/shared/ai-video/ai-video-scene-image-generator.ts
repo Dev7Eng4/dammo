@@ -616,9 +616,9 @@ export async function generateAiSceneSlideImages(
     );
 
     if (imageProvider === 'flow') {
-      const mains = chromeProfilesService.listMainProfiles();
+      const mains = chromeProfilesService.listProfilesForLlm('image', 'flow');
       log(
-        `[ai-video] Flow scene images via main profile(s): ${mains.map(p => p.name).join(', ')}`,
+        `[ai-video] Flow scene images via Flow profile(s): ${mains.map(p => p.name).join(', ')}`,
       );
       const referencedJobs = aiPending.filter(job => (job.referenceImagePaths?.length ?? 0) > 0);
       const plainJobs = aiPending.filter(job => (job.referenceImagePaths?.length ?? 0) === 0);

@@ -26,7 +26,9 @@ import { createSmallVideoGroupsRoutes } from '../modules/small-video-groups/smal
 import { createVideoProductionUiRoutes } from '../modules/video-production-ui/video-production-ui.routes.js';
 import { createVideoAgentRoutes } from '../modules/video-agent/video-agent.routes.js';
 import { createManualVideoRoutes } from '../modules/manual-video/manual-video.routes.js';
+import { createBrainsRoutes } from '../modules/brains/brains.routes.js';
 import { createScriptRemakeRoutes } from '../modules/script-remake/script-remake.routes.js';
+import { createVoiceRoutes } from '../modules/voice/voice.routes.js';
 
 function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/dashboard`, createDashboardRoutes());
@@ -54,6 +56,8 @@ function mountApiRoutes(app: Hono, prefix: string) {
   app.route(`${prefix}/video-agent`, createVideoAgentRoutes());
   app.route(`${prefix}/manual-video`, createManualVideoRoutes());
   app.route(`${prefix}/script-remake`, createScriptRemakeRoutes());
+  app.route(`${prefix}/brains`, createBrainsRoutes());
+  app.route(`${prefix}/voice`, createVoiceRoutes());
 }
 
 export function registerModules(app: Hono) {

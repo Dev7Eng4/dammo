@@ -90,16 +90,26 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       title={collapsed ? undefined : label}
       className={({ isActive }) =>
         cn(
-          'flex items-center rounded-lg text-sm font-medium transition-colors duration-150',
-          collapsed ? 'size-9 justify-center px-0' : 'w-full gap-3 px-3 py-2',
+          'group relative flex items-center rounded-md text-[13px] font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring/60',
+          collapsed ? 'size-9 justify-center px-0' : 'h-8 w-full gap-2.5 px-2.5',
           isActive
-            ? 'bg-primary-500/15 text-foreground'
-            : 'text-muted-foreground hover:bg-surface-elevated hover:text-foreground',
+            ? 'bg-[var(--app-nav-active)] text-foreground shadow-[inset_0_0_0_1px_var(--app-border),0_1px_2px_rgb(0_0_0/0.15)]'
+            : 'text-muted-foreground hover:bg-surface-elevated/60 hover:text-foreground',
         )
       }
     >
-      <Icon className="size-4 shrink-0" />
-      {!collapsed ? <span className="truncate">{label}</span> : null}
+      {({ isActive }) => (
+        <>
+          <Icon
+            strokeWidth={isActive ? 2.25 : 1.75}
+            className={cn(
+              'size-[15px] shrink-0 transition-colors duration-150',
+              isActive ? 'text-primary-500' : 'text-muted-foreground/80 group-hover:text-foreground',
+            )}
+          />
+          {!collapsed ? <span className="truncate">{label}</span> : null}
+        </>
+      )}
     </NavLink>
   )
 
@@ -112,21 +122,27 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
   )
 }
 
+function BrandMark() {
+  return (
+    <div className="relative flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-b from-primary-400 to-primary-600 text-[13px] font-bold text-on-primary shadow-[inset_0_1px_0_rgb(255_255_255/0.45),0_1px_2px_rgb(0_0_0/0.3),0_4px_12px_-2px_color-mix(in_srgb,var(--color-primary-500)_45%,transparent)]">
+      D
+    </div>
+  )
+}
+
 function BrandHeader({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className={cn(
         'flex w-full items-center',
-        collapsed ? 'justify-center px-0 py-1' : 'gap-2.5 px-2 py-1',
+        collapsed ? 'justify-center' : 'gap-2.5 px-1.5',
       )}
     >
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary-500 text-sm font-bold text-on-primary">
-        D
-      </div>
+      <BrandMark />
       {!collapsed ? (
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">Dammo</p>
-          <p className="truncate text-[10px] text-muted-foreground">Video operations</p>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-sm font-semibold tracking-tight text-foreground">Dammo</p>
+          <p className="truncate text-[11px] text-muted-foreground">Video operations</p>
         </div>
       ) : null}
     </div>
@@ -151,74 +167,54 @@ export function Sidebar() {
 
   const toggleLabel = collapsed ? t('common:sidebar.expand') : t('common:sidebar.collapse')
 
+  const toggleButton = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+      onClick={toggleCollapsed}
+      aria-label={toggleLabel}
+      aria-expanded={!collapsed}
+      title={collapsed ? undefined : toggleLabel}
+    >
+      {collapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
+    </Button>
+  )
+
   return (
     <aside
       className={cn(
-        'flex shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 ease-out',
-        collapsed ? 'w-14' : 'w-60',
+        'flex shrink-0 flex-col transition-[width] duration-200 ease-out',
+        collapsed ? 'w-[60px]' : 'w-60',
       )}
     >
-      <div className={cn('border-b border-border py-3', collapsed ? 'px-2' : 'px-3')}>
+      <div className={cn('pb-2 pt-3.5', collapsed ? 'flex flex-col items-center gap-3 px-2' : 'flex items-center gap-1 px-3')}>
+        <div className={collapsed ? undefined : 'min-w-0 flex-1'}>
+          <BrandHeader collapsed={collapsed} />
+        </div>
         {collapsed ? (
-          <div className="flex flex-col items-center gap-3">
-            <BrandHeader collapsed />
-            <Tooltip content={toggleLabel} side="right">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-9 shrink-0"
-                onClick={toggleCollapsed}
-                aria-label={toggleLabel}
-                aria-expanded={!collapsed}
-              >
-                <PanelLeft className="size-4" />
-              </Button>
-            </Tooltip>
-          </div>
+          <Tooltip content={toggleLabel} side="right">
+            {toggleButton}
+          </Tooltip>
         ) : (
-          <div className="flex items-center gap-1">
-            <div className="min-w-0 flex-1">
-              <BrandHeader collapsed={false} />
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-9 shrink-0"
-              onClick={toggleCollapsed}
-              aria-label={toggleLabel}
-              aria-expanded={!collapsed}
-              title={toggleLabel}
-            >
-              <PanelLeftClose className="size-4" />
-            </Button>
-          </div>
+          toggleButton
         )}
       </div>
 
-      <nav
-        className={cn(
-          'scrollbar-thin flex-1 overflow-y-auto overscroll-contain py-2',
-          collapsed ? 'px-2' : 'px-2',
-        )}
-      >
+      <nav className="scrollbar-thin flex-1 overflow-y-auto overscroll-contain px-3 pb-2">
         {navSections.map((section, sectionIndex) => (
-          <div key={section.id} className={collapsed ? 'mb-3' : 'mb-1'}>
+          <div key={section.id} className="mt-1">
             {collapsed ? (
               sectionIndex > 0 ? (
-                <div className="mx-auto my-2 h-px w-6 bg-border" aria-hidden />
+                <div className="mx-auto my-2.5 h-px w-5 bg-border/80" aria-hidden />
               ) : null
             ) : (
-              <p className="px-3 pb-1.5 pt-4 text-[10px] font-semibold tracking-wider text-muted-foreground">
+              <p className="px-2.5 pb-1 pt-4 text-[11px] font-medium text-muted-foreground/70">
                 {t(section.labelKey)}
               </p>
             )}
-            <div
-              className={cn(
-                collapsed ? 'flex flex-col items-center gap-2' : 'space-y-0.5',
-              )}
-            >
+            <div className={cn(collapsed ? 'flex flex-col items-center gap-1' : 'space-y-px')}>
               {section.items.map((item) => (
                 <NavItemLink key={item.id} item={item} collapsed={collapsed} />
               ))}
@@ -229,23 +225,19 @@ export function Sidebar() {
 
       <div
         className={cn(
-          'border-t border-border px-2 py-3',
-          collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center justify-end gap-1',
+          'mx-3 mb-2 border-t border-border/60 pt-2',
+          collapsed ? 'flex flex-col items-center gap-1.5' : 'flex items-center justify-end gap-1',
         )}
       >
         {footerNavItems.length > 0 ? (
-          <div
-            className={cn(
-              collapsed ? 'flex flex-col items-center gap-2' : 'min-w-0 flex-1 space-y-0.5',
-            )}
-          >
+          <div className={cn(collapsed ? 'flex flex-col items-center gap-1' : 'min-w-0 flex-1 space-y-px')}>
             {footerNavItems.map((item) => (
               <NavItemLink key={item.id} item={item} collapsed={collapsed} />
             ))}
           </div>
         ) : null}
         <LanguageSwitcher />
-        <ThemeToggleButton className={collapsed ? undefined : 'mr-1'} />
+        <ThemeToggleButton />
       </div>
     </aside>
   )

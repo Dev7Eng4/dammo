@@ -7,17 +7,22 @@ import { useAbortableEffect } from '../../hooks'
 import type { VideoAgentRun, VoicevoxStatus } from '../../types/videoAgent'
 import type { YoutubeChannel } from '../../types/youtubeChannel'
 import { Button, Input, Select, Textarea, useToast } from '../ui'
+import { PendingSourcePicker } from './PendingSourcePicker'
+import { sourceIdsOf } from './sourceUrls'
 import { VoicePreviewButton } from './VoicePreviewButton'
+import { isReupAudioChannelType } from '../../types/youtubeChannel'
 
 const SPEED_OPTIONS = ['0.9', '1', '1.1', '1.2']
 
 interface NewProjectFormProps {
   voicevox: VoicevoxStatus | null
+  /** Channel picked in the page's group select; preselected when it can take a project. */
+  defaultChannelId?: string
   onCreated: (run: VideoAgentRun) => void
   onClose: () => void
 }
 
-export function NewProjectForm({ voicevox, onCreated, onClose }: NewProjectFormProps) {
+export function NewProjectForm({ voicevox, defaultChannelId, onCreated, onClose }: NewProjectFormProps) {
   const { t } = useTranslation('manual')
   const { toast } = useToast()
   const [channels, setChannels] = useState<YoutubeChannel[]>([])
@@ -30,8 +35,13 @@ export function NewProjectForm({ voicevox, onCreated, onClose }: NewProjectFormP
 
   useAbortableEffect(async (signal) => {
     const res = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal })
-    setChannels(res.items.filter((channel) => channel.type === 'reup_audio'))
-  }, [])
+    const usable = res.items.filter((channel) => isReupAudioChannelType(channel.type))
+    setChannels(usable)
+    // Only channels the form offers can be preselected (projects need a reup audio channel).
+    if (defaultChannelId && usable.some((channel) => channel.id === defaultChannelId)) {
+      setChannelId((current) => current || defaultChannelId)
+    }
+  }, [defaultChannelId])
 
   const channelOptions = channels.map((channel) => ({
     value: channel.id,
@@ -83,6 +93,18 @@ export function NewProjectForm({ voicevox, onCreated, onClose }: NewProjectFormP
         </Button>
       </div>
 
+      {/* Channel first: the source picker below lists that channel's unprocessed source videos. */}
+      <label className="block space-y-1.5">
+        <span className="section-label">{t('form.channel')}</span>
+        <Select
+          options={channelOptions}
+          value={channelId}
+          onChange={setChannelId}
+          placeholder={t('form.channelPlaceholder')}
+          searchable
+        />
+      </label>
+
       <label className="block space-y-1.5">
         <span className="section-label">{t('form.sources')}</span>
         <Textarea
@@ -95,17 +117,16 @@ export function NewProjectForm({ voicevox, onCreated, onClose }: NewProjectFormP
         <span className="block text-[11px] text-muted-foreground">{t('form.sourcesHint')}</span>
       </label>
 
+      {channelId ? (
+        <PendingSourcePicker
+          channelId={channelId}
+          selectedIds={sourceIdsOf(sources)}
+          disabled={submitting}
+          onPick={(video) => setSources(video.url)}
+        />
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="block space-y-1.5">
-          <span className="section-label">{t('form.channel')}</span>
-          <Select
-            options={channelOptions}
-            value={channelId}
-            onChange={setChannelId}
-            placeholder={t('form.channelPlaceholder')}
-            searchable
-          />
-        </label>
         <label className="block space-y-1.5">
           <span className="section-label">{t('form.speed')}</span>
           <Select

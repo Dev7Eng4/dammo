@@ -9,22 +9,17 @@
       "editName": "Sửa tên",
       "open": "Mở",
       "opening": "Đang mở…",
-      "setMain": "Đặt làm chính",
-      "settingMain": "Đang đặt…",
-      "resetSecondary": "Đặt lại profile phụ",
-      "resetting": "Đang đặt lại…",
       "add": "Thêm profile"
     },
     "table": {
       "col": {
-        "role": "VAI TRÒ",
         "name": "TÊN",
-        "order": "THỨ TỰ",
-        "profileId": "PROFILE ID",
-        "createdAt": "TẠO LÚC"
+        "llmContent": "LLM CONTENT",
+        "llmImage": "LLM IMAGE",
+        "llmVideo": "LLM VIDEO",
+        "profileId": "PROFILE ID"
       },
-      "roleMain": "Chính",
-      "roleSecondary": "Phụ",
+      "llmNone": "— Không —",
       "empty": "Chưa có Chrome profile nào. Thêm một profile để bắt đầu."
     },
     "add": {
@@ -45,12 +40,7 @@
     "toast": {
       "created": "Đã tạo Chrome profile thành công",
       "renamed": "Đã cập nhật tên Chrome profile",
-      "setMain": "\\\"{{name}}\\\" đã đặt làm profile chính",
-      "setSecondary": "\\\"{{name}}\\\" đã đặt làm profile phụ",
-      "roleError": "Không thể cập nhật vai trò profile",
-      "resetDone": "Đã xóa {{count}} profile phụ và tạo 8 profile mới.",
-      "resetCreatedOnly": "Đã tạo 8 profile phụ mới.",
-      "resetError": "Không thể đặt lại profile phụ",
+      "llmError": "Không thể cập nhật LLM của profile",
       "opened": "Đã mở Chrome profile \\\"{{name}}\\\"",
       "openError": "Không thể mở profile",
       "loadError": "Không thể tải profile"

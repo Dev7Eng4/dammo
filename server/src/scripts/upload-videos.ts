@@ -3,11 +3,12 @@ import { listUploadJobs } from '../modules/youtube-upload/upload-jobs.js';
 import { youtubeUploadService } from '../modules/youtube-upload/youtube-upload.service.js';
 import { youtubeChannelsRepository } from '../modules/youtube-channels/youtube-channels.repository.js';
 import { pickReupChannels } from './lib/reup-channel-picker.js';
+import { isReupAudioFamilyType } from '../modules/youtube-channels/youtube-channels.types.js';
 
 function listReupChannelIds(): string[] {
   return youtubeChannelsRepository
     .findAll()
-    .filter(ch => ch.type === 'reup_audio' || ch.type === 'reup_video' || ch.type === 'reup')
+    .filter(ch => isReupAudioFamilyType(ch.type) || ch.type === 'reup_video' || ch.type === 'reup')
     .map(ch => ch.id);
 }
 

@@ -9,22 +9,17 @@
       "editName": "Rename",
       "open": "Open",
       "opening": "Opening…",
-      "setMain": "Set as main",
-      "settingMain": "Setting…",
-      "resetSecondary": "Reset secondary profiles",
-      "resetting": "Resetting…",
       "add": "Add profile"
     },
     "table": {
       "col": {
-        "role": "ROLE",
         "name": "NAME",
-        "order": "ORDER",
-        "profileId": "PROFILE ID",
-        "createdAt": "CREATED"
+        "llmContent": "LLM CONTENT",
+        "llmImage": "LLM IMAGE",
+        "llmVideo": "LLM VIDEO",
+        "profileId": "PROFILE ID"
       },
-      "roleMain": "Main",
-      "roleSecondary": "Secondary",
+      "llmNone": "— None —",
       "empty": "No Chrome profiles yet. Add a profile to get started."
     },
     "add": {
@@ -45,12 +40,7 @@
     "toast": {
       "created": "Chrome profile created successfully",
       "renamed": "Chrome profile name updated",
-      "setMain": "\"{{name}}\" set as main profile",
-      "setSecondary": "\"{{name}}\" set as secondary profile",
-      "roleError": "Could not update profile role",
-      "resetDone": "Deleted {{count}} secondary profiles and created 8 new ones.",
-      "resetCreatedOnly": "Created 8 new secondary profiles.",
-      "resetError": "Could not reset secondary profiles",
+      "llmError": "Could not update profile LLMs",
       "opened": "Opened Chrome profile \"{{name}}\"",
       "openError": "Could not open profile",
       "loadError": "Could not load profiles"

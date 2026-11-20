@@ -14,8 +14,8 @@ interface SourceChannelVideosTableProps {
   onOpenVideo: (video: SourceChannelVideo) => void;
 }
 
-function formatDuration(seconds?: number): string {
-  if (seconds === undefined) return '—';
+function formatDuration(seconds?: number | null): string {
+  if (seconds == null || !Number.isFinite(seconds)) return '—';
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
@@ -25,8 +25,8 @@ function formatDuration(seconds?: number): string {
   return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
-function formatViews(count?: number): string {
-  if (count === undefined) return '—';
+function formatViews(count?: number | null): string {
+  if (count == null) return '—';
   return count.toLocaleString();
 }
 
@@ -78,14 +78,14 @@ export function SourceChannelVideosTable({
       accessorKey: 'viewCount',
       header: t('videos.col.views'),
       cell: ({ getValue }) => (
-        <span className="text-neutral-300">{formatViews(getValue<number | undefined>())}</span>
+        <span className="text-neutral-300">{formatViews(getValue<number | null | undefined>())}</span>
       ),
     },
     {
       accessorKey: 'duration',
       header: t('videos.col.duration'),
       cell: ({ getValue }) => (
-        <span className="text-neutral-300">{formatDuration(getValue<number | undefined>())}</span>
+        <span className="text-neutral-300">{formatDuration(getValue<number | null | undefined>())}</span>
       ),
     },
     {

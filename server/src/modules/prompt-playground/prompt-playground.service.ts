@@ -13,6 +13,7 @@ import { promptsRepository } from '../prompts/prompts.repository.js';
 import { promptsSettingsService } from '../prompts/prompts-settings.service.js';
 import type { PromptOutputType } from '../prompts/prompts.types.js';
 import type { PromptPlaygroundRunBody } from './prompt-playground.schema.js';
+import { pickContentTaskProfile } from '../prompts/content-task.js';
 
 export interface PromptPlaygroundRunInput extends PromptPlaygroundRunBody {}
 
@@ -59,7 +60,7 @@ async function runTextPlayground(
   input: PromptPlaygroundRunInput,
   provider: LlmTextProvider,
 ): Promise<PromptPlaygroundRunResult> {
-  const profile = chromeProfilesService.pickSubProfile();
+  const profile = pickContentTaskProfile('content', provider);
   const startedAt = Date.now();
 
   try {
@@ -87,7 +88,7 @@ async function runTextPlayground(
 
     return result;
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }
 
@@ -95,7 +96,7 @@ async function runImagePlayground(
   input: PromptPlaygroundRunInput,
   imageProvider: ImageBrowserProvider,
 ): Promise<PromptPlaygroundRunResult> {
-  const profile = chromeProfilesService.requireMainProfile();
+  const profile = chromeProfilesService.requireProfileForLlm('image', imageProvider);
   const startedAt = Date.now();
   const runDir = path.join(paths.playgroundDir, generateId());
   await fs.mkdir(runDir, { recursive: true });
@@ -152,7 +153,7 @@ async function runImagePlayground(
 
     return result;
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }
 
@@ -160,7 +161,11 @@ async function runVideoPlayground(
   input: PromptPlaygroundRunInput,
   videoProvider: VideoBrowserProvider,
 ): Promise<PromptPlaygroundRunResult> {
-  const profile = chromeProfilesService.requireMainProfile();
+  // Meta has no LLM Video option: a Meta login is the same account, so use profiles with Meta in LLM Image.
+  const profile =
+    videoProvider === 'flow'
+      ? chromeProfilesService.requireProfileForLlm('video', 'flow')
+      : chromeProfilesService.requireProfileForLlm('image', 'meta');
   const startedAt = Date.now();
   const runDir = path.join(paths.playgroundDir, generateId());
   await fs.mkdir(runDir, { recursive: true });
@@ -173,8 +178,12 @@ async function runVideoPlayground(
   };
 
   try {
-    if (videoProvider !== 'meta') {
-      throw new AppError('Only Meta AI is supported for video generation', 400, 'PLAYGROUND_FAILED');
+    if (videoProvider === 'flow') {
+      throw new AppError(
+        'Google Flow chỉ tạo video từ ảnh (bước "Ảnh → video" của dự án / scene video clips) — chạy thử từ prompt chữ chưa hỗ trợ',
+        400,
+        'PLAYGROUND_FAILED',
+      );
     }
 
     const response = await metaBrowserService.generateMedia(profile.id, input.userPrompt, {
@@ -208,7 +217,7 @@ async function runVideoPlayground(
 
     return result;
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }
 

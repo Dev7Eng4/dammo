@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { resolveVoicevoxDefaultSpeaker, resolveVoicevoxUrl } from '../../infrastructure/tts/voice-settings.store.js';
 import { env } from '../../config/env.js';
 import { listVoicevoxSpeakers } from '../../infrastructure/tts/voicevox.client.js';
 import { requireYoutubeVideoId } from '../../infrastructure/youtube/youtube-url.js';
@@ -86,7 +87,7 @@ export const videoAgentService = {
         sourceUrls,
         channelId: channel.id,
         ...(input.notes?.trim() ? { notes: input.notes.trim() } : {}),
-        voicevoxSpeaker: input.voicevoxSpeaker ?? env.voicevoxSpeaker,
+        voicevoxSpeaker: input.voicevoxSpeaker ?? resolveVoicevoxDefaultSpeaker(),
         speedScale: input.speedScale ?? 1,
         requireApproval: input.requireApproval ?? true,
       },
@@ -152,12 +153,12 @@ export const videoAgentService = {
 
   async voicevoxStatus() {
     try {
-      return { available: true, url: env.voicevoxUrl, defaultSpeaker: env.voicevoxSpeaker, speakers: await listVoicevoxSpeakers() };
+      return { available: true, url: resolveVoicevoxUrl(), defaultSpeaker: resolveVoicevoxDefaultSpeaker(), speakers: await listVoicevoxSpeakers() };
     } catch (err) {
       return {
         available: false,
-        url: env.voicevoxUrl,
-        defaultSpeaker: env.voicevoxSpeaker,
+        url: resolveVoicevoxUrl(),
+        defaultSpeaker: resolveVoicevoxDefaultSpeaker(),
         speakers: [],
         error: err instanceof Error ? err.message : String(err),
       };

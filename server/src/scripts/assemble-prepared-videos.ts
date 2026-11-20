@@ -24,6 +24,7 @@ import { isAiSceneVideoType, type ReupAudioVideoType } from '../modules/youtube-
 import type { StoredYoutubeChannelType, YoutubeChannel } from '../modules/youtube-channels/youtube-channels.types.js';
 import { formatElapsedMs } from '../shared/timing/step-timer.js';
 import { pickReupChannels } from './lib/reup-channel-picker.js';
+import { isReupAudioFamilyType } from '../modules/youtube-channels/youtube-channels.types.js';
 
 const ASSEMBLE_VIDEOS_PER_RUN = 1;
 
@@ -34,7 +35,7 @@ const CENTER_IMAGE_FILE = 'background.jpg';
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.bmp']);
 
 function isReupChannelType(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+  return isReupAudioFamilyType(type) || type === 'reup_video' || type === 'reup';
 }
 
 function resolveChannelsFromPick(
@@ -186,12 +187,12 @@ async function main() {
       continue;
     }
 
-    if (channel.type === 'reup_audio' && !channel.reupAudioVideoType) {
+    if (isReupAudioFamilyType(channel.type) && !channel.reupAudioVideoType) {
       console.log(`  [skip] ${channel.name}: channel reup_audio thiếu reupAudioVideoType`);
       continue;
     }
 
-    const videoType = channel.type === 'reup_audio' ? channel.reupAudioVideoType! : 'si';
+    const videoType = isReupAudioFamilyType(channel.type) ? channel.reupAudioVideoType! : 'si';
 
     if (videoType === 'si' && !channel.backgroundFootageSources?.length) {
       console.log(`  [skip] ${channel.name}: không có backgroundFootageSources`);

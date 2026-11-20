@@ -344,69 +344,21 @@ export function uploadYoutubeChannelAvatar(channelId: string, file: File) {
   );
 }
 
-export interface ThumbnailCandidateItem {
-  file: string | null;
-  url: string | null;
-  angle: string;
-  hookLines: string[];
-  emphasis: string;
-  error: string | null;
-  selected: boolean;
-  /** Picked by the pipeline (AI judge winner). */
-  aiPicked: boolean;
-  judgement: ThumbnailCandidateJudgement | null;
-}
-
-export interface ThumbnailCandidateJudgement {
-  /** Weighted 0-10. */
-  score: number;
-  textCorrect: boolean;
-  textIssues: string;
-  mascotMatch: number;
-  readability: number;
-  curiosity: number;
-  titleFit: number;
-  reason: string;
-}
-
-export function fetchThumbnailCandidates(channelId: string, videoId: string, options?: FetchOptions) {
-  return fetchJson<{ items: ThumbnailCandidateItem[]; judgeError: string | null }>(
-    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(videoId)}/thumbnail-candidates`,
-    withSignal(undefined, options),
-  );
-}
-
-export function selectThumbnailCandidate(channelId: string, videoId: string, file: string) {
-  return fetchJson<YoutubeVideoContent>(
-    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/videos/${encodeURIComponent(videoId)}/thumbnail-candidates/${encodeURIComponent(file)}/select`,
-    { method: 'POST' },
-  );
-}
-
-/** Channel mascot image (used to draw) or its optional character sheet (read by the AI only). */
-export type ChannelMascotImageKind = 'mascot-image' | 'mascot-sheet';
-
-const MASCOT_IMAGE_LIST_SEGMENT: Record<ChannelMascotImageKind, string> = {
-  'mascot-image': 'mascot-images',
-  'mascot-sheet': 'mascot-sheets',
-};
-
 export function fetchYoutubeChannelMascotImages(
-  kind: ChannelMascotImageKind,
   channelId: string,
   options?: FetchOptions,
 ) {
   return fetchJson<{ items: ChannelAvatarItem[] }>(
-    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/${MASCOT_IMAGE_LIST_SEGMENT[kind]}`,
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-images`,
     withSignal(undefined, options),
   );
 }
 
-export function uploadYoutubeChannelMascotImage(kind: ChannelMascotImageKind, channelId: string, file: File) {
+export function uploadYoutubeChannelMascotImage(channelId: string, file: File) {
   const body = new FormData();
   body.append('file', file);
   return fetchJson<{ item: ChannelAvatarItem }>(
-    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/${kind}`,
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-image`,
     {
       method: 'POST',
       body,
@@ -414,11 +366,11 @@ export function uploadYoutubeChannelMascotImage(kind: ChannelMascotImageKind, ch
   );
 }
 
-export function uploadYoutubeChannelMascotImageTemp(kind: ChannelMascotImageKind, sessionId: string, file: File) {
+export function uploadYoutubeChannelMascotImageTemp(sessionId: string, file: File) {
   const body = new FormData();
   body.append('file', file);
   return fetchJson<{ item: ChannelAvatarItem }>(
-    `${API_V1}/youtube-channels/${MASCOT_IMAGE_LIST_SEGMENT[kind]}/temp/${encodeURIComponent(sessionId)}`,
+    `${API_V1}/youtube-channels/mascot-images/temp/${encodeURIComponent(sessionId)}`,
     {
       method: 'POST',
       body,
@@ -426,16 +378,24 @@ export function uploadYoutubeChannelMascotImageTemp(kind: ChannelMascotImageKind
   );
 }
 
-/** Copy a Assets → Mascot library image into the channel (`channelId`) or the new-channel temp session. */
+/** Mascot library file names already used by other channels (`excludeChannelId` = the channel being edited). */
+export function fetchMascotLibraryNamesInUse(excludeChannelId?: string, options?: FetchOptions) {
+  const query = excludeChannelId ? `?excludeChannelId=${encodeURIComponent(excludeChannelId)}` : '';
+  return fetchJson<{ names: string[] }>(
+    `${API_V1}/youtube-channels/mascot-images/library-in-use${query}`,
+    withSignal(undefined, options),
+  );
+}
+
+/** Copy an Assets → Mascot library image into the channel (`channelId`) or the new-channel temp session. */
 export function pickYoutubeChannelMascotImageFromLibrary(
-  kind: ChannelMascotImageKind,
   target: { channelId: string } | { sessionId: string },
   name: string,
 ) {
   const url =
     'channelId' in target
-      ? `${API_V1}/youtube-channels/${encodeURIComponent(target.channelId)}/${kind}/from-library`
-      : `${API_V1}/youtube-channels/${MASCOT_IMAGE_LIST_SEGMENT[kind]}/temp/${encodeURIComponent(target.sessionId)}/from-library`;
+      ? `${API_V1}/youtube-channels/${encodeURIComponent(target.channelId)}/mascot-image/from-library`
+      : `${API_V1}/youtube-channels/mascot-images/temp/${encodeURIComponent(target.sessionId)}/from-library`;
   return fetchJson<{ item: ChannelAvatarItem }>(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -443,16 +403,16 @@ export function pickYoutubeChannelMascotImageFromLibrary(
   });
 }
 
-export function deleteYoutubeChannelMascotImage(kind: ChannelMascotImageKind, channelId: string) {
+export function deleteYoutubeChannelMascotImage(channelId: string) {
   return fetchJson<{ ok: true }>(
-    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/${kind}`,
+    `${API_V1}/youtube-channels/${encodeURIComponent(channelId)}/mascot-image`,
     { method: 'DELETE' },
   );
 }
 
-export function deleteYoutubeChannelMascotImageTemp(kind: ChannelMascotImageKind, sessionId: string) {
+export function deleteYoutubeChannelMascotImageTemp(sessionId: string) {
   return fetchJson<{ ok: true }>(
-    `${API_V1}/youtube-channels/${MASCOT_IMAGE_LIST_SEGMENT[kind]}/temp/${encodeURIComponent(sessionId)}`,
+    `${API_V1}/youtube-channels/mascot-images/temp/${encodeURIComponent(sessionId)}`,
     { method: 'DELETE' },
   );
 }
@@ -467,4 +427,67 @@ export function uploadYoutubeChannelAvatarTemp(sessionId: string, file: File) {
       body,
     },
   );
+}
+
+// --- YouTube Data API v3 key per channel ---
+
+export interface YoutubeApiKeyStatus {
+  configured: boolean
+  maskedKey?: string
+  updatedAt?: string
+  status?: 'ok' | 'invalid' | 'quota_exceeded' | 'error'
+  statusMessage?: string
+  lastCheckedAt?: string
+  channelTitle?: string
+}
+
+export interface YoutubeApiChannelStatistics {
+  channelId: string
+  title: string
+  handle?: string
+  subscriberCount: number | null
+  viewCount: number
+  videoCount: number
+}
+
+export interface YoutubeApiKeyTestResult {
+  ok: boolean
+  channel?: YoutubeApiChannelStatistics
+  error?: string
+  code?: string
+}
+
+export function testYoutubeApiKey(payload: { apiKey: string; channelUrl?: string; channelId?: string }) {
+  return fetchJson<YoutubeApiKeyTestResult>(`${API_V1}/youtube-channels/youtube-api/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function fetchYoutubeApiKeyStatus(id: string, options?: FetchOptions) {
+  return fetchJson<{ item: YoutubeApiKeyStatus }>(
+    `${API_V1}/youtube-channels/${id}/youtube-api`,
+    withSignal(undefined, options),
+  )
+}
+
+export function saveYoutubeApiKey(id: string, apiKey: string) {
+  return fetchJson<{ item: YoutubeApiKeyStatus }>(`${API_V1}/youtube-channels/${id}/youtube-api`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey }),
+  })
+}
+
+export function deleteYoutubeApiKey(id: string) {
+  return fetchJson<{ item: YoutubeApiKeyStatus }>(`${API_V1}/youtube-channels/${id}/youtube-api`, {
+    method: 'DELETE',
+  })
+}
+
+export function checkYoutubeApiKey(id: string) {
+  return fetchJson<{ item: YoutubeApiKeyStatus }>(`${API_V1}/youtube-channels/${id}/youtube-api/check`, {
+    method: 'POST',
+  })
 }

@@ -4,7 +4,7 @@ import type {
   ChromeProfile,
   ChromeProfilesResponse,
   CreateChromeProfilePayload,
-  ResetSubProfilesResponse,
+  UpdateChromeProfileLlmsPayload,
   UpdateChromeProfilePayload,
 } from '../types/chromeProfile';
 
@@ -31,26 +31,16 @@ export function updateChromeProfile(id: string, payload: UpdateChromeProfilePayl
   });
 }
 
+export function updateChromeProfileLlms(id: string, payload: UpdateChromeProfileLlmsPayload) {
+  return fetchJson<{ item: ChromeProfile }>(`${API_V1}/chrome-profiles/${id}/llms`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function openChromeProfile(id: string) {
   return fetchJson<{ item: ChromeProfile }>(`${API_V1}/chrome-profiles/${id}/open`, {
-    method: 'POST',
-  });
-}
-
-export function setMainChromeProfile(id: string) {
-  return fetchJson<{ item: ChromeProfile }>(`${API_V1}/chrome-profiles/${id}/set-main`, {
-    method: 'POST',
-  });
-}
-
-export function setSubChromeProfile(id: string) {
-  return fetchJson<{ item: ChromeProfile }>(`${API_V1}/chrome-profiles/${id}/set-sub`, {
-    method: 'POST',
-  });
-}
-
-export function resetSubChromeProfiles() {
-  return fetchJson<ResetSubProfilesResponse>(`${API_V1}/chrome-profiles/reset-sub-profiles`, {
     method: 'POST',
   });
 }

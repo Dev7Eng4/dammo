@@ -1,14 +1,18 @@
 import { ListChecks, Plus } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { fetchManualProject, type ManualProjectDetail } from '../api/manualVideo'
 import { fetchVoicevoxStatus, VIDEO_AGENT_STREAM_URL } from '../api/videoAgent'
+import { fetchProductionVideos } from '../api/videoProduction'
+import { fetchYoutubeChannels } from '../api/youtubeChannels'
 import { PageHeader, PageShell } from '../components/layout'
+import { ChannelVideoDetail } from '../components/manual-video/ChannelVideoDetail'
+import { ChannelVideoThumb } from '../components/manual-video/ChannelVideoThumb'
 import { NewProjectForm } from '../components/manual-video/NewProjectForm'
 import { ProjectDetail } from '../components/manual-video/ProjectDetail'
-import { VideoLibrary } from '../components/manual-video/VideoLibrary'
-import { Button, PageTabs, StatusBadge } from '../components/ui'
+import { Button, Select, StatusBadge } from '../components/ui'
+import type { ProductionVideoPatch } from '../components/video-production/useProductionVideoWorkspace'
 import { RUN_STATUS_TONE } from '../components/video-agent/runStatus'
 import { useAbortableEffect } from '../hooks'
 import { cn } from '../lib/cn'
@@ -18,8 +22,7 @@ import {
   type VideoAgentRunSummary,
   type VoicevoxStatus,
 } from '../types/videoAgent'
-
-type Tab = 'projects' | 'library'
+import { productionVideoKey, type ProductionVideoListItem } from '../types/videoProductionScenes'
 
 function upsert(list: VideoAgentRunSummary[], run: VideoAgentRunSummary): VideoAgentRunSummary[] {
   const index = list.findIndex((item) => item.id === run.id)
@@ -31,16 +34,29 @@ function upsert(list: VideoAgentRunSummary[], run: VideoAgentRunSummary): VideoA
 
 const isManual = (run: Pick<VideoAgentRunSummary, 'mode'>) => run.mode === 'manual'
 
+/**
+ * Sidebar group: a YouTube channel id (its projects plus its prepared/created videos), or this value for
+ * projects that belong to no existing channel (no channel set, or the channel was deleted).
+ */
+const NO_GROUP = 'none'
+
 export function ManualVideoPage() {
   const { t, i18n } = useTranslation(['manual', 'agent'])
   const { id: selectedId } = useParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<Tab>('projects')
   const [projects, setProjects] = useState<VideoAgentRunSummary[]>([])
   const [detail, setDetail] = useState<ManualProjectDetail | null>(null)
   const [voicevox, setVoicevox] = useState<VoicevoxStatus | null>(null)
-  const [creating, setCreating] = useState(false)
+  // Landing on the page without a project in the URL goes straight to a new project.
+  const [creating, setCreating] = useState(() => !selectedId)
   const [libraryKey, setLibraryKey] = useState(0)
+  // Links from a channel page arrive with ?channelId= so the sidebar starts on that channel.
+  const [source, setSource] = useState<string>(() => searchParams.get('channelId') || NO_GROUP)
+  /** Ids of channels that still exist; null until loaded. */
+  const [channelIds, setChannelIds] = useState<Set<string> | null>(null)
+  const [channelVideos, setChannelVideos] = useState<ProductionVideoListItem[] | null>(null)
+  const [openedVideoKey, setOpenedVideoKey] = useState<string | null>(null)
   const selectedRef = useRef<string | undefined>(selectedId)
 
   useEffect(() => {
@@ -61,6 +77,26 @@ export function ManualVideoPage() {
     const timer = window.setInterval(() => void refreshVoicevox().catch(() => undefined), 10_000)
     return () => window.clearInterval(timer)
   }, [voicevoxUp, refreshVoicevox])
+
+  useAbortableEffect(
+    async (signal) => {
+      setChannelVideos(await fetchProductionVideos({ signal }))
+    },
+    [libraryKey],
+  )
+
+  useAbortableEffect(async (signal) => {
+    const res = await fetchYoutubeChannels('all', 'all', '', 1, 100, { signal })
+    setChannelIds(new Set(res.items.map((channel) => channel.id)))
+  }, [])
+
+  const patchChannelVideo = useCallback((channelId: string, videoId: string, patch: ProductionVideoPatch) => {
+    setChannelVideos((current) =>
+      (current ?? []).map((video) =>
+        video.channelId === channelId && video.videoId === videoId ? { ...video, ...patch } : video,
+      ),
+    )
+  }, [])
 
   const loadDetail = useCallback(async (id: string) => {
     const next = await fetchManualProject(id)
@@ -103,11 +139,69 @@ export function ManualVideoPage() {
 
   function openProject(id: string) {
     setCreating(false)
-    setTab('projects')
+    setOpenedVideoKey(null)
     navigate(`/manual-video/${id}`)
   }
 
+  /**
+   * Switching the group starts the right pane over with a New project form for the newly picked
+   * channel (blank for "No group"); the open project or channel video belongs to the old group.
+   */
+  function changeSource(next: string) {
+    if (next === source) return
+    setSource(next)
+    setOpenedVideoKey(null)
+    setCreating(true)
+    if (selectedId) navigate('/manual-video')
+  }
+
+  function openChannelVideo(video: ProductionVideoListItem) {
+    setCreating(false)
+    setSource(video.channelId)
+    setOpenedVideoKey(productionVideoKey(video))
+    if (selectedId) navigate('/manual-video')
+  }
+
   const shown = detail && detail.run.id === selectedId ? detail : null
+  const openedVideo = (channelVideos ?? []).find((video) => productionVideoKey(video) === openedVideoKey) ?? null
+
+  const inChannel = useCallback(
+    (channelId: string | undefined): channelId is string =>
+      Boolean(channelId) && (channelIds === null || channelIds.has(channelId as string)),
+    [channelIds],
+  )
+
+  // Channels that have projects or prepared/created videos, for the sidebar group select.
+  const sourceChannels = useMemo(() => {
+    const map = new Map<string, { name: string; projects: number; videos: number }>()
+    const entry = (id: string, name: string) => {
+      const existing = map.get(id) ?? { name, projects: 0, videos: 0 }
+      map.set(id, existing)
+      return existing
+    }
+    for (const project of projects) {
+      if (inChannel(project.input.channelId)) entry(project.input.channelId, project.channelName).projects += 1
+    }
+    for (const video of channelVideos ?? []) {
+      if (inChannel(video.channelId)) entry(video.channelId, video.channelName).videos += 1
+    }
+    return [...map.entries()]
+      .map(([id, value]) => ({ id, ...value }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+  }, [projects, channelVideos, inChannel])
+
+  const ungrouped = projects.filter((project) => !inChannel(project.input.channelId))
+  const sourceOptions = [
+    { value: NO_GROUP, label: `${t('manual:source.none')} (${ungrouped.length})` },
+    ...sourceChannels.map((channel) => ({
+      value: channel.id,
+      label: `${channel.name} (${channel.projects + channel.videos})`,
+    })),
+  ]
+  const listedProjects =
+    source === NO_GROUP ? ungrouped : projects.filter((project) => project.input.channelId === source)
+  const listedVideos =
+    source === NO_GROUP ? [] : (channelVideos ?? []).filter((video) => video.channelId === source)
 
   return (
     <PageShell>
@@ -116,92 +210,136 @@ export function ManualVideoPage() {
         subtitle={t('manual:page.subtitle')}
         icon={ListChecks}
         actions={
-          <Button
-            size="sm"
-            onClick={() => {
-              setTab('projects')
-              setCreating(true)
-            }}
-          >
+          <Button size="sm" onClick={() => setCreating(true)}>
             <Plus className="size-4" />
             {t('manual:page.newProject')}
           </Button>
         }
       />
 
-      <PageTabs
-        items={[
-          { id: 'projects', label: `${t('manual:tabs.projects')} (${projects.length})` },
-          { id: 'library', label: t('manual:tabs.library') },
-        ]}
-        value={tab}
-        onValueChange={(value) => setTab(value as Tab)}
-      />
-
-      {tab === 'library' ? (
-        <VideoLibrary reloadKey={libraryKey} />
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-          <aside className="space-y-2">
-            {projects.length === 0 ? (
-              <div className="card-surface p-4 text-sm text-muted-foreground">{t('manual:list.empty')}</div>
-            ) : (
-              projects.map((project) => {
-                const progress = VIDEO_AGENT_STAGES.filter((stage) => project.stagesDone.includes(stage)).length
-                return (
-                  <button
-                    key={project.id}
-                    type="button"
-                    onClick={() => openProject(project.id)}
-                    className={cn(
-                      'card-surface block w-full space-y-1.5 p-3 text-left transition-colors hover:border-primary-400/50',
-                      project.id === selectedId && !creating && 'border-primary-400/70',
-                    )}
-                  >
-                    <StatusBadge
-                      tone={RUN_STATUS_TONE[project.status]}
-                      label={t(`agent:status.${project.status}`)}
-                      withDot
-                    />
-                    <p lang="ja" className="line-clamp-2 text-sm text-foreground">
-                      {project.title ?? t('manual:list.untitled')}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      {VIDEO_AGENT_STAGES.map((stage, index) => (
-                        <span
-                          key={stage}
-                          className={cn('h-1 flex-1 rounded-full', index < progress ? 'bg-success' : 'bg-muted')}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <aside className="space-y-2">
+          <Select
+            options={sourceOptions}
+            value={source}
+            onChange={(value) => changeSource(value || NO_GROUP)}
+            searchable
+          />
+          {source !== NO_GROUP ? (
+            <p className="section-label pt-1">{t('manual:source.channelProjects')}</p>
+          ) : null}
+          {listedProjects.length === 0 ? (
+            <div className="card-surface p-4 text-sm text-muted-foreground">{t('manual:list.empty')}</div>
+          ) : (
+            listedProjects.map((project) => {
+              const progress = VIDEO_AGENT_STAGES.filter((stage) => project.stagesDone.includes(stage)).length
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => openProject(project.id)}
+                  className={cn(
+                    'card-surface block w-full space-y-1.5 p-3 text-left transition-colors hover:border-primary-400/50',
+                    project.id === selectedId && !creating && 'border-primary-400/70',
+                  )}
+                >
+                  <StatusBadge
+                    tone={RUN_STATUS_TONE[project.status]}
+                    label={t(`agent:status.${project.status}`)}
+                    withDot
+                  />
+                  <p lang="ja" className="line-clamp-2 text-sm text-foreground">
+                    {project.title ?? t('manual:list.untitled')}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {VIDEO_AGENT_STAGES.map((stage, index) => (
+                      <span
+                        key={stage}
+                        className={cn('h-1 flex-1 rounded-full', index < progress ? 'bg-success' : 'bg-muted')}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {project.channelName} · {new Date(project.createdAt).toLocaleString(i18n.language)}
+                  </p>
+                </button>
+              )
+            })
+          )}
+          {source !== NO_GROUP ? (
+            <>
+              <p className="section-label pt-2">
+                {t('manual:source.channelVideos')} ({listedVideos.length})
+              </p>
+              {listedVideos.length === 0 ? (
+                <div className="card-surface p-4 text-sm text-muted-foreground">
+                  {t('manual:channelVideo.empty')}
+                </div>
+              ) : (
+                listedVideos.map((video) => {
+                  const key = productionVideoKey(video)
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => openChannelVideo(video)}
+                      className={cn(
+                        'card-surface flex w-full items-start gap-2 p-2 text-left transition-colors hover:border-primary-400/50',
+                        key === openedVideoKey && !creating && !selectedId && 'border-primary-400/70',
+                      )}
+                    >
+                      <ChannelVideoThumb url={video.thumbnailUrl} className="w-24" />
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p lang="ja" className="line-clamp-2 text-xs text-foreground">
+                          {video.title}
+                        </p>
+                        <StatusBadge
+                          tone={video.status === 'Created' ? 'success' : 'warning'}
+                          label={t(`manual:channelVideo.status.${video.status}`)}
                         />
-                      ))}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {project.channelName} · {new Date(project.createdAt).toLocaleString(i18n.language)}
-                    </p>
-                  </button>
-                )
-              })
-            )}
-          </aside>
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </>
+          ) : null}
+        </aside>
 
-          <section className="min-w-0">
-            {creating ? (
-              <NewProjectForm voicevox={voicevox} onCreated={(run) => openProject(run.id)} onClose={() => setCreating(false)} />
-            ) : shown ? (
-              <ProjectDetail
-                key={shown.run.id}
-                run={shown.run}
-                scriptText={shown.scriptText}
-                motionDefault={shown.motionDefault ?? 'none'}
-                voicevox={voicevox}
-                onRefreshVoicevox={() => void refreshVoicevox().catch(() => undefined)}
-                onDeleted={() => navigate('/manual-video')}
-              />
-            ) : (
-              <div className="card-surface p-6 text-center text-sm text-muted-foreground">{t('manual:detail.select')}</div>
-            )}
-          </section>
-        </div>
-      )}
+        <section className="min-w-0">
+          {creating ? (
+            <NewProjectForm
+              key={source}
+              voicevox={voicevox}
+              defaultChannelId={source === NO_GROUP ? undefined : source}
+              onCreated={(run) => {
+                setSource(run.input.channelId)
+                openProject(run.id)
+              }}
+              onClose={() => setCreating(false)}
+            />
+          ) : openedVideo && !selectedId ? (
+            <ChannelVideoDetail
+              key={openedVideoKey}
+              video={openedVideo}
+              onPatched={patchChannelVideo}
+              onClose={() => setOpenedVideoKey(null)}
+            />
+          ) : shown ? (
+            <ProjectDetail
+              key={shown.run.id}
+              run={shown.run}
+              scriptText={shown.scriptText}
+              motionDefault={shown.motionDefault ?? 'none'}
+              voicevox={voicevox}
+              onRefreshVoicevox={() => void refreshVoicevox().catch(() => undefined)}
+              onDeleted={() => navigate('/manual-video')}
+            />
+          ) : (
+            <div className="card-surface p-6 text-center text-sm text-muted-foreground">{t('manual:detail.select')}</div>
+          )}
+        </section>
+      </div>
     </PageShell>
   )
 }

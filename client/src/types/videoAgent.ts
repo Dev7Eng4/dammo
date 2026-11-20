@@ -9,7 +9,7 @@ export type VideoAgentRunStatus =
   | 'cancelled'
 
 /** `motion` (images turned into video clips) is an optional manual step, not on the agent's rail. */
-export type VideoAgentStage = 'source' | 'script' | 'approval' | 'voice' | 'scenes' | 'motion' | 'video'
+export type VideoAgentStage = 'source' | 'script' | 'approval' | 'voice' | 'scenes' | 'motion' | 'video' | 'metadata'
 
 export const VIDEO_AGENT_STAGES: readonly VideoAgentStage[] = ['source', 'script', 'approval', 'voice', 'scenes', 'video']
 
@@ -40,6 +40,12 @@ export interface VideoAgentRunInput {
   channelId: string
   notes?: string
   voicevoxSpeaker: number
+  /** Provider of the saved voice in voicePresetId (default VOICEVOX). */
+  voiceProvider?: 'voicevox' | 'elevenlabs'
+  /** Saved voice from Settings → Giọng đọc. */
+  voicePresetId?: string
+  /** Voice settings picked for this run only (wins over voicePresetId). */
+  voiceCustom?: Record<string, unknown>
   speedScale: number
   requireApproval: boolean
 }

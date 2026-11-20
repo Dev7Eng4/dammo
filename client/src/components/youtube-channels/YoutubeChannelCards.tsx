@@ -1,4 +1,4 @@
-import { Clapperboard, ExternalLink, Pencil, RefreshCw, Trophy } from 'lucide-react'
+import { ArrowUpRight, CalendarClock, Pencil, Plus, RefreshCw, Sparkles } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
@@ -6,45 +6,77 @@ import type { YoutubeChannel } from '../../types/youtubeChannel'
 import { refreshYoutubeChannelStats, updateYoutubeChannelStats } from '../../api/youtubeChannels'
 import { useToast } from '../ui'
 import { isInteractiveTarget } from '../../utils/dom'
-import { formatNumber, levelColor, levelFor, LEVEL_THRESHOLDS, YPP_HOURS, YPP_SUBSCRIBERS } from '../../utils/ypp'
+import {
+  formatCompact,
+  formatNumber,
+  levelColor,
+  levelFor,
+  LEVEL_THRESHOLDS,
+  YPP_HOURS,
+  YPP_SUBSCRIBERS,
+} from '../../utils/ypp'
 import { MonetizationPill } from './MonetizationPill'
 
-function MeterRow({
+function StatBlock({
   label,
   value,
   target,
   color,
-  hint,
+  empty,
 }: {
   label: string
   value: number
   target: number
   color: string
-  hint?: string
+  empty?: boolean
 }) {
-  const percent = Math.min(100, (value / target) * 100)
+  const percent = empty ? 0 : Math.min(100, (value / target) * 100)
   return (
-    <div>
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <span className="section-label">{label}</span>
-        <span className="text-xs font-semibold tabular-nums text-foreground">
-          {formatNumber(value)} / {formatNumber(target)}
+    <div className="min-w-0">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5 truncate tabular-nums">
+        <span className={cn('text-base font-semibold', empty ? 'text-muted-foreground' : 'text-foreground')}>
+          {empty ? '—' : formatCompact(value)}
         </span>
-      </div>
+        <span className="text-[11px] text-muted-foreground"> / {formatCompact(target)}</span>
+      </p>
       <div
-        className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+        className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted"
         role="progressbar"
         aria-label={label}
         aria-valuenow={Math.round(percent)}
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${percent}%`, background: `linear-gradient(to right, ${color}, color-mix(in srgb, ${color} 55%, white))` }}
-        />
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${percent}%`, background: color }} />
       </div>
-      {hint ? <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  )
+}
+
+function ChannelAvatar({ channel, color }: { channel: YoutubeChannel; color: string }) {
+  const [broken, setBroken] = useState(false)
+  const ring = { boxShadow: `0 0 0 2px color-mix(in srgb, ${color} 55%, transparent)` }
+  if (channel.avatarUrl && !broken) {
+    return (
+      <img
+        src={channel.avatarUrl}
+        alt=""
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        onError={() => setBroken(true)}
+        className="size-11 shrink-0 rounded-full bg-muted object-cover"
+        style={ring}
+      />
+    )
+  }
+  const initial = Array.from(channel.name.trim())[0]?.toUpperCase() ?? '?'
+  return (
+    <div
+      className="flex size-11 shrink-0 items-center justify-center rounded-full text-base font-semibold"
+      style={{ ...ring, color, background: `color-mix(in srgb, ${color} 16%, transparent)` }}
+    >
+      {initial}
     </div>
   )
 }
@@ -87,19 +119,25 @@ function StatsEditor({
   }
 
   const inputClass =
-    'w-full rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground outline-none focus:border-primary-500'
+    'mt-1 w-full rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground outline-none focus:border-primary-500'
 
   return (
     <div className="space-y-2 rounded-lg bg-muted/50 p-2.5">
-      <label className="block">
-        <span className="section-label">{t('cards.watchHours')}</span>
-        <input type="number" min={0} step="any" value={hours} onChange={(e) => setHours(e.target.value)} className={inputClass} />
-        <span className="text-[11px] text-muted-foreground">{t('cards.hoursHint')}</span>
-      </label>
-      <label className="block">
-        <span className="section-label">{t('cards.subscribers')}</span>
-        <input type="number" min={0} step={1} value={subs} onChange={(e) => setSubs(e.target.value)} className={inputClass} />
-      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {t('cards.watchHours')}
+          </span>
+          <input type="number" min={0} step="any" value={hours} onChange={(e) => setHours(e.target.value)} className={inputClass} />
+        </label>
+        <label className="block">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {t('cards.subscribers')}
+          </span>
+          <input type="number" min={0} step={1} value={subs} onChange={(e) => setSubs(e.target.value)} className={inputClass} />
+        </label>
+      </div>
+      <p className="text-[11px] text-muted-foreground">{t('cards.hoursHint')}</p>
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -147,12 +185,13 @@ export function YoutubeChannelCards({
 }: YoutubeChannelCardsProps) {
   const { t, i18n } = useTranslation('youtube')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const dateLocale = i18n.language === 'en' ? 'en-US' : 'vi-VN'
 
   if (loading) {
     return (
-      <div className="card-grid" style={{ '--card-min': '210px' } as CSSProperties}>
+      <div className="card-grid" style={{ '--card-min': '240px' } as CSSProperties}>
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-56 animate-pulse rounded-2xl bg-muted" />
+          <div key={i} className="h-52 animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
     )
@@ -163,7 +202,7 @@ export function YoutubeChannelCards({
   }
 
   return (
-    <div className="card-grid" style={{ '--card-min': '210px' } as CSSProperties}>
+    <div className="card-grid" style={{ '--card-min': '240px' } as CSSProperties}>
       {channels.map((channel) => {
         const hasMetrics = channel.watchHours !== undefined || channel.subscribers !== undefined
         const hours = channel.watchHours ?? 0
@@ -173,9 +212,16 @@ export function YoutubeChannelCards({
         const eligible = hours >= YPP_HOURS && subs >= YPP_SUBSCRIBERS
         const nextTarget = LEVEL_THRESHOLDS[level] // undefined at max level
         const selected = selectedIds.has(channel.id)
-        const lastUpload = channel.lastUploadAt
-          ? new Date(channel.lastUploadAt).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN')
-          : '—'
+        const editing = editingId === channel.id
+        const hint = eligible
+          ? t('cards.ypp')
+          : nextTarget !== undefined
+            ? t('cards.hoursLeft', {
+                next: level + 1,
+                target: formatNumber(nextTarget),
+                left: formatNumber(Math.max(0, nextTarget - hours)),
+              })
+            : ''
 
         return (
           <div
@@ -183,104 +229,123 @@ export function YoutubeChannelCards({
             onClick={(event) => {
               if (!isInteractiveTarget(event.target)) onToggleRow(channel.id)
             }}
-            className={cn('kpi-card flex cursor-pointer flex-col gap-3 p-4', selected && 'ring-1 ring-primary-500')}
-            style={{ '--kpi': eligible ? 'var(--color-primary-500)' : color } as CSSProperties}
+            className={cn(
+              'group relative flex cursor-pointer flex-col rounded-xl border bg-surface transition-all duration-150',
+              'hover:-translate-y-0.5 hover:border-neutral-500/60 hover:shadow-lg hover:shadow-black/20',
+              selected ? 'border-primary-500 ring-1 ring-primary-500/60' : 'border-border',
+            )}
           >
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={() => onToggleRow(channel.id)}
-                aria-label={channel.name}
-                className="size-4 shrink-0 accent-primary-500"
-              />
-              <div
-                className="relative flex size-10 shrink-0 items-center justify-center rounded-full border-2 bg-surface-elevated"
-                style={{ borderColor: color }}
-              >
-                <Clapperboard className="size-5" style={{ color }} />
-                <span
-                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-1.5 text-[9px] font-bold leading-4 text-on-primary"
-                  style={{ background: color }}
-                >
-                  {t('cards.level', { level })}
-                </span>
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleRow(channel.id)}
+              aria-label={channel.name}
+              className={cn(
+                'absolute right-3 top-3 size-4 accent-primary-500 transition-opacity',
+                selected ? 'opacity-100' : 'opacity-0 focus-visible:opacity-100 group-hover:opacity-100',
+              )}
+            />
+
+            {/* Identity */}
+            <div className="flex items-center gap-3 p-4 pb-3 pr-9">
+              <ChannelAvatar channel={channel} color={color} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground" title={channel.name}>
+                  {channel.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground" title={channel.handle}>
+                  {channel.handle}
+                </p>
               </div>
-              <div className="ml-auto flex shrink-0 items-center">
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 px-4">
+              <span
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                style={{
+                  color,
+                  borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,
+                  background: `color-mix(in srgb, ${color} 10%, transparent)`,
+                }}
+              >
+                <Sparkles className="size-3" />
+                {t('cards.levelShort', { level })}
+              </span>
+              <MonetizationPill status={channel.monetizationStatus} />
+            </div>
+
+            {/* YPP progress */}
+            <div className="flex-1 px-4 pb-3 pt-4">
+              {editing ? (
+                <StatsEditor channel={channel} onSaved={onChannelUpdated} onClose={() => setEditingId(null)} />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <StatBlock
+                      label={t('cards.watchHours')}
+                      value={hours}
+                      target={YPP_HOURS}
+                      color={color}
+                      empty={!hasMetrics}
+                    />
+                    <StatBlock
+                      label={t('cards.subscribers')}
+                      value={subs}
+                      target={YPP_SUBSCRIBERS}
+                      color="var(--color-danger)"
+                      empty={!hasMetrics}
+                    />
+                  </div>
+                  {hasMetrics ? (
+                    <p className="mt-2.5 truncate text-[11px] text-muted-foreground" title={hint}>
+                      {hint}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(channel.id)}
+                      className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary-400 hover:text-primary-300"
+                    >
+                      <Plus className="size-3" />
+                      {t('cards.addStats')}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-2 border-t border-border px-4 py-2.5">
+              <span
+                className="inline-flex min-w-0 items-center gap-1.5 truncate text-[11px] text-muted-foreground"
+                title={t('cards.lastUpload')}
+              >
+                <CalendarClock className="size-3.5 shrink-0" />
+                {channel.lastUploadAt ? new Date(channel.lastUploadAt).toLocaleDateString(dateLocale) : t('cards.never')}
+              </span>
+              <div className="ml-auto flex shrink-0 items-center gap-0.5">
                 <button
                   type="button"
-                  onClick={() => setEditingId(editingId === channel.id ? null : channel.id)}
+                  onClick={() => setEditingId(editing ? null : channel.id)}
                   title={t('cards.editStats')}
                   aria-label={t('cards.editStats')}
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className={cn(
+                    'rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                    editing && 'bg-muted text-foreground',
+                  )}
                 >
-                  <Pencil className="size-4" />
+                  <Pencil className="size-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => onSelect(channel.id)}
                   title={t('cards.open')}
                   aria-label={t('cards.open')}
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <ExternalLink className="size-4" />
+                  <ArrowUpRight className="size-3.5" />
                 </button>
               </div>
-            </div>
-
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground" title={channel.name}>
-                {channel.name}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">{channel.handle}</p>
-            </div>
-
-            <div className="space-y-2.5 pt-1">
-              {editingId === channel.id ? (
-                <StatsEditor
-                  channel={channel}
-                  onSaved={onChannelUpdated}
-                  onClose={() => setEditingId(null)}
-                />
-              ) : hasMetrics ? (
-                <>
-                  <MeterRow
-                    label={t('cards.watchHours')}
-                    value={hours}
-                    target={YPP_HOURS}
-                    color={color}
-                    hint={
-                      eligible
-                        ? t('cards.ypp')
-                        : nextTarget !== undefined
-                          ? t('cards.hoursLeft', {
-                              next: level + 1,
-                              target: formatNumber(nextTarget),
-                              left: formatNumber(Math.max(0, nextTarget - hours)),
-                            })
-                          : undefined
-                    }
-                  />
-                  <MeterRow
-                    label={t('cards.subscribers')}
-                    value={subs}
-                    target={YPP_SUBSCRIBERS}
-                    color="var(--color-danger)"
-                  />
-                </>
-              ) : (
-                <p className="rounded-lg bg-muted/60 px-3 py-3 text-center text-xs text-muted-foreground">
-                  {t('cards.noData')}
-                </p>
-              )}
-            </div>
-
-            <div className="mt-auto flex flex-col items-start gap-1.5 border-t border-border pt-3">
-              <MonetizationPill status={channel.monetizationStatus} />
-              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Trophy className="size-3" />
-                {t('cards.lastUpload')}: {lastUpload}
-              </span>
             </div>
           </div>
         )

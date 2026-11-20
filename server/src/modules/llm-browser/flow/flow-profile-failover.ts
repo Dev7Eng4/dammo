@@ -19,9 +19,9 @@ import { emitDetailLog } from '../../video-production/shared/video-log.js';
 
 export interface FlowProfileFailoverOptions {
   startProfileId?: string;
-  /** Main profiles reserved by other concurrent work; never picked or failed over to. */
+  /** Flow profiles reserved by other concurrent work; never picked or failed over to. */
   excludeProfileIds?: string[];
-  /** Collects every main profile ID used during failover (for batch cleanup). */
+  /** Collects every Flow profile ID used during failover (for batch cleanup). */
   openedProfileIds?: Set<string>;
   onProfileSwitch?: (from: ChromeProfile, to: ChromeProfile, remainingCount: number) => void;
 }
@@ -35,14 +35,26 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-export function listAvailableFlowMainProfiles(exhaustedProfileIds: Set<string>): ChromeProfile[] {
-  return chromeProfilesService.listMainProfiles().filter(profile => !exhaustedProfileIds.has(profile.id));
+/** What the Flow job makes, i.e. which profile column (LLM Image / LLM Video) must have Flow ticked. */
+export type FlowCapability = 'image' | 'video';
+
+/** Profiles with Flow ticked for `capability`, in usageOrder, minus exhausted/reserved ones. */
+export function listAvailableFlowProfiles(capability: FlowCapability, exhaustedProfileIds: Set<string>): ChromeProfile[] {
+  return chromeProfilesService.listProfilesForLlm(capability, 'flow', { excludeIds: [...exhaustedProfileIds] });
 }
 
-function pickStartProfile(startProfileId: string | undefined, exhausted: Set<string>): ChromeProfile {
-  const available = listAvailableFlowMainProfiles(exhausted);
+function pickStartProfile(
+  capability: FlowCapability,
+  startProfileId: string | undefined,
+  exhausted: Set<string>,
+): ChromeProfile {
+  const available = listAvailableFlowProfiles(capability, exhausted);
   if (available.length === 0) {
-    throw new AppError('No Chrome main profiles available for Flow', 409, 'NO_MAIN_PROFILE');
+    throw new AppError(
+      `No Chrome profile with Flow ticked in LLM ${capability === 'image' ? 'Image' : 'Video'} is available`,
+      409,
+      'NO_LLM_PROFILE',
+    );
   }
 
   if (startProfileId) {
@@ -81,7 +93,7 @@ async function collectExistingAssets(
 }
 
 /**
- * Generate tool-batch images, switching to the next Chrome main profile when
+ * Generate tool-batch images, switching to the next Flow Chrome profile when
  * daily Flow quota is exhausted. Only retries visuals whose output file is missing.
  */
 export async function generateImagesViaToolWithFailover(
@@ -95,7 +107,7 @@ export async function generateImagesViaToolWithFailover(
 
   const outputDir = path.resolve(options.outputDir);
   const exhausted = new Set<string>(failoverOpts?.excludeProfileIds ?? []);
-  let profile = pickStartProfile(failoverOpts?.startProfileId, exhausted);
+  let profile = pickStartProfile('image', failoverOpts?.startProfileId, exhausted);
   const startedAt = Date.now();
   const triedNames: string[] = [];
 
@@ -140,21 +152,21 @@ export async function generateImagesViaToolWithFailover(
       const reason = isFlowDailyQuotaError(err) ? 'daily quota exhausted' : 'browser tile error';
       console.warn(`[flow-quota] profile ${profile.name} ${reason} — switching profile`);
       if (isFlowDailyQuotaError(err)) {
-        chromeProfilesService.markMainProfileLimited(profile.id);
+        chromeProfilesService.markFlowProfileLimited(profile.id);
       }
       exhausted.add(profile.id);
       triedNames.push(profile.name);
 
       await closeChromeProfile(profile.id).catch(() => undefined);
 
-      const nextProfiles = listAvailableFlowMainProfiles(exhausted);
+      const nextProfiles = listAvailableFlowProfiles('image', exhausted);
       if (nextProfiles.length === 0) {
         const stillMissing = (await resolvePendingVisuals(visuals, outputDir)).map(v => v.name);
         console.error(
-          `[flow-quota] all main profiles exhausted, missing: ${stillMissing.join(', ') || '(none)'}`,
+          `[flow-quota] all Flow profiles exhausted, missing: ${stillMissing.join(', ') || '(none)'}`,
         );
         throw new AppError(
-          `Flow profile failover exhausted on all main profiles (${triedNames.join(', ')}). ` +
+          `Flow profile failover exhausted on all Flow profiles (${triedNames.join(', ')}). ` +
             `Missing images: ${stillMissing.join(', ') || '(none)'}`,
           isFlowDailyQuotaError(err) ? 429 : 502,
           isFlowDailyQuotaError(err) ? 'FLOW_DAILY_QUOTA_EXHAUSTED' : 'FLOW_BROWSER_TILE_ERROR',
@@ -173,7 +185,7 @@ export async function generateImagesViaToolWithFailover(
 }
 
 /**
- * Generate a single Flow image with main-profile failover on daily quota exhaustion.
+ * Generate a single Flow image with Flow-profile failover on daily quota exhaustion.
  */
 export async function generateImageWithFailover(
   prompt: string,
@@ -181,7 +193,7 @@ export async function generateImageWithFailover(
   failoverOpts?: FlowProfileFailoverOptions,
 ): Promise<LlmBrowserResponse> {
   const exhausted = new Set<string>();
-  let profile = pickStartProfile(failoverOpts?.startProfileId, exhausted);
+  let profile = pickStartProfile('image', failoverOpts?.startProfileId, exhausted);
   const triedNames: string[] = [];
   const startedAt = Date.now();
 
@@ -210,18 +222,18 @@ export async function generateImageWithFailover(
       const reason = isFlowDailyQuotaError(err) ? 'daily quota exhausted' : 'browser tile error';
       console.warn(`[flow-quota] profile ${profile.name} ${reason} — switching profile`);
       if (isFlowDailyQuotaError(err)) {
-        chromeProfilesService.markMainProfileLimited(profile.id);
+        chromeProfilesService.markFlowProfileLimited(profile.id);
       }
       exhausted.add(profile.id);
       triedNames.push(profile.name);
 
       await closeChromeProfile(profile.id).catch(() => undefined);
 
-      const nextProfiles = listAvailableFlowMainProfiles(exhausted);
+      const nextProfiles = listAvailableFlowProfiles('image', exhausted);
       if (nextProfiles.length === 0) {
-        console.error(`[flow-quota] all main profiles exhausted: ${triedNames.join(', ')}`);
+        console.error(`[flow-quota] all Flow profiles exhausted: ${triedNames.join(', ')}`);
         throw new AppError(
-          `Flow profile failover exhausted on all main profiles (${triedNames.join(', ')})`,
+          `Flow profile failover exhausted on all Flow profiles (${triedNames.join(', ')})`,
           isFlowDailyQuotaError(err) ? 429 : 502,
           isFlowDailyQuotaError(err) ? 'FLOW_DAILY_QUOTA_EXHAUSTED' : 'FLOW_BROWSER_TILE_ERROR',
         );
@@ -236,7 +248,7 @@ export async function generateImageWithFailover(
 }
 
 /**
- * Generate image-to-video clips, switching to the next Chrome main profile when daily
+ * Generate image-to-video clips, switching to the next Flow Chrome profile when daily
  * Flow quota is exhausted. Only retries jobs whose clip is missing and that Flow did not reject.
  */
 export async function generateVideosFromImagesWithFailover(
@@ -250,7 +262,7 @@ export async function generateVideosFromImagesWithFailover(
 
   const outputDir = path.resolve(options.outputDir);
   const exhausted = new Set<string>(failoverOpts?.excludeProfileIds ?? []);
-  let profile = pickStartProfile(failoverOpts?.startProfileId, exhausted);
+  let profile = pickStartProfile('video', failoverOpts?.startProfileId, exhausted);
   const triedNames: string[] = [];
   const failed = new Map<string, string>();
 
@@ -287,17 +299,17 @@ export async function generateVideosFromImagesWithFailover(
 
       console.warn(`[flow-quota] profile ${profile.name} video generation blocked — switching profile`);
       if (isFlowDailyQuotaError(err)) {
-        chromeProfilesService.markMainProfileLimited(profile.id);
+        chromeProfilesService.markFlowProfileLimited(profile.id);
       }
       exhausted.add(profile.id);
       triedNames.push(profile.name);
       await closeChromeProfile(profile.id).catch(() => undefined);
 
-      const nextProfiles = listAvailableFlowMainProfiles(exhausted);
+      const nextProfiles = listAvailableFlowProfiles('video', exhausted);
       if (nextProfiles.length === 0) {
         const stillMissing = (await pendingJobs()).map(job => job.name);
         throw new AppError(
-          `Flow profile failover exhausted on all main profiles (${triedNames.join(', ')}). ` +
+          `Flow profile failover exhausted on all Flow profiles (${triedNames.join(', ')}). ` +
             `Missing videos: ${stillMissing.join(', ') || '(none)'}`,
           isFlowDailyQuotaError(err) ? 429 : 502,
           isFlowDailyQuotaError(err) ? 'FLOW_DAILY_QUOTA_EXHAUSTED' : 'FLOW_BROWSER_TILE_ERROR',

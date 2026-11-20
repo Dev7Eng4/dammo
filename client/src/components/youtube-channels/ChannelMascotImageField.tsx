@@ -5,16 +5,15 @@ import { assetFileUrl, fetchAssets } from '../../api/assets';
 import {
   deleteYoutubeChannelMascotImage,
   deleteYoutubeChannelMascotImageTemp,
+  fetchMascotLibraryNamesInUse,
   pickYoutubeChannelMascotImageFromLibrary,
   uploadYoutubeChannelMascotImage,
   uploadYoutubeChannelMascotImageTemp,
-  type ChannelMascotImageKind,
 } from '../../api/youtubeChannels';
 import type { AssetFileItem } from '../../types/asset';
 import { Button, Modal, useToast } from '../ui';
 
 interface ChannelMascotImageFieldProps {
-  kind: ChannelMascotImageKind;
   label: string;
   hint: string;
   optional?: boolean;
@@ -31,9 +30,8 @@ function cacheBustedUrl(url: string): string {
   return `${url}?v=${Date.now()}`;
 }
 
-/** Upload / preview / remove one channel mascot image (the mascot itself or its character sheet). */
+/** Upload / preview / remove the channel mascot image. */
 export function ChannelMascotImageField({
-  kind,
   label,
   hint,
   optional = false,
@@ -48,7 +46,7 @@ export function ChannelMascotImageField({
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const inputId = `channel-${kind}-upload`;
+  const inputId = 'channel-mascot-image-upload';
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState<AssetFileItem[] | null>(null);
 
@@ -56,8 +54,12 @@ export function ChannelMascotImageField({
     setLibraryOpen(true);
     setLibraryItems(null);
     try {
-      const { items } = await fetchAssets('mascot');
-      setLibraryItems(items);
+      const [{ items }, { names: inUse }] = await Promise.all([
+        fetchAssets('mascot'),
+        fetchMascotLibraryNamesInUse(channelId),
+      ]);
+      const used = new Set(inUse);
+      setLibraryItems(items.filter(item => !used.has(item.name)));
     } catch (err) {
       setLibraryItems([]);
       toast.error(err instanceof Error ? err.message : t('form.mascotLibraryError'));
@@ -69,7 +71,6 @@ export function ChannelMascotImageField({
     setBusy(true);
     try {
       const { item } = await pickYoutubeChannelMascotImageFromLibrary(
-        kind,
         channelId ? { channelId } : { sessionId: tempSessionId },
         name,
       );
@@ -88,8 +89,8 @@ export function ChannelMascotImageField({
     setBusy(true);
     try {
       const { item } = channelId
-        ? await uploadYoutubeChannelMascotImage(kind, channelId, file)
-        : await uploadYoutubeChannelMascotImageTemp(kind, tempSessionId, file);
+        ? await uploadYoutubeChannelMascotImage(channelId, file)
+        : await uploadYoutubeChannelMascotImageTemp(tempSessionId, file);
       onImageUrlChange(cacheBustedUrl(item.url));
       toast.success(t('form.mascotUploadSuccess'));
     } catch (err) {
@@ -104,9 +105,9 @@ export function ChannelMascotImageField({
     setBusy(true);
     try {
       if (channelId) {
-        await deleteYoutubeChannelMascotImage(kind, channelId);
+        await deleteYoutubeChannelMascotImage(channelId);
       } else {
-        await deleteYoutubeChannelMascotImageTemp(kind, tempSessionId);
+        await deleteYoutubeChannelMascotImageTemp(tempSessionId);
       }
       onImageUrlChange(null);
     } catch (err) {

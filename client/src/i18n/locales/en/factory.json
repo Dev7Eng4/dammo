@@ -1,9 +1,5 @@
 {
   "production": {
-    "page": {
-      "title": "Video Production",
-      "subtitle": "Select channel → select video → view render scenes"
-    },
     "loadVideosError": "Could not load video list",
     "loadScenesError": "Could not load scenes",
     "loadTranscriptError": "Could not load transcript",
@@ -22,29 +18,9 @@
       "unsupported": "Your browser does not support video playback."
     },
     "toolbar": {
-      "step1": "1. Select channel",
-      "step2": "2. Find video",
-      "channelLoading": "Loading channels...",
-      "channelPlaceholder": "Select YouTube channel",
-      "channelSearch": "Search channels...",
-      "videoSearch": "Search by video title...",
-      "selectChannelFirst": "Select a channel first",
-      "filterAll": "All",
-      "statusAll": "All",
-      "statusCreated": "Created",
-      "statusPrepared": "Prepared",
       "copyPath": "Copy path",
       "copyPathSuccess": "Copied video folder path",
-      "copyPathError": "Could not copy video folder path",
-      "count": "{{total}} videos",
-      "noChannel": "No channel selected"
-    },
-    "list": {
-      "loading": "Loading videos...",
-      "selectChannel": "Select a channel above to see the video list.",
-      "empty": "This channel has no Prepared or Created videos.",
-      "sceneCount": "{{count}} scenes",
-      "noThumbnail": "No thumbnail"
+      "copyPathError": "Could not copy video folder path"
     },
     "detail": {
       "selectVideo": "Select a video from the list to view its scenes and images.",
@@ -110,6 +86,9 @@
     "transcript": {
       "loading": "Loading transcript...",
       "empty": "No transcript.srt or transcript-updated.srt for this video yet.",
+      "copy": "Copy script",
+      "copySuccess": "Script copied",
+      "copyError": "Could not copy script",
       "col": {
         "index": "#",
         "timeline": "Timeline",
@@ -134,7 +113,12 @@
       "saved": "Character added",
       "saveError": "Could not add character",
       "mascotBadge": "Channel mascot",
-      "mascotHint": "The channel's mascot image. Change it when editing the channel."
+      "mascotHint": "The channel's mascot image. Change it when editing the channel.",
+      "replaceImage": "Replace image",
+      "uploading": "Uploading…",
+      "replaced": "Image replaced",
+      "mascotReplaceHint": "The channel's mascot — replacing it here applies to every video of the channel.",
+      "mascotReplaceConfirm": "This is the whole channel's mascot: replacing it applies to every video of the channel (images and thumbnails made from now on). Continue?"
     },
     "scene": {
       "titleCard": "Chapter title (text card, no AI image)",
@@ -279,7 +263,9 @@
       "chrome": "Chrome",
       "video": "Video",
       "taskQueue": "Queue",
-      "seeding": "Seeding"
+      "seeding": "Seeding",
+      "aiTools": "AI tools",
+      "voice": "Voice"
     },
     "seedingHint": "Default seeding period (in days).",
     "seedingEmailDays": "Email seeding period (days)",
@@ -298,13 +284,8 @@
     },
     "chromeOffscreen": "Move background Chrome windows off-screen",
     "chromeOffscreenDesc": "On: park windows off-screen when running in the background. Off: keep windows visible normally.",
-    "scenePromptProfile": "Chrome profile for scene prompts",
-    "scenePromptProfileDesc": "Used when generating scene prompts and character references (LLM text). Does not affect image generation. When scene-prompt concurrency is greater than 1, scene chunks use sub profiles instead.",
-    "scenePromptProfileMain": "Main profile",
-    "scenePromptProfileSub": "Sub profile",
-    "scenePromptProfileParallelHint": "Concurrency > 1: scene chunks run on sub profiles. This role still applies to character design (single profile).",
     "scenePromptConcurrency": "Scene prompt concurrency",
-    "scenePromptConcurrencyDesc": "How many Chrome profiles run scene-prompt LLM chunks at once (1–8). Value 1 = sequential. Values above 1 require that many sub profiles.",
+    "scenePromptConcurrencyDesc": "How many Chrome profiles run scene-prompt LLM chunks at once (1–8). Value 1 = sequential. Uses profiles with the default text LLM ticked in LLM Content, up to as many as exist.",
     "sceneDensity": "Max duration per scene (seconds) — system default. YouTube channels can still override per channel.",
     "sceneStart": "Start of video",
     "sceneMiddle": "Middle of video",
@@ -323,6 +304,137 @@
       "loadError": "Could not load settings",
       "saved": "Settings saved",
       "saveError": "Failed to save settings"
+    },
+    "enableUpdateTranscript": "Update transcript (Japanese)",
+    "enableUpdateTranscriptDesc": "On (true): checks conditions (Japanese language, captions enabled) to rewrite transcript with LLM. Off (false): skips transcript update completely.",
+    "providersDesc": "Pick the LLM / browser tool and the Chrome profile for each kind of job. Applies to every pipeline and the Prompt page playground. Changes save right away.",
+    "providerGroups": {
+      "content": {
+        "title": "Content (text)",
+        "desc": "The LLM that writes text — scripts, remakes, scene prompts, character references, metadata — and the Chrome profile for each of those jobs."
+      },
+      "image": {
+        "title": "Images",
+        "desc": "The tool that draws character-reference images, scene images and thumbnails."
+      },
+      "video": {
+        "title": "Video",
+        "desc": "The tool that makes video (motion clips from images)."
+      }
+    },
+    "contentTasks": {
+      "profileAuto": "Automatic (first profile with this LLM)",
+      "profileMissing": "(profile deleted or this LLM not ticked — automatic will be used)",
+      "noProfile": "No Chrome profile has this LLM ticked yet — tick it on the Chrome profiles screen.",
+      "content": {
+        "label": "Content generation",
+        "hint": "General writing jobs: transcript updates, JSON prompts, Prompt page playground."
+      },
+      "scriptRemake": {
+        "label": "Script remake",
+        "hint": "Script remake for Video production projects and Remake channel videos."
+      },
+      "scenePrompt": {
+        "label": "Scene image prompts",
+        "hint": "Writes the image prompt for each scene and the character designs (character reference)."
+      },
+      "metadata": {
+        "label": "Metadata",
+        "hint": "Video title, description and tags."
+      }
+    },
+    "voice": {
+      "hint": "Voice setup: ElevenLabs (multiple API keys, rotated automatically when one runs out of quota) and the local VOICEVOX Engine.",
+      "keyPlaceholder": "ElevenLabs API key (sk_...)",
+      "addKey": "Add key",
+      "keyHint": "Keys are verified with ElevenLabs before saving. When generating speech the server uses the key with the most characters left and falls over to the next key on errors or exhausted quota.",
+      "keyAdded": "ElevenLabs key added",
+      "noKeys": "No API keys yet.",
+      "checkAll": "Check all",
+      "checkKey": "Check quota",
+      "deleteKey": "Delete key",
+      "enabled": "Enabled",
+      "charsLeft": "{{count}} chars left",
+      "keyStatus": {
+        "ok": "Active",
+        "invalid": "Invalid",
+        "quota_exceeded": "Out of quota",
+        "error": "Error",
+        "unknown": "Not checked"
+      },
+      "reloadVoices": "Reload voices",
+      "noVoice": "— None —",
+      "el": {
+        "voice": "Voice",
+        "model": "Model",
+        "outputFormat": "Output format",
+        "stability": "Stability",
+        "similarityBoost": "Similarity",
+        "style": "Style",
+        "speed": "Speed"
+      },
+      "connected": "Connected",
+      "disconnected": "Not connected",
+      "checkConnection": "Check",
+      "vv": {
+        "url": "VOICEVOX Engine URL",
+        "urlHint": "Leave empty to use VOICEVOX_URL from env. In use: {{url}}"
+      },
+      "test": "Test voice",
+      "play": "Generate & play",
+      "preset": {
+        "title": "Saved voices",
+        "add": "Add voice",
+        "edit": "Edit voice",
+        "delete": "Delete voice",
+        "setDefault": "Set as default",
+        "default": "Default",
+        "empty": "No voices yet — click \"Add voice\" to pick one from your ElevenLabs library and save it under a name.",
+        "needKey": "Add at least one enabled API key to pick voices.",
+        "name": "Voice name",
+        "namePlaceholder": "e.g. Deep male – psychology channel",
+        "loadingVoices": "Loading voices...",
+        "sample": "Play ElevenLabs sample",
+        "useDefault": "Default voice",
+        "hint": {
+          "stability": "Low = expressive, high = steady and consistent.",
+          "similarityBoost": "How closely to match the original voice.",
+          "style": "Exaggerates emotion; 0 is the most stable.",
+          "speed": "Reading speed (1 = normal)."
+        },
+        "needKeyForList": "No enabled API key, so the voice list cannot load. Turn a key on in the list above and reopen this.",
+        "deleteMessage": "This voice will be removed from your saved list. If it is the default, the next voice becomes the default."
+      },
+      "disabled": "Disabled",
+      "deleteKeyMessage": "This key will be removed and no longer used to generate speech.",
+      "format": {
+        "intro": "File type ElevenLabs returns, as codec_sample-rate_bitrate. Applies to every voice.",
+        "items": {
+          "mp3_44100_128": "MP3 44.1 kHz, 128 kbps. Default; good enough for YouTube, small files.",
+          "mp3_44100_192": "MP3 44.1 kHz, 192 kbps. Slightly crisper, ~50% larger. Requires Creator tier or above.",
+          "mp3_22050_32": "MP3 22 kHz, 32 kbps. Very small but low quality; for quick tests only.",
+          "pcm_24000": "PCM 24 kHz, uncompressed. Original quality, very large files.",
+          "pcm_44100": "PCM 44.1 kHz, uncompressed. Very large files. Requires Pro tier or above."
+        },
+        "tierNote": "On the FREE plan, use mp3_44100_128."
+      },
+      "vvp": {
+        "speedScale": "Speed",
+        "pitchScale": "Pitch",
+        "intonationScale": "Intonation",
+        "volumeScale": "Volume",
+        "pauseLengthScale": "Pause length",
+        "hint": {
+          "speedScale": "1 = normal; lower reads slower.",
+          "pitchScale": "0 = original; negative is deeper, positive is higher.",
+          "intonationScale": "Low = flat, high = more expressive.",
+          "volumeScale": "1 = normal.",
+          "pauseLengthScale": "Pause at 、 (1 = default)."
+        },
+        "empty": "No voices yet — click \"Add voice\" to pick a VOICEVOX voice, tune it and save it under a name.",
+        "needEngine": "VOICEVOX Engine isn't running, so the voice list can't load. Open VOICEVOX and click Check.",
+        "namePlaceholder": "e.g. Soft female – psychology channel"
+      }
     }
   },
   "videoFactory": {

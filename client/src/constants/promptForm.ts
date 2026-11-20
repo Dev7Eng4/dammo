@@ -1,5 +1,5 @@
 import type {
-  PlaygroundProvider,
+  PlaygroundProvider, TextLlmProvider,
   PromptCategory,
   PromptLanguage,
   PromptOutputType,
@@ -60,12 +60,18 @@ export const IMAGE_PROVIDER_OPTIONS: { value: ImageBrowserProvider; label: strin
 ];
 
 export const VIDEO_PROVIDER_OPTIONS: { value: VideoBrowserProvider; label: string }[] = [
-  { value: 'meta', label: 'Meta AI' },
+  { value: 'flow', label: 'Google Flow' },
 ];
 
 export const PLAYGROUND_PROVIDER_OPTIONS: { value: PlaygroundProvider; label: string }[] = [
   { value: 'gpt', label: 'ChatGPT' },
   { value: 'gemini', label: 'Gemini' },
+];
+
+/** All text LLMs (= the LLM Content options on Chrome profiles). */
+export const TEXT_LLM_OPTIONS: { value: TextLlmProvider; label: string }[] = [
+  ...PLAYGROUND_PROVIDER_OPTIONS,
+  { value: 'claude', label: 'Claude' },
 ];
 
 export const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {

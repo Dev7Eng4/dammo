@@ -32,7 +32,7 @@ export function errorMessageFromUnknown(err: unknown, fallback = 'Task failed'):
 
 export function initCreateVideoStages(
   taskJobId: string,
-  options?: { copyingAssets?: boolean; includeUpdateTranscript?: boolean },
+  options?: { copyingAssets?: boolean; includeUpdateTranscript?: boolean; includeRemake?: boolean },
 ): void {
   const stages = buildCreateVideoStages(options);
   taskQueueRepository.initStages(taskJobId, stages);

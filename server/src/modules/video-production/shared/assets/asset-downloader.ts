@@ -8,7 +8,9 @@ import { downloadYoutubeVideo } from '../../../../infrastructure/youtube/youtube
 import { requireYoutubeVideoId } from '../../../../infrastructure/youtube/youtube-url.js';
 import type { ChannelLanguage } from '../../../youtube-channels/channel-language.js';
 import type { StoredYoutubeChannelType } from '../../../youtube-channels/youtube-channels.types.js';
+import { appSettingsService } from '../../../app-settings/app-settings.service.js';
 import { updateTranscriptWithLlm } from './transcript-updater.js';
+import { isReupAudioFamilyType } from '../../../youtube-channels/youtube-channels.types.js';
 
 export interface ReupAudioDownloadResult {
   youtubeVideoId: string;
@@ -66,7 +68,8 @@ export async function downloadReupAudioAssets(url: string, language: ChannelLang
 export async function processReupAudioTranscript(transcriptPath: string, language: ChannelLanguage): Promise<ReupTranscriptProcessResult> {
   const srtPath = await cleanSrt(transcriptPath);
 
-  if (language !== 'ja') {
+  const isEnabled = appSettingsService.get().enableUpdateTranscript ?? appSettingsService.get().disabledUpdateTranscript ?? true;
+  if (!isEnabled || language !== 'ja') {
     return { srtPath };
   }
 
@@ -75,7 +78,7 @@ export async function processReupAudioTranscript(transcriptPath: string, languag
 }
 
 function isReupAudioChannel(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio';
+  return isReupAudioFamilyType(type);
 }
 
 export async function downloadReupAssets(

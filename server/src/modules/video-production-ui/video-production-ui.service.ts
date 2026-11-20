@@ -77,7 +77,7 @@ function isProductionStatus(status: string): status is ProductionVideoStatus {
   return status === 'Prepared' || status === 'Created';
 }
 
-function resolveProductionVideoFolder(channelId: string, videoId: string): string {
+export function resolveProductionVideoFolder(channelId: string, videoId: string): string {
   const safeChannelId = assertSafeId(channelId, 'channel id');
   const safeVideoId = assertSafeId(videoId, 'video id');
 
@@ -285,6 +285,7 @@ export class VideoProductionUiService {
         items.push({
           channelId: channel.id,
           channelName: channel.name,
+          channelType: channel.type,
           videoId,
           title: item.title?.trim() || videoId,
           status: item.status,

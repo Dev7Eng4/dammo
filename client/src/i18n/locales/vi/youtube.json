@@ -33,7 +33,8 @@
     "statusPrepared": "Đã chuẩn bị",
     "statusCreated": "Đã tạo",
     "statusDraft": "Bản nháp",
-    "statusUploaded": "Đã tải lên (chưa công khai)"
+    "statusUploaded": "Đã tải lên (chưa công khai)",
+    "typeRemakeVideo": "Remake video"
   },
   "table": {
     "col": {
@@ -101,7 +102,8 @@
     "reupAudio": "Đăng lại âm thanh",
     "reupVideo": "Đăng lại video",
     "contentSale": "Bán nội dung",
-    "reup": "Đăng lại"
+    "reup": "Đăng lại",
+    "remakeVideo": "Remake video"
   },
   "monetization": {
     "monetized": "Đã bật kiếm tiền",
@@ -114,7 +116,7 @@
     "openingProfile": "Đang mở…",
     "openingProfileAria": "Đang mở profile",
     "noLinkedEmail": "Kênh chưa có email liên kết",
-    "openVideoProduction": "Video Production",
+    "openVideoProduction": "Sản xuất video",
     "edit": "Chỉnh sửa",
     "editAria": "Chỉnh sửa kênh",
     "pause": "Tạm dừng kênh",
@@ -270,6 +272,33 @@
     "emailSearch": "Tìm kiếm email...",
     "channelUrl": "URL kênh",
     "channelUrlPlaceholder": "https://youtube.com/@kenh hoặc @tenkenh",
+    "sourceMode": {
+      "label": "Nguồn video",
+      "channels": "Kênh nguồn cố định",
+      "trendBrain": "Bộ não săn xu hướng",
+      "clusters": "Cụm nội dung lấy từ bộ não",
+      "clustersPlaceholder": "Tất cả cụm K1–K11",
+      "trendHint": "Mỗi lần tạo video, kênh lấy video đang nóng nhất mà bộ não săn xu hướng tìm được (theo độ nóng, rồi view/giờ). Video kênh khác cùng chế độ đã lấy sẽ bị bỏ qua để không trùng."
+    },
+    "youtubeApi": {
+      "label": "YouTube Data API v3 key",
+      "placeholder": "AIza... (key riêng của kênh)",
+      "replacePlaceholder": "Nhập key mới để thay key đang lưu",
+      "test": "Kiểm tra",
+      "check": "Kiểm tra lại key đang lưu",
+      "delete": "Xoá key",
+      "confirmDelete": "Xoá YouTube API key của kênh này?",
+      "okKey": "Key hợp lệ.",
+      "okChannel": "Key hợp lệ — {{title}}: {{subs}} sub · {{views}} view · {{videos}} video",
+      "saveError": "Đã thêm kênh nhưng chưa lưu được YouTube API key",
+      "hint": "Dùng để đọc số liệu công khai của kênh và video (view, like, bình luận, sub) cho bộ não Chỉ số kênh. Tạo key ở Google Cloud Console → bật YouTube Data API v3. Mỗi key có 10.000 quota/ngày; key chỉ lưu trên server.",
+      "status": {
+        "ok": "Hoạt động",
+        "invalid": "Key sai",
+        "quota_exceeded": "Hết quota",
+        "error": "Lỗi"
+      }
+    },
     "language": "Ngôn ngữ",
     "languageRequired": "Ngôn ngữ là bắt buộc",
     "languagePlaceholder": "Chọn ngôn ngữ",
@@ -327,7 +356,7 @@
     "uploadImage": "Tải ảnh",
     "uploadingImage": "Đang tải...",
     "channelMascot": "Mascot kênh",
-    "channelMascotHint": "Ảnh chính của mascot: 1 nhân vật, 1 tư thế đứng chính diện, nền trơn. Dùng làm ảnh tham chiếu khi vẽ thumbnail và ảnh cảnh.",
+    "channelMascotHint": "Ảnh mascot của kênh: dùng để AI học biểu cảm, vẽ thumbnail và ảnh cảnh.",
     "removeImage": "Xoá ảnh",
     "thumbnailStyle": "Kiểu ảnh thu nhỏ",
     "thumbnailNeedLang": "Chọn ngôn ngữ trước",
@@ -401,17 +430,24 @@
       "imgOne": "Một ảnh",
       "imgMulti": "Nhiều ảnh"
     },
-    "mascotThumbnail": "Thumbnail AI theo mascot",
-    "mascotThumbnailOff": "Tắt (dùng kiểu thumbnail thường)",
-    "mascotThumbnailCount": "Bật – {{count}} bản để chọn",
-    "mascotThumbnailHint": "AI tự thiết kế nhiều thumbnail có mascot, chấm điểm và dùng bản tốt nhất; đổi bản khác trong popup video.",
+    "mascotThumbnailHint": "AI tự thiết kế thumbnail có mascot và dùng bản đầu tiên.",
     "mascotThumbnailNeedsMascot": "Tải ảnh mascot kênh trước để bật.",
     "mascotPickFromLibrary": "Chọn từ kho",
     "mascotLibraryTitle": "Chọn ảnh cho {{label}}",
     "mascotLibraryEmpty": "Kho mascot trống. Tải ảnh lên ở Tài nguyên → Mascot.",
     "mascotLibraryError": "Không tải được kho mascot",
-    "channelMascotSheet": "Bảng nhân vật mascot",
-    "channelMascotSheetHint": "Ảnh nhiều góc nhìn, biểu cảm, tư thế của cùng mascot. Chỉ để AI học cách mascot biểu cảm, không dùng để vẽ."
+    "typeRemakeVideo": "Remake video",
+    "remakeAuto": {
+      "label": "Tự remake kịch bản và đọc giọng khi chuẩn bị video",
+      "hint": "Bật: \"Chuẩn bị video\" / \"Tạo video\" remake transcript nguồn thành kịch bản mới (ChatGPT/Gemini), đọc bằng VOICEVOX thay audio gốc, rồi mới tạo metadata, thumbnail và cảnh theo kịch bản mới. Tắt: giữ audio nguồn như cũ.",
+      "provider": "LLM remake",
+      "providerDefault": "Theo Cài đặt",
+      "promptSet": "Bộ prompt remake",
+      "promptSetDefault": "Mặc định ({{name}})",
+      "voice": "Giọng VOICEVOX",
+      "voiceDefault": "Giọng mặc định ({{name}})",
+      "speed": "Tốc độ đọc"
+    }
   },
   "metadata": {
     "title": "Tạo Metadata",
@@ -439,18 +475,7 @@
     "copySuccess": "Đã sao chép {{label}}",
     "copyError": "Không thể sao chép {{label}}",
     "folderPathLabel": "đường dẫn folder",
-    "fromLinkJobTitle": "Tạo metadata từ link video",
-    "thumbnailCandidates": "Các bản thumbnail AI",
-    "thumbnailCandidateSelected": "Đang dùng",
-    "thumbnailCandidateUse": "Dùng bản này",
-    "thumbnailCandidateFailed": "Không vẽ được",
-    "thumbnailCandidateSelectError": "Không đổi được thumbnail",
-    "thumbnailCandidateUnsaved": "Lưu hoặc bỏ ảnh đã chọn trước khi đổi sang bản AI khác",
-    "thumbnailCandidateAiPicked": "AI chọn",
-    "thumbnailTextCorrect": "Chữ đúng",
-    "thumbnailTextWrong": "Sai chữ: {{issues}}",
-    "thumbnailJudgeBreakdown": "Mascot {{mascotMatch}} · Dễ đọc {{readability}} · Tò mò {{curiosity}} · Hợp title {{titleFit}}",
-    "thumbnailJudgeFailed": "AI chưa chấm được các bản (đang dùng bản vẽ được đầu tiên)."
+    "fromLinkJobTitle": "Tạo metadata từ link video"
   },
   "regenerate": {
     "title": "Tạo lại metadata?",
@@ -500,7 +525,13 @@
     "regenJobTitle": "Tạo lại metadata: {{title}}",
     "assembleJobTitle": "Tạo video: {{title}}",
     "copyThumbPrompt": "Sao chép prompt thumbnail",
-    "thumbPromptLabel": "Prompt thumbnail"
+    "thumbPromptLabel": "Prompt thumbnail",
+    "rerender": "Tạo lại video",
+    "rerendering": "Đang render…",
+    "rerenderTitle": "Render lại video.mp4 từ audio, phụ đề và scene hiện có",
+    "rerenderJobTitle": "Render lại video: {{title}}",
+    "rerenderQueued": "Đã thêm vào hàng đợi render lại video",
+    "rerenderSuccess": "Đã render lại video"
   },
   "comments": {
     "title": "Bình luận",
@@ -559,6 +590,9 @@
     "ypp": "Đủ điều kiện YPP",
     "hoursLeft": "Cấp {{next}} ở {{target}} giờ · còn {{left}} giờ",
     "noData": "Chưa có dữ liệu giờ xem / đăng ký",
+    "addStats": "Nhập số liệu",
+    "levelShort": "Cấp {{level}}",
+    "never": "Chưa đăng video",
     "lastUpload": "Đăng gần nhất",
     "open": "Mở kênh",
     "empty": "Không có kênh nào",

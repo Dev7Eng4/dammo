@@ -1,10 +1,6 @@
 import { paths } from '../../config/paths.js';
 import { readJson, writeJson } from '../../infrastructure/storage/json-store.js';
-import type {
-  AiScenePromptChromeProfileRole,
-  AppSettings,
-  UpdateAppSettingsInput,
-} from './app-settings.types.js';
+import type { AppSettings, UpdateAppSettingsInput } from './app-settings.types.js';
 
 export const DEFAULT_REMOVE_GEMINI_WATERMARK_PROMPT =
   'Xóa watermark (dấu sao) góc phải, giữ nguyên hình ảnh và text. Chỉ trả 1 ảnh duy nhất';
@@ -21,12 +17,13 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   },
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
-  aiScenePromptChromeProfileRole: 'main',
   aiScenePromptConcurrency: 1,
   seedingEmailDays: 5,
   seedingYoutubeDays: 3,
   removeGeminiWatermark: false,
   removeGeminiWatermarkPrompt: DEFAULT_REMOVE_GEMINI_WATERMARK_PROMPT,
+  enableUpdateTranscript: true,
+  disabledUpdateTranscript: true,
 };
 
 function resolveWatermarkPrompt(value: unknown, fallback: string): string {
@@ -39,13 +36,6 @@ function clampDays(value: number | undefined, fallback: number): number {
   const rounded = Math.round(value);
   if (rounded < 1 || rounded > 365) return fallback;
   return rounded;
-}
-
-function resolveScenePromptChromeProfileRole(
-  value: unknown,
-  fallback: AiScenePromptChromeProfileRole,
-): AiScenePromptChromeProfileRole {
-  return value === 'main' || value === 'sub' ? value : fallback;
 }
 
 function clampSceneSec(value: number | undefined, fallback: number): number {
@@ -63,6 +53,11 @@ function clampConcurrency(value: number | undefined, fallback: number): number {
 function loadSettings(): AppSettings {
   const stored = readJson<Partial<AppSettings>>(paths.appSettings);
   const density = stored?.aiSceneDensityMaxSec;
+  const enableUpdateTranscript =
+    stored?.enableUpdateTranscript ??
+    stored?.disabledUpdateTranscript ??
+    DEFAULT_APP_SETTINGS.enableUpdateTranscript;
+
   return {
     enableKenBurns: stored?.enableKenBurns ?? DEFAULT_APP_SETTINGS.enableKenBurns,
     kenBurnsOnPrepare: stored?.kenBurnsOnPrepare ?? DEFAULT_APP_SETTINGS.kenBurnsOnPrepare,
@@ -80,10 +75,6 @@ function loadSettings(): AppSettings {
       DEFAULT_APP_SETTINGS.taskQueueConcurrency,
     ),
     verboseVideoLogs: stored?.verboseVideoLogs ?? DEFAULT_APP_SETTINGS.verboseVideoLogs,
-    aiScenePromptChromeProfileRole: resolveScenePromptChromeProfileRole(
-      stored?.aiScenePromptChromeProfileRole,
-      DEFAULT_APP_SETTINGS.aiScenePromptChromeProfileRole,
-    ),
     aiScenePromptConcurrency: clampConcurrency(
       stored?.aiScenePromptConcurrency,
       DEFAULT_APP_SETTINGS.aiScenePromptConcurrency,
@@ -99,6 +90,8 @@ function loadSettings(): AppSettings {
       stored?.removeGeminiWatermarkPrompt,
       DEFAULT_APP_SETTINGS.removeGeminiWatermarkPrompt,
     ),
+    enableUpdateTranscript,
+    disabledUpdateTranscript: enableUpdateTranscript,
   };
 }
 
@@ -109,6 +102,11 @@ export class AppSettingsService {
 
   update(input: UpdateAppSettingsInput): AppSettings {
     const current = loadSettings();
+    const enableUpdateTranscript =
+      input.enableUpdateTranscript ??
+      input.disabledUpdateTranscript ??
+      current.enableUpdateTranscript;
+
     const next: AppSettings = {
       enableKenBurns: input.enableKenBurns ?? current.enableKenBurns,
       kenBurnsOnPrepare: input.kenBurnsOnPrepare ?? current.kenBurnsOnPrepare,
@@ -131,10 +129,6 @@ export class AppSettingsService {
         current.taskQueueConcurrency,
       ),
       verboseVideoLogs: input.verboseVideoLogs ?? current.verboseVideoLogs,
-      aiScenePromptChromeProfileRole: resolveScenePromptChromeProfileRole(
-        input.aiScenePromptChromeProfileRole ?? current.aiScenePromptChromeProfileRole,
-        current.aiScenePromptChromeProfileRole,
-      ),
       aiScenePromptConcurrency: clampConcurrency(
         input.aiScenePromptConcurrency,
         current.aiScenePromptConcurrency,
@@ -146,6 +140,8 @@ export class AppSettingsService {
         input.removeGeminiWatermarkPrompt ?? current.removeGeminiWatermarkPrompt,
         current.removeGeminiWatermarkPrompt,
       ),
+      enableUpdateTranscript,
+      disabledUpdateTranscript: enableUpdateTranscript,
     };
     writeJson(paths.appSettings, next);
     return next;

@@ -4,9 +4,6 @@ export interface AiSceneDensityMaxSecSettings {
   low: number;
 }
 
-/** Chrome profile role used for AI scene prompt + character-reference LLM chat. */
-export type AiScenePromptChromeProfileRole = 'main' | 'sub';
-
 export interface AppSettings {
   enableKenBurns: boolean;
   /**
@@ -22,14 +19,8 @@ export interface AppSettings {
   /** When true, emit ffmpeg progress / per-clip detail logs. When false, only timedStep summaries. */
   verboseVideoLogs: boolean;
   /**
-   * Which Chrome profile to open for scene-prompt LLM (and character reference design).
-   * Does not affect image generation or metadata.
-   * When aiScenePromptConcurrency > 1, scene chunks use sub profiles instead.
-   */
-  aiScenePromptChromeProfileRole: AiScenePromptChromeProfileRole;
-  /**
    * Max parallel Chrome profiles for AI scene-prompt LLM chunks (1–8).
-   * 1 = sequential (uses aiScenePromptChromeProfileRole). >1 uses that many sub profiles.
+   * Uses that many profiles with the default text LLM ticked in LLM Content (clamped to how many exist).
    */
   aiScenePromptConcurrency: number;
   /** Default seeding period for a new email account, in days. */
@@ -42,6 +33,14 @@ export interface AppSettings {
    */
   removeGeminiWatermark: boolean;
   removeGeminiWatermarkPrompt: string;
+  /**
+   * Whether to update transcripts via LLM for Japanese videos with captions.
+   * When true, checks existing conditions (language === 'ja' and captions not disabled).
+   * When false, skips LLM transcript update completely.
+   */
+  enableUpdateTranscript: boolean;
+  /** Alias for enableUpdateTranscript */
+  disabledUpdateTranscript?: boolean;
 }
 
 export type UpdateAppSettingsInput = Partial<

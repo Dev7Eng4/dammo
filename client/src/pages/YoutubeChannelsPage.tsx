@@ -33,6 +33,7 @@ const TYPE_FILTERS: readonly YoutubeChannelTypeFilter[] = [
   'reup_audio',
   'reup_video',
   'content_sale',
+  'remake_video',
 ];
 const MONETIZATION_FILTERS: readonly YoutubeMonetizationFilter[] = [
   'all',

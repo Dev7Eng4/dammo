@@ -1,6 +1,11 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { paths } from '../../config/paths.js';
+import { runFfmpeg } from '../../infrastructure/ffmpeg/ffmpeg-runner.js';
+import { appSettingsService } from '../app-settings/app-settings.service.js';
+import { runBrowserImageGeneration } from '../video-production/shared/thumbnail/hero-image.js';
 import { AppError } from '../../shared/http/errors.js';
 import type { AssetFileItem, AssetKind } from './assets.types.js';
 import { getPreparedColorAssetPath, type PrepareColorKind } from '../video-production/shared/si-video/si-prepare-color-cache.js';
@@ -80,6 +85,10 @@ function uniqueFilePath(dir: string, fileName: string): string {
     index += 1;
   }
 }
+
+/** Originals replaced by "remove watermark" are kept here (a sub-folder, so the library list ignores it). */
+const WATERMARK_BACKUP_DIR = '.watermark-backup';
+const watermarkRemovalsInFlight = new Set<string>();
 
 export class AssetsService {
   async list(kind: AssetKind): Promise<AssetFileItem[]> {
@@ -173,6 +182,40 @@ export class AssetsService {
     return { deleted };
   }
 
+  /** Rename a file; the extension is kept from the original when `newName` has none. */
+  rename(kind: AssetKind, oldName: string, newName: string): AssetFileItem {
+    const dir = resolveKindDir(kind);
+    ensureDir(dir);
+
+    const safeOld = sanitizeFileName(oldName);
+    assertAllowedExtension(kind, safeOld);
+    const oldPath = path.join(dir, safeOld);
+    if (!fs.existsSync(oldPath) || !fs.statSync(oldPath).isFile()) {
+      throw new AppError('Asset not found', 404, 'NOT_FOUND');
+    }
+
+    const oldExt = path.extname(safeOld);
+    let target = sanitizeFileName(newName);
+    if (path.extname(target).toLowerCase() !== oldExt.toLowerCase()) {
+      target = `${target}${oldExt}`;
+    }
+    assertAllowedExtension(kind, target);
+    if (target === safeOld) {
+      const stat = fs.statSync(oldPath);
+      return { name: safeOld, size: stat.size, updatedAt: stat.mtime.toISOString() };
+    }
+
+    const newPath = path.join(dir, target);
+    const caseOnlyChange = target.toLowerCase() === safeOld.toLowerCase();
+    if (!caseOnlyChange && fs.existsSync(newPath)) {
+      throw new AppError(`A file named "${target}" already exists`, 409, 'NAME_TAKEN');
+    }
+    fs.renameSync(oldPath, newPath);
+
+    const stat = fs.statSync(newPath);
+    return { name: target, size: stat.size, updatedAt: stat.mtime.toISOString() };
+  }
+
   getAsset(kind: AssetKind, filename: string): { filePath: string; contentType: string; size: number } {
     if (kind === 'fonts') {
       throw new AppError('Font assets cannot be streamed', 400, 'UNSUPPORTED_ASSET_KIND');
@@ -198,6 +241,68 @@ export class AssetsService {
       size: fs.statSync(filePath).size,
     };
   }
+
+  /**
+   * Manual "remove watermark" for a mascot image, like the thumbnail button: regenerate the image through
+   * Meta with the prompt from Settings (the image attached as the only reference), then write the result
+   * over the same file name and format so channels that use this mascot keep working. The original is
+   * copied to `.watermark-backup/` first.
+   */
+  async removeWatermark(kind: AssetKind, filename: string): Promise<AssetFileItem> {
+    if (kind !== 'mascot') {
+      throw new AppError('Watermark removal is only supported for mascot', 400, 'UNSUPPORTED_ASSET_KIND');
+    }
+    const asset = this.getAsset(kind, filename);
+    const name = path.basename(asset.filePath);
+    if (watermarkRemovalsInFlight.has(name)) {
+      throw new AppError('Watermark removal is already running for this image', 409, 'WATERMARK_REMOVAL_IN_PROGRESS');
+    }
+
+    watermarkRemovalsInFlight.add(name);
+    const ext = path.extname(name).toLowerCase();
+    // Short ASCII-only work dir: the browser upload of the reference needs a plain path.
+    const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'mascot-nowm-'));
+    try {
+      const referencePath = path.join(workDir, `ref-mascot${ext}`);
+      await fs.promises.copyFile(asset.filePath, referencePath);
+
+      const { removeGeminiWatermarkPrompt } = appSettingsService.get();
+      let generatedPath: string;
+      try {
+        const result = await runBrowserImageGeneration(removeGeminiWatermarkPrompt, workDir, {
+          provider: 'meta',
+          fileName: 'mascot-nowm.jpg',
+          referenceImagePaths: [referencePath],
+          skipResize: true,
+        });
+        generatedPath = result.imagePath;
+        await fs.promises.access(generatedPath);
+      } catch (error) {
+        if (error instanceof AppError) throw error;
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new AppError(`Watermark removal failed: ${detail}`, 502, 'WATERMARK_REMOVAL_FAILED');
+      }
+
+      // Meta returns a JPEG; keep the library file's own format (and name).
+      let outputPath = generatedPath;
+      if (ext !== '.jpg' && ext !== '.jpeg') {
+        outputPath = path.join(workDir, `mascot-nowm${ext}`);
+        await runFfmpeg(['-y', '-i', generatedPath, '-frames:v', '1', outputPath]);
+      }
+
+      const backupDir = path.join(path.dirname(asset.filePath), WATERMARK_BACKUP_DIR);
+      ensureDir(backupDir);
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      await fs.promises.copyFile(asset.filePath, path.join(backupDir, `${stamp}-${name}`));
+      await fs.promises.copyFile(outputPath, asset.filePath);
+
+      const stat = fs.statSync(asset.filePath);
+      return { name, size: stat.size, updatedAt: stat.mtime.toISOString() };
+    } finally {
+      watermarkRemovalsInFlight.delete(name);
+      await fs.promises.rm(workDir, { recursive: true, force: true }).catch(() => undefined);
+    }
+  }
 }
 
 export const assetsService = new AssetsService();
@@ -206,4 +311,19 @@ export const assetsService = new AssetsService();
 export function readMascotLibraryImage(name: string): { buffer: Buffer; contentType: string } {
   const asset = assetsService.getAsset('mascot', name);
   return { buffer: fs.readFileSync(asset.filePath), contentType: asset.contentType };
+}
+
+/** sha256 of every mascot library image, keyed by file name. */
+export async function hashMascotLibraryImages(): Promise<Map<string, string>> {
+  const items = await assetsService.list('mascot');
+  const hashes = new Map<string, string>();
+  for (const item of items) {
+    try {
+      const asset = assetsService.getAsset('mascot', item.name);
+      hashes.set(item.name, createHash('sha256').update(fs.readFileSync(asset.filePath)).digest('hex'));
+    } catch {
+      // skip unreadable files
+    }
+  }
+  return hashes;
 }

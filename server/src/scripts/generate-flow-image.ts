@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ensureDataDirs, paths } from '../config/paths.js';
 import { AppError } from '../shared/http/errors.js';
-import { chromeProfilesService } from '../modules/chrome-profiles/chrome-profiles.service.js';
+import { chromeProfilesService, profileHasLlm } from '../modules/chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../modules/chrome-profiles/chrome-profiles.types.js';
 import { flowBrowserService } from '../modules/llm-browser/flow/flow.service.js';
 
@@ -126,12 +126,12 @@ function buildPrompt(mainPrompt: string, negative: string): string {
 function resolveFlowProfile(profileId?: string): ChromeProfile {
   if (profileId) {
     const profile = chromeProfilesService.getById(profileId);
-    if (profile.role !== 'main') {
-      throw new AppError('Google Flow requires the main Chrome profile', 400, 'MAIN_PROFILE_REQUIRED');
+    if (!profileHasLlm(profile, 'image', 'flow')) {
+      throw new AppError('Google Flow needs a Chrome profile with Flow ticked in LLM Image', 400, 'LLM_PROFILE_REQUIRED');
     }
     return profile;
   }
-  return chromeProfilesService.requireMainProfile();
+  return chromeProfilesService.requireProfileForLlm('image', 'flow');
 }
 
 function resolveOutputPath(output?: string): string {

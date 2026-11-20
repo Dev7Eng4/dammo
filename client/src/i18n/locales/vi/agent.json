@@ -22,7 +22,8 @@
     "voice": "Giọng đọc",
     "scenes": "Scene & ảnh",
     "video": "Dựng video",
-    "motion": "Ảnh → video"
+    "motion": "Ảnh → video",
+    "metadata": "Metadata & thumbnail"
   },
   "health": {
     "claude": "Bộ não",

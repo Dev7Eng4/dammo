@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { AppError } from '../../../../../shared/http/errors.js';
+import { nichesRepository } from '../../../../niches/niches.repository.js';
+import { describeClusterThumbnailPlan } from '../../../shared/thumbnail/cluster-thumbnail-plan.js';
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
 import { hasNicheMetadataPrompt } from '../../../shared/meta/run-metadata.js';
 import { isCelebrityWisdomNiche, type VideoMetaOutput } from '../../../shared/meta/metadata.types.js';
@@ -178,6 +180,8 @@ async function runMascotFlow(
   const { destination, workDir, log, stepTimer } = ctx;
   const meta = ctx.videoMeta!;
   log.info(`Creating ${count} mascot thumbnail candidate(s) via ${resolveThumbnailImageProvider()}...`);
+  const formatBrief = describeClusterThumbnailPlan(meta);
+  if (formatBrief) log.info(`[format] thumbnail follows format ${meta.cluster_format?.format ?? ''} from the metadata step`);
 
   try {
     const result = await timedStep(
@@ -188,6 +192,8 @@ async function runMascotFlow(
           language: destination.language,
           title: textOf(meta.metadata.title),
           context: buildMascotThumbnailContext(meta),
+          niche: nichesRepository.findByKey(destination.niche)?.label ?? '',
+          ...(formatBrief ? { formatBrief } : {}),
           count,
           mascotImagePath,
           onLog: log.enabled ? msg => log.info(msg) : undefined,

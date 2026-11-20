@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const llmTextProviderSchema = z.enum(['gpt', 'gemini']);
+export const llmTextProviderSchema = z.enum(['gpt', 'gemini', 'claude']);
 export const imageBrowserProviderSchema = z.enum(['flow', 'meta']);
 export const videoBrowserProviderSchema = z.enum(['meta']);
 

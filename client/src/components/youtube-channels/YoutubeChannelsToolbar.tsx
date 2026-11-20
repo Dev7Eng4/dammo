@@ -54,6 +54,7 @@ export function YoutubeChannelsToolbar({
       { value: 'content' as const, label: t('filter.typeContent') },
       { value: 'reup_audio' as const, label: t('filter.typeReupAudio') },
       { value: 'reup_video' as const, label: t('filter.typeReupVideo') },
+      { value: 'remake_video' as const, label: t('filter.typeRemakeVideo') },
     ],
     [t],
   )

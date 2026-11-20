@@ -16,6 +16,7 @@ import type {
   TaskJob,
   UploadVideoTaskPayload,
 } from './task-queue.types.js';
+import { isReupAudioFamilyType } from '../youtube-channels/youtube-channels.types.js';
 
 let activeCount = 0;
 let filling = false;
@@ -159,7 +160,7 @@ async function processUploadVideo(job: TaskJob): Promise<unknown> {
       .findAll()
       .filter(
         ch =>
-          (ch.type === 'reup_audio' || ch.type === 'reup_video' || ch.type === 'reup') &&
+          (isReupAudioFamilyType(ch.type) || ch.type === 'reup_video' || ch.type === 'reup') &&
           ch.status === 'active',
       )
       .map(ch => ch.id);

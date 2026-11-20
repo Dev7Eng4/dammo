@@ -11,6 +11,10 @@ import { runMetadata } from '../../../shared/meta/run-metadata.js';
 import { runTwoStepNicheMetadata } from '../../../shared/meta/two-step/run-two-step-metadata.js';
 import { isTwoStepNicheMetadata } from '../../../shared/meta/two-step/two-step-niche.config.js';
 import type { VideoTaskContext } from '../video-task.context.js';
+import {
+  buildRecentFormatsHint,
+  readRecentClusterFormats,
+} from '../../../shared/meta/cluster-format-history.js';
 
 export async function runMetadataStep(ctx: VideoTaskContext): Promise<VideoMetaOutput> {
   const { destination, task, downloaded, subtitlePath, log, stepTimer } = ctx;
@@ -18,10 +22,16 @@ export async function runMetadataStep(ctx: VideoTaskContext): Promise<VideoMetaO
 
   log.info('Creating metadata...');
 
+  // Cluster meta prompts pick a format per video; tell them which formats this channel used lately (rotation).
+  const recentFormats = await readRecentClusterFormats(destination.id, workDir).catch(() => []);
+  const recentFormatsHint = buildRecentFormatsHint(recentFormats);
+  if (recentFormats.length > 0) log.info(`[format] recent formats: ${recentFormats.join(', ')}`);
+
   const metaOptions = {
     outputDir: workDir,
     niche: destination.niche,
     imageStyle: destination.visualStyle?.rule?.trim() || undefined,
+    ...(recentFormatsHint ? { extraInstructions: recentFormatsHint } : {}),
     descriptionDisclaimer:
       destination.showDisclaimer === true && destination.descriptionDisclaimerText?.trim()
         ? destination.descriptionDisclaimerText.trim()
@@ -47,7 +57,7 @@ export async function runMetadataStep(ctx: VideoTaskContext): Promise<VideoMetaO
       : undefined,
   };
 
-  const videoMetaOutput = await timedStep(
+  const generated = await timedStep(
     'Metadata',
     () => {
       if (isCelebrityWisdomNiche(destination.niche)) {
@@ -90,6 +100,14 @@ export async function runMetadataStep(ctx: VideoTaskContext): Promise<VideoMetaO
     },
     stepTimer,
   );
+  const videoMetaOutput = generated;
+  if (videoMetaOutput.cluster_format) {
+    const choice = videoMetaOutput.cluster_format;
+    log.info(`[format] ${choice.format} (${choice.cluster_role})${choice.reason ? ` — ${choice.reason}` : ''}`);
+    if (choice.cluster_role === 'off') {
+      log.info('[format] WARNING: this source video is outside the channel cluster — check the source channels');
+    }
+  }
 
   log.ok(
     `Metadata done → ${path.join(workDir, 'video-meta.json')}, title: ${videoMetaOutput.metadata.title}, niche: ${

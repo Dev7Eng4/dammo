@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageOff } from 'lucide-react';
+import { ImageOff, ImageUp, Loader2 } from 'lucide-react';
 import type { ProductionCharacterItem } from '../../types/videoProductionScenes';
 
 interface CharactersPanelProps {
@@ -11,15 +11,61 @@ interface CharactersPanelProps {
   leadingItem?: ReactNode;
   /** Drop the panel's own outer padding (when the host already pads the content). */
   flush?: boolean;
+  /** When set, hovering an image shows a button to replace it with a picked file. */
+  onReplaceImage?: (character: ProductionCharacterItem, file: File) => Promise<void>;
 }
 
-function CharacterImage({ character }: { character: ProductionCharacterItem }) {
+function CharacterImage({
+  character,
+  onReplace,
+}: {
+  character: ProductionCharacterItem;
+  onReplace?: (file: File) => Promise<void>;
+}) {
   const { t } = useTranslation('factory');
   const [failed, setFailed] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const showImage = Boolean(character.imageUrl) && !failed;
 
+  async function pick(file: File | undefined) {
+    if (!file || !onReplace) return;
+    setUploading(true);
+    try {
+      await onReplace(file);
+      setFailed(false);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
   return (
-    <div className="relative h-[180px] w-full overflow-hidden rounded-md bg-muted">
+    <div className="group relative h-[180px] w-full overflow-hidden rounded-md bg-muted">
+      {onReplace ? (
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => void pick(event.target.files?.[0])}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+            className={`absolute inset-0 z-10 flex items-center justify-center bg-black/55 text-sm font-medium text-white transition-opacity ${
+              uploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+            }`}
+          >
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-black/40 px-3 py-1.5">
+              {uploading ? <Loader2 className="size-4 animate-spin" /> : <ImageUp className="size-4" />}
+              {uploading ? t('production.characters.uploading') : t('production.characters.replaceImage')}
+            </span>
+          </button>
+        </>
+      ) : null}
       {showImage ? (
         <img
           src={character.imageUrl ?? undefined}
@@ -38,7 +84,7 @@ function CharacterImage({ character }: { character: ProductionCharacterItem }) {
   );
 }
 
-export function CharactersPanel({ characters, loading, error, leadingItem, flush = false }: CharactersPanelProps) {
+export function CharactersPanel({ characters, loading, error, leadingItem, flush = false, onReplaceImage }: CharactersPanelProps) {
   const { t } = useTranslation('factory');
   const messagePadding = flush ? 'py-4' : 'px-4 py-6';
 
@@ -72,7 +118,10 @@ export function CharactersPanel({ characters, loading, error, leadingItem, flush
             character.isMascot ? 'border-primary-400/50' : 'border-border'
           }`}
         >
-          <CharacterImage character={character} />
+          <CharacterImage
+            character={character}
+            onReplace={onReplaceImage ? (file) => onReplaceImage(character, file) : undefined}
+          />
           <div className="space-y-2 p-3">
             <div>
               <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -84,7 +133,7 @@ export function CharactersPanel({ characters, loading, error, leadingItem, flush
             </div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
               {character.isMascot
-                ? t('production.characters.mascotHint')
+                ? t(onReplaceImage ? 'production.characters.mascotReplaceHint' : 'production.characters.mascotHint')
                 : character.prompt || t('production.characters.noPrompt')}
             </p>
           </div>

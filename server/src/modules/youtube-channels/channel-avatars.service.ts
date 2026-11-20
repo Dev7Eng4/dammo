@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -8,7 +9,6 @@ import {
 import { AppError } from '../../shared/http/errors.js';
 import {
   CHANNEL_MASCOT_BASENAME,
-  CHANNEL_MASCOT_SHEET_BASENAME,
 } from '../video-production/shared/ai-video/ai-video-channel-mascots.js';
 import { CHANNEL_AVATAR_BASENAME } from '../video-production/shared/render-core/canvas.constants.js';
 
@@ -178,6 +178,14 @@ export class ChannelAvatarsService {
     return { name, url: `${urlPrefix}/${encodeURIComponent(name)}` };
   }
 
+  /** sha256 of the channel image file; null when the channel has none. */
+  hashForChannel(channelId: string): string | null {
+    const dir = youtubeChannelDir(channelId);
+    const name = findAvatarFileName(dir, this.basename);
+    if (!name) return null;
+    return createHash('sha256').update(fs.readFileSync(path.join(dir, name))).digest('hex');
+  }
+
   deleteForChannel(channelId: string): void {
     removeExistingAvatarFiles(youtubeChannelDir(channelId), this.basename);
   }
@@ -225,5 +233,3 @@ export class ChannelAvatarsService {
 
 export const channelAvatarsService = new ChannelAvatarsService(CHANNEL_AVATAR_BASENAME, youtubeChannelAvatarTempDir);
 export const channelMascotImagesService = new ChannelAvatarsService(CHANNEL_MASCOT_BASENAME, youtubeChannelMascotTempDir);
-/** Optional mascot character sheet; shares the mascot temp folder (different basename). */
-export const channelMascotSheetsService = new ChannelAvatarsService(CHANNEL_MASCOT_SHEET_BASENAME, youtubeChannelMascotTempDir);

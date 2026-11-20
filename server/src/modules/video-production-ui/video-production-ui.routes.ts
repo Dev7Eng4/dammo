@@ -2,7 +2,22 @@ import { Hono } from 'hono';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { isAppError } from '../../shared/http/errors.js';
+import { z } from 'zod';
+import { channelVideoMotionService } from './channel-video-motion.service.js';
+import { channelVideoRemakeService } from './channel-video-remake.service.js';
 import { videoProductionUiService } from './video-production-ui.service.js';
+
+const remakeSchema = z.object({
+  provider: z.enum(['gpt', 'gemini', 'claude']).optional(),
+  promptSetId: z.string().optional(),
+  notes: z.string().max(4000).optional(),
+});
+const scriptSchema = z.object({ text: z.string().min(1).max(200_000) });
+const motionSchema = z.object({
+  mode: z.enum(['intro', 'full', 'scenes']),
+  indexes: z.array(z.number().int().min(0)).max(500).optional(),
+});
+const voiceSchema = z.object({ speaker: z.number().int().min(0), speedScale: z.number().min(0.7).max(1.5) });
 
 function streamFileAsset(
   request: Request,
@@ -151,6 +166,67 @@ export function createVideoProductionUiRoutes() {
     return c.json(result);
   });
 
+  /** Ảnh → video: scene images turned into Flow clips. */
+  app.get('/videos/:channelId/:videoId/motion', (c) =>
+    c.json(channelVideoMotionService.state(c.req.param('channelId'), c.req.param('videoId'))),
+  );
+
+  app.post('/videos/:channelId/:videoId/motion', async (c) => {
+    const body = motionSchema.parse(await c.req.json());
+    return c.json(
+      channelVideoMotionService.generate(c.req.param('channelId'), c.req.param('videoId'), body.mode, body.indexes),
+      202,
+    );
+  });
+
+  app.delete('/videos/:channelId/:videoId/motion/:sceneIndex', async (c) =>
+    c.json(
+      await channelVideoMotionService.removeClip(
+        c.req.param('channelId'),
+        c.req.param('videoId'),
+        Number(c.req.param('sceneIndex')),
+      ),
+    ),
+  );
+
+  app.get('/videos/:channelId/:videoId/scenes/:sceneIndex/clip', (c) => {
+    const filePath = channelVideoMotionService.clipFile(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+      Number(c.req.param('sceneIndex')),
+    );
+    return streamFileAsset(c.req.raw, { filePath, contentType: 'video/mp4', size: fs.statSync(filePath).size });
+  });
+
+  app.get('/videos/:channelId/:videoId/audio', (c) => {
+    const filePath = channelVideoRemakeService.audioFile(c.req.param('channelId'), c.req.param('videoId'));
+    return streamFileAsset(c.req.raw, { filePath, contentType: 'audio/mpeg', size: fs.statSync(filePath).size });
+  });
+
+  app.get('/videos/:channelId/:videoId/script', (c) =>
+    c.json(channelVideoRemakeService.getScript(c.req.param('channelId'), c.req.param('videoId'))),
+  );
+
+  app.put('/videos/:channelId/:videoId/script', async (c) => {
+    const { text } = scriptSchema.parse(await c.req.json());
+    return c.json(await channelVideoRemakeService.saveScript(c.req.param('channelId'), c.req.param('videoId'), text));
+  });
+
+  app.post('/videos/:channelId/:videoId/script/remake', async (c) => {
+    const body = remakeSchema.parse(await c.req.json().catch(() => ({})));
+    return c.json(await channelVideoRemakeService.startRemake(c.req.param('channelId'), c.req.param('videoId'), body), 202);
+  });
+
+  app.post('/videos/:channelId/:videoId/script/import-remake', async (c) => {
+    const { jobId } = z.object({ jobId: z.string().optional() }).parse(await c.req.json().catch(() => ({})));
+    return c.json(await channelVideoRemakeService.importRemake(c.req.param('channelId'), c.req.param('videoId'), jobId));
+  });
+
+  app.post('/videos/:channelId/:videoId/voice', async (c) => {
+    const body = voiceSchema.parse(await c.req.json());
+    return c.json(channelVideoRemakeService.startVoice(c.req.param('channelId'), c.req.param('videoId'), body), 202);
+  });
+
   app.get('/videos/:channelId/:videoId/transcript', (c) => {
     const result = videoProductionUiService.getTranscript(
       c.req.param('channelId'),
@@ -219,6 +295,9 @@ export function createVideoProductionUiRoutes() {
   app.onError((err, c) => {
     if (isAppError(err)) {
       return c.json({ error: err.message, code: err.code }, err.statusCode as 400);
+    }
+    if (err instanceof z.ZodError) {
+      return c.json({ error: err.issues.map((issue) => issue.message).join('; '), code: 'VALIDATION_ERROR' }, 400);
     }
     return c.json({ error: 'Internal server error' }, 500);
   });

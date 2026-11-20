@@ -1,5 +1,5 @@
-import { env } from '../../config/env.js';
 import { AppError } from '../../shared/http/errors.js';
+import { resolveVoicevoxUrl } from './voice-settings.store.js';
 
 export interface VoicevoxStyle {
   id: number;
@@ -15,6 +15,12 @@ export interface VoicevoxSynthOptions {
   speaker: number;
   /** 1.0 = engine default. */
   speedScale?: number;
+  /** Pitch shift, -0.15..0.15 (0 = engine default). */
+  pitchScale?: number;
+  /** Intonation strength, 0..2 (1 = engine default). */
+  intonationScale?: number;
+  /** Loudness, 0..2 (1 = engine default). */
+  volumeScale?: number;
   /** Silence appended after the utterance, in seconds. */
   postPhonemeLength?: number;
   /** Multiplies the engine's pauses at 、 (1.0 = engine default). */
@@ -62,7 +68,7 @@ function addPhraseBreaths(phrases: AccentPhrase[], seconds: number): void {
 }
 
 function baseUrl(): string {
-  return env.voicevoxUrl.replace(/\/+$/, '');
+  return resolveVoicevoxUrl();
 }
 
 async function request(pathname: string, init?: RequestInit): Promise<Response> {
@@ -105,6 +111,9 @@ export async function synthesizeVoicevox(text: string, options: VoicevoxSynthOpt
   );
   const query = (await queryRes.json()) as Record<string, unknown>;
   if (options.speedScale !== undefined) query.speedScale = options.speedScale;
+  if (options.pitchScale !== undefined) query.pitchScale = options.pitchScale;
+  if (options.intonationScale !== undefined) query.intonationScale = options.intonationScale;
+  if (options.volumeScale !== undefined) query.volumeScale = options.volumeScale;
   if (options.postPhonemeLength !== undefined) query.postPhonemeLength = options.postPhonemeLength;
   if (options.pauseLengthScale !== undefined) query.pauseLengthScale = options.pauseLengthScale;
   if (options.phraseBreathSec && Array.isArray(query.accent_phrases)) {

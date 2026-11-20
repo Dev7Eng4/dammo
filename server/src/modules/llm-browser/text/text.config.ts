@@ -39,6 +39,34 @@ export const LLM_PROVIDER_CONFIGS: Record<LlmTextProvider, LlmProviderConfig> = 
       modeButton: 'button[aria-label*="model"], button.mode-switcher',
     },
   },
+  claude: {
+    id: 'claude',
+    // Every session starts a fresh chat; prompts within a session continue that chat.
+    url: 'https://claude.ai/new',
+    // Long chats keep only the latest few messages on the page, so counting replies stops working.
+    markSeenReplies: true,
+    // "Out of messages" banners. Not the "You've used 90% of your weekly limit" warning, which still lets you send.
+    usageLimitPattern:
+      /out of (free )?messages|message limit reached|usage limit reached|(hit|reached) (your|the) (\w+ )?limit|limit reached/i,
+    selectors: {
+      // Composer is a ProseMirror editor; Enter sends.
+      promptInput:
+        'div.ProseMirror[contenteditable="true"], [data-testid="chat-input"][contenteditable="true"], fieldset div[contenteditable="true"]',
+      sendButton: 'button[aria-label="Send message"], button[aria-label="Send Message"], button[data-testid="send-button"]',
+      // Each assistant reply: data-testid="assistant-message", data-is-streaming="true" while it is being written.
+      responseBlocks: 'div[data-testid="assistant-message"], div[data-is-streaming]',
+      // The markdown body only: skips the screen-reader "Claude responded: …" heading and the Copy / Retry / time toolbar.
+      responseContent: '.standard-markdown, .font-claude-response',
+      // Inside code blocks: the language label ("python") and the copy button.
+      responseContentExclude: '[role="group"][aria-label$="code"] > div:not(:has(pre)), .sr-only, button',
+      responseCodeBlocks: 'pre code',
+      generatingIndicator: 'div[data-is-streaming="true"], button[aria-label="Stop response"], button[aria-label="Stop Response"]',
+      conversationScrollContainer: 'main, [class*="overflow-y-auto"]',
+      copyResponseButton: '[data-testid="message-actions"] button[aria-label="Copy"]',
+      fileInput: 'input[type="file"]',
+      attachmentPreview: '[data-testid="file-thumbnail"], [data-testid*="attachment"]',
+    },
+  },
 };
 
 export function getLlmProviderConfig(provider: LlmTextProvider): LlmProviderConfig {

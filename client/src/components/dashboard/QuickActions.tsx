@@ -32,7 +32,7 @@ export function QuickActions() {
         })}
       </div>
       <Button asChild variant="primary" className="w-full">
-        <Link to="/video-production">
+        <Link to="/manual-video">
           <Play className="size-4" />
           {t('quickActions.videoProduction')}
         </Link>

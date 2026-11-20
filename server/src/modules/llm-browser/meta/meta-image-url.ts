@@ -1,22 +1,20 @@
 import type { Locator } from 'playwright';
+import { AppError } from '../../../shared/http/errors.js';
 import { META_CONFIG } from './meta.config.js';
 
-export type MetaImageUrlKind = 'http' | 'blob' | 'data' | 'unsupported';
+/**
+ * Generated Meta images are served from this exact host. Anything else in the assistant message
+ * (notably the echoed reference upload) is not a generation result.
+ */
+export const META_GENERATED_IMAGE_URL_PREFIX = 'https://scontent.xx.fbcdn.net/';
 
-export interface MetaImageUrlCandidate {
-  url: string;
-  kind: MetaImageUrlKind;
-  priority: number;
-}
+export const META_INVALID_IMAGE_SOURCE_CODE = 'META_INVALID_IMAGE_SOURCE';
 
 export interface ResolvedMetaImageUrl {
   url: string;
-  kind: MetaImageUrlKind;
-  candidateCount: number;
+  /** All http(s) `src` values seen in the assistant message on the last poll. */
+  candidates: string[];
 }
-
-const HTTP_FBCDN_PRIORITY = 100;
-const HTTP_SCONTENT_PRIORITY = 95;
 
 export function isHttpUrl(url: string): boolean {
   const trimmed = url.trim();
@@ -27,138 +25,63 @@ export function isBlobUrl(url: string): boolean {
   return url.trim().startsWith('blob:');
 }
 
-export function isDataUrl(url: string): boolean {
-  return url.trim().startsWith('data:');
-}
-
 export function isIgnoredImageUrl(url: string): boolean {
   const trimmed = url.trim();
-  if (!trimmed) return true;
-  if (trimmed.includes('favicon')) return true;
-  return false;
+  return !trimmed || trimmed.includes('favicon');
 }
 
-/** Only Meta CDN hosts are accepted as a generated image source. */
-export function isMetaCdnImageUrl(url: string): boolean {
-  const lower = url.trim().toLowerCase();
-  return isHttpUrl(lower) && (lower.includes('fbcdn.net') || lower.includes('scontent.'));
+/** True only for `src` URLs on the generated-image host (https://scontent.xx.fbcdn.net/). */
+export function isMetaGeneratedImageUrl(url: string | null | undefined): boolean {
+  return Boolean(url && url.trim().startsWith(META_GENERATED_IMAGE_URL_PREFIX));
 }
 
-export function classifyMetaImageUrl(url: string): MetaImageUrlKind {
-  const trimmed = url.trim();
-  if (!trimmed || isIgnoredImageUrl(trimmed)) return 'unsupported';
-  if (isHttpUrl(trimmed)) return isMetaCdnImageUrl(trimmed) ? 'http' : 'unsupported';
-  if (isBlobUrl(trimmed)) return 'blob';
-  if (isDataUrl(trimmed)) return 'data';
-  return 'unsupported';
+/**
+ * Pick the image to download from the `src` attributes of the assistant images.
+ * Prefers a generated-host URL; otherwise returns the first http(s) src (which will then fail
+ * validation). blob:/data:/empty src values mean the image is still loading and are skipped.
+ */
+export function pickMetaImageSrc(srcs: Array<string | null | undefined>): string | null {
+  const httpSrcs = srcs
+    .map(src => src?.trim() ?? '')
+    .filter(src => isHttpUrl(src) && !isIgnoredImageUrl(src));
+  return httpSrcs.find(isMetaGeneratedImageUrl) ?? httpSrcs[0] ?? null;
 }
 
-export function scoreMetaImageUrl(url: string): number {
-  if (classifyMetaImageUrl(url) !== 'http') return 0;
-  return url.toLowerCase().includes('fbcdn.net') ? HTTP_FBCDN_PRIORITY : HTTP_SCONTENT_PRIORITY;
+export function metaInvalidImageSourceError(url: string): AppError {
+  return new AppError(
+    `Meta image src is not a generated image (expected ${META_GENERATED_IMAGE_URL_PREFIX}...): ${url.slice(0, 120)}`,
+    502,
+    META_INVALID_IMAGE_SOURCE_CODE,
+  );
 }
 
-/** Parse srcset and return URLs ordered by declared width (descending). */
-export function parseSrcsetUrls(srcset: string): string[] {
-  const entries = srcset
-    .split(',')
-    .map(part => part.trim())
-    .filter(Boolean)
-    .map(part => {
-      const [urlPart, descriptor] = part.split(/\s+/, 2);
-      const widthMatch = descriptor?.match(/^(\d+)w$/);
-      const width = widthMatch ? Number(widthMatch[1]) : 0;
-      return { url: urlPart?.trim() ?? '', width };
-    })
-    .filter(entry => entry.url.length > 0 && !isIgnoredImageUrl(entry.url));
-
-  entries.sort((a, b) => b.width - a.width);
-  return entries.map(entry => entry.url);
-}
-
-export function collectImageUrlCandidates(
-  src: string | null | undefined,
-  srcset: string | null | undefined,
-): MetaImageUrlCandidate[] {
-  const seen = new Set<string>();
-  const candidates: MetaImageUrlCandidate[] = [];
-
-  const addUrl = (raw: string) => {
-    const url = raw.trim();
-    if (!url || seen.has(url)) return;
-    // Only http(s) fbcdn.net / scontent. URLs are downloadable; blob/data/other hosts are rejected.
-    const kind = classifyMetaImageUrl(url);
-    if (kind !== 'http') return;
-    seen.add(url);
-    candidates.push({ url, kind, priority: scoreMetaImageUrl(url) });
-  };
-
-  if (src) addUrl(src);
-  if (srcset) {
-    for (const url of parseSrcsetUrls(srcset)) {
-      addUrl(url);
-    }
+/** Throws (so the job is retried) when the src is not on the generated-image host. */
+export function assertMetaGeneratedImageUrl(url: string): void {
+  if (!isMetaGeneratedImageUrl(url)) {
+    throw metaInvalidImageSourceError(url);
   }
-
-  return candidates;
 }
 
-export function pickBestMetaImageUrl(
-  candidates: MetaImageUrlCandidate[],
-): MetaImageUrlCandidate | null {
-  if (candidates.length === 0) return null;
-
-  const sorted = [...candidates].sort((a, b) => b.priority - a.priority);
-
-  return sorted[0] ?? null;
-}
-
-export function pickBestMetaImageUrlFromInputs(
-  inputs: Array<{ src: string | null | undefined; srcset: string | null | undefined }>,
-): MetaImageUrlCandidate | null {
-  const allCandidates: MetaImageUrlCandidate[] = [];
-  for (const input of inputs) {
-    allCandidates.push(...collectImageUrlCandidates(input.src, input.srcset));
+export async function collectAssistantImageSrcs(assistant: Locator): Promise<Array<string | null>> {
+  let images = assistant.locator(META_CONFIG.selectors.resultImages);
+  if ((await images.count().catch(() => 0)) === 0) {
+    images = assistant.locator('img');
   }
-  return pickBestMetaImageUrl(allCandidates);
-}
-
-export async function collectAssistantImageInputs(
-  assistant: Locator,
-): Promise<Array<{ src: string | null; srcset: string | null }>> {
-  const images = assistant.locator(META_CONFIG.selectors.resultImages);
   const count = await images.count().catch(() => 0);
-  const inputs: Array<{ src: string | null; srcset: string | null }> = [];
-
+  const srcs: Array<string | null> = [];
   for (let index = 0; index < count; index += 1) {
-    const img = images.nth(index);
-    const src = await img.getAttribute('src').catch(() => null);
-    const srcset = await img.getAttribute('srcset').catch(() => null);
-    inputs.push({ src, srcset });
+    srcs.push(await images.nth(index).getAttribute('src').catch(() => null));
   }
-
-  if (inputs.length === 0) {
-    const fallbackCount = await assistant.locator('img').count().catch(() => 0);
-    for (let index = 0; index < fallbackCount; index += 1) {
-      const img = assistant.locator('img').nth(index);
-      const src = await img.getAttribute('src').catch(() => null);
-      const srcset = await img.getAttribute('srcset').catch(() => null);
-      inputs.push({ src, srcset });
-    }
-  }
-
-  return inputs;
+  return srcs;
 }
 
 export interface ResolveMetaImageSourceUrlOptions {
   pollDelayMs?: number;
-  onPoll?: (candidateCount: number, best: MetaImageUrlCandidate | null) => void;
 }
 
 /**
- * Poll assistant message images and return the best fbcdn.net / scontent. URL as soon as one
- * exists. Any other source (blob, data, other hosts) never resolves, so the call times out and
- * the image is treated as not generated.
+ * Poll the assistant message until an image has an http(s) `src`, then return it.
+ * The URL is NOT validated here — call assertMetaGeneratedImageUrl before downloading.
  */
 export async function resolveMetaImageSourceUrl(
   assistant: Locator,
@@ -167,31 +90,18 @@ export async function resolveMetaImageSourceUrl(
 ): Promise<ResolvedMetaImageUrl> {
   const deadline = Date.now() + timeoutMs;
   const pollDelayMs = options?.pollDelayMs ?? 400;
-  let lastCandidateCount = 0;
-  let lastRejectedUrls: string[] = [];
+  let lastSrcs: Array<string | null> = [];
 
   while (Date.now() < deadline) {
-    const inputs = await collectAssistantImageInputs(assistant);
-    lastRejectedUrls = inputs
-      .flatMap(input => [input.src ?? '', ...(input.srcset ? parseSrcsetUrls(input.srcset) : [])])
-      .map(url => url.trim())
-      .filter(url => url && !isMetaCdnImageUrl(url));
-    const best = pickBestMetaImageUrlFromInputs(inputs);
-    lastCandidateCount = inputs.reduce(
-      (count, input) => count + collectImageUrlCandidates(input.src, input.srcset).length,
-      0,
-    );
-    options?.onPoll?.(lastCandidateCount, best);
-
-    if (best) {
-      return { url: best.url, kind: best.kind, candidateCount: lastCandidateCount };
+    lastSrcs = await collectAssistantImageSrcs(assistant);
+    const url = pickMetaImageSrc(lastSrcs);
+    if (url) {
+      const candidates = lastSrcs.map(src => src?.trim() ?? '').filter(isHttpUrl);
+      return { url, candidates };
     }
-
     await new Promise(resolve => setTimeout(resolve, pollDelayMs));
   }
 
-  const rejected = lastRejectedUrls.length
-    ? ` (rejected non-fbcdn/scontent URLs: ${lastRejectedUrls.map(url => url.slice(0, 80)).join(', ')})`
-    : '';
-  throw new Error(`No fbcdn.net/scontent image URL found in assistant message${rejected}`);
+  const seen = lastSrcs.filter(Boolean).map(src => src!.slice(0, 80));
+  throw new Error(`No http(s) image src found in assistant message${seen.length ? ` (src: ${seen.join(', ')})` : ''}`);
 }

@@ -22,7 +22,8 @@
     "voice": "Voice",
     "scenes": "Scenes",
     "video": "Render",
-    "motion": "Image → video"
+    "motion": "Image → video",
+    "metadata": "Metadata & thumbnail"
   },
   "health": {
     "claude": "Brain",

@@ -10,15 +10,16 @@ const startRemakeSchema = z.object({
   language: languageSchema,
   notes: z.string().max(4000).optional(),
   promptSetId: z.string().optional(),
-  provider: z.enum(['gpt', 'gemini']).optional(),
+  provider: z.enum(['gpt', 'gemini', 'claude']).optional(),
 });
 
 export function createScriptRemakeRoutes() {
   const app = new Hono();
 
-  app.get('/prompts', zValidator('query', z.object({ language: languageSchema })), async c =>
-    c.json({ items: await scriptRemakeService.listPromptSets(c.req.valid('query').language) }),
-  );
+  app.get('/prompts', zValidator('query', z.object({ language: languageSchema, channelId: z.string().optional() })), async c => {
+    const { language, channelId } = c.req.valid('query');
+    return c.json({ items: await scriptRemakeService.listPromptSets(language, channelId) });
+  });
 
   app.post('/jobs', zValidator('json', startRemakeSchema), async c =>
     c.json(await scriptRemakeService.start(c.req.valid('json')), 202),

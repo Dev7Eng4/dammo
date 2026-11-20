@@ -3,6 +3,8 @@ export type ProductionVideoStatus = 'Prepared' | 'Created';
 export interface ProductionVideoListItem {
   channelId: string;
   channelName: string;
+  /** Remake channels remake the script and read it with VOICEVOX; others keep the source audio. */
+  channelType: string;
   videoId: string;
   title: string;
   status: ProductionVideoStatus;

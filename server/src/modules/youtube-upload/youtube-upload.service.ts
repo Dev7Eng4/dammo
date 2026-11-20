@@ -22,6 +22,7 @@ import {
 } from './studio-upload-flow.js';
 import { delay } from './studio-dom.js';
 import type { StoredYoutubeChannelType } from '../youtube-channels/youtube-channels.types.js';
+import { isReupAudioFamilyType } from '../youtube-channels/youtube-channels.types.js';
 
 export interface UploadYoutubeChannelOptions {
   maxUploads?: number | null;
@@ -53,7 +54,7 @@ function buildUploadQueue(jobs: UploadJob[], schedule: ReturnType<typeof getYout
 }
 
 function isReupUploadChannelType(type: StoredYoutubeChannelType): boolean {
-  return type === 'reup_audio' || type === 'reup_video' || type === 'reup';
+  return isReupAudioFamilyType(type) || type === 'reup_video' || type === 'reup';
 }
 
 export class YoutubeUploadService {

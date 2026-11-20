@@ -88,7 +88,7 @@ export function SourceChannelDetailHeader({
         {source.subscriberCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
             <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.subscribers')}</p>
-            <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.subscriberCount.toLocaleString()}</p>
+            <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.subscriberCount?.toLocaleString() ?? '—'}</p>
           </div>
         ) : null}
         {source.videoCount !== undefined ? (

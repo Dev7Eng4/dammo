@@ -1,3 +1,4 @@
+import { pickMetadataChromeProfile } from './metadata-chrome-profile.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { extractTranscriptForMetadata } from '../../../../infrastructure/subtitle/srt-utils.js';
@@ -6,18 +7,19 @@ import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.
 import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { executePromptTemplate, getPromptTemplateArity } from '../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../prompts/prompts.repository.js';
-import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from './meta-session.js';
 import { parseMetadataResponse } from './meta-response.js';
 import { formatParseFailureReason } from './llm-parse-result.js';
 import { persistLlmParseFailure } from './persist-llm-failure.js';
+import { checkTitleGuards, formatTitleGuardFeedback } from './title-guard.js';
 import {
   isCelebrityWisdomNiche,
   type MetadataLlmOutput,
   type MetadataPersistedOutput,
   type VideoMetaOutput,
 } from './metadata.types.js';
+import { contentTaskProvider } from '../../../prompts/content-task.js';
 
 const METADATA_PROMPT_KEY = 'metadata';
 const MAX_RETRIES = 3;
@@ -38,6 +40,8 @@ export interface RunMetadataOptions {
   niche?: string;
   /** Visual style rule from channel "Phong cách hình ảnh"; required when meta prompt arity >= 3. */
   imageStyle?: string;
+  /** Appended to the metadata prompt (e.g. the recently used formats of a cluster channel). */
+  extraInstructions?: string;
   onProgress?: (progress: MetadataProgress) => void;
 }
 
@@ -120,6 +124,7 @@ function pickWisdomPersistFields(parsed: MetadataLlmOutput): Partial<MetadataLlm
   if (parsed.video_visual_prompt !== undefined) {
     fields.video_visual_prompt = parsed.video_visual_prompt;
   }
+  if (parsed.cluster_format !== undefined) fields.cluster_format = parsed.cluster_format;
   return fields;
 }
 
@@ -195,8 +200,9 @@ export async function executeMetadata(
   const transcript = await extractTranscriptForMetadata(srtPath);
   const promptArity = await getPromptTemplateArity(language, promptKey);
   const imageStyle = options?.imageStyle?.trim() ?? '';
+  // Prompts with an optional 3rd parameter (`imageStyle = ''`, arity 2) still get the style when the channel has one.
   const templateArgs: unknown[] =
-    promptArity >= 3 ? [sourceTitle, transcript, imageStyle] : [sourceTitle, transcript];
+    promptArity >= 3 || imageStyle ? [sourceTitle, transcript, imageStyle] : [sourceTitle, transcript];
 
   if (promptArity >= 3 && !imageStyle) {
     throw new AppError(
@@ -208,6 +214,10 @@ export async function executeMetadata(
 
   let lastReason = 'unknown error';
   let lastDetails: Record<string, unknown> | undefined;
+  /** Feedback for the next attempt after the title guard rejected a valid response. */
+  let guardFeedback = '';
+  /** Last valid response the title guard rejected: used when every attempt is rejected, so the video still gets metadata. */
+  let guardRejected: MetadataLlmOutput | undefined;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     options?.onProgress?.({
@@ -218,7 +228,9 @@ export async function executeMetadata(
     });
 
     try {
-      const userPrompt = await executePromptTemplate(language, promptKey, templateArgs);
+      const basePrompt =
+        (await executePromptTemplate(language, promptKey, templateArgs)) + (options?.extraInstructions ?? '');
+      const userPrompt = basePrompt + guardFeedback;
       const response = await llmBrowserService.chat(session.profileId, session.provider, userPrompt, undefined, {
         submitWith: 'enter',
       });
@@ -226,6 +238,19 @@ export async function executeMetadata(
       const parseResult = parseMetadataResponse(response, { niche: parseNiche });
       if (parseResult.ok) {
         const parsed = parseResult.value;
+        const plannedThumbnail = parsed.thumbnail as unknown as { hook_lines?: unknown } | undefined;
+        const hookLines = Array.isArray(plannedThumbnail?.hook_lines)
+          ? plannedThumbnail.hook_lines.filter((line): line is string => typeof line === 'string')
+          : [];
+        const guard = checkTitleGuards({ title: parsed.metadata.title, prompt: basePrompt, transcript, hookLines });
+        if (!guard.ok) {
+          guardRejected = parsed;
+          guardFeedback = formatTitleGuardFeedback(guard.reasons);
+          lastReason = `title guard: ${guard.reasons.join(' | ')}`;
+          lastDetails = { attempt, reason: 'title_guard', title: parsed.metadata.title, reasons: guard.reasons };
+          logValidationFailure(attempt, lastReason);
+          continue;
+        }
         await persistMetadataOutput(
           parsed,
           sourceTitle,
@@ -263,6 +288,20 @@ export async function executeMetadata(
     }
   }
 
+  if (guardRejected) {
+    // Only the title guard failed: keep the last valid response rather than leaving the video without metadata.
+    console.warn(`[run-metadata] title guard still failing after ${MAX_RETRIES} attempts, keeping the last response: ${lastReason}`);
+    await persistMetadataOutput(
+      guardRejected,
+      sourceTitle,
+      videoId,
+      language,
+      options?.outputDir,
+      options?.descriptionDisclaimer,
+    );
+    return toVideoMetaOutput(guardRejected, sourceTitle, options?.descriptionDisclaimer);
+  }
+
   throw new AppError(
     `Metadata generation failed after ${MAX_RETRIES} attempts: ${lastReason}`,
     502,
@@ -278,8 +317,8 @@ export async function runMetadata(
   videoId: string,
   options?: RunMetadataOptions
 ): Promise<VideoMetaOutput> {
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const profile = chromeProfilesService.pickSubProfile();
+  const provider = contentTaskProvider('metadata');
+  const profile = pickMetadataChromeProfile();
 
   console.log(`[run-metadata] Mở Chrome profile ${profile.name} cho metadata...`);
 
@@ -295,6 +334,6 @@ export async function runMetadata(
       options
     );
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }

@@ -1,29 +1,17 @@
-import { AppError } from '../../../../shared/http/errors.js';
-import { appSettingsService } from '../../../app-settings/app-settings.service.js';
-import type { AiScenePromptChromeProfileRole } from '../../../app-settings/app-settings.types.js';
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
-
-export type { AiScenePromptChromeProfileRole };
-
-/** Default Chrome profile role for scene-prompt + character-reference LLM. */
-export const DEFAULT_AI_SCENE_PROMPT_CHROME_PROFILE_ROLE: AiScenePromptChromeProfileRole = 'main';
+import { listContentTaskProfiles, pickContentTaskProfile, pickContentTaskProfiles } from '../../../prompts/content-task.js';
+import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 
 export const AI_SCENE_PROMPT_CONCURRENCY_MIN = 1;
 export const AI_SCENE_PROMPT_CONCURRENCY_MAX = 8;
 
 /**
- * Pick the Chrome profile used for AI scene prompt and character-reference LLM chat.
- * Role comes from app settings (`aiScenePromptChromeProfileRole`); default is main.
+ * Pick the Chrome profile used for AI scene prompt and character-design LLM chat: the scene-prompt
+ * profile from Settings when it has the scene-prompt LLM ticked, else the first profile that does.
  */
 export function pickAiScenePromptChromeProfile(): ChromeProfile {
-  const role =
-    appSettingsService.get().aiScenePromptChromeProfileRole ??
-    DEFAULT_AI_SCENE_PROMPT_CHROME_PROFILE_ROLE;
-
-  return role === 'main'
-    ? chromeProfilesService.requireMainProfile()
-    : chromeProfilesService.pickSubProfile();
+  return pickContentTaskProfile('scenePrompt');
 }
 
 /** Clamp scene-prompt concurrency to the allowed 1–8 range. */
@@ -36,55 +24,55 @@ export function clampAiScenePromptConcurrency(value: number | undefined, fallbac
 }
 
 /**
- * Resolve Chrome profiles for scene-prompt LLM chunks.
- * Concurrency ≤ 1 → single profile from role setting.
- * Concurrency > 1 → up to N sub profiles (clamped to available count).
+ * Resolve Chrome profiles for scene-prompt LLM chunks: up to `concurrency` profiles with the scene-prompt
+ * LLM ticked, the one chosen in Settings first (clamped to how many exist).
  */
 export function resolveAiScenePromptProfiles(concurrency: number): ChromeProfile[] {
-  const requested = clampAiScenePromptConcurrency(concurrency, 1);
-  if (requested <= 1) {
-    return [pickAiScenePromptChromeProfile()];
-  }
-
-  const subs = chromeProfilesService.list().items.filter(profile => profile.role === 'sub');
-  if (subs.length === 0) {
-    throw new AppError(
-      'Scene prompt concurrency > 1 requires at least one sub Chrome profile. Create sub profiles first.',
-      409,
-      'NO_SUB_PROFILE',
-    );
-  }
-
-  const count = Math.min(requested, subs.length);
-  return chromeProfilesService.pickSubProfiles(count);
+  return pickContentTaskProfiles('scenePrompt', clampAiScenePromptConcurrency(concurrency, 1));
 }
 
 export interface ParallelScenePromptProfiles {
   profiles: ChromeProfile[];
-  /** Main profile held by scene prompts; character images must not use it. */
-  reservedMainProfileId?: string;
+  /** Flow image profiles held by scene prompts; character images must not use them. */
+  reservedFlowProfileIds: string[];
 }
 
 /**
- * Scene-prompt profiles that can run alongside character images (which always use main profiles).
- * A single-main scene-prompt setup gets the second main so the first stays free for images.
- * Returns undefined when only one main exists, so the caller must run the two tasks sequentially.
+ * Scene-prompt profiles that can run alongside character images without sharing a browser.
+ * Prefers chat profiles that are not image profiles. With Flow, a profile that does both may be
+ * reserved for chat as long as another Flow profile is left for the images. Meta cannot exclude
+ * profiles, so only non-image profiles qualify there.
+ * Returns undefined when no such split exists, so the caller must run the two tasks sequentially.
  */
 export function resolveParallelScenePromptProfiles(
   concurrency: number,
 ): ParallelScenePromptProfiles | undefined {
   const requested = clampAiScenePromptConcurrency(concurrency, 1);
-  const role =
-    appSettingsService.get().aiScenePromptChromeProfileRole ??
-    DEFAULT_AI_SCENE_PROMPT_CHROME_PROFILE_ROLE;
+  const imageProvider = promptsSettingsService.get().defaultReferenceImageProvider;
+  const chatProfiles = listContentTaskProfiles('scenePrompt');
+  const imageIds = new Set(
+    chromeProfilesService.listProfilesForLlm('image', imageProvider).map(profile => profile.id),
+  );
 
-  if (requested > 1 || role !== 'main') {
-    return { profiles: resolveAiScenePromptProfiles(requested) };
+  const freeFirst = [
+    ...chatProfiles.filter(profile => !imageIds.has(profile.id)),
+    ...chatProfiles.filter(profile => imageIds.has(profile.id)),
+  ];
+
+  const picked: ChromeProfile[] = [];
+  let imageProfilesLeft = imageIds.size;
+  for (const profile of freeFirst) {
+    if (picked.length >= requested) break;
+    if (imageIds.has(profile.id)) {
+      if (imageProvider !== 'flow' || imageProfilesLeft <= 1) continue;
+      imageProfilesLeft -= 1;
+    }
+    picked.push(profile);
   }
 
-  const mains = chromeProfilesService.listMainProfiles();
-  const reserved = mains[1];
-  if (!reserved) return undefined;
-
-  return { profiles: [reserved], reservedMainProfileId: reserved.id };
+  if (picked.length === 0) return undefined;
+  return {
+    profiles: picked,
+    reservedFlowProfileIds: picked.filter(profile => imageIds.has(profile.id)).map(profile => profile.id),
+  };
 }

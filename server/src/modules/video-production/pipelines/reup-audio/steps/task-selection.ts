@@ -88,7 +88,12 @@ function toTasks(
 export function buildTasks(
   destination: ProductionDestination,
   videos: SourceVideoWithSource[],
-  options?: { maxVideosPerChannel?: number; videoIds?: string[] },
+  options?: {
+    maxVideosPerChannel?: number;
+    videoIds?: string[];
+    /** Overrides the channel's creation order (trend videos are already sorted hottest first). */
+    order?: VideoCreationOrder;
+  },
 ): BuildTasksResult {
   const preparedVideoIds = destination.getPreparedVideoIds();
 
@@ -110,7 +115,7 @@ export function buildTasks(
     videos,
     preparedVideoIds,
     pickCount,
-    destination.videoCreationOrder ?? 'oldest_first',
+    options?.order ?? destination.videoCreationOrder ?? 'oldest_first',
   );
   return {
     tasks: toTasks(destination, selected),

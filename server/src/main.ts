@@ -9,6 +9,7 @@ import {
   stopTaskQueueWorker,
 } from './modules/task-queue/task-queue.worker.js';
 import { startRadarScheduler, stopRadarScheduler } from './modules/radar/radar.scheduler.js';
+import { startBrainsScheduler, stopBrainsScheduler } from './modules/brains/brains.service.js';
 import { videoAgentRunner } from './modules/video-agent/video-agent.runner.js';
 import { promptsRepository } from './modules/prompts/prompts.repository.js';
 import { ensurePromptsDir } from './modules/prompts/prompts.file-store.js';
@@ -24,6 +25,7 @@ function gracefulShutdown(signal: string): void {
   try {
     stopTaskQueueWorker();
     stopRadarScheduler();
+    stopBrainsScheduler();
     reclaimOrphanRunningJobs();
   } catch (err) {
     console.error('[server] shutdown cleanup failed', err);
@@ -50,6 +52,7 @@ export function startServer() {
   startRenderQueueWorker();
   startTaskQueueWorker();
   startRadarScheduler();
+  startBrainsScheduler();
   videoAgentRunner.recoverAfterRestart();
 
   serve(

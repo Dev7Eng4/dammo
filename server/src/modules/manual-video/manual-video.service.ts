@@ -1,4 +1,10 @@
 import { execFile } from 'node:child_process';
+import { resolveVoicevoxDefaultSpeaker } from '../../infrastructure/tts/voice-settings.store.js';
+import {
+  resolveNarrationVoice,
+  type ElevenLabsCustomVoice,
+  type VoicevoxCustomVoice,
+} from '../voice/narration-voice.js';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -44,12 +50,19 @@ import {
   type VideoAgentStage,
   type VideoAgentStep,
 } from '../video-agent/video-agent.types.js';
-import { buildLibrary, type ManualLibraryItem } from './manual-video.library.js';
 import { scriptRemakeService, splitSentences, type RemakeJob } from '../script-remake/script-remake.service.js';
+import { readSourceTranscript } from '../video-agent/source-transcript.js';
 import type { LlmTextProvider } from '../llm-browser/core/types.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import { createYoutubeProductionDestination } from '../video-production/adapters/youtube-production-destination.adapter.js';
+import { runMetadataStep } from '../video-production/pipelines/reup-audio/steps/metadata.step.js';
+import { runThumbnailStep } from '../video-production/pipelines/reup-audio/steps/thumbnail.step.js';
+import { resolveVideoTypeStrategy } from '../video-production/pipelines/reup-audio/strategies/index.js';
+import type { TaskLogger } from '../video-production/pipelines/reup-audio/task-logger.js';
+import type { VideoTaskContext } from '../video-production/pipelines/reup-audio/video-task.context.js';
+import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.types.js';
 
-export type ManualStep = 'sources' | 'voice' | 'scenes' | 'motion' | 'video';
+export type ManualStep = 'sources' | 'voice' | 'scenes' | 'motion' | 'video' | 'metadata';
 
 /**
  * What each step occupies. Steps on different resources may run at the same time (voice while
@@ -62,6 +75,8 @@ const STEP_RESOURCE: Record<ManualStep, string> = {
   // Flow runs in the same Chrome profiles as the image provider.
   motion: 'Chrome (vẽ ảnh)',
   video: 'ffmpeg (dựng video)',
+  // ChatGPT/Gemini for the text and the image provider for the thumbnail both run in Chrome.
+  metadata: 'Chrome (vẽ ảnh)',
 };
 
 const STEP_TOOL: Record<ManualStep, { tool: string; stage: VideoAgentStage }> = {
@@ -70,7 +85,34 @@ const STEP_TOOL: Record<ManualStep, { tool: string; stage: VideoAgentStage }> = 
   scenes: { tool: 'generate_scene_images', stage: 'scenes' },
   motion: { tool: 'scene_video_clips', stage: 'motion' },
   video: { tool: 'assemble_video', stage: 'video' },
+  metadata: { tool: 'metadata_thumbnail', stage: 'metadata' },
 };
+
+/** Written by the channel metadata step; same file name as in channel video folders. */
+const VIDEO_META_FILE = 'video-meta.json';
+const THUMBNAIL_FILES = ['thumbnail.jpg', 'thumbnail.png'];
+
+export interface ManualMetadata {
+  title: string;
+  description: string;
+  tags: string[];
+  hasThumbnail: boolean;
+  /** Changes whenever the thumbnail file is replaced, so the browser fetches the new one. */
+  thumbnailVersion: number;
+}
+
+function metaText(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function metaTags(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
+  return [...new Set(values.map(tag => metaText(tag).trim()).filter(Boolean))];
+}
+
+function findThumbnail(workDir: string): string | undefined {
+  return THUMBNAIL_FILES.map(name => path.join(workDir, name)).find(file => fs.existsSync(file));
+}
 
 /** A pasted script shorter than this is almost certainly a mistake, not a video. */
 const MIN_SCRIPT_CHARS = 300;
@@ -78,6 +120,9 @@ const MIN_SCRIPT_CHARS = 300;
 export interface ManualNarration {
   durationSec: number;
   speaker: number;
+  voiceProvider: 'voicevox' | 'elevenlabs';
+  voicePresetId: string | null;
+  voiceCustom: VoicevoxCustomVoice | ElevenLabsCustomVoice | null;
   speedScale: number;
   aligned: boolean;
   chapters: { heading: string; start: number; end: number; sentences: { text: string; start: number; end: number }[] }[];
@@ -255,7 +300,7 @@ class ManualVideoService {
         sourceUrls,
         channelId: channel.id,
         ...(input.notes?.trim() ? { notes: input.notes.trim() } : {}),
-        voicevoxSpeaker: input.voicevoxSpeaker ?? env.voicevoxSpeaker,
+        voicevoxSpeaker: input.voicevoxSpeaker ?? resolveVoicevoxDefaultSpeaker(),
         speedScale: input.speedScale ?? 1,
         // Approval is a button the producer presses; the voice step refuses to run before it.
         requireApproval: true,
@@ -280,13 +325,41 @@ class ManualVideoService {
   }
 
   /** Runs one pipeline step in the background; progress and errors land on the project. */
-  runStep(id: string, step: ManualStep, options: { urls?: string[]; voicevoxSpeaker?: number; speedScale?: number } = {}): VideoAgentRun {
+  runStep(
+    id: string,
+    step: ManualStep,
+    options: {
+      urls?: string[];
+      voicevoxSpeaker?: number;
+      speedScale?: number;
+      voiceProvider?: 'voicevox' | 'elevenlabs';
+      voicePresetId?: string | null;
+      voiceCustom?: VoicevoxCustomVoice | ElevenLabsCustomVoice | null;
+    } = {},
+  ): VideoAgentRun {
     const run = requireRun(id);
     this.assertCanStart(run, step);
     if (step === 'sources' && options.urls) run.input.sourceUrls = this.normalizeUrls(options.urls);
     if (step === 'voice') {
       if (options.voicevoxSpeaker !== undefined) run.input.voicevoxSpeaker = options.voicevoxSpeaker;
       if (options.speedScale !== undefined) run.input.speedScale = options.speedScale;
+      if (options.voiceProvider !== undefined) run.input.voiceProvider = options.voiceProvider;
+      if (options.voicePresetId !== undefined) run.input.voicePresetId = options.voicePresetId ?? undefined;
+      if (options.voiceCustom !== undefined) run.input.voiceCustom = options.voiceCustom ?? undefined;
+      const customIsElevenLabs = !!run.input.voiceCustom && 'voiceId' in run.input.voiceCustom;
+      if (run.input.voiceCustom && customIsElevenLabs !== (run.input.voiceProvider === 'elevenlabs')) {
+        throw new AppError('Setting giọng tùy chỉnh không khớp với nhà cung cấp đã chọn', 400, 'VALIDATION_ERROR');
+      }
+      // Fail now, not in the background job, when the chosen voice no longer exists.
+      resolveNarrationVoice(
+        {
+          provider: run.input.voiceProvider,
+          presetId: run.input.voicePresetId,
+          custom: run.input.voiceCustom,
+          voicevoxSpeaker: run.input.voicevoxSpeaker,
+        },
+        run.input.speedScale,
+      );
     }
     const { tool } = STEP_TOOL[step];
     // A full re-run cuts the script into new scenes; images are reused by file name, so old ones must go first.
@@ -303,6 +376,95 @@ class ManualVideoService {
       const outcome = await executeVideoAgentTool(tool, {}, ctx);
       return 'content' in outcome ? outcome.content : '';
     });
+  }
+
+  /**
+   * YouTube title, description, tags and thumbnail, made with the channel's own metadata prompts and
+   * thumbnail flow (mascot, niche prompt or style key) exactly as for the channel's prepared videos.
+   * The text is written from the narration subtitles, so the voice must be done first.
+   */
+  generateMetadata(id: string): VideoAgentRun {
+    const run = requireRun(id);
+    const { audioPath, subtitlePath } = run.artifacts;
+    if (!run.stagesDone.includes('voice') || !audioPath || !subtitlePath) {
+      throw new AppError('Cần đọc giọng trước: metadata được viết từ phụ đề của giọng đọc', 409, 'STAGE_ORDER');
+    }
+    this.assertCanStart(run, 'metadata');
+    return this.startJob(run, 'metadata', 'metadata_thumbnail', async ctx => {
+      const channel = youtubeChannelsRepository.findById(run.input.channelId);
+      if (!channel) throw new AppError('Kênh đích không còn tồn tại', 404, 'NOT_FOUND');
+      const destination = await createYoutubeProductionDestination(channel);
+      const source = run.artifacts.sources[0];
+      const youtubeVideoId = source?.videoId ?? run.id;
+      const note = (msg: string) => ctx.note(truncate(msg, 300));
+      const log: TaskLogger = { enabled: true, info: note, ok: note, err: note };
+      const task: VideoTaskContext = {
+        destination,
+        videoType: 'ai',
+        task: {
+          link: source?.url ?? '',
+          id: run.id,
+          language: destination.language,
+          videoId: youtubeVideoId,
+          sourceId: '',
+          sourceTitle: source?.title || run.script?.outline.title || run.title || run.id,
+        },
+        log,
+        stepTimer: {},
+        workDir: ctx.workDir,
+        downloaded: { youtubeVideoId, outputDir: ctx.workDir, audioPath, transcriptPath: subtitlePath },
+        subtitlePath,
+      };
+      task.videoMeta = await runMetadataStep(task);
+      const thumbnail = await runThumbnailStep(task, resolveVideoTypeStrategy('ai'));
+      ctx.markStage('metadata');
+      return [
+        `Tiêu đề: ${metaText(task.videoMeta.metadata.title)}`,
+        thumbnail.reupThumbnailPath ? `Thumbnail: ${thumbnail.reupThumbnailPath}` : 'Chưa tạo được thumbnail — xem nhật ký',
+      ].join('\n');
+    });
+  }
+
+  metadata(id: string): ManualMetadata {
+    const run = requireRun(id);
+    const workDir = videoAgentRunDir(run.id);
+    const thumbnail = findThumbnail(workDir);
+    const stat = thumbnail ? fs.statSync(thumbnail) : undefined;
+    let fields = { title: '', description: '', tags: [] as string[] };
+    const file = path.join(workDir, VIDEO_META_FILE);
+    if (fs.existsSync(file)) {
+      try {
+        const parsed = parseVideoMetaContent(JSON.parse(fs.readFileSync(file, 'utf8')));
+        fields = {
+          title: metaText(parsed.metadata?.title),
+          description: metaText(parsed.metadata?.description),
+          tags: metaTags(parsed.metadata?.tags),
+        };
+      } catch {
+        // A broken file reads as empty; generating again rewrites it.
+      }
+    }
+    return { ...fields, hasThumbnail: Boolean(stat), thumbnailVersion: stat ? Math.round(stat.mtimeMs) : 0 };
+  }
+
+  /** Producer edits to the generated title, description and tags. */
+  async saveMetadata(id: string, input: { title: string; description: string; tags: string[] }): Promise<ManualMetadata> {
+    const run = requireRun(id);
+    const file = path.join(videoAgentRunDir(run.id), VIDEO_META_FILE);
+    const raw = (await fsp.readFile(file, 'utf8').then(text => JSON.parse(text) as Record<string, unknown>).catch(() => null)) ?? {};
+    const current = raw.metadata && typeof raw.metadata === 'object' ? (raw.metadata as Record<string, unknown>) : {};
+    raw.metadata = { ...current, title: input.title.trim(), description: input.description.trim(), tags: metaTags(input.tags) };
+    await fsp.mkdir(path.dirname(file), { recursive: true });
+    await fsp.writeFile(file, `${JSON.stringify(raw, null, 2)}\n`, 'utf8');
+    appendStep(run, { kind: 'system', title: 'Sửa metadata' });
+    return this.metadata(id);
+  }
+
+  thumbnailFile(id: string): string {
+    const run = requireRun(id);
+    const file = findThumbnail(videoAgentRunDir(run.id));
+    if (!file) throw new AppError('Dự án chưa có thumbnail', 404, 'NOT_FOUND');
+    return file;
   }
 
   private assertCanStart(run: VideoAgentRun, step: ManualStep): void {
@@ -438,6 +600,9 @@ class ManualVideoService {
     return {
       durationSec: run.artifacts.audioDurationSec ?? 0,
       speaker: run.input.voicevoxSpeaker,
+      voiceProvider: run.input.voiceProvider ?? 'voicevox',
+      voicePresetId: run.input.voicePresetId ?? null,
+      voiceCustom: run.input.voiceCustom ?? null,
       speedScale: run.input.speedScale,
       // Fewer or more cues than the script implies means the track no longer matches it; timings are then approximate.
       aligned: cursor === cues.length,
@@ -557,7 +722,7 @@ class ManualVideoService {
 
       const videosDir = path.join(ctx.workDir, AI_VIDEOS_DIRNAME);
       ctx.note(`Tạo ${todo.length} clip qua Google Flow (Veo)`, todo.map(index => `#${index + 1}`).join(', '));
-      const mains = chromeProfilesService.listMainProfiles();
+      const mains = chromeProfilesService.listProfilesForLlm('video', 'flow');
       let failed: { name: string; reason: string }[] = [];
       try {
         const result = await generateVideosFromImagesWithFailover(
@@ -671,7 +836,7 @@ class ManualVideoService {
     const outline = plainOutline(input.title, input.angle, input.hook, input.chapters);
     const sourceTexts: string[] = [];
     for (const source of run.artifacts.sources) {
-      sourceTexts.push(await fsp.readFile(source.transcriptPath, 'utf8').catch(() => ''));
+      sourceTexts.push(await readSourceTranscript(source));
     }
     const script: VideoAgentScript = {
       outline,
@@ -734,7 +899,7 @@ class ManualVideoService {
     }
     const parts: string[] = [];
     for (const [index, source] of run.artifacts.sources.entries()) {
-      parts.push(`--- 参考動画${index + 1}: ${source.title} ---\n${await fsp.readFile(source.transcriptPath, 'utf8')}`);
+      parts.push(`--- 参考動画${index + 1}: ${source.title} ---\n${await readSourceTranscript(source)}`);
     }
     const job = await scriptRemakeService.start({
       transcript: parts.join('\n\n'),
@@ -792,11 +957,6 @@ class ManualVideoService {
     if (!fs.existsSync(folder)) throw new AppError('Thư mục chưa tồn tại', 404, 'NOT_FOUND');
     launchFileManager(folder);
     return { folder };
-  }
-
-  /** Every project at any stage plus standalone transcript downloads, newest first. */
-  library(): ManualLibraryItem[] {
-    return buildLibrary();
   }
 
   /** Opens a folder in the file manager. Only folders inside the data directory are allowed. */

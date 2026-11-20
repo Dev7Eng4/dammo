@@ -1,15 +1,16 @@
+import { pickMetadataChromeProfile } from '../metadata-chrome-profile.js';
 import { AppError } from '../../../../../shared/http/errors.js';
 import { chromeProfilesService } from '../../../../chrome-profiles/chrome-profiles.service.js';
 import { llmBrowserService } from '../../../../llm-browser/text/text.service.js';
 import { executePromptTemplate } from '../../../../prompts/prompts.file-store.js';
 import { promptsRepository } from '../../../../prompts/prompts.repository.js';
-import { promptsSettingsService } from '../../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../../prompts/prompts.types.js';
 import type { MetaLlmSession } from '../meta-session.js';
 import type { MetadataLlmOutput } from '../metadata.types.js';
 import { parseDramaStep1Response, parseDramaStep2Response } from './drama-response.js';
 import { formatParseFailureReason, type LlmParseResult } from '../llm-parse-result.js';
 import { persistLlmParseFailure } from '../persist-llm-failure.js';
+import { contentTaskProvider } from '../../../../prompts/content-task.js';
 
 const MAX_RETRIES = 3;
 
@@ -161,8 +162,8 @@ export async function runDramaStep2(
 
 /** Open one Chrome sub-profile, run `fn`, then close. */
 export async function withDramaLlmSession<T>(fn: (session: MetaLlmSession) => Promise<T>): Promise<T> {
-  const provider = promptsSettingsService.get().defaultLlmProvider;
-  const profile = chromeProfilesService.pickSubProfile();
+  const provider = contentTaskProvider('metadata');
+  const profile = pickMetadataChromeProfile();
 
   console.log(`[drama-metadata] open Chrome profile ${profile.name}`);
 
@@ -170,6 +171,6 @@ export async function withDramaLlmSession<T>(fn: (session: MetaLlmSession) => Pr
     await llmBrowserService.open(profile.id, provider);
     return await fn({ profileId: profile.id, profileName: profile.name, provider });
   } finally {
-    await chromeProfilesService.closeSubProfiles([profile.id]);
+    await chromeProfilesService.closeProfiles([profile.id]);
   }
 }

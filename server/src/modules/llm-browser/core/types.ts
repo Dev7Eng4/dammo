@@ -1,6 +1,7 @@
-export type LlmTextProvider = 'gpt' | 'gemini';
+export type LlmTextProvider = 'gpt' | 'gemini' | 'claude';
 export type ImageBrowserProvider = 'flow' | 'meta';
-export type VideoBrowserProvider = 'meta';
+/** `flow`: Google Flow (Veo), image → video. `meta`: Meta AI text → video, kept for the API only. */
+export type VideoBrowserProvider = 'flow' | 'meta';
 export type LlmBrowserProvider = LlmTextProvider | ImageBrowserProvider | VideoBrowserProvider;
 export type LlmSessionStatus = 'idle' | 'sending' | 'waiting';
 export interface LlmSetupSelectors {
@@ -11,7 +12,16 @@ export interface LlmSetupSelectors {
 export interface LlmDomSelectors {
   promptInput: string;
   sendButton: string;
+  /** One element per assistant reply (the latest one is read). */
   responseBlocks: string;
+  /**
+   * Text part(s) inside a reply block, read instead of the whole block (skips toolbars and other
+   * chrome). Several matches are joined; falls back to the whole block when nothing matches.
+   */
+  responseContent?: string;
+  /** Elements inside the reply text to leave out when reading it (labels, copy buttons, screen-reader text). */
+  responseContentExclude?: string;
+  /** Code blocks inside a reply block (relative to it). */
   responseCodeBlocks?: string;
   generatingIndicator?: string;
   conversationScrollContainer?: string;
@@ -26,6 +36,16 @@ export interface LlmProviderConfig {
   url: string;
   selectors: LlmDomSelectors;
   setup?: LlmSetupSelectors;
+  /**
+   * Mark the replies on the page before sending and treat the unmarked one as the new reply, instead of
+   * counting replies. Needed when the site unloads older messages from long chats (claude.ai).
+   */
+  markSeenReplies?: boolean;
+  /**
+   * Page text shown when the account is out of messages. Checked while no reply has appeared, so the
+   * job fails at once with `LLM_USAGE_LIMIT` instead of waiting out the whole timeout.
+   */
+  usageLimitPattern?: RegExp;
 }
 export interface LlmSetupConfig {
   mode?: string;

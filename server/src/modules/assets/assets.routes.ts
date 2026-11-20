@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { isAppError } from '../../shared/http/errors.js';
-import { assetKindSchema, deleteAssetsSchema, listAssetsQuerySchema, prepareColorSchema } from './assets.schema.js';
+import { assetKindSchema, deleteAssetsSchema, listAssetsQuerySchema, prepareColorSchema, renameAssetSchema } from './assets.schema.js';
 import { assetsService } from './assets.service.js';
 import type { AssetKind } from './assets.types.js';
 import { prepareColorAsset, type PrepareColorKind } from '../video-production/shared/si-video/si-prepare-color-cache.js';
@@ -98,6 +98,28 @@ export function createAssetsRoutes() {
     const body = c.req.valid('json');
     const result = assetsService.delete(kindParsed.data, body.names);
     return c.json(result);
+  });
+
+  app.patch('/:kind/:filename', zValidator('json', renameAssetSchema), (c) => {
+    const kindParsed = assetKindSchema.safeParse(c.req.param('kind'));
+    if (!kindParsed.success) {
+      return c.json({ error: 'Invalid asset kind' }, 400);
+    }
+    if (kindParsed.data !== 'mascot') {
+      return c.json({ error: 'Rename is only supported for mascot' }, 400);
+    }
+    const { name } = c.req.valid('json');
+    const item = assetsService.rename(kindParsed.data, c.req.param('filename'), name);
+    return c.json({ item });
+  });
+
+  app.post('/:kind/:filename/remove-watermark', async (c) => {
+    const kindParsed = assetKindSchema.safeParse(c.req.param('kind'));
+    if (!kindParsed.success) {
+      return c.json({ error: 'Invalid asset kind' }, 400);
+    }
+    const item = await assetsService.removeWatermark(kindParsed.data as AssetKind, c.req.param('filename'));
+    return c.json({ item });
   });
 
   app.post('/:kind/:filename/prepare-color', zValidator('json', prepareColorSchema), async (c) => {

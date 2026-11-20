@@ -55,5 +55,33 @@
   "unit": {
     "hours": "{{value}} giờ",
     "days": "{{value}} ngày"
+  },
+  "tabs": {
+    "trends": "Săn xu hướng (K1–K11)",
+    "channels": "Kênh nguồn"
+  },
+  "trends": {
+    "subtitle": "Video đang nổ trong ngách tâm lý Nhật do bộ não Săn xu hướng hoặc skill jp-psy-trends tìm ra, gán theo cụm K1–K11.",
+    "intro": "Dữ liệu do bộ não jp-psy-trends (trang Bộ não) hoặc skill jp-psy-trends trong Claude Code lưu vào. Số liệu là lúc ghi nhận.",
+    "lastRun": "Lần quét cuối",
+    "openBrain": "Mở bộ não",
+    "seenWithin": "Ghi nhận trong",
+    "days_one": "{{count}} ngày",
+    "days_other": "{{count}} ngày",
+    "allClusters": "Tất cả",
+    "chipTitle": "Cao nhất {{top}} view/giờ",
+    "heat": "Độ nóng",
+    "cluster": "Cụm",
+    "channel": "Kênh",
+    "ratio": "× kênh",
+    "source": "Nguồn",
+    "offNiche": "Ngoài ngách",
+    "untagged": "Chưa gán cụm",
+    "from": {
+      "brain": "Bộ não",
+      "skill": "Skill",
+      "unknown": "—"
+    },
+    "empty": "Chưa có dữ liệu. Chạy bộ não Săn xu hướng tâm lý Nhật ở trang Bộ não, hoặc gõ \"trends\" trong Claude Code rồi lưu kết quả."
   }
 }

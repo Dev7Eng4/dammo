@@ -7,6 +7,7 @@ import { createLlmProviderHandler } from '../text/text.provider.js';
 const textHandlers: Record<LlmTextProvider, LlmBrowserProviderHandler> = {
   gpt: createLlmProviderHandler('gpt'),
   gemini: createLlmProviderHandler('gemini'),
+  claude: createLlmProviderHandler('claude'),
 };
 
 let flowHandler: LlmBrowserProviderHandler | undefined;
@@ -36,7 +37,7 @@ export function getImageBrowserHandler(provider: ImageBrowserProvider): LlmBrows
 }
 
 export function isLlmTextProvider(value: string): value is LlmTextProvider {
-  return value === 'gpt' || value === 'gemini';
+  return value === 'gpt' || value === 'gemini' || value === 'claude';
 }
 
 export function isImageBrowserProvider(value: string): value is ImageBrowserProvider {

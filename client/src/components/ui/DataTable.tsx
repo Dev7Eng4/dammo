@@ -32,6 +32,8 @@ export type DataTableProps<TData> = {
   error?: string | null
   showRowNumbers?: boolean
   rowNumberStart?: number
+  /** `fixed` splits width evenly across columns (unless a column sets its own width) and never resizes with content. */
+  layout?: 'auto' | 'fixed'
 }
 
 const checkboxClassName = 'size-3.5 rounded border-border bg-surface accent-primary-500'
@@ -109,6 +111,7 @@ export function DataTable<TData>({
   error,
   showRowNumbers = false,
   rowNumberStart = 1,
+  layout = 'auto',
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
@@ -120,6 +123,7 @@ export function DataTable<TData>({
   const colCount = columns.length + (enableRowSelection ? 1 : 0) + (showRowNumbers ? 1 : 0)
   const allSelected = data.length > 0 && !!selectedIds && selectedIds.size === data.length
   const isInteractive = Boolean(onRowClick)
+  const tableClassName = cn('w-full text-left text-sm', layout === 'fixed' && 'table-fixed')
 
   const headerRow = (
     <tr className="border-b border-border text-xs text-muted-foreground">
@@ -145,7 +149,7 @@ export function DataTable<TData>({
 
   if (loading) {
     return (
-      <table className="w-full text-left text-sm">
+      <table className={tableClassName}>
         <thead>
           <tr className="border-b border-border text-xs text-muted-foreground">
             {enableRowSelection && <th className="min-w-[50px] w-10 pb-3 pr-4" />}
@@ -207,7 +211,7 @@ export function DataTable<TData>({
   }
 
   return (
-    <table className="w-full text-left text-sm">
+    <table className={tableClassName}>
       <thead>{headerRow}</thead>
       <tbody>
         {table.getRowModel().rows.map((row) => {

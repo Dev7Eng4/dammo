@@ -234,7 +234,7 @@ export class FlowBrowserService {
   /**
    * Turn scene images into short video clips (Flow image-to-video) through the flow.google.com UI.
    *
-   * Sets the prompt bar to Video · Frames · aspect · model · x1, then for each job uploads the start
+   * Sets the prompt bar to Video · Ingredients · aspect · model · 360p · x1, then for each job uploads the start
    * frame, types the motion prompt, generates and saves the clip as `${outputDir}/${name}.mp4`. One
    * clip at a time so each result maps to its job. Clips Flow rejects or that time out are reported in
    * `failed`; a quota/credits message aborts the batch so the caller can switch profile.

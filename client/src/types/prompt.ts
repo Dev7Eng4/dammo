@@ -11,12 +11,25 @@ export const PROMPT_LANGUAGES: SpecificPromptLanguage[] = ['en', 'ko', 'ja', 'es
 
 export type PlaygroundProvider = 'gpt' | 'gemini';
 
+/** Every text LLM the app can drive (all LLM Content options). */
+export type TextLlmProvider = PlaygroundProvider | 'claude';
+
 export type ImageBrowserProvider = 'flow' | 'meta';
 
-export type VideoBrowserProvider = 'meta';
+/** `flow`: Google Flow (Veo), image → video. `meta`: Meta AI, no longer offered in the UI. */
+export type VideoBrowserProvider = 'flow' | 'meta';
 
 export interface PromptsSettings {
+  /** Text LLM for general content. */
   defaultLlmProvider: PlaygroundProvider;
+  scriptRemakeLlmProvider: TextLlmProvider;
+  scenePromptLlmProvider: TextLlmProvider;
+  metadataLlmProvider: TextLlmProvider;
+  /** Chrome profile chosen per text task; null = first profile with that LLM ticked. */
+  contentChromeProfileId: string | null;
+  scriptRemakeChromeProfileId: string | null;
+  scenePromptChromeProfileId: string | null;
+  metadataChromeProfileId: string | null;
   defaultReferenceImageProvider: ImageBrowserProvider;
   defaultSceneImageProvider: ImageBrowserProvider;
   defaultThumbnailProvider: ImageBrowserProvider;
@@ -25,6 +38,13 @@ export interface PromptsSettings {
 
 export interface UpdatePromptsSettingsPayload {
   defaultLlmProvider?: PlaygroundProvider;
+  scriptRemakeLlmProvider?: TextLlmProvider;
+  scenePromptLlmProvider?: TextLlmProvider;
+  metadataLlmProvider?: TextLlmProvider;
+  contentChromeProfileId?: string | null;
+  scriptRemakeChromeProfileId?: string | null;
+  scenePromptChromeProfileId?: string | null;
+  metadataChromeProfileId?: string | null;
   defaultReferenceImageProvider?: ImageBrowserProvider;
   defaultSceneImageProvider?: ImageBrowserProvider;
   defaultThumbnailProvider?: ImageBrowserProvider;

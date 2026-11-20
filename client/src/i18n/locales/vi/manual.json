@@ -1,12 +1,8 @@
 {
   "page": {
-    "title": "Tạo video từng bước",
-    "subtitle": "Cùng pipeline với Agent nhưng bạn bấm từng bước: nguồn → kịch bản → duyệt → giọng đọc → scene & ảnh → dựng video. Mọi file nằm trong thư mục của dự án.",
+    "title": "Sản xuất video",
+    "subtitle": "Tạo dự án từ video nguồn rồi làm lần lượt: nguồn → kịch bản → duyệt → giọng đọc → scene & ảnh → dựng video. Chọn một kênh để xem dự án và mở các video đã chuẩn bị / đã tạo của kênh đó. Mọi file nằm trong thư mục của dự án.",
     "newProject": "Dự án mới"
-  },
-  "tabs": {
-    "projects": "Dự án",
-    "library": "Tất cả video"
   },
   "list": {
     "empty": "Chưa có dự án nào. Bấm \"Dự án mới\" để bắt đầu.",
@@ -67,7 +63,7 @@
     },
     "script": {
       "title": "Kịch bản",
-      "desc": "Remake bằng ChatGPT/Gemini từ transcript nguồn, hoặc tự soạn/dán kịch bản. Xem lại rồi bấm Duyệt ở cuối tab để mở bước Giọng đọc và Scene."
+      "desc": "Remake bằng ChatGPT/Gemini/Claude từ transcript nguồn, hoặc tự soạn/dán kịch bản. Xem lại rồi bấm Duyệt ở cuối tab để mở bước Giọng đọc và Scene."
     },
     "approval": {
       "title": "Duyệt kịch bản",
@@ -92,7 +88,7 @@
     },
     "voice": {
       "title": "Giọng đọc",
-      "desc": "VOICEVOX đọc từng câu và tạo phụ đề từ chính thời lượng thật. Nếu đã có ảnh scene, thời gian scene tự khớp lại theo giọng mới.",
+      "desc": "Đọc từng câu bằng voice đã lưu (VOICEVOX hoặc ElevenLabs) và tạo phụ đề từ chính thời lượng thật. Nếu đã có ảnh scene, thời gian scene tự khớp lại theo giọng mới.",
       "run": "Đọc giọng",
       "again": "Đọc lại",
       "unavailable": "Chưa kết nối được VOICEVOX ({{url}}). Trang tự kiểm tra lại mỗi 10 giây.",
@@ -120,7 +116,14 @@
     },
     "motion": {
       "title": "Ảnh → video",
-      "desc": "Tuỳ chọn: biến ảnh scene thành clip chuyển động ~8 giây bằng Google Flow (Veo), chạy qua Chrome và dùng lượt Flow của các profile chính. Cảnh có clip sẽ phát clip khi dựng video, cảnh còn lại vẫn là ảnh với Ken Burns. Bỏ qua bước này thì video ghép từ ảnh như cũ."
+      "desc": "Tuỳ chọn: biến ảnh scene thành clip chuyển động ~8 giây bằng Google Flow (Veo), chạy qua Chrome và dùng lượt Flow của các profile có tick Flow ở cột LLM Video. Cảnh có clip sẽ phát clip khi dựng video, cảnh còn lại vẫn là ảnh với Ken Burns. Bỏ qua bước này thì video ghép từ ảnh như cũ."
+    },
+    "metadata": {
+      "title": "Metadata & thumbnail",
+      "desc": "Viết tiêu đề, mô tả, tags YouTube và vẽ thumbnail theo prompt metadata và kiểu thumbnail của kênh (giống video đã chuẩn bị của kênh). Metadata được viết từ phụ đề giọng đọc, không cần chờ dựng video. Chạy qua Chrome, có thể mất vài phút.",
+      "run": "Tạo metadata & thumbnail",
+      "again": "Tạo lại",
+      "redoConfirm": "Tạo lại sẽ ghi đè tiêu đề, mô tả, tags (kể cả phần bạn đã sửa) và thumbnail hiện có. Tiếp tục?"
     }
   },
   "status": {
@@ -130,7 +133,7 @@
     "min": "phút",
     "remake": {
       "title": "Remake bằng ChatGPT / Gemini",
-      "hint": "Mở một Chrome profile phụ, chạy prompt \"Remake kịch bản\" trên các transcript nguồn. LLM tự chọn độ dài 12–30 phút. Sửa prompt ở trang Prompt.",
+      "hint": "Mở một Chrome profile có tick LLM chat, chạy prompt \"Remake kịch bản\" trên các transcript nguồn. LLM tự chọn độ dài 12–30 phút. Sửa prompt ở trang Prompt.",
       "promptSet": "Bộ prompt",
       "noPromptSet": "Chưa có bộ prompt remake",
       "provider": "LLM",
@@ -165,35 +168,6 @@
       "freshness": "So với {{count}} video cũ của kênh",
       "warn": "Có chỉ số chưa đạt. Bạn vẫn có thể duyệt, nhưng nên sửa để tránh bị coi là nội dung tái sử dụng hoặc lặp khuôn."
     }
-  },
-  "library": {
-    "projectsRoot": "Dự án (agent & từng bước)",
-    "downloadsRoot": "Transcript tải lẻ",
-    "rootHint": "Mỗi dự án nằm trong thư mục riêng, tên là mã dự án. Transcript tải lẻ nằm trong thư mục theo mã video YouTube.",
-    "empty": "Chưa có gì trong mục này.",
-    "chars": "{{chars}} ký tự ≈ {{minutes}} phút",
-    "files": "File",
-    "filter": {
-      "all": "Tất cả",
-      "finished": "Đã dựng xong",
-      "inProgress": "Đang làm dở",
-      "download": "Mới tải transcript"
-    },
-    "kind": {
-      "agent": "Agent",
-      "manual": "Từng bước",
-      "download": "Tải lẻ"
-    },
-    "file": {
-      "transcript": "Transcript",
-      "script": "Kịch bản",
-      "remake": "Remake",
-      "audio": "Giọng đọc",
-      "subtitle": "Phụ đề",
-      "video": "Video"
-    },
-    "play": "Xem",
-    "openProject": "Mở dự án"
   },
   "voicePreview": {
     "play": "Nghe thử",
@@ -246,5 +220,75 @@
     "remove": "Bỏ clip",
     "one": "Tạo clip",
     "titleCard": "Thẻ tiêu đề — giữ nguyên"
+  },
+  "source": {
+    "none": "Không có nhóm",
+    "channelProjects": "Dự án của kênh",
+    "channelVideos": "Video đã chuẩn bị / đã tạo"
+  },
+  "channelVideo": {
+    "status": {
+      "Prepared": "Đã chuẩn bị",
+      "Created": "Đã tạo"
+    },
+    "empty": "Kênh này chưa có video nào đã chuẩn bị hoặc đã tạo.",
+    "tabs": {
+      "characters": "Character reference"
+    },
+    "source": {
+      "hint": "Video nguồn trên YouTube mà video này được làm lại từ đó."
+    },
+    "script": {
+      "remakeHint": "Kênh Remake: viết lại kịch bản từ transcript của video nguồn bằng ChatGPT/Gemini/Claude (cùng bộ prompt với dự án), rồi bấm \"Dùng kết quả làm kịch bản\". Có thể sửa tay ở dưới.",
+      "size": "{{chars}} ký tự"
+    },
+    "voice": {
+      "title": "Đọc giọng VOICEVOX",
+      "hint": "Đọc kịch bản ở tab Kịch bản. Giọng đọc thay audio và phụ đề của video; audio và transcript gốc của video nguồn được giữ trong thư mục source/.",
+      "running": "Đang đọc {{progress}}",
+      "done": "Đã đọc giọng xong",
+      "failed": "Đọc giọng lỗi",
+      "needScript": "Cần có kịch bản trước.",
+      "rescenes": "Scene hiện có vẫn theo thời gian của audio cũ — bấm \"Tạo lại scenes\" ở tab Scene & ảnh để khớp với giọng mới, rồi dựng lại video.",
+      "narration": "Giọng đọc ({{duration}})",
+      "source": "Audio đã tải của video nguồn",
+      "sourceKept": "Audio gốc của video nguồn được giữ ở source/audio.mp3."
+    }
+  },
+  "metadata": {
+    "empty": "Chưa có metadata. Bấm nút ở trên để tạo.",
+    "thumbnail": "Thumbnail",
+    "noThumbnail": "Chưa có thumbnail",
+    "title": "Tiêu đề",
+    "description": "Mô tả",
+    "tags": "Tags",
+    "tagsHint": "Cách nhau bằng dấu phẩy",
+    "save": "Lưu thay đổi",
+    "saved": "Đã lưu metadata"
+  },
+  "sourcePicker": {
+    "title": "Chọn từ nguồn của kênh",
+    "search": "Tìm theo tiêu đề",
+    "hint": "Video từ các kênh nguồn của kênh đích chưa được xử lý: chưa chuẩn bị cho kênh và chưa làm nguồn ở dự án khác của kênh. Mỗi lần chọn 1 video; chọn video khác sẽ thay link đang có trong ô trên.",
+    "empty": "Không còn video nguồn nào chưa xử lý. Kiểm tra kênh nguồn trong cấu hình kênh, hoặc dán link vào ô trên.",
+    "noMatch": "Không có video nào khớp.",
+    "views_one": "{{formatted}} lượt xem",
+    "views_other": "{{formatted}} lượt xem",
+    "open": "Mở video trên YouTube"
+  },
+  "voicePick": {
+    "label": "Giọng đọc",
+    "default": "mặc định",
+    "none": "Chọn voice đã lưu",
+    "loading": "Đang tải voices…",
+    "empty": "Chưa có voice {{provider}} nào được lưu.",
+    "openSettings": "Tạo voice ở Cài đặt → Giọng đọc",
+    "custom": "Tùy chỉnh cho video này…",
+    "customValue": "Tùy chỉnh: {{name}}",
+    "editCustom": "Chỉnh",
+    "customTitle": "Giọng {{provider}} cho video này",
+    "customHint": "Chọn giọng và chỉnh setting chỉ cho video này — không lưu vào danh sách voice ở Cài đặt.",
+    "useCustom": "Dùng giọng này",
+    "cancel": "Hủy"
   }
 }

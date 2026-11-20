@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchChromeProfiles, openChromeProfile, resetSubChromeProfiles, setMainChromeProfile, setSubChromeProfile } from '../api/chromeProfiles';
+import {
+  fetchChromeProfiles,
+  openChromeProfile,
+  updateChromeProfileLlms,
+} from '../api/chromeProfiles';
 import { PageHeader, PageShell } from '../components/layout';
 import { AddChromeProfileModal } from '../components/chrome-profiles/AddChromeProfileModal';
 import { ChromeProfilesTable } from '../components/chrome-profiles/ChromeProfilesTable';
@@ -8,7 +12,7 @@ import { ChromeProfilesToolbar } from '../components/chrome-profiles/ChromeProfi
 import { EditChromeProfileModal } from '../components/chrome-profiles/EditChromeProfileModal';
 import { useToast } from '../components/ui';
 import { useAbortableEffect } from '../hooks';
-import type { ChromeProfile, ChromeProfileRole } from '../types/chromeProfile';
+import type { ChromeProfile, ChromeProfileLlmField } from '../types/chromeProfile';
 import { Globe } from 'lucide-react';
 
 export function ChromeProfilesPage() {
@@ -22,8 +26,8 @@ export function ChromeProfilesPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
-  const [settingRole, setSettingRole] = useState(false);
-  const [resettingSub, setResettingSub] = useState(false);
+  /** Latest LLM save request per profile, so stale responses don't overwrite newer picks. */
+  const llmRequestSeq = useRef(new Map<string, number>());
 
   const selectedProfile = profiles.find((profile) => profile.id === selectedId) ?? null;
 
@@ -63,55 +67,25 @@ export function ChromeProfilesPage() {
     handleRefresh();
   }
 
-  async function handleRoleChange(id: string, role: ChromeProfileRole) {
-    if (settingRole) return;
-
+  async function handleLlmChange(id: string, field: ChromeProfileLlmField, value: string[]) {
     const target = profiles.find((profile) => profile.id === id);
-    if (!target || target.role === role) return;
+    if (!target) return;
 
-    setSettingRole(true);
-    try {
-      if (role === 'main') {
-        await setMainChromeProfile(id);
-        toast.success(t('chrome.toast.setMain', { name: target.name }));
-      } else {
-        await setSubChromeProfile(id);
-        toast.success(t('chrome.toast.setSecondary', { name: target.name }));
-      }
-      handleRefresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('chrome.toast.roleError'));
-    } finally {
-      setSettingRole(false);
-    }
-  }
+    const applyItem = (item: ChromeProfile) =>
+      setProfiles((current) => current.map((profile) => (profile.id === id ? item : profile)));
+    const seq = (llmRequestSeq.current.get(id) ?? 0) + 1;
+    llmRequestSeq.current.set(id, seq);
+    const isLatest = () => llmRequestSeq.current.get(id) === seq;
 
-  async function handleSetMainProfile() {
-    if (!selectedId) return;
-    await handleRoleChange(selectedId, 'main');
-  }
-
-  async function handleResetSubProfiles() {
-    if (resettingSub) return;
-
-    setResettingSub(true);
-    setSelectedId((current) => {
-      const selected = profiles.find((profile) => profile.id === current);
-      return selected?.role === 'sub' ? null : current;
-    });
+    // Optimistic update; roll back on failure.
+    applyItem({ ...target, [field]: value } as ChromeProfile);
 
     try {
-      const result = await resetSubChromeProfiles();
-      toast.success(
-        result.deletedCount > 0
-          ? t('chrome.toast.resetDone', { count: result.deletedCount })
-          : t('chrome.toast.resetCreatedOnly'),
-      );
-      handleRefresh();
+      const { item } = await updateChromeProfileLlms(id, { [field]: value });
+      if (isLatest()) applyItem(item);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('chrome.toast.resetError'));
-    } finally {
-      setResettingSub(false);
+      if (isLatest()) applyItem(target);
+      toast.error(err instanceof Error ? err.message : t('chrome.toast.llmError'));
     }
   }
 
@@ -144,16 +118,11 @@ export function ChromeProfilesPage() {
               count={profiles.length}
               loading={loading}
               opening={opening}
-              settingMain={settingRole}
-              resetting={resettingSub}
               canOpen={selectedId !== null}
               canEdit={selectedId !== null}
-              canSetMain={selectedProfile !== null && selectedProfile.role !== 'main'}
               onAddProfile={() => setShowAddModal(true)}
               onEditProfile={() => setShowEditModal(true)}
               onOpenProfile={handleOpenProfile}
-              onSetMainProfile={handleSetMainProfile}
-              onResetSubProfiles={handleResetSubProfiles}
             />
           </div>
           {error ? <p className="mt-2 text-xs text-danger">{error}</p> : null}
@@ -165,9 +134,8 @@ export function ChromeProfilesPage() {
               profiles={profiles}
               selectedId={selectedId}
               loading={loading}
-              settingRole={settingRole}
               onSelect={setSelectedId}
-              onRoleChange={handleRoleChange}
+              onLlmChange={handleLlmChange}
             />
           </div>
         </div>

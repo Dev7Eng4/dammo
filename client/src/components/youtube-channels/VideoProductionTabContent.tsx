@@ -11,6 +11,7 @@ import { Button, useToast } from '../ui'
 import type {
   ProductionCharactersResponse,
   ProductionScenesResponse,
+  ProductionTranscriptCue,
   ProductionTranscriptResponse,
 } from '../../types/videoProductionScenes'
 import { CharactersPanel } from '../video-production/CharactersPanel'
@@ -29,6 +30,8 @@ interface VideoProductionTabContentProps {
   /** Shows the draft card for a new character. */
   addingCharacter?: boolean
   onAddingCharacterChange?: (adding: boolean) => void
+  /** Reports the loaded script cues (empty while loading or on error). */
+  onTranscriptCuesChange?: (cues: ProductionTranscriptCue[]) => void
 }
 
 function withCacheBust(url: string | null, version: number): string | null {
@@ -52,6 +55,7 @@ export function VideoProductionTabContent({
   reloadKey = 0,
   addingCharacter = false,
   onAddingCharacterChange,
+  onTranscriptCuesChange,
 }: VideoProductionTabContentProps) {
   const { t } = useTranslation('factory')
   const { toast } = useToast()
@@ -68,6 +72,12 @@ export function VideoProductionTabContent({
   const [charactersLoading, setCharactersLoading] = useState(true)
   const [charactersError, setCharactersError] = useState<string | null>(null)
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null)
+
+  const onTranscriptCuesChangeRef = useRef(onTranscriptCuesChange)
+  onTranscriptCuesChangeRef.current = onTranscriptCuesChange
+  useEffect(() => {
+    onTranscriptCuesChangeRef.current?.(transcript?.cues ?? [])
+  }, [transcript])
 
   useEffect(() => {
     mountedRef.current = true

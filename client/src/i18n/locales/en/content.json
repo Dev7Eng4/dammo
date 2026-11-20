@@ -88,7 +88,7 @@
       "referenceImageHint": "Flow / Meta for character reference image generation.",
       "sceneImageHint": "Flow / Meta for AI scene slide images.",
       "thumbHint": "Used for thumbnails and general/one_image.",
-      "savedVideoDefault": "Saved as default for video generation.",
+      "savedVideoDefault": "Google Flow (Veo) turns scene images into motion clips, in the \"Image → video\" step.",
       "step": "Step",
       "stepLabel": "Step {{n}}",
       "variables": "Variables",
@@ -97,7 +97,9 @@
       "valueFor": "Value for {{name}}",
       "running": "Running...",
       "run": "Run",
-      "imageAlt": "Preview of generated thumbnail"
+      "imageAlt": "Preview of generated thumbnail",
+      "providersMoved": "The playground runs with the default providers.",
+      "openSettings": "Change in Settings → AI tools"
     }
   },
   "visual": {
@@ -186,7 +188,13 @@
     "deleteOneBody": "Are you sure you want to delete file {{name}} in {{tab}}?",
     "deleteManyBody": "Are you sure you want to delete {{count}} selected files in {{tab}}?",
     "closePreview": "Close video preview",
+    "rename": "Rename",
+    "renameTitle": "Rename mascot",
+    "renameLabel": "New name",
+    "renameHint": "The file extension ({{ext}}) is kept.",
     "toast": {
+      "renamed": "Renamed to {{name}}",
+      "renameError": "Could not rename file",
       "added": "Added {{name}}",
       "uploadError": "Could not upload file",
       "deletedOne": "Deleted 1 file",
@@ -194,7 +202,9 @@
       "deleteError": "Could not delete file",
       "colorDone": "Processed {{color}}: {{name}}",
       "colorAlready": "{{name}} was already processed for {{color}}",
-      "colorError": "Could not process color"
+      "colorError": "Could not process color",
+      "watermarkRemoved": "Watermark removed: {{name}}",
+      "watermarkError": "Watermark removal failed"
     },
     "celebrities": {
       "count": "{{count}} celebrities",
@@ -290,7 +300,9 @@
         "success": "Moved {{name}}",
         "error": "Could not move video"
       }
-    }
+    },
+    "removeWatermark": "Remove watermark (Meta)",
+    "removingWatermark": "Removing watermark…"
   },
   "downloadTest": {
     "title": "Manual video",
@@ -307,7 +319,7 @@
     "size": "Size",
     "remake": {
       "title": "Remake script",
-      "hint": "Opens a sub Chrome profile and runs the \"Remake script\" prompts in ChatGPT/Gemini: an outline first, then each chapter in the same chat. Edit the prompts on the Prompts page.",
+      "hint": "Opens a Chrome profile with the text LLM ticked and runs the \"Remake script\" prompts in ChatGPT/Gemini/Claude: an outline first, then each chapter in the same chat. Edit the prompts on the Prompts page.",
       "promptSet": "Prompt set",
       "noPromptSet": "No remake prompt set for this language yet",
       "provider": "LLM",

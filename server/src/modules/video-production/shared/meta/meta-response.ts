@@ -9,6 +9,7 @@ import {
 import {
   isCelebrityWisdomNiche,
   isSeniorHealthNiche,
+  pickClusterFormatChoice,
   type CelebrityWisdomThumbnailSpec,
   type MetadataLlmOutput,
 } from './metadata.types.js';
@@ -107,10 +108,56 @@ function buildBaseMetadataOutput(parsed: Record<string, unknown>): MetadataLlmOu
   const imagePrompt = pickThumbnailImageGenerationPrompt(parsed);
   if (imagePrompt !== undefined) output.image_generation_prompt = imagePrompt;
 
-  const videoVisualPrompt = pickOptionalTrimmedString(parsed.video_visual_prompt);
+  // Models sometimes close the `thumbnail` object one brace too late, nesting video_visual_prompt inside it.
+  const nestedThumbnail =
+    parsed.thumbnail && typeof parsed.thumbnail === 'object' && !Array.isArray(parsed.thumbnail)
+      ? (parsed.thumbnail as Record<string, unknown>)
+      : undefined;
+  const videoVisualPrompt =
+    pickOptionalTrimmedString(parsed.video_visual_prompt) ??
+    pickOptionalTrimmedString(nestedThumbnail?.video_visual_prompt);
   if (videoVisualPrompt !== undefined) output.video_visual_prompt = videoVisualPrompt;
 
+  const clusterFormat = pickClusterFormatChoice(parsed.cluster_format);
+  if (clusterFormat) output.cluster_format = clusterFormat;
+
   return output;
+}
+
+/**
+ * Escape double quotes that sit inside a JSON string value: a quote only closes the string when the next
+ * non-space character can follow a string (`,` `}` `]` `:` or the end). Used only after JSON.parse failed.
+ */
+export function escapeStrayQuotes(jsonText: string): string {
+  let out = '';
+  let inString = false;
+  for (let i = 0; i < jsonText.length; i += 1) {
+    const char = jsonText[i];
+    if (!inString) {
+      if (char === '"') inString = true;
+      out += char;
+      continue;
+    }
+    if (char === '\\') {
+      out += char + (jsonText[i + 1] ?? '');
+      i += 1;
+      continue;
+    }
+    if (char === '"') {
+      let j = i + 1;
+      while (j < jsonText.length && /\s/.test(jsonText[j])) j += 1;
+      const next = jsonText[j];
+      if (next === undefined || next === ',' || next === '}' || next === ']' || next === ':') {
+        inString = false;
+        out += char;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    out += char;
+  }
+  return out;
 }
 
 export function parseMetadataResponse(
@@ -128,8 +175,13 @@ export function parseMetadataResponse(
   try {
     parsed = JSON.parse(jsonText);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'JSON.parse failed';
-    return { ok: false, reason: `invalid JSON (${message})`, snippet: truncateSnippet(jsonText) };
+    // Models often quote words inside a string value without escaping ("text '"怒った"' in white"): repair once.
+    try {
+      parsed = JSON.parse(escapeStrayQuotes(jsonText));
+    } catch {
+      const message = err instanceof Error ? err.message : 'JSON.parse failed';
+      return { ok: false, reason: `invalid JSON (${message})`, snippet: truncateSnippet(jsonText) };
+    }
   }
 
   if (!isRecord(parsed)) {

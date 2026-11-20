@@ -67,6 +67,23 @@ export interface CelebrityWisdomThumbnailSpec {
   image_generation_prompt?: string;
 }
 
+/** Cluster niche: the format the metadata LLM picked and whether the video fits the main or a border cluster. */
+export interface ClusterFormatChoice {
+  format: string;
+  cluster_role: 'main' | 'border' | 'off';
+  reason?: string;
+}
+
+export function pickClusterFormatChoice(value: unknown): ClusterFormatChoice | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const format = typeof record.format === 'string' ? record.format.trim().toUpperCase() : '';
+  if (!format) return undefined;
+  const role = record.cluster_role === 'border' || record.cluster_role === 'off' ? record.cluster_role : 'main';
+  const reason = typeof record.reason === 'string' && record.reason.trim() ? record.reason.trim() : undefined;
+  return { format, cluster_role: role, ...(reason ? { reason } : {}) };
+}
+
 export interface MetadataLlmOutput {
   detected_niche: string;
   metadata: {
@@ -85,6 +102,7 @@ export interface MetadataLlmOutput {
   image_generation_prompt?: string;
   /** Drama / niche meta: prompt for SI one_image background (no typography). */
   video_visual_prompt?: string;
+  cluster_format?: ClusterFormatChoice;
 }
 
 export interface MetadataPersistedOutput extends MetadataLlmOutput {
@@ -109,6 +127,7 @@ export interface VideoMetaOutput {
   thumbnail?: CelebrityWisdomThumbnailSpec;
   image_generation_prompt?: string;
   video_visual_prompt?: string;
+  cluster_format?: ClusterFormatChoice;
 }
 
 export function hasLegacyVisualMeta(
@@ -172,6 +191,8 @@ function pickWisdomMetaFields(record: Record<string, unknown>): Partial<VideoMet
   if (Array.isArray(record.alternative_titles)) {
     fields.alternative_titles = record.alternative_titles as string[];
   }
+  const clusterFormat = pickClusterFormatChoice(record.cluster_format);
+  if (clusterFormat) fields.cluster_format = clusterFormat;
   return fields;
 }
 
