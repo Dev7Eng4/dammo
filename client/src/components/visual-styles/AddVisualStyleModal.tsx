@@ -2,7 +2,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createVisualStyle } from '../../api/visualStyles';
-import { PROMPT_FORM_LANGUAGE_OPTIONS } from '../../constants/promptForm';
+import { promptFormLanguageOptions } from '../../constants/promptForm';
 import { Button, DropdownSelect, Input, Modal, Textarea } from '../ui';
 import type { VisualStyleFormValues } from '../../types/visualStyle';
 
@@ -89,7 +89,7 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
           </label>
           <Input
             id="style-niche"
-            placeholder="horror, comedy, slice-of-life..."
+            placeholder={t('visual.form.nichePlaceholder')}
             className="h-10 rounded-lg"
             {...register('niche', { required: t('visual.form.nicheRequired') })}
           />
@@ -109,7 +109,7 @@ export function AddVisualStyleModal({ open, onClose, onSuccess }: AddVisualStyle
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                options={promptFormLanguageOptions()}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
               />

@@ -99,8 +99,24 @@
       "run": "Run",
       "imageAlt": "Preview of generated thumbnail",
       "providersMoved": "The playground runs with the default providers.",
-      "openSettings": "Change in Settings → AI tools"
-    }
+      "openSettings": "Change in Settings → AI tools",
+      "profileShort": "profile {{id}}"
+    },
+    "option": {
+      "category": {
+        "thumbnail": "Thumbnail image",
+        "transcript": "Transcript",
+        "meta": "Meta",
+        "image": "Image",
+        "remake": "Script remake"
+      },
+      "outputType": {
+        "text": "Text",
+        "image": "Image",
+        "video": "Video"
+      }
+    },
+    "tokens": "{{count}} tokens"
   },
   "visual": {
     "page": {
@@ -133,7 +149,8 @@
       "nameRequired": "Please enter a name",
       "nicheRequired": "Please enter a theme",
       "ruleRequired": "Please enter rules",
-      "rulePlaceholder": "Describe the visual style rules..."
+      "rulePlaceholder": "Describe the visual style rules...",
+      "nichePlaceholder": "horror, comedy, slice-of-life..."
     },
     "addTitle": "Add visual style",
     "editTitle": "Edit visual style",

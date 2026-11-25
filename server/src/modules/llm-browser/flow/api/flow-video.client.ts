@@ -181,11 +181,29 @@ export function toFlowVideoFailureError(reason: string): AppError {
   return appErrorFromFlowErrorTileText(reason);
 }
 
+/** Below this an "mp4" is an error page or a stub, not a clip. */
+const MIN_FLOW_VIDEO_BYTES = 50_000;
+
+/**
+ * Downloads a Flow video (grid `<video>` src, `.../asb/<token>=mm,18,15`) with the browser's cookies.
+ * Written to a temp file and renamed, so `outputPath` only ever holds a complete video.
+ */
 export async function downloadFlowVideo(page: Page, videoUrl: string, outputPath: string): Promise<void> {
   const response = await page.request.get(videoUrl);
   if (!response.ok()) {
     throw new AppError(`Failed to download Flow video (${response.status()})`, 502, 'FLOW_VIDEO_DOWNLOAD_FAILED');
   }
+  const contentType = response.headers()['content-type'] ?? '';
+  const body = await response.body();
+  if (!contentType.startsWith('video/') || body.length < MIN_FLOW_VIDEO_BYTES) {
+    throw new AppError(
+      `Flow video download is not a video (${contentType || 'no content-type'}, ${body.length} bytes)`,
+      502,
+      'FLOW_VIDEO_DOWNLOAD_FAILED',
+    );
+  }
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, await response.body());
+  const tempPath = `${outputPath}.part`;
+  await fs.writeFile(tempPath, body);
+  await fs.rename(tempPath, outputPath);
 }

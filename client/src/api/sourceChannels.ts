@@ -14,6 +14,7 @@ import type {
   SourceChannelUsage,
 } from '../types/sourceChannel';
 import type { YoutubeVideoCommentsResponse } from '../types/youtubeChannel';
+import i18n from '../i18n';
 
 export function fetchSourceChannels(
   platform: SourcePlatformFilter = 'all',
@@ -107,7 +108,7 @@ export async function deleteSourceChannel(id: string) {
     const error =
       body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
         ? (body as { error: string }).error
-        : `Request failed: ${res.status}`;
+        : i18n.t('common:errors.requestFailed', { status: res.status });
     throw new Error(error);
   }
 }

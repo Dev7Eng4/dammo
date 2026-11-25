@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bộ skill tâm lý Nhật</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Bricolage+Grotesque:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: reference sheet. Reading matrix first, then one ruled row per skill in run order. */
+:root{
+  --bg:#f3f5fa; --surface:#ffffff; --ink:#16203a; --muted:#526080; --line:#d3daea; --accent:#2a4a9c; --accent-soft:#e3e9f8;
+  --ok:#1f6f4f; --todo:#8a5a00; --todo-soft:#fbf0d6;
+  --display:"Bricolage Grotesque","Be Vietnam Pro","Segoe UI",sans-serif;
+  --body:"Be Vietnam Pro","Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1521; --surface:#161e2d; --ink:#e5eaf5; --muted:#9dabc7; --line:#2b374e; --accent:#93b3ff; --accent-soft:#1f2c4a;
+  --ok:#6fcfa3; --todo:#eebb66; --todo-soft:#33290f; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1521; --surface:#161e2d; --ink:#e5eaf5; --muted:#9dabc7; --line:#2b374e; --accent:#93b3ff; --accent-soft:#1f2c4a;
+  --ok:#6fcfa3; --todo:#eebb66; --todo-soft:#33290f; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body)}
+main{max-width:1080px;margin:0 auto;padding:40px 20px 72px;display:grid;gap:56px}
+main>*{min-width:0}
+h1,h2,h3{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,42px);font-weight:700}
+h2{font-size:25px;font-weight:700}
+h3{font-size:19px;font-weight:600}
+p{margin:0;max-width:66ch}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.9em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header,section{display:grid;gap:16px}
+header code,td code,.nw{white-space:nowrap}
+.lead{font-size:18px}
+.muted{color:var(--muted)}
+.start{background:var(--todo-soft);border-left:4px solid var(--todo);padding:14px 18px;display:grid;gap:6px;max-width:760px}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child>*{border-bottom:0}
+thead th{font-weight:600;color:var(--muted)}
+.matrix{font-variant-numeric:tabular-nums}
+.matrix th,.matrix td{padding:0;height:34px;vertical-align:middle}
+.matrix thead th:not(.rowh):not(.saveh),.matrix td:not(.save){width:36px;min-width:32px;text-align:center;border-left:1px solid var(--line)}
+.matrix .rowh{padding:0 12px;white-space:nowrap;font-weight:500;position:sticky;left:0;background:var(--surface)}
+.matrix .rowh a{color:inherit;text-decoration:none}
+.matrix .rowh a:hover{color:var(--accent);text-decoration:underline}
+.mn{display:inline-block;width:26px;color:var(--muted)}
+.matrix .saveh,.matrix .save{padding:0 12px;border-left:1px solid var(--line);white-space:nowrap;color:var(--muted)}
+.matrix .on span{display:block;width:14px;height:14px;margin:auto;background:var(--accent)}
+.matrix .self{background:var(--line)}
+.matrix .later{background:var(--bg)}
+.matrix thead th.has{color:var(--ink);box-shadow:inset 0 -3px 0 var(--ok)}
+.group{display:grid;gap:4px}
+.list{border-top:2px solid var(--ink)}
+.skill{display:grid;grid-template-columns:44px minmax(0,5fr) minmax(0,6fr);gap:8px 24px;padding:22px 0;border-bottom:1px solid var(--line);scroll-margin-top:12px}
+.skill:target{background:var(--accent-soft);box-shadow:0 0 0 10px var(--accent-soft)}
+.num{font:600 20px/1.2 var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+.what,.how{display:grid;gap:10px;align-content:start;min-width:0}
+.slash{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.cmds{display:flex;flex-wrap:wrap;gap:8px}
+.cmd{font:inherit;font-size:14.5px;text-align:left;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:5px 10px;cursor:pointer;border-radius:4px;max-width:100%;overflow-wrap:anywhere}
+.cmd:hover{border-color:var(--accent);background:var(--accent-soft)}
+.cmd.done{border-color:var(--ok);color:var(--ok)}
+dl{margin:0;display:grid;gap:4px;font-size:14.5px}
+dl>div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px}
+dt{color:var(--muted)}
+dd{margin:0}
+.state{font-size:14px;display:flex;gap:8px;align-items:baseline}
+.state::before{content:"";flex:none;width:9px;height:9px;border:2px solid currentColor;border-radius:50%}
+.state.ok{color:var(--ok)} .state.ok::before{background:currentColor}
+.state.todo{color:var(--todo)} .state.plain{color:var(--muted)}
+ul{margin:0;padding-left:20px;display:grid;gap:8px;max-width:72ch}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.two>div{display:grid;gap:12px;align-content:start}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media (max-width:760px){
+  .skill{grid-template-columns:34px minmax(0,1fr)} .how{grid-column:2}
+  .two{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Bộ skill tâm lý Nhật</h1>
+    <p class="lead">14 skill Claude Code cho mạng kênh YouTube tâm lý học tiếng Nhật trong dammo. 13 skill làm việc của 13 bộ não và ghi vào cùng bộ nhớ với chúng: hai não Tiêu đề và Bìa dùng chung một skill, não Kịch bản có hai skill. Một skill chạy độc lập.</p>
+    <p>Gõ một câu lệnh ngắn như <code>competitors K3</code>, hoặc gọi thẳng bằng tên, ví dụ <code>/jp-psy-voice</code>. Với các từ chung như “voice”, “images”, gọi bằng tên sẽ chắc hơn.</p>
+    <div class="start">
+      <strong>Nên bắt đầu từ skill 2, Đối thủ</strong>
+      <p>Ngày 22/11/2026, chỉ não Săn xu hướng có dữ liệu: 40 video, 12 chủ đề, 12 từ khoá. 12 não còn lại đang trống, nên chạy theo thứ tự để skill sau có thứ để đọc.</p>
+    </div>
+  </header>
+
+  <section aria-labelledby="chain">
+    <h2 id="chain">Skill nào đọc của skill nào</h2>
+    <p>Xếp theo thứ tự chạy, mỗi skill chỉ đọc bộ nhớ của các skill đứng trước nó. Ô xanh ở hàng 6, cột 4 nghĩa là Kịch bản theo cụm đọc Ý tưởng video. Bấm tên để tới phần mô tả.</p>
+    <div class="scroll" tabindex="0" role="region" aria-label="Bảng skill đọc bộ nhớ của nhau">
+        <table class="matrix">
+          <thead><tr><th scope="col" class="rowh">Skill</th><th scope="col" title="Săn xu hướng" class="has">1</th><th scope="col" title="Đối thủ">2</th><th scope="col" title="Tiếng nói khán giả">3</th><th scope="col" title="Ý tưởng video">4</th><th scope="col" title="Tối ưu CTR: title + bìa">5</th><th scope="col" title="Kịch bản theo cụm">6</th><th scope="col" title="Giọng đọc">7</th><th scope="col" title="Ảnh / clip">8</th><th scope="col" title="Dựng video">9</th><th scope="col" title="Đăng video">10</th><th scope="col" title="Chỉ số kênh">11</th><th scope="col" title="Tăng trưởng">12</th><th scope="col" class="saveh">Lưu ra</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-trends"><span class="mn">1</span>Săn xu hướng</a></th><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">video, chủ đề, từ khoá</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-competitors"><span class="mn">2</span>Đối thủ</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">kênh, video, công thức</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-audience"><span class="mn">3</span>Tiếng nói khán giả</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">insight, từ khoá</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-ideas"><span class="mn">4</span>Ý tưởng video</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td class="on"><span role="img" aria-label="đọc Tiếng nói khán giả"></span></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">ý tưởng</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-ctr"><span class="mn">5</span>Tối ưu CTR: title + bìa</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td class="on"><span role="img" aria-label="đọc Tiếng nói khán giả"></span></td><td class="on"><span role="img" aria-label="đọc Ý tưởng video"></span></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">công thức, tiêu đề kèm bìa, từ khoá</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-script-niche"><span class="mn">6</span>Kịch bản theo cụm</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td class="on"><span role="img" aria-label="đọc Tiếng nói khán giả"></span></td><td class="on"><span role="img" aria-label="đọc Ý tưởng video"></span></td><td class="on"><span role="img" aria-label="đọc Tối ưu CTR: title + bìa"></span></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">brief kèm kịch bản</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-voice"><span class="mn">7</span>Giọng đọc</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td></td><td class="on"><span role="img" aria-label="đọc Tiếng nói khán giả"></span></td><td></td><td></td><td></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">cấu hình đề xuất, insight</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-images"><span class="mn">8</span>Ảnh / clip</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td></td><td></td><td></td><td class="on"><span role="img" aria-label="đọc Kịch bản theo cụm"></span></td><td></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">công thức, cấu hình đề xuất</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-editing"><span class="mn">9</span>Dựng video</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td></td><td></td><td></td><td></td><td class="on"><span role="img" aria-label="đọc Giọng đọc"></span></td><td class="on"><span role="img" aria-label="đọc Ảnh / clip"></span></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="later"></td><td class="save">công thức, cấu hình đề xuất</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-publish"><span class="mn">10</span>Đăng video</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td></td><td></td><td class="on"><span role="img" aria-label="đọc Ý tưởng video"></span></td><td class="on"><span role="img" aria-label="đọc Tối ưu CTR: title + bìa"></span></td><td></td><td></td><td></td><td></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="later"></td><td class="save">lịch, công thức</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-studio"><span class="mn">11</span>Chỉ số kênh</a></th><td class="on"><span role="img" aria-label="đọc Săn xu hướng"></span></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td></td><td class="on"><span role="img" aria-label="đọc Ý tưởng video"></span></td><td class="on"><span role="img" aria-label="đọc Tối ưu CTR: title + bìa"></span></td><td></td><td></td><td></td><td></td><td></td><td class="self" aria-label="chính nó"></td><td class="later"></td><td class="save">chỉ số, video, insight</td></tr>
+            <tr><th scope="row" class="rowh"><a href="#jp-psy-growth"><span class="mn">12</span>Tăng trưởng</a></th><td></td><td class="on"><span role="img" aria-label="đọc Đối thủ"></span></td><td class="on"><span role="img" aria-label="đọc Tiếng nói khán giả"></span></td><td class="on"><span role="img" aria-label="đọc Ý tưởng video"></span></td><td></td><td class="on"><span role="img" aria-label="đọc Kịch bản theo cụm"></span></td><td></td><td></td><td></td><td class="on"><span role="img" aria-label="đọc Đăng video"></span></td><td class="on"><span role="img" aria-label="đọc Chỉ số kênh"></span></td><td class="self" aria-label="chính nó"></td><td class="save">việc cần làm</td></tr>
+          </tbody>
+        </table>
+    </div>
+    <p class="muted">Cột 1 gạch chân xanh lá vì đang có dữ liệu. Ô xám là chính nó; mỗi skill cũng đọc lại bộ nhớ của mình để dùng tiếp mã cũ.</p>
+  </section>
+
+  <section aria-labelledby="g0">
+    <div class="group"><h2 id="g0">Tìm dữ liệu và chọn chủ đề</h2><p class="muted">Chạy trước. Mọi skill phía sau dựa vào đây.</p></div>
+    <div class="list">
+      <article class="skill" id="jp-psy-trends">
+        <div class="num" aria-hidden="true">1</div>
+        <div class="what">
+          <h3>Săn xu hướng</h3>
+          <p class="slash"><code>/jp-psy-trends</code></p>
+          <p>Tìm video đang nổ và chủ đề đang lên trên YouTube Nhật, gán mỗi video vào một cụm K1–K11.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="trends"><code>trends</code></button><button type="button" class="cmd" data-copy="trends K3"><code>trends K3</code></button><button type="button" class="cmd" data-copy="trends today"><code>trends today</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>YouTube và web</dd></div>
+            <div><dt>Lưu</dt><dd>video, chủ đề, từ khoá</dd></div>
+            <div><dt>Nhận được</dt><dd>Danh sách 20–40 video hiện ở màn Radar. Báo cáo ở docs/trends/.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Chỉ lưu video đã thật sự lấy về qua lệnh tìm.</dd></div>
+          </dl>
+          <p class="state ok">Đang dùng, có báo cáo 18/11 và 21/11</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-competitors">
+        <div class="num" aria-hidden="true">2</div>
+        <div class="what">
+          <h3>Đối thủ</h3>
+          <p class="slash"><code>/jp-psy-competitors</code></p>
+          <p>Tìm video vượt khoảng 3 lần median view/giờ của chính kênh đó, kênh đang tăng tốc và công thức họ lặp lại.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="competitors"><code>competitors</code></button><button type="button" class="cmd" data-copy="competitors K3"><code>competitors K3</code></button><button type="button" class="cmd" data-copy="competitors UC…"><code>competitors UC…</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng</dd></div>
+            <div><dt>Lưu</dt><dd>kênh, video, công thức</dd></div>
+            <div><dt>Nhận được</dt><dd>Soi 6–12 kênh mỗi lượt.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Kênh có dưới 5 video mới thì hệ số chưa đáng tin.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-audience">
+        <div class="num" aria-hidden="true">3</div>
+        <div class="what">
+          <h3>Tiếng nói khán giả</h3>
+          <p class="slash"><code>/jp-psy-audience</code></p>
+          <p>Đọc bình luận dưới 6–10 video nóng để lấy nỗi đau, câu hỏi và đúng cách nói của người xem 50–70 tuổi.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="audience"><code>audience</code></button><button type="button" class="cmd" data-copy="audience K8"><code>audience K8</code></button><button type="button" class="cmd" data-copy="comment &lt;videoId&gt;"><code>comment &lt;videoId&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ</dd></div>
+            <div><dt>Lưu</dt><dd>insight, từ khoá</dd></div>
+            <div><dt>Nhận được</dt><dd>8–15 insight, mỗi cái kèm một câu thật bằng tiếng Nhật.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Trích dẫn ngắn, không ghi tên người bình luận.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-ideas">
+        <div class="num" aria-hidden="true">4</div>
+        <div class="what">
+          <h3>Ý tưởng video</h3>
+          <p class="slash"><code>/jp-psy-ideas</code></p>
+          <p>Gộp dữ liệu của ba não trên thành ý tưởng cho từng kênh: tiêu đề tạm, góc khác biệt, lý do làm lúc này, mức bão hoà.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="ideas"><code>ideas</code></button><button type="button" class="cmd" data-copy="ideas K5"><code>ideas K5</code></button><button type="button" class="cmd" data-copy="ideas &lt;tên kênh&gt;"><code>ideas &lt;tên kênh&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ, 3 Tiếng nói khán giả</dd></div>
+            <div><dt>Lưu</dt><dd>ý tưởng</dd></div>
+            <div><dt>Nhận được</dt><dd>8–15 ý tưởng đã kiểm tra bão hoà trong tháng.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Cần não 1–3 có dữ liệu thì ý tưởng mới có bằng chứng.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+    </div>
+  </section>
+  <section aria-labelledby="g1">
+    <div class="group"><h2 id="g1">Đóng gói và sản xuất</h2><p class="muted">Từ ý tưởng đến cặp title và bìa, kịch bản, giọng, hình và cách dựng.</p></div>
+    <div class="list">
+      <article class="skill" id="jp-psy-ctr">
+        <div class="num" aria-hidden="true">5</div>
+        <div class="what">
+          <h3>Tối ưu CTR: title + bìa</h3>
+          <p class="slash"><code>/jp-psy-ctr</code></p>
+          <p>Đọc transcript từng video, xác định cụm, chấm cặp title và bìa thang 10. Dưới 8 thì viết title mới, vẽ bìa mới, thay vào video và ghi trạng thái để lần sau bỏ qua.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="ctr"><code>ctr</code></button><button type="button" class="cmd" data-copy="ctr &lt;kênh&gt;"><code>ctr &lt;kênh&gt;</code></button><button type="button" class="cmd" data-copy="ctr &lt;video&gt;"><code>ctr &lt;video&gt;</code></button><button type="button" class="cmd" data-copy="ctr restore &lt;video&gt;"><code>ctr restore &lt;video&gt;</code></button><button type="button" class="cmd" data-copy="ctr research K1"><code>ctr research K1</code></button><button type="button" class="cmd" data-copy="ctr idea &lt;key&gt;"><code>ctr idea &lt;key&gt;</code></button><button type="button" class="cmd" data-copy="ctr log &lt;video&gt; &lt;CTR%&gt;"><code>ctr log &lt;video&gt; &lt;CTR%&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ, 3 Tiếng nói khán giả, 4 Ý tưởng video</dd></div>
+            <div><dt>Lưu</dt><dd>công thức, tiêu đề kèm bìa, từ khoá</dd></div>
+            <div><dt>Nhận được</dt><dd>Không kèm gì: mọi video Đã tạo của mọi kênh. Bảng điểm cũ, điểm mới và bản sao lưu của từng video.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Vẽ bìa mở trình duyệt Flow. Điểm là đánh giá, không phải CTR đo được.</dd></div>
+          </dl>
+          <p class="state ok">Đã chạy thật trên 1 video ngày 22/11: 5,5 → 8,6 điểm</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-script-niche">
+        <div class="num" aria-hidden="true">6</div>
+        <div class="what">
+          <h3>Kịch bản theo cụm</h3>
+          <p class="slash"><code>/jp-psy-script-niche</code></p>
+          <p>Nhận mã cụm K1–K11, nghiên cứu chủ đề đang lên, chấm 6–10 ứng viên, tự chọn một rồi viết kịch bản tiếng Nhật 12–30 phút.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="script K3"><code>script K3</code></button><button type="button" class="cmd" data-copy="kịch bản K8"><code>kịch bản K8</code></button><button type="button" class="cmd" data-copy="script K5 chỉ chọn chủ đề"><code>script K5 chỉ chọn chủ đề</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ, 3 Tiếng nói khán giả, 4 Ý tưởng video, 5 Tối ưu CTR: title + bìa</dd></div>
+            <div><dt>Lưu</dt><dd>brief kèm kịch bản</dd></div>
+            <div><dt>Nhận được</dt><dd>Kịch bản dán được vào app, bảng chấm chủ đề, nguồn nghiên cứu có URL. Ở docs/scripts/.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Nghiên cứu chưa xác minh được thì không đưa vào. Cụm không có chủ đề mạnh thì hỏi lại.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết. Lấy nguồn và kiểm tra kịch bản đã thử, chưa viết trọn kịch bản nào</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-voice">
+        <div class="num" aria-hidden="true">7</div>
+        <div class="what">
+          <h3>Giọng đọc</h3>
+          <p class="slash"><code>/jp-psy-voice</code></p>
+          <p>Chọn giọng VOICEVOX, tốc độ và số ký tự kịch bản cho từng kênh, dựa trên ký tự/phút đo được.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="voice"><code>voice</code></button><button type="button" class="cmd" data-copy="voice &lt;tên kênh&gt;"><code>voice &lt;tên kênh&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 3 Tiếng nói khán giả</dd></div>
+            <div><dt>Lưu</dt><dd>cấu hình đề xuất, insight</dd></div>
+            <div><dt>Nhận được</dt><dd>Một đề xuất cho mỗi kênh.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Không nghe được giọng. Chỉ xét số đo, tên giọng và bình luận.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-images">
+        <div class="num" aria-hidden="true">8</div>
+        <div class="what">
+          <h3>Ảnh / clip</h3>
+          <p class="slash"><code>/jp-psy-images</code></p>
+          <p>Xem khung hình bên trong 10–15 video thắng, rồi đề xuất phong cách hình và prompt cảnh cho từng kênh.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="images"><code>images</code></button><button type="button" class="cmd" data-copy="images K2"><code>images K2</code></button><button type="button" class="cmd" data-copy="images &lt;tên kênh&gt;"><code>images &lt;tên kênh&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ, 6 Kịch bản theo cụm</dd></div>
+            <div><dt>Lưu</dt><dd>công thức, cấu hình đề xuất</dd></div>
+            <div><dt>Nhận được</dt><dd>Mỗi kênh một hướng hình và 3 prompt cảnh tiếng Anh.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Mỗi video chỉ thấy 3 khung hình. Không tạo ảnh.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-editing">
+        <div class="num" aria-hidden="true">9</div>
+        <div class="what">
+          <h3>Dựng video</h3>
+          <p class="slash"><code>/jp-psy-editing</code></p>
+          <p>So độ dài, nhịp cảnh, phụ đề và lớp phủ của video thắng với cấu hình dựng của mình.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="editing"><code>editing</code></button><button type="button" class="cmd" data-copy="editing &lt;tên kênh&gt;"><code>editing &lt;tên kênh&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ, 7 Giọng đọc, 8 Ảnh / clip</dd></div>
+            <div><dt>Lưu</dt><dd>công thức, cấu hình đề xuất</dd></div>
+            <div><dt>Nhận được</dt><dd>Độ dài mục tiêu, giây mỗi cảnh, kiểu phụ đề cho từng kênh.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Không đổi cấu hình kênh, không render.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+    </div>
+  </section>
+  <section aria-labelledby="g2">
+    <div class="group"><h2 id="g2">Đăng, đo và lớn lên</h2><p class="muted">Đóng vòng: kết quả thật của kênh quay lại thành việc cho lượt sau.</p></div>
+    <div class="list">
+      <article class="skill" id="jp-psy-publish">
+        <div class="num" aria-hidden="true">10</div>
+        <div class="what">
+          <h3>Đăng video</h3>
+          <p class="slash"><code>/jp-psy-publish</code></p>
+          <p>Lập lịch đăng 7 ngày theo giờ Nhật, đẩy video trúng chủ đề nóng lên trước, báo kênh sắp hết video.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="publish"><code>publish</code></button><button type="button" class="cmd" data-copy="publish &lt;tên kênh&gt;"><code>publish &lt;tên kênh&gt;</code></button><button type="button" class="cmd" data-copy="lịch tuần này"><code>lịch tuần này</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 4 Ý tưởng video, 5 Tối ưu CTR: title + bìa</dd></div>
+            <div><dt>Lưu</dt><dd>lịch, công thức</dd></div>
+            <div><dt>Nhận được</dt><dd>Bảng lịch và danh sách thứ còn thiếu của từng video.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Chỉ lập lịch, không upload.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-studio">
+        <div class="num" aria-hidden="true">11</div>
+        <div class="what">
+          <h3>Chỉ số kênh</h3>
+          <p class="slash"><code>/jp-psy-studio</code></p>
+          <p>Nhận email, tìm kênh và profile GPM, mở YouTube Studio, vào phân tích từng video mới đăng để đọc hiển thị, CTR, giữ chân, nguồn xem, rồi giải thích video thắng, thua.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="studio &lt;email&gt;"><code>studio &lt;email&gt;</code></button><button type="button" class="cmd" data-copy="studio &lt;email&gt; 5"><code>studio &lt;email&gt; 5</code></button><button type="button" class="cmd" data-copy="studio history &lt;email&gt;"><code>studio history &lt;email&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>1 Săn xu hướng, 2 Đối thủ, 4 Ý tưởng video, 5 Tối ưu CTR: title + bìa</dd></div>
+            <div><dt>Lưu</dt><dd>chỉ số, video, insight</dd></div>
+            <div><dt>Nhận được</dt><dd>Bảng số thật của 10 video gần nhất, nguyên nhân kèm bằng chứng, việc nên làm. CTR tự vào sổ của Tối ưu CTR.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Chỉ đọc, không đổi gì trong Studio. Cần GPM đang chạy và profile đã đăng nhập.</dd></div>
+          </dl>
+          <p class="state todo">Đã thử với trang Studio giả lập. Chưa chạy với kênh thật vì GPM đang tắt</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-growth">
+        <div class="num" aria-hidden="true">12</div>
+        <div class="what">
+          <h3>Tăng trưởng</h3>
+          <p class="slash"><code>/jp-psy-growth</code></p>
+          <p>Gộp tất cả thành 6–12 việc cho 2 tuần tới: nhân đôi thứ đang thắng, kéo chéo kênh, lấp khoảng trống ngách.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="growth"><code>growth</code></button><button type="button" class="cmd" data-copy="growth &lt;tên kênh&gt;"><code>growth &lt;tên kênh&gt;</code></button></div>
+          <dl>
+            <div><dt>Đọc</dt><dd>2 Đối thủ, 3 Tiếng nói khán giả, 4 Ý tưởng video, 6 Kịch bản theo cụm, 10 Đăng video, 11 Chỉ số kênh</dd></div>
+            <div><dt>Lưu</dt><dd>việc cần làm</dd></div>
+            <div><dt>Nhận được</dt><dd>Danh sách việc kèm công sức và con số cần theo dõi.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Không đề xuất gì trái chính sách YouTube.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết, chưa chạy trọn lượt nào</p>
+        </div>
+      </article>
+    </div>
+  </section>
+  <section aria-labelledby="g3">
+    <div class="group"><h2 id="g3">Đứng ngoài chuỗi</h2><p class="muted">Gọi bất cứ lúc nào, không cần chạy skill nào trước.</p></div>
+    <div class="list">
+      <article class="skill" id="jp-psy-cluster">
+        <div class="num" aria-hidden="true">A</div>
+        <div class="what">
+          <h3>Nội dung theo cụm K1–K11</h3>
+          <p class="slash"><code>/jp-psy-cluster</code></p>
+          <p>Tạo nội dung cho một cụm: prompt mascot, bộ nhận diện kênh, 10 chủ đề video, hoặc cả transcript tiếng Nhật 12–30 phút.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="K1 mascot"><code>K1 mascot</code></button><button type="button" class="cmd" data-copy="K5 channel"><code>K5 channel</code></button><button type="button" class="cmd" data-copy="K8 videos"><code>K8 videos</code></button><button type="button" class="cmd" data-copy="K2 video &lt;title&gt; &lt;summary&gt;"><code>K2 video &lt;title&gt; &lt;summary&gt;</code></button></div>
+          <dl>
+            
+            
+            <div><dt>Nhận được</dt><dd>Trả lời ngay trong chat.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Không đọc bộ nhớ của các bộ não.</dd></div>
+          </dl>
+          <p class="state plain">Có từ trước, lần này không kiểm tra lại</p>
+        </div>
+      </article>
+      <article class="skill" id="jp-psy-script-remake">
+        <div class="num" aria-hidden="true">B</div>
+        <div class="what">
+          <h3>Remake từ link video</h3>
+          <p class="slash"><code>/jp-psy-script-remake</code></p>
+          <p>Đọc hết một video YouTube, tìm vì sao nó chạy, nghiên cứu thêm xu hướng, bình luận và nghiên cứu thật, rồi viết kịch bản mới khác góc.</p>
+        </div>
+        <div class="how">
+          <div class="cmds"><button type="button" class="cmd" data-copy="remake &lt;link&gt;"><code>remake &lt;link&gt;</code></button><button type="button" class="cmd" data-copy="remake &lt;link&gt; K5"><code>remake &lt;link&gt; K5</code></button></div>
+          <dl>
+            
+            <div><dt>Lưu</dt><dd>brief kèm kịch bản</dd></div>
+            <div><dt>Nhận được</dt><dd>Kịch bản tiếng Nhật hoàn chỉnh và file nghiên cứu. Ở docs/scripts/.</dd></div>
+            <div><dt>Giới hạn</dt><dd>Video không có transcript thì dừng. Không lấy câu chữ, ví dụ, thứ tự ý hay title của nguồn.</dd></div>
+          </dl>
+          <p class="state todo">Mới viết. Lấy nguồn và kiểm tra kịch bản đã thử, chưa viết trọn kịch bản nào</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="pair">
+    <h2 id="pair">Title và bìa: cùng một móc, khác thông tin</h2>
+    <p>Bìa làm người xem khựng lại. Title nói chuyện này dành cho ai và xem xong được gì. Kịch bản phải trả lời được cả hai. Ví dụ từ một video K1:</p>
+    <div class="scroll" tabindex="0" role="region" aria-label="So cặp hiện tại và cặp đề xuất">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Bìa</th><th scope="col">Title</th><th scope="col">Móc</th></tr></thead>
+        <tbody lang="ja">
+          <tr><th scope="row" lang="vi">Hiện tại</th><td class="nw">TVより「体験」<br>※後悔しない6選</td><td>【心理学】「いつか」を消す時間とお金の使い方6選｜後悔しない老後の習慣</td><td lang="vi">Hai móc khác nhau. Cặp 27/40, cả video 6,8/10.</td></tr>
+          <tr><th scope="row" lang="vi">Đề xuất</th><td class="nw">妻は10年待った<br>※いつか、は来ない</td><td>【心理学】「退職してから」が口癖の人は、今日「これ」を手帳に書きなさい｜60代から後悔を減らす6つのコツ</td><td lang="vi">Một móc: mười năm nói với vợ “về hưu rồi đi”. Chương 1 và 8 trả lời.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="mix">
+    <h2 id="mix">Những cặp dễ nhầm</h2>
+    <div class="scroll" tabindex="0" role="region" aria-label="Bảng các cặp skill dễ nhầm">
+      <table>
+        <thead><tr><th scope="col">Bạn đang cần</th><th scope="col">Dùng</th><th scope="col">Thay vì</th></tr></thead>
+        <tbody>
+          <tr><td>Làm tốt title và bìa của video đã tạo</td><td><code>ctr</code>, <code>ctr &lt;kênh&gt;</code> hoặc <code>ctr &lt;video&gt;</code></td><td><code>ctr idea</code></td></tr>
+          <tr><td>Title và bìa cho ý tưởng chưa có video</td><td><code>ctr idea &lt;key&gt;</code></td><td><code>ctr &lt;video&gt;</code></td></tr>
+          <tr><td>Biết title và bìa kiểu nào đang thắng</td><td><code>ctr research</code></td><td>Săn xu hướng</td></tr>
+          <tr><td>Ý tưởng dựa trên dữ liệu thật tuần này</td><td>Ý tưởng video</td><td><code>K8 videos</code></td></tr>
+          <tr><td>10 chủ đề nhanh cho một cụm, chưa cần dữ liệu</td><td><code>K8 videos</code></td><td>Ý tưởng video</td></tr>
+          <tr><td>Kịch bản mới từ một video đang hot</td><td><code>remake &lt;link&gt;</code></td><td><code>script K3</code></td></tr>
+          <tr><td>Để skill tự tìm chủ đề trong cụm rồi viết</td><td><code>script K3</code></td><td><code>K3 videos</code></td></tr>
+          <tr><td>Đã có title, chỉ cần viết lời dẫn</td><td><code>K3 video &lt;title&gt; &lt;summary&gt;</code></td><td><code>script K3</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="rules">
+    <h2 id="rules">Cách các skill bộ não làm việc</h2>
+    <div class="two">
+      <div>
+        <ul>
+          <li>Skill lấy hướng dẫn trực tiếp từ prompt của bộ não trong app, nên sửa prompt của não là skill đổi theo.</li>
+          <li>Kết quả hiện trên bản đồ <code>/brains</code>, và lượt sau dùng lại mã cũ để cộng dồn thay vì tạo bản mới.</li>
+          <li>Chỉ lưu được video và kênh đã thật sự lấy về trong 72 giờ. Video bịa bị loại khi lưu.</li>
+          <li>Không cần API key riêng: Claude Code đóng vai bộ não.</li>
+        </ul>
+      </div>
+      <div>
+        <ul>
+          <li>Skill 7 đến 12 chỉ đọc rồi đề xuất. Không render, không đổi cấu hình kênh, không upload, không sửa gì trong Studio.</li>
+          <li>Mỗi lượt viết một báo cáo vào <code>docs/brains/&lt;não&gt;/</code>, riêng Săn xu hướng vào <code>docs/trends/</code>.</li>
+          <li>Thiếu dữ liệu thì skill nói là thiếu, và lưu ít mục hơn.</li>
+        </ul>
+      </div>
+    </div>
+    <h3>Lệnh phía dưới, chạy trong thư mục server</h3>
+    <div class="scroll" tabindex="0" role="region" aria-label="Bảng lệnh">
+      <table>
+        <thead><tr><th scope="col">Lệnh</th><th scope="col">Để làm gì</th></tr></thead>
+        <tbody>
+          <tr><td><button type="button" class="cmd" data-copy="npm run -s brain -- list"><code>npm run -s brain -- list</code></button></td><td>Liệt kê bộ não và skill tương ứng</td></tr>
+          <tr><td><button type="button" class="cmd" data-copy="npm run -s brain -- prompt voice"><code>npm run -s brain -- prompt voice</code></button></td><td>Xem hướng dẫn gốc, công cụ và loại dữ liệu được lưu của một não</td></tr>
+          <tr><td><button type="button" class="cmd" data-copy="npm run -s brain -- productions --limit 15"><code>npm run -s brain -- productions --limit 15</code></button></td><td>Xem video remake và reup của kênh mình: title, giọng, thời lượng, số cảnh</td></tr>
+          <tr><td><button type="button" class="cmd" data-copy="npm run -s script -- list"><code>npm run -s script -- list</code></button></td><td>Xem kịch bản đã viết, để không làm trùng chủ đề</td></tr>
+          <tr><td><button type="button" class="cmd" data-copy="npm run -s ctr -- scan"><code>npm run -s ctr -- scan</code></button></td><td>Xem video nào cần chấm, chờ làm mới, đã xong hoặc không làm được</td></tr>
+          <tr><td><button type="button" class="cmd" data-copy="npm run -s trends -- clusters"><code>npm run -s trends -- clusters</code></button></td><td>Xem luật xếp video vào cụm K1–K11</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="gaps">
+    <h2 id="gaps">Đã kiểm tra đến đâu</h2>
+    <div class="two">
+      <div>
+        <h3>Đã chạy thử</h3>
+        <ul>
+          <li>Đọc bộ nhớ, tải khung hình video, hàng chờ đăng, danh sách giọng VOICEVOX, phong cách hình, danh sách kênh.</li>
+          <li>Lưu vào một bản sao của bộ nhớ: nhận mục hợp lệ, loại video bịa và loại dữ liệu sai.</li>
+          <li>Chỉ số kênh: đọc trang Studio giả lập, dừng khi gặp trang đăng nhập hay captcha, loại số không có trên trang.</li>
+          <li>Kịch bản: lấy transcript từ link thật; bộ kiểm cho qua kịch bản thật (giống nguồn 0,1%) và chặn bản chép (98,5%).</li>
+          <li>Tối ưu CTR: quét 65 video Đã tạo ở 5 kênh, chạy thật 1 video. Trên bản sao dữ liệu: chấm, từ chối áp dụng khi điểm mới dưới 8, thay title và bìa, bỏ qua video đã xong, khôi phục đúng bản gốc.</li>
+          <li>Săn xu hướng sau khi tách mã dùng chung: tìm kiếm, gợi ý và luật cụm đều chạy.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Còn thiếu</h3>
+        <ul>
+          <li>8 skill bộ não còn lại chưa chạy trọn lượt nào. Lệnh lưu bộ nhớ chưa thử qua server đang chạy.</li>
+          <li>Hai skill kịch bản chưa viết trọn kịch bản nào. Chỉ số kênh chưa đọc Studio thật.</li>
+          <li>Tối ưu CTR: bước tự xoá dấu sao Gemini lỗi ở lượt chạy thật, bìa mới còn dấu sao.</li>
+          <li>Hệ thống chưa có cụm K12.</li>
+          <li>5 kênh có video Đã tạo đều không gắn niche K1–K11, nên cụm được xác định từ transcript; video ngoài cụm chấm theo chủ đề kênh.</li>
+          <li>Pipeline tạo video chưa đọc bộ nhớ của các não, nên video mới vẫn cần chạy <code>ctr</code> sau khi tạo.</li>
+          <li>Bộ não trong app không thấy video remake và reup: <code>list_my_productions</code> báo 0, trong khi thư mục kênh có khoảng 340 thư mục video. Skill bù bằng lệnh <code>productions</code>.</li>
+          <li>File cụm của <code>jp-psy-cluster</code> cũ hơn prompt meta ở cả 11 cụm: chỉ có format A–D, thiếu nhóm ưu tiên M1–M4 của K1 và P1–P3/P4 của K2–K11.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  <p class="sr" role="status" id="say"></p>
+</main>
+<script>
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.cmd');
+  if (!b) return;
+  const say = document.getElementById('say');
+  try {
+    await navigator.clipboard.writeText(b.dataset.copy);
+    const c = b.querySelector('code'), old = b.dataset.copy;
+    b.classList.add('done'); c.textContent = 'Đã chép'; say.textContent = 'Đã chép ' + old;
+    setTimeout(() => { b.classList.remove('done'); c.textContent = old; }, 1200);
+  } catch {
+    const r = document.createRange(); r.selectNodeContents(b);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    say.textContent = 'Chưa chép được. Lệnh đã được bôi đen để bạn chép tay.';
+  }
+});
+</script>
+</body>
+</html>

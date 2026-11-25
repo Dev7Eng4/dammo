@@ -48,7 +48,7 @@ export function MetadataPanel({
   onSaveStateChange,
 }: MetadataPanelProps) {
   const { t } = useTranslation('factory');
-  const toast = useToast();
+  const { toast } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

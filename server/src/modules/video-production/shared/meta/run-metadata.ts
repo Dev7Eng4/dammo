@@ -12,7 +12,7 @@ import type { MetaLlmSession } from './meta-session.js';
 import { parseMetadataResponse } from './meta-response.js';
 import { formatParseFailureReason } from './llm-parse-result.js';
 import { persistLlmParseFailure } from './persist-llm-failure.js';
-import { checkTitleGuards, formatTitleGuardFeedback } from './title-guard.js';
+import { checkTitleGuards, formatTitleGuardFeedback, pickTitlesAwayFromSource } from './title-guard.js';
 import {
   isCelebrityWisdomNiche,
   type MetadataLlmOutput,
@@ -242,7 +242,14 @@ export async function executeMetadata(
         const hookLines = Array.isArray(plannedThumbnail?.hook_lines)
           ? plannedThumbnail.hook_lines.filter((line): line is string => typeof line === 'string')
           : [];
-        const guard = checkTitleGuards({ title: parsed.metadata.title, prompt: basePrompt, transcript, hookLines });
+        const guard = checkTitleGuards({
+          title: parsed.metadata.title,
+          prompt: basePrompt,
+          transcript,
+          hookLines,
+          sourceTitle,
+          alternativeTitles: parsed.alternative_titles,
+        });
         if (!guard.ok) {
           guardRejected = parsed;
           guardFeedback = formatTitleGuardFeedback(guard.reasons);
@@ -291,6 +298,16 @@ export async function executeMetadata(
   if (guardRejected) {
     // Only the title guard failed: keep the last valid response rather than leaving the video without metadata.
     console.warn(`[run-metadata] title guard still failing after ${MAX_RETRIES} attempts, keeping the last response: ${lastReason}`);
+    // ...but never ship a title that keeps the source video's title when a clean one is available.
+    const titles = pickTitlesAwayFromSource(guardRejected.metadata.title, guardRejected.alternative_titles ?? [], sourceTitle);
+    if (titles.title !== guardRejected.metadata.title) {
+      console.warn(`[run-metadata] title kept the source title, promoted an alternative: ${titles.title}`);
+    }
+    guardRejected = {
+      ...guardRejected,
+      metadata: { ...guardRejected.metadata, title: titles.title },
+      alternative_titles: titles.alternatives,
+    };
     await persistMetadataOutput(
       guardRejected,
       sourceTitle,

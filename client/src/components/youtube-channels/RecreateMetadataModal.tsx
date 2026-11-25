@@ -259,7 +259,7 @@ export function RecreateMetadataModal({ open, channelId, onClose }: RecreateMeta
             id="recreate-metadata-video-url"
             value={videoUrl}
             onChange={event => setVideoUrl(event.target.value)}
-            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+            placeholder={t('metadata.videoLinkPlaceholder')}
             className="h-10 rounded-lg font-mono text-sm"
             disabled={busy}
           />

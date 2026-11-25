@@ -2,6 +2,7 @@ import { AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AlertCard } from '../ui/AlertCard'
 import type { HealthAlert } from '../../types/dashboard'
+import { localizeHealthAlert } from '../../utils/healthAlert'
 
 interface HealthAlertsProps {
   alerts: HealthAlert[]
@@ -25,8 +26,7 @@ export function HealthAlerts({ alerts, loading }: HealthAlertsProps) {
           : alerts.map((alert) => (
               <AlertCard
                 key={alert.id}
-                title={alert.title}
-                description={alert.description}
+                {...localizeHealthAlert(alert)}
                 severity={alert.severity}
               />
             ))}

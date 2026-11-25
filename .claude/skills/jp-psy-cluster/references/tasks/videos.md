@@ -1,6 +1,6 @@
 # {K} videos — 10 chủ đề video
 
-Mục tiêu: 10 cặp title + summary cho video mới của cụm. Người dùng sẽ chọn một cặp rồi chạy `{K} video {title} {summary}` để viết transcript, nên summary phải đủ ý để viết được video 12–30 phút.
+Mục tiêu: 10 cặp title + summary cho video mới của cụm. Người dùng sẽ chọn một cặp rồi chạy `{K} video {title} {summary}` để viết kịch bản, nên summary phải đủ ý để viết được video 12–30 phút.
 
 ## Cách chọn 10 chủ đề
 - **8 chủ đề cụm chính, 2 chủ đề cụm giáp ranh** (đúng tỷ lệ 80/20 của kênh). Trải đều các ngách nhỏ trong file cụm; ưu tiên ngách có lượt xem lớn, nhưng không quá 3 chủ đề cho cùng một ngách nhỏ.
@@ -11,7 +11,7 @@ Mục tiêu: 10 cặp title + summary cho video mới của cụm. Người dùn
 
 ## Title
 - Tiếng Nhật, theo mẫu title của format; phần chính khoảng 20–35 ký tự, từ khoá quan trọng ở nửa đầu. Có thể thêm phần phụ sau 「｜」 khi nó bổ sung từ khoá hoặc lời hứa (tổng không quá ~50 ký tự); không độn chữ cho dài. Nhãn đầu kiểu 【心理学】 để hệ thống thêm khi tạo metadata, không cần ở đây.
-- Con số trong title (ví dụ 7つ) phải là số ý mà video sẽ thật sự trình bày, vì summary và transcript sẽ theo đúng số đó.
+- Con số trong title (ví dụ 7つ) phải là số ý mà video sẽ thật sự trình bày, vì summary và kịch bản sẽ theo đúng số đó.
 - Gợi tò mò nhưng không hứa quá; không bịa nghiên cứu, không hù doạ.
 
 ## Summary

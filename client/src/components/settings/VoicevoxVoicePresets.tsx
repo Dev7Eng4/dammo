@@ -164,7 +164,7 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
                   </div>
                   <p className="truncate text-[11px] text-muted-foreground">
                     {speakerLabel(preset.speaker) ?? preset.speakerName} · {t('factory:settings.voice.vvp.speedScale').toLowerCase()}{' '}
-                    {preset.speedScale} · pitch {preset.pitchScale} · {t('factory:settings.voice.vvp.intonationScale').toLowerCase()}{' '}
+                    {preset.speedScale} · {t('factory:settings.voice.vvp.pitchScale').toLowerCase()} {preset.pitchScale} · {t('factory:settings.voice.vvp.intonationScale').toLowerCase()}{' '}
                     {preset.intonationScale}
                   </p>
                 </div>

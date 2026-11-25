@@ -23,12 +23,18 @@ const EMPTY_SETTINGS: AppSettings = {
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
   aiScenePromptConcurrency: 1,
+  metaTabsPerProfile: 3,
   seedingEmailDays: 5,
   seedingYoutubeDays: 3,
   removeGeminiWatermark: false,
   removeGeminiWatermarkPrompt: DEFAULT_WATERMARK_PROMPT,
   enableUpdateTranscript: true,
   disabledUpdateTranscript: true,
+}
+
+function clampMetaTabs(value: unknown, fallback: number): number {
+  const parsed = Math.round(Number(value))
+  return Number.isFinite(parsed) ? Math.min(5, Math.max(1, parsed)) : fallback
 }
 
 function clampDays(value: unknown, fallback: number): number {
@@ -104,6 +110,7 @@ export function SettingsPage() {
             8,
             Math.max(1, Math.round(Number(item.aiScenePromptConcurrency)) || 1),
           ),
+          metaTabsPerProfile: clampMetaTabs(item.metaTabsPerProfile, EMPTY_SETTINGS.metaTabsPerProfile),
           seedingEmailDays: clampDays(item.seedingEmailDays, EMPTY_SETTINGS.seedingEmailDays),
           seedingYoutubeDays: clampDays(item.seedingYoutubeDays, EMPTY_SETTINGS.seedingYoutubeDays),
           removeGeminiWatermarkPrompt:
@@ -146,6 +153,7 @@ export function SettingsPage() {
           8,
           Math.max(1, Math.round(Number(settings.aiScenePromptConcurrency)) || 1),
         ),
+        metaTabsPerProfile: clampMetaTabs(settings.metaTabsPerProfile, EMPTY_SETTINGS.metaTabsPerProfile),
         seedingEmailDays: clampDays(settings.seedingEmailDays, EMPTY_SETTINGS.seedingEmailDays),
         seedingYoutubeDays: clampDays(
           settings.seedingYoutubeDays,
@@ -324,6 +332,28 @@ export function SettingsPage() {
                       aiScenePromptConcurrency: Number.isFinite(parsed)
                         ? parsed
                         : prev.aiScenePromptConcurrency,
+                    }))
+                  }}
+                />
+              </label>
+              <label className="block max-w-xs space-y-1.5 rounded-lg border border-border bg-surface-elevated/50 px-4 py-3">
+                <span className="text-sm font-medium text-foreground">
+                  {t('settings.metaTabsPerProfile')}
+                </span>
+                <p className="text-xs text-muted-foreground">{t('settings.metaTabsPerProfileDesc')}</p>
+                <Input
+                  id="meta-tabs-per-profile"
+                  type="number"
+                  min={1}
+                  max={5}
+                  className="h-10"
+                  disabled={saving}
+                  value={settings.metaTabsPerProfile}
+                  onChange={(e) => {
+                    const parsed = Number(e.target.value)
+                    setSettings((prev) => ({
+                      ...prev,
+                      metaTabsPerProfile: Number.isFinite(parsed) ? parsed : prev.metaTabsPerProfile,
                     }))
                   }}
                 />

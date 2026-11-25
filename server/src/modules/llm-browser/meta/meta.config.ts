@@ -14,8 +14,9 @@
  * - result video container
  */
 export const META_BASE_URL = 'https://www.meta.ai/';
+/** Reference images are POSTed here; the send button is enabled before these uploads are done. */
+export const META_UPLOAD_URL_PATTERN = /^https:\/\/rupload[.-]/;
 export const ASSISTANT_MESSAGE_TIMEOUT_MS = 180_000;
-export const DIALOG_APPEAR_TIMEOUT_MS = 3_000;
 
 export interface MetaDomSelectors {
   composerAddAttachmentButton: string;

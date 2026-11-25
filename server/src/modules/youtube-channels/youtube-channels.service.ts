@@ -76,6 +76,7 @@ import type {
 } from './youtube-channels.types.js';
 import { isAiSceneVideoType } from './youtube-channels.types.js';
 import { isReupAudioFamilyType } from './youtube-channels.types.js';
+import { listReadyScripts } from '../script-remake/remake-ready.js';
 
 const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -776,24 +777,35 @@ export class YoutubeChannelsService {
     return { items: this.mergeVideosWithPrepare(id, videos, true), fetchedAt };
   }
 
-  /** Source videos linked to the channel that are not yet in video-prepare.json. */
+  /**
+   * Source videos linked to the channel that are not yet in video-prepare.json: `Preparing` when the
+   * remake skill already wrote a usable script for them (listed first), `Pending` otherwise.
+   */
   getPendingSourceVideos(id: string): { items: YoutubeChannelVideo[] } {
+    const scripted = new Set(listReadyScripts(id).map(item => item.sourceVideoId));
+    const items = this.listUnpreparedSourceVideos(id).map(video =>
+      scripted.has(video.id) ? { ...video, status: 'Preparing' as const } : video,
+    );
+    const rank = (video: YoutubeChannelVideo) => (video.status === 'Preparing' ? 0 : 1);
+    // Stable sort: the source order stays within each group.
+    return { items: items.sort((a, b) => rank(a) - rank(b)) };
+  }
+
+  private listUnpreparedSourceVideos(id: string): YoutubeChannelVideo[] {
     const channel = this.getById(id);
     const preparedIds = videoPrepareRepository.getPreparedVideoIds(id);
     if (channel.sourceMode === 'trend_brain') {
       const claimed = trendVideoIdsClaimedByOthers(id);
-      return {
-        items: listTrendSourceVideos({ clusters: channel.trendClusters })
-          .filter(video => !preparedIds.has(video.id) && !claimed.has(video.id))
-          .map(video => ({
-            id: video.id,
-            title: video.title,
-            url: video.url,
-            viewCount: video.viewCount,
-            duration: video.duration,
-            status: 'Pending' as const,
-          })),
-      };
+      return listTrendSourceVideos({ clusters: channel.trendClusters })
+        .filter(video => !preparedIds.has(video.id) && !claimed.has(video.id))
+        .map(video => ({
+          id: video.id,
+          title: video.title,
+          url: video.url,
+          viewCount: video.viewCount,
+          duration: video.duration,
+          status: 'Pending' as const,
+        }));
     }
     const sources = resolveSourceChannelsByIds(channel.sourceChannels ?? []);
 
@@ -815,7 +827,7 @@ export class YoutubeChannelsService {
       }
     }
 
-    return { items };
+    return items;
   }
 
   deleteVideos(id: string, videoIds: string[]): { deleted: string[] } {

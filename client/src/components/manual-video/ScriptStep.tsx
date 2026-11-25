@@ -15,6 +15,7 @@ import { useAbortableEffect } from '../../hooks'
 import type { VideoAgentRun } from '../../types/videoAgent'
 import { Button, Select, StatusBadge, Textarea, useToast } from '../ui'
 import { ScriptSummary } from './ScriptSummary'
+import { appLocale } from '../../utils/locale'
 
 const PROVIDERS = TEXT_LLM_OPTIONS
 const POLL_MS = 2000
@@ -163,7 +164,7 @@ export function ScriptStep({ run, scriptText, disabled }: ScriptStepProps) {
             <ul className="mt-2 max-h-40 overflow-auto rounded-lg bg-muted p-2 font-mono text-[11px] text-foreground/85">
               {job.logs.map((entry, index) => (
                 <li key={index}>
-                  {new Date(entry.at).toLocaleTimeString()} {entry.message}
+                  {new Date(entry.at).toLocaleTimeString(appLocale())} {entry.message}
                 </li>
               ))}
             </ul>

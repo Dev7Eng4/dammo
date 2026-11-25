@@ -7,6 +7,7 @@ import { ProxyProvidersTable } from './ProxyProvidersTable';
 import { Button, Modal, useToast } from '../ui';
 import { useAbortableEffect } from '../../hooks';
 import type { ProxyProvider } from '../../types/proxy';
+import { appLocale } from '../../utils/locale';
 
 export function ProxyProvidersTab() {
   const { t } = useTranslation(['browser', 'common']);
@@ -69,7 +70,7 @@ export function ProxyProvidersTab() {
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <span className="text-sm text-neutral-400">
-          {t('proxy.providers.count', { count: providers.length.toLocaleString() })}
+          {t('proxy.providers.count', { count: providers.length.toLocaleString(appLocale()) })}
         </span>
         <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>
           {t('proxy.providers.add')}

@@ -94,6 +94,8 @@ export interface AssembleReupSiVideoInput {
   /** Temporary: burn top-left disclaimer for the first N seconds. */
   showDisclaim?: boolean;
   disclaimerText?: string;
+  /** Render the audio at exactly this speed (remake videos: 1). Unset = random slow-down. */
+  fixedAudioSpeed?: number;
   onLog?: (msg: string) => void;
   onFfmpegProgress?: (progress: FfmpegProgress) => void;
 }
@@ -119,6 +121,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
     captionStyleKey,
     showDisclaim = false,
     disclaimerText,
+    fixedAudioSpeed,
     onLog,
     onFfmpegProgress,
   } = input;
@@ -150,7 +153,7 @@ export async function assembleReupSiVideo(input: AssembleReupSiVideoInput): Prom
   }
 
   const assets = assertRequiredSiAssets(captionStyleKey);
-  const speed = resolveRandomAudioSpeed();
+  const speed = fixedAudioSpeed ?? resolveRandomAudioSpeed();
   const centerImageSize =
     useMultiImage || centerImagePath ? resolveRandomSiCenterImageSize() : null;
   if (centerImageSize) {

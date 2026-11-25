@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchInput, DropdownSelect, Button } from '../ui';
 import {
-  PROMPT_CATEGORY_OPTIONS,
-  PROMPT_CATEGORY_LABELS,
   PROMPT_LANGUAGE_LABELS,
-  PROMPT_LANGUAGE_OPTIONS,
+  promptCategoryLabel,
+  promptCategoryOptions,
+  promptLanguageOptions,
 } from '../../constants/promptForm';
 import { cn } from '../../lib/cn';
 import { groupPromptSets } from '../../utils/promptSets';
@@ -61,7 +61,7 @@ export function PromptsListPanel({
   const categoryFilterOptions = useMemo(
     () => [
       { value: 'all' as const, label: t('prompts.filter.allCategories') },
-      ...PROMPT_CATEGORY_OPTIONS,
+      ...promptCategoryOptions(),
     ],
     [t],
   );
@@ -70,7 +70,7 @@ export function PromptsListPanel({
     () => [
       { value: 'any' as const, label: t('prompts.filter.allLanguages') },
       { value: 'all' as const, label: t('prompts.filter.namespaceAll') },
-      ...PROMPT_LANGUAGE_OPTIONS,
+      ...promptLanguageOptions(),
     ],
     [t],
   );
@@ -141,7 +141,7 @@ export function PromptsListPanel({
                           categoryBadgeClass(set.category),
                         )}
                       >
-                        {PROMPT_CATEGORY_LABELS[set.category]}
+                        {promptCategoryLabel(set.category)}
                       </span>
                       <span className="inline-flex rounded-full border border-border bg-neutral-800/80 px-2 py-0.5 text-[10px] font-medium text-neutral-400">
                         {PROMPT_LANGUAGE_LABELS[set.language]}

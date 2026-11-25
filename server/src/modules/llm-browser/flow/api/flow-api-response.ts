@@ -4,7 +4,7 @@ import type { Page, Request, Response } from 'playwright';
 import { paths } from '../../../../config/paths.js';
 import { AppError } from '../../../../shared/http/errors.js';
 import { createFlowDailyQuotaError, isFlowDailyQuotaExhausted } from './flow-api-errors.js';
-import { FLOW_TOOL_IDLE_MS, isFlowContentImageUrl } from '../flow.config.js';
+import { FLOW_TOOL_IDLE_MS, isFlowAsbImageUrl, toFlowOriginalImageUrl } from '../flow.config.js';
 import type { LlmMediaAsset } from '../../core/types.js';
 import type { FlowGenerateImageOptions, FlowToolVisual } from '../flow.types.js';
 
@@ -170,26 +170,6 @@ export function resolveFlowImageSavePath(
 /** @deprecated Use resolveFlowImageSavePath */
 export function resolveFlowImageOutputPath(outputPath?: string): string {
   return resolveFlowImageSavePath({ outputPath });
-}
-
-export function beginFlowContentImageWait(page: Page, timeoutMs: number): Promise<Response> {
-  return page
-    .waitForResponse(
-      response => isFlowContentImageUrl(response.url()) && response.ok(),
-      { timeout: timeoutMs },
-    )
-    .then(response => {
-      const fullUrl = response.url();
-      let pathOnly = fullUrl;
-      try {
-        const parsed = new URL(fullUrl);
-        pathOnly = `${parsed.origin}${parsed.pathname}`;
-      } catch {
-        // keep fullUrl
-      }
-      console.log(`[flow-cdn] matched image: ${pathOnly} (status=${response.status()})`);
-      return response;
-    });
 }
 
 export interface FlowToolMatchedImage {
@@ -473,17 +453,30 @@ export function beginBatchGenerateImagesCollector(
   });
 }
 
+/**
+ * Downloads a Flow image with the browser's cookies. For a grid tile src (`/asb/...=s1600-rw`, WebP)
+ * the original JPEG (`=s0`) is fetched first, falling back to the src as given.
+ */
 export async function downloadAndSaveFlowImage(page: Page, imageUrl: string, outputPath: string): Promise<LlmMediaAsset> {
-  const imageResponse = await page.request.get(imageUrl);
-  if (!imageResponse.ok()) {
-    throw new AppError(`Failed to download Flow image (${imageResponse.status()})`, 502, 'FLOW_IMAGE_DOWNLOAD_FAILED');
+  const candidates = isFlowAsbImageUrl(imageUrl) ? [toFlowOriginalImageUrl(imageUrl), imageUrl] : [imageUrl];
+
+  let imageBuffer: Buffer | null = null;
+  let lastStatus = 0;
+  for (const url of candidates) {
+    const imageResponse = await page.request.get(url);
+    lastStatus = imageResponse.status();
+    if (imageResponse.ok()) {
+      imageBuffer = await imageResponse.body();
+      break;
+    }
+    console.warn(`[flow] image download ${lastStatus} for ${url.slice(0, 80)}...`);
+  }
+  if (!imageBuffer) {
+    throw new AppError(`Failed to download Flow image (${lastStatus})`, 502, 'FLOW_IMAGE_DOWNLOAD_FAILED');
   }
 
-  const imageBuffer = await imageResponse.body();
-  const imageBase64 = imageBuffer.toString('base64');
-
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, imageBase64, 'base64');
+  await fs.writeFile(outputPath, imageBuffer);
 
   return { kind: 'image', sourceUrl: imageUrl, localPath: outputPath };
 }

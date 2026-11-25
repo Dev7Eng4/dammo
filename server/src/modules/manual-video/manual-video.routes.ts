@@ -129,7 +129,7 @@ export function createManualVideoRoutes() {
 
   app.post(
     '/projects/:id/motion',
-    zValidator('json', z.object({ mode: z.enum(['intro', 'full', 'scenes']), indexes: z.array(z.number().int().min(0)).max(500).optional() })),
+    zValidator('json', z.object({ mode: z.enum(['intro', 'full', 'interleaved', 'scenes']), indexes: z.array(z.number().int().min(0)).max(500).optional() })),
     c => {
       const body = c.req.valid('json');
       return c.json(manualVideoService.generateClips(c.req.param('id'), body.mode, body.indexes), 202);

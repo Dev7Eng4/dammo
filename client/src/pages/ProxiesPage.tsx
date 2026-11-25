@@ -19,7 +19,7 @@ import { ProxiesTable } from '../components/proxy-manager/ProxiesTable';
 import { ProxiesToolbar } from '../components/proxy-manager/ProxiesToolbar';
 import { Button, Input, Modal, useToast } from '../components/ui';
 import { usePaginatedList } from '../hooks';
-import type { Proxy, ProxyFilter, ProxyTab } from '../types/proxy';
+import type { ProxyFilter, ProxyTab } from '../types/proxy';
 
 export function ProxiesPage() {
   const { t, i18n } = useTranslation(['browser', 'common']);

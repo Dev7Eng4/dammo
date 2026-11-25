@@ -11,11 +11,14 @@ import { AppError } from '../../../shared/http/errors.js';
 import { emitDetailLog } from '../../video-production/shared/video-log.js';
 import { getChromeProfilePage, isChromeProfileOpen, openChromeProfile } from '../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
+import { MetaJobQueue } from './meta-job-queue.js';
+import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
 import {
   cleanupMetaWorkerPool,
+  createMetaWorkerPool,
   META_MEDIA_DEFAULT_MAX_RETRIES,
   META_MEDIA_DEFAULT_TIMEOUT_MS,
-  openMetaWorkerPool,
+  openMetaWorkers,
   type MetaMediaWorker,
 } from './meta-media-workers.js';
 import {
@@ -27,6 +30,27 @@ import {
 } from './meta-quota.js';
 
 const META_PROVIDER = 'meta' as const;
+/** Tries to download one generated image before the whole job is run again. */
+const SAVE_ATTEMPTS = 3;
+const SAVE_RETRY_DELAY_MS = 1_500;
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** Download + resize a generated image; independent of the tab, which already works on the next job. */
+async function saveGeneratedImage(page: Page, sourceUrl: string, job: MetaMediaBatchJob): Promise<string> {
+  const outputPath = resolveMetaMediaSavePath('image', { outputDir: job.outputDir, fileName: job.fileName });
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await downloadAndSaveMetaAsset(page, sourceUrl, outputPath, 'image', job.aspectRatio ?? '16:9');
+      return outputPath;
+    } catch (err) {
+      if (attempt >= SAVE_ATTEMPTS) throw err;
+      await new Promise(resolve => setTimeout(resolve, SAVE_RETRY_DELAY_MS * attempt));
+    }
+  }
+}
 
 function assertProfileOpen(profileId: string): void {
   if (!isChromeProfileOpen(profileId)) {
@@ -69,7 +93,8 @@ export class MetaBrowserService {
     const profile = chromeProfilesService.getById(profileId);
     const handler = getMetaBrowserHandler();
 
-    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
+    // Meta's menus are too heavy to draw on the CPU once several windows are open.
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true, gpu: true });
     const page = await getChromeProfilePage(profile.id);
     await handler.open(page);
     await handler.setupConfig(page, {});
@@ -144,7 +169,7 @@ export class MetaBrowserService {
   }
 
   /**
-   * Generate many Meta images with a shared worker pool.
+   * Generate many Meta images with a shared worker pool. Tabs start working as soon as they are open.
    * `concurrency: 'single'` → 1 tab sequential; `'batch'` → up to 5 tabs/main + GPM.
    * Individual job failures are collected (does not abort the whole batch).
    */
@@ -163,138 +188,163 @@ export class MetaBrowserService {
     const timeoutMs = options?.timeoutMs ?? META_MEDIA_DEFAULT_TIMEOUT_MS;
     const maxRetries = options?.maxRetries ?? META_MEDIA_DEFAULT_MAX_RETRIES;
 
-    const pool = await openMetaWorkerPool(jobs.length, log, concurrency);
-    const { workers } = pool;
-    let nextJobIndex = 0;
-    /** Jobs handed back by a worker whose profile ran out of quota; picked up before new ones. */
-    const requeuedJobIndexes: number[] = [];
-    const finishedJobIndexes = new Set<number>();
+    const pool = createMetaWorkerPool();
+    const queue = new MetaJobQueue(jobs.length);
+    const attempts = jobs.map(() => 0);
     const results: MetaMediaBatchJobResult[] = jobs.map(job => ({ id: job.id, ok: false }));
     let generatedCount = 0;
     let failedCount = 0;
 
-    const takeNextJobIndex = (): number | undefined => {
-      const requeued = requeuedJobIndexes.shift();
-      if (requeued !== undefined) return requeued;
-      if (nextJobIndex >= jobs.length) return undefined;
-      nextJobIndex += 1;
-      return nextJobIndex - 1;
+    const report = (jobIndex: number, status: 'generating' | 'done' | 'failed'): void => {
+      // A throwing listener must not leave the job unfinished: idle workers would wait for it forever.
+      try {
+        options?.onJobProgress?.({ jobId: jobs[jobIndex].id, index: jobIndex + 1, total: jobs.length, status });
+      } catch (err) {
+        log(`[meta] onJobProgress failed: ${errorText(err)}`);
+      }
     };
 
-    log(
-      `[meta] ${concurrency}: ${workers.length} worker(s) ` +
-        `[${workers.map(worker => worker.label).join(', ')}] cho ${jobs.length} job(s)`,
-    );
+    const succeed = (jobIndex: number, localPath: string): void => {
+      results[jobIndex] = { id: jobs[jobIndex].id, ok: true, localPath };
+      generatedCount += 1;
+      queue.finish(jobIndex);
+      report(jobIndex, 'done');
+    };
 
-    const runWorker = async (worker: MetaMediaWorker): Promise<void> => {
-      while (true) {
-        // Every tab of a profile shares one Meta account, so one exhausted tab stops them all.
-        if (isMetaProfileQuotaExhausted(worker.profileId)) {
-          log(`[meta] worker ${worker.workerIndex + 1} (${worker.label}) dừng: profile đã hết quota tạo ảnh`);
-          return;
-        }
+    const fail = (jobIndex: number, error: string): void => {
+      results[jobIndex] = { id: jobs[jobIndex].id, ok: false, error };
+      failedCount += 1;
+      queue.finish(jobIndex);
+      report(jobIndex, 'failed');
+    };
 
-        const jobIndex = takeNextJobIndex();
-        if (jobIndex === undefined) return;
+    /** Counts a failed try; true when the job may run again. */
+    const mayRetry = (jobIndex: number, error: string): boolean => {
+      attempts[jobIndex] += 1;
+      const { id } = jobs[jobIndex];
+      if (attempts[jobIndex] >= maxRetries) {
+        log(`[meta] bỏ qua ${id} sau ${maxRetries} lần: ${error}`);
+        return false;
+      }
+      log(`[meta] ${id} attempt ${attempts[jobIndex]}/${maxRetries} failed → retry (${error})`);
+      return true;
+    };
 
-        const job = jobs[jobIndex];
-        options?.onJobProgress?.({
-          jobId: job.id,
-          index: jobIndex + 1,
-          total: jobs.length,
-          status: 'generating',
-        });
-        log(
-          `[meta] worker ${worker.workerIndex + 1}/${workers.length} (${worker.label}) → ${job.id} ` +
-            `(${jobIndex + 1}/${jobs.length})`,
-        );
+    const saveInBackground = async (worker: MetaMediaWorker, jobIndex: number, sourceUrl: string): Promise<void> => {
+      let localPath: string;
+      try {
+        localPath = await saveGeneratedImage(worker.page, sourceUrl, jobs[jobIndex]);
+      } catch (err) {
+        const error = `Failed to save image: ${errorText(err)}`;
+        if (mayRetry(jobIndex, error)) queue.requeue(jobIndex);
+        else fail(jobIndex, error);
+        return;
+      }
+      succeed(jobIndex, localPath);
+    };
 
-        let lastError = 'unknown error';
-        let succeeded = false;
-        let quotaExhausted = false;
-
-        for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
-          try {
-            if (attempt > 1) {
-              // Reload Meta so the retry starts from an empty composer — otherwise the previous
-              // attachment(s) and text stay behind and get duplicated on every attempt.
-              await this.openOnPage(worker.page);
-            }
-            const response = await this.generateMediaOnPage(worker.page, job.prompt, {
-              mediaKind: job.mediaKind ?? 'image',
-              aspectRatio: job.aspectRatio ?? '16:9',
-              outputDir: job.outputDir,
-              fileName: job.fileName,
-              timeoutMs,
-              ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
-            });
-
-            const localPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
-            if (!localPath) {
-              throw new AppError(`Meta media generation produced no file for ${job.id}`, 502, 'META_MEDIA_NO_FILE');
-            }
-
-            results[jobIndex] = { id: job.id, ok: true, localPath };
-            finishedJobIndexes.add(jobIndex);
-            generatedCount += 1;
-            succeeded = true;
-            options?.onJobProgress?.({
-              jobId: job.id,
-              index: jobIndex + 1,
-              total: jobs.length,
-              status: 'done',
-            });
-            break;
-          } catch (err) {
-            lastError = err instanceof Error ? err.message : String(err);
-            if (isMetaQuotaExhaustedError(err)) {
-              quotaExhausted = true;
-              break;
-            }
-            if (attempt === maxRetries) {
-              log(`[meta] bỏ qua ${job.id} sau ${maxRetries} lần: ${lastError}`);
-            } else {
-              log(`[meta] ${job.id} attempt ${attempt}/${maxRetries} failed → retry (${lastError})`);
-            }
-          }
-        }
-
-        if (quotaExhausted) {
-          markMetaProfileQuotaExhausted(worker.profileId);
-          requeuedJobIndexes.push(jobIndex);
-          log(
-            `[meta] ${worker.label} hết quota tạo ảnh → không tải ảnh, dừng profile này ` +
-              `(bỏ qua ${Math.round(META_QUOTA_COOLDOWN_MS / 3_600_000)}h), trả ${job.id} lại hàng đợi`,
-          );
-          return;
-        }
-
-        if (!succeeded) {
-          results[jobIndex] = { id: job.id, ok: false, error: lastError };
-          finishedJobIndexes.add(jobIndex);
-          failedCount += 1;
-          options?.onJobProgress?.({
-            jobId: job.id,
-            index: jobIndex + 1,
-            total: jobs.length,
-            status: 'failed',
+    /** Generates one job on the worker's tab and returns the image URL; undefined when it is out of tries or quota. */
+    const generateOnWorker = async (worker: MetaMediaWorker, jobIndex: number): Promise<string | undefined> => {
+      const job = jobs[jobIndex];
+      for (let reload = false; ; reload = true) {
+        try {
+          // Reload Meta so the retry starts from an empty composer — otherwise the previous
+          // attachment(s) and text stay behind and get duplicated on every attempt.
+          if (reload) await this.openOnPage(worker.page);
+          const response = await this.generateMediaOnPage(worker.page, job.prompt, {
+            mediaKind: job.mediaKind ?? 'image',
+            aspectRatio: job.aspectRatio ?? '16:9',
+            timeoutMs,
+            ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
           });
+          const sourceUrl = response.mediaAssets?.find(asset => asset.sourceUrl)?.sourceUrl;
+          if (!sourceUrl) {
+            throw new AppError(`Meta media generation produced no image for ${job.id}`, 502, 'META_MEDIA_NO_FILE');
+          }
+          return sourceUrl;
+        } catch (err) {
+          if (isMetaQuotaExhaustedError(err)) {
+            markMetaProfileQuotaExhausted(worker.profileId);
+            log(
+              `[meta] ${worker.label} hết quota tạo ảnh → không tải ảnh, dừng profile này ` +
+                `(bỏ qua ${Math.round(META_QUOTA_COOLDOWN_MS / 3_600_000)}h), trả ${job.id} lại hàng đợi`,
+            );
+            queue.requeue(jobIndex);
+            return undefined;
+          }
+          const error = errorText(err);
+          if (mayRetry(jobIndex, error)) continue;
+          fail(jobIndex, error);
+          return undefined;
         }
       }
     };
 
+    const runWorker = async (worker: MetaMediaWorker): Promise<void> => {
+      const saves: Promise<void>[] = [];
+      while (true) {
+        // Every tab of a profile shares one Meta account, so one exhausted tab stops them all.
+        if (isMetaProfileQuotaExhausted(worker.profileId)) break;
+
+        const jobIndex = await queue.take();
+        if (jobIndex === undefined) break;
+        if (isMetaProfileQuotaExhausted(worker.profileId)) {
+          queue.requeue(jobIndex);
+          break;
+        }
+
+        report(jobIndex, 'generating');
+        log(
+          `[meta] worker ${worker.workerIndex + 1} (${worker.label}) → ${jobs[jobIndex].id} ` +
+            `(${jobIndex + 1}/${jobs.length})`,
+        );
+        const sourceUrl = await generateOnWorker(worker, jobIndex);
+        if (sourceUrl) saves.push(saveInBackground(worker, jobIndex, sourceUrl));
+      }
+      if (isMetaProfileQuotaExhausted(worker.profileId)) {
+        log(`[meta] worker ${worker.workerIndex + 1} (${worker.label}) dừng: profile đã hết quota tạo ảnh`);
+      }
+      await Promise.all(saves);
+    };
+
+    log(`[meta] ${concurrency}: ${jobs.length} job(s)`);
     try {
-      await Promise.all(workers.map(worker => runWorker(worker)));
+      // A worker only stops early when its profile is out of quota, so each further round can only
+      // use profiles that were not needed before; it ends when none is left.
+      for (let round = 1; !queue.isDrained; round += 1) {
+        const runs: Promise<void>[] = [];
+        try {
+          await openMetaWorkers(pool, {
+            jobCount: queue.unfinished().length,
+            mode: concurrency,
+            log,
+            done: queue.drained,
+            onWorker: worker => {
+              const run = runWorker(worker);
+              // Awaited below; until then a rejection must not count as unhandled.
+              run.catch(() => undefined);
+              runs.push(run);
+            },
+          });
+        } catch (err) {
+          if (round === 1) throw err;
+          log(`[meta] Không còn profile nào để chạy tiếp: ${errorText(err)}`);
+          break;
+        }
+        const settled = await Promise.allSettled(runs);
+        const crashed = settled.find(run => run.status === 'rejected');
+        if (crashed) throw crashed.reason;
+      }
 
       // Every profile ran out of quota before these jobs could run.
-      jobs.forEach((job, jobIndex) => {
-        if (finishedJobIndexes.has(jobIndex)) return;
-        results[jobIndex] = { id: job.id, ok: false, error: metaQuotaExhaustedError().message };
+      const leftover = queue.unfinished();
+      for (const jobIndex of leftover) {
+        results[jobIndex] = { id: jobs[jobIndex].id, ok: false, error: metaQuotaExhaustedError().message };
         failedCount += 1;
-        options?.onJobProgress?.({ jobId: job.id, index: jobIndex + 1, total: jobs.length, status: 'failed' });
-      });
-      if (requeuedJobIndexes.length > 0 || nextJobIndex < jobs.length) {
-        log('[meta] Tất cả profile đã hết quota tạo ảnh — các job còn lại bị bỏ qua');
+        report(jobIndex, 'failed');
+      }
+      if (leftover.length > 0) {
+        log(`[meta] Tất cả profile đã hết quota tạo ảnh — ${leftover.length} job còn lại bị bỏ qua`);
       }
 
       return { results, generatedCount, failedCount };

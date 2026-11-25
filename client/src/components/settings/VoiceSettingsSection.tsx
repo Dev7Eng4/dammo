@@ -25,6 +25,7 @@ import { Button, DropdownSelect, Input, StatusBadge, Switch, Tooltip, TooltipPro
 import { ElevenLabsVoicePresets } from './ElevenLabsVoicePresets'
 import { VoicevoxVoicePresets } from './VoicevoxVoicePresets'
 import { ConfirmDeleteModal } from './ConfirmDeleteModal'
+import { appLocale } from '../../utils/locale'
 
 
 const OUTPUT_FORMATS = ['mp3_44100_128', 'mp3_44100_192', 'mp3_22050_32', 'pcm_24000', 'pcm_44100']
@@ -98,7 +99,7 @@ function KeyRow({
               />
             </div>
             <span className="text-[11px] tabular-nums text-muted-foreground">
-              {used.toLocaleString()} / {limit.toLocaleString()} ({t('settings.voice.charsLeft', { count: Math.max(0, limit - used) })})
+              {used.toLocaleString(appLocale())} / {limit.toLocaleString(appLocale())} ({t('settings.voice.charsLeft', { count: Math.max(0, limit - used) })})
             </span>
           </div>
         ) : null}

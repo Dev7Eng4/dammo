@@ -31,7 +31,7 @@ export function collectSourceVideos(
 }
 
 /** Chọn video theo thứ tự tạo (mảng store thường mới → cũ). Bỏ qua video đã prepare. */
-function selectVideosForCreation(
+export function selectVideosForCreation(
   videos: SourceVideoWithSource[],
   preparedVideoIds: Set<string>,
   limit: number,

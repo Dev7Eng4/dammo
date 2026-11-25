@@ -7,6 +7,7 @@ import { PlatformIcon } from '../mail-accounts/PlatformIcon';
 import { Button } from '../ui';
 import { PurposePill } from './PurposePill';
 import { RiskPill } from './RiskPill';
+import { appLocale } from '../../utils/locale';
 
 interface SourceChannelDetailHeaderProps {
   source: SourceChannel;
@@ -88,13 +89,13 @@ export function SourceChannelDetailHeader({
         {source.subscriberCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
             <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.subscribers')}</p>
-            <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.subscriberCount?.toLocaleString() ?? '—'}</p>
+            <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.subscriberCount?.toLocaleString(appLocale()) ?? '—'}</p>
           </div>
         ) : null}
         {source.videoCount !== undefined ? (
           <div className='card-surface px-4 py-3'>
             <p className='text-[10px] font-medium uppercase tracking-wider text-neutral-500'>{t('detail.videos')}</p>
-            <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.videoCount.toLocaleString()}</p>
+            <p className='mt-2 text-lg font-semibold text-neutral-100'>{source.videoCount.toLocaleString(appLocale())}</p>
           </div>
         ) : null}
       </div>

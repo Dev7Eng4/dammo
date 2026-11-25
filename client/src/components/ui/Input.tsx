@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react'
 import { type InputHTMLAttributes, type ReactNode, forwardRef } from 'react'
 import { cn } from '../../lib/cn'
+import { useTranslation } from 'react-i18next'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   leadingIcon?: ReactNode
@@ -42,11 +43,13 @@ export function SearchIcon() {
 }
 
 export function SearchInput(props: Omit<InputProps, 'leadingIcon' | 'type'>) {
+  const { t } = useTranslation('common')
+
   return (
     <Input
       leadingIcon={<SearchIcon />}
       type="search"
-      placeholder="Tìm kiếm"
+      placeholder={t('search.placeholder')}
       pill
       {...props}
     />

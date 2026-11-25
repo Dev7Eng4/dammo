@@ -131,6 +131,8 @@ function BrandMark() {
 }
 
 function BrandHeader({ collapsed }: { collapsed: boolean }) {
+  const { t } = useTranslation('nav')
+
   return (
     <div
       className={cn(
@@ -142,7 +144,7 @@ function BrandHeader({ collapsed }: { collapsed: boolean }) {
       {!collapsed ? (
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-sm font-semibold tracking-tight text-foreground">Dammo</p>
-          <p className="truncate text-[11px] text-muted-foreground">Video operations</p>
+          <p className="truncate text-[11px] text-muted-foreground">{t('brand.tagline')}</p>
         </div>
       ) : null}
     </div>

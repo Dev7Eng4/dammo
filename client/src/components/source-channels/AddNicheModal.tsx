@@ -2,7 +2,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createNiche, deleteNiche, fetchNicheUsage, fetchNiches, updateNiche } from '../../api/niches';
-import { PROMPT_FORM_LANGUAGE_OPTIONS, PROMPT_LANGUAGE_LABELS } from '../../constants/promptForm';
+import { PROMPT_LANGUAGE_LABELS, promptFormLanguageOptions } from '../../constants/promptForm';
 import { Button, DropdownSelect, Input, Modal } from '../ui';
 import type { PromptLanguage } from '../../types/prompt';
 import type { AddNicheFormValues, Niche, NicheMutationAction, NicheUsage } from '../../types/niche';
@@ -245,7 +245,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                  options={promptFormLanguageOptions()}
                   className="w-full"
                   triggerClassName="h-10 w-full rounded-lg"
                 />
@@ -306,7 +306,7 @@ export function AddNicheModal({ open, onClose, onSuccess }: AddNicheModalProps) 
                           <DropdownSelect
                             value={editingLanguage}
                             onChange={setEditingLanguage}
-                            options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                            options={promptFormLanguageOptions()}
                             disabled={isBusy}
                             className="w-24 shrink-0"
                             triggerClassName="h-8 w-full rounded-lg"

@@ -41,7 +41,15 @@
     "assemble:short-card": "tsx src/scripts/assemble-short-card.ts",
     "whatif:generate-prompts": "tsx src/remotion/whatif/generate-prompts.ts",
     "whatif:generate-images": "tsx src/remotion/whatif/generate-images.ts",
-    "trends": "tsx src/scripts/trend-scan.ts"
+    "trends": "tsx src/scripts/trend-scan.ts",
+    "brain": "tsx src/scripts/brain-cli.ts",
+    "ctr": "tsx src/scripts/ctr-cli.ts",
+    "script": "tsx src/scripts/script-cli.ts",
+    "studio": "tsx src/scripts/studio-cli.ts",
+    "audience": "tsx src/scripts/audience-cli.ts",
+    "scene": "tsx src/scripts/scene-cli.ts",
+    "motion": "tsx src/scripts/motion-cli.ts",
+    "flow-length-check": "tsx src/scripts/flow-length-check.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

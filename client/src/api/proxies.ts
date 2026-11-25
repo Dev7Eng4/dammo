@@ -14,6 +14,7 @@ import type {
   UpdateProxyPayload,
   UpdateProxyProviderPayload,
 } from '../types/proxy';
+import i18n from '../i18n';
 
 export function fetchProxies(
   filter: ProxyFilter = 'all',
@@ -90,7 +91,7 @@ export async function exportProxiesExcel(
   const res = await fetch(`${API_V1}/proxies/export?${params}`);
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Export failed: ${res.status}`);
+    throw new Error(body.error ?? i18n.t('common:errors.exportFailed', { status: res.status }));
   }
 
   const blob = await res.blob();
@@ -117,7 +118,7 @@ export async function importProxiesExcel(file: File): Promise<ProxyImportResult>
 
   const body = (await res.json()) as ProxyImportResult & { error?: string };
   if (!res.ok) {
-    throw new Error(body.error ?? `Import failed: ${res.status}`);
+    throw new Error(body.error ?? i18n.t('common:errors.importFailed', { status: res.status }));
   }
 
   return body;

@@ -2,17 +2,18 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import type { Locator, Page } from 'playwright';
-import { appErrorFromFlowErrorTileText, createFlowDailyQuotaError } from './api/flow-api-errors.js';
+import { createFlowDailyQuotaError } from './api/flow-api-errors.js';
 import { downloadFlowVideo } from './api/flow-video.client.js';
-import { FLOW_CONFIG } from './flow.config.js';
+import { pollFlowGridVideo, snapshotFlowGridVideos } from './flow-grid-dom.js';
 import { uploadReferenceImage } from './flow.provider.js';
+import { paths } from '../../../config/paths.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { emitDetailLog } from '../../video-production/shared/video-log.js';
 
 /**
  * Image → video through the flow.google.com UI (the old labs.google token endpoint answers 410).
  *
- * Prompt-bar settings popover: Video · Ingredients · aspect · model · 360p · x1 (length untouched), then the scene image is
+ * Prompt-bar settings popover: Video · Ingredients · aspect · model · 360p · x1, the Length slider per clip, then the scene image is
  * attached as the only ingredient (+ → Upload media → asset → Add to prompt, as for image references).
  */
 
@@ -39,8 +40,6 @@ export const FLOW_VIDEO_SETTINGS_ONLY_REASON = 'Chế độ kiểm tra: chỉ ch
 export const FLOW_VIDEO_CLIP_TIMEOUT_MS = 6 * 60_000;
 const POLL_MS = 4_000;
 const UPLOAD_TIMEOUT_MS = 90_000;
-
-const VIDEO_URL_PATTERN = /https:\/\/flow-content\.google\/video\/[^"'\s)<>]+/g;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -105,7 +104,7 @@ export async function configureFlowVideoSettings(
     emitDetailLog(`[flow-video-ui] no ${resolution} option for ${settings.model}, keeping Flow's default resolution`);
   }
 
-  // Length slider is left as Flow sets it.
+  // Length is set per clip (setFlowVideoLength); clips without a length keep Flow's slider as is.
   await pickToggle(page, /^x1$/);
   if (options.keepOpen) {
     emitDetailLog(`[flow-video-ui] settings picked (popover left open): Video · Ingredients · ${settings.aspectRatio} · ${settings.model} · ${resolution} · x1`);
@@ -119,6 +118,146 @@ export async function configureFlowVideoSettings(
     throw new AppError(`Flow settings did not switch to video (got "${summary}")`, 502, 'FLOW_VIDEO_SETTINGS_FAILED');
   }
   emitDetailLog(`[flow-video-ui] settings: ${summary} · ${settings.model}`);
+}
+
+/** Seconds shown next to the Length slider ("5 Sec"), or null when not found. */
+async function shownLengthSec(page: Page): Promise<number | null> {
+  const text = await overlay(page).getByText(/^\s*\d+\s*Sec\s*$/).first().innerText().catch(() => '');
+  const match = /(\d+)/.exec(text);
+  return match ? Number(match[1]) : null;
+}
+
+async function sliderNumber(slider: Locator, names: string[]): Promise<number | null> {
+  for (const name of names) {
+    const raw = await slider.getAttribute(name).catch(() => null);
+    if (raw !== null && raw.trim() !== '' && Number.isFinite(Number(raw))) return Number(raw);
+  }
+  return null;
+}
+
+const LENGTH_ATTEMPTS = 3;
+/** Screenshots of the Length popover, so a wrong clip length can be traced without the server console. */
+const LENGTH_DEBUG_DIR = path.join(paths.dataDir, 'flow-debug');
+const LENGTH_DEBUG_KEEP = 30;
+
+async function openLengthSlider(page: Page): Promise<Locator> {
+  await settingsTrigger(page).click();
+  const slider = overlay(page).locator('input[type="range"], [role="slider"]').first();
+  await slider.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {
+    throw new AppError('Flow Length slider not found in the settings popover', 502, 'FLOW_LENGTH_SLIDER_NOT_FOUND');
+  });
+  await sleep(600);
+  return slider;
+}
+
+async function closeSettings(page: Page): Promise<void> {
+  await page.keyboard.press('Escape');
+  await sleep(800);
+}
+
+async function saveLengthShot(page: Page, name: string): Promise<void> {
+  try {
+    await fs.mkdir(LENGTH_DEBUG_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(LENGTH_DEBUG_DIR, `${new Date().toISOString().replace(/[:.]/g, '-')}-${name}.png`) });
+    const files = (await fs.readdir(LENGTH_DEBUG_DIR)).filter(file => file.endsWith('.png')).sort();
+    for (const old of files.slice(0, Math.max(0, files.length - LENGTH_DEBUG_KEEP))) await fs.rm(path.join(LENGTH_DEBUG_DIR, old), { force: true });
+  } catch {
+    // debug only
+  }
+}
+
+interface LengthState {
+  /** Seconds in the "N Sec" label. */
+  sec: number;
+  /** The slider input's own value: a step index (0 = shortest), not seconds. */
+  index: number;
+  minSec: number;
+  maxSec: number;
+}
+
+/**
+ * Length as Flow holds it, read from a freshly opened popover. The slider input counts steps
+ * (min="0" max="7" for 3–10 s), so seconds come from the "N Sec" label and the input's index range is
+ * turned into seconds with the label's offset.
+ */
+async function readCommittedLength(page: Page, shot: string): Promise<LengthState> {
+  const slider = await openLengthSlider(page);
+  const raw = (await slider.inputValue().catch(() => '')).trim();
+  const index = raw === '' ? Number.NaN : Number(raw);
+  const sec = await shownLengthSec(page);
+  const min = (await sliderNumber(slider, ['min', 'aria-valuemin'])) ?? 0;
+  const max = (await sliderNumber(slider, ['max', 'aria-valuemax'])) ?? min;
+  await saveLengthShot(page, shot);
+  await closeSettings(page);
+  if (sec === null || !Number.isFinite(index)) {
+    throw new AppError(`Flow Length slider unreadable (label ${sec ?? '?'} Sec, input ${Number.isFinite(index) ? index : '?'})`, 502, 'FLOW_LENGTH_SLIDER_NOT_FOUND');
+  }
+  const offset = sec - index;
+  return { sec, index, minSec: min + offset, maxSec: max + offset };
+}
+
+/**
+ * Sets the clip Length slider and returns the seconds Flow will use. The slider input is focused and
+ * moved with the arrow keys (one step = one second), blurred so Flow takes the value, the popover is
+ * closed, and the length is read back from a freshly opened popover. Retries up to three times and
+ * throws when the length never matches, so no clip is made at a wrong length. Screenshots of every
+ * read go to data/flow-debug/.
+ */
+export async function setFlowVideoLength(page: Page, wantedSec: number): Promise<number> {
+  let state = await readCommittedLength(page, `length-before-${Math.round(wantedSec)}s`);
+  const target = Math.max(state.minSec, Math.min(state.maxSec, Math.round(wantedSec)));
+  for (let attempt = 1; attempt <= LENGTH_ATTEMPTS && state.sec !== target; attempt += 1) {
+    const slider = await openLengthSlider(page);
+    const steps = target - state.sec;
+    await slider.focus();
+    await sleep(300);
+    for (let step = 0; step < Math.abs(steps); step += 1) {
+      await page.keyboard.press(steps > 0 ? 'ArrowRight' : 'ArrowLeft');
+      await sleep(350);
+    }
+    await sleep(1_000);
+    await page.keyboard.press('Tab');
+    await sleep(500);
+    await closeSettings(page);
+    const before = state.sec;
+    state = await readCommittedLength(page, `length-try${attempt}-${target}s`);
+    emitDetailLog(`[flow-video-ui] length try ${attempt}: ${before}s → ${state.sec}s (wanted ${target}s, slider ${state.minSec}–${state.maxSec}s)`);
+  }
+  if (state.sec !== target) {
+    throw new AppError(`Flow Length is ${state.sec}s, wanted ${target}s`, 502, 'FLOW_LENGTH_NOT_SET');
+  }
+  emitDetailLog(`[flow-video-ui] length ${target}s`);
+  return target;
+}
+
+/**
+ * For checking the Length slider by eye: what the settings popover holds around "Length" (outerHTML of
+ * its block, every range input / slider role with its attributes and box). Read-only.
+ */
+export async function describeFlowLengthSlider(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const root = document.querySelector('.cdk-overlay-container') ?? document.body;
+    const label = [...root.querySelectorAll('*')].find(el => el.children.length === 0 && el.textContent?.trim() === 'Length');
+    let block: Element | null | undefined = label;
+    for (let up = 0; block && up < 4; up += 1) block = block.parentElement;
+    const sliders = [...root.querySelectorAll('input[type="range"], [role="slider"]')].map(el => {
+      const box = el.getBoundingClientRect();
+      const attrs = [...el.attributes].map(attr => `${attr.name}="${attr.value}"`).join(' ');
+      return `<${el.tagName.toLowerCase()} ${attrs}> box=${Math.round(box.x)},${Math.round(box.y)} ${Math.round(box.width)}x${Math.round(box.height)}`;
+    });
+    return [
+      `sliders (${sliders.length}):`,
+      ...sliders,
+      '--- Length block ---',
+      (block?.outerHTML ?? '(no "Length" label found)').slice(0, 6000),
+    ].join('\n');
+  });
+}
+
+/** Opens the settings popover and leaves it open (for a person to check the settings). */
+export async function openFlowVideoSettingsPopover(page: Page): Promise<void> {
+  await settingsTrigger(page).click();
+  await sleep(800);
 }
 
 /** Image chips in the prompt bar (ingredients attached for the current clip). */
@@ -175,75 +314,6 @@ async function typePrompt(page: Page, prompt: string): Promise<void> {
   await sleep(400);
 }
 
-/** Lower-case, single-spaced, for comparing prompts as Flow shows them. */
-function normalizePrompt(text: string): string {
-  return text.replace(/s+/g, ' ').trim().toLowerCase();
-}
-
-/** Each generation is one batch in the media list, newest first: tiles + prompt + ingredients. */
-function newestBatch(page: Page): Locator {
-  return page.locator('.batch-container').first();
-}
-
-async function batchPrompt(batch: Locator): Promise<string> {
-  return normalizePrompt(await batch.locator('flow-batch-info .prompt-text').first().innerText({ timeout: 2_000 }).catch(() => ''));
-}
-
-async function scrollMediaToTop(page: Page): Promise<void> {
-  await page
-    .evaluate(() => {
-      for (const el of document.querySelectorAll('.virtual-scroll-container, cdk-virtual-scroll-viewport')) {
-        let node: HTMLElement | null = el as HTMLElement;
-        while (node) {
-          if (node.scrollTop > 0) node.scrollTop = 0;
-          node = node.parentElement;
-        }
-      }
-    })
-    .catch(() => undefined);
-}
-
-type BatchState = { kind: 'pending' } | { kind: 'done' } | { kind: 'error'; text: string };
-
-async function batchState(batch: Locator): Promise<BatchState> {
-  const errorTile = batch.locator(FLOW_CONFIG.selectors.flowErrorTile).first();
-  if (await errorTile.isVisible().catch(() => false)) {
-    return { kind: 'error', text: (await errorTile.innerText().catch(() => '')).trim() || 'unknown flow-error-tile' };
-  }
-  const tiles = (await batch.locator('.batch-tiles-section').innerText({ timeout: 2_000 }).catch(() => '')).replace(/s+/g, ' ');
-  if (/fail|couldn.t|unable|went wrong|violat|policy/i.test(tiles)) return { kind: 'error', text: tiles.trim() };
-  // A rendering tile shows its progress as text (e.g. "41%").
-  if (/d{1,3}%/.test(tiles)) return { kind: 'pending' };
-  const thumbnail = await batch.locator('flow-video-tile img.thumbnail').first().getAttribute('src', { timeout: 2_000 }).catch(() => null);
-  return thumbnail ? { kind: 'done' } : { kind: 'pending' };
-}
-
-/** Saves the batch's video: its Download button (original file), else the hover-preview stream. */
-async function downloadBatchVideo(page: Page, batch: Locator, outputPath: string): Promise<void> {
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  try {
-    await batch.hover();
-    const [download] = await Promise.all([
-      page.waitForEvent('download', { timeout: 30_000 }),
-      batch.getByRole('button', { name: 'Download' }).first().click(),
-    ]);
-    await download.saveAs(outputPath);
-    const size = (await fs.stat(outputPath)).size;
-    if (size > 50_000) return;
-    emitDetailLog(`[flow-video-ui] Download button gave ${size} bytes, using the preview stream`);
-  } catch (err) {
-    emitDetailLog(`[flow-video-ui] Download button failed (${err instanceof Error ? err.message : String(err)}), using the preview stream`);
-  }
-  await page.keyboard.press('Escape').catch(() => undefined);
-  const tile = batch.locator('flow-video-tile').first();
-  await tile.hover();
-  const video = tile.locator('video').first();
-  await video.waitFor({ state: 'attached', timeout: 15_000 });
-  const src = await video.evaluate(el => (el as HTMLVideoElement).currentSrc || (el as HTMLVideoElement).src);
-  if (!src) throw new AppError('Flow video tile has no source', 502, 'FLOW_VIDEO_DOWNLOAD_FAILED');
-  await downloadFlowVideo(page, src, outputPath);
-}
-
 async function alertText(page: Page): Promise<string> {
   const texts = await page
     .locator('.mat-mdc-snack-bar-container, [role=alert], mat-dialog-container')
@@ -263,8 +333,10 @@ export async function prepareFlowClipViaUi(
 }
 
 /**
- * Submits one clip and waits for its video. A credits/limit message is a quota error (switch
- * profile); an error tile is classified like image tiles; anything else fails just this clip.
+ * Submits one clip and waits for its video. The project grid is snapshotted first; the clip is done
+ * when a `<video>` tile with a new `/asb/` src appears, and that src is downloaded as the mp4.
+ * A credits/limit message is a quota error (switch profile); a new error tile on top is classified
+ * like image tiles; anything else fails just this clip.
  */
 export async function generateFlowClipViaUi(
   page: Page,
@@ -273,48 +345,43 @@ export async function generateFlowClipViaUi(
   options: { uploadTag: string; timeoutMs?: number },
 ): Promise<void> {
   const timeoutMs = options.timeoutMs ?? FLOW_VIDEO_CLIP_TIMEOUT_MS;
-  await scrollMediaToTop(page);
-  const batchesBefore = await page.locator('.batch-container').count();
-  const promptBefore = await batchPrompt(newestBatch(page));
-  // Flow clamps the shown prompt; the first words are enough to recognise our batch.
-  const wanted = normalizePrompt(job.prompt).slice(0, 60);
 
   await prepareFlowClipViaUi(page, job, options.uploadTag);
+  // After the ingredient upload (it adds an image tile on top), before submit.
+  const snapshot = await snapshotFlowGridVideos(page);
 
   const generate = page.getByRole('button', { name: 'Start generation' });
   if (!(await generate.isEnabled())) {
     throw new AppError('Flow generate button is disabled', 502, 'FLOW_GENERATE_DISABLED');
   }
   await generate.click();
-  emitDetailLog(`[flow-video-ui] submitted ${job.name}`);
+  emitDetailLog(`[flow-video-ui] submitted ${job.name} (grid had ${snapshot.videoKeys.size} video(s))`);
 
   const deadline = Date.now() + timeoutMs;
-  let found = false;
+  let lastDownloadError = '';
   while (Date.now() < deadline) {
     await sleep(POLL_MS);
 
     const alert = await alertText(page);
     if (/credit|limit|quota/i.test(alert)) throw createFlowDailyQuotaError(alert);
 
-    await scrollMediaToTop(page);
-    const batch = newestBatch(page);
-    if (!found) {
-      const prompt = await batchPrompt(batch);
-      const isNew = (await page.locator('.batch-container').count()) > batchesBefore || prompt !== promptBefore;
-      if (!isNew || !prompt || !prompt.startsWith(wanted.slice(0, Math.min(wanted.length, prompt.length)))) continue;
-      found = true;
-      emitDetailLog(`[flow-video-ui] ${job.name}: batch appeared, rendering...`);
-    }
+    const state = await pollFlowGridVideo(page, snapshot);
+    if (state.kind === 'error') throw state.error;
+    if (state.kind === 'pending') continue;
 
-    const state = await batchState(batch);
-    if (state.kind === 'error') throw appErrorFromFlowErrorTileText(state.text);
-    if (state.kind === 'done') {
-      await downloadBatchVideo(page, batch, outputPath);
+    try {
+      emitDetailLog(`[flow-video-ui] ${job.name}: video src ${state.src.slice(0, 80)}...`);
+      await downloadFlowVideo(page, state.src, outputPath);
       return;
+    } catch (err) {
+      // The tile can show its src a moment before the file is served; keep polling until the deadline.
+      lastDownloadError = err instanceof Error ? err.message : String(err);
+      emitDetailLog(`[flow-video-ui] ${job.name}: download not ready (${lastDownloadError}), retrying`);
     }
   }
   throw new AppError(
-    `Flow: no video for ${job.name} after ${Math.round(timeoutMs / 1000)}s${found ? '' : ' (its batch never appeared)'}`,
+    `Flow: no video for ${job.name} after ${Math.round(timeoutMs / 1000)}s` +
+      (lastDownloadError ? ` (last download error: ${lastDownloadError})` : ' (no new video tile appeared)'),
     504,
     'FLOW_VIDEO_TIMEOUT',
   );

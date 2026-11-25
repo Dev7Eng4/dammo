@@ -9,6 +9,7 @@ import { formatCompact } from '../../utils/ypp'
 import { youtubeWatchUrl } from '../../utils/youtubeVideo'
 import { Button, Modal } from '../ui'
 import { CommentThread } from './CommentThread'
+import { appLocale } from '../../utils/locale'
 
 interface PublishedVideoModalProps {
   open: boolean
@@ -128,7 +129,7 @@ export function PublishedVideoModal({ open, channelId, video, onClose }: Publish
             <MessageCircle className="size-4" aria-hidden="true" />
             {loading
               ? t('comments.title')
-              : t('comments.count', { count: total.toLocaleString('vi-VN') })}
+              : t('comments.count', { count: total.toLocaleString(appLocale()) })}
           </h3>
 
           {loading ? <CommentsSkeleton /> : null}

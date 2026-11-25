@@ -207,6 +207,7 @@
     "modes": {
       "intro": "Chỉ intro ({{sec}}s đầu)",
       "full": "Toàn bộ cảnh",
+      "interleaved": "Intro + 1 clip mỗi {{min}}–{{max}} ảnh",
       "scenes": "Tự chọn cảnh"
     },
     "channelImages": "Kênh này đang để kiểu video từ ảnh — chọn intro hoặc toàn bộ nếu muốn có chuyển động.",
@@ -218,42 +219,70 @@
     "badgeClip": "Clip",
     "badgeImage": "Ảnh",
     "remove": "Bỏ clip",
+    "replace": "Đổi clip",
     "one": "Tạo clip",
-    "titleCard": "Thẻ tiêu đề — giữ nguyên"
+    "titleCard": "Thẻ tiêu đề — giữ nguyên",
+    "replaced": "Đã đổi clip cảnh #{{index}}. Dựng lại video để dùng clip."
   },
   "source": {
     "none": "Không có nhóm",
     "channelProjects": "Dự án của kênh",
-    "channelVideos": "Video đã chuẩn bị / đã tạo"
+    "channelVideos": "Video đang chuẩn bị / đã chuẩn bị / đã tạo"
   },
   "channelVideo": {
     "status": {
       "Prepared": "Đã chuẩn bị",
-      "Created": "Đã tạo"
+      "Created": "Đã tạo",
+      "Preparing": "Đang chuẩn bị"
     },
-    "empty": "Kênh này chưa có video nào đã chuẩn bị hoặc đã tạo.",
+    "empty": "Kênh này chưa có video nào đang chuẩn bị, đã chuẩn bị hoặc đã tạo.",
     "tabs": {
-      "characters": "Character reference"
+      "characters": "Nhân vật tham chiếu"
     },
     "source": {
-      "hint": "Video nguồn trên YouTube mà video này được làm lại từ đó."
+      "hint": "Video nguồn trên YouTube mà video này được làm lại từ đó.",
+      "starting": "Đang tạo thư mục video từ kịch bản skill…"
     },
     "script": {
       "remakeHint": "Kênh Remake: viết lại kịch bản từ transcript của video nguồn bằng ChatGPT/Gemini/Claude (cùng bộ prompt với dự án), rồi bấm \"Dùng kết quả làm kịch bản\". Có thể sửa tay ở dưới.",
-      "size": "{{chars}} ký tự"
+      "size": "{{chars}} ký tự",
+      "fromSkill": "Kịch bản do skill viết sẵn hằng đêm (kiểm ĐẠT {{date}}). Muốn bản khác thì bấm Remake ở trên, dùng kết quả rồi đọc giọng lại."
     },
     "voice": {
       "title": "Đọc giọng VOICEVOX",
+      "groupPresets": "Giọng đã lưu (Cài đặt → VOICEVOX)",
+      "groupSpeakers": "Speaker VOICEVOX (không preset)",
+      "defaultMark": "mặc định",
+      "presetInfo": "{{speaker}} · cao độ {{pitch}} · ngữ điệu {{intonation}} · âm lượng {{volume}} · nghỉ {{pause}}. Tốc độ đọc điền sẵn từ giọng đã lưu ({{speed}}), sửa được.",
       "hint": "Đọc kịch bản ở tab Kịch bản. Giọng đọc thay audio và phụ đề của video; audio và transcript gốc của video nguồn được giữ trong thư mục source/.",
       "running": "Đang đọc {{progress}}",
       "done": "Đã đọc giọng xong",
       "failed": "Đọc giọng lỗi",
       "needScript": "Cần có kịch bản trước.",
-      "rescenes": "Scene hiện có vẫn theo thời gian của audio cũ — bấm \"Tạo lại scenes\" ở tab Scene & ảnh để khớp với giọng mới, rồi dựng lại video.",
+      "rescenes": "Đọc lại giọng thì các cảnh đã có tự dời theo thời gian của giọng mới. Nếu kịch bản đã đổi nhiều, app sẽ báo để tạo lại cảnh.",
       "narration": "Giọng đọc ({{duration}})",
       "source": "Audio đã tải của video nguồn",
-      "sourceKept": "Audio gốc của video nguồn được giữ ở source/audio.mp3."
-    }
+      "sourceKept": "Audio gốc của video nguồn được giữ ở source/audio.mp3.",
+      "scenesStale": "Kịch bản đã đổi nhiều so với lúc tạo cảnh (chỉ {{percent}}% câu còn giữ): ảnh không còn khớp lời. Bấm \"Tạo lại scenes\" ở tab Scene & ảnh, rồi dựng lại video.",
+      "readings": {
+        "title": "Nghe lại cách đọc ({{count}} từ)",
+        "hint": "Số, tên riêng, chữ Latin và chữ có hai cách đọc trong kịch bản, kèm cách VOICEVOX đã đọc câu đầu tiên có từ đó. Đọc sai thì ghi cách đọc đúng bằng katakana: chỉ tiếng đọc đổi, kịch bản và phụ đề giữ nguyên. Lưu xong bấm đọc lại giọng; chỉ những câu có từ đó được đọc lại.",
+        "sentences": "{{count}} câu",
+        "placeholder": "Cách đọc đúng (katakana)",
+        "save": "Lưu cách đọc",
+        "saved": "Đã lưu: {{surface}} → {{reading}}",
+        "inDictionary": "Đã có trong từ điển: {{reading}}",
+        "remove": "Xoá",
+        "noReading": "(VOICEVOX chưa mở lúc đọc: chưa có cách đọc)",
+        "kind": {
+          "number": "số",
+          "name": "tên",
+          "latin": "Latin",
+          "homograph": "hai cách đọc"
+        }
+      }
+    },
+    "sceneCount": "{{count}} cảnh"
   },
   "metadata": {
     "empty": "Chưa có metadata. Bấm nút ở trên để tạo.",

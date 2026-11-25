@@ -23,6 +23,11 @@ export interface AppSettings {
    * Uses that many profiles with the default text LLM ticked in LLM Content (clamped to how many exist).
    */
   aiScenePromptConcurrency: number;
+  /**
+   * Meta AI image generation: windows (tabs) opened per Chrome profile (1–5). All of them share the
+   * profile's Meta account, so this is how many prompts one account gets at the same time.
+   */
+  metaTabsPerProfile: number;
   /** Default seeding period for a new email account, in days. */
   seedingEmailDays: number;
   /** Default seeding period for a new YouTube channel, in days. */

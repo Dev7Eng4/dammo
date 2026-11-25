@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input } from '../ui'
+import { localizeSourceNames } from '../../utils/youtubeChannel';
 import { formatChannelUploadSchedule } from '../../constants/youtubeChannelForm'
 import type { Niche } from '../../types/niche'
 import { type YoutubeChannel, type YoutubeChannelLanguage } from '../../types/youtubeChannel'
@@ -181,7 +182,7 @@ export function YoutubeChannelDetailPanel({
                   readOnly
                   value={
                     channel.sourceNames?.length
-                      ? channel.sourceNames.join(', ')
+                      ? localizeSourceNames(channel.sourceNames).join(', ')
                       : channel.sourceChannels?.length
                         ? channel.sourceChannels.join(', ')
                         : '—'

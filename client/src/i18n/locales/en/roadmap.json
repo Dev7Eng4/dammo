@@ -1,8 +1,169 @@
 {
   "page": {
     "title": "Monetization roadmap",
-    "subtitle": "Next revenue streams, scored by earning potential, AI automation fit, speed to first income and platform risk.",
-    "disclaimer": "Scores are estimates for prioritising, not income promises. Program requirements (beta access, country, follower thresholds) change often — verify in your account before investing."
+    "subtitle": "Which market, language and platform to invest in: estimated RPM, whether you can get paid while living in Vietnam, limits, and a 6-month plan that puts early income first.",
+    "disclaimer": "RPMs are estimated ranges compiled from creator-reported figures up to 2026 for psychology / self-improvement content with an adult audience; real numbers vary widely by niche, season (Q4 highest, January lowest) and video length. Meta, TikTok and YouTube program rules change often — verify in your account before investing. Not an income promise."
+  },
+  "tabs": {
+    "markets": "Markets & languages",
+    "tracks": "Income tracks",
+    "plan": "6-month plan"
+  },
+  "pick": {
+    "title": "Verdict for you",
+    "lead": "You live in Vietnam, already have a working Japanese video pipeline and programming skills. Don't spread thin: three layers of income, done in order.",
+    "cash": {
+      "label": "Money in 2–6 weeks",
+      "body": "Freelance programming / AI video services for others, and TikTok Shop Affiliate Vietnam. These are the only two paths that can pay in the first month while you live in Vietnam."
+    },
+    "main": {
+      "label": "Main income in 2–6 months",
+      "body": "Your existing Japanese YouTube: focus on the best 1–2 channels until monetized. Japan RPM USD 2.5–6, VOICEVOX is free, almost no US tax withholding."
+    },
+    "expand": {
+      "label": "Scale once Japan earns",
+      "body": "Open one German channel (RPM USD 4–9, few AI channels) or English (RPM USD 5–12 but brutal competition and 30% withheld on US viewers). Use the ElevenLabs integration already in the app."
+    }
+  },
+  "market": {
+    "tableTitle": "Market comparison",
+    "tableHint": "RPM = USD you receive per 1,000 views. Sorted by recommended priority, then score; click a row for the detailed analysis.",
+    "col": {
+      "market": "Market",
+      "ytLong": "YouTube long",
+      "ytShorts": "Shorts",
+      "facebook": "Facebook",
+      "keep": "Kept after tax",
+      "voice": "Voice / month",
+      "total": "Score",
+      "tier": "Verdict"
+    },
+    "free": "Free",
+    "none": "—",
+    "detailTitle": "Detailed analysis",
+    "audience": "Audience",
+    "verdict": "Verdict",
+    "invest": "What to invest in",
+    "limits": "Limits",
+    "firstSteps": "How to start",
+    "platformsTitle": "Platforms — can you get paid from Vietnam?",
+    "scoresTitle": "Scores",
+    "rpmTitle": "Estimated RPM (USD / 1,000 views)"
+  },
+  "marketScore": {
+    "rpm": "RPM",
+    "access": "Payable from VN",
+    "competition": "Low competition",
+    "pipelineFit": "Pipeline fit",
+    "size": "Audience size"
+  },
+  "marketTier": {
+    "core": "Do now (existing)",
+    "expand": "Expand next",
+    "test": "Test later",
+    "cash": "Fast cash",
+    "skip": "Not a priority"
+  },
+  "access": {
+    "ok": "Yes",
+    "limited": "Limited / varies",
+    "no": "No"
+  },
+  "platform": {
+    "ytLong": "YouTube long-form",
+    "ytShorts": "YouTube Shorts",
+    "facebook": "Facebook (Content Monetization)",
+    "tiktokRewards": "TikTok Creator Rewards",
+    "tiktokShop": "TikTok Shop Affiliate",
+    "affiliate": "Affiliate (Amazon, ClickBank…)",
+    "local": "Local platforms"
+  },
+  "calc": {
+    "title": "Monthly income estimate",
+    "hint": "Enter the monthly views you expect. The result subtracts estimated US withholding and voice cost.",
+    "market": "Market",
+    "long": "Long-form views / month",
+    "shorts": "Shorts views / month",
+    "facebook": "Facebook views / month",
+    "result": "You could receive",
+    "perMonth": "/ month",
+    "vnd": "≈ {{low}} – {{high}} million VND (~26,000 VND/USD)",
+    "voice": "Voice cost of USD {{cost}}/month subtracted.",
+    "gate": "Only after the channel is monetized: 1,000 subscribers + 4,000 long-form watch hours in 12 months, or 1,000 subscribers + 10M Shorts views in 90 days."
+  },
+  "markets": {
+    "jp": {
+      "name": "Japan · Japanese",
+      "audience": "People aged 50–70 watch a lot of YouTube, watch long and rarely drop off. Facebook is weak in Japan; LINE and X are strong but barely pay foreign creators.",
+      "verdict": "Your main market. Not the highest RPM, but the cheapest place to run your pipeline (free VOICEVOX) and you already know the niche.",
+      "invest": "12–30 minute YouTube videos as the main income; Shorts only for subscribers. Amazon Japan / Rakuten affiliate in the pinned comment as a small extra. Japanese Facebook only to funnel people to YouTube.",
+      "limits": "The 人生後半 / 脳科学 niches are full of AI channels and Japanese viewers notice bad Japanese or robotic voices. YouTube demonetizes mass-produced, templated content. Amazon Japan affiliate is strict. TikTok Creator Rewards Japan requires Japanese residency.",
+      "firstSteps": "Pick the 1–2 channels with the best retention, post 3–4 long videos a week, use the Trend/CTR/Competitor brains for topics and titles + thumbnails. No new channels until one is monetized.",
+      "localName": "note.com, LINE VOOM"
+    },
+    "en": {
+      "name": "US, UK, Canada, Australia · English",
+      "audience": "The biggest market with the most advertisers. US viewers 45+ use both YouTube and Facebook heavily; stoicism, psychology, Buddha teachings and senior health are searched a lot.",
+      "verdict": "Highest pay per view but hardest to break into. Only once Japan earns and you have a genuinely different angle.",
+      "invest": "Long-form English YouTube on a narrow angle. English Facebook video if the Page is eligible. International affiliate (Amazon Associates, ClickBank, software) works from Vietnam. Digital products via Gumroad / Patreon.",
+      "limits": "The most crowded market, full of AI channels. Living in Vietnam, 30% of revenue from US viewers is withheld (no US tax treaty in force); without tax info in AdSense up to 24% of all revenue can be withheld. Needs a paid voice. TikTok Creator Rewards is not open to Vietnam residents.",
+      "firstSteps": "After Japan earns: translate your 10 best scripts, rework hooks for US culture, run one channel for 8 weeks and check retention before scaling.",
+      "localName": "Patreon, Gumroad, Medium"
+    },
+    "de": {
+      "name": "Germany, Austria, Switzerland · German",
+      "audience": "Well-off viewers, ad rates close to the US. Far less German psychology / philosophy / mental-health content than English.",
+      "verdict": "The best gap to expand into: high RPM, few AI channels, little US withholding since viewers aren't in the US.",
+      "invest": "Long-form German YouTube with the same senior psychology formula. Amazon.de affiliate. Shorts for subscribers.",
+      "limits": "You can't read German, so quality control is harder — needs careful AI review and a good ElevenLabs voice. German viewers punish misinformation; cite real studies. Smaller audience than English.",
+      "firstSteps": "Translate and localize your 10 best scripts, pick one natural German ElevenLabs voice, test one channel for 8 weeks.",
+      "localName": "Steady, Patreon"
+    },
+    "kr": {
+      "name": "South Korea · Korean",
+      "audience": "YouTube is very strong; middle-aged viewers watch psychology and life advice. Facebook is declining; Naver and KakaoTalk dominate but need Korean ID.",
+      "verdict": "RPM similar to Japan and the formula transfers, but only YouTube pays.",
+      "invest": "Long-form Korean YouTube. No Facebook for Korea.",
+      "limits": "Naver / Kakao are effectively closed to foreigners. Small market; Koreans dislike robotic voices and machine-translated Korean. Needs a paid voice.",
+      "firstSteps": "After German or English; only with a Korean speaker to check scripts.",
+      "localName": "Naver Blog / Clip"
+    },
+    "tw": {
+      "name": "Taiwan, Hong Kong · Traditional Chinese",
+      "audience": "One of Asia's heaviest Facebook users, plus YouTube, LINE and Threads. Older viewers like Buddhism, psychology and healthy living.",
+      "verdict": "Average RPM, but the one place the same content works on both YouTube and Facebook.",
+      "invest": "Long-form YouTube + Facebook video in Traditional Chinese, Buddhism / healthy ageing niche.",
+      "limits": "RPM only USD 1.5–4, small market. Must use Traditional characters and Taiwanese phrasing.",
+      "firstSteps": "Last of the Asian markets; reuse existing Buddhism scripts.",
+      "localName": "LINE, Threads"
+    },
+    "es": {
+      "name": "Spain, Latin America, US Hispanics · Spanish",
+      "audience": "500M+ speakers, heavy YouTube use. RPM is a blend: US and Spain viewers pay well, Latin America pays little.",
+      "verdict": "Big view volume, moderate competition, low pay per view. Good for testing formulas fast.",
+      "invest": "Long-form Spanish YouTube. Amazon US / ES affiliate.",
+      "limits": "RPM USD 1–4; US viewers still withheld at 30%. Needs a paid voice.",
+      "firstSteps": "Only after an English or German channel runs; reuse scripts.",
+      "localName": "Patreon"
+    },
+    "br": {
+      "name": "Brazil · Portuguese",
+      "audience": "Large population, heavy YouTube, Kwai and TikTok use.",
+      "verdict": "Cheap views: you need huge volume for meaningful money. Not a priority.",
+      "invest": "Don't invest now.",
+      "limits": "RPM USD 0.8–2.5, Shorts pay almost nothing. Hotmart / Kwai are awkward for foreigners.",
+      "firstSteps": "Skip until the markets above run.",
+      "localName": "Kwai, Hotmart"
+    },
+    "vn": {
+      "name": "Vietnam · Vietnamese",
+      "audience": "The market you know best and the easiest to get paid in: TikTok Shop, Shopee and Facebook are all open to Vietnam residents. Vietnamese buy a lot through video.",
+      "verdict": "YouTube / Facebook ad money is very low, but it's the fastest money through selling (TikTok Shop Affiliate) and services.",
+      "invest": "No ad-revenue channels. Instead: TikTok Shop Affiliate Vietnam, Shopee Affiliate, and selling AI video / programming services to Vietnamese shops and creators.",
+      "limits": "Ad RPM USD 0.3–1.2 — a Vietnamese channel for ad revenue alone is wasted effort. TikTok Shop punishes spam and false claims; TikTok Creator Rewards isn't available in Vietnam.",
+      "firstSteps": "Open one real TikTok account, pick one niche (household / books), post 2–3 videos a day with the dammo pipeline, check orders after 2 weeks.",
+      "localName": "Shopee, TikTok Shop VN, freelance"
+    }
   },
   "score": {
     "earn": "Earning potential",
@@ -16,12 +177,8 @@
     "next": "Do next",
     "later": "Later"
   },
-  "pick": {
-    "title": "Quick verdict",
-    "body": "Start with TikTok Shop Affiliate: it is where AI helps most (high-volume product review videos), pays fastest and needs no inventory. Keep YouTube as the base and add affiliate links to descriptions/bios to monetize existing traffic. TikTok Creator Rewards and Facebook Reels pay per view — pursue them only with original, higher-quality content. Leave organic dropshipping for last because it needs real operations (suppliers, support, returns)."
-  },
   "table": {
-    "title": "Comparison",
+    "title": "Income track comparison",
     "track": "Track",
     "tier": "Priority"
   },
@@ -29,91 +186,114 @@
     "title": "Track analysis",
     "summary": "Overview",
     "aiRole": "What AI can do",
-    "steps": "Direction",
+    "steps": "Steps",
     "risk": "Risks to avoid"
   },
   "phase": {
-    "title": "Phased roadmap",
+    "title": "Plan by phase",
     "p1": {
-      "name": "Phase 1 · Days 0–30",
-      "body": "Set up the TikTok Shop affiliate workflow and add affiliate links to existing YouTube channels. Goal: first orders and a signal on which products/niches convert."
+      "name": "Weeks 1–4 · Money now",
+      "body": "Take 1–2 freelance programming or AI video jobs to cover living costs. In parallel, start TikTok Shop Affiliate Vietnam in one niche. Goal: the first money in your account, not big revenue."
     },
     "p2": {
-      "name": "Phase 2 · Days 30–90",
-      "body": "Scale what works: more accounts in the converting niche, cross-post to Facebook Reels, and trial TikTok Creator Rewards with an original 1-minute+ series."
+      "name": "Months 1–3 · Monetize Japanese YouTube",
+      "body": "Put all remaining time into the best 1–2 Japanese channels: 3–4 long videos a week, redo titles + thumbnails on low-CTR videos. Goal: 1,000 subscribers + 4,000 watch hours, monetized."
     },
     "p3": {
-      "name": "Phase 3 · Day 90+",
-      "body": "Only with sales data in hand: test organic dropshipping with the 1–2 best-selling affiliate products, so demand is proven before you buy stock."
+      "name": "Months 3–6 · Multiply what works",
+      "body": "Once Japan earns: open one German or English channel from your 10 best localized scripts. Add affiliate links to old descriptions. Cut freelance once YouTube covers living costs."
+    },
+    "p4": {
+      "name": "After 6 months · Sustainable",
+      "body": "Keep only markets with good RPM and retention; stop channels that don't grow in 3 months. Consider digital products (ebook, short course) for loyal viewers — the highest margin."
     }
+  },
+  "rules": {
+    "title": "Rules while money is tight",
+    "r1": "Don't borrow to invest in channels, proxies, accounts or \"make money online\" courses. Spend only on what has proven to earn.",
+    "r2": "Keep fixed costs under USD 20/month until there is income: free VOICEVOX, few proxies, no bought channels / aged accounts.",
+    "r3": "One ad-revenue market + one fast-cash source at a time. Spreading over many channels is the most common reason none gets monetized.",
+    "r4": "Don't fake IP / country to join programs closed to Vietnam — payouts get held right before payment and accounts can be lost.",
+    "r5": "No reuploads and no mass-produced templated videos: both YouTube and Meta demonetize them.",
+    "r6": "Submit tax info in AdSense as soon as you are monetized to avoid 24% withholding on all revenue."
   },
   "ai": {
     "title": "Mapped to existing Dammo modules",
-    "radar": "Viral radar → find exploding products/topics to make videos about and pick affiliate items.",
-    "prompts": "Prompts + Visual styles → generate review scripts, 3-second hooks and CTAs per niche.",
-    "production": "Video production + Task queue → batch-render 9:16 videos for TikTok, Reels and Shorts from one script.",
-    "accounts": "Chrome/GPM + Proxies + YouTube channels → manage separate accounts, one niche each, to avoid duplicate posting."
+    "radar": "Viral radar + Trend brain → rising topics for Japanese channels; for TikTok Shop, find best-selling products.",
+    "prompts": "Prompts + CTR / Ideas brains → scripts, titles, thumbnails; translate and localize the best scripts into German / English.",
+    "production": "Video production → long-form for YouTube, 9:16 cuts for Shorts / Reels / TikTok from one script. VOICEVOX for Japanese, ElevenLabs for other languages.",
+    "accounts": "Chrome/GPM + Proxy → one profile per channel, fixed IP, no country hopping; no fake accounts."
   },
   "track": {
+    "freelanceServices": {
+      "name": "Freelance programming & AI video services",
+      "summary": "Sell skills you already have: front-end / back-end jobs, or AI videos, channel setup and automation for shops and creators. The fastest, most reliable money when you need it, independent of algorithms.",
+      "aiRole": "High: the dammo pipeline lets you make client videos at near-zero cost; AI speeds up programming jobs.",
+      "step1": "Make a short intro page + 3 sample videos from dammo, or 2–3 sample code projects.",
+      "step2": "Pitch in Vietnamese freelance Facebook groups, Upwork, Fiverr, and message TikTok / Shopee shop owners who need videos.",
+      "step3": "Start at a moderate price to get first reviews, raise it after 3–5 clients.",
+      "step4": "Turn one-off clients into monthly packages (e.g. 30 videos/month) for steady income.",
+      "risk": "Take a deposit and define scope in writing. Don't use copyrighted content / music in client videos."
+    },
     "tiktokAffiliate": {
-      "name": "TikTok Shop Affiliate",
-      "summary": "Make videos promoting other sellers' products on TikTok Shop and earn a commission per order (typically a few percent up to ~20% depending on category). No capital, no inventory. It has the highest income ceiling for a mass video production model.",
-      "aiRole": "Very high: review scripts, voiceover, product scene assembly, captions, and many render variants of one product to test hooks.",
-      "step1": "Pick 1–2 niches with repeat demand (home, beauty, kitchen) instead of chasing everything.",
-      "step2": "Use Radar and best-seller lists to choose 10–20 products and make 3–5 hook variants per product.",
-      "step3": "Post 2–3 videos/day/account, measure orders per video, clone winning hooks and drop products with no orders after about a week.",
-      "step4": "When a niche is stable, open more accounts in it; consider expanding to other supported countries.",
-      "risk": "Repetitive, spammy or misleading promo videos lose reach or the affiliate privilege. Label AI-generated content as required and avoid misleading product visuals."
+      "name": "TikTok Shop Affiliate Vietnam",
+      "summary": "Make product videos on TikTok Shop Vietnam and earn commission per order (a few % up to ~20% by category). Open to Vietnam residents, no capital, no inventory. TikTok Shop in other countries (US, Japan…) requires local residency.",
+      "aiRole": "Very high: review scripts, voice-over, product scenes, captions, many hook variants per product.",
+      "step1": "Pick one niche with repeat demand (household, kitchen, books).",
+      "step2": "Pick 10–20 best sellers, make 3–5 hook variants each.",
+      "step3": "Post 2–3 videos a day, track orders per video, drop products with no orders after about a week.",
+      "step4": "Only add accounts once a niche is stable; each account a real person with its own content.",
+      "risk": "Repetitive, spammy or false-claim videos lose reach or affiliate access. Label AI content as required."
     },
     "affiliateBio": {
-      "name": "Affiliate in descriptions/bio (Amazon, SaaS, ClickBank…)",
-      "summary": "Put affiliate links in YouTube descriptions, Pinterest and TikTok/Instagram bios. It monetizes traffic you already have at almost no extra cost. Recurring SaaS commissions can pay steadier than physical goods.",
-      "aiRole": "High: auto-write per-video CTAs and link descriptions, and produce tool/book comparison videos.",
-      "step1": "Pick programs that fit the channel niche (psychology/money channels → books, courses, tools).",
-      "step2": "Add links and CTAs to older video descriptions in one bulk update.",
-      "step3": "Make a few top-tools/books videos aimed at search keywords — content that stays alive on YouTube.",
-      "step4": "Track clicks and orders per link and keep the programs that convert.",
-      "risk": "Disclose the affiliate relationship as the platform requires; never misstate commissions or product benefits."
+      "name": "Affiliate in descriptions / pinned comments",
+      "summary": "Put affiliate links (Amazon, Rakuten, ClickBank, software) in YouTube descriptions and pinned Facebook comments. Monetizes existing traffic at near-zero cost. Small but compounding.",
+      "aiRole": "High: writes CTAs and per-video descriptions with links, makes top-books / tools videos.",
+      "step1": "Pick programs that fit the niche (psychology → books, courses, wellness products).",
+      "step2": "Bulk-update links and CTAs in old descriptions.",
+      "step3": "Make a few top-books / tools videos targeting search — long-lived videos.",
+      "step4": "Track clicks and orders per link; keep converting programs.",
+      "risk": "Disclose affiliate relationships. Amazon Japan is strict and may close accounts with no sales in 180 days."
     },
     "fbReels": {
-      "name": "Facebook Reels (Content Monetization)",
-      "summary": "Meta pays by Reels performance for eligible Pages, and you can also add affiliate links. The same vertical video works on TikTok and Shorts so the extra cost is low. Eligibility and payouts vary by country and program round.",
-      "aiRole": "High for production; lower for differentiation since Meta demotes reposted or near-identical content.",
-      "step1": "Create a dedicated Page (not a personal profile) and check its monetization eligibility.",
-      "step2": "Cross-post existing vertical videos, but change the hook/title and remove other platforms' watermarks.",
-      "step3": "Track for 4–6 weeks: turn high-retention videos into a series, drop the rest.",
-      "step4": "Use Reels as a funnel to affiliate or your own product instead of relying on view payouts alone.",
-      "risk": "Unoriginal or reposted content can lose monetization or distribution. Music/image copyright strikes are a common failure."
+      "name": "Facebook (Content Monetization)",
+      "summary": "Meta pays eligible Pages for long video, Reels and post performance; rates follow the viewer's country. Strongest with US 45+ and Taiwan, weak in Japan and Korea. Eligibility for Vietnam-based Pages changes by rollout.",
+      "aiRole": "High for production; lower for differentiation since Meta downranks reposted / duplicate content.",
+      "step1": "Open a Page with your real account, check Professional Dashboard → Monetization for eligibility.",
+      "step2": "Repost existing videos with new hooks / titles, no other-platform watermarks.",
+      "step3": "Watch 4–6 weeks: series-ize high-retention videos, drop the rest.",
+      "step4": "Use Facebook to funnel to YouTube and affiliate links if the Page isn't eligible.",
+      "risk": "Unoriginal / reposted content gets demonetized. Running many Pages via fake accounts can get the whole cluster banned."
     },
     "youtubeCore": {
-      "name": "YouTube (current base)",
-      "summary": "Existing Shorts and long-form channels are the base traffic source and the most durable platform. Ad income is slow because of monetization thresholds, but long-form videos have long lifespans.",
-      "aiRole": "Very high: the current Dammo pipeline (script → visuals → voice → render) already serves this track.",
-      "step1": "Keep a steady cadence and focus on niches with good retention instead of spreading across more channels.",
-      "step2": "Use the channels as a traffic pool for affiliate (track above) rather than living on ad revenue alone.",
-      "step3": "Turn well-performing Shorts into long-form videos aimed at search keywords for lasting traffic.",
-      "step4": "Favour quality over volume: YouTube cracks down on repetitive, mass-produced, low-value content.",
-      "risk": "Templated mass-produced content can be treated as inauthentic and lose monetization. Vary structure, visuals and voice between videos."
+      "name": "Japanese YouTube (current platform)",
+      "summary": "The main and most durable income: YouTube pays Vietnam residents by the viewer's country. Slow to start because of the monetization threshold, but long videos last.",
+      "aiRole": "Very high: the whole dammo pipeline (script → images → voice → render) and the brains already serve this.",
+      "step1": "Focus on the 1–2 best-retention channels, stop opening new ones.",
+      "step2": "3–4 long videos a week, redo titles + thumbnails on low-CTR videos.",
+      "step3": "Turn winning Shorts into search-targeted long videos.",
+      "step4": "Once monetized, copy the formula into German / English.",
+      "risk": "Mass-produced templated content is treated as inauthentic and demonetized. Vary structure, visuals and voice between videos."
     },
     "tiktokBeta": {
-      "name": "TikTok Creator Rewards (beta)",
-      "summary": "A program paying by qualified views on original videos of 1 minute or longer, with RPM typically much higher than short clips. Requirements usually include a minimum follower count, 30-day views, age and a supported country. It is still a pilot, so it can change at any time.",
-      "aiRole": "Medium: AI helps with scripts, visuals and voice, but content must be original, valuable and non-templated to qualify.",
-      "step1": "Check Creator Center for account/country eligibility before investing.",
-      "step2": "Pick one storytelling/educational niche and make 1–3 minute videos, each with its own angle.",
-      "step3": "Grow followers and views with short clips, then move to long videos once eligible.",
-      "step4": "Measure real RPM after 30 days, then decide whether to scale.",
-      "risk": "Videos judged unoriginal, repetitive or low quality earn nothing. For AI content, label it as required."
+      "name": "TikTok Creator Rewards",
+      "summary": "Pays per view for original videos over 1 minute, decent RPM. But only open to residents of certain countries (US, UK, Germany, Japan, Korea, France, Brazil…) — Vietnam residents can't join.",
+      "aiRole": "Medium: needs original, non-templated content.",
+      "step1": "Don't invest while living in Vietnam.",
+      "step2": "Use TikTok for Shop Affiliate Vietnam instead.",
+      "step3": "Watch for the program opening in Vietnam.",
+      "step4": "Then check eligibility in Creator Center.",
+      "risk": "Faking country / IP to join breaks the terms: payouts held and accounts banned."
     },
     "dropshipOrganic": {
       "name": "Organic dropshipping",
-      "summary": "Sell without holding stock using organic video traffic (TikTok Shop, Facebook). Margin per order is higher than affiliate, but you own the customer experience: fulfilment, delivery, refunds and complaints.",
-      "aiRole": "Medium: AI handles videos and product copy well, but success depends on suppliers, pricing and support — which AI cannot replace.",
-      "step1": "Start only after affiliate shows which products have real demand.",
-      "step2": "Pick 1–2 best sellers and order samples to check quality and delivery time.",
-      "step3": "Choose suppliers with clear delivery times and a return policy; price in platform fees, shipping and returns.",
-      "step4": "Scale only when margin after costs stays positive for several weeks in a row.",
-      "risk": "Late delivery, defective goods and many refunds lower shop score and can get the Shop banned. This has the highest platform and operational risk."
+      "summary": "Sell without inventory using organic video traffic. Higher margin per order than affiliate, but you own the customer: shipping, refunds, complaints.",
+      "aiRole": "Medium: AI handles video and descriptions, but sourcing, price and support decide the outcome.",
+      "step1": "Only after affiliate shows which products have real demand.",
+      "step2": "Pick the 1–2 best sellers, order samples to check quality.",
+      "step3": "Price in platform fees, shipping and returns.",
+      "step4": "Scale only when profit after costs stays positive for several weeks.",
+      "risk": "Needs capital for stock — not suitable while money is tight. Slow shipping or defects lower shop score and can get the Shop banned."
     }
   }
 }

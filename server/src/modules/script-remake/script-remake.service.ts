@@ -12,6 +12,7 @@ import { executePromptTemplate } from '../prompts/prompts.file-store.js';
 import { promptsRepository } from '../prompts/prompts.repository.js';
 import type { PromptLanguage, PromptSet } from '../prompts/prompts.types.js';
 import { validateLength } from '../video-agent/outline-rules.js';
+import { NARRATION_CHARS_PER_MIN } from '../video-agent/script-writer.js';
 import { ngramContainment } from '../video-agent/similarity.js';
 import { VIDEO_MAX_MINUTES, VIDEO_MIN_MINUTES } from '../video-agent/video-agent.types.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
@@ -19,8 +20,9 @@ import { DEFAULT_REMAKE_BASE_KEY, assertRemakeStep1Current, ensureDefaultRemakeP
 import { chapterFixPrompt, chapterProblems } from './script-remake.quality.js';
 import { contentTaskProvider, pickContentTaskProfile } from '../prompts/content-task.js';
 
-/** Narration pace used for length planning (~330 chars/min, same as the video agent). */
-const CHARS_PER_MIN = 330;
+/** Narration pace used for length planning, same as the video agent (see NARRATION_CHARS_PER_MIN). */
+export const REMAKE_CHARS_PER_MIN = NARRATION_CHARS_PER_MIN;
+const CHARS_PER_MIN = REMAKE_CHARS_PER_MIN;
 const RESPONSE_TIMEOUT_MS = 6 * 60_000;
 const MAX_LOGS = 200;
 /** How many times a plan with an invalid length is sent back to the LLM before the job fails. */
@@ -162,7 +164,8 @@ export function splitSentences(text: string): string[] {
     .filter(Boolean);
 }
 
-function remakeText(outline: RemakeOutline, chapters: RemakeChapter[]): string {
+/** The human-readable remake-<time>.txt: title, angle, hook, story, then the chapters. */
+export function remakeText(outline: RemakeOutline, chapters: RemakeChapter[]): string {
   const body = chapters
     .map((chapter, index) => `## ${index + 1}. ${chapter.heading}\n${chapter.sentences.join('\n')}`)
     .join('\n\n');

@@ -10,7 +10,8 @@ export const FPS = 30;
 
 export const SUBTITLE_FONT_SIZE = 90;
 export const SUBTITLE_LINE_GAP_PX = 0;
-export const SUBTITLE_PADDING_HORIZONTAL = 0;
+/** Left/right safe margin for captions, so text never touches the frame edge. */
+export const SUBTITLE_PADDING_HORIZONTAL = 40;
 export const SUBTITLE_MARGIN_BOTTOM_PX = 0;
 /** Margin bottom cho caption không có nền xám (px). */
 export const SUBTITLE_NO_BACKGROUND_MARGIN_BOTTOM_PX = 40;

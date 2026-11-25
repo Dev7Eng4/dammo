@@ -4,6 +4,7 @@ import { AppError } from '../../../../shared/http/errors.js';
 import { chromeProfilesService, profileHasLlm } from '../../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.types.js';
 import { FLOW_MAX_RETRIES, runWithFlowRetries, type FlowRetryProgress } from '../../../llm-browser/flow/flow-retry.js';
+import { isMetaProfileQuotaExhausted } from '../../../llm-browser/meta/meta-quota.js';
 import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 
@@ -86,6 +87,30 @@ function resolveFlowProfile(options?: FlowProfileOptions): ChromeProfile {
     return profile;
   }
   return chromeProfilesService.requireProfileForLlm('image', 'flow');
+}
+
+/**
+ * Chrome profiles to try for a Meta image, in order: `preferredId` first when it has Meta ticked, then the
+ * other profiles with Meta ticked in LLM Image. Profiles out of Meta quota (cooldown) are left out.
+ */
+export function listMetaImageProfiles(preferredId?: string): { profiles: ChromeProfile[]; exhausted: ChromeProfile[] } {
+  const ticked = chromeProfilesService.listProfilesForLlm('image', 'meta');
+  const ordered = preferredId
+    ? [...ticked.filter(profile => profile.id === preferredId), ...ticked.filter(profile => profile.id !== preferredId)]
+    : ticked;
+  return {
+    profiles: ordered.filter(profile => !isMetaProfileQuotaExhausted(profile.id)),
+    exhausted: ordered.filter(profile => isMetaProfileQuotaExhausted(profile.id)),
+  };
+}
+
+/**
+ * Profile for Meta: the given one, else the first profile with Meta ticked that still has quota,
+ * else (no Meta profile set up) the Flow profile as before.
+ */
+function resolveMetaProfile(options?: FlowProfileOptions): ChromeProfile {
+  if (options?.profileId) return chromeProfilesService.getById(options.profileId);
+  return listMetaImageProfiles().profiles[0] ?? resolveFlowProfile();
 }
 
 /**
@@ -188,7 +213,7 @@ async function runMetaImageGenerations(
   jobs: BrowserImageJob[],
   options?: RunBrowserImageGenerationsOptions,
 ): Promise<BrowserImageGenerationResult[]> {
-  const profile = resolveFlowProfile(options);
+  const profile = resolveMetaProfile(options);
   const debugScreenshotPath = path.join(outputDir, 'meta-debug.png');
   const results: BrowserImageGenerationResult[] = [];
 

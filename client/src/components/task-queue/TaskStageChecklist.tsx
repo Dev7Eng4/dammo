@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import type { TaskErrorDetails, TaskStage } from '../../types/taskQueue';
+import { getTaskStageLabel } from '../../utils/taskQueue';
 
 function stageMarker(status: TaskStage['status']): string {
   if (status === 'done') return '✓';
@@ -100,7 +101,7 @@ export function TaskStageChecklist({
                 {stageMarker(stage.status)}
               </span>
               <span className="min-w-0 flex-1 truncate">
-                {stage.label}
+                {getTaskStageLabel(stage)}
                 {statusText ? ` — ${statusText}` : ''}
               </span>
             </div>

@@ -5,12 +5,14 @@ import {
   fetchChannelVideoMotion,
   generateChannelVideoClips,
   removeChannelVideoClip,
+  replaceChannelVideoClip,
   type ChannelVideoMotionState,
 } from '../../api/videoProduction';
 import { useAbortableEffect } from '../../hooks';
 import { cn } from '../../lib/cn';
 import { MotionStep } from '../manual-video/MotionStep';
 import { useToast } from '../ui';
+import { useTranslation } from 'react-i18next';
 
 const POLL_MS = 4000;
 
@@ -24,6 +26,7 @@ interface ChannelVideoMotionStepProps {
  * (intro / every scene / hand-picked), clips made through Google Flow in the background.
  */
 export function ChannelVideoMotionStep({ channelId, videoId }: ChannelVideoMotionStepProps) {
+  const { t } = useTranslation('manual');
   const { toast } = useToast();
   const [state, setState] = useState<ChannelVideoMotionState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -89,6 +92,14 @@ export function ChannelVideoMotionStep({ channelId, videoId }: ChannelVideoMotio
         onRemove={(index) =>
           void act(async () => {
             const next = await removeChannelVideoClip(channelId, videoId, index);
+            setReload((value) => value + 1);
+            return next;
+          })
+        }
+        onReplace={(index, file) =>
+          void act(async () => {
+            const next = await replaceChannelVideoClip(channelId, videoId, index, file);
+            toast.success(t('motion.replaced', { index: index + 1 }));
             setReload((value) => value + 1);
             return next;
           })

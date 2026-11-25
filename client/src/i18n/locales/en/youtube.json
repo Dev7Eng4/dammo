@@ -29,6 +29,7 @@
     "limited": "Limited",
     "statusAll": "All statuses",
     "statusPending": "Pending",
+    "statusPreparing": "Preparing",
     "statusPublished": "Published",
     "statusPrepared": "Prepared",
     "statusCreated": "Created",
@@ -68,6 +69,7 @@
     "created": "Created",
     "uploaded": "Uploaded",
     "pending": "Pending",
+    "preparing": "Preparing",
     "error": "Error",
     "init": "Init",
     "active": "Active",
@@ -388,6 +390,7 @@
     "videoAi": "Multiple animated images",
     "videoAiFull": "Fully AI video",
     "videoAiIntro": "AI intro video, then images",
+    "videoAiInterleaved": "AI video clips interleaved with images",
     "imgNone": "No images",
     "imgOne": "One image",
     "imgMulti": "Multiple images",
@@ -403,7 +406,8 @@
       "every2Days": "1 video every 2 days",
       "daily1": "1 video per day",
       "daily2": "2 videos per day",
-      "daily3": "3 videos per day"
+      "daily3": "3 videos per day",
+      "at": "{{freq}} at {{times}}"
     },
     "order": {
       "oldestFirst": "Oldest to newest",
@@ -439,7 +443,7 @@
     "typeRemakeVideo": "Remake video",
     "remakeAuto": {
       "label": "Auto-remake the script and narrate when preparing videos",
-      "hint": "On: \"Prepare video\" / \"Create video\" remakes the source transcript into a new script (ChatGPT/Gemini), reads it with VOICEVOX in place of the source audio, then builds metadata, thumbnail and scenes from the new script. Off: keep the source audio.",
+      "hint": "On: \"Prepare video\" / \"Create video\" remakes the source transcript into a new script (ChatGPT/Gemini), reads it with VOICEVOX in place of the source audio, then builds metadata, thumbnail and scenes from the new script. A video the nightly skill already wrote a script for (check passed) uses that script; to get another one, remake again in the Script tab. Off: keep the source audio.",
       "provider": "Remake LLM",
       "providerDefault": "From Settings",
       "promptSet": "Remake prompt set",
@@ -447,6 +451,33 @@
       "voice": "VOICEVOX voice",
       "voiceDefault": "Default voice ({{name}})",
       "speed": "Reading speed"
+    },
+    "captionStyleName": {
+      "noto_sans_red_white": "Noto Sans Red text + White stroke",
+      "noto_sans_red_white_box": "Noto Sans Red text + White stroke + Box",
+      "noto_sans_blue_white": "Noto Sans Blue text + White stroke",
+      "noto_sans_blue_white_box": "Noto Sans Blue text + White stroke + Box",
+      "noto_sans_yellow": "Noto Sans Yellow text",
+      "noto_sans_yellow_box": "Noto Sans Yellow text + Box",
+      "noto_sans_cyan_white": "Noto Sans Cyan text + White stroke",
+      "noto_sans_cyan_white_box": "Noto Sans Cyan text + White stroke + Box",
+      "noto_sans_white_purple": "Noto Sans White text + Purple stroke",
+      "noto_sans_white_purple_box": "Noto Sans White text + Purple stroke + Box",
+      "bizudp_gothic": "BIZ UDPGothic",
+      "bizudp_gothic_red_white": "BIZ UDPGothic Red text + White stroke",
+      "bizudp_gothic_red_white_box": "BIZ UDPGothic Red text + White stroke + Box",
+      "zen_kaku": "Zen Kaku",
+      "zen_kaku_blue_white": "Zen Kaku Blue text + White stroke",
+      "zen_kaku_blue_white_box": "Zen Kaku Blue text + White stroke + Box",
+      "noto_serif": "Noto Serif",
+      "serif_white_purple": "Noto Serif White text + Purple stroke",
+      "serif_white_purple_box": "Noto Serif White text + Purple stroke + Box",
+      "serif_yellow": "Noto Serif Yellow text",
+      "serif_yellow_box": "Noto Serif Yellow text + Box",
+      "serif_cyan_white": "Noto Serif Cyan text + White stroke",
+      "serif_cyan_white_box": "Noto Serif Cyan text + White stroke + Box",
+      "serif_red_white": "Noto Serif Red text + White stroke",
+      "serif_red_white_box": "Noto Serif Red text + White stroke + Box"
     }
   },
   "metadata": {
@@ -475,7 +506,8 @@
     "copySuccess": "Copied {{label}}",
     "copyError": "Could not copy {{label}}",
     "folderPathLabel": "folder path",
-    "fromLinkJobTitle": "Create metadata from video link"
+    "fromLinkJobTitle": "Create metadata from video link",
+    "videoLinkPlaceholder": "https://www.youtube.com/watch?v=... or https://youtu.be/..."
   },
   "regenerate": {
     "title": "Regenerate metadata?",
@@ -528,10 +560,11 @@
     "thumbPromptLabel": "Thumbnail prompt",
     "rerender": "Re-render video",
     "rerendering": "Rendering…",
-    "rerenderTitle": "Re-render video.mp4 from the current audio, subtitles and scenes",
+    "rerenderTitle": "Re-render the video from the current audio, subtitles and scenes; the old video is removed once done",
     "rerenderJobTitle": "Re-render video: {{title}}",
     "rerenderQueued": "Queued video re-render",
-    "rerenderSuccess": "Video re-rendered"
+    "rerenderSuccess": "Video re-rendered",
+    "copyPath": "Copy path"
   },
   "comments": {
     "title": "Comments",

@@ -37,6 +37,8 @@ export interface ProductionDestination {
   captionStyleKey?: CaptionStyleKey;
   /** remake_video channels with auto remake on: remake the script + VOICEVOX narration before metadata/scenes. */
   remakeAuto?: RemakeAutoConfig;
+  /** Render the audio at exactly this speed (remake_video: 1). Unset = random slow-down per video. */
+  fixedAudioSpeed?: number;
   /** Set for reup_audio channels only */
   reupAudioVideoType?: ReupAudioVideoType;
   reupAudioVisualStyleId?: string;

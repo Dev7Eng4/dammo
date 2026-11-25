@@ -574,7 +574,7 @@ export function VideoContentModal({
                 disabled={!content?.videoFolderPath || busy}
                 title={t('videoContent.copyFolderTitle')}
               >
-                Copy path
+                {t('videoContent.copyPath')}
               </Button>
               {activeTab === 'script' ? (
                 <Button

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-table'
 import type { KeyboardEvent } from 'react'
 import { cn } from '../../lib/cn'
+import { useTranslation } from 'react-i18next'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -48,6 +49,8 @@ function SelectionHeader({
   allSelected: boolean
   onToggleAll?: () => void
 }) {
+  const { t } = useTranslation('common')
+
   return (
     <th className={cn(stickyHeaderClass, 'min-w-[50px] w-10 pb-3 pr-4')}>
       <label className="inline-flex size-6 cursor-pointer items-center justify-center rounded-md hover:bg-muted">
@@ -56,7 +59,7 @@ function SelectionHeader({
           checked={allSelected}
           onChange={onToggleAll}
           className={checkboxClassName}
-          aria-label="Select all rows"
+          aria-label={t('table.selectAll')}
         />
       </label>
     </th>
@@ -70,6 +73,8 @@ function SelectionCell({
   checked: boolean
   onToggle?: () => void
 }) {
+  const { t } = useTranslation('common')
+
   return (
     <td className="min-w-[50px] py-2.5 pr-4" onClick={(e) => e.stopPropagation()}>
       <label className="inline-flex size-6 cursor-pointer items-center justify-center rounded-md hover:bg-muted">
@@ -78,7 +83,7 @@ function SelectionCell({
           checked={checked}
           onChange={onToggle}
           className={checkboxClassName}
-          aria-label="Select row"
+          aria-label={t('table.selectRow')}
         />
       </label>
     </td>
@@ -86,8 +91,10 @@ function SelectionCell({
 }
 
 function RowNumberHeader() {
+  const { t } = useTranslation('common')
+
   return (
-    <th className={cn(stickyHeaderClass, 'min-w-[50px] w-10 pb-3 pr-4 font-medium')}>STT</th>
+    <th className={cn(stickyHeaderClass, 'min-w-[50px] w-10 pb-3 pr-4 font-medium')}>{t('table.rowNumber')}</th>
   )
 }
 
@@ -100,7 +107,7 @@ export function DataTable<TData>({
   columns,
   getRowId,
   loading,
-  emptyMessage = 'No items found.',
+  emptyMessage,
   emptyDescription,
   selectedIds,
   onToggleRow,
@@ -113,6 +120,7 @@ export function DataTable<TData>({
   rowNumberStart = 1,
   layout = 'auto',
 }: DataTableProps<TData>) {
+  const { t } = useTranslation('common')
   const table = useReactTable({
     data,
     columns,
@@ -153,7 +161,7 @@ export function DataTable<TData>({
         <thead>
           <tr className="border-b border-border text-xs text-muted-foreground">
             {enableRowSelection && <th className="min-w-[50px] w-10 pb-3 pr-4" />}
-            {showRowNumbers && <th className="min-w-[50px] w-10 pb-3 pr-4 font-medium">STT</th>}
+            {showRowNumbers && <th className="min-w-[50px] w-10 pb-3 pr-4 font-medium">{t('table.rowNumber')}</th>}
             {columns.map((column, index) => (
               <th
                 key={column.id ?? ('accessorKey' in column ? String(column.accessorKey) : index)}
@@ -192,7 +200,7 @@ export function DataTable<TData>({
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        <p className="text-sm text-muted-foreground">{emptyMessage ?? t('table.empty')}</p>
         {emptyDescription ? <p className="mt-1 text-xs text-muted-foreground">{emptyDescription}</p> : null}
       </div>
     )

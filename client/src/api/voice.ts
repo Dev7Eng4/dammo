@@ -13,6 +13,7 @@ import type {
   VoicevoxEngineStatus,
   VoiceSettings,
 } from '../types/voice'
+import i18n from '../i18n'
 
 const BASE = `${API_V1}/voice`
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
@@ -136,7 +137,7 @@ export async function previewNarrationVoice(payload: {
   const res = await fetch(`${BASE}/narration-preview`, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(payload) })
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string }
-    throw new Error(body.error || `Request failed: ${res.status}`)
+    throw new Error(body.error || i18n.t('common:errors.requestFailed', { status: res.status }))
   }
   return res.blob()
 }
@@ -146,7 +147,31 @@ export async function synthesizeSpeech(payload: SynthesizeSpeechPayload): Promis
   const res = await fetch(`${BASE}/tts`, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(payload) })
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string }
-    throw new Error(body.error || `Request failed: ${res.status}`)
+    throw new Error(body.error || i18n.t('common:errors.requestFailed', { status: res.status }))
   }
   return res.blob()
+}
+
+/** Reading dictionary: words the narration voice reads as the given katakana (script and subtitles unchanged). */
+export interface NarrationReading {
+  surface: string
+  reading: string
+  note?: string
+  addedAt: string
+}
+
+export function fetchNarrationReadings(options?: FetchOptions) {
+  return fetchJson<{ items: NarrationReading[] }>(`${BASE}/readings`, withSignal(undefined, options))
+}
+
+export function saveNarrationReading(payload: { surface: string; reading: string; note?: string }) {
+  return fetchJson<{ items: NarrationReading[] }>(`${BASE}/readings`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteNarrationReading(surface: string) {
+  return fetchJson<{ items: NarrationReading[] }>(`${BASE}/readings/${encodeURIComponent(surface)}`, { method: 'DELETE' })
 }

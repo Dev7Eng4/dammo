@@ -1,7 +1,7 @@
 import { youtubeChannelVideoDir } from '../../../config/paths.js';
 import { AppError } from '../../../shared/http/errors.js';
 import { resolveReupAudioVisualStyle } from '../../youtube-channels/reup-audio-visual-style.js';
-import { isAiSceneVideoType, isReupAudioFamilyType } from '../../youtube-channels/youtube-channels.types.js';
+import { isAiSceneVideoType, isReupAudioFamilyType, resolveFixedAudioSpeed } from '../../youtube-channels/youtube-channels.types.js';
 import type {
   ReupAudioBackgroundImage,
   StoredYoutubeChannelType,
@@ -90,6 +90,7 @@ export async function createYoutubeProductionDestination(
   }
 
   const reupAudioConfig = await resolveReupAudioConfig(channel);
+  const fixedAudioSpeed = resolveFixedAudioSpeed(channel.type);
 
   return {
     id: channel.id,
@@ -115,6 +116,7 @@ export async function createYoutubeProductionDestination(
     ...(channel.type === 'remake_video' && channel.remakeAuto?.enabled !== false
       ? { remakeAuto: channel.remakeAuto ?? {} }
       : {}),
+    ...(fixedAudioSpeed != null ? { fixedAudioSpeed } : {}),
     showDisclaimer: channel.showDisclaimer === true,
     ...(channel.showChannelAvatar === true ? { showChannelAvatar: true } : {}),
     disclaimerText: channel.disclaimerText,

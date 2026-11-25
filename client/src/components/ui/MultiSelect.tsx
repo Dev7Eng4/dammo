@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useFloatingMenuPosition } from '../../hooks';
 import { cn } from '../../lib/cn';
 import type { DropdownSelectOption } from './DropdownSelect';
+import { useTranslation } from 'react-i18next';
 
 export interface MultiSelectProps<T extends string = string> {
   options: DropdownSelectOption<T>[];
@@ -72,13 +73,14 @@ export function MultiSelect<T extends string>({
   onBlur,
   placeholder,
   searchable = false,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder,
   disabled = false,
   id,
   className,
   triggerClassName,
   menuClassName,
 }: MultiSelectProps<T>) {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,7 +178,7 @@ export function MultiSelect<T extends string>({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') e.preventDefault();
               }}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t('search.short')}
               className="h-8 w-full rounded-lg border border-border bg-surface pl-8 pr-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
             />
           </div>
@@ -210,7 +212,7 @@ export function MultiSelect<T extends string>({
             );
           })
         ) : (
-          <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
+          <p className="px-3 py-2 text-sm text-neutral-500">{t('search.noResults')}</p>
         )}
       </div>
     </div>
@@ -237,7 +239,7 @@ export function MultiSelect<T extends string>({
       >
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {selectedOptions.length === 0 ? (
-            <span className="px-1 text-neutral-500">{placeholder ?? 'Select options'}</span>
+            <span className="px-1 text-neutral-500">{placeholder ?? t('select.placeholder')}</span>
           ) : (
             selectedOptions.map((opt) => (
               <span
@@ -249,7 +251,7 @@ export function MultiSelect<T extends string>({
                   <span
                     role="button"
                     tabIndex={-1}
-                    aria-label={`Remove ${opt.label}`}
+                    aria-label={t('select.remove', { label: opt.label })}
                     onMouseDown={(e) => removeOption(opt.value, e)}
                     className="shrink-0 rounded p-0.5 text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
                   >

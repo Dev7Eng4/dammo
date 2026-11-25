@@ -158,7 +158,7 @@ export function PromptPlaygroundPanel({
                 {result.profileId ? (
                   <>
                     <span>·</span>
-                    <span>profile {result.profileId.slice(0, 8)}</span>
+                    <span>{t('prompts.playground.profileShort', { id: result.profileId.slice(0, 8) })}</span>
                   </>
                 ) : null}
                 {result.model ? (
@@ -170,7 +170,7 @@ export function PromptPlaygroundPanel({
                 {result.usage ? (
                   <>
                     <span>·</span>
-                    <span>{result.usage.totalTokens} tokens</span>
+                    <span>{t('prompts.tokens', { count: result.usage.totalTokens })}</span>
                   </>
                 ) : null}
               </div>

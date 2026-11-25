@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import type { ProxyStats } from '../../types/proxy';
+import { appLocale } from '../../utils/locale';
 
 interface ProxyStatCardsProps {
   data: ProxyStats | null;
@@ -33,7 +34,7 @@ export function ProxyStatCards({ data, loading }: ProxyStatCardsProps) {
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
       {cards.map((card) => {
         const rawValue = data ? data[card.key] : 0;
-        const display = card.format ? card.format(rawValue) : rawValue.toLocaleString();
+        const display = card.format ? card.format(rawValue) : rawValue.toLocaleString(appLocale());
 
         return (
           <div key={card.key} className="card-surface px-4 py-3">

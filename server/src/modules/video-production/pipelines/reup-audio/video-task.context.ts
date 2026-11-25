@@ -5,6 +5,7 @@ import type { VideoMetaOutput } from '../../shared/meta/metadata.types.js';
 import type { ProductionDestination } from '../../ports/production-destination.port.js';
 import type { TaskLogger } from './task-logger.js';
 import type { ReupVideoTask } from './reup-audio.types.js';
+import type { RemakeOutlineHint } from '../../../video-production-ui/channel-video-remake.service.js';
 
 export type StepTimerOptions = Pick<TimedStepOptions, 'prefix' | 'onLog'>;
 
@@ -44,6 +45,8 @@ export interface VideoTaskContext {
   /** SRT handed to the assembler (LLM-updated when the channel is Japanese). */
   subtitlePath: string;
   videoMeta?: VideoMetaOutput;
+  /** Set on remake channels: title, angle and hook of the new script, so the metadata follows the remake. */
+  remakeOutline?: RemakeOutlineHint;
 }
 
 /** Plain ffmpeg/log sink derived from the structured logger. */

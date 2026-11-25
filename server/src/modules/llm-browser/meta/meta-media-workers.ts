@@ -7,19 +7,20 @@ import {
 import type { GpmProfile } from '../../../infrastructure/gpm/gpm-api.client.js';
 import { getMetaBrowserHandler } from '../core/registry.js';
 import type { MetaConcurrencyMode } from './meta.types.js';
+import { META_BASE_URL } from './meta.config.js';
 import { AppError } from '../../../shared/http/errors.js';
 import {
   closeChromeProfiles,
-  createChromeProfilePage,
+  createChromeProfileWindow,
   getChromeProfilePage,
   openChromeProfile,
 } from '../../chrome-profiles/chrome-profile.runner.js';
 import { chromeProfilesService } from '../../chrome-profiles/chrome-profiles.service.js';
 import type { ChromeProfile } from '../../chrome-profiles/chrome-profiles.types.js';
 import { gpmManagerService } from '../../gpm-manager/gpm-manager.service.js';
+import { appSettingsService } from '../../app-settings/app-settings.service.js';
 import { isMetaProfileQuotaExhausted } from './meta-quota.js';
 
-export const META_MEDIA_TABS_PER_MAIN_PROFILE = 5;
 export const META_MEDIA_DEFAULT_TIMEOUT_MS = 300_000;
 export const META_MEDIA_DEFAULT_MAX_RETRIES = 3;
 
@@ -34,115 +35,132 @@ export interface MetaMediaWorker {
 export interface MetaMediaWorkerPool {
   workers: MetaMediaWorker[];
   gpmConnections: GpmPlaywrightConnection[];
+  /** Chrome profiles opened for this pool, including the ones none of whose tabs became a worker. */
+  chromeProfileIds: Set<string>;
+}
+
+export interface OpenMetaWorkersOptions {
+  /** Jobs left to run: never opens more tabs than that. */
+  jobCount: number;
   mode: MetaConcurrencyMode;
+  log: (msg: string) => void;
+  /** Called as soon as a tab is ready, while the others may still be opening. */
+  onWorker: (worker: MetaMediaWorker) => void;
+  /** Resolves when no more workers are needed: tabs still opening are given up. */
+  done: Promise<void>;
 }
 
-async function openMetaOnPage(page: Page): Promise<void> {
-  const handler = getMetaBrowserHandler();
-  await handler.open(page);
-  await handler.setupConfig(page, {});
+export interface ChromeTabAllocation<T> {
+  profile: T;
+  tabs: number;
 }
 
-async function openChromeMetaWorkers(
-  tabProfiles: ChromeProfile[],
-  startIndex: number,
-  log: (msg: string) => void,
-): Promise<MetaMediaWorker[]> {
-  if (tabProfiles.length === 0) return [];
-
-  const uniqueProfiles = [...new Map(tabProfiles.map(profile => [profile.id, profile])).values()];
-  for (const profile of uniqueProfiles) {
-    log(`[meta] Mở Chrome main profile ${profile.name}...`);
-    await openChromeProfile(profile.id, profile.userDataDir, { background: true });
-  }
-
-  const reusedInitialPage = new Set<string>();
-  const workers: MetaMediaWorker[] = [];
-  for (const profile of tabProfiles) {
-    try {
-      const page = reusedInitialPage.has(profile.id)
-        ? await createChromeProfilePage(profile.id)
-        : await getChromeProfilePage(profile.id);
-      reusedInitialPage.add(profile.id);
-      await openMetaOnPage(page);
-      const workerIndex = startIndex + workers.length;
-      workers.push({
-        workerIndex,
-        label: `chrome:${profile.name}`,
-        page,
-        kind: 'chrome',
-        profileId: profile.id,
-      });
-      log(`[meta] Worker ${workerIndex + 1} sẵn sàng trên Chrome ${profile.name}`);
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      log(`[meta] Bỏ qua Chrome tab trên ${profile.name}: ${reason}`);
-    }
-  }
-
-  return workers;
+export function createMetaWorkerPool(): MetaMediaWorkerPool {
+  return { workers: [], gpmConnections: [], chromeProfileIds: new Set() };
 }
 
-function allocateChromeMetaTabProfiles(
-  profiles: ChromeProfile[],
-  pendingCount: number,
-  tabsPerMain: number,
-): ChromeProfile[] {
-  const tabProfiles: ChromeProfile[] = [];
-
+/** Fill profiles in order, up to `tabsPerProfile` each, until every job has a tab. */
+export function allocateChromeTabs<T>(
+  profiles: readonly T[],
+  jobCount: number,
+  tabsPerProfile: number,
+): ChromeTabAllocation<T>[] {
+  const allocations: ChromeTabAllocation<T>[] = [];
+  let remaining = jobCount;
   for (const profile of profiles) {
-    const remaining = pendingCount - tabProfiles.length;
     if (remaining <= 0) break;
-
-    const tabCount = Math.min(tabsPerMain, remaining);
-    for (let tabIndex = 0; tabIndex < tabCount; tabIndex += 1) {
-      tabProfiles.push(profile);
-    }
+    const tabs = Math.min(tabsPerProfile, remaining);
+    allocations.push({ profile, tabs });
+    remaining -= tabs;
   }
-
-  return tabProfiles;
+  return allocations;
 }
 
-async function openGpmMetaWorkers(
-  profiles: GpmProfile[],
-  startIndex: number,
-  log: (msg: string) => void,
-): Promise<{ workers: MetaMediaWorker[]; connections: GpmPlaywrightConnection[] }> {
-  if (profiles.length === 0) return { workers: [], connections: [] };
+function reasonOf(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
-  const results = await Promise.all(
-    profiles.map(async profile => {
-      try {
-        log(`[meta] Start GPM profile ${profile.name}...`);
-        const connection = await connectPlaywrightToGpmProfile(profile.id);
-        await openMetaOnPage(connection.page);
-        return { profile, connection, error: null as string | null };
-      } catch (err) {
-        const reason = err instanceof Error ? err.message : String(err);
-        log(`[meta] Bỏ qua GPM profile ${profile.name}: ${reason}`);
-        return { profile, connection: null, error: reason };
-      }
-    }),
-  );
+function addWorker(
+  pool: MetaMediaWorkerPool,
+  options: OpenMetaWorkersOptions,
+  worker: Omit<MetaMediaWorker, 'workerIndex'>,
+): void {
+  const added: MetaMediaWorker = { workerIndex: pool.workers.length, ...worker };
+  pool.workers.push(added);
+  options.log(`[meta] Worker ${added.workerIndex + 1} sẵn sàng trên ${added.label}`);
+  options.onWorker(added);
+}
 
-  const workers: MetaMediaWorker[] = [];
-  const connections: GpmPlaywrightConnection[] = [];
+/** Load Meta in a tab; false when it failed or is no longer needed. */
+async function openMetaTab(
+  page: Page,
+  profileName: string,
+  options: OpenMetaWorkersOptions,
+): Promise<boolean> {
+  const handler = getMetaBrowserHandler();
+  const opening = handler
+    .open(page)
+    .then(() => handler.setupConfig(page, {}))
+    .then(
+      () => true,
+      err => {
+        options.log(`[meta] Bỏ qua tab trên ${profileName}: ${reasonOf(err)}`);
+        return false;
+      },
+    );
+  return Promise.race([opening, options.done.then(() => false)]);
+}
 
-  for (const result of results) {
-    if (!result.connection) continue;
-    const workerIndex = startIndex + workers.length;
-    workers.push({
-      workerIndex,
-      label: `gpm:${result.profile.name}`,
-      page: result.connection.page,
-      kind: 'gpm',
-      profileId: result.connection.profileId,
-    });
-    connections.push(result.connection);
-    log(`[meta] Worker ${workerIndex + 1} sẵn sàng trên GPM ${result.profile.name}`);
+async function openChromeWorkers(
+  pool: MetaMediaWorkerPool,
+  profile: ChromeProfile,
+  tabs: number,
+  options: OpenMetaWorkersOptions,
+): Promise<void> {
+  try {
+    options.log(`[meta] Mở Chrome main profile ${profile.name} (${tabs} tab)...`);
+    // GPU on: Meta's menus are too heavy to draw on the CPU once several windows are open.
+    await openChromeProfile(profile.id, profile.userDataDir, { background: true, startUrl: META_BASE_URL, gpu: true });
+    pool.chromeProfileIds.add(profile.id);
+
+    const openTab = async (page: Page): Promise<void> => {
+      if (!(await openMetaTab(page, profile.name, options))) return;
+      addWorker(pool, options, { label: `chrome:${profile.name}`, page, kind: 'chrome', profileId: profile.id });
+    };
+    // Every worker gets its own window, so mouse and scroll stay fast in all of them.
+    await Promise.all(
+      Array.from({ length: tabs }, async (_, tabIndex) => {
+        try {
+          await openTab(tabIndex === 0 ? await getChromeProfilePage(profile.id) : await createChromeProfileWindow(profile.id));
+        } catch (err) {
+          options.log(`[meta] Bỏ qua tab ${tabIndex + 1} trên ${profile.name}: ${reasonOf(err)}`);
+        }
+      }),
+    );
+  } catch (err) {
+    options.log(`[meta] Bỏ qua Chrome profile ${profile.name}: ${reasonOf(err)}`);
   }
+}
 
-  return { workers, connections };
+async function openGpmWorker(
+  pool: MetaMediaWorkerPool,
+  profile: GpmProfile,
+  options: OpenMetaWorkersOptions,
+): Promise<void> {
+  try {
+    options.log(`[meta] Start GPM profile ${profile.name}...`);
+    const connection = await connectPlaywrightToGpmProfile(profile.id);
+    pool.gpmConnections.push(connection);
+    if (!(await openMetaTab(connection.page, profile.name, options))) return;
+    addWorker(pool, options, {
+      label: `gpm:${profile.name}`,
+      page: connection.page,
+      kind: 'gpm',
+      profileId: connection.profileId,
+    });
+  } catch (err) {
+    options.log(`[meta] Bỏ qua GPM profile ${profile.name}: ${reasonOf(err)}`);
+  }
 }
 
 /** Drop profiles that recently ran out of Meta image quota, logging which ones were skipped. */
@@ -157,136 +175,67 @@ function withoutQuotaExhausted<T extends { id: string; name: string }>(
   return profiles.filter(profile => !isMetaProfileQuotaExhausted(profile.id));
 }
 
-export async function openMetaWorkerPool(
-  pendingCount: number,
-  log: (msg: string) => void,
-  mode: MetaConcurrencyMode = 'batch',
-): Promise<MetaMediaWorkerPool> {
-  if (mode === 'single') {
-    return openMetaWorkerPoolSingle(log);
-  }
-  return openMetaWorkerPoolBatch(pendingCount, log);
-}
-
-/** Exactly 1 tab on 1 profile (Chrome main first, else first GPM meta). */
-async function openMetaWorkerPoolSingle(log: (msg: string) => void): Promise<MetaMediaWorkerPool> {
-  const mains = withoutQuotaExhausted(chromeProfilesService.listProfilesForLlm('image', 'meta'), log);
-  const firstMain = mains[0];
-
-  log(
-    `[meta] Capacity: mode=single, effectiveSlots=1, chromeMains=${mains.length}, ` +
-      `tabsPerMain=1, prefer=${firstMain?.name ?? '(none)'}`,
-  );
-
-  if (firstMain) {
-    log(`[meta] Mở Chrome main profile ${firstMain.name} (single)...`);
-    await openChromeProfile(firstMain.id, firstMain.userDataDir, { background: true });
-    try {
-      const page = await getChromeProfilePage(firstMain.id);
-      await openMetaOnPage(page);
-      const worker: MetaMediaWorker = {
-        workerIndex: 0,
-        label: `chrome:${firstMain.name}`,
-        page,
-        kind: 'chrome',
-        profileId: firstMain.id,
-      };
-      log(`[meta] Worker 1 sẵn sàng trên Chrome ${firstMain.name} (single)`);
-      return { workers: [worker], gpmConnections: [], mode: 'single' };
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      log(`[meta] Chrome single worker failed on ${firstMain.name}: ${reason}`);
-      await closeChromeProfiles([firstMain.id]).catch(() => undefined);
-    }
-  }
-
-  let gpmCandidates: GpmProfile[] = [];
+async function listGpmCandidates(log: (msg: string) => void): Promise<GpmProfile[]> {
   try {
-    gpmCandidates = withoutQuotaExhausted(await gpmManagerService.listMetaEnabledProfiles(), log);
+    return withoutQuotaExhausted(await gpmManagerService.listMetaEnabledProfiles(), log);
   } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
     const code = err instanceof AppError ? err.code : undefined;
-    log(`[meta] GPM meta profiles unavailable (${code ?? 'error'}): ${reason}`);
+    log(`[meta] GPM meta profiles unavailable (${code ?? 'error'}): ${reasonOf(err)}`);
+    return [];
   }
-
-  const gpmProfile = gpmCandidates[0];
-  if (!gpmProfile) {
-    throw new AppError(
-      'No Chrome main or GPM meta-enabled profiles available for Meta media',
-      400,
-      'META_MEDIA_NO_PROFILES',
-    );
-  }
-
-  log(`[meta] Start GPM profile ${gpmProfile.name} (single)...`);
-  const connection = await connectPlaywrightToGpmProfile(gpmProfile.id);
-  await openMetaOnPage(connection.page);
-  const worker: MetaMediaWorker = {
-    workerIndex: 0,
-    label: `gpm:${gpmProfile.name}`,
-    page: connection.page,
-    kind: 'gpm',
-    profileId: connection.profileId,
-  };
-  log(`[meta] Worker 1 sẵn sàng trên GPM ${gpmProfile.name} (single)`);
-  return { workers: [worker], gpmConnections: [connection], mode: 'single' };
 }
 
-async function openMetaWorkerPoolBatch(
-  pendingCount: number,
-  log: (msg: string) => void,
-): Promise<MetaMediaWorkerPool> {
-  const tabsPerMain = META_MEDIA_TABS_PER_MAIN_PROFILE;
-  const mains = withoutQuotaExhausted(chromeProfilesService.listProfilesForLlm('image', 'meta'), log);
-  const chromeTabProfiles = allocateChromeMetaTabProfiles(mains, pendingCount, tabsPerMain);
-  const remainingAfterChrome = Math.max(0, pendingCount - chromeTabProfiles.length);
+/**
+ * Open tabs on Chrome main profiles, then GPM meta profiles for the jobs left over, all in parallel.
+ * Resolves when every tab has opened or failed. A profile that fails to open is skipped; when none
+ * of the chosen ones worked, the remaining profiles are tried.
+ *
+ * `batch`: up to `metaTabsPerProfile` (app settings) windows per profile. `single`: one tab in total.
+ */
+export async function openMetaWorkers(pool: MetaMediaWorkerPool, options: OpenMetaWorkersOptions): Promise<void> {
+  const { log, mode } = options;
+  const tabsPerProfile = mode === 'single' ? 1 : appSettingsService.get().metaTabsPerProfile;
+  const jobCount = mode === 'single' ? Math.min(1, options.jobCount) : options.jobCount;
+  const opened = pool.workers.length;
+  const hasNewWorker = (): boolean => pool.workers.length > opened;
 
-  let gpmCandidates: GpmProfile[] = [];
-  if (remainingAfterChrome > 0) {
-    try {
-      gpmCandidates = withoutQuotaExhausted(await gpmManagerService.listMetaEnabledProfiles(), log);
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      const code = err instanceof AppError ? err.code : undefined;
-      log(`[meta] GPM meta profiles unavailable (${code ?? 'error'}): ${reason} — tiếp tục Chrome-only`);
-      gpmCandidates = [];
-    }
-  }
-  const gpmProfiles = gpmCandidates.slice(0, remainingAfterChrome);
+  let chromeCandidates = withoutQuotaExhausted(chromeProfilesService.listProfilesForLlm('image', 'meta'), log);
+  let gpmCandidates: GpmProfile[] | undefined;
+  let anyCandidate = false;
 
-  log(
-    `[meta] Capacity: mode=batch, pending=${pendingCount}, effectiveSlots=${pendingCount}, ` +
-      `chromeMains=${mains.length}, tabsPerMain=${tabsPerMain}, chromeTabs=${chromeTabProfiles.length}, ` +
-      `gpmMeta=${gpmProfiles.length}` +
-      (gpmProfiles.length > 0
-        ? ` (${gpmProfiles.map(profile => profile.name).join(', ')})`
-        : ''),
-  );
+  do {
+    const chrome = allocateChromeTabs(chromeCandidates, jobCount, tabsPerProfile);
+    chromeCandidates = chromeCandidates.slice(chrome.length);
+    const chromeTabs = chrome.reduce((sum, allocation) => sum + allocation.tabs, 0);
 
-  if (chromeTabProfiles.length === 0 && gpmProfiles.length === 0) {
+    const gpmNeeded = Math.max(0, jobCount - chromeTabs);
+    if (gpmNeeded > 0) gpmCandidates ??= await listGpmCandidates(log);
+    const gpm = gpmNeeded > 0 ? (gpmCandidates ?? []).slice(0, gpmNeeded) : [];
+    if (gpm.length > 0) gpmCandidates = (gpmCandidates ?? []).slice(gpm.length);
+
+    if (chrome.length === 0 && gpm.length === 0) break;
+    anyCandidate = true;
+    log(
+      `[meta] Capacity: mode=${mode}, jobs=${options.jobCount}, tabsPerMain=${tabsPerProfile}, ` +
+        `chrome=${chrome.map(({ profile, tabs }) => `${profile.name}×${tabs}`).join(', ') || '(none)'}, ` +
+        `gpm=${gpm.map(profile => profile.name).join(', ') || '(none)'}`,
+    );
+
+    await Promise.all([
+      ...chrome.map(({ profile, tabs }) => openChromeWorkers(pool, profile, tabs, options)),
+      ...gpm.map(profile => openGpmWorker(pool, profile, options)),
+    ]);
+  } while (!hasNewWorker());
+
+  if (hasNewWorker()) return;
+  if (!anyCandidate) {
     throw new AppError(
       'No Chrome main or GPM meta-enabled profiles available for Meta media',
       400,
       'META_MEDIA_NO_PROFILES',
     );
   }
-
-  const chromeWorkers = await openChromeMetaWorkers(chromeTabProfiles, 0, log);
-  const { workers: gpmWorkers, connections } = await openGpmMetaWorkers(
-    gpmProfiles,
-    chromeWorkers.length,
-    log,
-  );
-
-  const workers = [...chromeWorkers, ...gpmWorkers];
-  if (workers.length === 0) {
-    for (const connection of connections) {
-      await disconnectGpmPlaywright(connection).catch(() => undefined);
-    }
-    throw new AppError('Failed to open any Meta workers (Chrome/GPM)', 502, 'META_MEDIA_NO_WORKERS');
-  }
-
-  return { workers, gpmConnections: connections, mode: 'batch' };
+  throw new AppError('Failed to open any Meta workers (Chrome/GPM)', 502, 'META_MEDIA_NO_WORKERS');
 }
 
 export async function cleanupMetaWorkerPool(
@@ -299,19 +248,14 @@ export async function cleanupMetaWorkerPool(
         await disconnectGpmPlaywright(connection);
         log(`[meta] Closed GPM profile ${connection.profileId}`);
       } catch (err) {
-        const reason = err instanceof Error ? err.message : String(err);
-        log(`[meta] Failed to close GPM ${connection.profileId}: ${reason}`);
+        log(`[meta] Failed to close GPM ${connection.profileId}: ${reasonOf(err)}`);
       }
     }),
   );
 
-  const chromeProfileIds = [
-    ...new Set(pool.workers.filter(worker => worker.kind === 'chrome').map(worker => worker.profileId)),
-  ];
+  if (pool.chromeProfileIds.size === 0) return;
 
-  if (chromeProfileIds.length === 0) return;
-
-  const closedIds = await closeChromeProfiles(chromeProfileIds);
+  const closedIds = await closeChromeProfiles([...pool.chromeProfileIds]);
   for (const profileId of closedIds) {
     log(`[meta] Closed Chrome profile ${profileId}`);
   }

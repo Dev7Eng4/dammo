@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Input } from '../ui';
+import { appLocale } from '../../utils/locale';
 
 interface GpmGroupsToolbarProps {
   count: number;
@@ -26,7 +27,7 @@ export function GpmGroupsToolbar({
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm text-neutral-400">
-          {t('gpm.groups.count', { count: count.toLocaleString() })}
+          {t('gpm.groups.count', { count: count.toLocaleString(appLocale()) })}
         </span>
         <Input
           value={search}

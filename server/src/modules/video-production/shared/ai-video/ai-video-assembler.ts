@@ -49,11 +49,10 @@ import {
   AI_SMALL_VIDEO_OVERLAY_Y,
 } from './ai-video.constants.js';
 import { ensurePrebakedAiSmallVideo } from './ai-small-video-prepare.js';
-import { loadAiRenderConfig } from './ai-render-config.js';
+import { loadAiRenderConfig, resolveAiRenderConfig } from './ai-render-config.js';
 import {
   addAudioDeficitHold,
-  assignHoldsForMissingScenes,
-  buildAiTimedSlides,
+  buildAiTimelineSlides,
   buildStillBackgroundSlides,
 } from './ai-video-slide-spec.js';
 import {
@@ -68,8 +67,15 @@ import {
 import { emitDetailLog } from '../video-log.js';
 import type { AssembleReupAiSlideshowVideoInput } from './ai-video.types.js';
 
-async function resolveAssembleRender(workDir: string): Promise<{ audioSpeed: number; kenBurns: boolean }> {
+async function resolveAssembleRender(
+  workDir: string,
+  fixedAudioSpeed?: number,
+): Promise<{ audioSpeed: number; kenBurns: boolean }> {
   const kenBurns = isKenBurnsEnabled();
+  if (fixedAudioSpeed != null) {
+    await resolveAiRenderConfig(workDir, { kenBurns, fixedAudioSpeed });
+    return { audioSpeed: fixedAudioSpeed, kenBurns };
+  }
   try {
     const config = await loadAiRenderConfig(workDir);
     return {
@@ -99,6 +105,7 @@ export async function assembleReupAiSlideshowVideo(
     smallVideoFile,
     smallVideoPath,
     stillBackground = false,
+    fixedAudioSpeed,
     onLog,
   } = input;
   const log = (msg: string) => emitDetailLog(msg, onLog);
@@ -109,14 +116,14 @@ export async function assembleReupAiSlideshowVideo(
   }
 
   const assets = resolveCaptionFont(captionStyleKey);
-  const { audioSpeed: speed, kenBurns } = await resolveAssembleRender(workDir);
+  const { audioSpeed: speed, kenBurns } = await resolveAssembleRender(workDir, fixedAudioSpeed);
   const originalAudioDuration = await getAudioDurationSeconds(audioPath);
   const audioDurationAfterTempo = originalAudioDuration / speed;
   const scaledScenes = scaleSceneTimestamps(scenes, speed);
 
   let slides = stillBackground
     ? buildStillBackgroundSlides(workDir, scenes)
-    : assignHoldsForMissingScenes(scaledScenes, buildAiTimedSlides(workDir, scaledScenes));
+    : buildAiTimelineSlides(workDir, scaledScenes, log);
   slides = addAudioDeficitHold(slides, audioDurationAfterTempo, log);
   const imagePaths = slides.map(slide => slide.imagePath);
 

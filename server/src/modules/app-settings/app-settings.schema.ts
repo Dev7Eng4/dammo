@@ -17,6 +17,7 @@ export const updateAppSettingsSchema = z.object({
   taskQueueConcurrency: z.number().int().min(1).max(8).optional(),
   verboseVideoLogs: z.boolean().optional(),
   aiScenePromptConcurrency: z.number().int().min(1).max(8).optional(),
+  metaTabsPerProfile: z.number().int().min(1).max(5).optional(),
   seedingEmailDays: z.number().int().min(1).max(365).optional(),
   seedingYoutubeDays: z.number().int().min(1).max(365).optional(),
   removeGeminiWatermark: z.boolean().optional(),

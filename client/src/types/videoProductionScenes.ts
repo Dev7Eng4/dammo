@@ -1,4 +1,9 @@
-export type ProductionVideoStatus = 'Prepared' | 'Created';
+/**
+ * `Preparing`: a remake video started from a skill script, finished in the production tabs (voice, scenes,
+ * title, thumbnail); it becomes `Prepared` once all of those exist. A skill script not opened yet is listed as
+ * `Preparing` with `videoFolderPath: null`: opening it creates the folder first (startPreparingProductionVideo).
+ */
+export type ProductionVideoStatus = 'Preparing' | 'Prepared' | 'Created';
 
 export interface ProductionVideoListItem {
   channelId: string;
@@ -12,6 +17,8 @@ export interface ProductionVideoListItem {
   hasScenes: boolean;
   thumbnailUrl: string | null;
   videoFolderPath: string | null;
+  /** Skill script not opened yet (no folder): its estimated length. */
+  estimatedMinutes?: number;
 }
 
 export interface ProductionSceneItem {

@@ -7,6 +7,7 @@ import {
 } from '../../constants/videoFactory';
 import type { VideoFactoryFormValues } from '../../types/videoProduction';
 import { Button, Input, Select } from '../ui';
+import { useTranslation } from 'react-i18next';
 
 interface VideoFactoryFormProps {
   onQueued?: () => void;
@@ -35,11 +36,13 @@ function FormField({
   children: React.ReactNode;
   error?: string;
 }) {
+  const { t } = useTranslation('common');
+
   return (
     <div>
       <label htmlFor={htmlFor} className="mb-1.5 block text-xs font-medium text-neutral-300">
         {label}
-        {optional ? <span className="ml-1 text-neutral-500">(optional)</span> : null}
+        {optional ? <span className="ml-1 text-neutral-500">{t('actions.optional')}</span> : null}
       </label>
       {children}
       {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
@@ -48,6 +51,7 @@ function FormField({
 }
 
 export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
+  const { t } = useTranslation(['factory', 'common']);
   const navigate = useNavigate();
   const {
     register,
@@ -68,26 +72,26 @@ export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
       reset(defaultValues);
       navigate('/manual-video');
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : 'Failed to queue render job');
+      onError?.(err instanceof Error ? err.message : t('videoFactory.form.queueError'));
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="grid gap-5 md:grid-cols-2">
-        <FormField label="Project Name" htmlFor="projectName" error={errors.projectName?.message}>
+        <FormField label={t('videoFactory.form.projectName')} htmlFor="projectName" error={errors.projectName?.message}>
           <Input
             id="projectName"
-            placeholder="Top 10 AI Tools"
-            {...register('projectName', { required: 'Project name is required' })}
+            placeholder={t('videoFactory.form.projectNamePlaceholder')}
+            {...register('projectName', { required: t('videoFactory.form.projectNameRequired') })}
           />
         </FormField>
 
-        <FormField label="Template" error={errors.template?.message}>
+        <FormField label={t('videoFactory.form.template')} error={errors.template?.message}>
           <Controller
             name="template"
             control={control}
-            rules={{ required: 'Template is required' }}
+            rules={{ required: t('videoFactory.form.templateRequired') }}
             render={({ field }) => (
               <Select
                 id="template"
@@ -98,17 +102,17 @@ export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select template"
+                placeholder={t('videoFactory.form.templatePlaceholder')}
               />
             )}
           />
         </FormField>
 
-        <FormField label="Destination" error={errors.destination?.message}>
+        <FormField label={t('videoFactory.form.destination')} error={errors.destination?.message}>
           <Controller
             name="destination"
             control={control}
-            rules={{ required: 'Destination is required' }}
+            rules={{ required: t('videoFactory.form.destinationRequired') }}
             render={({ field }) => (
               <Select
                 id="destination"
@@ -119,31 +123,31 @@ export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Select destination"
+                placeholder={t('videoFactory.form.destinationPlaceholder')}
               />
             )}
           />
         </FormField>
 
-        <FormField label="Dataset Path" htmlFor="datasetPath" error={errors.datasetPath?.message}>
+        <FormField label={t('videoFactory.form.datasetPath')} htmlFor="datasetPath" error={errors.datasetPath?.message}>
           <Input
             id="datasetPath"
             placeholder="./data/job_dataset.json"
             className="font-mono text-sm"
-            {...register('datasetPath', { required: 'Dataset path is required' })}
+            {...register('datasetPath', { required: t('videoFactory.form.datasetPathRequired') })}
           />
         </FormField>
 
-        <FormField label="Assets Path" htmlFor="assetsPath" error={errors.assetsPath?.message}>
+        <FormField label={t('videoFactory.form.assetsPath')} htmlFor="assetsPath" error={errors.assetsPath?.message}>
           <Input
             id="assetsPath"
             placeholder="./assets/project_001/"
             className="font-mono text-sm"
-            {...register('assetsPath', { required: 'Assets path is required' })}
+            {...register('assetsPath', { required: t('videoFactory.form.assetsPathRequired') })}
           />
         </FormField>
 
-        <FormField label="Voiceover Path" htmlFor="voiceoverPath" optional>
+        <FormField label={t('videoFactory.form.voiceoverPath')} htmlFor="voiceoverPath" optional>
           <Input
             id="voiceoverPath"
             placeholder="./audio/voiceover.mp3"
@@ -155,7 +159,7 @@ export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-5">
         <Button type="submit" size="sm" className="rounded-lg" disabled={isSubmitting}>
-          Queue Render
+          {t('videoFactory.form.queue')}
         </Button>
         <Button
           type="button"
@@ -164,7 +168,7 @@ export function VideoFactoryForm({ onQueued, onError }: VideoFactoryFormProps) {
           className="rounded-lg"
           onClick={() => reset(defaultValues)}
         >
-          Reset
+          {t('common:actions.reset')}
         </Button>
       </div>
     </form>

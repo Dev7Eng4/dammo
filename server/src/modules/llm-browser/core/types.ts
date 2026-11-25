@@ -59,7 +59,8 @@ export interface LlmTextReceiveResponseOptions {
 }
 export interface FlowReceiveResponseOptions extends LlmTextReceiveResponseOptions {
   projectId?: string;
-  batchResponsePromise?: Promise<import('playwright').Response>;
+  /** Grid image tile ids present before the prompt was submitted; the result is the first new tile. */
+  knownImageIds?: ReadonlySet<string>;
   outputPath?: string;
   debugScreenshotPath?: string;
 }

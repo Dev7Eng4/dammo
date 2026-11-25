@@ -49,7 +49,8 @@ export function PendingSourcePicker({ channelId, runId, selectedIds, disabled, o
           .flatMap((project) => project.input.sourceUrls.map(youtubeIdOf))
           .filter((id): id is string => Boolean(id)),
       )
-      setVideos(pending.items.filter((video) => !usedElsewhere.has(video.id)))
+      // Preparing sources already have a skill script and open in the production list instead.
+      setVideos(pending.items.filter((video) => video.status !== 'Preparing' && !usedElsewhere.has(video.id)))
     },
     [channelId, runId],
   )

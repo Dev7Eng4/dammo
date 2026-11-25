@@ -7,7 +7,7 @@ export type StoredYoutubeChannelType = YoutubeChannelType | LegacyYoutubeChannel
 
 export type ReupYoutubeChannelType = 'reup_audio' | 'reup_video' | 'remake_video';
 
-export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video';
+export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video' | 'ai_interleaved_video';
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image' | 'celebrity';
 
@@ -90,15 +90,8 @@ export type YoutubeChannelLanguage = 'en' | 'ko' | 'ja' | 'es';
 /** @deprecated Use YoutubeChannelLanguage */
 export type TargetAudience = YoutubeChannelLanguage;
 
-export const YOUTUBE_CHANNEL_LANGUAGE_LABELS: Record<YoutubeChannelLanguage, string> = {
-  en: 'Tiếng Anh',
-  ko: 'Tiếng Hàn',
-  ja: 'Tiếng Nhật',
-  es: 'Tiếng Tây Ban Nha',
-};
-
-/** @deprecated Use YOUTUBE_CHANNEL_LANGUAGE_LABELS */
-export const TARGET_AUDIENCE_LABELS = YOUTUBE_CHANNEL_LANGUAGE_LABELS;
+/** Label with `youtube:language.<value>`. */
+const YOUTUBE_CHANNEL_LANGUAGES: readonly string[] = ['en', 'ko', 'ja', 'es'] satisfies YoutubeChannelLanguage[];
 
 const LEGACY_LANGUAGE_MAP: Record<string, YoutubeChannelLanguage> = {
   'EN-US': 'en',
@@ -109,7 +102,7 @@ const LEGACY_LANGUAGE_MAP: Record<string, YoutubeChannelLanguage> = {
 };
 
 export function parseStoredChannelLanguage(value: string): YoutubeChannelLanguage | '' {
-  if (value in YOUTUBE_CHANNEL_LANGUAGE_LABELS) return value as YoutubeChannelLanguage;
+  if (YOUTUBE_CHANNEL_LANGUAGES.includes(value)) return value as YoutubeChannelLanguage;
   return LEGACY_LANGUAGE_MAP[value] ?? '';
 }
 
@@ -118,14 +111,6 @@ export function parseStoredTargetAudience(value: string): YoutubeChannelLanguage
   return parseStoredChannelLanguage(value);
 }
 
-export function formatChannelLanguageLabel(value: string): string {
-  return YOUTUBE_CHANNEL_LANGUAGE_LABELS[value as YoutubeChannelLanguage] ?? value;
-}
-
-/** @deprecated Use formatChannelLanguageLabel */
-export function formatTargetAudienceLabel(value: string): string {
-  return formatChannelLanguageLabel(value);
-}
 export type UploadFrequency = 'every_5_days' | 'every_3_days' | 'every_2_days' | 'daily_1' | 'daily_2' | 'daily_3';
 export type VideoCreationOrder =
   | 'oldest_first'
@@ -221,17 +206,13 @@ export interface YoutubeChannelStats {
 
 export type YoutubeChannelTypeFilter = 'all' | YoutubeChannelType;
 
-export const YOUTUBE_CHANNEL_TYPE_LABELS: Record<YoutubeChannelType | 'reup', string> = {
-  content: 'Nội dung',
-  reup_audio: 'Đăng lại âm thanh',
-  reup_video: 'Đăng lại video',
-  content_sale: 'Bán nội dung',
-  remake_video: 'Remake video',
-  reup: 'Đăng lại',
-};
 export type YoutubeMonetizationFilter = 'all' | MonetizationStatus;
 
-export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error' | 'Pending';
+/**
+ * `Preparing`: a remake source whose script the skill already wrote (check passed), or a video started from one
+ * that still lacks voice, scenes, title or thumbnail.
+ */
+export type YoutubeChannelVideoStatus = 'Published' | 'Preparing' | 'Prepared' | 'Created' | 'Uploaded' | 'Error' | 'Pending';
 
 export type YoutubeChannelVideoStatusFilter = 'all' | YoutubeChannelVideoStatus | 'Draft';
 
@@ -241,6 +222,7 @@ export const YOUTUBE_CHANNEL_VIDEO_STATUS_FILTER_OPTIONS: {
 }[] = [
   { value: 'all', labelKey: 'filter.statusAll' },
   { value: 'Pending', labelKey: 'filter.statusPending' },
+  { value: 'Preparing', labelKey: 'filter.statusPreparing' },
   { value: 'Published', labelKey: 'filter.statusPublished' },
   { value: 'Prepared', labelKey: 'filter.statusPrepared' },
   { value: 'Created', labelKey: 'filter.statusCreated' },

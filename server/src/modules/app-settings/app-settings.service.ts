@@ -18,6 +18,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   taskQueueConcurrency: 1,
   verboseVideoLogs: true,
   aiScenePromptConcurrency: 1,
+  metaTabsPerProfile: 3,
   seedingEmailDays: 5,
   seedingYoutubeDays: 3,
   removeGeminiWatermark: false,
@@ -50,6 +51,14 @@ function clampConcurrency(value: number | undefined, fallback: number): number {
   return Math.min(8, Math.max(1, Math.round(value)));
 }
 
+/** Most Meta AI windows one profile (one account) may run at once. */
+export const META_TABS_PER_PROFILE_MAX = 5;
+
+function clampMetaTabs(value: number | undefined, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(META_TABS_PER_PROFILE_MAX, Math.max(1, Math.round(value)));
+}
+
 function loadSettings(): AppSettings {
   const stored = readJson<Partial<AppSettings>>(paths.appSettings);
   const density = stored?.aiSceneDensityMaxSec;
@@ -79,6 +88,7 @@ function loadSettings(): AppSettings {
       stored?.aiScenePromptConcurrency,
       DEFAULT_APP_SETTINGS.aiScenePromptConcurrency,
     ),
+    metaTabsPerProfile: clampMetaTabs(stored?.metaTabsPerProfile, DEFAULT_APP_SETTINGS.metaTabsPerProfile),
     seedingEmailDays: clampDays(stored?.seedingEmailDays, DEFAULT_APP_SETTINGS.seedingEmailDays),
     seedingYoutubeDays: clampDays(
       stored?.seedingYoutubeDays,
@@ -133,6 +143,7 @@ export class AppSettingsService {
         input.aiScenePromptConcurrency,
         current.aiScenePromptConcurrency,
       ),
+      metaTabsPerProfile: clampMetaTabs(input.metaTabsPerProfile, current.metaTabsPerProfile),
       seedingEmailDays: clampDays(input.seedingEmailDays, current.seedingEmailDays),
       seedingYoutubeDays: clampDays(input.seedingYoutubeDays, current.seedingYoutubeDays),
       removeGeminiWatermark: input.removeGeminiWatermark ?? current.removeGeminiWatermark,

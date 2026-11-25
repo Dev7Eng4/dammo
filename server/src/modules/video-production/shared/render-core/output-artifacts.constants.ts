@@ -8,6 +8,9 @@
 /** Final uploadable mp4 basename when no metadata title is available. */
 export const OUTPUT_VIDEO_BASENAME = 'video';
 
+/** The final video while ffmpeg is still writing it; renamed to its title once the render succeeds. */
+export const RENDERING_VIDEO_BASENAME = 'rendering_output';
+
 /** Raw Ken Burns slideshow rendered by the AI assembler before the final mux. */
 export const AI_SLIDESHOW_RAW_BASENAME = 'slideshow_raw';
 
@@ -22,6 +25,7 @@ export const SI_CELEBRITY_SLIDESHOW_BASENAME = 'center_slideshow_celebrity';
  * as the final uploadable video when scanning a video folder.
  */
 export const INTERMEDIATE_MP4_BASENAMES: ReadonlySet<string> = new Set([
+  RENDERING_VIDEO_BASENAME,
   AI_SLIDESHOW_RAW_BASENAME,
   SI_MULTI_IMAGE_SLIDESHOW_BASENAME,
   'stock_processed',

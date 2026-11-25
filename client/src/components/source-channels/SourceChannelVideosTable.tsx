@@ -2,6 +2,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
 import type { SourceChannelVideo } from '../../types/sourceChannel';
 import { DataTable, Link } from '../ui';
+import { appLocale } from '../../utils/locale';
 
 interface SourceChannelVideosTableProps {
   videos: SourceChannelVideo[];
@@ -27,7 +28,7 @@ function formatDuration(seconds?: number | null): string {
 
 function formatViews(count?: number | null): string {
   if (count == null) return '—';
-  return count.toLocaleString();
+  return count.toLocaleString(appLocale());
 }
 
 function truncateLink(url: string, max = 32) {

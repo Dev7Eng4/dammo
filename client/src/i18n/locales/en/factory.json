@@ -64,14 +64,14 @@
       "regenReloadError": "Could not reload scenes after regeneration",
       "regenJobTitle": "Regenerate scenes: {{title}}",
       "regenConfirmTitle": "Regenerate scenes?",
-      "regenConfirmBody": "This will recreate all scene prompts and images for the selected video. The final video will not be reassembled.",
+      "regenConfirmBody": "This deletes the old scenes (prompts, images, clips) and recreates them. The current video is kept until you re-render it.",
       "regenConfirmSending": "Queuing…"
     },
     "createVideo": {
       "button": "Create video",
       "creating": "Creating video…",
       "confirmTitle": "Recreate the video?",
-      "confirmBody": "This will assemble the video again from the current scene images.",
+      "confirmBody": "This will assemble the video again from the current scene images. Once done, the new video replaces the old one.",
       "confirmSending": "Queuing…",
       "errorTitle": "Cannot create the video",
       "scenesLoading": "Scene list is still loading.",
@@ -154,9 +154,11 @@
         "timeline": "Timeline",
         "prompt": "Prompt",
         "image": "Image"
-      }
+      },
+      "sceneAlt": "Scene {{n}}"
     },
     "status": {
+      "preparing": "Preparing",
       "prepared": "Prepared",
       "created": "Created"
     }
@@ -251,6 +253,17 @@
       "create": "Create video",
       "upload": "Upload",
       "queued": "queued"
+    },
+    "stageName": {
+      "download": "Download",
+      "copy_assets": "Copy assets",
+      "clean_transcript": "Clean transcript",
+      "remake_script": "Remake script",
+      "narration": "VOICEVOX narration",
+      "update_transcript": "Update transcript",
+      "metadata": "Create metadata",
+      "thumbnail": "Create thumbnail",
+      "assemble": "Assemble video"
     }
   },
   "settings": {
@@ -286,6 +299,8 @@
     "chromeOffscreenDesc": "On: park windows off-screen when running in the background. Off: keep windows visible normally.",
     "scenePromptConcurrency": "Scene prompt concurrency",
     "scenePromptConcurrencyDesc": "How many Chrome profiles run scene-prompt LLM chunks at once (1–8). Value 1 = sequential. Uses profiles with the default text LLM ticked in LLM Content, up to as many as exist.",
+    "metaTabsPerProfile": "Meta AI windows per profile",
+    "metaTabsPerProfileDesc": "How many image windows run at once on each Chrome profile with Meta ticked (1–5), i.e. how many prompts one Meta account gets at the same time. More is faster, but draws more attention to the account and uses more RAM. Default 3.",
     "sceneDensity": "Max duration per scene (seconds) — system default. YouTube channels can still override per channel.",
     "sceneStart": "Start of video",
     "sceneMiddle": "Middle of video",
@@ -442,6 +457,24 @@
       "title": "Video Factory",
       "subtitle": "Configure a new render job and add it to the queue",
       "queued": "Video queued for render"
+    },
+    "form": {
+      "projectName": "Project name",
+      "projectNamePlaceholder": "Top 10 AI Tools",
+      "projectNameRequired": "Project name is required",
+      "template": "Template",
+      "templateRequired": "Template is required",
+      "templatePlaceholder": "Select template",
+      "destination": "Destination",
+      "destinationRequired": "Destination is required",
+      "destinationPlaceholder": "Select destination",
+      "datasetPath": "Dataset path",
+      "datasetPathRequired": "Dataset path is required",
+      "assetsPath": "Assets path",
+      "assetsPathRequired": "Assets path is required",
+      "voiceoverPath": "Voiceover path",
+      "queue": "Queue render",
+      "queueError": "Failed to queue render job"
     }
   }
 }

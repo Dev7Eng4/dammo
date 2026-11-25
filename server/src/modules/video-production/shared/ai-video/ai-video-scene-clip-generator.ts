@@ -6,13 +6,20 @@ import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.
 import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.runner.js';
 import type { FlowImageToVideoJob } from '../../../llm-browser/flow/flow.types.js';
 import { emitDetailLog } from '../video-log.js';
-import { AI_INTRO_VIDEO_SEC, AI_VIDEOS_DIRNAME } from './ai-video.constants.js';
+import {
+  AI_INTERLEAVED_MAX_IMAGES,
+  AI_INTERLEAVED_MIN_IMAGES,
+  AI_INTRO_VIDEO_SEC,
+  AI_VIDEO_CLIP_SEC,
+  AI_VIDEOS_DIRNAME,
+} from './ai-video.constants.js';
+import { sceneClipJobLengthSec } from './ai-video-clip-span.js';
 import { persistAiScenePromptsFile } from './ai-video-scene-prompts-store.js';
 import { resolveSceneImageAbsolutePath } from './ai-video-scene-timing.js';
 import { isTitleScene } from './ai-video-title-card.js';
 import type { AiVideoScenePrompt } from './ai-video.types.js';
 
-export type AiSceneVideoMode = 'full' | 'intro';
+export type AiSceneVideoMode = 'full' | 'intro' | 'interleaved';
 
 const MOTION_PROMPT_CONTEXT_CHARS = 400;
 
@@ -35,10 +42,17 @@ const CAMERA_INSTRUCTIONS: Record<SceneCameraMotion, string> = {
     'Camera: an extremely subtle, barely noticeable slow drift forward (at most about 2% closer over the whole clip, the framing should look almost unchanged from start to end), no pan, no zoom-in on any character.',
 };
 
-export function buildSceneMotionPrompt(scenePrompt: string): string {
+/**
+ * Flow (Veo) prompt for one scene clip. `motionPrompt` is the scene's own motion, written for it
+ * (jp-psy-motion skill); without it every scene gets the same gentle, generic motion.
+ */
+export function buildSceneMotionPrompt(scenePrompt: string, motionPrompt?: string): string {
   const context = scenePrompt.replace(/\s+/g, ' ').trim().slice(0, MOTION_PROMPT_CONTEXT_CHARS);
+  const motion = motionPrompt?.replace(/\s+/g, ' ').trim().replace(/[.\s]+$/, '');
   return (
-    'Animate this illustration with gentle, natural character motion (expressions, gestures, small body movement). ' +
+    (motion
+      ? `Animate this illustration: ${motion}. Motion stays gentle and natural, as in a calm animated film. `
+      : 'Animate this illustration with gentle, natural character motion (expressions, gestures, small body movement). ') +
     `${CAMERA_INSTRUCTIONS[resolveSceneCameraMotion(scenePrompt)]} ` +
     'Keep every character fully inside the frame as in the start frame; never crop heads or bodies. ' +
     'Keep the exact art style, colors and composition of the start frame. ' +
@@ -47,19 +61,66 @@ export function buildSceneMotionPrompt(scenePrompt: string): string {
   );
 }
 
+/**
+ * How badly a scene fits one Flow clip: scenes longer than the clip freeze on its last frame
+ * (weighted heavier), shorter ones only cut the motion early.
+ */
+function clipFitCost(durationSec: number): number {
+  return durationSec > AI_VIDEO_CLIP_SEC ? (durationSec - AI_VIDEO_CLIP_SEC) * 3 : AI_VIDEO_CLIP_SEC - durationSec;
+}
+
+/**
+ * Interleaved pick over eligible scenes (in order): every intro scene, then one clip after each
+ * run of `minImages`–`maxImages` image scenes, choosing the candidate whose length fits a clip best.
+ */
+export function selectInterleavedScenes<T>(
+  eligible: T[],
+  startSec: (scene: T) => number,
+  durationSec: (scene: T) => number,
+  introSec: number = AI_INTRO_VIDEO_SEC,
+  minImages: number = AI_INTERLEAVED_MIN_IMAGES,
+  maxImages: number = AI_INTERLEAVED_MAX_IMAGES,
+): T[] {
+  const picked: T[] = [];
+  let cursor = 0;
+  while (cursor < eligible.length && startSec(eligible[cursor]!) < introSec) {
+    picked.push(eligible[cursor]!);
+    cursor += 1;
+  }
+  for (;;) {
+    const first = cursor + minImages;
+    if (first >= eligible.length) break;
+    const last = Math.min(cursor + maxImages, eligible.length - 1);
+    let best = first;
+    for (let i = first + 1; i <= last; i += 1) {
+      if (clipFitCost(durationSec(eligible[i]!)) < clipFitCost(durationSec(eligible[best]!))) best = i;
+    }
+    picked.push(eligible[best]!);
+    cursor = best + 1;
+  }
+  return picked;
+}
+
 /** Scenes that should become video clips for the given mode (only scenes that already have an image; never title cards). */
 export function selectScenesForVideo(
   scenes: AiVideoScenePrompt[],
   mode: AiSceneVideoMode,
   introSec: number = AI_INTRO_VIDEO_SEC,
 ): number[] {
-  const indexes: number[] = [];
+  const eligible: number[] = [];
   scenes.forEach((scene, index) => {
     if (!scene.path?.trim() || isTitleScene(scene)) return;
     if (mode === 'intro' && srtTimestampToMs(scene.startTime) >= introSec * 1_000) return;
-    indexes.push(index);
+    eligible.push(index);
   });
-  return indexes;
+  if (mode !== 'interleaved') return eligible;
+  const startSec = (index: number) => srtTimestampToMs(scenes[index]!.startTime) / 1_000;
+  return selectInterleavedScenes(
+    eligible,
+    startSec,
+    index => (srtTimestampToMs(scenes[index]!.endTime) - srtTimestampToMs(scenes[index]!.startTime)) / 1_000,
+    introSec,
+  );
 }
 
 function sceneVideoName(index: number): string {
@@ -110,7 +171,8 @@ export async function generateAiSceneVideoClips(
   const jobs: FlowImageToVideoJob[] = indexes.map(index => ({
     name: sceneVideoName(index),
     imagePath: resolveSceneImageAbsolutePath(input.workDir, input.scenes[index]!),
-    prompt: buildSceneMotionPrompt(input.scenes[index]!.prompt),
+    prompt: buildSceneMotionPrompt(input.scenes[index]!.prompt, input.scenes[index]!.motionPrompt),
+    lengthSec: sceneClipJobLengthSec(input.workDir, input.scenes, index),
   }));
 
   log(`[ai-video] Generating ${jobs.length} video clip(s) via Flow (mode=${input.mode}) → ${videosDir}`);

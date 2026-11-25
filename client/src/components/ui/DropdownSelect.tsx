@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useFloatingMenuPosition } from '../../hooks';
 import { cn } from '../../lib/cn';
+import { useTranslation } from 'react-i18next';
 
 export interface DropdownSelectOption<T extends string = string> {
   value: T;
@@ -76,7 +77,7 @@ export function DropdownSelect<T extends string>({
   leadingIcon,
   placeholder,
   searchable = false,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder,
   clearable = false,
   disabled = false,
   id,
@@ -84,6 +85,7 @@ export function DropdownSelect<T extends string>({
   triggerClassName,
   menuClassName,
 }: DropdownSelectProps<T>) {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,7 +169,7 @@ export function DropdownSelect<T extends string>({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') e.preventDefault();
               }}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t('search.short')}
               className="h-8 w-full rounded-lg border border-border bg-surface pl-8 pr-2 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
             />
           </div>
@@ -202,7 +204,7 @@ export function DropdownSelect<T extends string>({
             );
           })
         ) : (
-          <p className="px-3 py-2 text-sm text-neutral-500">No results found</p>
+          <p className="px-3 py-2 text-sm text-neutral-500">{t('search.noResults')}</p>
         )}
       </div>
     </div>
@@ -249,7 +251,7 @@ export function DropdownSelect<T extends string>({
             <span
               role="button"
               tabIndex={-1}
-              aria-label="Clear selection"
+              aria-label={t('select.clear')}
               className="rounded p-0.5 text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
               onClick={e => {
                 e.preventDefault();

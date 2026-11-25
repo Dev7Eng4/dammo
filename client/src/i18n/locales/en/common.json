@@ -27,10 +27,14 @@
     "close": "Close",
     "closePanel": "Close panel",
     "closeDetailPanel": "Close detail panel",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "dismiss": "Dismiss",
+    "navigation": "Navigation"
   },
   "search": {
-    "placeholder": "Search"
+    "placeholder": "Search",
+    "noResults": "No results found",
+    "short": "Search..."
   },
   "pagination": {
     "showing": "Showing",
@@ -67,12 +71,40 @@
     "all": "All"
   },
   "errors": {
-    "generic": "Something went wrong"
+    "generic": "Something went wrong",
+    "loadData": "Failed to load data",
+    "requestFailed": "Request failed: {{status}}",
+    "exportFailed": "Export failed: {{status}}",
+    "importFailed": "Import failed: {{status}}"
   },
   "placeholder": {
     "fallbackTitle": "Module",
     "subtitle": "Feature under development. This module will be available in a future version.",
     "body": "Module content will appear here."
+  },
+  "select": {
+    "placeholder": "Select options",
+    "clear": "Clear selection",
+    "remove": "Remove {{label}}"
+  },
+  "table": {
+    "selectAll": "Select all rows",
+    "selectRow": "Select row",
+    "rowNumber": "No.",
+    "empty": "No items found."
+  },
+  "cluster": {
+    "K1": "Happiness in later life",
+    "K2": "The aging brain",
+    "K3": "Money in later life",
+    "K4": "Smart people",
+    "K5": "Hidden talents",
+    "K6": "Psychology of the wealthy",
+    "K7": "Decluttering and letting go",
+    "K8": "Relationship boundaries",
+    "K9": "Family",
+    "K10": "Solitude and introversion",
+    "K11": "Healing teachings"
   }
 }
 

@@ -11,15 +11,18 @@ import {
   downloadAndSaveFlowImage,
   extractFifeUrl,
   beginFlowToolBatchImagesCollector,
-  beginFlowContentImageWait,
   resolveFlowImageSavePath,
 } from './api/flow-api-response.js';
+import { snapshotFlowGridImageIds } from './flow-grid-dom.js';
 import {
   FLOW_VIDEO_CLIP_TIMEOUT_MS,
   FLOW_VIDEO_DEFAULT_MODEL,
   FLOW_VIDEO_SETTINGS_ONLY,
   FLOW_VIDEO_SETTINGS_ONLY_REASON,
   configureFlowVideoSettings,
+  setFlowVideoLength,
+  describeFlowLengthSlider,
+  openFlowVideoSettingsPopover,
   generateFlowClipViaUi,
 } from './flow-video-ui.js';
 import { isFlowDailyQuotaError } from './api/flow-api-errors.js';
@@ -282,11 +285,18 @@ export class FlowBrowserService {
       }
       await fs.mkdir(outputDir, { recursive: true });
 
-      for (const [index, job] of jobs.entries()) {
+      // Same-length clips run back to back so the Length slider moves as few times as possible.
+      const ordered = [...jobs].sort((a, b) => (a.lengthSec ?? 0) - (b.lengthSec ?? 0));
+      let currentLength: number | null = null;
+      for (const [index, job] of ordered.entries()) {
         const outputPath = path.join(outputDir, `${job.name}.mp4`);
-        emitDetailLog(`[flow-video-ui] clip ${index + 1}/${jobs.length}: ${job.name}`);
+        emitDetailLog(`[flow-video-ui] clip ${index + 1}/${jobs.length}: ${job.name}${job.lengthSec ? ` (${job.lengthSec}s)` : ''}`);
         setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
         try {
+          if (job.lengthSec && job.lengthSec !== currentLength) {
+            currentLength = null; // unknown until the slider is confirmed (a failed set is retried next clip)
+            currentLength = await setFlowVideoLength(page, job.lengthSec);
+          }
           await generateFlowClipViaUi(page, job, outputPath, {
             uploadTag,
             timeoutMs: options.timeoutMs ? Math.min(options.timeoutMs, FLOW_VIDEO_CLIP_TIMEOUT_MS) : undefined,
@@ -316,6 +326,33 @@ export class FlowBrowserService {
         'FLOW_VIDEO_UI_FAILED',
       );
     }
+  }
+
+  /**
+   * Settings check only, no generation: opens Flow, picks the video settings like a clip run, optionally
+   * sets the Length slider, then leaves the settings popover open in a visible window so a person can
+   * check them. Returns a description of the Length slider's DOM (before and after) for debugging.
+   */
+  async checkVideoSettings(
+    profileId: string,
+    options: { lengthSec?: number; model?: string; aspectRatio?: '16:9' | '9:16' } = {},
+  ): Promise<{ before: string; after: string; length: number | null }> {
+    const page = await ensureFlowChromeSession(profileId);
+    const profile = chromeProfilesService.getById(profileId);
+    await openChromeProfile(profile.id, profile.userDataDir, { background: false });
+    await resolveFlowProjectId(profileId, page, { skipInitialSetup: true });
+    await waitForFlowProjectReady(page);
+    await configureFlowVideoSettings(page, {
+      model: options.model ?? FLOW_VIDEO_DEFAULT_MODEL,
+      aspectRatio: options.aspectRatio ?? '16:9',
+    }, { keepOpen: true });
+    const before = await describeFlowLengthSlider(page);
+    await page.keyboard.press('Escape');
+    let length: number | null = null;
+    if (options.lengthSec) length = await setFlowVideoLength(page, options.lengthSec);
+    await openFlowVideoSettingsPopover(page);
+    const after = await describeFlowLengthSlider(page);
+    return { before, after, length };
   }
 
   private async generateImageViaBrowser(
@@ -348,6 +385,10 @@ export class FlowBrowserService {
     setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'sending');
 
     try {
+      // Taken before sendPrompt: uploaded references also add tiles (skipped by their file-name label).
+      const knownImageIds = await snapshotFlowGridImageIds(page);
+      emitDetailLog(`[flow-browser] grid has ${knownImageIds.size} image tile(s) before submit`);
+
       emitDetailLog('[flow-browser] sendPrompt...');
       await handler.sendPrompt(page, prompt, {
         submitWith: 'enter',
@@ -356,14 +397,10 @@ export class FlowBrowserService {
       emitDetailLog('[flow-browser] sendPrompt done');
       setLlmBrowserSessionStatus(profileId, FLOW_PROVIDER, 'waiting');
 
-      // Start after sendPrompt so attach-reference CDN hits are not mistaken for generate.
-      emitDetailLog(`[flow-browser] start flow-content image wait (timeout=${timeoutMs}ms)...`);
-      const batchResponsePromise = beginFlowContentImageWait(page, timeoutMs);
-
-      emitDetailLog('[flow-browser] receiveResponse...');
+      emitDetailLog(`[flow-browser] receiveResponse: waiting for new grid image (timeout=${timeoutMs}ms)...`);
       const response = await handler.receiveResponse(page, {
         projectId,
-        batchResponsePromise,
+        knownImageIds,
         outputPath,
         debugScreenshotPath: options?.debugScreenshotPath,
         timeoutMs,

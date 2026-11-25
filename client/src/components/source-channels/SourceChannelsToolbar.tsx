@@ -5,7 +5,7 @@ import type {
   SourceLanguageFilter,
   SourcePurposeFilter,
 } from '../../types/sourceChannel';
-import { SOURCE_CHANNEL_LANGUAGE_LABELS } from '../../types/sourceChannel';
+import { SOURCE_CHANNEL_LANGUAGES } from '../../types/sourceChannel';
 
 interface SourceChannelsToolbarProps {
   purposeFilter: SourcePurposeFilter;
@@ -44,7 +44,7 @@ export function SourceChannelsToolbar({
   onDownload,
   onDelete,
 }: SourceChannelsToolbarProps) {
-  const { t } = useTranslation('source');
+  const { t } = useTranslation(['source', 'youtube']);
 
   const purposeOptions: { value: SourcePurposeFilter; label: string }[] = [
     { value: 'all', label: t('filter.purposeAll') },
@@ -54,9 +54,7 @@ export function SourceChannelsToolbar({
 
   const languageOptions: { value: SourceLanguageFilter; label: string }[] = [
     { value: 'all', label: t('filter.langAll') },
-    ...(Object.entries(SOURCE_CHANNEL_LANGUAGE_LABELS) as [Exclude<SourceLanguageFilter, 'all'>, string][]).map(
-      ([value, label]) => ({ value, label }),
-    ),
+    ...SOURCE_CHANNEL_LANGUAGES.map((value) => ({ value, label: t(`youtube:language.${value}`) })),
   ];
 
   const nicheOptions: { value: string; label: string }[] = [

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import type { TaskJobListItem, TaskStage, TaskStageStatus } from '../../types/taskQueue'
 import { isActiveTaskStatus } from '../../types/taskQueue'
+import { getTaskStageLabel } from '../../utils/taskQueue'
 
 interface ChannelProductionBoardProps {
   jobs: TaskJobListItem[]
@@ -46,10 +47,10 @@ function StageChips({ stages }: { stages: TaskStage[] }) {
       {stages.map((stage) => (
         <span
           key={stage.id}
-          title={stage.error ?? stage.label}
+          title={stage.error ?? getTaskStageLabel(stage)}
           className={cn('rounded-md border px-1.5 py-0.5 text-[10px] font-medium', stageStyles[stage.status])}
         >
-          {stage.label}
+          {getTaskStageLabel(stage)}
         </span>
       ))}
     </div>

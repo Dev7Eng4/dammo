@@ -40,6 +40,8 @@ export interface FlowImageToVideoJob {
   imagePath: string;
   /** Motion prompt. */
   prompt: string;
+  /** Clip length in seconds (Flow's Length slider, clamped to its range). Unset = leave the slider as is. */
+  lengthSec?: number;
 }
 
 export interface FlowGenerateVideosOptions {

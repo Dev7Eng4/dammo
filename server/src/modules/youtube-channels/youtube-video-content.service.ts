@@ -37,6 +37,8 @@ export interface YoutubeVideoContent {
   hasOldThumbnail: boolean;
   videoFolderPath: string;
   hasVideo: boolean;
+  /** mtime of the final mp4, so a re-rendered video gets a new URL. */
+  videoVersion?: number | null;
   /** image_generation_prompt from video-meta.json (null when the video has none). */
   thumbnailPrompt: string | null;
 }
@@ -281,6 +283,7 @@ export class YoutubeVideoContentService {
     const raw = readRawMetadata(folderPath);
     const thumbnailPath = findThumbnailPath(folderPath);
     const oldThumbnailPath = findOldThumbnailPath(folderPath);
+    const videoPath = findFinalVideoMp4(folderPath);
     let parsed;
     try {
       parsed = parseVideoMetaContent(raw);
@@ -297,7 +300,8 @@ export class YoutubeVideoContentService {
       thumbnailVersion: thumbnailPath ? Math.round(fs.statSync(thumbnailPath).mtimeMs) : null,
       hasOldThumbnail: Boolean(oldThumbnailPath),
       videoFolderPath: path.resolve(folderPath),
-      hasVideo: Boolean(findFinalVideoMp4(folderPath)),
+      hasVideo: Boolean(videoPath),
+      videoVersion: videoPath ? Math.round(fs.statSync(videoPath).mtimeMs) : null,
       thumbnailPrompt: normalizeText(parsed.image_generation_prompt) || null,
     };
   }

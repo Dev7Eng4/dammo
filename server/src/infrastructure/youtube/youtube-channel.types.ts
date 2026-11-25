@@ -12,7 +12,11 @@ export interface YoutubeChannelMetadata {
   categories?: string[];
 }
 
-export type YoutubeChannelVideoStatus = 'Published' | 'Prepared' | 'Created' | 'Uploaded' | 'Error' | 'Pending';
+/**
+ * `Preparing`: a remake source whose script the skill already wrote (remake-ready/, check passed), or a video
+ * started from one that still lacks voice, scenes, title or thumbnail.
+ */
+export type YoutubeChannelVideoStatus = 'Published' | 'Preparing' | 'Prepared' | 'Created' | 'Uploaded' | 'Error' | 'Pending';
 
 export interface YoutubeChannelVideo {
   id: string;

@@ -46,7 +46,7 @@ const STEP_1 = [
   '- Each chapter ends by pointing to the NEXT chapter in the list. Order the chapters so that every hand-over is true: if chapter 2 raises a question, chapter 3 answers it.',
   '- The hook opens with a concrete scene the viewer recognises, then promises what the video gives them.',
   '',
-  'Length - you choose the runtime, between ${minMinutes} and ${maxMinutes} minutes (about 330 characters of narration per minute), from the material and not from the length of the reference video:',
+  'Length - you choose the runtime, between ${minMinutes} and ${maxMinutes} minutes (about 300 characters of narration per minute), from the material and not from the length of the reference video:',
   '- Count the distinct points that can each carry a chapter of their own (its own scene, conflict and takeaway). A chapter holds about 1.5-4.5 minutes, so the runtime is roughly chapters x 2-3 minutes (30 minutes needs at least 7 chapters; 12 minutes at most 8).',
   '- A thin topic with one idea and a few examples fits the short end. A rich topic with many distinct points fits 20-30 minutes.',
   '- Never stretch to reach a number. If you would have to repeat a point, restate an example or add generic advice to fill the time, shorten the video.',
@@ -123,7 +123,12 @@ function normalizeTemplate(source: string): string {
 
 /** Every earlier default of each step, oldest first, with the current one. */
 const DEFAULT_HISTORY: { step: number; previous: string[]; current: string }[] = [
-  { step: 1, previous: PREVIOUS_STEP_1_DEFAULTS, current: STEP_1 },
+  // The previous default differed from the current one only in the planning pace (330 → 300 chars/min).
+  {
+    step: 1,
+    previous: [...PREVIOUS_STEP_1_DEFAULTS, STEP_1.replace('(about 300 characters', '(about 330 characters')],
+    current: STEP_1,
+  },
   { step: 2, previous: PREVIOUS_STEP_2_DEFAULTS, current: STEP_2 },
 ];
 

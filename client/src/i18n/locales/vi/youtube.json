@@ -29,6 +29,7 @@
     "limited": "Bị hạn chế",
     "statusAll": "Tất cả trạng thái",
     "statusPending": "Chưa xử lý",
+    "statusPreparing": "Đang chuẩn bị",
     "statusPublished": "Đã xuất bản",
     "statusPrepared": "Đã chuẩn bị",
     "statusCreated": "Đã tạo",
@@ -68,6 +69,7 @@
     "created": "Đã tạo",
     "uploaded": "Đã tải lên",
     "pending": "Chưa xử lý",
+    "preparing": "Đang chuẩn bị",
     "error": "Lỗi",
     "init": "Khởi tạo",
     "active": "Đang hoạt động",
@@ -388,6 +390,7 @@
     "videoAi": "Nhiều hình ảnh chuyển động",
     "videoAiFull": "Toàn bộ là video (AI)",
     "videoAiIntro": "Video mở đầu, sau đó là ảnh",
+    "videoAiInterleaved": "Video xen kẽ ảnh",
     "imgNone": "Không dùng hình ảnh",
     "imgOne": "Một hình ảnh",
     "imgMulti": "Nhiều hình ảnh",
@@ -403,7 +406,8 @@
       "every2Days": "1 video mỗi 2 ngày",
       "daily1": "1 video mỗi ngày",
       "daily2": "2 video mỗi ngày",
-      "daily3": "3 video mỗi ngày"
+      "daily3": "3 video mỗi ngày",
+      "at": "{{freq}} lúc {{times}}"
     },
     "order": {
       "oldestFirst": "Từ cũ đến mới",
@@ -439,7 +443,7 @@
     "typeRemakeVideo": "Remake video",
     "remakeAuto": {
       "label": "Tự remake kịch bản và đọc giọng khi chuẩn bị video",
-      "hint": "Bật: \"Chuẩn bị video\" / \"Tạo video\" remake transcript nguồn thành kịch bản mới (ChatGPT/Gemini), đọc bằng VOICEVOX thay audio gốc, rồi mới tạo metadata, thumbnail và cảnh theo kịch bản mới. Tắt: giữ audio nguồn như cũ.",
+      "hint": "Bật: \"Chuẩn bị video\" / \"Tạo video\" remake transcript nguồn thành kịch bản mới (ChatGPT/Gemini), đọc bằng VOICEVOX thay audio gốc, rồi mới tạo metadata, thumbnail và cảnh theo kịch bản mới. Video nào đã có kịch bản skill viết sẵn (chạy hằng đêm, đã kiểm ĐẠT) thì dùng bản đó; muốn bản khác thì vào tab Kịch bản bấm remake lại. Tắt: giữ audio nguồn như cũ.",
       "provider": "LLM remake",
       "providerDefault": "Theo Cài đặt",
       "promptSet": "Bộ prompt remake",
@@ -447,6 +451,33 @@
       "voice": "Giọng VOICEVOX",
       "voiceDefault": "Giọng mặc định ({{name}})",
       "speed": "Tốc độ đọc"
+    },
+    "captionStyleName": {
+      "noto_sans_red_white": "Noto Sans chữ đỏ + viền trắng",
+      "noto_sans_red_white_box": "Noto Sans chữ đỏ + viền trắng + khung nền",
+      "noto_sans_blue_white": "Noto Sans chữ xanh dương + viền trắng",
+      "noto_sans_blue_white_box": "Noto Sans chữ xanh dương + viền trắng + khung nền",
+      "noto_sans_yellow": "Noto Sans chữ vàng",
+      "noto_sans_yellow_box": "Noto Sans chữ vàng + khung nền",
+      "noto_sans_cyan_white": "Noto Sans chữ xanh lơ + viền trắng",
+      "noto_sans_cyan_white_box": "Noto Sans chữ xanh lơ + viền trắng + khung nền",
+      "noto_sans_white_purple": "Noto Sans chữ trắng + viền tím",
+      "noto_sans_white_purple_box": "Noto Sans chữ trắng + viền tím + khung nền",
+      "bizudp_gothic": "BIZ UDPGothic",
+      "bizudp_gothic_red_white": "BIZ UDPGothic chữ đỏ + viền trắng",
+      "bizudp_gothic_red_white_box": "BIZ UDPGothic chữ đỏ + viền trắng + khung nền",
+      "zen_kaku": "Zen Kaku",
+      "zen_kaku_blue_white": "Zen Kaku chữ xanh dương + viền trắng",
+      "zen_kaku_blue_white_box": "Zen Kaku chữ xanh dương + viền trắng + khung nền",
+      "noto_serif": "Noto Serif",
+      "serif_white_purple": "Noto Serif chữ trắng + viền tím",
+      "serif_white_purple_box": "Noto Serif chữ trắng + viền tím + khung nền",
+      "serif_yellow": "Noto Serif chữ vàng",
+      "serif_yellow_box": "Noto Serif chữ vàng + khung nền",
+      "serif_cyan_white": "Noto Serif chữ xanh lơ + viền trắng",
+      "serif_cyan_white_box": "Noto Serif chữ xanh lơ + viền trắng + khung nền",
+      "serif_red_white": "Noto Serif chữ đỏ + viền trắng",
+      "serif_red_white_box": "Noto Serif chữ đỏ + viền trắng + khung nền"
     }
   },
   "metadata": {
@@ -475,7 +506,8 @@
     "copySuccess": "Đã sao chép {{label}}",
     "copyError": "Không thể sao chép {{label}}",
     "folderPathLabel": "đường dẫn folder",
-    "fromLinkJobTitle": "Tạo metadata từ link video"
+    "fromLinkJobTitle": "Tạo metadata từ link video",
+    "videoLinkPlaceholder": "https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
   },
   "regenerate": {
     "title": "Tạo lại metadata?",
@@ -528,10 +560,11 @@
     "thumbPromptLabel": "Prompt thumbnail",
     "rerender": "Tạo lại video",
     "rerendering": "Đang render…",
-    "rerenderTitle": "Render lại video.mp4 từ audio, phụ đề và scene hiện có",
+    "rerenderTitle": "Render lại video từ audio, phụ đề và scene hiện có; dựng xong sẽ xóa video cũ",
     "rerenderJobTitle": "Render lại video: {{title}}",
     "rerenderQueued": "Đã thêm vào hàng đợi render lại video",
-    "rerenderSuccess": "Đã render lại video"
+    "rerenderSuccess": "Đã render lại video",
+    "copyPath": "Sao chép đường dẫn"
   },
   "comments": {
     "title": "Bình luận",

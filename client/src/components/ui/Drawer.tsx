@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 import { cn } from '../../lib/cn'
+import { useTranslation } from 'react-i18next'
 
 export interface DrawerProps {
   open: boolean
@@ -26,6 +27,7 @@ export function Drawer({
   headerActions,
   placement = 'push',
 }: DrawerProps) {
+  const { t } = useTranslation('common')
   const isOverlay = placement === 'overlay'
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function Drawer({
     <>
       <button
         type="button"
-        aria-label="Đóng panel"
+        aria-label={t('aria.closePanel')}
         onClick={onClose}
         className={cn('fixed inset-0 z-40 bg-black/50 transition-opacity duration-150', !isOverlay && 'lg:hidden')}
       />
@@ -68,7 +70,7 @@ export function Drawer({
               type="button"
               onClick={onClose}
               className="shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground"
-              aria-label="Đóng panel"
+              aria-label={t('aria.closePanel')}
             >
               <X className="size-5" />
             </button>

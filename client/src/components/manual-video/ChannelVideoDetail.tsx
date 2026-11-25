@@ -24,11 +24,11 @@ export function ChannelVideoDetail({ video, onPatched, onClose }: ChannelVideoDe
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <StatusBadge
-              tone={video.status === 'Created' ? 'success' : 'warning'}
+              tone={video.status === 'Created' ? 'success' : video.status === 'Preparing' ? 'info' : 'warning'}
               label={t(`channelVideo.status.${video.status}`)}
             />
             <span>
-              {[video.channelName, video.videoId, video.sceneCount ? `${video.sceneCount} scene` : '']
+              {[video.channelName, video.videoId, video.sceneCount ? t('channelVideo.sceneCount', { count: video.sceneCount }) : '']
                 .filter(Boolean)
                 .join(' · ')}
             </span>

@@ -124,6 +124,47 @@ export function isFlowContentImageUrl(url: string): boolean {
   }
 }
 
+/** Generated/uploaded image tiles in the project grid serve from `https://flow.google.com/asb/<token>=s1600-rw`. */
+export const FLOW_ASB_IMAGE_PATH_PREFIX = '/asb/';
+
+/** True for a Flow grid image src (`https://flow.google.com/asb/...`). */
+export function isFlowAsbImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin === FLOW_BASE_URL && parsed.pathname.startsWith(FLOW_ASB_IMAGE_PATH_PREFIX);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The tile src asks for a 1600px WebP (`=s1600-rw`); `=s0` returns the original JPEG at full size.
+ * Replaces the trailing `=<options>` segment, or appends `=s0` when there is none.
+ */
+export function toFlowOriginalImageUrl(url: string): string {
+  const parsed = new URL(url);
+  const pathname = parsed.pathname;
+  const slash = pathname.lastIndexOf('/');
+  const eq = pathname.lastIndexOf('=');
+  parsed.pathname = eq > slash ? `${pathname.slice(0, eq)}=s0` : `${pathname}=s0`;
+  return parsed.toString();
+}
+
+/**
+ * Identity of a grid asset: the `/asb/<token>` path without its `=<options>` suffix. A video tile's
+ * thumbnail and `<video>` share it, and video tiles carry no `data-media-id`.
+ */
+export function flowAsbAssetKey(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname;
+    const eq = pathname.lastIndexOf('=');
+    return eq > pathname.lastIndexOf('/') ? pathname.slice(0, eq) : pathname;
+  } catch {
+    return url;
+  }
+}
+
 export interface FlowDomSelectors {
   promptInput: string;
   /** Prompt input of the custom Flow tool page (`#david-input-prompts`). */
@@ -159,6 +200,15 @@ export interface FlowDomSelectors {
   virtualItemContainer: string;
   /** Error tile inside a failed generation result. */
   flowErrorTile: string;
+  /** Image tiles in the project grid (generated and uploaded); `data-media-id` identifies each. */
+  gridImage: string;
+  /**
+   * Video tile in the project grid: `img.thumbnail` (`/asb/<token>`) always; the
+   * `<video src=".../asb/<token>=mm,18,15">` (mp4) only after the tile has been hovered.
+   */
+  gridVideoTile: string;
+  /** One tile of the project grid (newest first). */
+  gridTile: string;
 }
 
 export interface FlowConfig {
@@ -200,6 +250,9 @@ export const FLOW_CONFIG: FlowConfig = {
     virtualScrollContainer: '.virtual-scroll-container',
     virtualItemContainer: '.virtual-item-container',
     flowErrorTile: 'flow-error-tile',
+    gridImage: 'flow-image-tile img.image[data-media-id]',
+    gridVideoTile: 'flow-video-tile',
+    gridTile: 'flow-grid-tile-container',
   },
 };
 

@@ -20,11 +20,13 @@ import {
   SUBTITLE_PADDING_HORIZONTAL,
   resolveSubtitleMarginBottomPx,
 } from './canvas.constants.js';
+import { type CaptionCue, resegmentJapaneseCues, wrapCaptionText } from './caption-segment.js';
 
 export { resolveSmallVideoClip, type SmallVideoClip } from './small-video.js';
 
 export interface ConvertSrtToAssOptions {
   captionStyleKey?: CaptionStyleKey | string | null;
+  /** Japanese track: cues are re-cut along sentences and 、 so none ends mid-word. */
   japaneseStyle?: boolean;
   fontFile?: string;
   /** Temporary flag: burn top-left disclaimer for the first N seconds. */
@@ -34,6 +36,52 @@ export interface ConvertSrtToAssOptions {
 
 function srtTimeToMs(h: string, m: string, s: string, ms: string): number {
   return Number.parseInt(h) * 3600000 + Number.parseInt(m) * 60000 + Number.parseInt(s) * 1000 + Number.parseInt(ms);
+}
+
+const SRT_TIME_RE = /(\d{2}):(\d{2}):(\d{2}),(\d{3}) --> (\d{2}):(\d{2}):(\d{2}),(\d{3})/;
+
+/** Parses SRT text into cues; multi-line cue text is kept joined with `\n`. */
+export function parseSrtCues(content: string): CaptionCue[] {
+  const cues: CaptionCue[] = [];
+  for (const block of content.replace(/\r/g, '').split(/\n\n+/)) {
+    const lines = block
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean);
+    const timeLineIdx = lines.findIndex(l => SRT_TIME_RE.test(l));
+    if (timeLineIdx === -1) continue;
+    const m = lines[timeLineIdx].match(SRT_TIME_RE)!;
+    const text = lines.slice(timeLineIdx + 1).join('\n');
+    if (!text) continue;
+    cues.push({ startMs: srtTimeToMs(m[1], m[2], m[3], m[4]), endMs: srtTimeToMs(m[5], m[6], m[7], m[8]), text });
+  }
+  return cues;
+}
+
+/** Keeps ASR text from being read as ASS override tags. */
+function escapeCaptionAssText(text: string): string {
+  return text.replace(/\\/g, '＼').replace(/\{/g, '｛').replace(/\}/g, '｝');
+}
+
+/** Width of one full-width glyph in px, letter spacing included. */
+function cSizeUnits(fontSize: number, preset: CaptionStylePreset): number {
+  return fontSize + Math.max(0, preset.charSpacing ?? SUBTITLE_CHAR_SPACING);
+}
+
+/** White or near-white stroke: on light backgrounds it needs a dark rim to stay readable. */
+function isLightAssColor(color: string | undefined): boolean {
+  const m = color?.match(/^&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})$/i);
+  if (!m) return false;
+  const [b, g, r] = [m[2], m[3], m[4]].map(h => Number.parseInt(h, 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 186;
+}
+
+/** Dark rim drawn under a light stroke (ASS &HAABBGGRR, ~20% transparent near-black). */
+const CAPTION_EDGE_COLOR = '&H33101010';
+const CAPTION_EDGE_EXTRA_PX = 2.5;
+
+function usesDarkEdge(preset: CaptionStylePreset): boolean {
+  return preset.assLayout !== 'glow_dual' && isLightAssColor(preset.outlineColor);
 }
 
 function msToSrtTime(totalMs: number): string {
@@ -81,12 +129,12 @@ function buildAssStyleLine(
   outlineColor = '&H00000000',
   charSpacing = SUBTITLE_CHAR_SPACING,
 ): string {
-  return `Style: ${name},${fontName},${fontSize},${primaryColor},${primaryColor},${outlineColor},&H00000000,-1,0,0,0,100,100,${charSpacing},0,1,${outlinePx},${shadowPx},2,${SUBTITLE_PADDING_HORIZONTAL},${SUBTITLE_PADDING_HORIZONTAL},0,1\r`;
+  return `Style: ${name},${fontName},${fontSize},${primaryColor},${primaryColor},${outlineColor},&H00000000,-1,0,0,0,100,100,${charSpacing},0,1,${outlinePx},${shadowPx},2,${SUBTITLE_PADDING_HORIZONTAL},${SUBTITLE_PADDING_HORIZONTAL},0,1\r\n`;
 }
 
 /** Top-left disclaimer style (Alignment 7). */
 function buildDisclaimerAssStyleLine(fontName: string): string {
-  return `Style: Disclaimer,${fontName},${DISCLAIMER_FONT_SIZE},${DISCLAIMER_PRIMARY_COLOR},${DISCLAIMER_PRIMARY_COLOR},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,${DISCLAIMER_MARGIN_LEFT_PX},0,${DISCLAIMER_MARGIN_TOP_PX},1\r`;
+  return `Style: Disclaimer,${fontName},${DISCLAIMER_FONT_SIZE},${DISCLAIMER_PRIMARY_COLOR},${DISCLAIMER_PRIMARY_COLOR},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,${DISCLAIMER_MARGIN_LEFT_PX},0,${DISCLAIMER_MARGIN_TOP_PX},1\r\n`;
 }
 
 function formatAssCentiseconds(totalSec: number): string {
@@ -126,6 +174,32 @@ function buildAssStyles(fontName: string, fontSize: number, preset: CaptionStyle
     );
   }
 
+  if (usesDarkEdge(preset)) {
+    // Two layers: a thicker dark stroke underneath, the preset's light stroke on top → light stroke with a dark rim.
+    return (
+      buildAssStyleLine(
+        'Edge',
+        fontName,
+        fontSize,
+        preset.primaryColor,
+        preset.outlinePx + CAPTION_EDGE_EXTRA_PX,
+        preset.shadowPx,
+        CAPTION_EDGE_COLOR,
+        charSpacing,
+      ) +
+      buildAssStyleLine(
+        'Default',
+        fontName,
+        fontSize,
+        preset.primaryColor,
+        preset.outlinePx,
+        0,
+        preset.outlineColor ?? '&H00000000',
+        charSpacing,
+      )
+    );
+  }
+
   return buildAssStyleLine(
     'Default',
     fontName,
@@ -153,6 +227,13 @@ function buildAssEvent(
     );
   }
 
+  if (usesDarkEdge(preset)) {
+    return (
+      `Dialogue: 0,${start},${end},Edge,,0,0,${eventMarginV},,${baseText}\n` +
+      `Dialogue: 1,${start},${end},Default,,0,0,${eventMarginV},,${baseText}\n`
+    );
+  }
+
   return `Dialogue: 0,${start},${end},Default,,0,0,${eventMarginV},,${baseText}\n`;
 }
 
@@ -162,7 +243,6 @@ export function convertSrtToAss(
   options: ConvertSrtToAssOptions = {},
 ): void {
   const content = fs.readFileSync(srtPath, 'utf8').replace(/\r/g, '');
-  const cues = content.split(/\n\n+/).filter(Boolean);
 
   const styleKey = resolveCaptionStyleKey(options.captionStyleKey);
   const preset = getCaptionStylePreset(styleKey);
@@ -192,54 +272,20 @@ ${buildAssStyles(fontName, fontSize, preset)}${options.showDisclaim ? buildDiscl
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\r
 `;
 
+  const maxLineWidth = (CANVAS_W - SUBTITLE_PADDING_HORIZONTAL * 2) / cSizeUnits(fontSize, preset);
+  const sourceCues = parseSrtCues(content);
+  const cues = options.japaneseStyle
+    ? resegmentJapaneseCues(sourceCues, Math.floor(maxLineWidth))
+    : sourceCues;
+
   let events = options.showDisclaim ? buildDisclaimerAssEvent(disclaimerText) : '';
   for (const cue of cues) {
-    const lines = cue
+    const start = formatAssCentiseconds(cue.startMs / 1000);
+    const end = formatAssCentiseconds(cue.endMs / 1000);
+    const wrappedLines = cue.text
       .split('\n')
-      .map(l => l.trim())
-      .filter(Boolean);
-    const timeRe = /(\d{2}):(\d{2}):(\d{2}),(\d{3}) --> (\d{2}):(\d{2}):(\d{2}),(\d{3})/;
-    let timeLineIdx = -1;
-    let match: RegExpMatchArray | null = null;
-
-    for (let i = 0; i < lines.length; i++) {
-      match = lines[i].match(timeRe);
-      if (match) {
-        timeLineIdx = i;
-        break;
-      }
-    }
-
-    if (timeLineIdx === -1 || !match) continue;
-
-    const formatTime = (h: string, m: string, s: string, ms: string) => {
-      const cs = Math.floor(Number.parseInt(ms) / 10)
-        .toString()
-        .padStart(2, '0');
-      return `${Number.parseInt(h)}:${m}:${s}.${cs}`;
-    };
-
-    const start = formatTime(match[1], match[2], match[3], match[4]);
-    const end = formatTime(match[5], match[6], match[7], match[8]);
-    const textLines = lines.slice(timeLineIdx + 1);
-
-    const cw = CANVAS_W - SUBTITLE_PADDING_HORIZONTAL * 2;
-    const charSpacing = preset.charSpacing ?? SUBTITLE_CHAR_SPACING;
-    const cSize = fontSize + Math.max(0, charSpacing);
-    const maxCharsPerLine = Math.max(1, Math.floor(cw / cSize));
-
-    const wrappedLines: string[] = [];
-    for (const rawLine of textLines) {
-      let currentLine = '';
-      for (const char of Array.from(rawLine)) {
-        if (currentLine.length >= maxCharsPerLine) {
-          wrappedLines.push(currentLine);
-          currentLine = '';
-        }
-        currentLine += char;
-      }
-      if (currentLine) wrappedLines.push(currentLine);
-    }
+      .flatMap(line => wrapCaptionText(escapeCaptionAssText(line), maxLineWidth));
+    if (!wrappedLines.length) continue;
 
     const extraGapPx = SUBTITLE_LINE_GAP_PX;
     const lineBreakStr =

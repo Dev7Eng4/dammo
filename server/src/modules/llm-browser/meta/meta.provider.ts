@@ -1,12 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Locator, Page } from 'playwright';
+import type { Locator, Page, Request, Response } from 'playwright';
 import { AppError } from '../../../shared/http/errors.js';
-import { DIALOG_APPEAR_TIMEOUT_MS, META_BASE_URL, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from './meta.config.js';
+import { META_BASE_URL, META_UPLOAD_URL_PATTERN, ASSISTANT_MESSAGE_TIMEOUT_MS, META_CONFIG } from './meta.config.js';
 import { downloadAndSaveMetaAsset, resolveMetaMediaSavePath } from './meta-media.js';
 import { normalizeReferenceImagePaths } from '../core/reference-images.js';
 import { assertMetaGeneratedImageUrl, resolveMetaImageSourceUrl } from './meta-image-url.js';
-import { isMetaQuotaExhaustedOnPage, metaQuotaExhaustedError } from './meta-quota.js';
+import { isMetaQuotaExhaustedError, isMetaQuotaExhaustedOnPage, metaQuotaExhaustedError } from './meta-quota.js';
+import { classifyMetaSubmit, composerHoldsPrompt, composerMatchesPrompt } from './meta-submit.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
 import type {
   LlmBrowserResponse,
@@ -18,9 +19,9 @@ import type {
   MetaReceiveResponseOptions,
 } from '../core/types.js';
 import {
-  humanFocusAndClear,
-  humanClick,
-  humanPaste,
+  humanClearInput,
+  humanMove,
+  humanPasteIntoFocused,
   humanPressEnter,
   humanReadLatestResponse,
   humanScroll,
@@ -29,19 +30,34 @@ import {
   randomInt,
 } from '../../../infrastructure/browser/human-interaction.js';
 
-const WARMUP_URL = 'https://www.google.com';
 const PROVIDER = 'meta' as const;
 /** Grace period to detect composer-stop-button after submit (fast generations may skip it). */
-const COMPOSER_STOP_GRACE_MS = 5_000;
+const COMPOSER_STOP_GRACE_MS = 2_000;
 const ASSISTANT_IMAGE_POLL_MS = 15_000;
 /** Settle time after the image first appears: Meta briefly shows the reference image before swapping in the result. */
 const IMAGE_SETTLE_BEFORE_DOWNLOAD_MS = 1_000;
-/** Max wait for reference uploads to finish (send button enabled) before submitting. */
-const SEND_READY_TIMEOUT_MS = 60_000;
-/** Fixed idle time after the prompt is accepted, before polling for the generated image. */
-const POST_SUBMIT_WAIT_MS = 60_000;
+/** Re-check the page for the out-of-quota card at most this often while waiting for the image. */
+const QUOTA_CHECK_INTERVAL_MS = 2_000;
+/** Max wait for an element to be stable and not covered before a click gives up. */
+const SAFE_CLICK_TIMEOUT_MS = 15_000;
+/** Max wait for the composer to show the attached reference images. */
+const ATTACH_PREVIEW_TIMEOUT_MS = 8_000;
+/** Max wait for reference images to finish uploading. */
+const UPLOAD_TIMEOUT_MS = 60_000;
+/** No upload request seen for this long: assume Meta did not need one (selector/host drift must not block). */
+const UPLOAD_START_GRACE_MS = 10_000;
+/** Max wait for the composer to hold the prompt after inserting it. */
+const INSERT_PROMPT_TIMEOUT_MS = 3_000;
+/** Max wait for the send button to be enabled once the prompt is in. */
+const SEND_READY_TIMEOUT_MS = 20_000;
+/** Keep the latest message in view this often while polling for its image. */
+const SCROLL_INTERVAL_MS = 3_000;
 /** Max wait after submit for Meta to accept the prompt (stop button or a new message). */
-const SUBMIT_CONFIRM_TIMEOUT_MS = 10_000;
+const SUBMIT_CONFIRM_TIMEOUT_MS = 45_000;
+/** Prompt still in the composer this long after a submit try: press the send button. */
+const SUBMIT_RETRY_INTERVAL_MS = 4_000;
+/** A message can show up just before the composer empties, so `hijacked` must last this long. */
+const SUBMIT_HIJACK_SETTLE_MS = 4_000;
 
 const stepStartByPage = new WeakMap<Page, number>();
 
@@ -55,16 +71,22 @@ function errText(err: unknown): string {
   return err instanceof Error ? (err.message.split('\n')[0] ?? '') : String(err);
 }
 
-async function composerInputLength(page: Page): Promise<number> {
+/** Composer text; undefined when it could not be read. */
+async function composerText(page: Page): Promise<string | undefined> {
   return page
     .locator(META_CONFIG.selectors.promptInput)
     .last()
-    .evaluate(el => {
-      const t = el as HTMLElement;
-      if (t instanceof HTMLTextAreaElement || t instanceof HTMLInputElement) return t.value.length;
-      return (t.textContent ?? '').length;
-    })
-    .catch(() => -1);
+    .evaluate(
+      el =>
+        el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement ? el.value : (el.textContent ?? ''),
+      undefined,
+      { timeout: 2_000 },
+    )
+    .catch(() => undefined);
+}
+
+async function composerInputLength(page: Page): Promise<number> {
+  return (await composerText(page))?.length ?? -1;
 }
 
 /** Dump DOM facts + screenshot so selector drift on meta.ai can be identified from the log. */
@@ -149,6 +171,10 @@ function domTimeoutError(detail: string): AppError {
   return new AppError(`LLM DOM timeout (${PROVIDER}): ${detail}`, 502, 'LLM_DOM_TIMEOUT');
 }
 
+function promptNotSentError(detail: string): AppError {
+  return new AppError(`Meta prompt was not sent: ${detail}`, 502, 'META_PROMPT_NOT_SENT');
+}
+
 function splitSelectors(selector: string): string[] {
   return selector
     .split(',')
@@ -179,14 +205,22 @@ async function waitForFirstVisible(page: Page, selector: string, timeout = 45_00
   );
 }
 
-async function warmUpBeforeMeta(page: Page): Promise<void> {
-  const currentUrl = page.url();
-  if (!currentUrl.startsWith(WARMUP_URL)) {
-    await page.goto(WARMUP_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<void> {
+  if (!debugPath) return;
+  try {
+    await fs.mkdir(path.dirname(debugPath), { recursive: true });
+    await page.screenshot({ path: debugPath, fullPage: true });
+  } catch (err) {
+    console.warn('[meta] failed to save debug screenshot:', err instanceof Error ? err.message : err);
   }
-  await randomDelay(1_500, 3_000);
-  await humanWander(page);
-  await randomDelay(800, 1_500);
+}
+
+async function isComposerStopVisible(page: Page): Promise<boolean> {
+  return page
+    .locator(META_CONFIG.selectors.composerStopButton)
+    .first()
+    .isVisible()
+    .catch(() => false);
 }
 
 async function humanIdleBrief(page: Page): Promise<void> {
@@ -207,21 +241,36 @@ async function humanPauseAfterMediaReady(page: Page, assistant: Locator): Promis
   await randomDelay(900, 1_100);
 }
 
-async function captureDebugScreenshot(page: Page, debugPath?: string): Promise<void> {
-  if (!debugPath) return;
-  try {
-    await fs.mkdir(path.dirname(debugPath), { recursive: true });
-    await page.screenshot({ path: debugPath, fullPage: true });
-  } catch (err) {
-    console.warn('[meta] failed to save debug screenshot:', err instanceof Error ? err.message : err);
-  }
+/**
+ * Move the mouse to the element, then click the element itself instead of the screen position: Playwright
+ * waits until it stops moving and refuses when something else is on top, so a layout shift during the
+ * mouse move never lands the click on a suggestion chip.
+ */
+async function safeClick(page: Page, locator: Locator): Promise<void> {
+  await locator.waitFor({ state: 'visible', timeout: SAFE_CLICK_TIMEOUT_MS });
+  const box = await locator.boundingBox();
+  const position = box
+    ? { x: box.width * (0.35 + Math.random() * 0.3), y: box.height * (0.35 + Math.random() * 0.3) }
+    : undefined;
+  if (box && position) await humanMove(page, box.x + position.x, box.y + position.y);
+  await randomDelay(80, 220);
+  await locator.click({
+    delay: randomInt(40, 120),
+    timeout: SAFE_CLICK_TIMEOUT_MS,
+    ...(position ? { position } : {}),
+  });
+  await randomDelay(100, 280);
 }
 
-async function isComposerStopVisible(page: Page): Promise<boolean> {
-  return page
-    .locator(META_CONFIG.selectors.composerStopButton)
-    .first()
-    .isVisible()
+async function focusComposer(page: Page, input: Locator): Promise<void> {
+  await safeClick(page, input);
+  await randomDelay(120, 300);
+  await input.focus();
+}
+
+async function isComposerFocused(input: Locator): Promise<boolean> {
+  return input
+    .evaluate(el => el.contains(document.activeElement), undefined, { timeout: 2_000 })
     .catch(() => false);
 }
 
@@ -248,71 +297,115 @@ async function isSendButtonEnabled(page: Page): Promise<boolean> {
   return ariaDisabled !== 'true';
 }
 
-/** Wait until the send button is enabled (reference uploads done + prompt present). */
-async function waitForSendReady(page: Page, timeoutMs: number): Promise<boolean> {
-  const startedAt = Date.now();
-  const deadline = startedAt + timeoutMs;
-  let lastLogAt = startedAt;
-  while (Date.now() < deadline) {
-    if (await isSendButtonEnabled(page)) {
-      metaLog(page, 'send-ready', `send button enabled after ${Date.now() - startedAt}ms`);
-      return true;
-    }
-    if (Date.now() - lastLogAt >= 5_000) {
-      lastLogAt = Date.now();
-      metaLog(page, 'send-ready', `still waiting (${Math.round((lastLogAt - startedAt) / 1000)}s) - ${await composerSnapshot(page)}`);
-    }
-    await randomDelay(300, 600);
+async function clickSendButton(page: Page): Promise<boolean> {
+  if (!(await isSendButtonEnabled(page))) return false;
+  try {
+    const button = page.locator(META_CONFIG.selectors.composerSendButton).first();
+    await button.click({ delay: randomInt(40, 120), timeout: 3_000 });
+    return true;
+  } catch (err) {
+    metaLog(page, 'submit', `send button click failed: ${errText(err)}`);
+    return false;
   }
-  metaLog(page, 'send-ready', `TIMEOUT after ${timeoutMs}ms - ${await composerSnapshot(page)}`);
-  return false;
 }
 
-async function submitComposer(page: Page, submitWith: 'enter' | 'button'): Promise<void> {
-  if (submitWith === 'enter') {
-    metaLog(page, 'submit', 'pressing Space + Enter on keyboard');
-    await humanPressEnter(page);
-    return;
-  }
-
-  for (const candidate of splitSelectors(META_CONFIG.selectors.generateButton)) {
-    const button = page.locator(candidate).first();
-    if (await button.isVisible().catch(() => false)) {
-      metaLog(page, 'submit', `clicking send button: ${candidate}`);
-      await humanClick(page, button);
+async function submitComposer(page: Page, input: Locator, submitWith: 'enter' | 'button'): Promise<void> {
+  if (submitWith === 'button') {
+    if (await clickSendButton(page)) {
+      metaLog(page, 'submit', 'clicked send button');
       return;
     }
+    metaLog(page, 'submit', 'send button not clickable - falling back to Space + Enter');
   }
-  metaLog(page, 'submit', 'no send button visible - falling back to Space + Enter');
+
+  // Space + Enter on anything but the composer would press whatever is focused (e.g. a suggestion chip).
+  await input.focus();
+  if (!(await isComposerFocused(input))) {
+    throw promptNotSentError('composer lost focus before submit');
+  }
+  metaLog(page, 'submit', 'pressing Space + Enter on keyboard');
   await humanPressEnter(page);
 }
 
+/** Every prompt gets its own chat: follow-up suggestions and older images only exist in used chats. */
+async function ensureFreshChat(page: Page): Promise<void> {
+  const messages = await countMessageItems(page);
+  let onHome = false;
+  try {
+    onHome = new URL(page.url()).pathname === '/';
+  } catch {
+    // Not a URL yet: load the home page below.
+  }
+  if (messages === 0 && onHome) return;
+
+  metaLog(page, 'new-chat', `opening a new chat (messages=${messages} url=${page.url()})`);
+  await page.goto(META_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
+  await randomDelay(800, 1_500);
+
+  const left = await countMessageItems(page);
+  if (left > 0) {
+    throw domTimeoutError(`New chat still shows ${left} message(s)`);
+  }
+}
+
+/** Wait until Meta has really taken the prompt; presses the send button when Enter was ignored. */
+async function confirmPromptSent(page: Page, inputLenBefore: number, baselineMessages: number): Promise<void> {
+  const startedAt = Date.now();
+  let lastTryAt = startedAt;
+  let hijackedSince: number | undefined;
+
+  while (Date.now() - startedAt < SUBMIT_CONFIRM_TIMEOUT_MS) {
+    await closeDialogIfVisible(page);
+    const inputLen = await composerInputLength(page);
+    const state = classifyMetaSubmit({
+      inputLenBefore,
+      inputLen,
+      baselineMessages,
+      messages: await countMessageItems(page),
+      generating: await isComposerStopVisible(page),
+    });
+
+    if (state === 'sent') {
+      metaLog(page, 'submit', `prompt accepted after ${Date.now() - startedAt}ms`);
+      return;
+    }
+
+    if (state === 'hijacked') {
+      hijackedSince ??= Date.now();
+      if (Date.now() - hijackedSince >= SUBMIT_HIJACK_SETTLE_MS) {
+        await dumpMetaDiagnostics(page, 'submit-hijacked');
+        throw promptNotSentError('Meta answered something else while the prompt is still in the composer');
+      }
+    } else {
+      hijackedSince = undefined;
+      if (composerHoldsPrompt(inputLen, inputLenBefore) && Date.now() - lastTryAt >= SUBMIT_RETRY_INTERVAL_MS) {
+        lastTryAt = Date.now();
+        const clicked = await clickSendButton(page);
+        metaLog(
+          page,
+          'submit',
+          `prompt still in composer - ${clicked ? 'clicked send button' : 'send button not ready'} - ${await composerSnapshot(page)}`,
+        );
+      }
+    }
+
+    await randomDelay(300, 600);
+  }
+
+  await dumpMetaDiagnostics(page, 'submit-timeout');
+  throw promptNotSentError(
+    `not accepted within ${Math.round(SUBMIT_CONFIRM_TIMEOUT_MS / 1000)}s - ${await composerSnapshot(page)}`,
+  );
+}
+
 async function waitForComposerGenerationComplete(page: Page, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
+  const startedAt = Date.now();
+  let generationStarted = false;
   let pollCount = 0;
   let nextIdleAt = randomInt(3, 5);
 
-  const phaseADeadline = Math.min(Date.now() + COMPOSER_STOP_GRACE_MS, deadline);
-  let generationStarted = false;
-
-  const waitStartedAt = Date.now();
-  while (Date.now() < phaseADeadline) {
-    if (await isComposerStopVisible(page)) {
-      generationStarted = true;
-      break;
-    }
-    await randomDelay(200, 400);
-  }
-  metaLog(
-    page,
-    'generating',
-    generationStarted
-      ? `stop button seen after ${Date.now() - waitStartedAt}ms - generation started`
-      : `stop button NOT seen within ${COMPOSER_STOP_GRACE_MS}ms grace`,
-  );
-  let lastStateLogAt = Date.now();
-
-  while (Date.now() < deadline) {
+  while (Date.now() - startedAt < timeoutMs) {
     pollCount += 1;
     if (pollCount >= nextIdleAt) {
       await humanIdleWhileWaiting(page);
@@ -320,15 +413,18 @@ async function waitForComposerGenerationComplete(page: Page, timeoutMs: number):
       nextIdleAt = randomInt(3, 5);
     }
 
-    const sendVisible = await isComposerSendVisible(page);
-    const stopVisible = await isComposerStopVisible(page);
-
-    if (sendVisible && !stopVisible) {
-      metaLog(page, 'generating', `composer back to send state after ${Date.now() - waitStartedAt}ms - ${await composerSnapshot(page)}`);
-      return;
-    }
-
-    if (!generationStarted && sendVisible && !stopVisible) {
+    if (await isComposerStopVisible(page)) {
+      if (!generationStarted) metaLog(page, 'generating', `stop button seen after ${Date.now() - startedAt}ms`);
+      generationStarted = true;
+    } else if (
+      (generationStarted || Date.now() - startedAt >= COMPOSER_STOP_GRACE_MS) &&
+      (await isComposerSendVisible(page))
+    ) {
+      metaLog(
+        page,
+        'generating',
+        `composer back to send state after ${Date.now() - startedAt}ms (stop button seen: ${generationStarted})`,
+      );
       return;
     }
 
@@ -337,6 +433,14 @@ async function waitForComposerGenerationComplete(page: Page, timeoutMs: number):
 
   metaLog(page, 'generating', `TIMEOUT waiting for send state - ${await composerSnapshot(page)}`);
   throw domTimeoutError('Timed out waiting for composer button to return to send state');
+}
+
+async function scrollToLatestMessage(page: Page): Promise<void> {
+  await page
+    .locator(META_CONFIG.selectors.messageItem)
+    .last()
+    .evaluate(el => el.scrollIntoView({ block: 'end' }), undefined, { timeout: 1_000 })
+    .catch(() => undefined);
 }
 
 async function extractFirstAssistantImage(
@@ -350,6 +454,20 @@ async function extractFirstAssistantImage(
   let nextIdleAt = randomInt(3, 5);
   let lastStateLogAt = 0;
   metaLog(page, 'image', `polling for image (budget ${Math.round(timeoutMs / 1000)}s, baseline messages=${baseline})`);
+
+  let lastQuotaCheckAt = 0;
+  let lastScrollAt = 0;
+  const pollPage = async (): Promise<void> => {
+    if (Date.now() - lastScrollAt >= SCROLL_INTERVAL_MS) {
+      lastScrollAt = Date.now();
+      await scrollToLatestMessage(page);
+    }
+    if (Date.now() - lastQuotaCheckAt < QUOTA_CHECK_INTERVAL_MS) return;
+    lastQuotaCheckAt = Date.now();
+    if (!(await isMetaQuotaExhaustedOnPage(page))) return;
+    metaLog(page, 'image', `QUOTA EXHAUSTED after ${Date.now() - startedAt}ms - not downloading`);
+    throw metaQuotaExhaustedError();
+  };
 
   while (Date.now() < deadline) {
     pollCount += 1;
@@ -378,10 +496,7 @@ async function extractFirstAssistantImage(
     }
 
     // Out of quota, Meta echoes the reference image next to an upgrade card — never treat that as the result.
-    if (await isMetaQuotaExhaustedOnPage(page)) {
-      metaLog(page, 'image', `QUOTA EXHAUSTED after ${Date.now() - startedAt}ms - not downloading`);
-      throw metaQuotaExhaustedError();
-    }
+    await pollPage();
 
     // Only look at messages created by this prompt — never reuse an older image in the chat.
     if ((await countMessageItems(page)) <= baseline) {
@@ -398,6 +513,7 @@ async function extractFirstAssistantImage(
         const remainingMs = Math.max(1_000, deadline - Date.now());
         const resolved = await resolveMetaImageSourceUrl(assistant, remainingMs, {
           pollDelayMs: 400,
+          onPoll: pollPage,
         });
         metaLog(
           page,
@@ -406,6 +522,7 @@ async function extractFirstAssistantImage(
         );
         return { assistant, sourceUrl: resolved.url };
       } catch (err) {
+        if (isMetaQuotaExhaustedError(err)) throw err;
         metaLog(page, 'image', `assistant message found but image not ready: ${errText(err)}`);
         await humanReadLatestResponse(page, assistant).catch(() => undefined);
       }
@@ -446,59 +563,172 @@ function resolveMetaOptions(options?: LlmReceiveResponseOptions): MetaReceiveRes
   return (options ?? {}) as MetaReceiveResponseOptions;
 }
 
-async function attachMetaReferenceFile(page: Page, imagePath: string): Promise<void> {
-  await fs.access(imagePath);
-  metaLog(page, 'attach', `attaching ${path.basename(imagePath)}`);
-
-  const attachButton = await waitForFirstVisible(page, META_CONFIG.selectors.composerAddAttachmentButton);
-  await humanClick(page, attachButton);
-  metaLog(page, 'attach', 'clicked add-attachment button');
-  await randomDelay(500, 1_000);
-
-  try {
-    const dropzone = await waitForFirstVisible(page, META_CONFIG.selectors.composerAttachmentDropzone, 10_000);
-    const [fileChooser] = await Promise.all([page.waitForEvent('filechooser', { timeout: 10_000 }), humanClick(page, dropzone)]);
-    await fileChooser.setFiles(imagePath);
-    metaLog(page, 'attach', `selected via dropzone: ${path.basename(imagePath)}`);
-    return;
-  } catch (err) {
-    metaLog(page, 'attach', `dropzone failed (${errText(err)}) - falling back to file input`);
-  }
-
-  const fileInput = page.locator('input[type="file"]').first();
-  await fileInput.waitFor({ state: 'attached', timeout: 10_000 });
-  await fileInput.setInputFiles(imagePath);
-  metaLog(page, 'attach', `selected via file input: ${path.basename(imagePath)}`);
+interface MetaUploadTracker {
+  /** Upload requests seen so far. */
+  started(): number;
+  /** Resolves once every reference is uploaded; throws when Meta did not take them in time. */
+  wait(): Promise<void>;
+  dispose(): void;
 }
 
-async function attachMetaReferenceFiles(page: Page, imagePaths: string[]): Promise<void> {
-  for (const imagePath of imagePaths) {
-    await attachMetaReferenceFile(page, imagePath);
+/** The composer shows local previews at once, so only the network tells when references are really uploaded. */
+function trackUploads(page: Page, expected: number): MetaUploadTracker {
+  const beganAt = Date.now();
+  let started = 0;
+  let finished = 0;
+  const isUpload = (request: Request): boolean =>
+    request.method() === 'POST' && META_UPLOAD_URL_PATTERN.test(request.url());
+  const onRequest = (request: Request): void => {
+    if (isUpload(request)) started += 1;
+  };
+  const onResponse = (response: Response): void => {
+    if (!isUpload(response.request())) return;
+    if (response.ok()) finished += 1;
+    else metaLog(page, 'attach', `upload answered ${response.status()}`);
+  };
+  page.on('request', onRequest);
+  page.on('response', onResponse);
+
+  return {
+    started: () => started,
+    async wait(): Promise<void> {
+      while (finished < expected) {
+        const waitedMs = Date.now() - beganAt;
+        if (started === 0 && waitedMs >= UPLOAD_START_GRACE_MS) {
+          metaLog(page, 'attach', `no upload request seen in ${waitedMs}ms - continuing without waiting`);
+          return;
+        }
+        if (waitedMs >= UPLOAD_TIMEOUT_MS) {
+          throw promptNotSentError(`${finished}/${expected} reference image(s) uploaded in ${Math.round(waitedMs / 1000)}s`);
+        }
+        await randomDelay(100, 200);
+      }
+      metaLog(page, 'attach', `${finished} reference(s) uploaded after ${Date.now() - beganAt}ms`);
+    },
+    dispose(): void {
+      page.off('request', onRequest);
+      page.off('response', onResponse);
+    },
+  };
+}
+
+/** Attach through the + menu and the file dialog. */
+async function attachViaMenu(page: Page, imagePaths: string[]): Promise<void> {
+  let left = imagePaths;
+  while (left.length > 0) {
+    const attachButton = await waitForFirstVisible(page, META_CONFIG.selectors.composerAddAttachmentButton, 15_000);
+    await safeClick(page, attachButton);
+    await randomDelay(500, 1_000);
+    const dropzone = await waitForFirstVisible(page, META_CONFIG.selectors.composerAttachmentDropzone, 10_000);
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser', { timeout: SAFE_CLICK_TIMEOUT_MS + 5_000 }),
+      safeClick(page, dropzone),
+    ]);
+    const chosen = fileChooser.isMultiple() ? left : left.slice(0, 1);
+    await fileChooser.setFiles(chosen);
+    left = left.slice(chosen.length);
+    metaLog(page, 'attach', `selected via + menu: ${chosen.map(file => path.basename(file)).join(', ')}`);
     await randomDelay(400, 900);
   }
 }
 
-async function dismissDialogIfPresent(page: Page): Promise<void> {
-  await randomDelay(300, 800);
+async function attachReferences(page: Page, input: Locator, imagePaths: string[], uploads: MetaUploadTracker): Promise<void> {
+  await Promise.all(imagePaths.map(imagePath => fs.access(imagePath)));
 
-  const deadline = Date.now() + DIALOG_APPEAR_TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    const dialog = page.locator(META_CONFIG.selectors.dialog).first();
-
-    if (await dialog.isVisible().catch(() => false)) {
-      const closeButton = dialog.locator(META_CONFIG.selectors.dialogCloseButton).first();
-
-      if (await closeButton.isVisible().catch(() => false)) {
-        metaLog(page, 'dialog', 'dialog visible after submit - closing it');
-        await humanClick(page, closeButton);
-        await randomDelay(300, 600);
-        return;
-      }
+  const previewCount = (): Promise<number> => input.locator('img').count().catch(() => 0);
+  const waitTaken = async (): Promise<boolean> => {
+    const deadline = Date.now() + ATTACH_PREVIEW_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      if ((await previewCount()) >= imagePaths.length || uploads.started() >= imagePaths.length) return true;
+      await randomDelay(80, 150);
     }
+    return false;
+  };
 
-    await randomDelay(200, 400);
+  let taken = false;
+  try {
+    await attachViaMenu(page, imagePaths);
+    taken = await waitTaken();
+  } catch (err) {
+    metaLog(page, 'attach', `+ menu failed: ${errText(err)}`);
   }
+
+  // Nothing at all was taken, so trying another way cannot attach a file twice.
+  if (!taken && (await previewCount()) === 0 && uploads.started() === 0) {
+    metaLog(page, 'attach', '+ menu took nothing - falling back to the file input');
+    await page.keyboard.press('Escape');
+    const fileInput = page.locator('input[type="file"]').first();
+    await fileInput.waitFor({ state: 'attached', timeout: 10_000 });
+    await fileInput.setInputFiles(imagePaths);
+    taken = await waitTaken();
+  }
+
+  const previews = await previewCount();
+  if (!taken || previews > imagePaths.length) {
+    throw promptNotSentError(`composer shows ${previews} reference image(s), expected ${imagePaths.length}`);
+  }
+  metaLog(page, 'attach', `${imagePaths.length} reference(s) attached`);
+}
+
+async function clearComposer(page: Page, input: Locator): Promise<void> {
+  await focusComposer(page, input);
+  await humanClearInput(page);
+  metaLog(page, 'clear', `composer cleared (Ctrl+A, Backspace) - ${await composerSnapshot(page)}`);
+}
+
+async function waitForPromptInComposer(page: Page, prompt: string): Promise<boolean> {
+  const deadline = Date.now() + INSERT_PROMPT_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const text = await composerText(page);
+    if (text !== undefined && composerMatchesPrompt(text, prompt)) return true;
+    await randomDelay(80, 150);
+  }
+  return false;
+}
+
+/** Paste with Ctrl+V; the clipboard is held until the composer shows this very prompt. */
+async function insertPrompt(page: Page, input: Locator, prompt: string): Promise<void> {
+  await focusComposer(page, input);
+  // Behind the inline reference images, so the references stay in front of the text.
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
+
+  let pasted = false;
+  try {
+    await humanPasteIntoFocused(page, prompt, async () => {
+      pasted = await waitForPromptInComposer(page, prompt);
+    });
+  } catch (err) {
+    metaLog(page, 'paste', `clipboard paste failed: ${errText(err)}`);
+  }
+  if (pasted) return;
+
+  // Clipboard not available on this page: type the text in (line breaks would cut it off).
+  if (((await composerText(page)) ?? '').trim() === '') {
+    metaLog(page, 'paste', 'Ctrl+V pasted nothing - inserting the text directly');
+    await input.focus();
+    await page.keyboard.insertText(prompt.replace(/\s+/g, ' ').trim());
+    if (await waitForPromptInComposer(page, prompt)) return;
+  }
+
+  throw promptNotSentError(`composer does not hold the prompt - ${await composerSnapshot(page)}`);
+}
+
+async function waitForSendReady(page: Page): Promise<void> {
+  const deadline = Date.now() + SEND_READY_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (await isSendButtonEnabled(page)) return;
+    await randomDelay(100, 200);
+  }
+  throw promptNotSentError(`send button not enabled - ${await composerSnapshot(page)}`);
+}
+
+async function closeDialogIfVisible(page: Page): Promise<void> {
+  const dialog = page.locator(META_CONFIG.selectors.dialog).first();
+  if (!(await dialog.isVisible().catch(() => false))) return;
+  const closeButton = dialog.locator(META_CONFIG.selectors.dialogCloseButton).first();
+  if (!(await closeButton.isVisible().catch(() => false))) return;
+  metaLog(page, 'dialog', 'dialog visible after submit - closing it');
+  await safeClick(page, closeButton).catch(err => metaLog(page, 'dialog', `close failed: ${errText(err)}`));
 }
 
 export function createMetaProviderHandler(): LlmBrowserProviderHandler {
@@ -506,7 +736,6 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
     provider: PROVIDER,
 
     async open(page: Page): Promise<void> {
-      await warmUpBeforeMeta(page);
       await page.goto(META_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await randomDelay(2_000, 4_000);
       await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
@@ -548,53 +777,46 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         `start: promptLength=${prompt.length} refs=${referencePaths.length} submitWith=${options?.submitWith ?? 'button'} ` +
           `url=${page.url()}`,
       );
+      await ensureFreshChat(page);
       metaLog(page, 'send', `initial state - ${await composerSnapshot(page)}`);
 
       // Clear composer BEFORE attaching reference images so Ctrl+A/Backspace
       // does not remove already-uploaded attachments.
       const input = await waitForFirstVisible(page, META_CONFIG.selectors.promptInput);
-      await humanFocusAndClear(page, input);
-      metaLog(page, 'clear', `composer cleared (Ctrl+A, Backspace) - ${await composerSnapshot(page)}`);
-
-      if (referencePaths.length > 0) {
-        await attachMetaReferenceFiles(page, referencePaths);
-        await randomDelay(500, 1_000);
-        metaLog(page, 'attach', `all ${referencePaths.length} reference(s) attached - ${await composerSnapshot(page)}`);
-      }
-
-      await humanPaste(page, input, prompt);
-      await randomDelay(1_000, 1_200);
-      metaLog(page, 'paste', `prompt pasted - ${await composerSnapshot(page)}`);
-
-      // Pressing Enter while a reference image is still uploading is silently ignored by Meta,
-      // which used to fall through to a timeout + retry (clear, re-attach, re-type...).
-      // if (!(await waitForSendReady(page, SEND_READY_TIMEOUT_MS))) {
-      //   metaLog(page, 'send-ready', 'WARNING: send button not enabled before submit - trying anyway');
-      // }
-
       const baseline = await countMessageItems(page);
-      const inputLenBeforeSubmit = await composerInputLength(page);
+      await clearComposer(page, input);
+
+      const uploads = trackUploads(page, referencePaths.length);
+      try {
+        if (referencePaths.length > 0) {
+          await attachReferences(page, input, referencePaths, uploads);
+          await randomDelay(500, 1_000);
+        }
+        // References keep uploading while the prompt goes in.
+        await insertPrompt(page, input, prompt);
+        await randomDelay(1_000, 1_200);
+        metaLog(page, 'paste', `prompt inserted - ${await composerSnapshot(page)}`);
+        if (referencePaths.length > 0) await uploads.wait();
+      } finally {
+        uploads.dispose();
+      }
+      await waitForSendReady(page);
+      await randomDelay(1_500, 3_000);
+
+      const textBeforeSubmit = (await composerText(page)) ?? '';
+      if (!composerMatchesPrompt(textBeforeSubmit, prompt)) {
+        throw promptNotSentError(`composer holds other text before submit: "${textBeforeSubmit.slice(0, 60)}"`);
+      }
+      const messagesBeforeSubmit = await countMessageItems(page);
+      if (messagesBeforeSubmit > baseline) {
+        throw promptNotSentError(`chat already has ${messagesBeforeSubmit} message(s) before submit`);
+      }
       const submitWith = options?.submitWith ?? 'button';
       metaLog(page, 'submit', `submitting via ${submitWith}, baseline messages=${baseline} - ${await composerSnapshot(page)}`);
-      await randomDelay(3_000, 1_500);
 
-      await submitComposer(page, submitWith);
-      metaLog(page, 'submit', `submitted - ${await composerSnapshot(page)}`);
-      await dismissDialogIfPresent(page);
-
-      await randomDelay(2_000, 1_000);
+      await submitComposer(page, input, submitWith);
+      await confirmPromptSent(page, textBeforeSubmit.length, baseline);
       metaLog(page, 'send', `done - ${await composerSnapshot(page)}`);
-
-      // Give Meta time to generate before we start polling; do nothing on the page meanwhile.
-      // metaLog(page, 'post-submit-wait', `idle ${POST_SUBMIT_WAIT_MS / 1000}s before waiting for the image`);
-      // const waitStartedAt = Date.now();
-      // while (Date.now() - waitStartedAt < POST_SUBMIT_WAIT_MS) {
-      //   const left = POST_SUBMIT_WAIT_MS - (Date.now() - waitStartedAt);
-      //   await new Promise(resolve => setTimeout(resolve, Math.min(10_000, left)));
-      //   const remaining = Math.max(0, POST_SUBMIT_WAIT_MS - (Date.now() - waitStartedAt));
-      //   metaLog(page, 'post-submit-wait', `${Math.round(remaining / 1000)}s left - ${await composerSnapshot(page)}`);
-      // }
-      // metaLog(page, 'post-submit-wait', 'done - start waiting for image');
 
       return { baselineBlockCount: baseline };
     },
@@ -626,7 +848,9 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         // button is not always shown for image generation), so keep polling for the image with
         // the rest of the overall budget — at least ASSISTANT_IMAGE_POLL_MS.
         const remainingMs = Math.max(ASSISTANT_IMAGE_POLL_MS, timeoutMs - (Date.now() - startedAt));
-        ({ assistant, sourceUrl } = await extractFirstAssistantImage(page, remainingMs, baselineBlockCount));
+        const found = await extractFirstAssistantImage(page, remainingMs, baselineBlockCount);
+        assistant = found.assistant;
+        sourceUrl = found.sourceUrl;
 
         // Wait for the generated image to finish loading, then re-read the URL instead of
         // downloading the first one seen (which can still be the reference image).
@@ -679,9 +903,8 @@ export function createMetaProviderHandler(): LlmBrowserProviderHandler {
         mediaAssets.push({ kind: 'image', sourceUrl });
       }
 
-      if (mediaAssets.length > 0) {
-        await humanPauseAfterMediaReady(page, assistant);
-      }
+      // The image is already secured; a hiccup while looking at it must not fail the job.
+      await humanPauseAfterMediaReady(page, assistant).catch(err => metaLog(page, 'receive', `pause failed: ${errText(err)}`));
 
       metaLog(page, 'receive', `done in ${Date.now() - startedAt}ms`);
       return {

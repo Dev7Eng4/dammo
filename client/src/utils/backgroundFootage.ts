@@ -1,8 +1,6 @@
 /** UI sentinel for Assets → Video background footage (siLocalStock). */
 export const LOCAL_STOCK_SENTINEL = '__local__';
 
-export const LOCAL_STOCK_LABEL = 'Máy tính Local';
-
 /**
  * Normalize MultiSelect values for background footage.
  * Local and source-channel IDs are exclusive: picking Local clears sources;

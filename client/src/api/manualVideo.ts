@@ -7,7 +7,7 @@ import { fetchJson, withSignal, type FetchOptions } from './http'
 const BASE = `${API_V1}/manual-video`
 
 export type ManualStep = 'sources' | 'voice' | 'scenes' | 'video'
-export type ManualMotionMode = 'intro' | 'full' | 'scenes'
+export type ManualMotionMode = 'intro' | 'full' | 'interleaved' | 'scenes'
 
 export interface ManualProjectDetail {
   run: VideoAgentRun

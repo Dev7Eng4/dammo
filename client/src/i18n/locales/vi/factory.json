@@ -11,14 +11,14 @@
       "video": "Video",
       "transcript": "Kịch bản",
       "scenes": "Scene",
-      "characters": "Characters"
+      "characters": "Nhân vật"
     },
     "outputVideo": {
       "missing": "Chưa có video",
       "unsupported": "Trình duyệt không hỗ trợ phát video."
     },
     "toolbar": {
-      "copyPath": "Copy path",
+      "copyPath": "Sao chép đường dẫn",
       "copyPathSuccess": "Đã sao chép đường dẫn folder video",
       "copyPathError": "Không thể sao chép đường dẫn folder video"
     },
@@ -64,14 +64,14 @@
       "regenReloadError": "Không tải lại được scenes sau khi tạo lại",
       "regenJobTitle": "Tạo lại scenes: {{title}}",
       "regenConfirmTitle": "Tạo lại scenes?",
-      "regenConfirmBody": "Sẽ tạo lại toàn bộ scene prompts và images cho video đang chọn. Video cuối sẽ không được ghép lại.",
+      "regenConfirmBody": "Sẽ xóa scene cũ (prompts, images, clip) và tạo lại từ đầu. Video hiện tại được giữ nguyên cho đến khi bạn bấm Tạo lại video.",
       "regenConfirmSending": "Đang xếp hàng…"
     },
     "createVideo": {
       "button": "Tạo video",
       "creating": "Đang tạo video…",
       "confirmTitle": "Tạo lại video?",
-      "confirmBody": "Sẽ ghép lại file video từ ảnh scene hiện có.",
+      "confirmBody": "Sẽ ghép lại file video từ ảnh scene hiện có. Dựng xong, video mới thay video cũ.",
       "confirmSending": "Đang xếp hàng…",
       "errorTitle": "Không tạo được video",
       "scenesLoading": "Chưa tải xong danh sách scene.",
@@ -91,7 +91,7 @@
       "copyError": "Không copy được kịch bản",
       "col": {
         "index": "#",
-        "timeline": "Timeline",
+        "timeline": "Mốc thời gian",
         "text": "Nội dung"
       }
     },
@@ -151,12 +151,14 @@
     "table": {
       "col": {
         "index": "#",
-        "timeline": "Timeline",
+        "timeline": "Mốc thời gian",
         "prompt": "Prompt",
         "image": "Ảnh"
-      }
+      },
+      "sceneAlt": "Cảnh {{n}}"
     },
     "status": {
+      "preparing": "Đang chuẩn bị",
       "prepared": "Prepared",
       "created": "Created"
     }
@@ -251,6 +253,17 @@
       "create": "Tạo video",
       "upload": "Tải lên",
       "queued": "đang chờ"
+    },
+    "stageName": {
+      "download": "Tải xuống",
+      "copy_assets": "Sao chép tài nguyên",
+      "clean_transcript": "Làm sạch transcript",
+      "remake_script": "Remake kịch bản",
+      "narration": "Đọc giọng VOICEVOX",
+      "update_transcript": "Cập nhật transcript",
+      "metadata": "Tạo metadata",
+      "thumbnail": "Tạo thumbnail",
+      "assemble": "Ghép video"
     }
   },
   "settings": {
@@ -284,8 +297,10 @@
     },
     "chromeOffscreen": "Đưa cửa sổ Chrome nền ra ngoài màn hình",
     "chromeOffscreenDesc": "Bật: đỗ cửa sổ ra ngoài màn hình khi chạy nền. Tắt: giữ cửa sổ hiển thị bình thường.",
-    "scenePromptConcurrency": "Concurrency scene prompt",
+    "scenePromptConcurrency": "Số luồng tạo prompt cảnh",
     "scenePromptConcurrencyDesc": "Số Chrome profile chạy song song khi tạo scene prompt (1–8). Giá trị 1 = tuần tự. Dùng các profile có tick LLM chat mặc định ở cột LLM Content, tối đa bằng số profile có.",
+    "metaTabsPerProfile": "Số cửa sổ Meta AI mỗi profile",
+    "metaTabsPerProfileDesc": "Số cửa sổ tạo ảnh chạy cùng lúc trên mỗi Chrome profile có tick Meta (1–5), tức số prompt một tài khoản Meta nhận cùng lúc. Nhiều hơn thì nhanh hơn nhưng tài khoản dễ bị chú ý và máy tốn thêm RAM. Mặc định 3.",
     "sceneDensity": "Thời lượng tối đa mỗi cảnh (giây) — mặc định toàn hệ thống. Kênh YouTube vẫn có thể ghi đè riêng.",
     "sceneStart": "Đầu video",
     "sceneMiddle": "Giữa video",
@@ -439,9 +454,27 @@
   },
   "videoFactory": {
     "page": {
-      "title": "Video Factory",
+      "title": "Nhà máy video",
       "subtitle": "Cấu hình job render mới và thêm vào hàng đợi",
       "queued": "Đã thêm video vào hàng đợi render"
+    },
+    "form": {
+      "projectName": "Tên dự án",
+      "projectNamePlaceholder": "Top 10 công cụ AI",
+      "projectNameRequired": "Tên dự án là bắt buộc",
+      "template": "Mẫu",
+      "templateRequired": "Mẫu là bắt buộc",
+      "templatePlaceholder": "Chọn mẫu",
+      "destination": "Nơi đăng",
+      "destinationRequired": "Nơi đăng là bắt buộc",
+      "destinationPlaceholder": "Chọn nơi đăng",
+      "datasetPath": "Đường dẫn dataset",
+      "datasetPathRequired": "Đường dẫn dataset là bắt buộc",
+      "assetsPath": "Đường dẫn tài nguyên",
+      "assetsPathRequired": "Đường dẫn tài nguyên là bắt buộc",
+      "voiceoverPath": "Đường dẫn giọng đọc",
+      "queue": "Xếp hàng render",
+      "queueError": "Không xếp được job render vào hàng đợi"
     }
   }
 }

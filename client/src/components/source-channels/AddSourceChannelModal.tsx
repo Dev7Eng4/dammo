@@ -8,19 +8,14 @@ import type { Niche } from '../../types/niche';
 import type {
   AddSourceChannelFormValues,
   CreateSourceChannelPayload,
-  SourceChannelLanguage,
 } from '../../types/sourceChannel';
-import { SOURCE_CHANNEL_LANGUAGE_LABELS } from '../../types/sourceChannel';
+import { SOURCE_CHANNEL_LANGUAGES } from '../../types/sourceChannel';
 
 interface AddSourceChannelModalProps {
   open: boolean;
   onClose: () => void;
   onAdd: (payloads: CreateSourceChannelPayload[]) => void;
 }
-
-const languageOptions = (
-  Object.entries(SOURCE_CHANNEL_LANGUAGE_LABELS) as [SourceChannelLanguage, string][]
-).map(([value, label]) => ({ value, label }));
 
 const defaultValues: AddSourceChannelFormValues = {
   url: '',
@@ -30,7 +25,8 @@ const defaultValues: AddSourceChannelFormValues = {
 };
 
 export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannelModalProps) {
-  const { t } = useTranslation(['source', 'common']);
+  const { t } = useTranslation(['source', 'common', 'youtube']);
+  const languageOptions = SOURCE_CHANNEL_LANGUAGES.map((value) => ({ value, label: t(`youtube:language.${value}`) }));
   const [niches, setNiches] = useState<Niche[]>([]);
   const [nichesError, setNichesError] = useState<string | null>(null);
 
@@ -196,7 +192,7 @@ export function AddSourceChannelModal({ open, onClose, onAdd }: AddSourceChannel
 
         <div>
           <label htmlFor="source-niche" className="mb-1.5 block text-xs font-medium text-neutral-400">
-            Niche
+            {t('add.niche')}
             <span className="ml-1 font-normal text-neutral-500">{t('add.nicheOptional')}</span>
           </label>
           <Controller

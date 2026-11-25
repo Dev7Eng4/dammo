@@ -10,7 +10,7 @@ import {
 describe('matchesMetaQuotaExhausted', () => {
   test('detects the upgrade / limit card', () => {
     assert.equal(
-      matchesMetaQuotaExhausted('Upgrade to create more images You reached your limit. Get Meta One Core'),
+      matchesMetaQuotaExhausted('Upgrade to create more images You reached your limit. Get Meta One Core', ''),
       true,
     );
   });
@@ -18,6 +18,7 @@ describe('matchesMetaQuotaExhausted', () => {
   test('detects the assistant quota reply', () => {
     assert.equal(
       matchesMetaQuotaExhausted(
+        '',
         'My image generation quota is temporarily exhausted for this request, so I can’t render that',
       ),
       true,
@@ -25,7 +26,16 @@ describe('matchesMetaQuotaExhausted', () => {
   });
 
   test('ignores a normal generation reply', () => {
-    assert.equal(matchesMetaQuotaExhausted('Here is your image of a mascot on a balance scale.'), false);
+    const reply = 'Here is your image of a mascot on a balance scale.';
+    assert.equal(matchesMetaQuotaExhausted(reply, reply), false);
+  });
+
+  test('ignores old chats in the sidebar titled after a past quota problem', () => {
+    const reply = 'Here is your image.';
+    assert.equal(
+      matchesMetaQuotaExhausted(`History Image generation quota exhausted Image generation limit ${reply}`, reply),
+      false,
+    );
   });
 });
 

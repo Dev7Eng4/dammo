@@ -1,7 +1,13 @@
 import crypto from 'node:crypto';
 import { AppError } from '../../shared/http/errors.js';
 import { synthesizeElevenLabs } from '../../infrastructure/tts/elevenlabs.client.js';
-import { synthesizeVoicevox, type VoicevoxSynthOptions } from '../../infrastructure/tts/voicevox.client.js';
+import {
+  synthesizeVoicevoxTimed,
+  voicevoxReading,
+  voicevoxSpeechTiming,
+  type SpeechTiming,
+  type VoicevoxSynthOptions,
+} from '../../infrastructure/tts/voicevox.client.js';
 import { readVoiceSettings } from '../../infrastructure/tts/voice-settings.store.js';
 import { encodeWav, silencePcm } from '../../infrastructure/tts/wav.js';
 import { NARRATION_PACING } from '../video-agent/narration.js';
@@ -59,10 +65,18 @@ export interface NarrationVoice {
   provider: VoiceProvider;
   /** Human-readable name for logs / UI. */
   label: string;
+  /** VOICEVOX style id that reads the narration (VOICEVOX only); recorded for the description credit. */
+  voicevoxSpeaker?: number;
+  /** Speaker name as saved with the voice, e.g. 「青山龍星 — ノーマル (#13)」 (VOICEVOX only, when known). */
+  speakerName?: string;
   /** Changes whenever anything that affects the sound changes, so cached sentence audio is redone. */
   cacheKey: string;
-  /** One sentence → WAV bytes, with `pauseSec` of silence at the end. */
-  synthesize(sentence: string, pauseSec: number): Promise<Buffer>;
+  /** One sentence → WAV bytes, with `pauseSec` of silence at the end, and where its pauses fall when the engine says. */
+  synthesize(sentence: string, pauseSec: number): Promise<{ wav: Buffer; timing?: SpeechTiming }>;
+  /** Timing of a sentence without synthesizing it (VOICEVOX only), for sentences whose audio is cached. */
+  timing?(sentence: string, pauseSec: number): Promise<SpeechTiming>;
+  /** How the engine reads a sentence, in katakana (VOICEVOX only). */
+  reading?(sentence: string): Promise<string>;
 }
 
 function hash(value: unknown): string {
@@ -117,7 +131,7 @@ export function resolveNarrationVoice(ref: NarrationVoiceRef, speedScale: number
         const pcm = await voiceService.withElevenLabsKey(apiKey =>
           synthesizeElevenLabs(apiKey, sentence, { ...sound, outputFormat: ELEVENLABS_PCM_FORMAT }),
         );
-        return encodeWav(ELEVENLABS_PCM, [pcm, silencePcm({ ...ELEVENLABS_PCM, data: Buffer.alloc(0) }, pauseSec)]);
+        return { wav: encodeWav(ELEVENLABS_PCM, [pcm, silencePcm({ ...ELEVENLABS_PCM, data: Buffer.alloc(0) }, pauseSec)]) };
       },
     };
   }
@@ -142,10 +156,18 @@ export function resolveNarrationVoice(ref: NarrationVoiceRef, speedScale: number
       : voice
         ? `VOICEVOX · ${voice.speakerName ?? `#${speaker}`} (tùy chỉnh)`
         : `VOICEVOX #${speaker}`,
+    voicevoxSpeaker: speaker,
+    ...(voice?.speakerName ? { speakerName: voice.speakerName } : {}),
     // Bare-speaker runs keep their old key shape so their cached sentences stay valid.
     cacheKey: prosody ? `vv-${hash({ speaker, producerSpeed: speedScale, ...prosody })}` : `${speaker}|${speedScale}`,
     synthesize(sentence, pauseSec) {
-      return synthesizeVoicevox(sentence, voicevoxNarrationOptions(speaker, speedScale, pauseSec, prosody));
+      return synthesizeVoicevoxTimed(sentence, voicevoxNarrationOptions(speaker, speedScale, pauseSec, prosody));
+    },
+    timing(sentence, pauseSec) {
+      return voicevoxSpeechTiming(sentence, voicevoxNarrationOptions(speaker, speedScale, pauseSec, prosody));
+    },
+    reading(sentence) {
+      return voicevoxReading(sentence, speaker);
     },
   };
 }

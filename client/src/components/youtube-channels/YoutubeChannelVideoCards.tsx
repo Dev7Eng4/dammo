@@ -27,6 +27,7 @@ const stampStyle: Record<YoutubeChannelVideoStatus, { labelKey: string; classNam
   Uploaded: { labelKey: 'status.uploaded', className: 'border-secondary-300/60 bg-black/55 text-secondary-300' },
   Created: { labelKey: 'status.created', className: 'border-primary-400/60 bg-black/55 text-primary-300' },
   Prepared: { labelKey: 'status.prepared', className: 'border-primary-400/60 bg-black/55 text-primary-300' },
+  Preparing: { labelKey: 'status.preparing', className: 'border-info/60 bg-black/55 text-info' },
   Pending: { labelKey: 'status.pending', className: 'border-neutral-400/60 bg-black/55 text-neutral-200' },
   Error: { labelKey: 'status.error', className: 'border-danger/70 bg-black/55 text-danger' },
 }

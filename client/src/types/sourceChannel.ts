@@ -109,12 +109,8 @@ export interface AddSourceChannelFormValues {
   niche: string;
 }
 
-export const SOURCE_CHANNEL_LANGUAGE_LABELS: Record<SourceChannelLanguage, string> = {
-  en: 'Tiếng Anh',
-  ko: 'Tiếng Hàn',
-  ja: 'Tiếng Nhật',
-  es: 'Tiếng Tây Ban Nha',
-};
+/** Label with `youtube:language.<value>`. */
+export const SOURCE_CHANNEL_LANGUAGES: SourceChannelLanguage[] = ['en', 'ko', 'ja', 'es'];
 
 /** Platforms whose videos can be downloaded (audio, video, transcript, thumbnail). */
 export function isDownloadablePlatform(platform: SourcePlatform): boolean {

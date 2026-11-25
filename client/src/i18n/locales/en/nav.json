@@ -25,5 +25,8 @@
     "manualVideo": "Video production",
     "taskQueue": "Running tasks",
     "settings": "Settings"
+  },
+  "brand": {
+    "tagline": "Video operations"
   }
 }

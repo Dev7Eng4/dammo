@@ -60,7 +60,7 @@ import {
   LOCAL_STOCK_SENTINEL,
   normalizeBackgroundFootageSourceIds,
 } from '../../utils/backgroundFootage';
-import { PSY_CLUSTERS } from '../../constants/psyClusters';
+import { PSY_CLUSTER_IDS } from '../../constants/psyClusters';
 import { formatSourceChannelOptionLabel } from '../../utils/niche';
 import { loadReupAudioVideoStyleOptions } from '../../utils/youtubeChannel';
 import { Button, Input, Modal, MultiSelect, Select, Textarea, useToast } from '../ui';
@@ -162,6 +162,7 @@ function buildAudioVideoTypeOptions(t: TFunc) {
       ai: t('form.videoAi'),
       ai_full_video: t('form.videoAiFull'),
       ai_intro_video: t('form.videoAiIntro'),
+      ai_interleaved_video: t('form.videoAiInterleaved'),
     }[option.value],
   }));
 }
@@ -228,7 +229,7 @@ function buildCaptionStyleOptions(t: TFunc) {
   return CAPTION_STYLE_OPTIONS.map(option => {
     if (option.value === 'none') return { ...option, label: t('form.captionNone') };
     if (option.value === 'default') return { ...option, label: t('form.default') };
-    return option;
+    return { ...option, label: t(`form.captionStyleName.${option.value}`) };
   });
 }
 
@@ -391,8 +392,8 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
     [t],
   );
   const trendClusterOptions = useMemo(
-    () => PSY_CLUSTERS.map(cluster => ({ value: cluster.id, label: `${cluster.id} · ${cluster.name}` })),
-    [],
+    () => PSY_CLUSTER_IDS.map(id => ({ value: id, label: `${id} · ${tCommon(`cluster.${id}`)}` })),
+    [tCommon],
   );
   const [apiError, setApiError] = useState<string | null>(null);
   /** New YouTube Data API v3 key typed in the form; saved after the channel itself is saved. */
@@ -481,7 +482,7 @@ export function AddYoutubeChannelModal(props: YoutubeChannelModalProps) {
       { value: LOCAL_STOCK_SENTINEL, label: t('form.localStock') },
       ...sources.filter(s => s.purpose === 'background_footage').map(s => toSourceOption(s, niches)),
     ],
-    [sources, niches],
+    [sources, niches, t],
   );
   const nicheOptions = useMemo(
     () =>

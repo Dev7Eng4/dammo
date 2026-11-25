@@ -35,6 +35,13 @@ export interface AiVideoScenePrompt {
   path?: string;
   /** Relative path under workDir to the Flow image-to-video clip, e.g. videos/scene-001.mp4 */
   videoPath?: string;
+  /** What moves in this scene's clip (English), chosen per scene by the jp-psy-motion skill. */
+  motionPrompt?: string;
+  /**
+   * Scenes this scene's clip covers, itself included (default 1). While the clip exists, the next
+   * `clipSpan - 1` scenes' images are left out and the clip plays over their time too.
+   */
+  clipSpan?: number;
 }
 
 export interface AiVideoCharacterReference {
@@ -132,6 +139,8 @@ export interface AssembleReupAiSlideshowVideoInput {
   smallVideoPath?: string;
   /** Show only the first scene image, letterboxed on black, for the whole audio (no Ken Burns). */
   stillBackground?: boolean;
+  /** Overrides the saved audio speed (remake videos: 1). Unset = speed from ai-render-config.json. */
+  fixedAudioSpeed?: number;
   onLog?: (msg: string) => void;
 }
 

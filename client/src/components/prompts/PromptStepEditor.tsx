@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Button, DropdownSelect, Input, Textarea } from '../ui';
-import { PROMPT_OUTPUT_TYPE_OPTIONS } from '../../constants/promptForm';
+import { promptOutputTypeOptions } from '../../constants/promptForm';
 import {
   estimateTokens,
   isUserFunctionTemplate,
@@ -88,7 +88,7 @@ export function PromptStepEditor({
         <DropdownSelect
           value={step.outputType}
           onChange={(outputType) => onChange({ outputType })}
-          options={PROMPT_OUTPUT_TYPE_OPTIONS}
+          options={promptOutputTypeOptions()}
           disabled={readOnly}
           className="w-full"
           triggerClassName="h-10 w-full rounded-lg"
@@ -161,7 +161,7 @@ export function PromptStepEditor({
             </p>
           </div>
           <span className="shrink-0 rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] text-neutral-500">
-            ~{tokenEstimate} tokens
+            ~{t('prompts.tokens', { count: tokenEstimate })}
           </span>
         </div>
         <Textarea

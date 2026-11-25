@@ -508,7 +508,7 @@ export function createYoutubeChannelsRoutes() {
       ...item,
       thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
       oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
-      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video?v=${item.videoVersion}` : null,
     });
   });
 
@@ -567,7 +567,7 @@ export function createYoutubeChannelsRoutes() {
       ...item,
       thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
       oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
-      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video?v=${item.videoVersion}` : null,
     });
   });
 
@@ -605,7 +605,7 @@ export function createYoutubeChannelsRoutes() {
       ...item,
       thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
       oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
-      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video?v=${item.videoVersion}` : null,
     });
   });
 
@@ -619,7 +619,7 @@ export function createYoutubeChannelsRoutes() {
       ...item,
       thumbnailUrl: item.hasThumbnail ? `${baseUrl}/thumbnail?v=${item.thumbnailVersion}` : null,
       oldThumbnailUrl: item.hasOldThumbnail ? `${baseUrl}/old-thumbnail` : null,
-      videoUrl: item.hasVideo ? `${baseUrl}/video` : null,
+      videoUrl: item.hasVideo ? `${baseUrl}/video?v=${item.videoVersion}` : null,
     });
   });
 

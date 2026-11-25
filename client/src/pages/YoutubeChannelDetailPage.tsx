@@ -31,7 +31,7 @@ function canOpenGpmProfile(linkedEmail: string): boolean {
 }
 
 function isDeletableVideoStatus(status: YoutubeChannelVideo['status']): boolean {
-  return status != null && status !== 'Published' && status !== 'Pending';
+  return status != null && status !== 'Published' && status !== 'Pending' && status !== 'Preparing';
 }
 
 function isMovableVideoStatus(status: YoutubeChannelVideo['status']): boolean {
@@ -92,13 +92,20 @@ export function YoutubeChannelDetailPage() {
     else contentModal.show(video);
   }
 
-  const isPendingFilter = statusFilter === 'Pending';
+  // Preparing: skill scripts not opened yet (from the source list) and videos started from one (from video-prepare).
+  const isPendingFilter = statusFilter === 'Pending' || statusFilter === 'Preparing';
   const canRecreateMetadata =
     channel != null && channel.language === 'ja' && isStoredReupChannelType(channel.type);
   const paginationLocale = i18n.language === 'vi' ? 'vi' : 'en';
 
   const filteredVideos = useMemo(() => {
-    if (isPendingFilter) return pendingVideos;
+    if (statusFilter === 'Preparing') {
+      return [
+        ...pendingVideos.filter(video => video.status === 'Preparing'),
+        ...allVideos.filter(video => video.status === 'Preparing'),
+      ];
+    }
+    if (isPendingFilter) return pendingVideos.filter(video => video.status === statusFilter);
     return filterYoutubeChannelVideosByStatus(allVideos, statusFilter);
   }, [allVideos, statusFilter, isPendingFilter, pendingVideos]);
 
@@ -117,7 +124,7 @@ export function YoutubeChannelDetailPage() {
     [filteredVideos, selectedVideoIds],
   );
   const canCreateFromSelection =
-    isPendingFilter &&
+    statusFilter === 'Pending' &&
     selectedVideoIds.size > 0 &&
     channel != null &&
     isStoredReupChannelType(channel.type);

@@ -7,10 +7,11 @@ import { EditVisualStyleModal } from '../components/visual-styles/EditVisualStyl
 import { VisualStylesTable } from '../components/visual-styles/VisualStylesTable';
 import { Button, DropdownSelect, Modal, useToast } from '../components/ui';
 import type { PromptListLanguageFilter } from '../components/prompts/PromptsListPanel';
-import { PROMPT_LANGUAGE_OPTIONS } from '../constants/promptForm';
+import { promptLanguageOptions } from '../constants/promptForm';
 import { useAbortableEffect } from '../hooks';
 import type { VisualStyle } from '../types/visualStyle';
 import { Palette } from 'lucide-react';
+import { appLocale } from '../utils/locale';
 
 export function VisualStylesPage() {
   const { t } = useTranslation(['content', 'common']);
@@ -28,7 +29,7 @@ export function VisualStylesPage() {
   const languageFilterOptions = useMemo(
     () => [
       { value: 'any' as const, label: t('prompts.filter.allLanguages') },
-      ...PROMPT_LANGUAGE_OPTIONS,
+      ...promptLanguageOptions(),
     ],
     [t],
   );
@@ -106,7 +107,7 @@ export function VisualStylesPage() {
                 triggerClassName="h-9 w-full rounded-lg text-xs"
               />
               <span className="text-sm text-neutral-400">
-                {t('visual.count', { count: filteredStyles.length.toLocaleString() })}
+                {t('visual.count', { count: filteredStyles.length.toLocaleString(appLocale()) })}
               </span>
             </div>
             <Button size="sm" className="rounded-lg" onClick={() => setShowAddModal(true)}>

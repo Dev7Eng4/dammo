@@ -11,6 +11,7 @@ import {
   buildFlowToolUrl,
 } from './flow.config.js';
 import { downloadAndSaveFlowImage } from './api/flow-api-response.js';
+import { waitForNewFlowGridImage } from './flow-grid-dom.js';
 import { appErrorFromFlowErrorTileText } from './api/flow-api-errors.js';
 import type { FlowOpenOptions } from '../core/types.js';
 import type { LlmBrowserProviderHandler } from '../core/provider.interface.js';
@@ -642,9 +643,9 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
 
     async receiveResponse(page: Page, options?: LlmReceiveResponseOptions): Promise<LlmBrowserResponse> {
       const startedAt = Date.now();
-      const batchResponsePromise = options?.batchResponsePromise;
-      if (!batchResponsePromise) {
-        throw new AppError('Flow batchResponsePromise is required for receiveResponse', 500, 'FLOW_API_WAIT_MISSING');
+      const knownImageIds = options?.knownImageIds;
+      if (!knownImageIds) {
+        throw new AppError('Flow knownImageIds is required for receiveResponse', 500, 'FLOW_IMAGE_WAIT_MISSING');
       }
 
       const timeoutMs = options?.timeoutMs ?? FLOW_CONFIG.defaultTimeoutMs;
@@ -655,11 +656,14 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
       };
 
       const cdnSuccess = (async (): Promise<LlmBrowserResponse> => {
-        console.log('[flow] waiting for flow-content image response...');
-        const apiResponse = await batchResponsePromise;
+        console.log('[flow] waiting for a new image tile in the project grid...');
+        const gridImage = await waitForNewFlowGridImage(page, knownImageIds, {
+          timeoutMs,
+          isCancelled: () => settled,
+        });
         stopPolling();
-        const imageUrl = apiResponse.url();
-        console.log(`[flow-cdn] image url: ${imageUrl.split('?')[0]} (status=${apiResponse.status()})`);
+        const imageUrl = gridImage.src;
+        console.log(`[flow-dom] image src: ${imageUrl.slice(0, 80)}... (mediaId=${gridImage.mediaId})`);
 
         const mediaAssets: LlmMediaAsset[] = [];
         if (options?.outputPath) {
@@ -694,7 +698,6 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
             const text = ((await errorTile.innerText().catch(() => '')) || '').trim();
             console.warn(`[flow] error tile detected: ${text.slice(0, 200)}`);
             stopPolling();
-            void batchResponsePromise.catch(() => undefined);
             void cdnSuccess.catch(() => undefined);
             throw appErrorFromFlowErrorTileText(text || 'unknown flow-error-tile');
           }
@@ -713,7 +716,6 @@ export function createFlowProviderHandler(): LlmBrowserProviderHandler {
         return await Promise.race([cdnSuccess, errorPoll]);
       } catch (err) {
         stopPolling();
-        void batchResponsePromise.catch(() => undefined);
         void cdnSuccess.catch(() => undefined);
         console.error(`[flow] receiveResponse failed: ${err instanceof Error ? err.message : String(err)}`);
         await captureDebugScreenshot(page, options?.debugScreenshotPath);

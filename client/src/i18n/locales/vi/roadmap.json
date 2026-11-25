@@ -1,8 +1,169 @@
 {
   "page": {
     "title": "Lộ trình kiếm tiền",
-    "subtitle": "Các hướng mở rộng doanh thu tiếp theo, chấm điểm theo khả năng kiếm tiền, mức tự động hóa bằng AI, tốc độ ra tiền và rủi ro nền tảng.",
-    "disclaimer": "Điểm số là ước tính để ưu tiên hướng đi, không phải cam kết thu nhập. Điều kiện chương trình (beta, quốc gia, số follower) thay đổi thường xuyên — kiểm tra lại trong tài khoản trước khi đầu tư."
+    "subtitle": "Nên làm thị trường nào, ngôn ngữ nào, trên nền tảng nào: RPM ước tính, khả năng nhận tiền khi bạn ở Việt Nam, giới hạn và kế hoạch 6 tháng ưu tiên ra tiền sớm.",
+    "disclaimer": "RPM là khoảng ước tính tổng hợp từ số creator công bố đến 2026 cho ngách tâm lý / phát triển bản thân, khán giả trưởng thành; số thật dao động mạnh theo ngách, mùa (quý 4 cao nhất, tháng 1 thấp nhất) và độ dài video. Điều kiện chương trình của Meta, TikTok, YouTube thay đổi thường xuyên — kiểm tra lại trong tài khoản trước khi đầu tư. Đây không phải cam kết thu nhập."
+  },
+  "tabs": {
+    "markets": "Thị trường & ngôn ngữ",
+    "tracks": "Hướng kiếm tiền",
+    "plan": "Kế hoạch 6 tháng"
+  },
+  "pick": {
+    "title": "Kết luận cho bạn",
+    "lead": "Bạn ở Việt Nam, đã có dây chuyền video tiếng Nhật chạy được và có kỹ năng lập trình. Đừng dàn trải: chia làm 3 lớp tiền, làm theo thứ tự.",
+    "cash": {
+      "label": "Tiền trong 2–6 tuần",
+      "body": "Freelance lập trình / dịch vụ làm video AI cho người khác, và TikTok Shop Affiliate Việt Nam. Đây là hai đường duy nhất có thể ra tiền trong tháng đầu khi bạn đang ở Việt Nam."
+    },
+    "main": {
+      "label": "Thu nhập chính trong 2–6 tháng",
+      "body": "YouTube tiếng Nhật đang có: dồn sức vào 1–2 kênh tốt nhất cho tới khi bật kiếm tiền. RPM Nhật 2,5–6 USD, giọng VOICEVOX miễn phí, không bị khấu trừ thuế Mỹ đáng kể."
+    },
+    "expand": {
+      "label": "Nhân rộng sau khi kênh Nhật có tiền",
+      "body": "Mở 1 kênh tiếng Đức (RPM 4–9 USD, ít kênh AI) hoặc tiếng Anh (RPM 5–12 USD nhưng cạnh tranh rất gắt và bị giữ 30% thuế phần khán giả Mỹ). Dùng ElevenLabs đã có trong app."
+    }
+  },
+  "market": {
+    "tableTitle": "So sánh thị trường",
+    "tableHint": "RPM = USD bạn nhận trên 1.000 lượt xem. Xếp theo thứ tự nên làm, rồi theo điểm; bấm một dòng để xem phân tích chi tiết.",
+    "col": {
+      "market": "Thị trường",
+      "ytLong": "YouTube dài",
+      "ytShorts": "Shorts",
+      "facebook": "Facebook",
+      "keep": "Giữ lại sau thuế",
+      "voice": "Giọng / tháng",
+      "total": "Điểm",
+      "tier": "Nên làm"
+    },
+    "free": "Miễn phí",
+    "none": "—",
+    "detailTitle": "Phân tích chi tiết",
+    "audience": "Khán giả",
+    "verdict": "Nhận định",
+    "invest": "Nên đầu tư vào gì",
+    "limits": "Hạn chế",
+    "firstSteps": "Bắt đầu thế nào",
+    "platformsTitle": "Nền tảng — nhận được tiền khi bạn ở Việt Nam?",
+    "scoresTitle": "Chấm điểm",
+    "rpmTitle": "RPM ước tính (USD / 1.000 view)"
+  },
+  "marketScore": {
+    "rpm": "RPM",
+    "access": "Nhận tiền từ VN",
+    "competition": "Ít cạnh tranh",
+    "pipelineFit": "Hợp dây chuyền",
+    "size": "Quy mô khán giả"
+  },
+  "marketTier": {
+    "core": "Làm ngay (đang có)",
+    "expand": "Mở rộng tiếp",
+    "test": "Thử sau",
+    "cash": "Ra tiền nhanh",
+    "skip": "Không ưu tiên"
+  },
+  "access": {
+    "ok": "Được",
+    "limited": "Hạn chế / tuỳ lúc",
+    "no": "Không"
+  },
+  "platform": {
+    "ytLong": "YouTube video dài",
+    "ytShorts": "YouTube Shorts",
+    "facebook": "Facebook (Content Monetization)",
+    "tiktokRewards": "TikTok Creator Rewards",
+    "tiktokShop": "TikTok Shop Affiliate",
+    "affiliate": "Affiliate (Amazon, ClickBank…)",
+    "local": "Nền tảng riêng của nước đó"
+  },
+  "calc": {
+    "title": "Ước tính thu nhập mỗi tháng",
+    "hint": "Nhập lượt xem mỗi tháng bạn nghĩ đạt được. Kết quả đã trừ khấu trừ thuế Mỹ ước tính và chi phí giọng đọc.",
+    "market": "Thị trường",
+    "long": "View video dài / tháng",
+    "shorts": "View Shorts / tháng",
+    "facebook": "View Facebook / tháng",
+    "result": "Bạn có thể nhận",
+    "perMonth": "/ tháng",
+    "vnd": "≈ {{low}} – {{high}} triệu đồng (tỉ giá ~26.000đ)",
+    "voice": "Đã trừ chi phí giọng {{cost}} USD/tháng.",
+    "gate": "Chỉ có tiền sau khi kênh bật kiếm tiền: 1.000 người đăng ký + 4.000 giờ xem dài trong 12 tháng, hoặc 1.000 người đăng ký + 10 triệu view Shorts trong 90 ngày."
+  },
+  "markets": {
+    "jp": {
+      "name": "Nhật Bản · tiếng Nhật",
+      "audience": "Người 50–70 tuổi xem YouTube rất nhiều, xem dài, ít bỏ ngang. Facebook yếu ở Nhật (chủ yếu người trung niên, dân kinh doanh); LINE và X mạnh nhưng gần như không trả tiền cho creator nước ngoài.",
+      "verdict": "Thị trường chính của bạn. Không phải RPM cao nhất, nhưng là nơi dây chuyền hiện tại chạy rẻ nhất (VOICEVOX miễn phí) và bạn đã có kinh nghiệm ngách.",
+      "invest": "YouTube video dài 12–30 phút là nguồn tiền chính. Shorts chỉ để kéo người đăng ký. Gắn affiliate Amazon Japan / Rakuten (sách tâm lý, não bộ, Phật giáo) ở bình luận ghim — tiền phụ nhỏ. Facebook tiếng Nhật chỉ đăng lại để kéo người về YouTube, đừng trông vào tiền Facebook.",
+      "limits": "Ngách 人生後半 / 脳科学 đã có rất nhiều kênh AI, người xem Nhật rất nhạy với tiếng Nhật sai hoặc giọng máy cứng. YouTube xử lý nội dung hàng loạt, lặp mẫu (mất kiếm tiền). Affiliate Amazon Japan cần website và duyệt khắt khe. TikTok Creator Rewards Nhật chỉ cho người cư trú tại Nhật.",
+      "firstSteps": "Chọn 1–2 kênh có giữ chân tốt nhất, đăng đều 3–4 video dài/tuần, dùng các bộ não Trend/CTR/Đối thủ để chọn chủ đề và làm lại title + bìa. Ngừng mở kênh mới tới khi 1 kênh bật kiếm tiền.",
+      "localName": "note.com, LINE VOOM"
+    },
+    "en": {
+      "name": "Mỹ, Anh, Canada, Úc · tiếng Anh",
+      "audience": "Thị trường lớn nhất và nhiều nhà quảng cáo nhất. Người 45+ ở Mỹ dùng cả YouTube lẫn Facebook nhiều; ngách stoicism, tâm lý, Buddha teachings, sức khoẻ tuổi già rất được tìm kiếm.",
+      "verdict": "Tiền trên mỗi view cao nhất nhưng khó chen chân nhất. Chỉ làm khi kênh Nhật đã có tiền và bạn tìm được góc khác biệt thật.",
+      "invest": "YouTube video dài tiếng Anh (góc hẹp, ví dụ tâm lý cho người về hưu, ngủ ngon tuổi 60). Facebook video dài tiếng Anh nếu Page đủ điều kiện kiếm tiền. Affiliate quốc tế (Amazon Associates, ClickBank, phần mềm) nhận được từ Việt Nam. Sản phẩm số qua Gumroad / Patreon.",
+      "limits": "Cạnh tranh gắt nhất thế giới, đầy kênh AI cùng công thức. Bạn ở Việt Nam nên bị giữ 30% phần doanh thu từ người xem Mỹ (Việt Nam chưa có hiệp định thuế có hiệu lực với Mỹ); chưa khai thuế trong AdSense có thể bị giữ tới 24% toàn bộ. Cần ElevenLabs hoặc giọng trả phí. TikTok Creator Rewards không cho người ở Việt Nam.",
+      "firstSteps": "Sau khi kênh Nhật có tiền: dịch 10 kịch bản tốt nhất sang tiếng Anh, làm lại hook theo văn hoá Mỹ, đăng thử 1 kênh trong 8 tuần, đo giữ chân trước khi tăng số lượng.",
+      "localName": "Patreon, Gumroad, Medium"
+    },
+    "de": {
+      "name": "Đức, Áo, Thuỵ Sĩ · tiếng Đức",
+      "audience": "Người đọc khá giả, quảng cáo trả cao gần bằng Mỹ. Nội dung tâm lý, triết học, sức khoẻ tinh thần tiếng Đức ít hơn tiếng Anh rất nhiều.",
+      "verdict": "Vùng trũng đáng thử nhất để mở rộng: RPM cao, ít kênh AI, không bị giữ thuế Mỹ đáng kể vì người xem không ở Mỹ.",
+      "invest": "YouTube video dài tiếng Đức theo đúng công thức tâm lý cho người lớn tuổi. Affiliate Amazon.de. Shorts kéo người đăng ký.",
+      "limits": "Bạn không đọc được tiếng Đức nên khó tự kiểm chất lượng — cần AI kiểm tra kỹ và giọng ElevenLabs tốt. Người Đức kỹ tính với thông tin sai, cần dẫn nghiên cứu thật. Khán giả nhỏ hơn tiếng Anh.",
+      "firstSteps": "Dịch và bản địa hoá 10 kịch bản tốt nhất, chọn 1 giọng ElevenLabs tiếng Đức tự nhiên, đăng thử 1 kênh 8 tuần.",
+      "localName": "Steady, Patreon"
+    },
+    "kr": {
+      "name": "Hàn Quốc · tiếng Hàn",
+      "audience": "YouTube rất mạnh, người trung niên xem nội dung tâm lý, lời khuyên cuộc sống nhiều. Facebook đang giảm; Naver và KakaoTalk là chính nhưng cần danh tính Hàn.",
+      "verdict": "RPM ngang Nhật, văn hoá gần Nhật nên công thức chuyển được, nhưng chỉ ăn được tiền YouTube.",
+      "invest": "YouTube video dài tiếng Hàn. Không đầu tư Facebook cho Hàn.",
+      "limits": "Naver / Kakao gần như không mở cho người nước ngoài. Thị trường nhỏ, người Hàn ghét giọng máy và tiếng Hàn dịch máy. Cần giọng trả phí.",
+      "firstSteps": "Để sau Đức hoặc Anh; chỉ thử khi có người biết tiếng Hàn kiểm kịch bản.",
+      "localName": "Naver Blog / Clip"
+    },
+    "tw": {
+      "name": "Đài Loan, Hồng Kông · tiếng Trung phồn thể",
+      "audience": "Một trong những nơi dùng Facebook nhiều nhất châu Á, cùng YouTube, LINE, Threads. Người lớn tuổi thích nội dung Phật pháp, tâm lý, sống khoẻ.",
+      "verdict": "RPM trung bình, nhưng là nơi duy nhất làm được cả YouTube lẫn Facebook với cùng một nội dung.",
+      "invest": "YouTube video dài + Facebook video tiếng Trung phồn thể, ngách Phật giáo / sống khoẻ tuổi già.",
+      "limits": "RPM chỉ 1,5–4 USD, thị trường nhỏ. Phải dùng chữ phồn thể và cách nói Đài Loan, không dùng giản thể.",
+      "firstSteps": "Thử sau cùng trong nhóm châu Á, tận dụng kịch bản Phật giáo đã có.",
+      "localName": "LINE, Threads"
+    },
+    "es": {
+      "name": "Tây Ban Nha, Mỹ Latin, người Mỹ gốc Latin · tiếng Tây Ban Nha",
+      "audience": "Hơn 500 triệu người nói, rất nhiều người xem YouTube. RPM là trung bình gộp: người xem ở Mỹ và Tây Ban Nha trả cao, Mỹ Latin trả thấp.",
+      "verdict": "Lượng xem lớn, cạnh tranh trung bình, nhưng tiền mỗi view thấp. Hợp nếu muốn view nhiều để thử công thức nhanh.",
+      "invest": "YouTube video dài tiếng Tây Ban Nha. Affiliate Amazon US / ES.",
+      "limits": "RPM 1–4 USD, phần người xem ở Mỹ vẫn bị giữ thuế 30%. Cần giọng trả phí.",
+      "firstSteps": "Chỉ làm khi đã có 1 kênh tiếng Anh hoặc Đức chạy, dùng lại kịch bản.",
+      "localName": "Patreon"
+    },
+    "br": {
+      "name": "Brazil · tiếng Bồ Đào Nha",
+      "audience": "Dân số đông, xem YouTube, Kwai, TikTok rất nhiều.",
+      "verdict": "View rẻ: phải đạt lượng xem rất lớn mới ra tiền đáng kể. Không ưu tiên.",
+      "invest": "Không đầu tư lúc này.",
+      "limits": "RPM 0,8–2,5 USD, Shorts gần như không có tiền. Hotmart / Kwai phức tạp với người nước ngoài.",
+      "firstSteps": "Bỏ qua cho tới khi các thị trường trên đã chạy.",
+      "localName": "Kwai, Hotmart"
+    },
+    "vn": {
+      "name": "Việt Nam · tiếng Việt",
+      "audience": "Thị trường bạn hiểu nhất và nhận tiền dễ nhất: TikTok Shop, Shopee, Facebook đều mở cho người ở Việt Nam. Người Việt mua hàng qua video rất nhiều.",
+      "verdict": "Tiền quảng cáo YouTube / Facebook rất thấp, nhưng là nơi ra tiền nhanh nhất qua bán hàng (TikTok Shop Affiliate) và dịch vụ.",
+      "invest": "Không làm kênh ăn quảng cáo. Thay vào đó: TikTok Shop Affiliate Việt Nam (hoa hồng mỗi đơn), Shopee Affiliate, và bán dịch vụ làm video AI / lập trình cho chủ shop, creator Việt.",
+      "limits": "RPM quảng cáo 0,3–1,2 USD — làm kênh view tiếng Việt chỉ để ăn quảng cáo là phí công. TikTok Shop phạt nặng video spam, quảng cáo sai; TikTok Creator Rewards không có ở Việt Nam.",
+      "firstSteps": "Mở 1 tài khoản TikTok thật, chọn 1 ngách hàng gia dụng / sách, làm 2–3 video/ngày bằng dây chuyền dammo, đo đơn sau 2 tuần.",
+      "localName": "Shopee, TikTok Shop VN, freelance"
+    }
   },
   "score": {
     "earn": "Tiềm năng thu nhập",
@@ -16,12 +177,8 @@
     "next": "Làm tiếp",
     "later": "Để sau"
   },
-  "pick": {
-    "title": "Kết luận nhanh",
-    "body": "Ưu tiên TikTok Shop Affiliate: AI làm tốt nhất ở đây (video review sản phẩm số lượng lớn), ra tiền nhanh và không cần tồn kho. Giữ YouTube làm nền và gắn affiliate vào mô tả/bio để tận dụng lưu lượng sẵn có. TikTok Creator Rewards và Facebook Reels là hướng thưởng theo lượt xem — chỉ làm với nội dung gốc, đầu tư chất lượng. Dropship organic để sau cùng vì cần vận hành thật (nhà cung cấp, chăm sóc khách, hoàn hàng)."
-  },
   "table": {
-    "title": "Bảng so sánh",
+    "title": "Bảng so sánh hướng kiếm tiền",
     "track": "Hướng đi",
     "tier": "Ưu tiên"
   },
@@ -33,87 +190,110 @@
     "risk": "Rủi ro cần tránh"
   },
   "phase": {
-    "title": "Lộ trình theo giai đoạn",
+    "title": "Kế hoạch theo giai đoạn",
     "p1": {
-      "name": "Giai đoạn 1 · 0–30 ngày",
-      "body": "Dựng quy trình affiliate trên TikTok Shop và gắn link affiliate vào các kênh YouTube hiện có. Mục tiêu: có đơn hàng đầu tiên, biết sản phẩm/ngách nào ra đơn."
+      "name": "Tuần 1–4 · Có tiền ngay",
+      "body": "Nhận 1–2 việc freelance lập trình hoặc dịch vụ làm video AI để có tiền sống. Song song, mở TikTok Shop Affiliate Việt Nam với 1 ngách. Mục tiêu: khoản tiền đầu tiên vào tài khoản, không phải doanh thu lớn."
     },
     "p2": {
-      "name": "Giai đoạn 2 · 30–90 ngày",
-      "body": "Nhân bản phần thắng: tăng số tài khoản cho ngách ra đơn, đăng chéo Facebook Reels, và thử TikTok Creator Rewards bằng series nội dung gốc từ 1 phút."
+      "name": "Tháng 1–3 · Bật kiếm tiền YouTube Nhật",
+      "body": "Dồn toàn bộ thời gian còn lại vào 1–2 kênh tiếng Nhật tốt nhất: 3–4 video dài/tuần, làm lại title + bìa video có CTR thấp. Mục tiêu: 1.000 người đăng ký + 4.000 giờ xem, bật kiếm tiền."
     },
     "p3": {
-      "name": "Giai đoạn 3 · 90 ngày trở đi",
-      "body": "Chỉ khi đã có dữ liệu bán hàng: thử dropship organic với 1–2 sản phẩm bán chạy nhất từ affiliate — đã có bằng chứng nhu cầu trước khi nhập hàng."
+      "name": "Tháng 3–6 · Nhân phần thắng",
+      "body": "Khi kênh Nhật có tiền: mở 1 kênh tiếng Đức hoặc tiếng Anh bằng 10 kịch bản tốt nhất đã bản địa hoá. Gắn affiliate vào mô tả các video cũ. Giảm freelance khi tiền YouTube đủ sống."
+    },
+    "p4": {
+      "name": "Sau 6 tháng · Bền vững",
+      "body": "Chỉ giữ thị trường có RPM và giữ chân tốt; dừng kênh không lên sau 3 tháng. Cân nhắc sản phẩm số (ebook, khoá ngắn) cho khán giả trung thành — biên lợi nhuận cao nhất."
     }
+  },
+  "rules": {
+    "title": "Nguyên tắc khi đang thiếu tiền",
+    "r1": "Không vay tiền để đầu tư kênh, proxy, tài khoản hay khoá học \"kiếm tiền online\". Chỉ tiêu tiền vào thứ đã chứng minh ra tiền.",
+    "r2": "Giữ chi phí cố định dưới 20 USD/tháng cho tới khi có thu nhập: dùng VOICEVOX miễn phí, ít proxy, không mua kênh / tài khoản cũ.",
+    "r3": "Một thời điểm chỉ làm 1 thị trường quảng cáo + 1 nguồn tiền nhanh. Dàn trải nhiều kênh là lý do phổ biến nhất khiến không kênh nào bật được kiếm tiền.",
+    "r4": "Không giả IP / quốc gia để vào chương trình không mở cho Việt Nam — tiền bị giữ đúng lúc sắp nhận và có thể mất cả tài khoản.",
+    "r5": "Không reup nội dung người khác, không làm video lặp mẫu hàng loạt: cả YouTube và Meta đều cắt kiếm tiền nội dung này.",
+    "r6": "Khai thông tin thuế trong AdSense ngay khi bật kiếm tiền để không bị giữ 24% toàn bộ doanh thu."
   },
   "ai": {
     "title": "Gắn vào module Dammo hiện có",
-    "radar": "Radar video nổ → tìm sản phẩm/chủ đề đang bùng nổ để làm video và chọn món hàng affiliate.",
-    "prompts": "Prompt + Phong cách hình ảnh → sinh kịch bản review, hook 3 giây, CTA theo từng ngách.",
-    "production": "Sản xuất video + Công việc đang chạy → render hàng loạt video dọc 9:16 cho TikTok, Reels, Shorts từ cùng một kịch bản.",
-    "accounts": "Chrome/GPM + Proxy + Kênh YouTube → quản lý nhiều tài khoản tách biệt; mỗi tài khoản một ngách, tránh đăng trùng nội dung."
+    "radar": "Radar video nổ + bộ não Trend → chọn chủ đề đang lên cho kênh Nhật; với TikTok Shop thì tìm sản phẩm đang bán chạy.",
+    "prompts": "Prompt + bộ não CTR / Ý tưởng → kịch bản, title, bìa; dịch và bản địa hoá kịch bản tốt nhất sang tiếng Đức / Anh.",
+    "production": "Sản xuất video → render video dài cho YouTube, cắt dọc 9:16 cho Shorts / Reels / TikTok từ cùng một kịch bản. VOICEVOX cho tiếng Nhật, ElevenLabs cho ngôn ngữ khác.",
+    "accounts": "Chrome/GPM + Proxy → mỗi kênh một profile, IP cố định, không đổi quốc gia liên tục; không nuôi tài khoản ảo."
   },
   "track": {
+    "freelanceServices": {
+      "name": "Freelance lập trình & dịch vụ video AI",
+      "summary": "Bán kỹ năng bạn đã có: nhận việc front-end / back-end, hoặc làm video AI, dựng kênh, tự động hoá cho chủ shop và creator. Đây là đường ra tiền nhanh và chắc nhất khi đang cần tiền, không phụ thuộc thuật toán.",
+      "aiRole": "Cao: dây chuyền dammo giúp bạn làm video cho khách với chi phí gần bằng 0; AI hỗ trợ code nhanh hơn khi nhận việc lập trình.",
+      "step1": "Làm 1 trang giới thiệu ngắn + 3 video mẫu từ dammo, hoặc 2–3 dự án code mẫu.",
+      "step2": "Chào việc ở nhóm Facebook freelance Việt, Upwork, Fiverr, và nhắn trực tiếp chủ shop TikTok / Shopee đang cần video.",
+      "step3": "Bắt đầu giá vừa phải để có đánh giá đầu tiên, rồi tăng giá sau 3–5 khách.",
+      "step4": "Chuyển khách lẻ thành gói tháng (ví dụ 30 video/tháng) để có thu nhập đều.",
+      "risk": "Nhận cọc trước, ghi rõ phạm vi việc. Không dùng nội dung / nhạc có bản quyền trong video làm cho khách."
+    },
     "tiktokAffiliate": {
-      "name": "TikTok Shop Affiliate",
-      "summary": "Làm video giới thiệu sản phẩm của người khác trên TikTok Shop, ăn hoa hồng mỗi đơn (thường vài % đến ~20% tùy ngành hàng). Không cần vốn, không tồn kho. Đây là hướng có trần thu nhập cao nhất cho mô hình sản xuất video hàng loạt.",
-      "aiRole": "Rất cao: sinh kịch bản review, giọng đọc, ghép cảnh sản phẩm, phụ đề, render nhiều biến thể cùng một sản phẩm để test hook.",
-      "step1": "Chọn 1–2 ngách có nhu cầu lặp lại (gia dụng, làm đẹp, đồ nhà bếp) thay vì chạy theo đủ loại.",
-      "step2": "Dùng Radar và danh sách sản phẩm bán chạy để chọn 10–20 sản phẩm, làm 3–5 biến thể hook cho mỗi sản phẩm.",
-      "step3": "Đăng 2–3 video/ngày/tài khoản, đo đơn theo video, nhân bản hook thắng và bỏ sản phẩm không ra đơn sau khoảng 1 tuần.",
-      "step4": "Khi một ngách ổn định thì mở thêm tài khoản cùng ngách; cân nhắc mở rộng theo quốc gia được hỗ trợ.",
-      "risk": "Video lặp, spam hoặc quảng cáo sai sự thật bị giảm hiển thị hoặc khóa quyền affiliate. Nội dung do AI tạo cần gắn nhãn đúng quy định, không dùng hình ảnh sản phẩm gây hiểu lầm."
+      "name": "TikTok Shop Affiliate Việt Nam",
+      "summary": "Làm video giới thiệu sản phẩm trên TikTok Shop Việt Nam, ăn hoa hồng mỗi đơn (vài % đến khoảng 20% tùy ngành). Người ở Việt Nam được tham gia, không cần vốn, không tồn kho. TikTok Shop các nước khác (Mỹ, Nhật…) yêu cầu cư trú tại nước đó.",
+      "aiRole": "Rất cao: sinh kịch bản review, giọng đọc, ghép cảnh sản phẩm, phụ đề, nhiều biến thể hook cho cùng một sản phẩm.",
+      "step1": "Chọn 1 ngách có nhu cầu lặp lại (gia dụng, nhà bếp, sách) thay vì đủ loại.",
+      "step2": "Chọn 10–20 sản phẩm bán chạy, làm 3–5 biến thể hook mỗi sản phẩm.",
+      "step3": "Đăng 2–3 video/ngày, đo đơn theo video, bỏ sản phẩm không ra đơn sau khoảng 1 tuần.",
+      "step4": "Khi một ngách ổn định mới mở thêm tài khoản; mỗi tài khoản là người thật, nội dung riêng.",
+      "risk": "Video lặp, spam hoặc nói sai công dụng sản phẩm bị giảm hiển thị hoặc khóa quyền affiliate. Gắn nhãn nội dung AI đúng quy định."
     },
     "affiliateBio": {
-      "name": "Affiliate trong mô tả/bio (Amazon, SaaS, ClickBank…)",
-      "summary": "Gắn link affiliate vào mô tả video YouTube, Pinterest, bio TikTok/Instagram. Tận dụng lưu lượng đang có, chi phí thêm gần như bằng 0. Hoa hồng SaaS định kỳ có thể cho thu nhập đều hơn bán hàng vật lý.",
-      "aiRole": "Cao: tự viết đoạn CTA, mô tả có link theo từng video, và làm video so sánh/đánh giá công cụ.",
-      "step1": "Chọn chương trình phù hợp ngách kênh (kênh tâm lý/tiền → sách, khóa học, công cụ).",
-      "step2": "Thêm link và CTA vào mô tả các video cũ bằng một đợt cập nhật hàng loạt.",
-      "step3": "Làm vài video dạng top công cụ/sách nhắm từ khóa tìm kiếm — loại nội dung sống lâu trên YouTube.",
-      "step4": "Theo dõi click và đơn theo từng link để giữ lại chương trình có tỉ lệ chuyển đổi tốt.",
-      "risk": "Phải công bố quan hệ affiliate đúng quy định nền tảng; không nói sai về hoa hồng hay lợi ích sản phẩm."
+      "name": "Affiliate trong mô tả / bình luận ghim",
+      "summary": "Gắn link affiliate (Amazon, Rakuten, ClickBank, phần mềm) vào mô tả YouTube, bình luận ghim Facebook. Tận dụng lưu lượng đang có, chi phí thêm gần bằng 0. Thu nhập nhỏ nhưng cộng dồn theo thời gian.",
+      "aiRole": "Cao: tự viết CTA, mô tả có link theo từng video, làm video top sách / công cụ.",
+      "step1": "Chọn chương trình hợp ngách (kênh tâm lý → sách, khoá học, sản phẩm sức khoẻ).",
+      "step2": "Cập nhật link và CTA hàng loạt vào mô tả video cũ.",
+      "step3": "Làm vài video top sách / công cụ nhắm từ khoá tìm kiếm — loại video sống lâu.",
+      "step4": "Theo dõi click và đơn theo link, giữ chương trình chuyển đổi tốt.",
+      "risk": "Phải công bố quan hệ affiliate. Amazon Japan duyệt khắt khe và có thể khoá nếu không ra đơn trong 180 ngày."
     },
     "fbReels": {
-      "name": "Facebook Reels (Content Monetization)",
-      "summary": "Meta trả tiền theo hiệu suất Reels cho Page đủ điều kiện, ngoài ra có thể gắn link affiliate. Cùng một video dọc dùng được cho TikTok và Shorts nên chi phí thêm thấp. Điều kiện và mức thưởng thay đổi theo quốc gia và từng đợt chương trình.",
-      "aiRole": "Cao ở khâu sản xuất; thấp hơn ở khâu tạo khác biệt vì Meta hạ phân phối nội dung đăng lại/giống nhau.",
-      "step1": "Mở Page riêng (không dùng profile cá nhân), kiểm tra mục kiếm tiền xem Page có đủ điều kiện không.",
-      "step2": "Đăng chéo video dọc đã có, nhưng đổi hook/tiêu đề và bỏ watermark của nền tảng khác.",
-      "step3": "Theo dõi 4–6 tuần: video nào giữ chân tốt thì làm series, còn lại bỏ.",
-      "step4": "Dùng Reels làm cửa dẫn vào affiliate hoặc sản phẩm riêng thay vì chỉ trông vào tiền thưởng lượt xem.",
-      "risk": "Nội dung không gốc hoặc đăng lại có thể mất quyền kiếm tiền hoặc giảm phân phối. Vi phạm bản quyền nhạc/hình ảnh là lỗi thường gặp."
+      "name": "Facebook (Content Monetization)",
+      "summary": "Meta trả tiền theo hiệu suất video dài, Reels, bài đăng cho Page đủ điều kiện; mức trả theo nước của khán giả. Mạnh nhất với khán giả Mỹ 45+ và Đài Loan, yếu ở Nhật và Hàn. Điều kiện cho Page ở Việt Nam thay đổi theo từng đợt.",
+      "aiRole": "Cao ở khâu sản xuất; thấp hơn ở khâu tạo khác biệt vì Meta hạ phân phối nội dung đăng lại / giống nhau.",
+      "step1": "Mở Page bằng tài khoản thật, vào Professional Dashboard → Monetization xem Page có đủ điều kiện không.",
+      "step2": "Đăng lại video đã có nhưng đổi hook / tiêu đề, bỏ watermark nền tảng khác.",
+      "step3": "Theo dõi 4–6 tuần: video giữ chân tốt thì làm series, còn lại bỏ.",
+      "step4": "Dùng Facebook để kéo người về YouTube và link affiliate nếu Page chưa được kiếm tiền.",
+      "risk": "Nội dung không gốc / đăng lại bị mất kiếm tiền. Nuôi nhiều Page bằng tài khoản ảo có thể bị khoá cả cụm."
     },
     "youtubeCore": {
-      "name": "YouTube (nền tảng hiện tại)",
-      "summary": "Kênh Shorts và video dài hiện có là nguồn lưu lượng nền và là nền tảng bền nhất. Thu nhập quảng cáo ra chậm vì phải đạt ngưỡng kiếm tiền, nhưng video dài có tuổi thọ cao.",
-      "aiRole": "Rất cao: toàn bộ pipeline Dammo hiện tại (kịch bản → hình ảnh → giọng → render) đã phục vụ hướng này.",
-      "step1": "Giữ nhịp đăng ổn định và tập trung vào ngách có retention tốt thay vì mở thêm kênh dàn trải.",
-      "step2": "Dùng kênh làm bể lưu lượng cho affiliate (hướng ở trên) thay vì chỉ sống bằng tiền quảng cáo.",
-      "step3": "Chuyển Shorts hiệu quả thành video dài nhắm từ khóa tìm kiếm để có lưu lượng dài hạn.",
-      "step4": "Tăng chất lượng thay vì số lượng: YouTube xử lý nặng nội dung lặp, hàng loạt, ít giá trị gia tăng.",
-      "risk": "Nội dung hàng loạt lặp mẫu có thể bị coi là nội dung không xác thực và mất khả năng kiếm tiền. Cần thay đổi cấu trúc, hình ảnh và giọng giữa các video."
+      "name": "YouTube tiếng Nhật (nền tảng hiện tại)",
+      "summary": "Nguồn thu nhập chính và bền nhất: YouTube trả tiền cho người ở Việt Nam theo nước của người xem. Ra chậm vì phải đạt ngưỡng kiếm tiền, nhưng video dài có tuổi thọ cao.",
+      "aiRole": "Rất cao: toàn bộ pipeline dammo (kịch bản → hình → giọng → render) và các bộ não đã phục vụ hướng này.",
+      "step1": "Dồn vào 1–2 kênh giữ chân tốt nhất, ngừng mở kênh mới.",
+      "step2": "3–4 video dài/tuần, làm lại title + bìa video CTR thấp.",
+      "step3": "Chuyển Shorts hiệu quả thành video dài nhắm từ khoá tìm kiếm.",
+      "step4": "Khi bật kiếm tiền, nhân công thức sang tiếng Đức / Anh.",
+      "risk": "Nội dung hàng loạt lặp mẫu bị coi là không xác thực và mất kiếm tiền. Thay đổi cấu trúc, hình và giọng giữa các video."
     },
     "tiktokBeta": {
-      "name": "TikTok Creator Rewards (beta)",
-      "summary": "Chương trình trả tiền theo lượt xem hợp lệ cho video gốc dài từ 1 phút trở lên, RPM thường cao hơn nhiều so với video ngắn. Điều kiện thường gồm số follower tối thiểu, lượt xem 30 ngày, độ tuổi và quốc gia được hỗ trợ. Còn ở dạng thử nghiệm nên có thể thay đổi bất cứ lúc nào.",
-      "aiRole": "Trung bình: AI hỗ trợ kịch bản, hình ảnh, giọng đọc, nhưng cần nội dung gốc, có giá trị và không lặp mẫu để đủ điều kiện.",
-      "step1": "Kiểm tra trong Creator Center xem tài khoản/quốc gia có đủ điều kiện không trước khi đầu tư.",
-      "step2": "Chọn một ngách kể chuyện/giáo dục làm video 1–3 phút, mỗi video một góc nhìn riêng.",
-      "step3": "Tăng follower và lượt xem bằng video ngắn, rồi chuyển sang video dài khi đủ điều kiện.",
-      "step4": "Đo RPM thực tế sau 30 ngày rồi quyết định mở rộng.",
-      "risk": "Video bị chấm là không gốc, lặp lại hoặc chất lượng thấp sẽ không được tính tiền. Với nội dung AI, phải gắn nhãn đúng quy định."
+      "name": "TikTok Creator Rewards",
+      "summary": "Trả tiền theo view cho video gốc từ 1 phút, RPM khá. Nhưng chỉ mở cho người cư trú tại một số nước (Mỹ, Anh, Đức, Nhật, Hàn, Pháp, Brazil…) — người ở Việt Nam không tham gia được.",
+      "aiRole": "Trung bình: cần nội dung gốc, không lặp mẫu.",
+      "step1": "Không đầu tư khi đang ở Việt Nam.",
+      "step2": "Dùng TikTok cho Shop Affiliate Việt Nam thay thế.",
+      "step3": "Theo dõi nếu chương trình mở cho Việt Nam.",
+      "step4": "Khi đó mới kiểm tra điều kiện trong Creator Center.",
+      "risk": "Giả quốc gia / IP để vào chương trình là vi phạm điều khoản: bị giữ tiền và khoá tài khoản."
     },
     "dropshipOrganic": {
       "name": "Dropship organic",
-      "summary": "Bán hàng không giữ kho bằng lưu lượng tự nhiên từ video (TikTok Shop, Facebook). Lợi nhuận trên đơn cao hơn affiliate nhưng bạn chịu trách nhiệm với khách: đóng gói, giao hàng, hoàn tiền, khiếu nại.",
-      "aiRole": "Trung bình: AI lo video và mô tả sản phẩm tốt, nhưng thắng thua nằm ở nhà cung cấp, giá và chăm sóc khách — những thứ AI không thay được.",
+      "summary": "Bán hàng không giữ kho bằng lưu lượng tự nhiên từ video. Lợi nhuận trên đơn cao hơn affiliate nhưng bạn chịu trách nhiệm với khách: giao hàng, hoàn tiền, khiếu nại.",
+      "aiRole": "Trung bình: AI lo video và mô tả tốt, nhưng thắng thua nằm ở nguồn hàng, giá và chăm sóc khách.",
       "step1": "Chỉ bắt đầu sau khi affiliate cho thấy sản phẩm nào có nhu cầu thật.",
-      "step2": "Chọn 1–2 sản phẩm bán chạy nhất, đặt hàng mẫu để kiểm tra chất lượng và thời gian giao.",
-      "step3": "Chọn nhà cung cấp có thời gian giao rõ ràng và chính sách đổi trả; tính đủ phí sàn, ship, hoàn hàng vào giá.",
-      "step4": "Chỉ mở rộng khi biên lợi nhuận sau chi phí vẫn dương trong ít nhất vài tuần liên tục.",
-      "risk": "Giao chậm, hàng lỗi, hoàn tiền nhiều làm điểm shop giảm và có thể bị khóa Shop. Đây là hướng có rủi ro nền tảng và vận hành cao nhất."
+      "step2": "Chọn 1–2 sản phẩm bán chạy nhất, đặt mẫu kiểm tra chất lượng.",
+      "step3": "Tính đủ phí sàn, ship, hoàn hàng vào giá.",
+      "step4": "Chỉ mở rộng khi lãi sau chi phí dương vài tuần liên tục.",
+      "risk": "Cần vốn nhập hàng — không hợp khi đang thiếu tiền. Giao chậm, hàng lỗi làm điểm shop giảm và có thể bị khoá Shop."
     }
   }
 }

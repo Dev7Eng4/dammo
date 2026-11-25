@@ -160,7 +160,7 @@ export interface VideoAgentScript {
   /** Why the agent chose that runtime (what the material supports), in Vietnamese. */
   lengthReason: string;
   totalChars: number;
-  /** At the narration pace used for planning (~330 chars/min). */
+  /** At the narration pace used for planning (NARRATION_CHARS_PER_MIN, ~300 chars/min). */
   estimatedMinutes: number;
   similarity: VideoAgentSimilarity[];
   review?: VideoAgentScriptReview;

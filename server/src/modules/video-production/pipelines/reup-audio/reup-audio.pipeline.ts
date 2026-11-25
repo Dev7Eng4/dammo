@@ -55,6 +55,7 @@ import { parseVideoMetaContent } from '../../shared/meta/metadata.types.js';
 import { OUTPUT_VIDEO_BASENAME } from '../../shared/render-core/output-artifacts.constants.js';
 import {
   AI_SLIDES_DIRNAME,
+  AI_VIDEOS_DIRNAME,
   CHARACTER_REFERENCES_FILENAME,
   IMAGE_REFERENCES_DIRNAME,
   resolveAiScenePromptsFilePath,
@@ -101,8 +102,9 @@ interface TaskRunContext {
 const AUDIO_FILE = 'audio.mp3';
 const SUBTITLE_FILES = ['transcript-updated.srt', 'transcript.srt'] as const;
 const VIDEO_META_FILENAME = 'video-meta.json';
-const REGENERATE_PREPARE_STATUSES = new Set(['Prepared', 'Created', 'Uploaded']);
-const SCENE_REGEN_PREPARE_STATUSES = new Set(['Prepared', 'Created']);
+// Preparing: a video started from a skill script, finished step by step in the production tabs.
+const REGENERATE_PREPARE_STATUSES = new Set(['Preparing', 'Prepared', 'Created', 'Uploaded']);
+const SCENE_REGEN_PREPARE_STATUSES = new Set(['Preparing', 'Prepared', 'Created']);
 
 function readTitleFromVideoMeta(folderPath: string): string | null {
   try {
@@ -112,6 +114,21 @@ function readTitleFromVideoMeta(folderPath: string): string | null {
     if (!metadata || typeof metadata !== 'object') return null;
     const title = (metadata as Record<string, unknown>).title;
     return typeof title === 'string' && title.trim() ? title.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `source_title` of an earlier video-meta.json: the source video's own title. The prepare item's title is
+ * replaced by the generated title after each run, so it is not the source title when metadata is regenerated.
+ */
+function readSourceTitleFromVideoMeta(folderPath: string): string | null {
+  try {
+    const raw = readJson<unknown>(path.join(folderPath, VIDEO_META_FILENAME));
+    if (!raw || typeof raw !== 'object') return null;
+    const sourceTitle = (raw as Record<string, unknown>).source_title;
+    return typeof sourceTitle === 'string' && sourceTitle.trim() ? sourceTitle.trim() : null;
   } catch {
     return null;
   }
@@ -167,6 +184,8 @@ function supportsSceneAssetRegeneration(destination: ProductionDestination): boo
 
 async function clearSceneAssetFiles(workDir: string, useReferenceImage: boolean): Promise<void> {
   await fs.rm(path.join(workDir, AI_SLIDES_DIRNAME), { recursive: true, force: true });
+  // Clips animated from the old images: kept, they would be reused instead of the new images.
+  await fs.rm(path.join(workDir, AI_VIDEOS_DIRNAME), { recursive: true, force: true });
   await fs.rm(resolveAiScenePromptsFilePath(workDir), { force: true });
   if (useReferenceImage) {
     await fs.rm(path.join(workDir, CHARACTER_REFERENCES_FILENAME), { force: true });
@@ -376,8 +395,9 @@ export class ReupAudioPipeline {
           taskQueueRepository.setLivePhase(taskJobId, 'metadata');
         }
 
+        // Regenerating: the guard and the prompt compare against the SOURCE title, not the title made last time.
         const sourceTitle =
-          prepareItem?.title.trim() || readTitleFromVideoMeta(workDir) || videoId;
+          readSourceTitleFromVideoMeta(workDir) || prepareItem?.title.trim() || readTitleFromVideoMeta(workDir) || videoId;
 
         const task: ReupVideoTask = {
           link: `https://www.youtube.com/watch?v=${videoId}`,
@@ -800,7 +820,7 @@ export class ReupAudioPipeline {
     }
 
     const videoType = destination.reupAudioVideoType as ReupAudioVideoType;
-    if (videoType !== 'si' && videoType !== 'ai') {
+    if (videoType !== 'si' && !isAiSceneVideoType(videoType)) {
       throw new AppError(
         'Assemble prepared videos requires reupAudioVideoType si or ai',
         400,
@@ -1074,12 +1094,13 @@ export class ReupAudioPipeline {
                 activeStageId = CREATE_VIDEO_STAGE_IDS.narration;
                 startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.narration);
               },
-            }),
+            }, { channelId: destination.id, sourceVideoId: task.videoId }),
           stepTimer,
         );
         completeCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.narration);
         log.ok(`Narration → ${remade.subtitlePath}`);
         ctx.subtitlePath = remade.subtitlePath;
+        ctx.remakeOutline = remade.outline;
       } else if (shouldUpdateTranscript) {
         activeStageId = CREATE_VIDEO_STAGE_IDS.updateTranscript;
         startCreateVideoStage(taskJobId, CREATE_VIDEO_STAGE_IDS.updateTranscript);
@@ -1089,6 +1110,13 @@ export class ReupAudioPipeline {
         ctx.subtitlePath = updatedSrtPath;
         ctx.workDir = path.dirname(updatedSrtPath);
       } else {
+        if (destination.language === 'ja' && !isCaptionDisabled(destination.captionStyleKey) && !isUpdateTranscriptEnabled) {
+          // Always recorded (err level): burned-in captions will show raw speech-recognition text, typos included.
+          log.err(
+            'Warning: transcript LLM correction is turned off in Settings (enableUpdateTranscript) — ' +
+              'captions will be burned in with uncorrected speech-recognition text.',
+          );
+        }
         ctx.subtitlePath = await finalizeCleanTranscript(srtPath, log);
       }
 

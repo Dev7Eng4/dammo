@@ -7,6 +7,7 @@ import { toOnLog, type VideoTaskContext } from '../video-task.context.js';
 export function resolveSceneVideoMode(videoType: string | undefined): AiSceneVideoMode | undefined {
   if (videoType === 'ai_full_video') return 'full';
   if (videoType === 'ai_intro_video') return 'intro';
+  if (videoType === 'ai_interleaved_video') return 'interleaved';
   return undefined;
 }
 
@@ -23,7 +24,9 @@ export async function runSceneVideoClipsStep(
   log.info(
     mode === 'full'
       ? 'Converting every scene image to a video clip via Flow...'
-      : 'Converting the intro scene images to video clips via Flow...',
+      : mode === 'interleaved'
+        ? 'Converting the intro scenes and every few scenes after it to video clips via Flow...'
+        : 'Converting the intro scene images to video clips via Flow...',
   );
 
   const result = await timedStep(

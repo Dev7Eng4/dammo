@@ -10,6 +10,7 @@ import { formatCompact } from '../../utils/ypp'
 import { youtubeWatchUrl } from '../../utils/youtubeVideo'
 import { CommentThread } from '../youtube-channels/CommentThread'
 import { Button, Modal } from '../ui'
+import { appLocale } from '../../utils/locale'
 
 interface SourceVideoModalProps {
   source: SourceChannel
@@ -140,7 +141,7 @@ function SourceVideoDialog({
               <MessageCircle className="size-4" aria-hidden="true" />
               {loading
                 ? tYoutube('comments.title')
-                : tYoutube('comments.count', { count: total.toLocaleString('vi-VN') })}
+                : tYoutube('comments.count', { count: total.toLocaleString(appLocale()) })}
             </h3>
 
             {loading ? <CommentsSkeleton /> : null}

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui';
+import { appLocale } from '../../utils/locale';
 
 interface ChromeProfilesToolbarProps {
   count: number;
@@ -27,7 +28,7 @@ export function ChromeProfilesToolbar({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <span className="text-sm text-neutral-400">
-        {t('chrome.toolbar.count', { count: count.toLocaleString() })}
+        {t('chrome.toolbar.count', { count: count.toLocaleString(appLocale()) })}
       </span>
 
       <div className="flex items-center gap-2">

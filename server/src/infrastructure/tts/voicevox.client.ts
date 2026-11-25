@@ -34,16 +34,35 @@ const BREATH_AFTER = new Set(['ワ', 'ガ', 'テ', 'デ']);
 const BREATH_MIN_RUN_MORAS = 12;
 const BREATH_MIN_TAIL_MORAS = 6;
 
+interface Mora {
+  text: string;
+  consonant_length?: number | null;
+  vowel_length?: number | null;
+}
+
 interface AccentPhrase {
-  moras: { text: string }[];
-  pause_mora?: unknown;
+  moras: Mora[];
+  pause_mora?: Mora | null;
+}
+
+/**
+ * Where speech and pauses fall inside one synthesized utterance, from the engine's own phoneme lengths
+ * (seconds, before the engine rounds them to frames: scale by real WAV length / `totalSec`).
+ */
+export interface SpeechTiming {
+  totalSec: number;
+  speechStartSec: number;
+  speechEndSec: number;
+  /** Pauses the engine put at punctuation (、。！？…), in text order. Breaths from addPhraseBreaths are left out. */
+  pauses: { startSec: number; endSec: number }[];
 }
 
 /**
  * Adds a pause after a particle once a stretch has run BREATH_MIN_RUN_MORAS without one, the way a
  * narrator breathes inside a long clause. Never right before the end of the sentence.
  */
-function addPhraseBreaths(phrases: AccentPhrase[], seconds: number): void {
+function addPhraseBreaths(phrases: AccentPhrase[], seconds: number): Set<number> {
+  const added = new Set<number>();
   const total = phrases.reduce((sum, phrase) => sum + phrase.moras.length, 0);
   let sincePause = 0;
   let spoken = 0;
@@ -61,10 +80,38 @@ function addPhraseBreaths(phrases: AccentPhrase[], seconds: number): void {
       total - spoken >= BREATH_MIN_TAIL_MORAS &&
       BREATH_AFTER.has(last)
     ) {
-      phrase.pause_mora = { text: '、', consonant: null, consonant_length: null, vowel: 'pau', vowel_length: seconds, pitch: 0 };
+      phrase.pause_mora = { text: '、', consonant: null, consonant_length: null, vowel: 'pau', vowel_length: seconds, pitch: 0 } as Mora;
+      added.add(index);
       sincePause = 0;
     }
   }
+  return added;
+}
+
+function num(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/** Same arithmetic as the engine: pre/post silence and pauses (× pauseLengthScale), all ÷ speedScale. */
+function speechTiming(query: Record<string, unknown>, breaths: Set<number>): SpeechTiming {
+  const speed = num(query.speedScale, 1) || 1;
+  const pauseScale = num(query.pauseLengthScale, 1);
+  const fixedPause = typeof query.pauseLength === 'number' ? query.pauseLength : null;
+  const phrases = (Array.isArray(query.accent_phrases) ? query.accent_phrases : []) as AccentPhrase[];
+  let t = num(query.prePhonemeLength, 0.1) / speed;
+  const speechStartSec = t;
+  const pauses: SpeechTiming['pauses'] = [];
+  for (const [index, phrase] of phrases.entries()) {
+    for (const mora of phrase.moras) t += (num(mora.consonant_length, 0) + num(mora.vowel_length, 0)) / speed;
+    if (phrase.pause_mora) {
+      const length = ((fixedPause ?? num(phrase.pause_mora.vowel_length, 0)) * pauseScale) / speed;
+      if (!breaths.has(index)) pauses.push({ startSec: t, endSec: t + length });
+      t += length;
+    }
+  }
+  const speechEndSec = t;
+  t += num(query.postPhonemeLength, 0.1) / speed;
+  return { totalSec: t, speechStartSec, speechEndSec, pauses };
 }
 
 function baseUrl(): string {
@@ -103,8 +150,7 @@ export async function listVoicevoxSpeakers(): Promise<VoicevoxSpeaker[]> {
   }));
 }
 
-/** Text → 16-bit mono WAV bytes (engine sampling rate, 24 kHz by default). */
-export async function synthesizeVoicevox(text: string, options: VoicevoxSynthOptions): Promise<Buffer> {
+async function buildQuery(text: string, options: VoicevoxSynthOptions) {
   const queryRes = await request(
     `/audio_query?${new URLSearchParams({ text, speaker: String(options.speaker) })}`,
     { method: 'POST' },
@@ -116,14 +162,48 @@ export async function synthesizeVoicevox(text: string, options: VoicevoxSynthOpt
   if (options.volumeScale !== undefined) query.volumeScale = options.volumeScale;
   if (options.postPhonemeLength !== undefined) query.postPhonemeLength = options.postPhonemeLength;
   if (options.pauseLengthScale !== undefined) query.pauseLengthScale = options.pauseLengthScale;
-  if (options.phraseBreathSec && Array.isArray(query.accent_phrases)) {
-    addPhraseBreaths(query.accent_phrases as AccentPhrase[], options.phraseBreathSec);
-  }
+  const breaths =
+    options.phraseBreathSec && Array.isArray(query.accent_phrases)
+      ? addPhraseBreaths(query.accent_phrases as AccentPhrase[], options.phraseBreathSec)
+      : new Set<number>();
+  return { query, breaths };
+}
 
+/** Text → 16-bit mono WAV bytes (engine sampling rate, 24 kHz by default). */
+export async function synthesizeVoicevox(text: string, options: VoicevoxSynthOptions): Promise<Buffer> {
+  return (await synthesizeVoicevoxTimed(text, options)).wav;
+}
+
+/** Like synthesizeVoicevox, plus where each pause falls (for exact subtitle cues inside a sentence). */
+export async function synthesizeVoicevoxTimed(
+  text: string,
+  options: VoicevoxSynthOptions,
+): Promise<{ wav: Buffer; timing: SpeechTiming }> {
+  const { query, breaths } = await buildQuery(text, options);
   const wavRes = await request(`/synthesis?${new URLSearchParams({ speaker: String(options.speaker) })}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(query),
   });
-  return Buffer.from(await wavRes.arrayBuffer());
+  return { wav: Buffer.from(await wavRes.arrayBuffer()), timing: speechTiming(query, breaths) };
+}
+
+/** Timing of an utterance without synthesizing it (audio_query only), for sentences whose WAV is cached. */
+export async function voicevoxSpeechTiming(text: string, options: VoicevoxSynthOptions): Promise<SpeechTiming> {
+  const { query, breaths } = await buildQuery(text, options);
+  return speechTiming(query, breaths);
+}
+
+/**
+ * How VOICEVOX will read `text`, in katakana: accent phrases separated by spaces, pauses as 、.
+ * Used to check numbers and names before narrating.
+ */
+export async function voicevoxReading(text: string, speaker: number): Promise<string> {
+  const { query } = await buildQuery(text, { speaker });
+  const phrases = (Array.isArray(query.accent_phrases) ? query.accent_phrases : []) as AccentPhrase[];
+  return phrases
+    .map(phrase => phrase.moras.map(mora => mora.text).join('') + (phrase.pause_mora ? '、' : ''))
+    .join(' ')
+    .replace(/ 、/g, '、')
+    .trim();
 }

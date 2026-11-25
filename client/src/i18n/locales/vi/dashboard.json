@@ -9,7 +9,7 @@
     "title": "Thao tác nhanh",
     "addEmail": "Thêm email",
     "addYt": "Thêm kênh YT",
-    "videoFactory": "Video Factory",
+    "videoFactory": "Nhà máy video",
     "assets": "Tài nguyên",
     "videoProduction": "Sản xuất video"
   },
@@ -42,7 +42,32 @@
     "eta": "Còn lại {{eta}}"
   },
   "health": {
-    "title": "Cảnh báo sức khỏe"
+    "title": "Cảnh báo sức khỏe",
+    "paused": {
+      "title": "Kênh đang tạm dừng ({{count}})",
+      "description": "Các kênh YouTube này đang tạm dừng, không nên đăng video lên."
+    },
+    "stale": {
+      "titleDays": "{{name}} — {{value}} ngày chưa có video mới",
+      "titleHours": "{{name}} — {{value}} giờ chưa có video mới",
+      "description": "Lần đăng gần nhất: {{time}}."
+    },
+    "ram": {
+      "title": "RAM còn {{size}} trống",
+      "description": "Trên tổng {{size}}. Render và tải video có thể chậm hoặc lỗi."
+    },
+    "disk": {
+      "title": "Ổ đĩa còn {{size}} trống",
+      "description": "Trên tổng {{size}}. Video render và tải về sẽ hết chỗ."
+    },
+    "queueFailed": {
+      "title": "{{count}} tác vụ trong hàng đợi bị lỗi",
+      "description": "Mở Công việc đang chạy để xem lỗi và chạy lại hoặc xóa."
+    },
+    "queuePaused": {
+      "title": "Hàng đợi đang tạm dừng ({{count}} việc chờ)",
+      "description": "Các tác vụ sẽ không chạy cho tới khi tiếp tục hàng đợi."
+    }
   },
   "upcoming": {
     "title": "Lịch đăng sắp tới",

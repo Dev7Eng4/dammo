@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export interface FetchOptions {
   signal?: AbortSignal;
 }
@@ -8,7 +10,7 @@ export function isAbortError(err: unknown): boolean {
 
 function parseApiError(body: unknown, status: number): string {
   if (!body || typeof body !== 'object') {
-    return `Request failed: ${status}`;
+    return i18n.t('common:errors.requestFailed', { status: status });
   }
 
   const record = body as Record<string, unknown>;
@@ -36,7 +38,7 @@ function parseApiError(body: unknown, status: number): string {
     }
   }
 
-  return `Request failed: ${status}`;
+  return i18n.t('common:errors.requestFailed', { status: status });
 }
 
 export async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {

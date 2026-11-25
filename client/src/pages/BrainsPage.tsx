@@ -2,19 +2,13 @@ import { Activity, AlertTriangle, BrainCircuit, ExternalLink, Flame, Maximize2, 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BRAINS_STREAM_URL, cancelBrain, cancelPipeline, fetchBrains, forgetBrain, runBrain, runPipeline, setBrainAutoInterval } from '../api/brains'
 import { BrainMap } from '../components/brains/BrainMap'
-import { KIND_COLOR, KIND_LABEL, KIND_SECTION, videoIdOf } from '../components/brains/neuronKinds'
+import { KIND_COLOR, KIND_SECTIONS, NEURON_KINDS, videoIdOf } from '../components/brains/neuronKinds'
 import { useToast } from '../components/ui'
 import { cn } from '../lib/cn'
 import type { Brain, BrainEvent, Neuron, PipelineStatus, Pulse, PulseKind } from '../types/brains'
+import { Trans, useTranslation } from 'react-i18next'
+import { appLocale } from '../utils/locale'
 
-const PULSE_LABEL: Record<PulseKind, string> = {
-  start: 'BẮT ĐẦU',
-  think: 'NGHĨ',
-  search: 'TÌM',
-  found: 'GHI NHỚ',
-  error: 'LỖI',
-  done: 'XONG',
-}
 const PULSE_COLOR: Record<PulseKind, string> = {
   start: 'text-sky-300',
   think: 'text-slate-400',
@@ -23,17 +17,20 @@ const PULSE_COLOR: Record<PulseKind, string> = {
   error: 'text-red-400',
   done: 'text-amber-300',
 }
-const STATUS_LABEL: Record<Brain['status'], string> = { idle: 'Sẵn sàng', running: 'Đang chạy', error: 'Lỗi', dormant: 'Chưa xây' }
 const AUTO_OPTIONS = [0, 2, 4, 6, 12, 24]
 
 function formatTime(iso?: string): string {
   if (!iso) return '—'
   const d = new Date(iso)
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+  const locale = appLocale()
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+  return `${locale === 'en-US' ? `${month}/${day}` : `${day}/${month}`} ${time}`
 }
 
 function formatNumber(n: number): string {
-  return n.toLocaleString('vi-VN')
+  return n.toLocaleString(appLocale())
 }
 
 function Panel({ title, icon, children, className, action }: { title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string; action?: React.ReactNode }) {
@@ -58,9 +55,10 @@ function HeatBar({ value, color }: { value: number; color: string }) {
 }
 
 export function BrainsPage() {
+  const { t } = useTranslation('brains')
   const { toast } = useToast()
   const rootRef = useRef<HTMLDivElement>(null)
-  const [brains, setBrains] = useState<Brain[]>([])
+  const [serverBrains, setBrains] = useState<Brain[]>([])
   const [neurons, setNeurons] = useState<Neuron[]>([])
   const [pulses, setPulses] = useState<Pulse[]>([])
   const [stats, setStats] = useState({ pulses24h: 0, errors24h: 0 })
@@ -128,6 +126,18 @@ export function BrainsPage() {
     return () => clearInterval(timer)
   }, [])
 
+  // Brain texts come from the server in Vietnamese; known brains are named in the app language.
+  const brains = useMemo(
+    () =>
+      serverBrains.map((b) => ({
+        ...b,
+        name: t(`brain.${b.id}.name`, { defaultValue: b.name }),
+        department: t(`brain.${b.id}.department`, { defaultValue: b.department }),
+        description: t(`brain.${b.id}.description`, { defaultValue: b.description }),
+      })),
+    [serverBrains, t],
+  )
+
   // Neuron counts come from the live neuron list so the map labels stay current.
   const brainsWithCounts = useMemo(
     () => brains.map((b) => ({ ...b, neuronCount: neurons.filter((n) => n.brainId === b.id).length })),
@@ -174,7 +184,7 @@ export function BrainsPage() {
       <div className="flex items-center gap-3">
         <Activity className="size-4 text-violet-300" />
         <h1 className="text-sm font-bold tracking-[0.16em] uppercase">
-          Bản đồ não sống — {brains.length} bộ não, điều đã học và xung thần kinh thời gian thực
+          {t('page.title', { count: brains.length })}
         </h1>
         <div className="ml-auto flex items-center gap-2">
           {pipeline.running ? (
@@ -182,20 +192,20 @@ export function BrainsPage() {
               onClick={() => act(() => cancelPipeline())}
               className="flex items-center gap-1.5 rounded-lg bg-red-500/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500"
             >
-              <Square className="size-3.5" /> Dừng dây chuyền
-              {pipeline.current && <span className="font-normal opacity-80">— đang: {brains.find((b) => b.id === pipeline.current)?.name}</span>}
+              <Square className="size-3.5" /> {t('pipeline.stop')}
+              {pipeline.current && <span className="font-normal opacity-80">{t('pipeline.current', { name: brains.find((b) => b.id === pipeline.current)?.name ?? pipeline.current })}</span>}
             </button>
           ) : (
             <button
               onClick={() => {
-                if (window.confirm(`Chạy lần lượt ${pipeline.order.length} bộ não (mỗi não là một lượt Claude, tốn phí)?`)) {
-                  void act(() => runPipeline(notes.trim() || undefined), 'Dây chuyền đã khởi động')
+                if (window.confirm(t('pipeline.confirm', { count: pipeline.order.length }))) {
+                  void act(() => runPipeline(notes.trim() || undefined), t('pipeline.started'))
                 }
               }}
               title={pipeline.order.map((id) => brains.find((b) => b.id === id)?.name ?? id).join(' → ')}
               className="flex items-center gap-1.5 rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-400"
             >
-              <Workflow className="size-3.5" /> Chạy cả dây chuyền ({pipeline.order.length} não)
+              <Workflow className="size-3.5" /> {t('pipeline.run', { count: pipeline.order.length })}
             </button>
           )}
         </div>
@@ -203,7 +213,7 @@ export function BrainsPage() {
           className="flex items-center gap-1.5 rounded-lg border border-slate-600/60 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
           onClick={() => (document.fullscreenElement ? document.exitFullscreen() : rootRef.current?.requestFullscreen())}
         >
-          <Maximize2 className="size-3.5" /> Toàn màn hình
+          <Maximize2 className="size-3.5" /> {t('page.fullscreen')}
         </button>
       </div>
 
@@ -211,14 +221,14 @@ export function BrainsPage() {
 
       <div className="grid min-h-0 flex-1 grid-cols-[250px_minmax(0,1fr)_340px] gap-3">
         {/* Left: brains */}
-        <Panel title="Não bộ phận" icon={<BrainCircuit className="size-4 text-violet-300" />}>
+        <Panel title={t('list.title')} icon={<BrainCircuit className="size-4 text-violet-300" />}>
           <div className="px-3 pb-2">
             <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/60 px-2.5 py-1.5">
               <Search className="size-3.5 text-slate-500" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm nơ-ron, kênh, chủ đề…"
+                placeholder={t('list.search')}
                 className="w-full bg-transparent text-xs outline-none placeholder:text-slate-500"
               />
             </div>
@@ -231,7 +241,7 @@ export function BrainsPage() {
               }}
               className={cn('w-full rounded-md px-2 py-1.5 text-left text-xs text-slate-400 hover:bg-slate-800', !selectedBrainId && 'bg-slate-800 text-slate-100')}
             >
-              ◎ Não trung tâm (toàn bộ)
+              {t('list.all')}
             </button>
             {brainsWithCounts.map((brain) => (
               <button
@@ -248,21 +258,21 @@ export function BrainsPage() {
               >
                 <span className={cn('size-2.5 shrink-0 rounded-full', brain.status === 'running' && 'animate-ping')} style={{ background: brain.color }} />
                 <span className="min-w-0 flex-1 truncate">{brain.name}</span>
-                <span className="text-[10px] text-slate-500">{brain.active ? brain.neuronCount : 'sắp có'}</span>
+                <span className="text-[10px] text-slate-500">{brain.active ? brain.neuronCount : t('list.soon')}</span>
               </button>
             ))}
           </div>
           <div className="space-y-2 border-t border-slate-800 px-3 py-3">
-            <div className="text-[10px] tracking-widest text-slate-500 uppercase">Loại nơ-ron — bấm để ẩn/hiện</div>
+            <div className="text-[10px] tracking-widest text-slate-500 uppercase">{t('list.kinds')}</div>
             <div className="flex flex-wrap gap-1.5">
-              {(Object.keys(KIND_LABEL) as Neuron['kind'][]).filter((kind) => kindCount(kind) > 0 || kind === 'topic' || kind === 'video').map((kind) => (
+              {NEURON_KINDS.filter((kind) => kindCount(kind) > 0 || kind === 'topic' || kind === 'video').map((kind) => (
                 <button
                   key={kind}
                   onClick={() => toggleKind(kind)}
                   className={cn('flex items-center gap-1.5 rounded-full border border-slate-700 px-2.5 py-1 text-[11px]', hiddenKinds.has(kind) && 'opacity-40 line-through')}
                 >
                   <span className="size-2 rounded-full" style={{ background: KIND_COLOR[kind] }} />
-                  {KIND_LABEL[kind]} <b>{kindCount(kind)}</b>
+                  {t(`kind.${kind}`)} <b>{kindCount(kind)}</b>
                 </button>
               ))}
             </div>
@@ -273,11 +283,11 @@ export function BrainsPage() {
         <div className="flex min-h-0 flex-col gap-3">
           <div className="grid grid-cols-5 divide-x divide-slate-700/50 rounded-xl border border-slate-700/50 bg-slate-900/60 py-2.5">
             {[
-              { icon: <Activity className="size-3.5" />, label: 'Xung 24 giờ', value: formatNumber(stats.pulses24h), color: 'text-emerald-300' },
-              { icon: <AlertTriangle className="size-3.5" />, label: 'Lỗi 24 giờ', value: formatNumber(stats.errors24h), color: 'text-red-300' },
-              { icon: <Flame className="size-3.5" />, label: 'Nơ-ron đã học', value: formatNumber(neurons.length), color: 'text-sky-300' },
-              { icon: <BrainCircuit className="size-3.5" />, label: 'Lần quét gần nhất', value: formatTime(lastRun), color: 'text-violet-300' },
-              { icon: <Zap className="size-3.5" />, label: 'Xung / phút', value: String(pulsesPerMin), color: 'text-amber-300' },
+              { icon: <Activity className="size-3.5" />, label: t('stats.pulses24h'), value: formatNumber(stats.pulses24h), color: 'text-emerald-300' },
+              { icon: <AlertTriangle className="size-3.5" />, label: t('stats.errors24h'), value: formatNumber(stats.errors24h), color: 'text-red-300' },
+              { icon: <Flame className="size-3.5" />, label: t('stats.neurons'), value: formatNumber(neurons.length), color: 'text-sky-300' },
+              { icon: <BrainCircuit className="size-3.5" />, label: t('stats.lastRun'), value: formatTime(lastRun), color: 'text-violet-300' },
+              { icon: <Zap className="size-3.5" />, label: t('stats.pulsesPerMin'), value: String(pulsesPerMin), color: 'text-amber-300' },
             ].map((s) => (
               <div key={s.label} className="px-4">
                 <div className="flex items-center gap-1.5 text-[10px] tracking-widest text-slate-500 uppercase">
@@ -305,18 +315,18 @@ export function BrainsPage() {
               }}
             />
             <div className="pointer-events-none absolute bottom-2 left-3 text-[10px] text-slate-500">
-              Kéo để xoay · lăn chuột để phóng to · bấm chấm sáng để đọc nơ-ron · bấm tên não để bay tới
+              {t('page.mapHint')}
             </div>
           </div>
         </div>
 
         {/* Right: detail */}
-        <Panel title={selectedNeuron ? KIND_LABEL[selectedNeuron.kind] : selectedBrain ? selectedBrain.name : 'Bản đồ não 3D'} className="overflow-hidden">
+        <Panel title={selectedNeuron ? t(`kind.${selectedNeuron.kind}`) : selectedBrain ? selectedBrain.name : t('page.mapTitle')} className="overflow-hidden">
           <div className="scrollbar-thin min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4 text-[13px] leading-relaxed">
             {selectedNeuron ? (
               <>
                 <button className="text-xs text-violet-300 hover:underline" onClick={() => setSelectedNeuron(undefined)}>
-                  ← về bộ não
+                  {t('neuron.back')}
                 </button>
                 {selectedNeuron.kind === 'video' && (
                   <img
@@ -333,48 +343,48 @@ export function BrainsPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-slate-400">
-                    <span>Độ nóng</span>
+                    <span>{t('neuron.heat')}</span>
                     <b className="text-slate-200">{selectedNeuron.heat}/100</b>
                   </div>
                   <HeatBar value={selectedNeuron.heat} color={KIND_COLOR[selectedNeuron.kind]} />
                 </div>
                 {selectedNeuron.detail && <p className="whitespace-pre-line text-slate-300">{selectedNeuron.detail}</p>}
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                  <dt className="text-slate-500">Gặp</dt>
-                  <dd>{selectedNeuron.hits} lần</dd>
-                  <dt className="text-slate-500">Lần đầu</dt>
+                  <dt className="text-slate-500">{t('neuron.hits')}</dt>
+                  <dd>{t('neuron.hitsValue', { value: selectedNeuron.hits })}</dd>
+                  <dt className="text-slate-500">{t('neuron.firstSeen')}</dt>
                   <dd>{formatTime(selectedNeuron.firstSeenAt)}</dd>
-                  <dt className="text-slate-500">Gần nhất</dt>
+                  <dt className="text-slate-500">{t('neuron.lastSeen')}</dt>
                   <dd>{formatTime(selectedNeuron.lastSeenAt)}</dd>
-                  <dt className="text-slate-500">Bộ não</dt>
+                  <dt className="text-slate-500">{t('neuron.brain')}</dt>
                   <dd>{brains.find((b) => b.id === selectedNeuron.brainId)?.name}</dd>
                   {selectedNeuron.meta?.subscribers && (
                     <>
-                      <dt className="text-slate-500">Người đăng ký</dt>
+                      <dt className="text-slate-500">{t('neuron.subscribers')}</dt>
                       <dd>{String(selectedNeuron.meta.subscribers).replace('チャンネル登録者数', '').trim()}</dd>
                     </>
                   )}
                   {selectedNeuron.meta?.channel && (
                     <>
-                      <dt className="text-slate-500">Kênh</dt>
+                      <dt className="text-slate-500">{t('neuron.channel')}</dt>
                       <dd>{String(selectedNeuron.meta.channel)}</dd>
-                      <dt className="text-slate-500">Lượt xem</dt>
+                      <dt className="text-slate-500">{t('neuron.views')}</dt>
                       <dd>{formatNumber(Number(selectedNeuron.meta.views))}</dd>
-                      <dt className="text-slate-500">View / giờ</dt>
+                      <dt className="text-slate-500">{t('neuron.viewsPerHour')}</dt>
                       <dd className="font-semibold text-amber-300">{formatNumber(Number(selectedNeuron.meta.viewsPerHour))}</dd>
-                      <dt className="text-slate-500">Đăng</dt>
+                      <dt className="text-slate-500">{t('neuron.published')}</dt>
                       <dd>{String(selectedNeuron.meta.published)}</dd>
                     </>
                   )}
                 </dl>
                 {selectedNeuron.url && (
                   <a href={selectedNeuron.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-sky-300 hover:underline">
-                    {selectedNeuron.kind === 'keyword' ? 'Tìm trên YouTube' : 'Mở trên YouTube'} <ExternalLink className="size-3" />
+                    {selectedNeuron.kind === 'keyword' ? t('neuron.searchYoutube') : t('neuron.openYoutube')} <ExternalLink className="size-3" />
                   </a>
                 )}
                 {linked.length > 0 && (
                   <div className="space-y-1.5">
-                    <div className="text-[10px] tracking-widest text-slate-500 uppercase">Liên kết</div>
+                    <div className="text-[10px] tracking-widest text-slate-500 uppercase">{t('neuron.links')}</div>
                     {linked.map((n) => (
                       <button key={n.id} onClick={() => setSelectedNeuron(n)} className="block w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-slate-800">
                         <span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: KIND_COLOR[n.kind] }} />
@@ -396,30 +406,20 @@ export function BrainsPage() {
                 brains={brainsWithCounts}
                 onSelectBrain={(id) => setSelectedBrainId(id)}
                 onSelect={setSelectedNeuron}
-                onRun={() => act(() => runBrain(selectedBrain.id, notes.trim() || undefined), 'Đã đánh thức bộ não')}
+                onRun={() => act(() => runBrain(selectedBrain.id, notes.trim() || undefined), t('detail.woken'))}
                 onCancel={() => act(() => cancelBrain(selectedBrain.id))}
                 onForget={() => {
-                  if (window.confirm('Xoá toàn bộ nơ-ron đã học của bộ não này?')) void act(() => forgetBrain(selectedBrain.id), 'Đã xoá trí nhớ')
+                  if (window.confirm(t('detail.forgetConfirm'))) void act(() => forgetBrain(selectedBrain.id), t('detail.forgotten'))
                 }}
                 onAuto={(hours) => act(() => setBrainAutoInterval(selectedBrain.id, hours))}
               />
             ) : (
               <div className="space-y-3 text-slate-300">
-                <p>
-                  Mỗi <b>bộ não</b> là một AI agent làm một việc trong dây chuyền kênh. Mỗi <b>chấm sáng</b> là một nơ-ron — một điều bộ não đã học (chủ đề, video, kênh,
-                  thấu hiểu khán giả, ý tưởng, tiêu đề, công thức, brief kịch bản, cấu hình đề xuất, lịch đăng, chỉ số, việc nên làm). <b>Màu</b> = bộ não đã học nó.
-                </p>
-                <p>
-                  <b>To</b> = gặp nhiều lần, <b>sáng</b> = nóng và mới, <b>mờ</b> = cũ. <b>Dây vàng</b> nối chủ đề với video bằng chứng khi chủ đề xuất hiện ≥ 2 lần quét.
-                </p>
-                <p>
-                  <b>Dây tím</b> giữa các não = não sau đọc trí nhớ của não trước; dây chạy sáng khi não sau đang làm việc. Dây chuyền: Xu hướng → Đối thủ → Khán giả → Ý
-                  tưởng → Tiêu đề → Bìa → Kịch bản → Giọng đọc → Ảnh/clip → Dựng → Đăng → Chỉ số kênh → Tăng trưởng.
-                </p>
-                <p>
-                  Não đang chạy sẽ chớp sáng theo từng xung (tìm kiếm, suy nghĩ, ghi nhớ). Các não từ Kịch bản trở đi chỉ phân tích và đề xuất — render vẫn do Agent tạo
-                  video làm, tải lên vẫn do bạn hoặc mô-đun upload làm.
-                </p>
+                {(['p1', 'p2', 'p3', 'p4'] as const).map((key) => (
+                  <p key={key}>
+                    <Trans t={t} i18nKey={`intro.${key}`} components={{ b: <b /> }} />
+                  </p>
+                ))}
               </div>
             )}
           </div>
@@ -428,10 +428,10 @@ export function BrainsPage() {
 
       {/* Bottom: pulse feed */}
       <Panel
-        title="Xung thần kinh"
+        title={t('feed.title')}
         icon={<Zap className="size-4 text-amber-300" />}
         className="h-[190px] shrink-0"
-        action={<span className="text-[11px] text-slate-500">{pulsesPerMin} xung trong 60 giây · trực tiếp</span>}
+        action={<span className="text-[11px] text-slate-500">{t('feed.live', { value: pulsesPerMin })}</span>}
       >
         <PulseFeed pulses={pulses} brains={brainsWithCounts} />
       </Panel>
@@ -440,6 +440,7 @@ export function BrainsPage() {
 }
 
 function PulseFeed({ pulses, brains }: { pulses: Pulse[]; brains: Brain[] }) {
+  const { t } = useTranslation('brains')
   const ref = useRef<HTMLDivElement>(null)
   const recent = pulses.slice(-200).reverse()
   useEffect(() => {
@@ -447,7 +448,7 @@ function PulseFeed({ pulses, brains }: { pulses: Pulse[]; brains: Brain[] }) {
   }, [pulses.length])
   return (
     <div ref={ref} className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-2 pb-2 font-mono text-[12px]">
-      {recent.length === 0 && <div className="px-2 py-4 text-slate-500">Chưa có xung nào — đánh thức một bộ não để bắt đầu.</div>}
+      {recent.length === 0 && <div className="px-2 py-4 text-slate-500">{t('feed.empty')}</div>}
       {recent.map((pulse) => {
         const brain = brains.find((b) => b.id === pulse.brainId)
         return (
@@ -457,7 +458,7 @@ function PulseFeed({ pulses, brains }: { pulses: Pulse[]; brains: Brain[] }) {
               <span className="size-2 shrink-0 rounded-full" style={{ background: brain?.color }} />
               {brain?.name ?? pulse.brainId}
             </span>
-            <span className={cn('text-[11px] font-semibold', PULSE_COLOR[pulse.kind])}>{PULSE_LABEL[pulse.kind]}</span>
+            <span className={cn('text-[11px] font-semibold', PULSE_COLOR[pulse.kind])}>{t(`pulse.${pulse.kind}`)}</span>
             <span className="truncate font-sans text-slate-300">{pulse.text.replace(/\s+/g, ' ')}</span>
           </div>
         )
@@ -481,6 +482,7 @@ interface BrainDetailProps {
 }
 
 function BrainDetail({ brain, notes, setNotes, neurons, brains, onSelectBrain, onSelect, onRun, onCancel, onForget, onAuto }: BrainDetailProps) {
+  const { t } = useTranslation('brains')
   const running = brain.status === 'running'
   return (
     <>
@@ -493,13 +495,13 @@ function BrainDetail({ brain, notes, setNotes, neurons, brains, onSelectBrain, o
             running ? 'bg-emerald-500/15 text-emerald-300' : brain.status === 'error' ? 'bg-red-500/15 text-red-300' : 'bg-slate-700/50 text-slate-300',
           )}
         >
-          {STATUS_LABEL[brain.status]}
+          {t(`status.${brain.status}`)}
         </span>
       </div>
       <p className="text-slate-300">{brain.description}</p>
       {brain.feeds.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
-          Đọc từ:
+          {t('detail.feeds')}
           {brain.feeds.map((id) => {
             const source = brains.find((b) => b.id === id)
             return (
@@ -519,25 +521,25 @@ function BrainDetail({ brain, notes, setNotes, neurons, brains, onSelectBrain, o
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            placeholder="Ghi chú cho lần quét (tuỳ chọn), vd: tập trung 人間関係 và お金"
+            placeholder={t('detail.notesPlaceholder')}
             className="w-full resize-none rounded-lg border border-slate-700 bg-slate-950/60 px-2.5 py-1.5 text-xs outline-none placeholder:text-slate-500 focus:border-violet-400"
           />
           <div className="flex gap-2">
             {running ? (
               <button onClick={onCancel} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-red-500/80 px-3 py-2 text-xs font-semibold text-white hover:bg-red-500">
-                <Square className="size-3.5" /> Dừng
+                <Square className="size-3.5" /> {t('detail.stop')}
               </button>
             ) : (
               <button onClick={onRun} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-violet-500 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-400">
-                <Play className="size-3.5" /> Đánh thức — quét ngay
+                <Play className="size-3.5" /> {t('detail.wake')}
               </button>
             )}
-            <button onClick={onForget} title="Xoá trí nhớ" className="rounded-lg border border-slate-700 px-2.5 text-slate-400 hover:text-red-300">
+            <button onClick={onForget} title={t('detail.forget')} className="rounded-lg border border-slate-700 px-2.5 text-slate-400 hover:text-red-300">
               <Trash2 className="size-3.5" />
             </button>
           </div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-            <span className="text-slate-500">Tự chạy</span>
+            <span className="text-slate-500">{t('detail.auto')}</span>
             <select
               value={brain.autoIntervalHours}
               onChange={(e) => onAuto(Number(e.target.value))}
@@ -545,19 +547,20 @@ function BrainDetail({ brain, notes, setNotes, neurons, brains, onSelectBrain, o
             >
               {AUTO_OPTIONS.map((h) => (
                 <option key={h} value={h}>
-                  {h === 0 ? 'Tắt' : `Mỗi ${h} giờ`}
+                  {h === 0 ? t('detail.autoOff') : t('detail.autoEvery', { hours: h })}
                 </option>
               ))}
             </select>
-            <span className="text-slate-500">Số lần chạy</span>
+            <span className="text-slate-500">{t('detail.runs')}</span>
             <span>{brain.runs}</span>
-            <span className="text-slate-500">Lần gần nhất</span>
+            <span className="text-slate-500">{t('detail.lastRun')}</span>
             <span>{formatTime(brain.lastRunAt)}</span>
-            <span className="text-slate-500">Chi phí Claude</span>
+            <span className="text-slate-500">{t('detail.cost')}</span>
             <span>${brain.usage.costUsd.toFixed(3)}</span>
           </div>
 
-          {KIND_SECTION.map(([kind, title]) => {
+          {KIND_SECTIONS.map((kind) => {
+            const title = t(`section.${kind}`)
             const items = neurons.filter((n) => n.kind === kind)
             if (kind === 'keyword') {
               if (items.length === 0) return null
@@ -579,7 +582,7 @@ function BrainDetail({ brain, notes, setNotes, neurons, brains, onSelectBrain, o
         </>
       ) : (
         <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-slate-400">
-          Bộ não này chưa được xây. Khi xây xong, nó sẽ đọc trí nhớ của các não ở mục «Đọc từ».
+          {t('detail.dormant')}
         </div>
       )}
     </>

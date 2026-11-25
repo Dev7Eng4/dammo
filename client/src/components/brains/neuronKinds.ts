@@ -1,21 +1,5 @@
 import type { NeuronKind } from '../../types/brains'
 
-export const KIND_LABEL: Record<NeuronKind, string> = {
-  topic: 'Chủ đề',
-  video: 'Video',
-  keyword: 'Từ khoá',
-  channel: 'Kênh',
-  insight: 'Thấu hiểu',
-  idea: 'Ý tưởng',
-  title: 'Tiêu đề',
-  pattern: 'Công thức',
-  brief: 'Brief kịch bản',
-  recipe: 'Cấu hình đề xuất',
-  schedule: 'Lịch đăng',
-  metric: 'Chỉ số',
-  action: 'Việc nên làm',
-}
-
 export const KIND_COLOR: Record<NeuronKind, string> = {
   topic: '#f59e0b',
   video: '#60a5fa',
@@ -32,22 +16,25 @@ export const KIND_COLOR: Record<NeuronKind, string> = {
   action: '#fb7185',
 }
 
-/** Section headings in a brain's detail panel, in display order. */
-export const KIND_SECTION: [NeuronKind, string][] = [
-  ['action', 'Việc nên làm'],
-  ['schedule', 'Lịch đăng đề xuất'],
-  ['brief', 'Brief kịch bản'],
-  ['recipe', 'Cấu hình đề xuất'],
-  ['metric', 'Chỉ số kênh mình'],
-  ['idea', 'Ý tưởng video'],
-  ['title', 'Tiêu đề đề xuất'],
-  ['topic', 'Chủ đề đang lên'],
-  ['insight', 'Thấu hiểu khán giả'],
-  ['pattern', 'Công thức đang thắng'],
-  ['channel', 'Kênh đáng theo dõi'],
-  ['video', 'Video đang nổ'],
-  ['keyword', 'Từ khoá đang lên'],
-]
+/** Neuron kinds in legend order; label with `brains:kind.<kind>`. */
+export const NEURON_KINDS = Object.keys(KIND_COLOR) as NeuronKind[];
+
+/** Sections of a brain's detail panel, in display order; label with `brains:section.<kind>`. */
+export const KIND_SECTIONS: NeuronKind[] = [
+  'action',
+  'schedule',
+  'brief',
+  'recipe',
+  'metric',
+  'idea',
+  'title',
+  'topic',
+  'insight',
+  'pattern',
+  'channel',
+  'video',
+  'keyword',
+];
 
 export function videoIdOf(key: string): string {
   return key.replace(/^video:/, '')

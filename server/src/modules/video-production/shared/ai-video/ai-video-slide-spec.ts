@@ -11,6 +11,7 @@ import {
   isImageTransitionsEnabled,
 } from '../slideshow/slideshow.constants.js';
 import type { SlideSpec } from '../slideshow/slideshow.types.js';
+import { applyClipSpans } from './ai-video-clip-span.js';
 import { CANVAS_H, CANVAS_W, FPS } from '../render-core/canvas.constants.js';
 import {
   AI_KEN_BURNS_FOCAL_MAX,
@@ -23,6 +24,7 @@ import {
   AI_SLIDES_DIRNAME,
 } from './ai-video.constants.js';
 import {
+  resolveImageTimeline,
   resolveSceneImageAbsolutePath,
   scaleSceneTimestamps,
   sceneDurationSec,
@@ -134,47 +136,65 @@ export function padAiSlidesToAudio(
   return padded;
 }
 
+/** Float noise below this neither adds a hold nor re-renders a clip. */
+const HOLD_EPSILON_SEC = 0.0005;
+
+/** xfade length into the next image: never more than half of either image's time on screen. */
+function transitionSecBetween(windowSec: number, nextWindowSec: number): number {
+  return Math.min(SS_DEFAULT_TRANSITION_DURATION, Math.max(0.05, Math.min(windowSec, nextWindowSec) / 2 - 0.05));
+}
+
 /**
- * Give time from scenes that have no image to a neighbor, without changing
- * that neighbor's Ken Burns duration. A leading gap freezes the next image's
- * first frame. Every other gap freezes the previous image's last frame.
- * `scaledScenes` must already be scaled by audio speed.
+ * Slides placed on the scene timeline: every image takes over at its own start time (in the middle
+ * of the crossfade into it) and stays until the next image does. Because a crossfade overlaps two
+ * clips, each clip is made longer by its half of the crossfades around it; without that every cut
+ * would pull all later images forward.
+ *
+ * The extra time is a still hold, so a clip keeps the duration of its scene and cached / prebaked
+ * Ken Burns clips stay valid. Only a clip that must be shorter than its scene (overlapping scenes)
+ * is rendered again. `scaledScenes` must already be scaled by audio speed.
  */
-export function assignHoldsForMissingScenes(
-  scaledScenes: AiVideoScenePrompt[],
-  slides: SlideSpec[],
+export function buildAiTimelineSlides(
+  workDir: string,
+  timedScenes: AiVideoScenePrompt[],
+  log?: (msg: string) => void,
 ): SlideSpec[] {
-  const next = slides.map(slide => ({ ...slide }));
-  const imageIndexes: number[] = [];
-  scaledScenes.forEach((scene, index) => {
-    if (scene.path?.trim()) imageIndexes.push(index);
-  });
-  if (imageIndexes.length === 0 || imageIndexes.length !== next.length) {
-    return next;
+  const scaledScenes = applyClipSpans(workDir, timedScenes);
+  const covered = scenesWithImagePaths(timedScenes).length - scenesWithImagePaths(scaledScenes).length;
+  if (covered > 0) log?.(`[ai-video] ${covered} scene image(s) covered by longer clips (clipSpan)`);
+  const timeline = resolveImageTimeline(scaledScenes);
+  const slides = buildAiTimedSlides(workDir, timeline.map(entry => scaledScenes[entry.index]!));
+  const dropped = scenesWithImagePaths(scaledScenes).length - timeline.length;
+  if (dropped > 0) {
+    log?.(`[ai-video] ${dropped} scene image(s) skipped: their time is taken by overlapping scenes`);
   }
 
-  const durationOf = (index: number): number => sceneDurationSec(scaledScenes[index]!);
+  const starts = timeline.map(entry => entry.startSec);
+  // The first image is on screen from 0; the last one keeps its own duration (the audio deficit is added later).
+  const windows = slides.map((slide, i) =>
+    i < slides.length - 1 ? starts[i + 1]! - (i === 0 ? 0 : starts[i]!) : slide.durationSec,
+  );
+  const transitions = slides.map((slide, i) =>
+    i < slides.length - 1 && slide.transitionToNext ? transitionSecBetween(windows[i]!, windows[i + 1]!) : 0,
+  );
 
-  const firstImage = imageIndexes[0]!;
-  if (firstImage > 0) {
-    let hold = 0;
-    for (let index = 0; index < firstImage; index += 1) hold += durationOf(index);
-    next[0] = { ...next[0]!, holdBeforeSec: (next[0]!.holdBeforeSec ?? 0) + hold };
-  }
-
-  for (let slideIndex = 0; slideIndex < imageIndexes.length; slideIndex += 1) {
-    const sceneIndex = imageIndexes[slideIndex]!;
-    const followingImage = imageIndexes[slideIndex + 1];
-    const gapEnd = followingImage ?? scaledScenes.length;
-    let hold = 0;
-    for (let index = sceneIndex + 1; index < gapEnd; index += 1) hold += durationOf(index);
-    if (hold > 0) {
-      const slide = next[slideIndex]!;
-      next[slideIndex] = { ...slide, holdAfterSec: (slide.holdAfterSec ?? 0) + hold };
+  return slides.map((slide, i) => {
+    const visible = windows[i]! + transitions[i]! / 2 + (i > 0 ? transitions[i - 1]! / 2 : 0);
+    const placed: SlideSpec = { ...slide };
+    if (transitions[i]! > 0) placed.transitionDurationSec = transitions[i]!;
+    if (visible < slide.durationSec - HOLD_EPSILON_SEC) {
+      placed.durationSec = Math.round(visible * 1_000) / 1_000;
+      return placed;
     }
-  }
-
-  return next;
+    let hold = visible - slide.durationSec;
+    if (i === 0) {
+      const lead = Math.min(hold, starts[0]!);
+      if (lead > HOLD_EPSILON_SEC) placed.holdBeforeSec = lead;
+      hold -= lead;
+    }
+    if (hold > HOLD_EPSILON_SEC) placed.holdAfterSec = hold;
+    return placed;
+  });
 }
 
 /** Extend the last slide with a still hold so the slideshow covers the audio. */

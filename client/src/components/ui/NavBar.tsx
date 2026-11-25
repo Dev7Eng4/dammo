@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 import { cn } from '../../lib/cn'
+import { useTranslation } from 'react-i18next'
 
 export interface NavItem {
   id: string
@@ -15,13 +16,15 @@ export interface NavBarProps {
 }
 
 export function NavBar({ items, activeId, onChange, className }: NavBarProps) {
+  const { t } = useTranslation('common')
+
   return (
     <nav
       className={cn(
         'inline-flex items-center gap-1 rounded-full border border-border bg-surface p-1.5',
         className,
       )}
-      aria-label="Navigation"
+      aria-label={t('aria.navigation')}
     >
       {items.map((item) => {
         const isActive = item.id === activeId

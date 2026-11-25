@@ -12,8 +12,12 @@ import type {
   VideoAgentUsage,
 } from './video-agent.types.js';
 
-/** Narration pace used for length planning (measured ~330–350 chars/min on the reference channel). */
-export const NARRATION_CHARS_PER_MIN = 330;
+/**
+ * Narration pace used for length planning, at the producer's ×1 voice speed. Measured on our own
+ * VOICEVOX narration with NARRATION_PACING (narration.ts): ~296 chars/min (gSdX6QnHsZ0: 7,872 chars
+ * in 26.6 min). It used to be 330, which made every video run ~11 % longer than planned.
+ */
+export const NARRATION_CHARS_PER_MIN = 300;
 
 export interface ScriptSource {
   title: string;

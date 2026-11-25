@@ -66,7 +66,7 @@ function SceneImageCell({
           <img
             key={scene.imageUrl ?? scene.index}
             src={scene.imageUrl ?? undefined}
-            alt={`Scene ${scene.index + 1}`}
+            alt={t('production.table.sceneAlt', { n: scene.index + 1 })}
             loading="lazy"
             className={cn('size-full object-cover', regenerating && 'opacity-40')}
             onError={() => setImageFailed(true)}

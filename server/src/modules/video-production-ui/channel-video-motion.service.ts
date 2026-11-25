@@ -8,6 +8,7 @@ import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.servic
 import { generateVideosFromImagesWithFailover } from '../llm-browser/flow/flow-profile-failover.js';
 import { FLOW_VIDEO_SETTINGS_ONLY, FLOW_VIDEO_SETTINGS_ONLY_REASON } from '../llm-browser/flow/flow-video-ui.js';
 import { resolveSceneVideoMode } from '../video-production/pipelines/reup-audio/steps/scene-video-clips.step.js';
+import { sceneClipJobLengthSec } from '../video-production/shared/ai-video/ai-video-clip-span.js';
 import { buildSceneMotionPrompt, selectScenesForVideo } from '../video-production/shared/ai-video/ai-video-scene-clip-generator.js';
 import { persistAiScenePromptsFile, resolveAiScenePromptsFilePath } from '../video-production/shared/ai-video/ai-video-scene-prompts-store.js';
 import { resolveSceneImageAbsolutePath } from '../video-production/shared/ai-video/ai-video-scene-timing.js';
@@ -17,7 +18,7 @@ import type { AiVideoScenePrompt, AiVideoScenePromptsFile } from '../video-produ
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
 import { resolveProductionVideoFolder } from './video-production-ui.service.js';
 
-export type ChannelVideoMotionMode = 'intro' | 'full' | 'scenes';
+export type ChannelVideoMotionMode = 'intro' | 'full' | 'interleaved' | 'scenes';
 
 /** One scene as the "Ảnh → video" tab shows it (same shape as a manual project's scene item). */
 export interface ChannelVideoMotionScene {
@@ -143,7 +144,8 @@ class ChannelVideoMotionService {
             todo.map(index => ({
               name: sceneClipName(index),
               imagePath: resolveSceneImageAbsolutePath(workDir, scenes[index]!),
-              prompt: buildSceneMotionPrompt(scenes[index]!.prompt),
+              prompt: buildSceneMotionPrompt(scenes[index]!.prompt, scenes[index]!.motionPrompt),
+              lengthSec: sceneClipJobLengthSec(workDir, scenes, index),
             })),
             { outputDir: path.join(workDir, AI_VIDEOS_DIRNAME) },
             {
@@ -195,6 +197,34 @@ class ChannelVideoMotionService {
     await fsp.rm(path.join(workDir, AI_VIDEOS_DIRNAME, `${sceneClipName(index)}.mp4`), { force: true });
     delete scene.videoPath;
     await persistAiScenePromptsFile(workDir, file.youtubeVideoId ?? videoId, file.scenes);
+    return this.state(channelId, videoId);
+  }
+
+  /** Swaps one scene's clip for a user-chosen mp4 (used as is the next time the video is assembled). */
+  async replaceClip(channelId: string, videoId: string, index: number, file: File): Promise<ChannelVideoMotionState> {
+    if (this.jobs.get(this.key(channelId, videoId))?.status === 'running') {
+      throw new AppError('Đang tạo clip cho video này — chờ xong rồi thử lại', 409, 'MOTION_BUSY');
+    }
+    const workDir = resolveProductionVideoFolder(channelId, videoId);
+    const scenesFile = readScenes(workDir);
+    const scene: AiVideoScenePrompt | undefined = scenesFile?.scenes[index];
+    if (!scenesFile || !scene) throw new AppError(`Không có cảnh ${index + 1}`, 400, 'VALIDATION_ERROR');
+    if (isTitleScene(scene)) throw new AppError('Thẻ tiêu đề không dùng clip', 400, 'VALIDATION_ERROR');
+
+    const body = Buffer.from(await file.arrayBuffer());
+    // mp4/mov start with an `ftyp` box at byte 4.
+    if (body.length < 12 || body.subarray(4, 8).toString('latin1') !== 'ftyp') {
+      throw new AppError('Chỉ nhận file video mp4', 400, 'VALIDATION_ERROR');
+    }
+
+    const relative = path.posix.join(AI_VIDEOS_DIRNAME, `${sceneClipName(index)}.mp4`);
+    const target = path.join(workDir, relative);
+    await fsp.mkdir(path.dirname(target), { recursive: true });
+    await fsp.writeFile(`${target}.part`, body);
+    await fsp.rename(`${target}.part`, target);
+
+    scene.videoPath = relative;
+    await persistAiScenePromptsFile(workDir, scenesFile.youtubeVideoId ?? videoId, scenesFile.scenes);
     return this.state(channelId, videoId);
   }
 

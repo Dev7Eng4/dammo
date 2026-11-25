@@ -1,5 +1,6 @@
 import i18n from '../i18n';
-import type { TaskJobListItem, TaskType } from '../types/taskQueue';
+import type { TaskJobListItem, TaskStage, TaskType } from '../types/taskQueue';
+import { appLocale } from './locale';
 
 const TASK_TYPE_KEYS: Record<TaskType, string> = {
   add_source: 'queue.type.importSource',
@@ -12,10 +13,16 @@ export function getTaskTypeLabel(type: TaskType): string {
   return i18n.t(TASK_TYPE_KEYS[type], { ns: 'factory' });
 }
 
+/** The server labels stages in Vietnamese, so name the known ones by id. */
+export function getTaskStageLabel(stage: TaskStage): string {
+  const key = stage.id === 'download' && stage.label.startsWith('Sao chép') ? 'copy_assets' : stage.id;
+  return i18n.t(`queue.stageName.${key}`, { ns: 'factory', defaultValue: stage.label });
+}
+
 export function getTaskDetailLine(job: TaskJobListItem): string {
   if (job.status === 'failed') {
     const failedStage = job.stages?.find((stage) => stage.status === 'failed');
-    if (failedStage?.error) return `${failedStage.label}: ${failedStage.error}`;
+    if (failedStage?.error) return `${getTaskStageLabel(failedStage)}: ${failedStage.error}`;
     if (job.error) return job.error;
   }
   if (job.status === 'completed') {
@@ -27,7 +34,7 @@ export function getTaskDetailLine(job: TaskJobListItem): string {
   }
   if (job.status === 'queued') return i18n.t('queue.job.waitingWorker', { ns: 'factory' });
   const doing = job.stages?.find((stage) => stage.status === 'doing');
-  if (doing) return i18n.t('queue.job.doingLabel', { ns: 'factory', label: doing.label });
+  if (doing) return i18n.t('queue.job.doingLabel', { ns: 'factory', label: getTaskStageLabel(doing) });
   return job.progressLabel ?? i18n.t('queue.job.processing', { ns: 'factory' });
 }
 
@@ -51,7 +58,7 @@ export function getTaskSourceId(job: TaskJobListItem): string | null {
 
 export function formatTaskTimestamp(iso: string): string {
   const date = new Date(iso);
-  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return date.toLocaleTimeString(appLocale(), { hour: 'numeric', minute: '2-digit' });
 }
 
 export function matchesTaskSearch(job: TaskJobListItem, query: string): boolean {

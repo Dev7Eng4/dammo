@@ -11,6 +11,7 @@ import {
 } from '../../api/youtubeChannels';
 import { useAbortableEffect } from '../../hooks';
 import { Button, Input, StatusBadge } from '../ui';
+import { appLocale } from '../../utils/locale';
 
 interface YoutubeApiKeyFieldProps {
   /** Set when editing an existing channel: shows its saved key and lets it be checked / removed. */
@@ -26,7 +27,7 @@ interface YoutubeApiKeyFieldProps {
 const STATUS_TONE = { ok: 'success', quota_exceeded: 'warning', invalid: 'danger', error: 'danger' } as const;
 
 function formatCount(value: number | null | undefined): string {
-  return value === null || value === undefined ? '—' : value.toLocaleString();
+  return value === null || value === undefined ? '—' : value.toLocaleString(appLocale());
 }
 
 /**

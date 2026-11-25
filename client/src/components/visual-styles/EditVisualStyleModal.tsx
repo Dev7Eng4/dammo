@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { updateVisualStyle } from '../../api/visualStyles';
-import { PROMPT_FORM_LANGUAGE_OPTIONS } from '../../constants/promptForm';
+import { promptFormLanguageOptions } from '../../constants/promptForm';
 import { Button, DropdownSelect, Input, Modal, Textarea } from '../ui';
 import type { VisualStyle, VisualStyleFormValues } from '../../types/visualStyle';
 
@@ -122,7 +122,7 @@ export function EditVisualStyleModal({
                 value={field.value}
                 onChange={field.onChange}
                 onBlur={field.onBlur}
-                options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                options={promptFormLanguageOptions()}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
               />

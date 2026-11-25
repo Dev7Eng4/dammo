@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { fetchManualProject, type ManualProjectDetail } from '../api/manualVideo'
 import { fetchVoicevoxStatus, VIDEO_AGENT_STREAM_URL } from '../api/videoAgent'
-import { fetchProductionVideos } from '../api/videoProduction'
+import { fetchProductionVideos, startPreparingProductionVideo } from '../api/videoProduction'
 import { fetchYoutubeChannels } from '../api/youtubeChannels'
 import { PageHeader, PageShell } from '../components/layout'
 import { ChannelVideoDetail } from '../components/manual-video/ChannelVideoDetail'
 import { ChannelVideoThumb } from '../components/manual-video/ChannelVideoThumb'
 import { NewProjectForm } from '../components/manual-video/NewProjectForm'
 import { ProjectDetail } from '../components/manual-video/ProjectDetail'
-import { Button, Select, StatusBadge } from '../components/ui'
+import { Button, Select, StatusBadge, useToast } from '../components/ui'
 import type { ProductionVideoPatch } from '../components/video-production/useProductionVideoWorkspace'
 import { RUN_STATUS_TONE } from '../components/video-agent/runStatus'
 import { useAbortableEffect } from '../hooks'
@@ -22,7 +22,11 @@ import {
   type VideoAgentRunSummary,
   type VoicevoxStatus,
 } from '../types/videoAgent'
-import { productionVideoKey, type ProductionVideoListItem } from '../types/videoProductionScenes'
+import {
+  productionVideoKey,
+  type ProductionVideoStatus,
+  type ProductionVideoListItem,
+} from '../types/videoProductionScenes'
 
 function upsert(list: VideoAgentRunSummary[], run: VideoAgentRunSummary): VideoAgentRunSummary[] {
   const index = list.findIndex((item) => item.id === run.id)
@@ -33,6 +37,11 @@ function upsert(list: VideoAgentRunSummary[], run: VideoAgentRunSummary): VideoA
 }
 
 const isManual = (run: Pick<VideoAgentRunSummary, 'mode'>) => run.mode === 'manual'
+
+const VIDEO_STATUS_TONE = { Created: 'success', Prepared: 'warning', Preparing: 'info' } as const satisfies Record<
+  ProductionVideoStatus,
+  string
+>
 
 /**
  * Sidebar group: a YouTube channel id (its projects plus its prepared/created videos), or this value for
@@ -57,6 +66,9 @@ export function ManualVideoPage() {
   const [channelIds, setChannelIds] = useState<Set<string> | null>(null)
   const [channelVideos, setChannelVideos] = useState<ProductionVideoListItem[] | null>(null)
   const [openedVideoKey, setOpenedVideoKey] = useState<string | null>(null)
+  /** Key of a skill-script video whose folder is being created before its tabs open. */
+  const [startingKey, setStartingKey] = useState<string | null>(null)
+  const { toast } = useToast()
   const selectedRef = useRef<string | undefined>(selectedId)
 
   useEffect(() => {
@@ -155,10 +167,25 @@ export function ManualVideoPage() {
     if (selectedId) navigate('/manual-video')
   }
 
-  function openChannelVideo(video: ProductionVideoListItem) {
+  async function openChannelVideo(video: ProductionVideoListItem) {
+    const key = productionVideoKey(video)
+    if (video.status === 'Preparing' && !video.videoFolderPath) {
+      // A skill script with no folder yet: create it (script, source transcript) so every tab works.
+      if (startingKey) return
+      setStartingKey(key)
+      try {
+        await startPreparingProductionVideo(video.channelId, video.videoId)
+        setChannelVideos(await fetchProductionVideos())
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err))
+        return
+      } finally {
+        setStartingKey(null)
+      }
+    }
     setCreating(false)
     setSource(video.channelId)
-    setOpenedVideoKey(productionVideoKey(video))
+    setOpenedVideoKey(key)
     if (selectedId) navigate('/manual-video')
   }
 
@@ -282,7 +309,8 @@ export function ManualVideoPage() {
                     <button
                       key={key}
                       type="button"
-                      onClick={() => openChannelVideo(video)}
+                      onClick={() => void openChannelVideo(video)}
+                      disabled={startingKey === key}
                       className={cn(
                         'card-surface flex w-full items-start gap-2 p-2 text-left transition-colors hover:border-primary-400/50',
                         key === openedVideoKey && !creating && !selectedId && 'border-primary-400/70',
@@ -294,9 +322,12 @@ export function ManualVideoPage() {
                           {video.title}
                         </p>
                         <StatusBadge
-                          tone={video.status === 'Created' ? 'success' : 'warning'}
+                          tone={VIDEO_STATUS_TONE[video.status]}
                           label={t(`manual:channelVideo.status.${video.status}`)}
                         />
+                        {startingKey === key ? (
+                          <p className="text-[11px] text-muted-foreground">{t('manual:channelVideo.source.starting')}</p>
+                        ) : null}
                       </div>
                     </button>
                   )

@@ -32,6 +32,21 @@ describe('remove Gemini watermark settings', () => {
   });
 });
 
+describe('Meta tabs per profile', () => {
+  test('defaults to 3', () => {
+    assert.equal(appSettingsService.get().metaTabsPerProfile, 3);
+  });
+
+  test('is kept within 1–5', () => {
+    appSettingsService.update({ metaTabsPerProfile: 9 });
+    assert.equal(appSettingsService.get().metaTabsPerProfile, 5);
+    appSettingsService.update({ metaTabsPerProfile: 0 });
+    assert.equal(appSettingsService.get().metaTabsPerProfile, 1);
+    appSettingsService.update({ metaTabsPerProfile: 2 });
+    assert.equal(appSettingsService.get().metaTabsPerProfile, 2);
+  });
+});
+
 describe('update transcript settings', () => {
   test('defaults to true (enabled)', () => {
     const settings = appSettingsService.get();

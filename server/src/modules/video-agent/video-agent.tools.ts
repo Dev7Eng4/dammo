@@ -19,6 +19,7 @@ import {
 import { isKenBurnsEnabled } from '../video-production/shared/slideshow/slideshow.constants.js';
 import { resolveChannelAvatarForVideoAssembly } from '../youtube-channels/resolve-channel-avatar.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import { resolveFixedAudioSpeed } from '../youtube-channels/youtube-channels.types.js';
 import { checkChannelFreshness } from './channel-freshness.js';
 import { resolveNarrationVoice } from '../voice/narration-voice.js';
 import { synthesizeNarration, writeProvisionalSubtitle } from './narration.js';
@@ -287,6 +288,12 @@ async function resolveDestination(run: VideoAgentRun): Promise<ProductionDestina
     throw new AppError(`Kênh "${channel.name}" chưa gắn visual style — vào cấu hình kênh để chọn`, 400, 'VALIDATION_ERROR');
   }
   return destination;
+}
+
+/** Audio speed this project must be rendered at: 1 on remake channels and for remade scripts; else unset. */
+export function resolveRunFixedAudioSpeed(run: VideoAgentRun): number | undefined {
+  if (run.remakeJobId) return 1;
+  return resolveFixedAudioSpeed(youtubeChannelsRepository.findById(run.input.channelId)?.type);
 }
 
 function requireStage(run: VideoAgentRun, stage: VideoAgentStage, message: string): void {
@@ -582,7 +589,10 @@ const tools = [
       run.artifacts.sceneCount = prompts.scenes.length;
       ctx.signal.throwIfAborted();
 
-      const renderConfig = await resolveAiRenderConfig(ctx.workDir, { kenBurns: isKenBurnsEnabled() });
+      const renderConfig = await resolveAiRenderConfig(ctx.workDir, {
+        kenBurns: isKenBurnsEnabled(),
+        fixedAudioSpeed: resolveRunFixedAudioSpeed(run),
+      });
       const settings = appSettingsService.get();
       ctx.note(`Vẽ ${prompts.scenes.length} ảnh scene`);
       const images = await generateAiSceneSlideImages({
@@ -636,6 +646,7 @@ const tools = [
         language: destination.language,
         captionStyleKey: destination.captionStyleKey,
         outputBasename: 'video',
+        fixedAudioSpeed: resolveRunFixedAudioSpeed(run),
         ...(channelAvatarPath ? { channelAvatarPath } : {}),
         onLog: msg => ctx.note(msg),
       });

@@ -7,43 +7,46 @@ import type {
   ReupAudioBackgroundImage,
   CaptionStyleKey,
 } from '../types/youtubeChannel';
+import i18n from '../i18n'
 
-export const YOUTUBE_CHANNEL_LANGUAGE_OPTIONS: { value: YoutubeChannelLanguage; label: string }[] = [
-  { value: 'en', label: 'Tiếng Anh' },
-  { value: 'ko', label: 'Tiếng Hàn' },
-  { value: 'ja', label: 'Tiếng Nhật' },
-  { value: 'es', label: 'Tiếng Tây Ban Nha' },
+export const YOUTUBE_CHANNEL_LANGUAGE_OPTIONS: { value: YoutubeChannelLanguage }[] = [
+  { value: 'en' },
+  { value: 'ko' },
+  { value: 'ja' },
+  { value: 'es' },
 ];
 
-/** @deprecated Use YOUTUBE_CHANNEL_LANGUAGE_OPTIONS */
-export const TARGET_AUDIENCE_OPTIONS = YOUTUBE_CHANNEL_LANGUAGE_OPTIONS;
-
-export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType; label: string }[] = [
-  { value: 'content', label: 'Nội dung' },
-  { value: 'reup_audio', label: 'Đăng lại âm thanh' },
-  { value: 'reup_video', label: 'Đăng lại video' },
-  { value: 'remake_video', label: 'Remake video' },
+export const YOUTUBE_CHANNEL_TYPE_OPTIONS: { value: YoutubeChannelType }[] = [
+  { value: 'content' },
+  { value: 'reup_audio' },
+  { value: 'reup_video' },
+  { value: 'remake_video' },
 ];
 
-export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType; label: string }[] = [
-  { value: 'si', label: 'Video kho + hình ảnh' },
-  { value: 'ai', label: 'Tạo chuyển động cho ảnh (AI)' },
-  { value: 'ai_full_video', label: 'Toàn bộ là video (AI)' },
-  { value: 'ai_intro_video', label: 'Video mở đầu, sau đó là ảnh (AI)' },
+export const REUP_AUDIO_VIDEO_TYPE_OPTIONS: { value: ReupAudioVideoType }[] = [
+  { value: 'si' },
+  { value: 'ai' },
+  { value: 'ai_full_video' },
+  { value: 'ai_intro_video' },
+  { value: 'ai_interleaved_video' },
 ];
 
-/** Video types that build scenes from AI images (the plain `ai` flow and the two video variants). */
+/** Video types that build scenes from AI images (the plain `ai` flow and the video variants). */
 export function isAiSceneVideoType(videoType: string | undefined): boolean {
-  return videoType === 'ai' || videoType === 'ai_full_video' || videoType === 'ai_intro_video';
+  return (
+    videoType === 'ai' ||
+    videoType === 'ai_full_video' ||
+    videoType === 'ai_intro_video' ||
+    videoType === 'ai_interleaved_video'
+  );
 }
 
 export const REUP_AUDIO_BACKGROUND_IMAGE_OPTIONS: {
   value: Exclude<ReupAudioBackgroundImage, 'celebrity' | 'local_image'>;
-  label: string;
 }[] = [
-  { value: 'no_image', label: 'Không dùng ảnh' },
-  { value: 'one_image', label: 'Một ảnh' },
-  { value: 'multi_image', label: 'Nhiều ảnh' },
+  { value: 'no_image' },
+  { value: 'one_image' },
+  { value: 'multi_image' },
 ];
 
 export const CELEBRITY_BACKGROUND_VALUE_PREFIX = 'celebrity:';
@@ -82,50 +85,50 @@ export function toSiBackgroundImageFormValue(
   return mode ?? '';
 }
 
-export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey; label: string }[] = [
-  { value: 'none', label: 'No captions' },
-  { value: 'default', label: 'Default' },
-  { value: 'noto_sans_red_white', label: 'Noto Sans Red text + White stroke' },
-  { value: 'noto_sans_red_white_box', label: 'Noto Sans Red text + White stroke + Box' },
-  { value: 'noto_sans_blue_white', label: 'Noto Sans Blue text + White stroke' },
-  { value: 'noto_sans_blue_white_box', label: 'Noto Sans Blue text + White stroke + Box' },
-  { value: 'noto_sans_yellow', label: 'Noto Sans Yellow text' },
-  { value: 'noto_sans_yellow_box', label: 'Noto Sans Yellow text + Box' },
-  { value: 'noto_sans_cyan_white', label: 'Noto Sans Cyan text + White stroke' },
-  { value: 'noto_sans_cyan_white_box', label: 'Noto Sans Cyan text + White stroke + Box' },
-  { value: 'noto_sans_white_purple', label: 'Noto Sans White text + Purple stroke' },
-  { value: 'noto_sans_white_purple_box', label: 'Noto Sans White text + Purple stroke + Box' },
-  { value: 'bizudp_gothic', label: 'BIZ UDPGothic' },
-  { value: 'bizudp_gothic_red_white', label: 'BIZ UDPGothic Red text + White stroke' },
-  { value: 'bizudp_gothic_red_white_box', label: 'BIZ UDPGothic Red text + White stroke + Box' },
-  { value: 'zen_kaku', label: 'Zen Kaku' },
-  { value: 'zen_kaku_blue_white', label: 'Zen Kaku Blue text + White stroke' },
-  { value: 'zen_kaku_blue_white_box', label: 'Zen Kaku Blue text + White stroke + Box' },
-  { value: 'noto_serif', label: 'Noto Serif' },
-  { value: 'serif_white_purple', label: 'Noto Serif White text + Purple stroke' },
-  { value: 'serif_white_purple_box', label: 'Noto Serif White text + Purple stroke + Box' },
-  { value: 'serif_yellow', label: 'Noto Serif Yellow text' },
-  { value: 'serif_yellow_box', label: 'Noto Serif Yellow text + Box' },
-  { value: 'serif_cyan_white', label: 'Noto Serif Cyan text + White stroke' },
-  { value: 'serif_cyan_white_box', label: 'Noto Serif Cyan text + White stroke + Box' },
-  { value: 'serif_red_white', label: 'Noto Serif Red text + White stroke' },
-  { value: 'serif_red_white_box', label: 'Noto Serif Red text + White stroke + Box' },
+export const CAPTION_STYLE_OPTIONS: { value: CaptionStyleKey }[] = [
+  { value: 'none' },
+  { value: 'default' },
+  { value: 'noto_sans_red_white' },
+  { value: 'noto_sans_red_white_box' },
+  { value: 'noto_sans_blue_white' },
+  { value: 'noto_sans_blue_white_box' },
+  { value: 'noto_sans_yellow' },
+  { value: 'noto_sans_yellow_box' },
+  { value: 'noto_sans_cyan_white' },
+  { value: 'noto_sans_cyan_white_box' },
+  { value: 'noto_sans_white_purple' },
+  { value: 'noto_sans_white_purple_box' },
+  { value: 'bizudp_gothic' },
+  { value: 'bizudp_gothic_red_white' },
+  { value: 'bizudp_gothic_red_white_box' },
+  { value: 'zen_kaku' },
+  { value: 'zen_kaku_blue_white' },
+  { value: 'zen_kaku_blue_white_box' },
+  { value: 'noto_serif' },
+  { value: 'serif_white_purple' },
+  { value: 'serif_white_purple_box' },
+  { value: 'serif_yellow' },
+  { value: 'serif_yellow_box' },
+  { value: 'serif_cyan_white' },
+  { value: 'serif_cyan_white_box' },
+  { value: 'serif_red_white' },
+  { value: 'serif_red_white_box' },
 ];
 
-export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency; label: string }[] = [
-  { value: 'every_5_days', label: '1 video mỗi 5 ngày' },
-  { value: 'every_3_days', label: '1 video mỗi 3 ngày' },
-  { value: 'every_2_days', label: '1 video mỗi 2 ngày' },
-  { value: 'daily_1', label: '1 video mỗi ngày' },
-  { value: 'daily_2', label: '2 video mỗi ngày' },
-  { value: 'daily_3', label: '3 video mỗi ngày' },
+export const UPLOAD_FREQUENCY_OPTIONS: { value: UploadFrequency }[] = [
+  { value: 'every_5_days' },
+  { value: 'every_3_days' },
+  { value: 'every_2_days' },
+  { value: 'daily_1' },
+  { value: 'daily_2' },
+  { value: 'daily_3' },
 ];
 
-export const VIDEO_CREATION_ORDER_OPTIONS: { value: VideoCreationOrder; label: string }[] = [
-  { value: 'oldest_first', label: 'Từ cũ đến mới' },
-  { value: 'newest_first', label: 'Từ mới đến cũ' },
-  { value: 'lowest_views_first', label: 'Video view tăng dần' },
-  { value: 'shortest_duration_first', label: 'Thời lượng ngắn đến dài' },
+export const VIDEO_CREATION_ORDER_OPTIONS: { value: VideoCreationOrder }[] = [
+  { value: 'oldest_first' },
+  { value: 'newest_first' },
+  { value: 'lowest_views_first' },
+  { value: 'shortest_duration_first' },
 ];
 
 export function getPublishTimeSlotCount(frequency: UploadFrequency | ''): number {
@@ -144,24 +147,20 @@ export function getPublishTimeSlotCount(frequency: UploadFrequency | ''): number
   }
 }
 
+const UPLOAD_FREQUENCY_KEYS: Record<UploadFrequency, string> = {
+  every_5_days: 'every5Days',
+  every_3_days: 'every3Days',
+  every_2_days: 'every2Days',
+  daily_1: 'daily1',
+  daily_2: 'daily2',
+  daily_3: 'daily3',
+};
+
 export function buildUploadScheduleLabel(frequency: UploadFrequency, times: string[]): string {
   const formattedTimes = times.join(', ');
-  switch (frequency) {
-    case 'every_5_days':
-      return `1 video mỗi 5 ngày lúc ${formattedTimes}`;
-    case 'every_3_days':
-      return `1 video mỗi 3 ngày lúc ${formattedTimes}`;
-    case 'every_2_days':
-      return `1 video mỗi 2 ngày lúc ${formattedTimes}`;
-    case 'daily_1':
-      return `1 video mỗi ngày lúc ${formattedTimes}`;
-    case 'daily_2':
-      return `2 video mỗi ngày lúc ${formattedTimes}`;
-    case 'daily_3':
-      return `3 video mỗi ngày lúc ${formattedTimes}`;
-    default:
-      return formattedTimes;
-  }
+  const key = UPLOAD_FREQUENCY_KEYS[frequency];
+  if (!key) return formattedTimes;
+  return i18n.t('youtube:form.freq.at', { freq: i18n.t(`youtube:form.freq.${key}`), times: formattedTimes });
 }
 
 export function createEmptyPublishTimes(count: number): string[] {

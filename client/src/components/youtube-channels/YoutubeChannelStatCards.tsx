@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import type { YoutubeChannelStats } from '../../types/youtubeChannel'
+import { appLocale } from '../../utils/locale'
 
 interface YoutubeChannelStatCardsProps {
   data: YoutubeChannelStats | null
@@ -54,7 +55,7 @@ export function YoutubeChannelStatCards({ data, loading }: YoutubeChannelStatCar
                 loading && 'animate-pulse text-neutral-700',
               )}
             >
-              {loading ? '—' : value.toLocaleString()}
+              {loading ? '—' : value.toLocaleString(appLocale())}
             </p>
             {!loading && data ? (
               <p className="mt-0.5 text-[11px] text-neutral-500">{card.sub(data)}</p>

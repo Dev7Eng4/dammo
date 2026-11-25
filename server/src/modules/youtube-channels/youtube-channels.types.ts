@@ -14,6 +14,14 @@ export function isReupAudioFamilyType(type: string | undefined): boolean {
   return type === 'reup_audio' || type === 'remake_video';
 }
 
+/**
+ * Audio speed a channel type must be rendered at; undefined = a random slow-down per video.
+ * Remake videos play their audio unchanged: it is their own narration, at the speed chosen for the voice.
+ */
+export function resolveFixedAudioSpeed(type: string | undefined): number | undefined {
+  return type === 'remake_video' ? 1 : undefined;
+}
+
 /** @deprecated Legacy persisted value */
 export type LegacyYoutubeChannelType = 'reup';
 
@@ -53,11 +61,11 @@ export interface RemakeAutoConfig {
 
 export type YoutubeChannelStatus = 'init' | 'created' | 'active' | 'paused' | 'deleted';
 
-export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video';
+export type ReupAudioVideoType = 'si' | 'ai' | 'ai_full_video' | 'ai_intro_video' | 'ai_interleaved_video';
 
 /** Types that build scenes from AI images: the plain `ai` flow and the two video variants. */
 export function isAiSceneVideoType(type: ReupAudioVideoType | string | undefined): boolean {
-  return type === 'ai' || type === 'ai_full_video' || type === 'ai_intro_video';
+  return type === 'ai' || type === 'ai_full_video' || type === 'ai_intro_video' || type === 'ai_interleaved_video';
 }
 
 export type ReupAudioBackgroundImage = 'no_image' | 'local_image' | 'one_image' | 'multi_image' | 'celebrity';

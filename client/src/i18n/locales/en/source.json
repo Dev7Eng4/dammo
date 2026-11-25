@@ -112,7 +112,8 @@
     "nicheEmpty": "No niches yet",
     "nichePlaceholder": "Select niche",
     "hint": "Platform is detected automatically. YouTube channels will fetch metadata and videos in the background after adding.",
-    "nichesLoadError": "Could not load niches"
+    "nichesLoadError": "Could not load niches",
+    "niche": "Niche"
   },
   "niche": {
     "modalTitle": "Add niche",

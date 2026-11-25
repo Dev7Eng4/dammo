@@ -3,6 +3,7 @@ import { StatusBadge, type StatusTone } from '../ui/StatusBadge';
 import type { ProductionVideoStatus } from '../../types/videoProductionScenes';
 
 const statusTone: Record<ProductionVideoStatus, StatusTone> = {
+  Preparing: 'neutral',
   Prepared: 'info',
   Created: 'success',
 };
@@ -15,8 +16,10 @@ interface ProductionStatusPillProps {
 export function ProductionStatusPill({ status, className }: ProductionStatusPillProps) {
   const { t } = useTranslation('factory');
   const label =
-    status === 'Prepared'
-      ? t('production.status.prepared')
-      : t('production.status.created');
+    status === 'Preparing'
+      ? t('production.status.preparing')
+      : status === 'Prepared'
+        ? t('production.status.prepared')
+        : t('production.status.created');
   return <StatusBadge label={label} tone={statusTone[status]} withDot className={className} />;
 }

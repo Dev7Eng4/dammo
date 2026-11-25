@@ -112,7 +112,10 @@ export async function runSceneAssetsStep(
     `Generating ${options.label} scene images via ${promptsSettingsService.get().defaultSceneImageProvider}...`,
   );
 
-  const renderConfig = await resolveAiRenderConfig(workDir, { kenBurns: isKenBurnsEnabled() });
+  const renderConfig = await resolveAiRenderConfig(workDir, {
+    kenBurns: isKenBurnsEnabled(),
+    fixedAudioSpeed: destination.fixedAudioSpeed,
+  });
   const audioSpeed = renderConfig.audioSpeed;
   const settings = appSettingsService.get();
   const kenBurns = settings.kenBurnsOnPrepare && settings.enableKenBurns;

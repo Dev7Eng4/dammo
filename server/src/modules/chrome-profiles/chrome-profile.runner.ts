@@ -168,6 +168,11 @@ export async function applyChromeBackgroundModeToOpenProfiles(): Promise<void> {
 export interface OpenChromeProfileOptions {
   startUrl?: string;
   background?: boolean;
+  /**
+   * Launch with GPU rendering. Only applies when this call launches Chrome: a profile that is already
+   * open keeps the mode it was launched with.
+   */
+  gpu?: boolean;
 }
 
 function chromeLaunchError(err: unknown, action: string): AppError {
@@ -184,6 +189,7 @@ async function logChromeLaunch(
   headless: boolean,
   userDataDir: string,
   background: boolean,
+  gpu: boolean,
 ): Promise<void> {
   let userAgent: string | undefined;
   try {
@@ -200,6 +206,7 @@ async function logChromeLaunch(
       ? { backgroundMode: isChromeBackgroundUseOffscreen() ? 'offscreen' : 'visible' }
       : {}),
     chrome: env.chromeExecutablePath || `channel:${env.chromeChannel}`,
+    gpu,
     userAgent,
     userDataDir,
   });
@@ -260,6 +267,62 @@ export async function createChromeProfilePage(profileId: string): Promise<Page> 
     await keepProfileInBackground(profileId, page);
   }
   return page;
+}
+
+const windowChains = new Map<string, Promise<unknown>>();
+
+async function openWindowInContext(context: BrowserContext): Promise<Page> {
+  const opener = await waitForInitialPage(context);
+  const known = new Set(context.pages());
+  const client = await context.newCDPSession(opener);
+  try {
+    const { targetId } = await client.send('Target.createTarget', {
+      url: 'about:blank',
+      newWindow: true,
+      background: true,
+    });
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      for (const page of context.pages()) {
+        if (known.has(page)) continue;
+        const session = await context.newCDPSession(page);
+        const { targetInfo } = await session.send('Target.getTargetInfo');
+        await session.detach().catch(() => undefined);
+        if (targetInfo.targetId === targetId) return page;
+        known.add(page);
+      }
+      await sleep(50);
+    }
+    throw new Error('new window did not show up');
+  } finally {
+    await client.detach().catch(() => undefined);
+  }
+}
+
+/**
+ * New page in its own window. Chrome renders a hidden tab about once per second, which makes every mouse
+ * move and scroll in it take ~0.5s; a window that is merely covered by others keeps its normal speed.
+ */
+export async function createChromeProfileWindow(profileId: string): Promise<Page> {
+  const context = getChromeProfileContext(profileId);
+  if (!context) {
+    throw new AppError('Chrome profile is not open', 409, 'PROFILE_NOT_OPEN');
+  }
+
+  const opening = (windowChains.get(profileId) ?? Promise.resolve()).then(() => openWindowInContext(context));
+  windowChains.set(
+    profileId,
+    opening.catch(() => undefined),
+  );
+  try {
+    const page = await opening;
+    await keepProfileInBackground(profileId, page);
+    return page;
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.warn(`[chrome-profile] new window failed for ${profileId}, opening a tab instead: ${detail}`);
+    return createChromeProfilePage(profileId);
+  }
 }
 
 export async function closeChromeProfile(profileId: string): Promise<boolean> {
@@ -338,6 +401,7 @@ async function launchChromeContext(
   userDataDir: string,
   headless: boolean,
   background: boolean,
+  gpu = false,
 ): Promise<BrowserContext> {
   return enqueueChromeLaunch(async () => {
     await waitChromeLaunchSlot();
@@ -360,10 +424,11 @@ async function launchChromeContext(
           buildChromeLaunchOptions(headless, {
             background,
             ...(windowRect ? { windowRect } : {}),
+            gpu,
           }),
         );
         await applyStealthInit(context);
-        await logChromeLaunch(context, headless, userDataDir, background);
+        await logChromeLaunch(context, headless, userDataDir, background, gpu);
         return context;
       } catch (err) {
         lastError = err;
@@ -405,7 +470,7 @@ export async function openChromeProfile(
 
   let context: BrowserContext;
   try {
-    context = await launchChromeContext(userDataDir, false, background);
+    context = await launchChromeContext(userDataDir, false, background, options?.gpu === true);
   } catch (err) {
     throw chromeLaunchError(err, 'open Chrome profile');
   }

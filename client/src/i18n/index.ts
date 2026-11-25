@@ -15,6 +15,7 @@ import facebookVi from './locales/vi/facebook.json';
 import roadmapVi from './locales/vi/roadmap.json';
 import agentVi from './locales/vi/agent.json';
 import manualVi from './locales/vi/manual.json';
+import brainsVi from './locales/vi/brains.json';
 
 import commonEn from './locales/en/common.json';
 import navEn from './locales/en/nav.json';
@@ -30,6 +31,7 @@ import facebookEn from './locales/en/facebook.json';
 import roadmapEn from './locales/en/roadmap.json';
 import agentEn from './locales/en/agent.json';
 import manualEn from './locales/en/manual.json';
+import brainsEn from './locales/en/brains.json';
 
 export const LOCALES = ['vi', 'en'] as const;
 export type AppLocale = (typeof LOCALES)[number];
@@ -52,6 +54,7 @@ export const namespaces = [
   'facebook',
   'agent',
   'manual',
+  'brains',
 ] as const;
 
 export type AppNamespace = (typeof namespaces)[number];
@@ -72,6 +75,7 @@ const resources = {
     facebook: facebookVi,
     agent: agentVi,
     manual: manualVi,
+    brains: brainsVi,
   },
   en: {
     common: commonEn,
@@ -88,6 +92,7 @@ const resources = {
     facebook: facebookEn,
     agent: agentEn,
     manual: manualEn,
+    brains: brainsEn,
   },
 };
 

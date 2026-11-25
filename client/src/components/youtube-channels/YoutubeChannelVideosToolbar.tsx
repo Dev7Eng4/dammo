@@ -26,6 +26,7 @@ export function YoutubeChannelVideosToolbar({
     () => [
       { value: 'all' as const, label: t('filter.statusAll') },
       { value: 'Pending' as const, label: t('filter.statusPending') },
+      { value: 'Preparing' as const, label: t('filter.statusPreparing') },
       { value: 'Published' as const, label: t('filter.statusPublished') },
       { value: 'Uploaded' as const, label: t('filter.statusUploaded') },
       { value: 'Prepared' as const, label: t('filter.statusPrepared') },

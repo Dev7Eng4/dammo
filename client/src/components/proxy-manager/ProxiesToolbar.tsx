@@ -4,6 +4,7 @@ import { Filter } from 'lucide-react'
 import { ListToolbar } from '../layout'
 import { Button, DropdownSelect } from '../ui'
 import type { ProxyFilter } from '../../types/proxy'
+import { appLocale } from '../../utils/locale'
 
 interface ProxiesToolbarProps {
   total: number
@@ -60,7 +61,7 @@ export function ProxiesToolbar({
     <div className="mt-5 border-b border-border pb-4">
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
       <ListToolbar
-        countLabel={<span>{t('proxy.toolbar.count', { count: total.toLocaleString() })}</span>}
+        countLabel={<span>{t('proxy.toolbar.count', { count: total.toLocaleString(appLocale()) })}</span>}
         filters={
           <DropdownSelect
             options={filterOptions}

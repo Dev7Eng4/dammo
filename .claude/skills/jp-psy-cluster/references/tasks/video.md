@@ -1,59 +1,31 @@
-# {K} video {title} {summary} — viết transcript
+# {K} video {title} {summary} — viết kịch bản khi đã có title
 
-Mục tiêu: transcript lời đọc tiếng Nhật hoàn chỉnh cho một video 12–30 phút của cụm, dùng để đọc bằng giọng đọc (TTS) hoặc người đọc. Title bắt buộc; summary có thể không có.
+Đọc `.claude/skills/_shared/script-writing.md` trước (CLI, luật viết, format, cách kiểm và lưu). Lệnh này là lối vào thứ ba của cùng quy trình đó, bên cạnh `jp-psy-script-remake` (có link) và `jp-psy-script-niche` (chỉ có mã cụm). File này chỉ nói phần khác: chủ đề đã có sẵn, nên nghiên cứu để **làm sâu và làm khác**, không để chọn chủ đề.
+
+Đầu ra là `script.txt` đúng format ô Kịch bản của app (`# title` / `## 1. chương` / mỗi dòng một câu), qua `script check` **ĐẠT**, lưu ở `docs/scripts/`.
 
 ## 1. Hiểu đầu vào
-- Title có thể là tiếng Nhật hoặc tiếng Việt; transcript luôn viết tiếng Nhật và giữ đúng lời hứa của title.
-- Có summary: bám sát các ý trong summary. Không có: tự xác định 3–9 ý chính từ title, khán giả và ngách nhỏ của cụm.
-- Title có con số (7つ, 5選...) thì transcript trình bày đúng số ý đó.
-- Xác định format của video theo các format A–D trong file cụm (danh sách, đối lập, khoảng trống tò mò, hệ quả, chân dung, gỡ mặc cảm, lời dạy...) và viết theo đúng tinh thần format đó (ví dụ format khoảng trống tò mò thì giữ "điều then chốt" tới gần cuối mới nói hết).
+- Title bắt buộc; summary có thể không có.
+- Title tiếng Việt: viết lại thành title tiếng Nhật theo luật title của `metadata_tlnb_{k}/step-1.js`, giữ đúng lời hứa. Title tiếng Nhật: giữ nguyên, chỉ sửa khi phạm luật title của cụm hoặc phạm mục Tránh (nói rõ đã sửa gì và vì sao).
+- Có summary: bám các ý trong summary. Không có: tự xác định ý chính từ title, khán giả và ngách nhỏ của cụm.
+- Title có con số (7つ, 5選...) thì số chương mang mục đúng bằng số đó.
+- Xác định format theo các format trong file cụm và prompt meta (danh sách, đối lập, khoảng trống tò mò, hệ quả, chân dung, gỡ mặc cảm, lời dạy...) và viết đúng tinh thần format đó (ví dụ khoảng trống tò mò thì giữ điều then chốt tới chương cuối mới nói hết).
 
-## 2. Chọn thời lượng
-Tốc độ đọc tham chiếu: khoảng 300 ký tự tiếng Nhật mỗi phút (giọng chậm, hợp người lớn tuổi).
+## 2. Kiểm trùng
+`npm run -s script -- list --cluster K{n}` và `npm run -s brain -- productions` cho các kênh của cụm. Đã có kịch bản cùng `topicKey` hoặc cùng lời hứa trong 90 ngày thì báo người dùng, đề xuất góc khác, và hỏi có viết tiếp không.
 
-| Loại nội dung | Thời lượng hợp lý | Số ký tự mục tiêu |
-|---|---|---|
-| 3–4 ý, hoặc một lời dạy / một nghịch lý | 12–15 phút | 3.600–4.500 |
-| 5–7 ý, hoặc đối lập có ví dụ | 16–22 phút | 4.800–6.600 |
-| 8–10 ý, hoặc chủ đề có nhiều tình huống | 23–30 phút | 6.900–9.000 |
+## 3. Nghiên cứu (nhẹ hơn remake / niche)
+- `npm run -s trends -- search --date month "<cụm từ chính của title>"` với 2–4 cách diễn đạt. Lấy 1–3 video mạnh nhất cùng chủ đề bằng `script -- source` và đọc hết, để biết **điều mọi video đều nói**. Mọi video đã đọc đều vào `sources` và được `check` so độ giống.
+- Bình luận của 1–2 video đó (`video_comments`): câu hỏi người xem chưa được trả lời, lời họ dùng.
+- WebSearch: 3–5 nghiên cứu hoặc khái niệm cho các chương, xác minh theo `script-writing.md` mục 2. Không xác minh được thì dùng tình huống đời thường, không viết 「心理学では〜と言われています」 cho một kết quả cụ thể.
+- Không tìm được video nào cùng chủ đề (YouTube lỗi hoặc chủ đề quá mới): ghi rõ trong `research.md` và viết với `sources` rỗng.
+- Chốt góc một câu: "mọi video nói X, video này nói Y". Title đã cố định nên Y nằm ở chất liệu và cách giải thích, không đổi lời hứa.
 
-Mỗi ý khoảng 2–3 phút; mở đầu ~1 phút; kết ~1 phút. Chọn mức ngắn nhất mà vẫn nói đủ sâu: kéo dài bằng ý lặp lại làm người xem bỏ đi giữa chừng.
+## 4. Dàn ý, viết, soát, lưu
+Theo `script-writing.md` mục 3–7, với:
+- `mode: "title"` trong `meta.json`;
+- kết bài dùng "Câu hỏi kéo bình luận" của cụm;
+- theo mục "Tránh" của cụm (ví dụ K8: không kích động trả thù, không gán bệnh cho người khác).
 
-## 3. Cấu trúc
-1. **Hook (30–60 giây đầu)**: vào thẳng tình huống hoặc câu hỏi chạm vào người xem; không chào hỏi, không giới thiệu kênh trước hook. Hứa điều người xem sẽ hiểu ra khi xem hết.
-2. **Mở bài ngắn**: vì sao chủ đề quan trọng với khán giả cụm; lời chào rất ngắn có thể đặt ở đây.
-3. **Thân bài**: từng ý có dấu hiệu rõ (「1つ目は…」「次に…」), mỗi ý gồm:
-   - nêu ý bằng lời đời thường;
-   - giải thích vì sao theo tâm lý học / khoa học não bộ, đơn giản, không thuật ngữ khó (nếu dùng thuật ngữ thì giải thích ngay);
-   - một tình huống đời thường có nhân vật cụ thể (ví dụ 「68歳の佐藤さん」), bối cảnh Nhật Bản quen thuộc;
-   - điều người xem có thể làm hoặc nhận ra.
-4. **Giữ chân giữa video**: cứ khoảng 4–5 phút có một câu gợi tò mò cho phần sau (ví dụ 「実は、最後にお話しする○つ目が一番大切です」).
-5. **Kết**: tóm tắt ngắn các ý; một thông điệp ấm áp, an tâm; câu hỏi mời bình luận theo "Câu hỏi kéo bình luận" của cụm; lời mời đăng ký ngắn gọn, lịch sự.
-
-## 4. Giọng văn và an toàn
-- Thể です・ます lịch sự, ấm, chậm rãi; câu ngắn; dùng từ thường ngày. Không suồng sã (〜だよね、〜じゃん).
-- Viết để đọc thành tiếng: không bảng, không ký hiệu đầu dòng, không chú thích sân khấu trong lời đọc; số viết cách đọc tự nhiên.
-- Không bịa nghiên cứu, tên nhà khoa học, trường đại học hay số liệu. Chỉ nhắc khái niệm có thật và phổ biến (ví dụ 確証バイアス, ザイアンス効果) và nói chung chung (「心理学では〜と言われています」).
-- Không chẩn đoán, không hứa chữa khỏi, không hù doạ bệnh tật hay cái chết; chủ đề sức khoẻ thì khuyên hỏi ý kiến chuyên gia khi cần.
-- Theo mục "Tránh" của cụm (ví dụ K8: không kích động trả thù, không gán bệnh cho người khác).
-
-## 5. Lưu file và kiểm tra độ dài
-Lưu transcript vào `docs/transcripts/{k}/{YYYY-MM-DD}-{slug}.md` (thư mục cụm viết thường, `slug` là vài từ romaji / tiếng Anh không dấu), theo mẫu:
-
-```
-# {title}
-- Cụm: {K} {tên cụm} · Format: {K-?} · Thời lượng ước tính: {phút} phút · Số ký tự lời đọc: {n}
-- Summary: {summary đã dùng}
-
-## Mục lục (ước tính)
-00:00 ...
-...
-
-## Transcript
-{toàn bộ lời đọc tiếng Nhật, chia đoạn bằng dòng trống, không tiêu đề chương}
-```
-
-Sau khi lưu, đếm số ký tự phần Transcript bằng script (ví dụ đọc file bằng Python, lấy phần sau `## Transcript`, bỏ khoảng trắng và xuống dòng, `len(...)`). Nếu lệch khỏi khoảng mục tiêu quá 10% thì viết thêm hoặc cắt bớt rồi đếm lại, và cập nhật dòng thông tin ở đầu file.
-
-## 6. Trả lời trong chat
-Ngắn gọn: đường dẫn file, thời lượng ước tính và số ký tự, format đã chọn, mục lục. Không dán lại toàn bộ transcript trừ khi người dùng yêu cầu.
+## 5. Trả lời trong chat
+Theo `script-writing.md` mục 7, thêm format đã chọn và title cuối cùng (nếu khác title người dùng đưa thì nói vì sao). Không dán lại cả kịch bản trừ khi người dùng yêu cầu.

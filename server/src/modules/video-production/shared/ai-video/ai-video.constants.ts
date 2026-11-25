@@ -136,6 +136,20 @@ export const AI_INTRO_VIDEO_SEC = 30;
 /** Length of one Flow video clip; longer scenes hold the last frame. */
 export const AI_VIDEO_CLIP_SEC = 8;
 
+/**
+ * Range of Flow's video Length slider (seconds). Each clip is made as long as the time it fills on
+ * screen (its scene, or the scenes its `clipSpan` covers), clamped to this range.
+ */
+export const FLOW_CLIP_MIN_SEC = 3;
+export const FLOW_CLIP_MAX_SEC = 10;
+
+/**
+ * `ai_interleaved_video`: after the intro clips, one scene becomes a clip, then this many image
+ * scenes play before the next clip (the clip is the best-fitting scene in that range).
+ */
+export const AI_INTERLEAVED_MIN_IMAGES = 4;
+export const AI_INTERLEAVED_MAX_IMAGES = 6;
+
 /** Max reference images attached to one scene image when the channel has a mascot (mascot first). */
 export const AI_SCENE_MAX_REFERENCE_IMAGES = 3;
 
@@ -145,10 +159,15 @@ export const MASCOT_SCENES_PROMPT_KEY = 'mascot_scenes';
 /** Vision prompt that turns the channel mascot image into the channel mascot profile. */
 export const MASCOT_PROFILE_PROMPT_KEY = 'mascot_profile';
 
-/** Prepended to scene image prompts that show the mascot (the mascot is always the first reference image). */
+/**
+ * Prepended to scene image prompts that show the mascot (the mascot is always the first reference image).
+ * The rule about other people must stay conditional: stated as a fact ("every other person in the scene
+ * is...") it made Meta add people to scenes that mention none.
+ */
 export const AI_MASCOT_IMAGE_PROMPT_PREFIX =
   'Main character: the character in the first reference image. Draw it exactly as shown (same head and body shape, face style, line art, colors and shading); do not redesign it. ' +
-  'Only ONE character in the image is this reference character: every other person in the scene is a clearly different character (different age or gender, face, hairstyle, body shape and clothing) drawn in the same art style, never a copy or twin of it. ' +
+  'It appears only ONCE and, unless the scene below explicitly describes someone else, it is ALONE: do not add any other people, onlookers or background figures. ' +
+  'If the scene does describe other people, draw exactly those and nobody else, each clearly different from the reference character (different age or gender, face, hairstyle, body shape and clothing) in the same art style, never a copy or twin of it. ' +
   'Draw ONE single illustration of the scene below: not a character sheet, no turnaround or multiple poses of the same character, no text. Scene: ';
 
 /** Prepended to mascot-channel scene prompts without the mascot: the reference only sets the art style. */

@@ -4,8 +4,19 @@ import path from 'node:path';
 import { AppError } from '../../shared/http/errors.js';
 import type { LlmTextProvider } from '../llm-browser/core/types.js';
 import { parseScriptText, scriptToText } from '../manual-video/manual-video.service.js';
-import { scriptRemakeService, type RemakeJob } from '../script-remake/script-remake.service.js';
-import { synthesizeNarration } from '../video-agent/narration.js';
+import { paths } from '../../config/paths.js';
+import { findReadyScript } from '../script-remake/remake-ready.js';
+import {
+  REMAKE_CHARS_PER_MIN,
+  remakeText,
+  scriptRemakeService,
+  type RemakeJob,
+  type RemakeOutline,
+  type RemakeResult,
+} from '../script-remake/script-remake.service.js';
+import { READING_CHECKS_FILE, synthesizeNarration, type ReadingCheck } from '../video-agent/narration.js';
+import { retimeScenePromptsFile } from '../video-agent/scene-retime.js';
+import { resolveAiScenePromptsFilePath } from '../video-production/shared/ai-video/ai-video-scene-prompts-store.js';
 import { resolveNarrationVoice, type NarrationVoiceRef } from '../voice/narration-voice.js';
 import { readVoiceSettings, resolveVoicevoxDefaultSpeaker } from '../../infrastructure/tts/voice-settings.store.js';
 import type { RemakeAutoConfig } from '../youtube-channels/youtube-channels.types.js';
@@ -31,37 +42,84 @@ import { resolveProductionVideoFolder } from './video-production-ui.service.js';
 const SCRIPT_FILE = 'script.txt';
 const STATE_FILE = 'remake-state.json';
 const SOURCE_DIR = 'source';
+/** Written when a video is started from a skill script (Preparing): its source/ holds only the source transcript. */
+export const PREPARING_MARKER = path.join('source', 'from-skill-script.json');
 const NARRATION_DIR = 'narration';
 const AUDIO_FILE = 'audio.mp3';
 const SOURCE_TRANSCRIPTS = ['transcript-updated.srt', 'transcript.srt'];
 
 export interface ChannelVideoVoice {
   speaker: number;
+  /** ×speed on top of the saved voice's own speed when `presetId` is set; otherwise the bare speaker's ×speed. */
   speedScale: number;
+  /** Saved VOICEVOX voice (Settings → VOICEVOX) the narration was read with. */
+  presetId?: string;
   durationSec: number;
   at: string;
 }
 
+/** What the remake planner decided for the new script; the metadata step builds the title on this angle. */
+export interface RemakeOutlineHint {
+  title: string;
+  angle: string;
+  hook: string;
+}
+
 interface RemakeState {
   remakeJobId?: string;
+  /** Set when script.txt came from the skill's ready script instead of an LLM remake job. */
+  skillScript?: { checkedAt: string; topicKey: string };
   voice?: ChannelVideoVoice;
+  /**
+   * The last narration changed most sentences after scenes were made: the images no longer show what is
+   * said. `promptsGeneratedAt` is the scene file it applies to; new scenes clear it.
+   */
+  scenesStale?: { at: string; matchedPercent: number; promptsGeneratedAt: string };
 }
 
 export interface ChannelVideoVoiceJob {
   status: 'running' | 'done' | 'failed';
   progress?: string;
   error?: string;
+  /** What happened to the scenes after the new narration. */
+  notice?: string;
 }
+
+/** Scenes made against an older track keep their place by sentence; below this share of unchanged sentences they are out of date. */
+const SCENES_STALE_RATIO = 0.6;
 
 export interface ChannelVideoScriptResponse {
   text: string;
   chars: number;
   remakeJobId?: string;
+  /** script.txt came from the nightly skill run (remake-ready/) instead of an LLM remake job. */
+  skillScript?: RemakeState['skillScript'];
   /** Narration currently in audio.mp3; unset while the video still has the source audio. */
   voice?: ChannelVideoVoice;
   voiceJob?: ChannelVideoVoiceJob;
   /** The source audio was replaced by a narration (kept in `source/`). */
   sourceReplaced: boolean;
+  /** Numbers, names and Latin words of the last narration, and how the voice read them. */
+  readingChecks?: ReadingCheck[];
+  /** Scenes were made for a script that has since changed a lot: create scenes again. */
+  scenesStale?: { matchedPercent: number };
+}
+
+function scenePromptsGeneratedAt(workDir: string): string | null {
+  try {
+    const raw = JSON.parse(fs.readFileSync(resolveAiScenePromptsFilePath(workDir), 'utf8')) as { generatedAt?: string };
+    return raw.generatedAt ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function readReadingChecks(workDir: string): ReadingCheck[] | undefined {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(workDir, NARRATION_DIR, READING_CHECKS_FILE), 'utf8')) as ReadingCheck[];
+  } catch {
+    return undefined;
+  }
 }
 
 function readState(workDir: string): RemakeState {
@@ -116,13 +174,21 @@ class ChannelVideoRemakeService {
     const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
     const state = readState(workDir);
     const voiceJob = this.voiceJobs.get(this.key(channelId, videoId));
+    const readingChecks = readReadingChecks(workDir);
+    const stale = state.scenesStale && state.scenesStale.promptsGeneratedAt === scenePromptsGeneratedAt(workDir);
     return {
       text,
       chars: parseScriptText(text).chapters.reduce((sum, chapter) => sum + chapter.sentences.join('').length, 0),
       ...(state.remakeJobId ? { remakeJobId: state.remakeJobId } : {}),
+      ...(state.skillScript ? { skillScript: state.skillScript } : {}),
       ...(state.voice ? { voice: state.voice } : {}),
       ...(voiceJob ? { voiceJob } : {}),
-      sourceReplaced: fs.existsSync(path.join(workDir, SOURCE_DIR, AUDIO_FILE)),
+      // Started from a skill script: there was never a source audio, the first narration is the audio.
+      sourceReplaced:
+        fs.existsSync(path.join(workDir, SOURCE_DIR, AUDIO_FILE)) ||
+        (fs.existsSync(path.join(workDir, PREPARING_MARKER)) && Boolean(state.voice)),
+      ...(readingChecks?.length ? { readingChecks } : {}),
+      ...(stale ? { scenesStale: { matchedPercent: state.scenesStale!.matchedPercent } } : {}),
     };
   }
 
@@ -164,16 +230,29 @@ class ChannelVideoRemakeService {
     const job = scriptRemakeService.get(jobId ?? readState(workDir).remakeJobId ?? '');
     if (job.status !== 'done' || !job.result) throw new AppError('Lượt remake chưa xong hoặc bị lỗi', 409, 'REMAKE_NOT_DONE');
     await fsp.writeFile(path.join(workDir, SCRIPT_FILE), scriptToText(job.result.outline.title, job.result.chapters), 'utf8');
+    // The user chose an LLM remake over the skill's script.
+    await writeState(workDir, { skillScript: undefined });
     return this.getScript(channelId, videoId);
   }
 
   /**
    * Reads script.txt with VOICEVOX in the background. The source audio/transcripts move to `source/`
-   * the first time; audio.mp3 and transcript.srt then hold the narration. Scenes keep their old timing,
-   * so they should be created again afterwards.
+   * the first time; audio.mp3 and transcript.srt then hold the narration. Existing scenes are moved onto
+   * the new timing (see narrateFolder).
    */
-  startVoice(channelId: string, videoId: string, input: { speaker: number; speedScale: number }): ChannelVideoScriptResponse {
+  startVoice(
+    channelId: string,
+    videoId: string,
+    input: { speaker: number; speedScale: number; presetId?: string },
+  ): ChannelVideoScriptResponse {
     requireRemakeChannel(channelId);
+    const preset = input.presetId
+      ? readVoiceSettings().voicevox.presets.find(item => item.id === input.presetId)
+      : undefined;
+    if (input.presetId && !preset) {
+      throw new AppError('Giọng VOICEVOX đã chọn không còn trong Cài đặt — chọn lại giọng', 400, 'VOICE_PRESET_NOT_FOUND');
+    }
+    const speaker = preset?.speaker ?? input.speaker;
     const workDir = resolveProductionVideoFolder(channelId, videoId);
     const key = this.key(channelId, videoId);
     if (this.voiceJobs.get(key)?.status === 'running') {
@@ -187,11 +266,15 @@ class ChannelVideoRemakeService {
     void (async () => {
       try {
         await this.narrateFolder(workDir, chapters, {
-          ref: { voicevoxSpeaker: input.speaker },
-          speaker: input.speaker,
+          ref: { provider: 'voicevox', ...(preset ? { presetId: preset.id } : {}), voicevoxSpeaker: speaker },
+          speaker,
           speedScale: input.speedScale,
+          ...(preset ? { presetId: preset.id } : {}),
           onProgress: (done, total) => {
             job.progress = `${done}/${total}`;
+          },
+          onNotice: message => {
+            job.notice = message;
           },
         });
         job.status = 'done';
@@ -218,12 +301,20 @@ class ChannelVideoRemakeService {
   /**
    * Reads `chapters` with VOICEVOX into `workDir`. The source audio/transcripts move to `source/` the
    * first time; audio.mp3 and transcript.srt then hold the narration, so scene/assemble/metadata steps
-   * run on it unchanged.
+   * run on it unchanged. Scenes made earlier are moved onto the new timing sentence by sentence; when most
+   * sentences changed (a new remake), they are flagged out of date instead of silently showing old images.
    */
   private async narrateFolder(
     workDir: string,
     chapters: ScriptChapters,
-    voice: { ref: NarrationVoiceRef; speaker: number; speedScale: number; onProgress?: (done: number, total: number) => void },
+    voice: {
+      ref: NarrationVoiceRef;
+      speaker: number;
+      speedScale: number;
+      presetId?: string;
+      onProgress?: (done: number, total: number) => void;
+      onNotice?: (message: string) => void;
+    },
   ): Promise<ChannelVideoVoice> {
     const narrationDir = path.join(workDir, NARRATION_DIR);
     await fsp.mkdir(narrationDir, { recursive: true });
@@ -234,9 +325,17 @@ class ChannelVideoRemakeService {
       ...(voice.onProgress ? { onProgress: voice.onProgress } : {}),
     });
 
-    // Keep the source files once, before the first narration overwrites them.
+    // The track the current scenes were cut against (the pipeline prefers transcript-updated.srt).
+    const previousTrack = await fsp
+      .readFile(path.join(workDir, 'transcript-updated.srt'), 'utf8')
+      .catch(() => fsp.readFile(path.join(workDir, 'transcript.srt'), 'utf8'))
+      .catch(() => null);
+
+    // Keep the source files once, before the first narration overwrites them. A video started from a skill
+    // script (Preparing) already has source/ with the source transcript and no source audio: nothing to move,
+    // and moving would put this folder's narration track in source/ on the second narration.
     const sourceDir = path.join(workDir, SOURCE_DIR);
-    if (!fs.existsSync(path.join(sourceDir, AUDIO_FILE))) {
+    if (!fs.existsSync(path.join(sourceDir, AUDIO_FILE)) && !fs.existsSync(path.join(workDir, PREPARING_MARKER))) {
       await fsp.mkdir(sourceDir, { recursive: true });
       for (const name of [AUDIO_FILE, ...SOURCE_TRANSCRIPTS]) {
         const from = path.join(workDir, name);
@@ -250,10 +349,35 @@ class ChannelVideoRemakeService {
     const saved: ChannelVideoVoice = {
       speaker: voice.speaker,
       speedScale: voice.speedScale,
+      ...(voice.presetId ? { presetId: voice.presetId } : {}),
       durationSec: result.durationSec,
       at: new Date().toISOString(),
     };
     await writeState(workDir, { voice: saved });
+
+    const newTrack = await fsp.readFile(result.subtitlePath, 'utf8');
+    const retimed = previousTrack ? await retimeScenePromptsFile(workDir, previousTrack, newTrack) : null;
+    const notices: string[] = [];
+    if (retimed) {
+      const matchedPercent = Math.round(retimed.matchedRatio * 100);
+      const promptsGeneratedAt = scenePromptsGeneratedAt(workDir);
+      if (retimed.matchedRatio < SCENES_STALE_RATIO && promptsGeneratedAt) {
+        await writeState(workDir, { scenesStale: { at: saved.at, matchedPercent, promptsGeneratedAt } });
+        notices.push(`Kịch bản đổi nhiều (${matchedPercent}% câu còn giữ): ${retimed.scenes} cảnh đã dời theo giọng mới nhưng ảnh không còn khớp lời, nên tạo lại cảnh.`);
+      } else {
+        await writeState(workDir, { scenesStale: undefined });
+        notices.push(`Đã căn lại ${retimed.scenes} cảnh theo giọng mới (${matchedPercent}% câu giữ nguyên).`);
+      }
+    }
+    if (result.readingChecks.length) {
+      notices.push(
+        `Nghe lại cách đọc ${result.readingChecks.length} từ (số, tên riêng, chữ Latin): ${result.readingChecks
+          .slice(0, 6)
+          .map(check => check.term)
+          .join('、')}${result.readingChecks.length > 6 ? '…' : ''}.`,
+      );
+    }
+    if (notices.length) voice.onNotice?.(notices.join(' '));
     return saved;
   }
 
@@ -267,27 +391,11 @@ class ChannelVideoRemakeService {
     transcriptPath: string,
     config: RemakeAutoConfig,
     hooks: { log: (message: string) => void; onRemakeDone?: () => void },
-  ): Promise<{ subtitlePath: string; voice: ChannelVideoVoice }> {
-    if (scriptRemakeService.isBusy()) {
-      throw new AppError('Đang có một lượt remake khác chạy — chờ xong rồi chuẩn bị lại', 409, 'REMAKE_BUSY');
-    }
-    const started = await scriptRemakeService.start({
-      transcript: await fsp.readFile(transcriptPath, 'utf8'),
-      outputDir: path.join(workDir, 'remake'),
-      language: 'ja',
-      ...(config.promptSetId ? { promptSetId: config.promptSetId } : {}),
-      ...(config.provider ? { provider: config.provider } : {}),
-    });
-    await writeState(workDir, { remakeJobId: started.id });
-    hooks.log(`Remake kịch bản (${started.provider}, bộ prompt "${started.promptSetName ?? '?'}")…`);
-    const job = await scriptRemakeService.wait(started.id);
-    if (job.status !== 'done' || !job.result) {
-      throw new AppError(`Remake kịch bản thất bại: ${job.error ?? 'không có kết quả'}`, 502, 'REMAKE_FAILED');
-    }
-    await fsp.writeFile(path.join(workDir, SCRIPT_FILE), scriptToText(job.result.outline.title, job.result.chapters), 'utf8');
-    hooks.log(
-      `Kịch bản mới: "${job.result.outline.title}" — ${job.result.chapters.length} chương, ~${job.result.estimatedMinutes} phút`,
-    );
+    /** Channel and source video, to pick up a script the skill wrote ahead (remake-ready/). */
+    source?: { channelId: string; sourceVideoId: string },
+  ): Promise<{ subtitlePath: string; voice: ChannelVideoVoice; outline: RemakeOutlineHint }> {
+    const ready = await this.useReadyScript(workDir, hooks.log, source);
+    const outline = ready?.outline ?? (await this.remakeWithLlm(workDir, transcriptPath, config, hooks.log));
     hooks.onRemakeDone?.();
 
     this.assertVoiceFree();
@@ -306,12 +414,117 @@ class ChannelVideoRemakeService {
         ref: { provider: 'voicevox', ...(preset ? { presetId: preset.id } : {}), voicevoxSpeaker: speaker },
         speaker,
         speedScale,
+        ...(preset ? { presetId: preset.id } : {}),
+        onNotice: hooks.log,
       });
       hooks.log(`Đã thay audio bằng giọng đọc (${Math.round(voice.durationSec)} giây)`);
-      return { subtitlePath: path.join(workDir, 'transcript.srt'), voice };
+      // The skill's script now lives in this video's folder; drop it from remake-ready/ only once narrated,
+      // so a failed prepare leaves it for the next try.
+      if (ready) await fsp.rm(ready.dir, { recursive: true, force: true });
+      return { subtitlePath: path.join(workDir, 'transcript.srt'), voice, outline };
     } finally {
       this.autoNarrating = false;
     }
+  }
+
+  /**
+   * When the nightly skill run already remade this source (remake-ready/, check passed), its script becomes
+   * script.txt and its result is written to `remake/` exactly like an LLM remake job (remake-<time>.txt + .json,
+   * plus the skill's research notes), so the folder looks the same whichever wrote it. Returns null when there is
+   * no usable skill script: the LLM remakes as before. Another script is only made by remaking in the Script tab.
+   */
+  async useReadyScript(
+    workDir: string,
+    log: (message: string) => void,
+    source?: { channelId: string; sourceVideoId: string },
+  ): Promise<{ outline: RemakeOutlineHint; dir: string } | null> {
+    if (!source) return null;
+    const ready = findReadyScript(source.channelId, source.sourceVideoId);
+    if (ready.status !== 'ready') {
+      if (ready.status !== 'missing') log(`Không dùng kịch bản skill viết sẵn: ${ready.reason} — remake bằng LLM`);
+      return null;
+    }
+    const { title, chapters } = parseScriptText(ready.text);
+    if (chapters.length === 0) {
+      log('Kịch bản skill viết sẵn trống — remake bằng LLM');
+      return null;
+    }
+
+    const { meta, check } = ready;
+    const finalTitle = title || meta.title || source.sourceVideoId;
+    const totalChars = chapters.reduce((sum, chapter) => sum + chapter.sentences.join('').length, 0);
+    const estimatedMinutes = Math.round((totalChars / REMAKE_CHARS_PER_MIN) * 10) / 10;
+    const plannedMinutes = meta.minutes ?? Math.round(estimatedMinutes);
+    const lengthReason = meta.lengthReason ?? 'Kịch bản do skill jp-psy-script-remake viết sẵn (lý do chọn góc và nguồn trong file .research.md cùng tên).';
+    const outline: RemakeOutline = {
+      title: finalTitle,
+      angle: meta.angle ?? '',
+      hook: meta.hook ?? '',
+      story: meta.story ?? '',
+      targetMinutes: plannedMinutes,
+      lengthReason,
+      chapters: chapters.map(chapter => ({ heading: chapter.heading, keyPoints: [] })),
+    };
+
+    const outputDir = path.join(workDir, 'remake');
+    await fsp.mkdir(outputDir, { recursive: true });
+    const outputPath = path.join(outputDir, `remake-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`);
+    const result: RemakeResult = {
+      outline,
+      chapters,
+      plannedMinutes,
+      lengthReason,
+      totalChars,
+      estimatedMinutes,
+      similarity: {
+        gram8: Math.max(0, ...check.sources.map(item => item.gram8)),
+        gram15: Math.max(0, ...check.sources.map(item => item.gram15)),
+      },
+      qualityWarnings: [],
+      outputPath,
+      relativeOutputPath: path.relative(paths.dataDir, outputPath).split(path.sep).join('/'),
+    };
+    await fsp.writeFile(outputPath, remakeText(outline, chapters), 'utf8');
+    await fsp.writeFile(
+      outputPath.replace(/\.txt$/, '.json'),
+      JSON.stringify({ ...result, writtenBy: 'skill:jp-psy-script-remake', skillMeta: meta, skillCheck: check }, null, 2),
+      'utf8',
+    );
+    const research = path.join(ready.dir, 'research.md');
+    if (fs.existsSync(research)) await fsp.copyFile(research, outputPath.replace(/\.txt$/, '.research.md'));
+
+    await fsp.writeFile(path.join(workDir, SCRIPT_FILE), scriptToText(finalTitle, chapters), 'utf8');
+    await writeState(workDir, { skillScript: { checkedAt: check.checkedAt, topicKey: meta.topicKey ?? '' } });
+    log(`Dùng kịch bản skill viết sẵn (kiểm ĐẠT ${check.checkedAt.slice(0, 10)}): "${finalTitle}" — ${chapters.length} chương, ~${estimatedMinutes} phút`);
+    return { outline: { title: finalTitle, angle: outline.angle, hook: outline.hook }, dir: ready.dir };
+  }
+
+  private async remakeWithLlm(
+    workDir: string,
+    transcriptPath: string,
+    config: RemakeAutoConfig,
+    log: (message: string) => void,
+  ): Promise<RemakeOutlineHint> {
+    if (scriptRemakeService.isBusy()) {
+      throw new AppError('Đang có một lượt remake khác chạy — chờ xong rồi chuẩn bị lại', 409, 'REMAKE_BUSY');
+    }
+    const started = await scriptRemakeService.start({
+      transcript: await fsp.readFile(transcriptPath, 'utf8'),
+      outputDir: path.join(workDir, 'remake'),
+      language: 'ja',
+      ...(config.promptSetId ? { promptSetId: config.promptSetId } : {}),
+      ...(config.provider ? { provider: config.provider } : {}),
+    });
+    await writeState(workDir, { remakeJobId: started.id });
+    log(`Remake kịch bản (${started.provider}, bộ prompt "${started.promptSetName ?? '?'}")…`);
+    const job = await scriptRemakeService.wait(started.id);
+    if (job.status !== 'done' || !job.result) {
+      throw new AppError(`Remake kịch bản thất bại: ${job.error ?? 'không có kết quả'}`, 502, 'REMAKE_FAILED');
+    }
+    await fsp.writeFile(path.join(workDir, SCRIPT_FILE), scriptToText(job.result.outline.title, job.result.chapters), 'utf8');
+    log(`Kịch bản mới: "${job.result.outline.title}" — ${job.result.chapters.length} chương, ~${job.result.estimatedMinutes} phút`);
+    const { title, angle, hook } = job.result.outline;
+    return { title, angle, hook };
   }
 }
 

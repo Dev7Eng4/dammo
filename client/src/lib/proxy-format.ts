@@ -1,4 +1,5 @@
 import type { Proxy } from '../types/proxy';
+import { appLocale } from '../utils/locale';
 
 export function buildRawProxy(proxy: Proxy): string {
   if (proxy.rawProxy) return proxy.rawProxy;
@@ -18,7 +19,7 @@ export function formatProxyLabel(proxy: Proxy): string {
 function formatProxyLastUsed(value?: string): string {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(appLocale());
 }
 
 /** Select label: `host:port (n) / date` — n = assigned profiles, date = last used */

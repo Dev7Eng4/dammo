@@ -48,6 +48,7 @@ export function mergeChannelVideos(
     .map(prepareItemToVideo);
 
   const draftVideos = prepareVideos.filter(video => video.status === 'Error');
+  const preparingVideos = prepareVideos.filter(video => video.status === 'Preparing');
   const preparedVideos = prepareVideos.filter(video => video.status === 'Prepared');
   const createdVideos = prepareVideos.filter(video => video.status === 'Created');
 
@@ -56,6 +57,7 @@ export function mergeChannelVideos(
 
   return [
     ...draftVideos,
+    ...preparingVideos,
     ...preparedVideos,
     ...createdVideos,
     ...publishedInUploads,

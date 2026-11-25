@@ -17,6 +17,8 @@ export interface AppSettings {
   verboseVideoLogs: boolean;
   /** Max parallel Chrome profiles for scene-prompt LLM chunks (1–8). */
   aiScenePromptConcurrency: number;
+  /** Meta AI image generation: windows per Chrome profile (1–5), i.e. prompts one account runs at once. */
+  metaTabsPerProfile: number;
   /** Default seeding period for a new email account, in days. */
   seedingEmailDays: number;
   /** Default seeding period for a new YouTube channel, in days. */

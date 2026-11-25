@@ -1,0 +1,185 @@
+{
+  "page": {
+    "title": "Bản đồ não sống — {{count}} bộ não, điều đã học và xung thần kinh thời gian thực",
+    "fullscreen": "Toàn màn hình",
+    "mapHint": "Kéo để xoay · lăn chuột để phóng to · bấm chấm sáng để đọc nơ-ron · bấm tên não để bay tới",
+    "mapTitle": "Bản đồ não 3D"
+  },
+  "pipeline": {
+    "stop": "Dừng dây chuyền",
+    "current": "— đang: {{name}}",
+    "confirm": "Chạy lần lượt {{count}} bộ não (mỗi não là một lượt Claude, tốn phí)?",
+    "started": "Dây chuyền đã khởi động",
+    "run": "Chạy cả dây chuyền ({{count}} não)"
+  },
+  "list": {
+    "title": "Não bộ phận",
+    "search": "Tìm nơ-ron, kênh, chủ đề…",
+    "all": "◎ Não trung tâm (toàn bộ)",
+    "soon": "sắp có",
+    "kinds": "Loại nơ-ron — bấm để ẩn/hiện"
+  },
+  "stats": {
+    "pulses24h": "Xung 24 giờ",
+    "errors24h": "Lỗi 24 giờ",
+    "neurons": "Nơ-ron đã học",
+    "lastRun": "Lần quét gần nhất",
+    "pulsesPerMin": "Xung / phút"
+  },
+  "neuron": {
+    "back": "← về bộ não",
+    "heat": "Độ nóng",
+    "hits": "Gặp",
+    "hitsValue": "{{value}} lần",
+    "firstSeen": "Lần đầu",
+    "lastSeen": "Gần nhất",
+    "brain": "Bộ não",
+    "subscribers": "Người đăng ký",
+    "channel": "Kênh",
+    "views": "Lượt xem",
+    "viewsPerHour": "View / giờ",
+    "published": "Đăng",
+    "searchYoutube": "Tìm trên YouTube",
+    "openYoutube": "Mở trên YouTube",
+    "links": "Liên kết"
+  },
+  "intro": {
+    "p1": "Mỗi <b>bộ não</b> là một AI agent làm một việc trong dây chuyền kênh. Mỗi <b>chấm sáng</b> là một nơ-ron — một điều bộ não đã học (chủ đề, video, kênh, thấu hiểu khán giả, ý tưởng, tiêu đề, công thức, brief kịch bản, cấu hình đề xuất, lịch đăng, chỉ số, việc nên làm). <b>Màu</b> = bộ não đã học nó.",
+    "p2": "<b>To</b> = gặp nhiều lần, <b>sáng</b> = nóng và mới, <b>mờ</b> = cũ. <b>Dây vàng</b> nối chủ đề với video bằng chứng khi chủ đề xuất hiện ≥ 2 lần quét.",
+    "p3": "<b>Dây tím</b> giữa các não = não sau đọc trí nhớ của não trước; dây chạy sáng khi não sau đang làm việc. Dây chuyền: Xu hướng → Đối thủ → Khán giả → Ý tưởng → Tiêu đề → Bìa → Kịch bản → Giọng đọc → Ảnh/clip → Dựng → Đăng → Chỉ số kênh → Tăng trưởng.",
+    "p4": "Não đang chạy sẽ chớp sáng theo từng xung (tìm kiếm, suy nghĩ, ghi nhớ). Các não từ Kịch bản trở đi chỉ phân tích và đề xuất — render vẫn do Agent tạo video làm, tải lên vẫn do bạn hoặc mô-đun upload làm."
+  },
+  "feed": {
+    "title": "Xung thần kinh",
+    "live": "{{value}} xung trong 60 giây · trực tiếp",
+    "empty": "Chưa có xung nào — đánh thức một bộ não để bắt đầu."
+  },
+  "detail": {
+    "feeds": "Đọc từ:",
+    "notesPlaceholder": "Ghi chú cho lần quét (tuỳ chọn), vd: tập trung 人間関係 và お金",
+    "stop": "Dừng",
+    "wake": "Đánh thức — quét ngay",
+    "woken": "Đã đánh thức bộ não",
+    "forget": "Xoá trí nhớ",
+    "forgetConfirm": "Xoá toàn bộ nơ-ron đã học của bộ não này?",
+    "forgotten": "Đã xoá trí nhớ",
+    "auto": "Tự chạy",
+    "autoOff": "Tắt",
+    "autoEvery": "Mỗi {{hours}} giờ",
+    "runs": "Số lần chạy",
+    "lastRun": "Lần gần nhất",
+    "cost": "Chi phí Claude",
+    "dormant": "Bộ não này chưa được xây. Khi xây xong, nó sẽ đọc trí nhớ của các não ở mục «Đọc từ»."
+  },
+  "pulse": {
+    "start": "BẮT ĐẦU",
+    "think": "NGHĨ",
+    "search": "TÌM",
+    "found": "GHI NHỚ",
+    "error": "LỖI",
+    "done": "XONG"
+  },
+  "status": {
+    "idle": "Sẵn sàng",
+    "running": "Đang chạy",
+    "error": "Lỗi",
+    "dormant": "Chưa xây"
+  },
+  "kind": {
+    "topic": "Chủ đề",
+    "video": "Video",
+    "keyword": "Từ khoá",
+    "channel": "Kênh",
+    "insight": "Thấu hiểu",
+    "idea": "Ý tưởng",
+    "title": "Tiêu đề",
+    "pattern": "Công thức",
+    "brief": "Brief kịch bản",
+    "recipe": "Cấu hình đề xuất",
+    "schedule": "Lịch đăng",
+    "metric": "Chỉ số",
+    "action": "Việc nên làm"
+  },
+  "section": {
+    "action": "Việc nên làm",
+    "schedule": "Lịch đăng đề xuất",
+    "brief": "Brief kịch bản",
+    "recipe": "Cấu hình đề xuất",
+    "metric": "Chỉ số kênh mình",
+    "idea": "Ý tưởng video",
+    "title": "Tiêu đề đề xuất",
+    "topic": "Chủ đề đang lên",
+    "insight": "Thấu hiểu khán giả",
+    "pattern": "Công thức đang thắng",
+    "channel": "Kênh đáng theo dõi",
+    "video": "Video đang nổ",
+    "keyword": "Từ khoá đang lên"
+  },
+  "brain": {
+    "jp-psy-trends": {
+      "name": "Săn xu hướng tâm lý Nhật",
+      "department": "Chọn content",
+      "description": "Quét YouTube Nhật + web để tìm chủ đề đang lên và video đang nổ về tâm lý học / khoa học não bộ (人生後半, 人間関係, 脳科学, ブッダの教え…). Mỗi lần chạy tạo nơ-ron chủ đề, video và từ khoá kèm điểm nóng."
+    },
+    "competitors": {
+      "name": "Đối thủ",
+      "department": "Phân tích",
+      "description": "Theo dõi các kênh cùng ngách (kênh nguồn tiếng Nhật + kênh đứng sau video nóng). So từng video với mức view/giờ trung vị của chính kênh đó để bắt video \"vượt chuẩn\", kênh đang tăng tốc và công thức họ đang lặp lại."
+    },
+    "audience": {
+      "name": "Tiếng nói khán giả",
+      "department": "Phân tích",
+      "description": "Đọc bình luận của các video đang nổ để tìm nỗi đau, câu hỏi chưa được trả lời, tranh cãi và đúng những từ người xem 50-70 tuổi dùng. Đây là nguyên liệu cho góc nhìn và lời mở đầu video."
+    },
+    "ideas": {
+      "name": "Ý tưởng video",
+      "department": "Chọn content",
+      "description": "Gộp chủ đề nóng, video vượt chuẩn của đối thủ và nỗi đau khán giả thành ý tưởng video cụ thể cho từng kênh của mình: tiêu đề Nhật, góc khác biệt, lời hứa, vì sao là bây giờ, mức độ bão hoà."
+    },
+    "title-seo": {
+      "name": "Tiêu đề / SEO",
+      "department": "Sản xuất",
+      "description": "Bóc công thức tiêu đề của video đang thắng (độ dài, 【】, con số, đối tượng, lời hứa), kiểm tra từ khoá bằng gợi ý YouTube, rồi viết 3 phương án tiêu đề + tag cho các ý tưởng nóng nhất."
+    },
+    "thumbnail": {
+      "name": "Bìa",
+      "department": "Sản xuất",
+      "description": "Nhìn thumbnail của video nóng và video vượt chuẩn (thị giác máy), tìm mẫu đang thắng: bố cục, màu, chữ, nhân vật/mascot, biểu cảm — và chỉ ra điều video ít view làm khác."
+    },
+    "script": {
+      "name": "Kịch bản",
+      "department": "Sản xuất",
+      "description": "Biến ý tưởng nóng nhất thành brief kịch bản làm được ngay: câu hỏi trung tâm, lời mở đầu tiếng Nhật, sợi dây xuyên suốt, dàn chương, điểm khác biệt và link video nguồn để đưa cho Agent tạo video. Đối chiếu video kênh đã làm để không lặp góc nhìn."
+    },
+    "voice": {
+      "name": "Giọng đọc",
+      "department": "Sản xuất",
+      "description": "Chọn giọng VOICEVOX và tốc độ đọc cho từng kênh từ số đo thật của các video đã làm (ký tự/phút, lệch so với thời lượng mục tiêu) và từ điều người xem lớn tuổi nói về giọng đọc trong bình luận."
+    },
+    "images": {
+      "name": "Ảnh / clip",
+      "department": "Sản xuất",
+      "description": "Nhìn vào bên trong video đang thắng (3 khung hình giữa video): minh hoạ hay ảnh thật, nhân vật, bảng màu, chữ trên màn hình — rồi chỉ hướng phong cách hình và prompt cảnh mẫu cho từng kênh."
+    },
+    "editing": {
+      "name": "Dựng video",
+      "department": "Sản xuất",
+      "description": "So thời lượng, nhịp cảnh, kiểu phụ đề và lớp phủ của video đang thắng với cấu hình dựng của mình, rồi đề xuất độ dài mục tiêu, số giây mỗi cảnh, kiểu phụ đề và lớp phủ nên bật/tắt cho từng kênh."
+    },
+    "publish": {
+      "name": "Đăng video",
+      "department": "Phát hành",
+      "description": "Lập lịch đăng 7 ngày tới: video nào xong thì lên khung giờ nào, video trúng chủ đề nóng được chen lên trước, kênh nào sắp hết video. Học nhịp đăng của đối thủ. Chỉ lập lịch — việc tải lên vẫn do bạn hoặc mô-đun upload làm."
+    },
+    "studio": {
+      "name": "Chỉ số kênh",
+      "department": "Phân tích",
+      "description": "Đo kênh và video của chính mình bằng số công khai (view, view/giờ, like, bình luận, sub): mức nền, xu hướng, video thắng/thua và lý do. CTR, retention, doanh thu chỉ có trong YouTube Studio nên não này không đọc được — nó chỉ ra số nào cần bạn vào Studio xem."
+    },
+    "growth": {
+      "name": "Tăng trưởng",
+      "department": "Phân tích",
+      "description": "Gộp mọi thứ cả mạng lưới biết thành 6-12 việc nên làm trong 2 tuần tới: nhân đôi thứ đang thắng, kéo chéo giữa các kênh, lấp khoảng trống ngách, kênh nên dừng hay đổi hướng, rủi ro nội dung lặp."
+    }
+  }
+}

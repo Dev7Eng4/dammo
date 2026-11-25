@@ -94,6 +94,75 @@ export function findCopiedSample(title: string, samples: string[], transcript?: 
   return undefined;
 }
 
+/** A title whose bigrams cover at least this share of the source video's title keeps the source title. */
+export const SOURCE_CONTAINMENT_LIMIT = 0.5;
+/** Any shared run of this many characters with the source title is a copy (topic phrases like 時間とお金の使い方 are shorter). */
+export const SOURCE_MAX_SHARED_RUN = 12;
+
+export interface SourceTitleCopy {
+  containment: number;
+  sharedRun: number;
+}
+
+/**
+ * Whether `title` keeps the source video's title (another channel's video, reuploaded or remade).
+ * Unlike sample titles, overlap is never excused by the transcript: a remade transcript always shares the
+ * source's topic words, which is exactly why the model drifts back to the source title.
+ */
+export function findSourceTitleCopy(title: string, sourceTitle: string): SourceTitleCopy | undefined {
+  const source = normalizeTitle(sourceTitle);
+  const normalizedTitle = normalizeTitle(title);
+  if (source.length < SAMPLE_MIN_LENGTH || !normalizedTitle) return undefined;
+  const sourceBigrams = bigrams(source);
+  const titleBigrams = bigrams(normalizedTitle);
+  let shared = 0;
+  for (const gram of sourceBigrams) if (titleBigrams.has(gram)) shared += 1;
+  const containment = sourceBigrams.size ? shared / sourceBigrams.size : 0;
+  const sharedRun = longestSharedRun(normalizedTitle, source);
+  return containment >= SOURCE_CONTAINMENT_LIMIT || sharedRun >= SOURCE_MAX_SHARED_RUN ? { containment, sharedRun } : undefined;
+}
+
+/**
+ * Last resort after every attempt was rejected: drop alternative titles that keep the source title, and when
+ * the main title keeps it, promote the first clean alternative. With no clean title at all, nothing changes.
+ */
+export function pickTitlesAwayFromSource(
+  title: string,
+  alternatives: string[],
+  sourceTitle: string,
+): { title: string; alternatives: string[] } {
+  if (!sourceTitle.trim()) return { title, alternatives };
+  const clean = alternatives.filter(candidate => !findSourceTitleCopy(candidate, sourceTitle));
+  if (!findSourceTitleCopy(title, sourceTitle)) return { title, alternatives: clean };
+  if (clean.length === 0) return { title, alternatives };
+  return { title: clean[0], alternatives: clean.slice(1) };
+}
+
+/** A hook line whose bigrams are at least this much inside the title only restates it. */
+export const HOOK_TITLE_COVERAGE_LIMIT = 0.8;
+/** Lines this short (a number like 6選, a mark) carry no hook of their own and are not judged. */
+const HOOK_MIN_LENGTH = 3;
+const COUNT_TOKEN = /[0-9０-９]+(?:選|つ|個|位)?/g;
+
+/**
+ * True when every judged thumbnail line is (almost) made of the title's own words, so the thumbnail adds
+ * no hook of its own. Formats may repeat the subject phrase or the number on one line, but at least one
+ * line has to say something the title does not.
+ */
+export function hookLinesOnlyRepeatTitle(hookLines: string[], title: string): boolean {
+  const titleBigrams = bigrams(normalizeTitle(title));
+  const judged = hookLines
+    .map(line => normalizeTitle(line).replace(COUNT_TOKEN, ''))
+    .filter(line => line.length >= HOOK_MIN_LENGTH);
+  if (judged.length === 0) return false;
+  return judged.every(line => {
+    const lineBigrams = bigrams(line);
+    let inTitle = 0;
+    for (const gram of lineBigrams) if (titleBigrams.has(gram)) inTitle += 1;
+    return lineBigrams.size > 0 && inTitle / lineBigrams.size >= HOOK_TITLE_COVERAGE_LIMIT;
+  });
+}
+
 const COMPOSITION_LINE = /Composition thumbnail:\s*(.+)$/gm;
 /** Thumbnail devices the formats mean to be reused as they are (not a hook copied from another channel). */
 const SHARED_DEVICES = ['ほとんどが', '第1位は意外', 'あなたはどの階層ですか', '決まってこうなる', 'ここで差がつく'];
@@ -155,7 +224,8 @@ export interface TitleGuardResult {
 }
 
 /**
- * Checks the title against the sample titles in the prompt and against the transcript.
+ * Checks the title against the sample titles in the prompt, the source video title and the transcript,
+ * and the planned thumbnail lines against the Composition examples and the title.
  * Prompts without sample titles are not checked (other niches keep their behaviour).
  */
 export function checkTitleGuards(input: {
@@ -164,11 +234,25 @@ export function checkTitleGuards(input: {
   transcript: string;
   /** Thumbnail text lines the meta prompt planned (thumbnail.hook_lines), when it has them. */
   hookLines?: string[];
+  /** Title of the source video (another channel's): the new title and the alternatives must not keep it. */
+  sourceTitle?: string;
+  /** alternative_titles of the response, checked against the source title too. */
+  alternativeTitles?: string[];
 }): TitleGuardResult {
   const samples = extractSampleTitles(input.prompt);
   if (samples.length === 0 || !input.title.trim()) return { ok: true, reasons: [] };
 
   const reasons: string[] = [];
+  const sourceTitle = input.sourceTitle?.trim();
+  if (sourceTitle) {
+    for (const [index, candidate] of [input.title, ...(input.alternativeTitles ?? [])].entries()) {
+      const kept = findSourceTitleCopy(candidate, sourceTitle);
+      if (!kept) continue;
+      reasons.push(
+        `${index === 0 ? 'title' : `title phụ 「${candidate}」`} giữ gần nguyên title cũ của video gốc 「${sourceTitle}」 (trùng ${Math.round(kept.containment * 100)}%, đoạn liền dài nhất ${kept.sharedRun} ký tự): đổi góc hook và cấu trúc câu, lấy cái móc từ một chi tiết cụ thể của transcript, chỉ được giữ một từ khoá chung (定年後, 60代...)`,
+      );
+    }
+  }
   const copied = findCopiedSample(input.title, samples, input.transcript);
   if (copied) {
     reasons.push(
@@ -191,6 +275,12 @@ export function checkTitleGuards(input: {
   if (copiedHooks.length > 0) {
     reasons.push(
       `thumbnail.hook_lines ${copiedHooks.map(line => `「${line}」`).join('、')} chép nguyên ví dụ trong Composition (câu của kênh khác): viết chữ thumbnail mới từ transcript, chỉ giữ thiết bị chung như 「ほとんどが…」「※第1位は意外」`,
+    );
+  }
+  const hookLines = input.hookLines ?? [];
+  if (hookLinesOnlyRepeatTitle(hookLines, input.title)) {
+    reasons.push(
+      `thumbnail.hook_lines ${hookLines.map(line => `「${line}」`).join('、')} chỉ lặp lại chữ của title, không thêm cái móc nào: giữ tối đa cụm chủ thể hoặc con số, dòng chính phải nói điều title chưa nói (một chi tiết, đồ vật, ý ngược lẽ thường trong transcript)`,
     );
   }
   return { ok: reasons.length === 0, reasons };

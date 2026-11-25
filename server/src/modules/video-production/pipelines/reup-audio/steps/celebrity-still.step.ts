@@ -48,7 +48,7 @@ export async function runCelebrityStillStep(ctx: VideoTaskContext): Promise<Scen
   await fs.mkdir(path.dirname(stillPath), { recursive: true });
   await materializeStillJpeg(sourcePath, stillPath, toOnLog(log));
 
-  await resolveAiRenderConfig(workDir, { kenBurns: false });
+  await resolveAiRenderConfig(workDir, { kenBurns: false, fixedAudioSpeed: destination.fixedAudioSpeed });
 
   const durationSec = await getAudioDurationSeconds(downloaded.audioPath);
   const scene: AiVideoScenePrompt = {

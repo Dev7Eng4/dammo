@@ -42,7 +42,32 @@
     "eta": "{{eta}} remaining"
   },
   "health": {
-    "title": "Health alerts"
+    "title": "Health alerts",
+    "paused": {
+      "title": "Paused channels ({{count}})",
+      "description": "YouTube channels are paused and should not receive uploads."
+    },
+    "stale": {
+      "titleDays": "{{name}} — no new video for {{value}} days",
+      "titleHours": "{{name}} — no new video for {{value}} hours",
+      "description": "Last upload: {{time}}."
+    },
+    "ram": {
+      "title": "{{size}} of RAM free",
+      "description": "Out of {{size}}. Rendering and downloading videos may be slow or fail."
+    },
+    "disk": {
+      "title": "{{size}} of disk space free",
+      "description": "Out of {{size}}. Rendered and downloaded videos will run out of space."
+    },
+    "queueFailed": {
+      "title": "Failed tasks in the queue: {{count}}",
+      "description": "Open the task queue to see the errors, then retry or delete."
+    },
+    "queuePaused": {
+      "title": "Queue is paused ({{count}} waiting)",
+      "description": "Tasks will not run until the queue is resumed."
+    }
   },
   "upcoming": {
     "title": "Upcoming uploads",

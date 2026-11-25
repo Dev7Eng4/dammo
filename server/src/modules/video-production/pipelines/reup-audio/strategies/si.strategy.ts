@@ -3,6 +3,7 @@ import { timedStep } from '../../../../../shared/timing/step-timer.js';
 import { AI_VIDEO_SI_MULTI_MAX_TRANSCRIPT_SEC } from '../../../shared/ai-video/index.js';
 import { isThumbnailOnlyTwoStepNiche } from '../../../shared/meta/two-step/two-step-niche.config.js';
 import { copyCelebrityImagesToWorkDir, listSiMultiImagePaths } from '../../../shared/si-video/si-multi-image.js';
+import { renderFinalVideoMp4 } from '../../../shared/render-core/video-output-file.js';
 import { assembleReupSiVideo } from '../../../shared/si-video/si-video-assembler.js';
 import {
   DEFAULT_HERO_IMAGE_FILENAME,
@@ -228,11 +229,11 @@ export const siStrategy: VideoTypeStrategy = {
           : `Assembling SI video (stock + subtitles, backgroundImage=${backgroundImage})...`,
     );
 
-    const outputPath = await assembleReupSiVideo({
+    const outputPath = await renderFinalVideoMp4(workDir, outputBasename, renderBasename => assembleReupSiVideo({
       workDir,
       audioPath: ctx.audioPath,
       subtitlePath: ctx.subtitlePath,
-      outputBasename,
+      outputBasename: renderBasename,
       ...(needsCenterImage && assets.heroImagePath ? { centerImagePath: assets.heroImagePath } : {}),
       ...(needsMultiImage
         ? {
@@ -252,9 +253,10 @@ export const siStrategy: VideoTypeStrategy = {
       subscribeFile: destination.subscribeFile,
       showDisclaim: ctx.showDisclaim,
       disclaimerText: ctx.disclaimerText,
+      ...(destination.fixedAudioSpeed != null ? { fixedAudioSpeed: destination.fixedAudioSpeed } : {}),
       ...(ctx.channelAvatarPath ? { channelAvatarPath: ctx.channelAvatarPath } : {}),
       onLog: toOnLog(log),
-    });
+    }));
 
     log.ok(`SI video saved → ${outputBasename}.mp4`);
     return outputPath;

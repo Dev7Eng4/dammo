@@ -1,5 +1,6 @@
 import { timedStep } from '../../../../../shared/timing/step-timer.js';
 import { assembleReupAiSlideshowVideo, AI_VIDEO_CLIP_SEC } from '../../../shared/ai-video/index.js';
+import { renderFinalVideoMp4 } from '../../../shared/render-core/video-output-file.js';
 import { runCelebrityStillStep, usesCelebrityStillBackground } from '../steps/celebrity-still.step.js';
 import { runSceneAssetsStep } from '../steps/scene-assets.step.js';
 import { resolveSceneVideoMode, runSceneVideoClipsStep } from '../steps/scene-video-clips.step.js';
@@ -68,17 +69,18 @@ export const aiStrategy: VideoTypeStrategy = {
     const outputPath = await timedStep(
       'AI assemble video',
       () =>
-        assembleReupAiSlideshowVideo({
+        renderFinalVideoMp4(ctx.workDir, outputBasename, renderBasename => assembleReupAiSlideshowVideo({
           workDir: ctx.workDir,
           scenes: allScenes,
           audioPath: ctx.audioPath,
           subtitlePath: ctx.subtitlePath,
           language: destination.language,
           captionStyleKey: destination.captionStyleKey,
-          outputBasename,
+          outputBasename: renderBasename,
           ...(stillBackground ? { stillBackground } : {}),
           showDisclaim: ctx.showDisclaim,
           disclaimerText: ctx.disclaimerText,
+          ...(destination.fixedAudioSpeed != null ? { fixedAudioSpeed: destination.fixedAudioSpeed } : {}),
           ...(ctx.channelAvatarPath ? { channelAvatarPath: ctx.channelAvatarPath } : {}),
           ...(destination.showSmallVideo || destination.smallVideoFile
             ? {
@@ -87,7 +89,7 @@ export const aiStrategy: VideoTypeStrategy = {
               }
             : {}),
           onLog: toOnLog(log),
-        }),
+        })),
       ctx.stepTimer,
     );
 

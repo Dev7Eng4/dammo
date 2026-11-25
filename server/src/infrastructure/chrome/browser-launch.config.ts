@@ -4,9 +4,14 @@ import type { ChromeWindowRect } from './chrome-window-placement.js';
 
 const STEALTH_ARGS = ['--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check'] as const;
 
+/**
+ * Software rendering. Saves GPU memory, but heavy pages draw slowly on the CPU: with 10 Meta AI windows,
+ * moving the mouse over its open attachment menu took 8–30s (0.6–1s with the GPU on).
+ */
+const DISABLE_GPU_ARG = '--disable-gpu';
+
 /** Flags reducing Chrome memory. Only safe, non-visual-breaking ones (page still renders normally). */
 const RAM_OPTIMIZATION_ARGS = [
-  '--disable-gpu',
   '--renderer-process-limit=2',
   '--disable-extensions',
   '--disable-dev-shm-usage',
@@ -41,8 +46,8 @@ export function backgroundChromeArgs(): string[] {
 }
 
 /** Shared launch flags for system Google Chrome (not Playwright Chromium bundle). */
-function baseChromeOptions(headless: boolean, background = false, windowRect?: ChromeWindowRect) {
-  const args: string[] = [...STEALTH_ARGS, ...RAM_OPTIMIZATION_ARGS];
+function baseChromeOptions(headless: boolean, background = false, windowRect?: ChromeWindowRect, gpu = false) {
+  const args: string[] = [...STEALTH_ARGS, ...(gpu ? [] : [DISABLE_GPU_ARG]), ...RAM_OPTIMIZATION_ARGS];
   if (background) {
     args.push(...backgroundChromeArgs());
   }
@@ -70,6 +75,8 @@ export interface ChromeLaunchOptions {
   background?: boolean;
   /** Forces the window on screen, overriding the position persisted in the profile. */
   windowRect?: ChromeWindowRect;
+  /** Render with the GPU instead of the CPU (off by default to save memory). */
+  gpu?: boolean;
 }
 
 /**
@@ -78,7 +85,7 @@ export interface ChromeLaunchOptions {
  */
 export function buildChromeLaunchOptions(headless: boolean, options: ChromeLaunchOptions = {}) {
   return {
-    ...baseChromeOptions(headless, options.background, options.windowRect),
+    ...baseChromeOptions(headless, options.background, options.windowRect, options.gpu),
     viewport: null,
     locale: 'en-US',
     acceptDownloads: true,

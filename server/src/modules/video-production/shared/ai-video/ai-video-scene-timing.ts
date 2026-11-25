@@ -122,6 +122,59 @@ export function sceneDurationSec(scene: AiVideoScenePrompt): number {
   return Math.max(0.2, (endMs - startMs) / 1_000);
 }
 
+export interface ImageTimelineEntry {
+  /** Index into the scene list passed in. */
+  index: number;
+  /** When the image takes over on screen, in seconds on the scenes' own clock. */
+  startSec: number;
+}
+
+/** An image squeezed below this by an overlapping scene is left out instead of flashing by. */
+const MIN_IMAGE_WINDOW_SEC = 1;
+
+/**
+ * When each scene image takes over on screen. Scenes without an image have no entry, so the image
+ * before them simply stays (the first image also covers everything before its own start).
+ *
+ * Every start comes from the scene timestamps, never from summed durations: overlapping or missing
+ * scenes stay a local matter and cannot shift the images after them. Overlapping scenes meet in the
+ * middle of their overlap, except that a title card keeps its exact range. Scenes are taken in order
+ * of their end time, which also puts scenes back in place when the timestamps went backwards.
+ */
+export function resolveImageTimeline(scenes: AiVideoScenePrompt[]): ImageTimelineEntry[] {
+  const windows = scenes
+    .map((scene, index) => {
+      const start = srtTimestampToMs(scene.startTime) / 1_000;
+      const end = Math.max(start, srtTimestampToMs(scene.endTime) / 1_000);
+      return { index, start, end, hasImage: Boolean(scene.path?.trim()), title: scene.type === 'title' };
+    })
+    .filter(window => window.hasImage)
+    .sort((a, b) => a.end - b.end || a.index - b.index);
+
+  for (;;) {
+    const starts = windows.map((window, i) => {
+      const prev = windows[i - 1];
+      if (!prev || prev.end <= window.start || window.title) return window.start;
+      if (prev.title) return prev.end;
+      return (Math.max(prev.start, window.start) + Math.min(prev.end, window.end)) / 2;
+    });
+
+    let dropAt = -1;
+    let smallest = Infinity;
+    for (let i = 0; i < windows.length - 1; i += 1) {
+      const window = windows[i]!;
+      const visible = starts[i + 1]! - starts[i]!;
+      const wanted = Math.min(MIN_IMAGE_WINDOW_SEC, Math.max(0.1, window.end - window.start));
+      if (!window.title && visible < wanted - 0.001 && visible < smallest) {
+        smallest = visible;
+        dropAt = i;
+      }
+    }
+    if (dropAt === -1) return windows.map((window, i) => ({ index: window.index, startSec: starts[i]! }));
+    windows.splice(dropAt, 1);
+  }
+}
+
 /** Scale scene start/end to match audio after atempo (factor = 1/speed), same as scaleSrtTimestamps. */
 export function scaleSceneTimestamps(
   scenes: AiVideoScenePrompt[],

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
-import { getTaskDetailLine } from '../../utils/taskQueue';
+import { getTaskDetailLine, getTaskStageLabel } from '../../utils/taskQueue';
 import type { TaskJob, TaskLogEntry } from '../../types/taskQueue';
 import { Drawer } from '../ui';
 import { TaskErrorDetailsBlock, TaskStageChecklist } from './TaskStageChecklist';
@@ -78,7 +78,7 @@ export function TaskJobDetailDrawer({ open, job, onClose }: TaskJobDetailDrawerP
     const failed = current.stages?.find((stage) => stage.status === 'failed');
     const details = failed?.errorDetails ?? current.errorDetails;
     const lines = [
-      failed ? t('queue.job.stepLabel', { label: failed.label }) : null,
+      failed ? t('queue.job.stepLabel', { label: getTaskStageLabel(failed) }) : null,
       failed?.error ?? current.error,
       details?.reason ? t('queue.stage.reason', { reason: details.reason }) : null,
       details?.missingFields?.length

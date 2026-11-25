@@ -85,7 +85,7 @@ Previous titles on this channel:
 - <tiêu đề cũ 1>
 - <tiêu đề cũ 2>
 
-Length: you decide, between 12 and 30 minutes (about 330 characters of narration per minute), from the material - see the length rule in your instructions.
+Length: you decide, between 12 and 30 minutes (about 300 characters of narration per minute), from the material - see the length rule in your instructions.
 Producer notes: <ghi chú, nếu có>
 
 ## Source 1: <tiêu đề nguồn 1>
@@ -134,7 +134,7 @@ Cần kiểm — các luật này code tự kiểm cứng trong agent (`validate
 
 ## Bước 3 — Prompt 2: viết từng chương
 
-Gọi **một lần cho mỗi chương, theo thứ tự**. Số ký tự mục tiêu mỗi chương = `targetMinutes × 330 ÷ số chương`.
+Gọi **một lần cho mỗi chương, theo thứ tự**. Số ký tự mục tiêu mỗi chương = `targetMinutes × 300 ÷ số chương`.
 
 Prompt viết bằng **tiếng Anh**, chỉ phần lời thoại đầu ra là tiếng Nhật (có dòng yêu cầu rõ trong prompt). Các câu tiếng Nhật còn lại là ví dụ nguyên văn cần giữ (「さて」「次に」…).
 

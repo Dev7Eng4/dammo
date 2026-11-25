@@ -6,7 +6,10 @@ import {
   extractSampleTitles,
   findCopiedHookLines,
   findCopiedSample,
+  findSourceTitleCopy,
   findUnsupportedPromises,
+  hookLinesOnlyRepeatTitle,
+  pickTitlesAwayFromSource,
   findUnsupportedStats,
   formatTitleGuardFeedback,
 } from './title-guard.js';
@@ -87,6 +90,56 @@ describe('title guard', () => {
     });
     assert.equal(result.ok, false);
     assert.match(result.reasons.join(' '), /hook_lines/);
+  });
+
+  test('flags a title that keeps the source video title, allows shared topic words', () => {
+    const source = '【心理学】定年後に「やらなかった後悔」が消える時間とお金の使い方6選';
+    assert.ok(findSourceTitleCopy('定年後に「やらなかった後悔」が消える時間とお金の使い方6選｜心理学が明かした', source));
+    assert.ok(findSourceTitleCopy('実は、定年後に「やらなかった後悔」を残す人に共通する先延ばしの習慣とは', source));
+    assert.equal(
+      findSourceTitleCopy('「いつか行こう」が一生来ない人へ　心理学でわかった60代からの後悔しない時間とお金の使い方6つのコツ', source),
+      undefined,
+    );
+    assert.equal(findSourceTitleCopy('60代で「物」より「思い出」にお金を使った人が知っていた人生の選択', source), undefined);
+  });
+
+  test('checks the main and alternative titles against the source title', () => {
+    const result = checkTitleGuards({
+      title: '定年後に「やらなかった後悔」が消える時間とお金の使い方6選｜心理学が明かした',
+      prompt,
+      transcript: '定年後 時間 お金',
+      sourceTitle: '【心理学】定年後に「やらなかった後悔」が消える時間とお金の使い方6選',
+      alternativeTitles: ['テレビを買う前に考えたい、60代からの「思い出」へのお金の使い方6選'],
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.reasons.length, 1);
+    assert.match(result.reasons[0], /title cũ của video gốc/);
+  });
+
+  test('after every attempt failed, drops alternatives that keep the source title and promotes a clean one', () => {
+    const source = '【心理学】定年後に「やらなかった後悔」が消える時間とお金の使い方6選';
+    const copy = '定年後に「やらなかった」と悔やまない人になる時間とお金の使い方6選';
+    const clean = '60代から人生が変わる、先送りをやめて「体験」に時間とお金を使う6つの方法';
+    assert.deepEqual(pickTitlesAwayFromSource('【心理学】「いつか」を消す時間とお金の使い方6選', [copy, clean], source), {
+      title: '【心理学】「いつか」を消す時間とお金の使い方6選',
+      alternatives: [clean],
+    });
+    assert.deepEqual(pickTitlesAwayFromSource(copy, [clean], source), { title: clean, alternatives: [] });
+    assert.deepEqual(pickTitlesAwayFromSource(copy, [copy], source), { title: copy, alternatives: [copy] });
+  });
+
+  test('flags thumbnail lines that only restate the title', () => {
+    const title = '定年後に「やらなかった後悔」が消える時間とお金の使い方6選｜心理学が明かした';
+    assert.equal(hookLinesOnlyRepeatTitle(['後悔が消える使い方「6選」', '※やらなかった後悔'], title), true);
+    assert.equal(hookLinesOnlyRepeatTitle(['テレビより「金沢」', '※後悔しない使い方6選'], title), false);
+    assert.equal(hookLinesOnlyRepeatTitle(['6選'], title), false);
+    const result = checkTitleGuards({
+      title: '限界を迎えた優しい人が無言で去る4つのわけ',
+      prompt,
+      transcript: '限界 優しい人 去る',
+      hookLines: ['優しい人が無言で去る', '4つのわけ'],
+    });
+    assert.match(result.reasons.join(' '), /chỉ lặp lại chữ của title/);
   });
 
   test('passes prompts without sample titles untouched', () => {

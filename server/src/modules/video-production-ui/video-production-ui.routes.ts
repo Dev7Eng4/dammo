@@ -5,6 +5,7 @@ import { isAppError } from '../../shared/http/errors.js';
 import { z } from 'zod';
 import { channelVideoMotionService } from './channel-video-motion.service.js';
 import { channelVideoRemakeService } from './channel-video-remake.service.js';
+import { startPreparingFromReadyScript } from './preparing-video.service.js';
 import { videoProductionUiService } from './video-production-ui.service.js';
 
 const remakeSchema = z.object({
@@ -14,10 +15,15 @@ const remakeSchema = z.object({
 });
 const scriptSchema = z.object({ text: z.string().min(1).max(200_000) });
 const motionSchema = z.object({
-  mode: z.enum(['intro', 'full', 'scenes']),
+  mode: z.enum(['intro', 'full', 'interleaved', 'scenes']),
   indexes: z.array(z.number().int().min(0)).max(500).optional(),
 });
-const voiceSchema = z.object({ speaker: z.number().int().min(0), speedScale: z.number().min(0.7).max(1.5) });
+const voiceSchema = z.object({
+  speaker: z.number().int().min(0),
+  speedScale: z.number().min(0.5).max(2),
+  /** Saved VOICEVOX voice: its speaker and prosody win, speedScale multiplies its speed. */
+  presetId: z.string().min(1).optional(),
+});
 
 function streamFileAsset(
   request: Request,
@@ -68,6 +74,11 @@ export function createVideoProductionUiRoutes() {
     const basePath = c.req.path;
     return c.json({ items: videoProductionUiService.listVideos(basePath) });
   });
+
+  /** Opens a skill script that has no folder yet (Preparing): creates the video folder so the tabs work. */
+  app.post('/videos/:channelId/:videoId/start-preparing', async (c) =>
+    c.json(await startPreparingFromReadyScript(c.req.param('channelId'), c.req.param('videoId'))),
+  );
 
   app.get('/videos/:channelId/:videoId/video', (c) => {
     const asset = videoProductionUiService.getOutputVideo(
@@ -188,6 +199,22 @@ export function createVideoProductionUiRoutes() {
       ),
     ),
   );
+
+  app.put('/videos/:channelId/:videoId/motion/:sceneIndex/clip', async (c) => {
+    const body = await c.req.parseBody();
+    const file = body.file;
+    if (!(file instanceof File)) {
+      return c.json({ error: 'File is required' }, 400);
+    }
+    return c.json(
+      await channelVideoMotionService.replaceClip(
+        c.req.param('channelId'),
+        c.req.param('videoId'),
+        Number(c.req.param('sceneIndex')),
+        file,
+      ),
+    );
+  });
 
   app.get('/videos/:channelId/:videoId/scenes/:sceneIndex/clip', (c) => {
     const filePath = channelVideoMotionService.clipFile(

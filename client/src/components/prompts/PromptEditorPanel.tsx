@@ -3,11 +3,10 @@ import { Trans, useTranslation } from 'react-i18next';
 import { fetchNiches } from '../../api/niches';
 import { Button, DropdownSelect, Input } from '../ui';
 import {
-  PROMPT_CATEGORY_OPTIONS,
-  PROMPT_FORM_LANGUAGE_OPTIONS,
   PROMPT_NICHE_ALL,
-  PROMPT_NICHE_ALL_OPTION,
-  PROMPT_PLATFORM_OPTIONS,
+  promptCategoryOptions,
+  promptFormLanguageOptions,
+  promptPlatformOptions,
 } from '../../constants/promptForm';
 import { useAbortableEffect } from '../../hooks';
 import { derivePromptKeyFromName } from '../../utils/promptVariables';
@@ -75,10 +74,10 @@ export function PromptEditorPanel({
 
   const nicheOptions = useMemo(
     () => [
-      PROMPT_NICHE_ALL_OPTION,
+      { value: PROMPT_NICHE_ALL, label: t('common:filter.all') },
       ...niches.map((item) => ({ value: item.key, label: item.label })),
     ],
-    [niches],
+    [niches, t],
   );
 
   if (!draft && !loading) {
@@ -227,7 +226,7 @@ export function PromptEditorPanel({
               <DropdownSelect
                 value={draft.language}
                 onChange={(language) => onChange({ language })}
-                options={PROMPT_FORM_LANGUAGE_OPTIONS}
+                options={promptFormLanguageOptions()}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
@@ -238,7 +237,7 @@ export function PromptEditorPanel({
               <DropdownSelect
                 value={draft.category}
                 onChange={(category) => onChange({ category })}
-                options={PROMPT_CATEGORY_OPTIONS}
+                options={promptCategoryOptions()}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"
@@ -249,7 +248,7 @@ export function PromptEditorPanel({
               <DropdownSelect
                 value={draft.platform || 'all'}
                 onChange={(platform) => onChange({ platform })}
-                options={PROMPT_PLATFORM_OPTIONS}
+                options={promptPlatformOptions()}
                 disabled={readOnly}
                 className="w-full"
                 triggerClassName="h-10 w-full rounded-lg"

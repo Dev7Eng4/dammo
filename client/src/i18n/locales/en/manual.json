@@ -207,6 +207,7 @@
     "modes": {
       "intro": "Intro only (first {{sec}}s)",
       "full": "Every scene",
+      "interleaved": "Intro + 1 clip every {{min}}–{{max}} images",
       "scenes": "Pick scenes"
     },
     "channelImages": "This channel is set to image-based video — pick intro or every scene to add motion.",
@@ -218,42 +219,70 @@
     "badgeClip": "Clip",
     "badgeImage": "Image",
     "remove": "Remove clip",
+    "replace": "Replace clip",
     "one": "Make clip",
-    "titleCard": "Title card — unchanged"
+    "titleCard": "Title card — unchanged",
+    "replaced": "Replaced the clip for scene #{{index}}. Rebuild the video to use it."
   },
   "source": {
     "none": "No group",
     "channelProjects": "Channel projects",
-    "channelVideos": "Prepared / created videos"
+    "channelVideos": "Preparing / prepared / created videos"
   },
   "channelVideo": {
     "status": {
       "Prepared": "Prepared",
-      "Created": "Created"
+      "Created": "Created",
+      "Preparing": "Preparing"
     },
-    "empty": "This channel has no prepared or created videos.",
+    "empty": "This channel has no preparing, prepared or created videos yet.",
     "tabs": {
       "characters": "Character reference"
     },
     "source": {
-      "hint": "The YouTube source video this video is remade from."
+      "hint": "The YouTube source video this video is remade from.",
+      "starting": "Creating the video folder from the skill script…"
     },
     "script": {
       "remakeHint": "Remake channel: rewrite the script from the source transcript with ChatGPT/Gemini/Claude (same prompt sets as projects), then press \"Use the result as the script\". You can edit it by hand below.",
-      "size": "{{chars}} chars"
+      "size": "{{chars}} chars",
+      "fromSkill": "Script written ahead by the nightly skill (check passed {{date}}). For another one, remake above, use the result and narrate again."
     },
     "voice": {
       "title": "VOICEVOX narration",
+      "groupPresets": "Saved voices (Settings → VOICEVOX)",
+      "groupSpeakers": "VOICEVOX speakers (no preset)",
+      "defaultMark": "default",
+      "presetInfo": "{{speaker}} · pitch {{pitch}} · intonation {{intonation}} · volume {{volume}} · pause {{pause}}. Speed is prefilled from the saved voice ({{speed}}) and can be changed.",
       "hint": "Reads the script from the Script tab. The narration replaces the video's audio and subtitles; the source video's audio and transcript are kept in the source/ folder.",
       "running": "Reading {{progress}}",
       "done": "Narration finished",
       "failed": "Narration failed",
       "needScript": "A script is needed first.",
-      "rescenes": "Existing scenes still follow the old audio timing — press \"Regenerate scenes\" on the Scenes tab to match the new voice, then render again.",
+      "rescenes": "Re-reading the voice moves the existing scenes onto the new voice timing. If the script changed a lot, the app tells you to regenerate the scenes.",
       "narration": "Narration ({{duration}})",
       "source": "Source video's downloaded audio",
-      "sourceKept": "The source video's original audio is kept at source/audio.mp3."
-    }
+      "sourceKept": "The source video's original audio is kept at source/audio.mp3.",
+      "scenesStale": "The script changed a lot since the scenes were made (only {{percent}}% of sentences kept): the images no longer match the narration. Press \"Regenerate scenes\" on the Scenes tab, then render again.",
+      "readings": {
+        "title": "Check readings ({{count}} words)",
+        "hint": "Numbers, names, Latin words and kanji with two readings in the script, with how VOICEVOX read the first sentence containing each. If a reading is wrong, write the right one in katakana: only the voice changes, the script and subtitles stay as written. Then read the voice again; only sentences with that word are re-read.",
+        "sentences": "{{count}} sentences",
+        "placeholder": "Correct reading (katakana)",
+        "save": "Save reading",
+        "saved": "Saved: {{surface}} → {{reading}}",
+        "inDictionary": "In the dictionary: {{reading}}",
+        "remove": "Remove",
+        "noReading": "(VOICEVOX was not running: no reading)",
+        "kind": {
+          "number": "number",
+          "name": "name",
+          "latin": "Latin",
+          "homograph": "two readings"
+        }
+      }
+    },
+    "sceneCount": "{{count}} scenes"
   },
   "metadata": {
     "empty": "No metadata yet. Use the button above to create it.",

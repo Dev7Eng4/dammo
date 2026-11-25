@@ -1,0 +1,185 @@
+{
+  "page": {
+    "title": "Live brain map — {{count}} brains, what they have learned and real-time pulses",
+    "fullscreen": "Fullscreen",
+    "mapHint": "Drag to rotate · scroll to zoom · click a dot to read a neuron · click a brain name to fly to it",
+    "mapTitle": "3D brain map"
+  },
+  "pipeline": {
+    "stop": "Stop pipeline",
+    "current": "— now: {{name}}",
+    "confirm": "Run {{count}} brains one after another (each brain is a paid Claude run)?",
+    "started": "Pipeline started",
+    "run": "Run the whole pipeline ({{count}} brains)"
+  },
+  "list": {
+    "title": "Department brains",
+    "search": "Search neurons, channels, topics…",
+    "all": "◎ Central brain (all)",
+    "soon": "coming soon",
+    "kinds": "Neuron types — click to show/hide"
+  },
+  "stats": {
+    "pulses24h": "Pulses 24h",
+    "errors24h": "Errors 24h",
+    "neurons": "Neurons learned",
+    "lastRun": "Last scan",
+    "pulsesPerMin": "Pulses / min"
+  },
+  "neuron": {
+    "back": "← back to brain",
+    "heat": "Heat",
+    "hits": "Seen",
+    "hitsValue": "{{value}}×",
+    "firstSeen": "First seen",
+    "lastSeen": "Last seen",
+    "brain": "Brain",
+    "subscribers": "Subscribers",
+    "channel": "Channel",
+    "views": "Views",
+    "viewsPerHour": "Views / hour",
+    "published": "Published",
+    "searchYoutube": "Search on YouTube",
+    "openYoutube": "Open on YouTube",
+    "links": "Links"
+  },
+  "intro": {
+    "p1": "Each <b>brain</b> is an AI agent doing one job in the channel pipeline. Each <b>glowing dot</b> is a neuron — one thing a brain has learned (topic, video, channel, audience insight, idea, title, pattern, script brief, suggested setting, schedule, metric, action). <b>Color</b> = the brain that learned it.",
+    "p2": "<b>Large</b> = seen many times, <b>bright</b> = hot and new, <b>dim</b> = old. A <b>yellow thread</b> links a topic to its evidence videos once the topic has appeared in ≥ 2 scans.",
+    "p3": "A <b>purple thread</b> between brains = the later brain reads the earlier brain's memory; it lights up while the later brain is working. Pipeline: Trends → Competitors → Audience → Ideas → Titles → Thumbnails → Script → Voice → Images/clips → Editing → Publishing → Channel metrics → Growth.",
+    "p4": "A running brain flashes with every pulse (searching, thinking, remembering). Brains from Script onwards only analyse and suggest — rendering is still done by the video agent, and uploading by you or the upload module."
+  },
+  "feed": {
+    "title": "Neural pulses",
+    "live": "{{value}} pulses in 60 seconds · live",
+    "empty": "No pulses yet — wake a brain to get started."
+  },
+  "detail": {
+    "feeds": "Reads from:",
+    "notesPlaceholder": "Notes for this scan (optional), e.g. focus on 人間関係 and お金",
+    "stop": "Stop",
+    "wake": "Wake — scan now",
+    "woken": "Brain is awake",
+    "forget": "Clear memory",
+    "forgetConfirm": "Delete every neuron this brain has learned?",
+    "forgotten": "Memory cleared",
+    "auto": "Auto run",
+    "autoOff": "Off",
+    "autoEvery": "Every {{hours}} hours",
+    "runs": "Runs",
+    "lastRun": "Last run",
+    "cost": "Claude cost",
+    "dormant": "This brain has not been built yet. Once built, it will read the memory of the brains listed under “Reads from”."
+  },
+  "pulse": {
+    "start": "START",
+    "think": "THINK",
+    "search": "SEARCH",
+    "found": "LEARN",
+    "error": "ERROR",
+    "done": "DONE"
+  },
+  "status": {
+    "idle": "Ready",
+    "running": "Running",
+    "error": "Error",
+    "dormant": "Not built"
+  },
+  "kind": {
+    "topic": "Topic",
+    "video": "Video",
+    "keyword": "Keyword",
+    "channel": "Channel",
+    "insight": "Insight",
+    "idea": "Idea",
+    "title": "Title",
+    "pattern": "Pattern",
+    "brief": "Script brief",
+    "recipe": "Suggested setting",
+    "schedule": "Schedule",
+    "metric": "Metric",
+    "action": "Action"
+  },
+  "section": {
+    "action": "Recommended actions",
+    "schedule": "Suggested schedule",
+    "brief": "Script briefs",
+    "recipe": "Suggested settings",
+    "metric": "Our channel metrics",
+    "idea": "Video ideas",
+    "title": "Suggested titles",
+    "topic": "Rising topics",
+    "insight": "Audience insights",
+    "pattern": "Winning patterns",
+    "channel": "Channels to watch",
+    "video": "Breakout videos",
+    "keyword": "Rising keywords"
+  },
+  "brain": {
+    "jp-psy-trends": {
+      "name": "Japanese psychology trends",
+      "department": "Content selection",
+      "description": "Scans Japanese YouTube and the web for rising topics and breakout videos about psychology / brain science (人生後半, 人間関係, 脳科学, ブッダの教え…). Each run creates topic, video and keyword neurons with a heat score."
+    },
+    "competitors": {
+      "name": "Competitors",
+      "department": "Analysis",
+      "description": "Tracks channels in the same niche (Japanese source channels + the channels behind hot videos). Compares each video with that channel's own median views/hour to catch outlier videos, accelerating channels and the formulas they repeat."
+    },
+    "audience": {
+      "name": "Audience voice",
+      "department": "Analysis",
+      "description": "Reads the comments of breakout videos to find pain points, unanswered questions, debates and the exact words viewers aged 50–70 use. This is the raw material for video angles and openings."
+    },
+    "ideas": {
+      "name": "Video ideas",
+      "department": "Content selection",
+      "description": "Merges hot topics, competitor outliers and audience pain points into concrete video ideas for each of our channels: Japanese title, differentiating angle, promise, why now, saturation level."
+    },
+    "title-seo": {
+      "name": "Titles / SEO",
+      "department": "Production",
+      "description": "Breaks down the title formulas of winning videos (length, 【】, numbers, target, promise), checks keywords with YouTube suggestions, then writes 3 title options + tags for the hottest ideas."
+    },
+    "thumbnail": {
+      "name": "Thumbnails",
+      "department": "Production",
+      "description": "Looks at the thumbnails of hot and outlier videos (computer vision) to find winning patterns: layout, colors, text, character/mascot, expression — and points out what low-view videos do differently."
+    },
+    "script": {
+      "name": "Script",
+      "department": "Production",
+      "description": "Turns the hottest ideas into ready-to-use script briefs: central question, Japanese opening, through-line, chapter outline, differentiators and source video links for the video agent. Checks what the channel has already made to avoid repeating an angle."
+    },
+    "voice": {
+      "name": "Voice",
+      "department": "Production",
+      "description": "Picks the VOICEVOX voice and reading speed for each channel from real measurements of produced videos (characters/minute, deviation from target length) and from what older viewers say about the narration in comments."
+    },
+    "images": {
+      "name": "Images / clips",
+      "department": "Production",
+      "description": "Looks inside winning videos (3 frames from the middle): illustration or photo, characters, color palette, on-screen text — then gives the visual style direction and sample scene prompts for each channel."
+    },
+    "editing": {
+      "name": "Editing",
+      "department": "Production",
+      "description": "Compares the length, scene pacing, caption style and overlays of winning videos with our own editing settings, then suggests target length, seconds per scene, caption style and which overlays to turn on or off for each channel."
+    },
+    "publish": {
+      "name": "Publishing",
+      "department": "Distribution",
+      "description": "Plans the next 7 days of uploads: which finished video goes in which slot, videos matching hot topics jump the queue, which channels are running out of videos. Learns competitors' upload rhythm. Planning only — uploading is still done by you or the upload module."
+    },
+    "studio": {
+      "name": "Channel metrics",
+      "department": "Analysis",
+      "description": "Measures our own channels and videos with public numbers (views, views/hour, likes, comments, subscribers): baseline, trend, winning/losing videos and why. CTR, retention and revenue only exist in YouTube Studio, so this brain cannot read them — it tells you which numbers to check in Studio."
+    },
+    "growth": {
+      "name": "Growth",
+      "department": "Analysis",
+      "description": "Merges everything the network knows into 6–12 things to do in the next 2 weeks: double down on what is winning, cross-promote channels, fill niche gaps, channels to stop or redirect, duplicate-content risks."
+    }
+  }
+}

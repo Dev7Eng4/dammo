@@ -27,10 +27,14 @@
     "close": "Đóng",
     "closePanel": "Đóng panel",
     "closeDetailPanel": "Đóng panel chi tiết",
-    "moreActions": "Thêm thao tác"
+    "moreActions": "Thêm thao tác",
+    "dismiss": "Đóng thông báo",
+    "navigation": "Điều hướng"
   },
   "search": {
-    "placeholder": "Tìm kiếm"
+    "placeholder": "Tìm kiếm",
+    "noResults": "Không tìm thấy kết quả",
+    "short": "Tìm kiếm..."
   },
   "pagination": {
     "showing": "Hiển thị",
@@ -67,12 +71,40 @@
     "all": "Tất cả"
   },
   "errors": {
-    "generic": "Đã xảy ra lỗi"
+    "generic": "Đã xảy ra lỗi",
+    "loadData": "Không tải được dữ liệu",
+    "requestFailed": "Yêu cầu thất bại: {{status}}",
+    "exportFailed": "Xuất file thất bại: {{status}}",
+    "importFailed": "Nhập file thất bại: {{status}}"
   },
   "placeholder": {
     "fallbackTitle": "Module",
     "subtitle": "Tính năng đang phát triển. Module này sẽ có sẵn trong phiên bản tiếp theo.",
     "body": "Nội dung module sẽ xuất hiện tại đây."
+  },
+  "select": {
+    "placeholder": "Chọn mục",
+    "clear": "Xóa lựa chọn",
+    "remove": "Bỏ {{label}}"
+  },
+  "table": {
+    "selectAll": "Chọn tất cả các dòng",
+    "selectRow": "Chọn dòng",
+    "rowNumber": "STT",
+    "empty": "Không có mục nào."
+  },
+  "cluster": {
+    "K1": "Hạnh phúc tuổi già",
+    "K2": "Não tuổi già",
+    "K3": "Tiền tuổi già",
+    "K4": "Người thông minh",
+    "K5": "Tài năng bị ẩn",
+    "K6": "Tâm lý người giàu",
+    "K7": "Dọn dẹp và buông bỏ",
+    "K8": "Ranh giới quan hệ",
+    "K9": "Gia đình",
+    "K10": "Một mình, hướng nội",
+    "K11": "Lời dạy chữa lành"
   }
 }
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import type { OverviewStats, OverviewTrends } from '../../types/dashboard'
 import { Sparkline } from '../ui/Sparkline'
+import { appLocale } from '../../utils/locale'
 
 interface StatCardsProps {
   data: OverviewStats
@@ -67,7 +68,7 @@ export function StatCards({ data, trends, loading }: StatCardsProps) {
                   loading && 'animate-pulse text-muted-foreground',
                 )}
               >
-                {loading ? '—' : data[stat.key].toLocaleString()}
+                {loading ? '—' : data[stat.key].toLocaleString(appLocale())}
               </p>
               {!loading && series && (
                 <Sparkline values={series} className="shrink-0" />

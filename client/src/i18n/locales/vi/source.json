@@ -112,7 +112,8 @@
     "nicheEmpty": "Chưa có niche",
     "nichePlaceholder": "Chọn niche",
     "hint": "Nền tảng được nhận diện tự động. Kênh YouTube sẽ lấy metadata và video ở nền sau khi thêm.",
-    "nichesLoadError": "Không thể tải niches"
+    "nichesLoadError": "Không thể tải niches",
+    "niche": "Niche"
   },
   "niche": {
     "modalTitle": "Thêm niche",

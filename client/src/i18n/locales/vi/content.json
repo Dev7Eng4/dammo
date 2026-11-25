@@ -14,7 +14,7 @@
     "search": "Tìm prompt...",
     "empty": "Không tìm thấy prompt",
     "system": "Hệ thống",
-    "stepCount": "{{count}} step",
+    "stepCount": "{{count}} bước",
     "nameRequired": "Tên là bắt buộc",
     "stepTemplateRequired": "Mỗi step cần có mẫu prompt",
     "saveError": "Lưu thất bại",
@@ -89,7 +89,7 @@
       "sceneImageHint": "Flow / Meta cho tạo ảnh scene slide AI.",
       "thumbHint": "Dùng cho thumbnail và general/one_image.",
       "savedVideoDefault": "Google Flow (Veo) tạo clip chuyển động từ ảnh scene, ở bước \"Ảnh → video\".",
-      "step": "Step",
+      "step": "Bước",
       "stepLabel": "Bước {{n}}",
       "variables": "Biến",
       "functionNoVars": "Mẫu function — không có biến",
@@ -99,8 +99,24 @@
       "run": "Chạy thử",
       "imageAlt": "Xem trước ảnh thumbnail đã tạo",
       "providersMoved": "Chạy thử dùng nhà cung cấp mặc định.",
-      "openSettings": "Đổi ở Cài đặt → Công cụ AI"
-    }
+      "openSettings": "Đổi ở Cài đặt → Công cụ AI",
+      "profileShort": "hồ sơ {{id}}"
+    },
+    "option": {
+      "category": {
+        "thumbnail": "Ảnh thumbnail",
+        "transcript": "Bản ghi",
+        "meta": "Meta",
+        "image": "Hình ảnh",
+        "remake": "Remake kịch bản"
+      },
+      "outputType": {
+        "text": "Văn bản",
+        "image": "Hình ảnh",
+        "video": "Video"
+      }
+    },
+    "tokens": "{{count}} token"
   },
   "visual": {
     "page": {
@@ -133,7 +149,8 @@
       "nameRequired": "Vui lòng nhập tên",
       "nicheRequired": "Vui lòng nhập chủ đề",
       "ruleRequired": "Vui lòng nhập quy tắc",
-      "rulePlaceholder": "Mô tả quy tắc phong cách hình ảnh..."
+      "rulePlaceholder": "Mô tả quy tắc phong cách hình ảnh...",
+      "nichePlaceholder": "kinh dị, hài, đời thường..."
     },
     "addTitle": "Thêm phong cách hình ảnh",
     "editTitle": "Sửa phong cách hình ảnh",

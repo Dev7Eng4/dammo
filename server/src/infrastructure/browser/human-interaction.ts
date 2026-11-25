@@ -103,13 +103,40 @@ export async function humanFocusAndClear(page: Page, locator: Locator): Promise<
   await humanClearInput(page);
 }
 
-async function pasteViaClipboard(page: Page, text: string): Promise<void> {
-  await page.evaluate(async content => {
-    await navigator.clipboard.writeText(content);
-  }, text);
-  await randomDelay(80, 180);
-  const modifier = keyboardModifier();
-  await page.keyboard.press(`${modifier}+v`, { delay: randomInt(30, 90) });
+/** A tab that hangs with the clipboard must not block every other tab forever. */
+const CLIPBOARD_LOCK_MAX_MS = 15_000;
+let clipboardChain: Promise<unknown> = Promise.resolve();
+
+/**
+ * Run `task` while no other tab uses the clipboard. There is one system clipboard for every tab of every
+ * profile: without this, parallel tabs paste each other's text between their copy and their Ctrl+V.
+ */
+export function withClipboardLock<T>(task: () => Promise<T>, maxHoldMs = CLIPBOARD_LOCK_MAX_MS): Promise<T> {
+  const run = clipboardChain.then(async () => {
+    let timer: NodeJS.Timeout | undefined;
+    const tooLong = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`clipboard held longer than ${maxHoldMs}ms`)), maxHoldMs);
+    });
+    try {
+      return await Promise.race([task(), tooLong]);
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+  clipboardChain = run.catch(() => undefined);
+  return run;
+}
+
+/** Copy + Ctrl/Meta+V into the focused input. `confirm` runs before the clipboard is released to other tabs. */
+export async function humanPasteIntoFocused(page: Page, text: string, confirm?: () => Promise<void>): Promise<void> {
+  await withClipboardLock(async () => {
+    await page.evaluate(async content => {
+      await navigator.clipboard.writeText(content);
+    }, text);
+    await randomDelay(80, 180);
+    await page.keyboard.press(`${keyboardModifier()}+v`, { delay: randomInt(30, 90) });
+    await confirm?.();
+  });
 }
 
 /**
@@ -121,7 +148,7 @@ export async function humanPaste(page: Page, locator: Locator, text: string): Pr
   await humanClick(page, locator);
   await randomDelay(120, 300);
   await locator.focus();
-  await pasteViaClipboard(page, text);
+  await humanPasteIntoFocused(page, text);
   await randomDelay(150, 350);
 }
 

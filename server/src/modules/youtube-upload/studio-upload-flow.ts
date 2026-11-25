@@ -7,6 +7,7 @@ import { parseVideoMetaContent } from '../video-production/shared/meta/metadata.
 import { clickElement, clearContent, delay, scrollUntilVisible } from './studio-dom.js';
 import { YOUTUBE_SELECTOR } from './studio-selectors.js';
 import { findThumbnailPath } from './upload-assets.js';
+import { resolveVoicevoxCredit, withVoicevoxCredit } from '../voice/voicevox-credit.js';
 
 const RELATED_VIDEO_START_OFFSET_SEC = 17;
 const VIDEO_META_FILENAME = 'video-meta.json';
@@ -63,12 +64,20 @@ function readVideoMeta(videoFolderPath: string) {
   }
 }
 
+/** YouTube Studio rejects the tag field above 500 characters (commas count; a tag with spaces counts its quotes). */
+const YOUTUBE_TAGS_MAX_CHARS = 500;
+
 function formatTags(tags: unknown): string {
   if (!Array.isArray(tags)) return '';
-  return tags
-    .map(tag => String(tag ?? '').trim())
-    .filter(Boolean)
-    .join(', ');
+  const kept: string[] = [];
+  let used = 0;
+  for (const tag of new Set(tags.map(item => String(item ?? '').trim()).filter(Boolean))) {
+    const cost = tag.length + (/\s/.test(tag) ? 2 : 0) + (kept.length > 0 ? 1 : 0);
+    if (used + cost > YOUTUBE_TAGS_MAX_CHARS) break;
+    kept.push(tag);
+    used += cost;
+  }
+  return kept.join(', ');
 }
 
 export async function openYoutubeUpload(page: Page, mp4Path: string): Promise<void> {
@@ -129,7 +138,11 @@ export async function fillVideoDetails(
 ): Promise<void> {
   const meta = readVideoMeta(videoFolderPath);
   const title = typeof meta?.metadata.title === 'string' ? meta.metadata.title.trim() : '';
-  const description = typeof meta?.metadata.description === 'string' ? meta.metadata.description.trim() : '';
+  // Last safety net for the VOICEVOX credit: metadata made before the narration, or edited by hand, may lack it.
+  const description = withVoicevoxCredit(
+    typeof meta?.metadata.description === 'string' ? meta.metadata.description.trim() : '',
+    await resolveVoicevoxCredit(videoFolderPath),
+  );
   const tags = formatTags(meta?.metadata.tags);
 
   await page.waitForTimeout(randomInt(150, 250));

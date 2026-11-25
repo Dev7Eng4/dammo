@@ -28,7 +28,7 @@ function heatTone(heat: number): StatusTone {
 
 /** Hot videos found by the jp-psy-trends brain or the Claude Code skill, filterable by cluster K1–K11. */
 export function TrendRadarPanel() {
-  const { t, i18n } = useTranslation("radar");
+  const { t, i18n } = useTranslation(["radar", "common"]);
   const [filters, setFilters] = useState<TrendRadarFilters>({ days: 7 });
   const [data, setData] = useState<TrendRadarResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,13 @@ export function TrendRadarPanel() {
     return hours < 48
       ? t("unit.hours", { value: Math.round(hours) })
       : t("unit.days", { value: Math.round(hours / 24) });
+  }
+
+  function clusterChipLabel(id: string, name: string): string {
+    if (id === "off") return t("trends.offNiche");
+    if (id === "none") return t("trends.untagged");
+    const label = t(`common:cluster.${id}`, { defaultValue: name });
+    return /^K\d+$/.test(id) ? `${id} ${label}` : label;
   }
 
   function selectCluster(id?: string) {
@@ -143,7 +150,7 @@ export function TrendRadarPanel() {
               chip.count === 0 && "opacity-50",
             )}
           >
-            {/^K\d+$/.test(chip.id) ? `${chip.id} ${chip.name}` : chip.name} ·{" "}
+            {clusterChipLabel(chip.id, chip.name)} ·{" "}
             {chip.count}
           </button>
         ))}
@@ -233,7 +240,9 @@ export function TrendRadarPanel() {
                           {item.clusterUnsure ? "?" : ""}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {item.clusterName}
+                          {t(`common:cluster.${item.cluster}`, {
+                            defaultValue: item.clusterName ?? "",
+                          })}
                         </span>
                         {item.subCluster ? (
                           <span className="text-[11px] text-muted-foreground">

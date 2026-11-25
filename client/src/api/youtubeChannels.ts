@@ -20,6 +20,7 @@ import type {
   ThumbnailBackgroundItem,
   ChannelAvatarItem,
 } from '../types/youtubeChannel';
+import i18n from '../i18n';
 
 export function fetchYoutubeChannelStats(options?: FetchOptions) {
   return fetchJson<YoutubeChannelStats>(
@@ -78,7 +79,7 @@ export async function deleteYoutubeChannel(id: string) {
     const error =
       body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
         ? (body as { error: string }).error
-        : `Request failed: ${res.status}`;
+        : i18n.t('common:errors.requestFailed', { status: res.status });
     throw new Error(error);
   }
 }

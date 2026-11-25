@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { isAbortError } from '../api/http';
 import type { PaginatedResponse } from '../types/pagination';
+import i18n from '../i18n';
 
 export interface UsePaginatedListOptions<TItem, TQuery extends object> {
   fetcher: (
@@ -94,7 +95,7 @@ export function usePaginatedList<TItem, TQuery extends object>({
         setItems([]);
         setTotal(0);
         setTotalPages(1);
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+        setError(err instanceof Error ? err.message : i18n.t('common:errors.loadData'));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);

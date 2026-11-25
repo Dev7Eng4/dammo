@@ -47,7 +47,7 @@ const channelConfigFields = {
   thumbnailStyleKey: z.string().optional(),
   thumbnailBackgroundFile: z.string().optional(),
   captionStyleKey: z.enum(CAPTION_STYLE_KEYS).optional(),
-  reupAudioVideoType: z.enum(['si', 'ai', 'ai_full_video', 'ai_intro_video']).optional(),
+  reupAudioVideoType: z.enum(['si', 'ai', 'ai_full_video', 'ai_intro_video', 'ai_interleaved_video']).optional(),
   reupAudioVisualStyleId: z.string().min(1).optional(),
   reupAudioBackgroundImage: z
     .enum(['no_image', 'local_image', 'one_image', 'multi_image', 'celebrity'])

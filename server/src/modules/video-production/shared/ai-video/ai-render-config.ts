@@ -30,23 +30,36 @@ export function resolveSavedKenBurns(config: AiRenderConfig, fallback: boolean):
   return typeof config.kenBurns === 'boolean' ? config.kenBurns : fallback;
 }
 
-/** Resolve once per workDir; reuses existing config on retry. */
+async function writeAiRenderConfig(workDir: string, config: AiRenderConfig): Promise<void> {
+  await fs.mkdir(workDir, { recursive: true });
+  await fs.writeFile(resolveAiRenderConfigPath(workDir), JSON.stringify(config, null, 2), 'utf8');
+}
+
+/**
+ * Resolve once per workDir; reuses existing config on retry. `fixedAudioSpeed` wins over a saved speed
+ * (and is written back), so videos prepared with a random speed follow it too.
+ */
 export async function resolveAiRenderConfig(
   workDir: string,
-  createOptions?: { kenBurns: boolean },
+  options?: { kenBurns: boolean; fixedAudioSpeed?: number },
 ): Promise<AiRenderConfig> {
   const filePath = resolveAiRenderConfigPath(workDir);
+  const fixedAudioSpeed = options?.fixedAudioSpeed;
   try {
     await fs.access(filePath);
-    return loadAiRenderConfig(workDir);
   } catch {
     const config: AiRenderConfig = {
-      audioSpeed: resolveRandomAudioSpeed(),
+      audioSpeed: fixedAudioSpeed ?? resolveRandomAudioSpeed(),
       createdAt: new Date().toISOString(),
-      kenBurns: createOptions?.kenBurns ?? false,
+      kenBurns: options?.kenBurns ?? false,
     };
-    await fs.mkdir(workDir, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
+    await writeAiRenderConfig(workDir, config);
     return config;
   }
+
+  const saved = await loadAiRenderConfig(workDir);
+  if (fixedAudioSpeed == null || saved.audioSpeed === fixedAudioSpeed) return saved;
+  const config: AiRenderConfig = { ...saved, audioSpeed: fixedAudioSpeed };
+  await writeAiRenderConfig(workDir, config);
+  return config;
 }

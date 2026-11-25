@@ -77,6 +77,8 @@ export async function collectAssistantImageSrcs(assistant: Locator): Promise<Arr
 
 export interface ResolveMetaImageSourceUrlOptions {
   pollDelayMs?: number;
+  /** Runs before every poll; throw to stop waiting (e.g. the account ran out of quota). */
+  onPoll?: () => Promise<void>;
 }
 
 /**
@@ -93,6 +95,7 @@ export async function resolveMetaImageSourceUrl(
   let lastSrcs: Array<string | null> = [];
 
   while (Date.now() < deadline) {
+    await options?.onPoll?.();
     lastSrcs = await collectAssistantImageSrcs(assistant);
     const url = pickMetaImageSrc(lastSrcs);
     if (url) {

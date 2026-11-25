@@ -41,6 +41,11 @@ const statusStyle: Record<YoutubeChannelVideoStatus, { labelKey: string; text: s
     text: 'text-secondary-300',
     bg: 'bg-secondary-400/10 border-secondary-400/30',
   },
+  Preparing: {
+    labelKey: 'status.preparing',
+    text: 'text-info',
+    bg: 'bg-info/10 border-info/30',
+  },
   Pending: {
     labelKey: 'status.pending',
     text: 'text-neutral-300',

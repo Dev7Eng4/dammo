@@ -1,6 +1,6 @@
 ---
 name: jp-psy-cluster
-description: Tạo nội dung cho kênh YouTube tâm lý học / khoa học não bộ tiếng Nhật theo 11 cụm K1–K11 của dammo. Dùng skill này mỗi khi tin nhắn bắt đầu bằng mã cụm K1…K11 (viết hoa hay thường) kèm một việc — "K1 mascot" (3 prompt tạo mascot trên Flow), "K5 channel" (3 bộ tên kênh, handle, mô tả, tags, prompt avatar và banner), "K8 videos" (10 chủ đề title + summary), "K2 video <title> <summary>" (viết transcript tiếng Nhật 12–30 phút) — hoặc khi người dùng muốn mascot, thông tin kênh, ý tưởng video hay kịch bản cho một cụm tâm lý Nhật (人生後半, 脳科学, お金持ち, 人間関係, ひとり時間, ブッダの教え...), kể cả khi không gõ đúng cú pháp.
+description: Tạo nội dung cho kênh YouTube tâm lý học / khoa học não bộ tiếng Nhật theo 11 cụm K1–K11 của dammo. Dùng skill này mỗi khi tin nhắn bắt đầu bằng mã cụm K1…K11 (viết hoa hay thường) kèm một việc — "K1 mascot" (3 prompt tạo mascot trên Flow), "K5 channel" (3 bộ tên kênh, handle, mô tả, tags, prompt avatar và banner), "K8 videos" (10 chủ đề title + summary), "K2 video <title> <summary>" (viết kịch bản tiếng Nhật 12–30 phút đúng format ô Kịch bản của app, qua `script check`) — hoặc khi người dùng muốn mascot, thông tin kênh, ý tưởng video hay kịch bản cho một cụm tâm lý Nhật (人生後半, 脳科学, お金持ち, 人間関係, ひとり時間, ブッダの教え...), kể cả khi không gõ đúng cú pháp.
 ---
 
 # Cụm tâm lý tiếng Nhật (K1–K11)
@@ -24,6 +24,6 @@ Luôn đọc theo thứ tự:
 Với `channel`, `videos`, `video`: nếu cần format title chi tiết hơn, đọc thêm prompt meta của cụm ở `server/data/prompts/ja/metadata_tlnb_{k}/step-1.js`; file đó là bản đang chạy trong hệ thống, nên khi khác với file cụm thì theo file đó.
 
 ## Bước 3 — Làm việc và trả lời
-Làm đúng hướng dẫn và định dạng trả lời trong file việc. Giải thích cho người dùng bằng tiếng Việt; nội dung cho người xem (title, mô tả kênh, tags, transcript, chữ trên banner) bằng tiếng Nhật; prompt tạo ảnh bằng tiếng Anh.
+Làm đúng hướng dẫn và định dạng trả lời trong file việc. Giải thích cho người dùng bằng tiếng Việt; nội dung cho người xem (title, mô tả kênh, tags, kịch bản, chữ trên banner) bằng tiếng Nhật; prompt tạo ảnh bằng tiếng Anh.
 
 Nếu người dùng gọi nhiều việc liền nhau trong cùng cuộc trò chuyện (ví dụ `K8 mascot` rồi `K8 channel`), dùng lại kết quả trước: kênh thứ i dùng mascot thứ i, chủ đề video không trùng các title đã tạo.

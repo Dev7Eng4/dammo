@@ -33,6 +33,7 @@ import { findFinalVideoMp4 } from '../video-production/shared/render-core/video-
 import { findThumbnailPath } from '../youtube-upload/upload-assets.js';
 import { videoPrepareRepository } from '../youtube-channels/video-prepare.repository.js';
 import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.repository.js';
+import { resolveFixedAudioSpeed } from '../youtube-channels/youtube-channels.types.js';
 import type {
   ProductionCharacterItem,
   ProductionCharactersResponse,
@@ -46,6 +47,7 @@ import type {
   ProductionVideoListItem,
   ProductionVideoStatus,
 } from './video-production-ui.types.js';
+import { listReadyScripts } from '../script-remake/remake-ready.js';
 
 const TRANSCRIPT_CANDIDATES = ['transcript-updated.srt', 'transcript.srt'] as const;
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'] as const;
@@ -74,7 +76,35 @@ function imageContentType(filePath: string): string {
 }
 
 function isProductionStatus(status: string): status is ProductionVideoStatus {
-  return status === 'Prepared' || status === 'Created';
+  return status === 'Preparing' || status === 'Prepared' || status === 'Created';
+}
+
+/**
+ * A Preparing video is Prepared once it has everything "Chuẩn bị video" would have made: narration
+ * (audio.mp3 + transcript.srt), a title in video-meta.json, a thumbnail, and scenes that all have an image.
+ */
+function isPreparationComplete(workDir: string): boolean {
+  if (!fs.existsSync(path.join(workDir, 'audio.mp3'))) return false;
+  if (!TRANSCRIPT_CANDIDATES.some((name) => fs.existsSync(path.join(workDir, name)))) return false;
+  if (!readVideoMetadataFields(workDir).title.trim()) return false;
+  if (!findThumbnailPath(workDir)) return false;
+  const scenes = readScenePromptsFile(workDir)?.scenes ?? [];
+  if (scenes.length === 0) return false;
+  return scenes.every(
+    (scene) =>
+      isTitleScene(scene) || (typeof scene.path === 'string' && Boolean(resolveWorkDirFilePath(workDir, scene.path))),
+  );
+}
+
+/** Moves a Preparing video to Prepared when its folder is complete; returns the status it has now. */
+export function promotePreparingVideo(channelId: string, videoId: string): ProductionVideoStatus | null {
+  const item = videoPrepareRepository.read(channelId).find((entry) => entry.videoId.trim() === videoId);
+  if (!item || !isProductionStatus(item.status)) return null;
+  if (item.status !== 'Preparing') return item.status;
+  const workDir = resolveYoutubeChannelVideoDir(channelId, videoId);
+  if (!workDir || !isPreparationComplete(workDir)) return 'Preparing';
+  videoPrepareRepository.updateStatus(channelId, videoId, 'Prepared');
+  return 'Prepared';
 }
 
 export function resolveProductionVideoFolder(channelId: string, videoId: string): string {
@@ -106,6 +136,23 @@ export function resolveProductionVideoFolder(channelId: string, videoId: string)
   }
 
   return folderPath;
+}
+
+/** A clip animated from the old image no longer matches the new one (and would replace it at assemble). */
+function dropSceneClips(workDir: string, sceneIndexes: number[]): void {
+  const file = readScenePromptsFile(workDir);
+  if (!file) return;
+
+  let changed = false;
+  for (const index of sceneIndexes) {
+    const scene = file.scenes[index];
+    if (!scene?.videoPath) continue;
+    const clipPath = resolveWorkDirFilePath(workDir, scene.videoPath);
+    if (clipPath) fs.rmSync(clipPath, { force: true });
+    delete scene.videoPath;
+    changed = true;
+  }
+  if (changed) writeJson(resolveAiScenePromptsFilePath(workDir), file);
 }
 
 function readScenePromptsFile(workDir: string): AiVideoScenePromptsFile | null {
@@ -190,9 +237,14 @@ function findCharacterImagePath(
   return null;
 }
 
+/** A source video's YouTube thumbnail (remake videos keep the source's id). */
+const sourceThumbnailUrl = (videoId: string) => `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`;
+
+/** Prepared first (ready to make the video), then Preparing (work left), then Created. */
 function statusRank(status: ProductionVideoStatus): number {
-  return status === 'Prepared' ? 0 : 1;
+  return status === 'Prepared' ? 0 : status === 'Preparing' ? 1 : 2;
 }
+
 
 function normalizeMetaText(value: unknown): string {
   return typeof value === 'string' ? value : '';
@@ -255,11 +307,13 @@ async function runExclusiveSceneImageJob<T>(
 }
 
 async function resolveSceneImageRenderOptions(
+  channelId: string,
   workDir: string,
 ): Promise<{ audioSpeed?: number; kenBurns: boolean }> {
   try {
     const renderConfig = await loadAiRenderConfig(workDir);
-    return { audioSpeed: renderConfig.audioSpeed, kenBurns: isKenBurnsEnabled() };
+    const fixedAudioSpeed = resolveFixedAudioSpeed(youtubeChannelsRepository.findById(channelId)?.type);
+    return { audioSpeed: fixedAudioSpeed ?? renderConfig.audioSpeed, kenBurns: isKenBurnsEnabled() };
   } catch {
     return { kenBurns: false };
   }
@@ -277,6 +331,7 @@ export class VideoProductionUiService {
 
         const videoId = item.videoId.trim();
         if (!videoId) continue;
+        const status = item.status === 'Preparing' ? (promotePreparingVideo(channel.id, videoId) ?? item.status) : item.status;
 
         const workDir = resolveYoutubeChannelVideoDir(channel.id, videoId);
         const sceneCount = countScenes(workDir);
@@ -288,14 +343,37 @@ export class VideoProductionUiService {
           channelType: channel.type,
           videoId,
           title: item.title?.trim() || videoId,
-          status: item.status,
+          status,
           sceneCount,
           hasScenes: sceneCount > 0,
           thumbnailUrl: hasThumbnail
             ? `${videosBasePath}/${encodeURIComponent(channel.id)}/${encodeURIComponent(videoId)}/thumbnail`
-            : null,
+            : status === 'Preparing'
+              ? sourceThumbnailUrl(videoId) // no thumbnail made yet: show the source video's
+              : null,
           videoFolderPath: workDir ? path.resolve(workDir) : null,
         });
+      }
+
+      if (channel.type === 'remake_video') {
+        const preparedIds = new Set(prepareItems.map(item => item.videoId.trim()));
+        for (const ready of listReadyScripts(channel.id)) {
+          if (preparedIds.has(ready.sourceVideoId)) continue;
+          items.push({
+            channelId: channel.id,
+            channelName: channel.name,
+            channelType: channel.type,
+            videoId: ready.sourceVideoId,
+            title: ready.title,
+            status: 'Preparing',
+            sceneCount: 0,
+            hasScenes: false,
+            // No folder yet: the only picture is the source video's own thumbnail.
+            thumbnailUrl: sourceThumbnailUrl(ready.sourceVideoId),
+            videoFolderPath: null,
+            estimatedMinutes: ready.estimatedMinutes,
+          });
+        }
       }
     }
 
@@ -353,7 +431,7 @@ export class VideoProductionUiService {
       channelId: safeChannelId,
       videoId: safeVideoId,
       title: prepareItem.title?.trim() || safeVideoId,
-      status: prepareItem.status,
+      status: promotePreparingVideo(safeChannelId, safeVideoId) ?? prepareItem.status,
       generatedAt: file?.generatedAt ?? null,
       sceneCount: scenes.length,
       scenes,
@@ -501,6 +579,7 @@ export class VideoProductionUiService {
 
     scene.path = relativePath;
     writeJson(resolveAiScenePromptsFilePath(workDir), file);
+    dropSceneClips(workDir, [sceneIndex]);
 
     const scenesBasePath = basePath.replace(/\/scenes\/\d+\/image$/, '/scenes');
     return this.getScenes(safeChannelId, safeVideoId, scenesBasePath);
@@ -534,7 +613,7 @@ export class VideoProductionUiService {
       throw new AppError('Scene has an empty prompt', 400, 'AI_SCENE_IMAGE_EMPTY_PROMPT');
     }
 
-    const { audioSpeed, kenBurns } = await resolveSceneImageRenderOptions(workDir);
+    const { audioSpeed, kenBurns } = await resolveSceneImageRenderOptions(safeChannelId, workDir);
 
     const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
       generateAiSceneSlideImages({
@@ -547,6 +626,8 @@ export class VideoProductionUiService {
         kenBurns,
       }),
     );
+
+    if (result.generatedCount > 0) dropSceneClips(workDir, [sceneIndex]);
 
     const regenerated = result.scenes[sceneIndex];
     const hasImage =
@@ -604,7 +685,7 @@ export class VideoProductionUiService {
       );
     }
 
-    const { audioSpeed, kenBurns } = await resolveSceneImageRenderOptions(workDir);
+    const { audioSpeed, kenBurns } = await resolveSceneImageRenderOptions(safeChannelId, workDir);
 
     const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
       generateAiSceneSlideImages({
@@ -617,6 +698,13 @@ export class VideoProductionUiService {
         kenBurns,
       }),
     );
+
+    if (result.generatedCount > 0) {
+      dropSceneClips(
+        workDir,
+        missing.map(({ index }) => index).filter((index) => result.scenes[index]?.path?.trim()),
+      );
+    }
 
     if (result.generatedCount === 0) {
       throw new AppError(

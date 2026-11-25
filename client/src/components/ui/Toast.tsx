@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { cn } from '../../lib/cn';
+import { useTranslation } from 'react-i18next';
 
 type ToastType = 'success' | 'error';
 
@@ -33,6 +34,8 @@ const typeStyles: Record<ToastType, string> = {
 };
 
 function ToastMessage({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) => void }) {
+  const { t } = useTranslation('common');
+
   return (
     <div
       role="status"
@@ -44,7 +47,7 @@ function ToastMessage({ item, onDismiss }: { item: ToastItem; onDismiss: (id: st
       <p className="flex-1 leading-snug">{item.message}</p>
       <button
         type="button"
-        aria-label="Dismiss"
+        aria-label={t('aria.dismiss')}
         onClick={() => onDismiss(item.id)}
         className="shrink-0 opacity-70 hover:opacity-100"
       >

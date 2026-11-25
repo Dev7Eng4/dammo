@@ -1,4 +1,4 @@
-import { Clapperboard, Film, ImageIcon, Undo2 } from 'lucide-react'
+import { Clapperboard, Film, ImageIcon, Replace, Undo2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ManualMotionMode, ManualSceneItem } from '../../api/manualVideo'
@@ -6,14 +6,42 @@ import { useAbortableEffect } from '../../hooks'
 import { cn } from '../../lib/cn'
 import { Button } from '../ui'
 
-/** Same values as the server: intro window and the length of one Flow clip. */
+/** Same values as the server: intro window, length of one Flow clip, image run between interleaved clips. */
 const INTRO_SEC = 30
 const CLIP_SEC = 8
-const MODES: ManualMotionMode[] = ['intro', 'full', 'scenes']
+const INTERLEAVED_MIN_IMAGES = 4
+const INTERLEAVED_MAX_IMAGES = 6
+const MODES: ManualMotionMode[] = ['intro', 'interleaved', 'full', 'scenes']
 
 function toSec(srt: string): number {
   const match = /(\d+):(\d+):(\d+)[,.](\d+)/.exec(srt)
   return match ? Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + Number(match[4]) / 1000 : 0
+}
+
+/** Mirrors the server's `selectInterleavedScenes`: longer-than-clip scenes freeze, so they cost more. */
+function clipFitCost(durationSec: number): number {
+  return durationSec > CLIP_SEC ? (durationSec - CLIP_SEC) * 3 : CLIP_SEC - durationSec
+}
+
+function interleavedIndexes(eligible: ManualSceneItem[]): Set<number> {
+  const picked = new Set<number>()
+  let cursor = 0
+  while (cursor < eligible.length && toSec(eligible[cursor]!.startTime) < INTRO_SEC) {
+    picked.add(eligible[cursor]!.index)
+    cursor += 1
+  }
+  for (;;) {
+    const first = cursor + INTERLEAVED_MIN_IMAGES
+    if (first >= eligible.length) break
+    const last = Math.min(cursor + INTERLEAVED_MAX_IMAGES, eligible.length - 1)
+    let best = first
+    for (let i = first + 1; i <= last; i += 1) {
+      if (clipFitCost(eligible[i]!.durationSec) < clipFitCost(eligible[best]!.durationSec)) best = i
+    }
+    picked.add(eligible[best]!.index)
+    cursor = best + 1
+  }
+  return picked
 }
 
 function shortTime(srt: string): string {
@@ -33,6 +61,8 @@ export interface MotionStepProps {
   disabled: boolean
   onGenerate: (mode: ManualMotionMode, indexes?: number[]) => void
   onRemove: (index: number) => void
+  /** When set, each scene gets a "replace clip" button that takes an mp4 from disk. */
+  onReplace?: (index: number, file: File) => void
 }
 
 /** Turns scene images into short Flow (Veo) clips: the intro, every scene, or hand-picked ones. */
@@ -46,6 +76,7 @@ export function MotionStep({
   disabled,
   onGenerate,
   onRemove,
+  onReplace,
 }: MotionStepProps) {
   const { t } = useTranslation('manual')
   const [scenes, setScenes] = useState<ManualSceneItem[] | null>(null)
@@ -64,10 +95,16 @@ export function MotionStep({
   if (scenes === null) return <div className="h-24 animate-pulse rounded-lg bg-muted" />
 
   const eligible = (scene: ManualSceneItem) => scene.hasImage && scene.title === undefined
+  const interleaved = mode === 'interleaved' ? interleavedIndexes(scenes.filter(eligible)) : null
+  const modeLabel = (value: ManualMotionMode) =>
+    t(`motion.modes.${value}`, { sec: INTRO_SEC, min: INTERLEAVED_MIN_IMAGES, max: INTERLEAVED_MAX_IMAGES })
   const targets = scenes.filter(
     (scene) =>
       eligible(scene) &&
-      (mode === 'full' || (mode === 'intro' && toSec(scene.startTime) < INTRO_SEC) || (mode === 'scenes' && picked.has(scene.index))),
+      (mode === 'full' ||
+        (mode === 'intro' && toSec(scene.startTime) < INTRO_SEC) ||
+        (interleaved?.has(scene.index) ?? false) ||
+        (mode === 'scenes' && picked.has(scene.index))),
   )
   const todo = targets.filter((scene) => !scene.hasClip)
   const frozen = targets.filter((scene) => scene.durationSec > CLIP_SEC)
@@ -90,12 +127,12 @@ export function MotionStep({
         <div className="flex flex-wrap gap-1.5">
           {MODES.map((value) => (
             <Button key={value} size="sm" variant={mode === value ? 'primary' : 'secondary'} onClick={() => setMode(value)}>
-              {t(`motion.modes.${value}`, { sec: INTRO_SEC })}
+              {modeLabel(value)}
             </Button>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          {motionDefault === 'none' ? t('motion.channelImages') : t('motion.channelDefault', { mode: t(`motion.modes.${motionDefault}`, { sec: INTRO_SEC }) })}
+          {motionDefault === 'none' ? t('motion.channelImages') : t('motion.channelDefault', { mode: modeLabel(motionDefault) })}
         </p>
       </div>
 
@@ -172,6 +209,28 @@ export function MotionStep({
                 ) : (
                   <span className="text-[11px] text-muted-foreground">{t('motion.titleCard')}</span>
                 )}
+                {onReplace && eligible(scene) ? (
+                  <label
+                    className={cn(
+                      'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm font-medium text-foreground hover:bg-muted',
+                      disabled && 'pointer-events-none opacity-50',
+                    )}
+                  >
+                    <Replace className="size-3.5" />
+                    {t('motion.replace')}
+                    <input
+                      type="file"
+                      accept="video/mp4,.mp4"
+                      className="hidden"
+                      disabled={disabled}
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0]
+                        event.currentTarget.value = ''
+                        if (file) onReplace(scene.index, file)
+                      }}
+                    />
+                  </label>
+                ) : null}
               </div>
             </li>
           )

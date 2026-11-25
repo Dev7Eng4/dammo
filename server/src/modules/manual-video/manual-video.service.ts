@@ -18,7 +18,7 @@ import { checkChannelFreshness } from '../video-agent/channel-freshness.js';
 import { emitVideoAgentEvent } from '../video-agent/video-agent.events.js';
 import { toRunSummary, videoAgentRepository, videoAgentRunDir } from '../video-agent/video-agent.repository.js';
 import { videoAgentRunner } from '../video-agent/video-agent.runner.js';
-import { executeVideoAgentTool, type ToolContext } from '../video-agent/video-agent.tools.js';
+import { executeVideoAgentTool, resolveRunFixedAudioSpeed, type ToolContext } from '../video-agent/video-agent.tools.js';
 import { NARRATION_CHARS_PER_MIN } from '../video-agent/script-writer.js';
 import { clearSceneArtifacts, SCENES_FILE } from '../video-agent/scene-retime.js';
 import { parseSrt, srtTimestampToMs } from '../../infrastructure/subtitle/srt-utils.js';
@@ -30,6 +30,7 @@ import { generateAiSceneSlideImages } from '../video-production/shared/ai-video/
 import type { AiVideoScenePrompt } from '../video-production/shared/ai-video/ai-video.types.js';
 import { isKenBurnsEnabled } from '../video-production/shared/slideshow/slideshow.constants.js';
 import { AI_VIDEOS_DIRNAME } from '../video-production/shared/ai-video/ai-video.constants.js';
+import { sceneClipJobLengthSec } from '../video-production/shared/ai-video/ai-video-clip-span.js';
 import { buildSceneMotionPrompt, selectScenesForVideo } from '../video-production/shared/ai-video/ai-video-scene-clip-generator.js';
 import { resolveSceneImageAbsolutePath } from '../video-production/shared/ai-video/ai-video-scene-timing.js';
 import { isTitleScene } from '../video-production/shared/ai-video/ai-video-title-card.js';
@@ -128,7 +129,7 @@ export interface ManualNarration {
   chapters: { heading: string; start: number; end: number; sentences: { text: string; start: number; end: number }[] }[];
 }
 
-export type ManualMotionMode = 'intro' | 'full' | 'scenes';
+export type ManualMotionMode = 'intro' | 'full' | 'interleaved' | 'scenes';
 
 function sceneClipName(index: number): string {
   if (!Number.isInteger(index) || index < 0) throw new AppError('Số cảnh không hợp lệ', 400, 'VALIDATION_ERROR');
@@ -638,7 +639,10 @@ class ManualVideoService {
       if (edited && scene.type !== 'title') scene.prompt = edited;
       ctx.note(`Vẽ lại cảnh ${index + 1}${edited ? ' với prompt mới' : ''}`, scene.prompt);
 
-      const renderConfig = await resolveAiRenderConfig(ctx.workDir, { kenBurns: isKenBurnsEnabled() });
+      const renderConfig = await resolveAiRenderConfig(ctx.workDir, {
+        kenBurns: isKenBurnsEnabled(),
+        fixedAudioSpeed: resolveRunFixedAudioSpeed(run),
+      });
       const settings = appSettingsService.get();
       const result = await generateAiSceneSlideImages({
         workDir: ctx.workDir,
@@ -729,7 +733,8 @@ class ManualVideoService {
           todo.map(index => ({
             name: sceneClipName(index),
             imagePath: resolveSceneImageAbsolutePath(ctx.workDir, scenes[index]!),
-            prompt: buildSceneMotionPrompt(scenes[index]!.prompt),
+            prompt: buildSceneMotionPrompt(scenes[index]!.prompt, scenes[index]!.motionPrompt),
+            lengthSec: sceneClipJobLengthSec(ctx.workDir, scenes, index),
           })),
           { outputDir: videosDir },
           { onProfileSwitch: (from, to, remaining) => ctx.note(`Flow hết lượt ở ${from.name}, chuyển sang ${to.name} (còn ${remaining} clip)`) },

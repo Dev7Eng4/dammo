@@ -181,7 +181,8 @@ export function ElevenLabsVoicePresets({
                     ) : null}
                   </div>
                   <p className="truncate text-[11px] text-muted-foreground">
-                    {voices.find((voice) => voice.voiceId === preset.voiceId)?.name ?? preset.voiceName} · {preset.modelId} · stab {preset.stability} · sim {preset.similarityBoost} · style{' '}
+                    {voices.find((voice) => voice.voiceId === preset.voiceId)?.name ?? preset.voiceName} · {preset.modelId} · {t('factory:settings.voice.el.stability').toLowerCase()} {preset.stability} ·{' '}
+                    {t('factory:settings.voice.el.similarityBoost').toLowerCase()} {preset.similarityBoost} · {t('factory:settings.voice.el.style').toLowerCase()}{' '}
                     {preset.style} · {t('factory:settings.voice.el.speed').toLowerCase()} {preset.speed}
                   </p>
                 </div>

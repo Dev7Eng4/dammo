@@ -8,6 +8,7 @@ import type {
   MailImportResult,
   UpdateMailAccountPayload,
 } from '../types/mailAccount';
+import i18n from '../i18n';
 
 export function fetchMailAccounts(
   query = '',
@@ -55,7 +56,7 @@ export async function deleteMailAccount(id: string) {
     const error =
       body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
         ? (body as { error: string }).error
-        : `Request failed: ${res.status}`;
+        : i18n.t('common:errors.requestFailed', { status: res.status });
     throw new Error(error);
   }
 }
@@ -83,7 +84,7 @@ export async function exportMailAccountsExcel(
   const res = await fetch(`${API_V1}/mail-accounts/export?${params}`);
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Export failed: ${res.status}`);
+    throw new Error(body.error ?? i18n.t('common:errors.exportFailed', { status: res.status }));
   }
 
   const blob = await res.blob();

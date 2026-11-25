@@ -12,6 +12,7 @@ import {
   voicevoxPresetSchema,
 } from './voice.schema.js';
 import { z } from 'zod';
+import { applyNarrationReadings, readNarrationReadings, removeNarrationReading, upsertNarrationReading } from './narration-readings.js';
 import { resolveNarrationVoice } from './narration-voice.js';
 import { voiceService } from './voice.service.js';
 
@@ -26,6 +27,24 @@ export function createVoiceRoutes() {
   );
 
   app.get('/voicevox/status', async c => c.json(await voiceService.voicevoxStatus()));
+
+  /** Reading dictionary: words the narration voice reads as the given katakana (script and captions unchanged). */
+  app.get('/readings', c => c.json({ items: readNarrationReadings() }));
+
+  app.post(
+    '/readings',
+    zValidator(
+      'json',
+      z.object({
+        surface: z.string().trim().min(1).max(40),
+        reading: z.string().trim().min(1).max(80),
+        note: z.string().trim().max(200).optional(),
+      }),
+    ),
+    c => c.json({ items: upsertNarrationReading(c.req.valid('json')) }),
+  );
+
+  app.delete('/readings/:surface', c => c.json({ items: removeNarrationReading(c.req.param('surface')) }));
 
   /** Saved VOICEVOX voices: a speaker style + its own prosody settings. */
   app.get('/voicevox/presets', c => c.json({ items: voiceService.listVoicevoxPresets() }));
@@ -110,7 +129,7 @@ export function createVoiceRoutes() {
         { provider: body.provider, presetId: body.presetId, custom: body.custom, voicevoxSpeaker: body.voicevoxSpeaker ?? 13 },
         body.speed ?? 1,
       );
-      const wav = await voice.synthesize(body.text, 0);
+      const { wav } = await voice.synthesize(applyNarrationReadings(body.text), 0);
       return new Response(new Uint8Array(wav), { headers: { 'Content-Type': 'audio/wav', 'Cache-Control': 'no-store' } });
     },
   );

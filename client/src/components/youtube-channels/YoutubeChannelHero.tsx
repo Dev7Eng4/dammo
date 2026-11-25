@@ -14,6 +14,7 @@ import {
 } from '../../utils/ypp'
 import { ChannelTypePill } from './ChannelTypePill'
 import { MonetizationPill } from './MonetizationPill'
+import { appLocale } from '../../utils/locale'
 
 interface YoutubeChannelHeroProps {
   channel: YoutubeChannel
@@ -290,7 +291,7 @@ export function YoutubeChannelHero({ channel, videos }: YoutubeChannelHeroProps)
           value={`${published.length}/${videos.length}`}
         />
         <Kpi icon={<ScanEye className="size-3.5" />} label={t('hero.impressions')} value={formatCompact(impressions)} />
-        <Kpi icon={<MousePointerClick className="size-3.5" />} label={t('hero.ctr')} value={`${ctr.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%`} />
+        <Kpi icon={<MousePointerClick className="size-3.5" />} label={t('hero.ctr')} value={`${ctr.toLocaleString(appLocale(), { maximumFractionDigits: 2 })}%`} />
       </div>
     </div>
   )

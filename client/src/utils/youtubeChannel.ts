@@ -2,7 +2,7 @@ import i18n from '../i18n';
 import type { SourceChannel } from '../types/sourceChannel';
 import type { ReupAudioVideoType, YoutubeChannel } from '../types/youtubeChannel';
 import { fetchVisualStyles } from '../api/visualStyles';
-import { LOCAL_STOCK_LABEL, LOCAL_STOCK_SENTINEL } from './backgroundFootage';
+import { LOCAL_STOCK_SENTINEL } from './backgroundFootage';
 
 function buildSourceLookup(sources: SourceChannel[]): Map<string, SourceChannel> {
   const lookup = new Map<string, SourceChannel>();
@@ -31,6 +31,16 @@ function resolveLabelsFromIds(
   return labels;
 }
 
+/** Built-in sources the server names in Vietnamese; real channel names pass through. */
+const BUILT_IN_SOURCE_KEYS: Record<string, string> = {
+  'Bộ não săn xu hướng': 'youtube:form.sourceMode.trendBrain',
+  'Máy tính Local': 'youtube:form.localStock',
+};
+
+export function localizeSourceNames(names: string[]): string[] {
+  return names.map((name) => (BUILT_IN_SOURCE_KEYS[name] ? i18n.t(BUILT_IN_SOURCE_KEYS[name]) : name));
+}
+
 export function getChannelSourceLabels(
   channel: YoutubeChannel,
   sources: SourceChannel[],
@@ -46,11 +56,11 @@ export function getChannelSourceLabels(
   }
 
   if (channel.sourceChannelNames?.length) {
-    return channel.sourceChannelNames;
+    return localizeSourceNames(channel.sourceChannelNames);
   }
 
   if (channel.sourceNames?.length) {
-    return channel.sourceNames;
+    return localizeSourceNames(channel.sourceNames);
   }
 
   return labels;
@@ -62,7 +72,7 @@ export function getChannelBackgroundFootageLabels(
 ): string[] {
   const ids = channel.backgroundFootageSources ?? [];
   if (ids.includes(LOCAL_STOCK_SENTINEL)) {
-    return [LOCAL_STOCK_LABEL];
+    return [i18n.t('youtube:form.localStock')];
   }
 
   const lookup = buildSourceLookup(sources);
@@ -72,7 +82,7 @@ export function getChannelBackgroundFootageLabels(
     return labels;
   }
 
-  return channel.backgroundFootageNames ?? [];
+  return localizeSourceNames(channel.backgroundFootageNames ?? []);
 }
 
 function formatLabels(labels: string[]): string {
