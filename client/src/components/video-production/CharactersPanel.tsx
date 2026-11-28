@@ -41,7 +41,7 @@ function CharacterImage({
   }
 
   return (
-    <div className="group relative h-[180px] w-full overflow-hidden rounded-md bg-muted">
+    <div className="group relative aspect-video w-full overflow-hidden rounded-md bg-muted">
       {onReplace ? (
         <>
           <input
@@ -71,7 +71,7 @@ function CharacterImage({
           src={character.imageUrl ?? undefined}
           alt={character.name}
           loading="lazy"
-          className={`size-full ${character.isMascot ? 'object-contain' : 'object-cover'}`}
+          className="size-full object-contain"
           onError={() => setFailed(true)}
         />
       ) : (

@@ -14,10 +14,10 @@ export type PlaygroundProvider = 'gpt' | 'gemini';
 /** Every text LLM the app can drive (all LLM Content options). */
 export type TextLlmProvider = PlaygroundProvider | 'claude';
 
-export type ImageBrowserProvider = 'flow' | 'meta';
+export type ImageBrowserProvider = 'flow' | 'meta' | 'muse';
 
 /** `flow`: Google Flow (Veo), image → video. `meta`: Meta AI, no longer offered in the UI. */
-export type VideoBrowserProvider = 'flow' | 'meta';
+export type VideoBrowserProvider = 'flow' | 'meta' | 'muse';
 
 export interface PromptsSettings {
   /** Text LLM for general content. */

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { env } from '../../config/env.js';
 import { FALLBACK_BETA, getClaudeClient } from '../video-agent/claude.js';
 import type { Neuron, NeuronKind, PulseKind } from './brains.types.js';
-import { OFF_NICHE, parseClusterTag } from './psy-clusters.js';
+import { OFF_NICHE, parseClusterTag, parseSourceType, SOURCE_TYPES } from './psy-clusters.js';
 import { type TrendVideo } from './youtube-trends.js';
 
 export type FoundNeuron = Omit<Neuron, 'id' | 'brainId' | 'hits' | 'firstSeenAt' | 'lastSeenAt'>;
@@ -63,6 +63,7 @@ const saveItem = z.object({
   cluster: z.string().max(12).optional(),
   subCluster: z.string().max(12).optional(),
   format: z.string().max(80).optional(),
+  sourceType: z.string().max(20).optional(),
 });
 export const saveInput = z.object({ items: z.array(saveItem).max(120) });
 export type SaveItem = z.infer<typeof saveItem>;
@@ -73,6 +74,11 @@ const HOUR_MS = 3_600_000;
 function clusterMeta(item: SaveItem): { meta: Record<string, string | number>; error?: string } {
   const meta: Record<string, string | number> = {};
   if (item.format?.trim()) meta.format = item.format.trim();
+  if (item.sourceType?.trim()) {
+    const type = parseSourceType(item.sourceType);
+    if (!type) return { meta, error: `sourceType "${item.sourceType}" is not one of ${SOURCE_TYPES.map(t => t.id).join(', ')}` };
+    meta.sourceType = type;
+  }
   if (!item.cluster) return { meta };
   const main = parseClusterTag(item.cluster);
   if (!main) return { meta, error: `cluster "${item.cluster}" is not K1–K11 or "off"` };
@@ -208,6 +214,7 @@ export function saveFindingsTool(kinds: NeuronKind[], requireCluster = false): B
                 cluster: { type: 'string', description: 'Main cluster K1–K11 ("K2?" when unsure, "off" outside the niche).' },
                 subCluster: { type: 'string', description: 'Optional second cluster K1–K11.' },
                 format: { type: 'string', description: 'Video format, e.g. 寝ながら聴く 1h, 実は〇〇です, 漫画, 名言朗読, 脳トレ.' },
+                sourceType: { type: 'string', enum: SOURCE_TYPES.map(t => t.id), description: 'Kind of production (see the source type rules): decides whether our channels can remake it or only borrow the topic.' },
               },
               required: ['kind', 'label', 'heat'],
             },

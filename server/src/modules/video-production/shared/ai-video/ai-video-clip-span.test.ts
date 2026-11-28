@@ -35,7 +35,10 @@ describe('clip window and length', () => {
 
   test('length rounds up and stays in the Flow slider range', () => {
     assert.equal(sceneClipLengthSec(7.7), 8);
-    assert.equal(sceneClipLengthSec(7.2), 7);
+    assert.equal(sceneClipLengthSec(7.2), 8);
+    assert.equal(sceneClipLengthSec(4.25), 5);
+    assert.equal(sceneClipLengthSec(5), 5);
+    assert.equal(sceneClipLengthSec(5.004), 5);
     assert.equal(sceneClipLengthSec(1.5), 3);
     assert.equal(sceneClipLengthSec(14), 10);
   });

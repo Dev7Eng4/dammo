@@ -49,7 +49,7 @@ Lệnh gửi vào server đang chạy (`POST /api/v1/brains/jp-psy-trends/import
 {
   "summary": "3-6 dòng tóm tắt tiếng Việt, kèm số video theo cụm",
   "items": [
-    { "kind": "video", "videoId": "AZvQGM0aTf8", "label": "-", "cluster": "K2", "subCluster": "K11", "format": "寝ながら聴く 1h", "heat": 98, "detail": "4.583 view/giờ, x39 kênh; thức giấc giữa đêm → K2" },
+    { "kind": "video", "videoId": "AZvQGM0aTf8", "label": "-", "cluster": "K2", "subCluster": "K11", "format": "寝ながら聴く 1h", "sourceType": "narrated", "heat": 98, "detail": "4.583 view/giờ, x39 kênh; thức giấc giữa đêm → K2" },
     { "kind": "video", "videoId": "a7-rgjpgikE", "label": "-", "cluster": "off", "heat": 40, "detail": "tình cảm nam nữ, ngoài ngách" },
     { "kind": "topic", "key": "sleep-night-waking", "label": "Thức giấc ban đêm", "labelJa": "夜中に目が覚める", "cluster": "K2", "heat": 95, "detail": "bằng chứng…", "links": ["video:AZvQGM0aTf8"] },
     { "kind": "keyword", "label": "Nghe 1 tiếng khi nằm ngủ", "labelJa": "寝ながら聴く1時間", "cluster": "K11", "heat": 90, "detail": "tiêu đề lặp ở 10+ kênh" }
@@ -58,6 +58,7 @@ Lệnh gửi vào server đang chạy (`POST /api/v1/brains/jp-psy-trends/import
 ```
 - `kind` là `video`, `topic` hoặc `keyword`. Với video, tiêu đề, kênh và số liệu lấy từ cache, nên `label` để gì cũng được.
 - `cluster` bắt buộc với video: `K1`…`K11`, thêm `?` khi phân vân (`K4?`), hoặc `off` cho video ngoài ngách. `subCluster` và `format` là tuỳ chọn.
+- `sourceType` nên có với mọi video: `narrated`, `manga`, `real-host`, `real-vlog` hoặc `persona` (luật in ở cuối `trends -- clusters`). Nó cho Radar và remake biết kênh mình làm lại được tới đâu: `real-vlog` (người thật quay đời sống thật) và `persona` (nói ngôi thứ nhất như một người nổi tiếng có thật, kiểu 【斎藤一人】) chỉ được mượn chủ đề, Radar gắn nhãn vàng "chỉ lấy chủ đề".
 - `heat` từ 0 đến 100. `detail` viết tiếng Việt: vì sao nóng và vì sao xếp cụm này. Đây là dòng lý do hiện trên Radar.
 - Topic dùng lại đúng `key` cũ khi cùng chủ đề (xem tab Săn xu hướng hoặc `/brains`), để bộ nhớ cộng dồn thay vì tạo bản mới.
 
@@ -67,8 +68,13 @@ Lệnh gửi vào server đang chạy (`POST /api/v1/brains/jp-psy-trends/import
 3. **Gợi ý tìm kiếm.** Chạy `suggest` với 4–8 từ gốc hứa hẹn nhất để biết khán giả đang gõ gì.
 4. **Tín hiệu ngoài.** Chạy 2–4 lượt WebSearch tiếng Nhật về chuyện người Nhật lớn tuổi đang bàn trong tuần (tin tức, sách bán chạy, TV, chính sách lương hưu…) có thể làm thành video tâm lý.
 5. **Kiểm tra kênh nhỏ (không bắt buộc).** Với 2–4 kênh nhỏ có video view/giờ cao, chạy `channel` để biết video đó vượt chuẩn thật hay kênh vốn đã mạnh.
-6. **Gán cụm cho từng video** theo luật trong `trends -- clusters`: cụm chính, cụm phụ (nếu có), format, và vài chữ lý do. Video lệch ngách gán `off` và đưa vào bảng "Ngoài ngách". Không bỏ qua video nào trong danh sách.
+6. **Gán cụm cho từng video** theo luật trong `trends -- clusters`: cụm chính, cụm phụ (nếu có), format, **loại nguồn** (`sourceType`), và vài chữ lý do. Video lệch ngách gán `off` và đưa vào bảng "Ngoài ngách". Không bỏ qua video nào trong danh sách.
 7. **Chấm độ nóng.** Chấm theo **view/giờ** và mức **lặp lại giữa nhiều kênh**, không theo tổng view của video cũ. Kênh nhỏ mà view/giờ cao (hoặc `x` lớn) là tín hiệu mạnh. Heat 0–100: khoảng 80+ là đang nổ rõ trên nhiều kênh, 50–79 là đang lên, dưới 50 là tín hiệu yếu hoặc đang nguội.
+7b. **Cổng remake (nên làm / có thể làm / không nên làm).** App tự chấm lại mỗi video khi lưu, bằng đúng luật trong `server/src/modules/radar/remake-gates.ts`, và video "Không nên làm" **không vào hàng chờ remake tự động**. Vì vậy cũng chấm theo luật đó trong báo cáo:
+   - **Không nên làm** khi có một trong các điều sau: dài ngoài **10–35 phút**; `off` (lạc ngách); view thật dưới sàn theo tuổi (15.000 × đường cong tuổi, ví dụ khoảng 3.400 view ở 22h, 5.700 ở 48h, 9.750 ở 7 ngày).
+   - **Nên làm** khi qua hết cổng, nổ mạnh (`x kênh` ≥ 8, hoặc chưa đo `x` thì heat ≥ 80), đăng **≤ 72 giờ**, và không có điểm nghi ngờ.
+   - **Có thể làm** cho các trường hợp còn lại: quá 72h, nổ yếu (x 3–8), cụm phân vân `?`, `real-vlog` / `persona` (chỉ mượn chủ đề), chưa rõ độ dài.
+   Ưu tiên tìm video 10–35 phút. Video ngoài khuôn vẫn được lưu làm bằng chứng chủ đề, nhưng không đề xuất remake.
 8. **Lưu vào bộ nhớ bộ não** bằng `save` (xem phần Lưu kết quả): 20–40 video, 5–12 topic, 5–15 keyword. Đọc kết quả lệnh; mục nào bị bỏ thì sửa rồi lưu lại.
 9. **Viết báo cáo** theo mẫu dưới, lưu vào `docs/trends/YYYY-MM-DD[-k{n}].md`, rồi trả lời trong chat bằng bản tóm tắt, kèm số mục đã lưu và nhắc rằng kết quả đã có ở `/radar` (tab Săn xu hướng).
 
@@ -80,12 +86,14 @@ Lệnh gửi vào server đang chạy (`POST /api/v1/brains/jp-psy-trends/import
 3–6 dòng tiếng Việt: điều quan trọng nhất, cái gì mới, cái gì vẫn lên, cái gì nguội so với lần trước.
 
 ## Danh sách video (20–40, xếp theo heat)
-| # | Heat | View/giờ | x kênh | Video | Kênh | Cụm | Cụm phụ | Format | Vì sao xếp cụm này |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 95 | 2.433 | x20 | [tiêu đề](https://www.youtube.com/watch?v=ID) | tên kênh | K2 Não tuổi già | K11 | 寝ながら聴く 1h | lo âu ban đêm, không ngủ được |
+| # | Nên làm? | Heat | View/giờ | x kênh | Phút | Video | Kênh | Cụm | Cụm phụ | Format | Nguồn | Vì sao xếp cụm này |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Nên làm | 95 | 2.433 | x20 | 18 | [tiêu đề](https://www.youtube.com/watch?v=ID) | tên kênh | K2 Não tuổi già | K11 | 解説 | narrated | lo âu ban đêm, không ngủ được |
 
+- `Nên làm?`: Nên làm / Có thể làm / Không nên làm theo bước 7b; với "Không nên làm" ghi lý do ngắn trong cột cuối (ví dụ "dài 58 phút").
 - `x kênh`: hệ số so với median view/giờ của kênh (từ lệnh `channel`). Kênh chưa kiểm tra thì ghi `?`.
 - `Cụm`: mã cụm kèm tên ngắn. Phân vân thì thêm `?` (ví dụ `K1?`).
+- `Nguồn`: `sourceType`. Video `real-vlog` / `persona` ghi thêm "(chỉ chủ đề)".
 - Lấy cả video đứng đầu ở mỗi ngách nhỏ, không chỉ top toàn ngách, để cụm nào cũng có mặt nếu có dữ liệu.
 
 ### Theo cụm
@@ -111,7 +119,7 @@ Trạng thái: mới / vẫn lên / nguội (so với báo cáo trước; lần 
 2–4 gạch đầu dòng: cấu trúc lặp lại (【】, 「〜な人、実は〇〇です」, con số, đối tượng 60代/70代…), mỗi cái kèm 1–2 ví dụ videoId.
 
 ## Gợi ý cho kênh mình
-3–5 góc video nên làm ngay, ghi cụm K phù hợp. Người dùng có thể chuyển tiếp sang skill `jp-psy-cluster` (`K{n} video <title>`).
+3–5 góc video nên làm ngay, ghi cụm K phù hợp. Chỉ lấy từ video "Nên làm" hoặc "Có thể làm" (dài 10–35 phút). Video `real-vlog` / `persona` chỉ là bằng chứng chủ đề đang nóng: không đề xuất làm theo dạng của nó (quay thật, nhập vai người nổi tiếng), vì kênh mình là thuyết minh + minh hoạ. Người dùng có thể chuyển tiếp sang skill `jp-psy-cluster` (`K{n} video <title>`).
 ```
 
 ## Luật

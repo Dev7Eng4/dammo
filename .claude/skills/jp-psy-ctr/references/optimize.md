@@ -5,6 +5,7 @@ Ghi các file JSON vào scratchpad, đặt tên theo videoId.
 ## A. Đọc
 `npm run -s ctr -- info <video>` cho biết: `files.transcript`, `files.thumbnail`, `current` (title, title phụ, chữ bìa, prompt ảnh), `channel` (niche, `cluster`, `promptFiles`, `promptIsOwn`, `siblings`), `draw.flow`, `state`.
 
+0. Đọc `channel.measured`: CTR Studio thật của các video kênh đã đăng, cao nhất trước. Mở bằng Read 3 bìa CTR cao nhất và 2 bìa thấp nhất; ghi ra khuôn bìa và khuôn title của nhóm cao, và chủ đề của nhóm thấp. Đây là chuẩn cho B3, T2. Rỗng thì nhờ người dùng chạy `jp-psy-studio` khi kênh đã đăng từ 5 video.
 1. Đọc **hết** transcript (bỏ số thứ tự và mốc giờ). Transcript tự động hay sai chữ; hiểu theo nghĩa.
 2. Mở ảnh bìa bằng Read. Không có bìa thì mọi điểm B là 0; C1 và C2 chấm theo chữ dự kiến, tối đa nửa điểm.
 3. Ghi ra cho mình: chủ đề thật; **tự đếm số mục**; chiều nội dung; người xem là ai; mốc tuổi có được nói không; 5–8 chi tiết cụ thể kèm câu trích.
@@ -18,6 +19,7 @@ Cụm quyết định **khán giả, động lực bấm và kỹ thuật title*
 
 | Kênh | Chuẩn title | Chuẩn giao diện bìa |
 |---|---|---|
+| có `channel.measured` từ 5 video | khuôn title của nhóm CTR cao | khuôn bìa của nhóm CTR cao; đứng trên mọi dòng dưới, kể cả các bố cục khác mà prompt kênh cho phép |
 | niche `ja-psy-k*` | prompt của cụm kênh | prompt của cụm kênh |
 | có prompt riêng (`promptIsOwn`) | luật của cụm nội dung, cộng luật bắt buộc của kênh (nhãn 【】, độ dài) | prompt kênh: bố cục, màu, mô tả nhân vật chép nguyên văn |
 | không có prompt riêng | luật của cụm nội dung, hoặc luật title chung khi `off` | nhìn 3–4 ảnh trong `siblings` và `current.imagePrompt`, giữ đúng một phong cách |
@@ -38,7 +40,7 @@ Chấm theo `review.md`, rồi ghi:
 
 ## D. Viết cặp mới (dưới 8 điểm)
 1. Liệt kê 5–8 móc có câu trích. Chọn móc cụ thể nhất, "chuyện của chính mình", vẽ được, kịch bản trả lời được. Không lấy móc của `sourceTitle`.
-2. Viết 2–3 cặp theo `pairing.md`, khác móc hoặc khác kiểu chia vai. Tránh khuôn title mà 2 video trở lên trong `siblings` đang dùng: cả kênh một khuôn thì người xem lướt qua, và dễ bị coi là nội dung lặp.
+2. Viết 2–3 cặp theo `pairing.md`, khác móc hoặc khác kiểu chia vai, **trong khuôn đã chứng minh** của kênh (nhãn 【】, bố cục, nhân vật, tông). Chỉ tránh trùng câu chữ móc với `siblings`; khuôn chung không phải lỗi. Nội dung thuộc chủ đề mà nhóm CTR thấp đang dùng thì đóng khung lại theo góc của nhóm cao khi transcript cho phép (ví dụ chuyện lương hưu: nói về tiền, đừng kể thành chuyện tình bạn đổ vỡ).
 3. Kiểm tra máy (`ctr-check.mts`), chạy bảy phép thử, chọn một cặp.
 4. Title 30–70 ký tự (app nhận tối đa 100), móc trong 30 ký tự đầu. Số mục đúng số tự đếm. Mốc tuổi chỉ dùng khi transcript nói về tuổi đó.
 5. Description, tags giữ nguyên, trừ khi mâu thuẫn với title mới (ví dụ nhắc số mục sai).

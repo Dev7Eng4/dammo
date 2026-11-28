@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pencil, Settings2, Square, Volume2 } from 'lucide-react'
-import { fetchElevenLabsModels, fetchElevenLabsVoices, fetchVoiceSettings, previewNarrationVoice } from '../../api/voice'
+import {
+  fetchElevenLabsModels,
+  fetchElevenLabsVoices,
+  fetchVoicevoxEngineStatus,
+  fetchVoiceSettings,
+  previewNarrationVoice,
+} from '../../api/voice'
 import { useAbortableEffect } from '../../hooks'
 import type {
   ElevenLabsModel,
@@ -37,6 +43,7 @@ interface NarrationVoicePickerProps {
 
 const PROVIDERS: { value: VoiceProvider; label: string }[] = [
   { value: 'voicevox', label: 'VOICEVOX' },
+  { value: 'aivisspeech', label: 'AivisSpeech' },
   { value: 'elevenlabs', label: 'ElevenLabs' },
 ]
 
@@ -60,7 +67,7 @@ function presetToDraft(
     const { voiceId, voiceName, modelId, stability, similarityBoost, style, speed } = preset
     return { voiceId, voiceName, modelId, stability, similarityBoost, style, speed }
   }
-  const preset = settings?.voicevox.presets.find((item) => item.id === presetId)
+  const preset = settings?.[provider === 'aivisspeech' ? 'aivisspeech' : 'voicevox'].presets.find((item) => item.id === presetId)
   if (!preset) return emptyVoicevoxDraft(fallbackSpeaker)
   const { speaker, speakerName, speedScale, pitchScale, intonationScale, volumeScale, pauseLengthScale } = preset
   return { speaker, speakerName, speedScale, pitchScale, intonationScale, volumeScale, pauseLengthScale }
@@ -84,6 +91,8 @@ export function NarrationVoicePicker({
   const { toast } = useToast()
   const [settings, setSettings] = useState<VoiceSettings | null>(null)
   const [preview, setPreview] = useState<'idle' | 'loading' | 'playing'>('idle')
+  // AivisSpeech Engine status (the page passes VOICEVOX's); checked while it is the chosen provider.
+  const [aivis, setAivis] = useState<VoicevoxEngineStatus | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Custom-voice modal
@@ -101,9 +110,26 @@ export function NarrationVoicePicker({
 
   useEffect(() => () => audioRef.current?.pause(), [])
 
+  const aivisSelected = value.provider === 'aivisspeech'
+  const aivisUp = aivis?.available === true
+  async function refreshAivis() {
+    setAivis(await fetchVoicevoxEngineStatus(undefined, 'aivisspeech').catch(() => null))
+  }
+  useEffect(() => {
+    if (!aivisSelected) return
+    void refreshAivis()
+    if (aivisUp) return
+    // The engine is often started after the page opens: keep checking until it answers.
+    const timer = window.setInterval(() => void refreshAivis(), 10_000)
+    return () => window.clearInterval(timer)
+  }, [aivisSelected, aivisUp])
+
   const presets = settings ? settings[value.provider].presets : []
   const defaultId = settings ? settings[value.provider].defaultPresetId : null
-  const fallbackSpeaker = settings?.voicevox.effectiveDefaultSpeaker ?? voicevox?.defaultSpeaker ?? 13
+  const engineStatus = aivisSelected ? aivis : voicevox
+  const fallbackSpeaker = aivisSelected
+    ? (settings?.aivisspeech.effectiveDefaultSpeaker ?? aivis?.defaultSpeaker ?? 888753760)
+    : (settings?.voicevox.effectiveDefaultSpeaker ?? voicevox?.defaultSpeaker ?? 13)
   const canUseElevenLabs = (settings?.elevenlabs.keys ?? []).some((key) => key.enabled)
 
   // No voice chosen yet (or it was deleted) → the provider's default voice.
@@ -191,8 +217,8 @@ export function NarrationVoicePicker({
     })),
     { value: CUSTOM, label: value.custom ? t('voicePick.customValue', { name: customName }) : t('voicePick.custom') },
   ]
-  const providerName = value.provider === 'voicevox' ? 'VOICEVOX' : 'ElevenLabs'
-  const engineDown = value.provider === 'voicevox' && !voicevox?.available
+  const providerName = PROVIDERS.find((item) => item.value === value.provider)?.label ?? 'ElevenLabs'
+  const engineDown = value.provider !== 'elevenlabs' && !engineStatus?.available
   const ready = value.custom ? true : !!value.presetId
 
   return (
@@ -250,8 +276,8 @@ export function NarrationVoicePicker({
 
       {engineDown ? (
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs text-danger">{t('step.voice.unavailable', { url: voicevox?.url ?? '' })}</p>
-          <Button size="sm" variant="secondary" onClick={onRefreshVoicevox}>
+          <p className="text-xs text-danger">{t('step.voice.unavailable', { name: providerName, url: engineStatus?.url ?? '' })}</p>
+          <Button size="sm" variant="secondary" onClick={aivisSelected ? () => void refreshAivis() : onRefreshVoicevox}>
             {t('step.voice.recheck')}
           </Button>
         </div>
@@ -289,7 +315,8 @@ export function NarrationVoicePicker({
         ) : draft ? (
           <VoicevoxVoiceEditor
             draft={draft}
-            engine={voicevox}
+            engine={engineStatus}
+            provider={aivisSelected ? 'aivisspeech' : 'voicevox'}
             onChange={(patch) => setDraft((prev) => (prev && !isElevenLabsDraft(prev) ? { ...prev, ...patch } : prev))}
             synthesizeTest={(current, text) => previewBlob(current, text)}
           />

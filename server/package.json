@@ -37,6 +37,8 @@
     "flow:generate-image": "tsx src/scripts/generate-flow-image.ts",
     "flow:generate-tool-images": "tsx src/scripts/generate-flow-tool-images.ts",
     "meta:generate-videos": "tsx src/scripts/generate-meta-videos.ts",
+    "muse:generate-image": "tsx src/scripts/generate-muse-image.ts",
+    "muse:generate-video": "tsx src/scripts/generate-muse-image.ts --video",
     "slideshow:demo": "tsx src/scripts/create-slideshow.ts",
     "assemble:short-card": "tsx src/scripts/assemble-short-card.ts",
     "whatif:generate-prompts": "tsx src/remotion/whatif/generate-prompts.ts",

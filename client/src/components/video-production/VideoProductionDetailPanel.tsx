@@ -97,6 +97,8 @@ interface VideoProductionDetailPanelProps {
   onCharactersUpdated?: (data: ProductionCharactersResponse) => void;
   /** Buttons for the open tab (Tạo video, Lưu metadata…), shown at the bottom of the content box. */
   actions?: ReactNode;
+  /** Buttons shown at the top of the content box (Tạo ảnh còn thiếu…). */
+  topActions?: ReactNode;
 }
 
 export function VideoProductionDetailPanel({
@@ -125,6 +127,7 @@ export function VideoProductionDetailPanel({
   onVoiced,
   onCharactersUpdated,
   actions,
+  topActions,
 }: VideoProductionDetailPanelProps) {
   const { t } = useTranslation('factory');
   const { toast } = useToast();
@@ -215,6 +218,9 @@ export function VideoProductionDetailPanel({
 
       {/* Grows with its content and scrolls with the page, like a manual project's step card. */}
       <div className="card-surface">
+        {topActions ? (
+          <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">{topActions}</div>
+        ) : null}
         <div>
           <div className={activeTab === 'metadata' ? 'contents' : 'hidden'}>
             <MetadataPanel

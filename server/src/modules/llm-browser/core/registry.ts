@@ -2,6 +2,7 @@ import type { ImageBrowserProvider, LlmBrowserProvider, LlmTextProvider } from '
 import type { LlmBrowserProviderHandler } from './provider.interface.js';
 import { createFlowProviderHandler } from '../flow/flow.provider.js';
 import { createMetaProviderHandler } from '../meta/meta.provider.js';
+import { createMuseProviderHandler } from '../muse/muse.provider.js';
 import { createLlmProviderHandler } from '../text/text.provider.js';
 
 const textHandlers: Record<LlmTextProvider, LlmBrowserProviderHandler> = {
@@ -12,6 +13,7 @@ const textHandlers: Record<LlmTextProvider, LlmBrowserProviderHandler> = {
 
 let flowHandler: LlmBrowserProviderHandler | undefined;
 let metaHandler: LlmBrowserProviderHandler | undefined;
+let museHandler: LlmBrowserProviderHandler | undefined;
 
 export function getLlmTextBrowserHandler(provider: LlmTextProvider): LlmBrowserProviderHandler {
   return textHandlers[provider];
@@ -31,8 +33,16 @@ export function getMetaBrowserHandler(): LlmBrowserProviderHandler {
   return metaHandler;
 }
 
+export function getMuseBrowserHandler(): LlmBrowserProviderHandler {
+  if (!museHandler) {
+    museHandler = createMuseProviderHandler();
+  }
+  return museHandler;
+}
+
 export function getImageBrowserHandler(provider: ImageBrowserProvider): LlmBrowserProviderHandler {
   if (provider === 'meta') return getMetaBrowserHandler();
+  if (provider === 'muse') return getMuseBrowserHandler();
   return getFlowBrowserHandler();
 }
 
@@ -41,9 +51,9 @@ export function isLlmTextProvider(value: string): value is LlmTextProvider {
 }
 
 export function isImageBrowserProvider(value: string): value is ImageBrowserProvider {
-  return value === 'flow' || value === 'meta';
+  return value === 'flow' || value === 'meta' || value === 'muse';
 }
 
 export function isLlmBrowserProvider(value: string): value is LlmBrowserProvider {
-  return isLlmTextProvider(value) || isImageBrowserProvider(value);
+  return isLlmTextProvider(value) || isImageBrowserProvider(value) || value === 'muse';
 }

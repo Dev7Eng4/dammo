@@ -26,11 +26,12 @@ export function sceneClipWindowSec(scenes: AiVideoScenePrompt[], index: number, 
 }
 
 /**
- * Flow Length for a clip filling `windowSec`: rounded up so the clip never runs out early (a quarter
- * second short is not worth a second of credits), clamped to the slider's range.
+ * Clip length (Flow and Muse) for a clip filling `windowSec`: always rounded up to whole seconds
+ * (4.25 s → 5 s), so the clip never runs out before the scene ends; assembly cuts the extra.
+ * Only float noise under 10 ms is ignored (5.004 s stays 5 s). Clamped to the 3–10 s both tools allow.
  */
 export function sceneClipLengthSec(windowSec: number): number {
-  return Math.max(FLOW_CLIP_MIN_SEC, Math.min(FLOW_CLIP_MAX_SEC, Math.ceil(windowSec - 0.25)));
+  return Math.max(FLOW_CLIP_MIN_SEC, Math.min(FLOW_CLIP_MAX_SEC, Math.ceil(windowSec - 0.01)));
 }
 
 /** Audio speed the video is rendered at (ai-render-config.json); 1 before the first render. */

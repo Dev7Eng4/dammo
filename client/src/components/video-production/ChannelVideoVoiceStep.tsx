@@ -200,7 +200,7 @@ export function ChannelVideoVoiceStep({ channelId, videoId, remake, onVoiced }: 
             <p className="text-xs text-muted-foreground">{t('channelVideo.voice.hint')}</p>
           </div>
           {voicevox && !voicevox.available ? (
-            <p className="text-xs text-danger">{t('step.voice.unavailable', { url: voicevox.url })}</p>
+            <p className="text-xs text-danger">{t('step.voice.unavailable', { name: 'VOICEVOX', url: voicevox.url })}</p>
           ) : null}
           <div className="grid gap-3 md:grid-cols-3">
             <label className="space-y-1.5 md:col-span-2">

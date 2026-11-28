@@ -13,7 +13,7 @@
  */
 import { Log } from 'youtubei.js';
 import { TREND_BRAIN_ID } from '../modules/brains/brains.registry.js';
-import { CLUSTER_RULES } from '../modules/brains/psy-clusters.js';
+import { CLUSTER_RULES, SOURCE_TYPE_RULES } from '../modules/brains/psy-clusters.js';
 import { fetchChannelSnapshot, searchYoutube, youtubeSuggestions, type TrendVideo } from '../modules/brains/youtube-trends.js';
 import { readCache, saveFindings, writeCache, type ScanCache } from './lib/brain-skill-store.js';
 
@@ -99,7 +99,9 @@ async function main() {
   const [command, ...argv] = process.argv.slice(2);
   const { flags, rest } = parseArgs(argv);
   if (command === 'clusters') {
-    console.log(CLUSTER_RULES);
+    console.log(`${CLUSTER_RULES}
+
+${SOURCE_TYPE_RULES}`);
     return;
   }
   if (!command || !rest.length) {

@@ -39,6 +39,8 @@ import {
   upsertNarrationReading,
 } from '../modules/voice/narration-readings.js';
 import { voicevoxReading } from '../infrastructure/tts/voicevox.client.js';
+import { isTopicOnlySource, sourceTypeName } from '../modules/brains/psy-clusters.js';
+import { trendVideoSourceType } from '../modules/radar/radar-trends.js';
 import { resolveVoicevoxDefaultSpeaker } from '../infrastructure/tts/voice-settings.store.js';
 
 /** Narration pace the app plans with (measured on our VOICEVOX narration). */
@@ -165,6 +167,12 @@ async function source(inputs: string[], flags: Record<string, string[]>) {
     const { description, ...shown } = record;
     console.log(JSON.stringify(shown, null, 1));
     if (description) console.log(`mô tả: ${description.replace(/\s+/g, ' ').slice(0, 400)}`);
+    const sourceType = trendVideoSourceType(videoId);
+    if (sourceType) {
+      console.log(`loại nguồn (bộ não săn xu hướng): ${sourceType} — ${sourceTypeName(sourceType)}${isTopicOnlySource(sourceType) ? ' ⚠ CHỈ mượn chủ đề (xem bước 1 của skill remake)' : ''}`);
+    } else {
+      console.log('loại nguồn: chưa gắn — tự xác định (narrated / manga / real-host / real-vlog / persona)');
+    }
     console.log(`transcript: ${file.replaceAll('\\', '/')}`);
     if (language !== preferred) console.log(`⚠ Transcript là tiếng ${language}, không có tiếng ${preferred}.`);
   }

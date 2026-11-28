@@ -20,11 +20,13 @@ import {
   DEFAULT_PRESET_VOICE_SETTINGS,
   DEFAULT_VOICEVOX_PRESET_SETTINGS,
   readVoiceSettings,
-  resolveVoicevoxDefaultSpeaker,
-  resolveVoicevoxUrl,
+  resolveEngineDefaultSpeaker,
+  resolveEngineUrl,
   updateVoiceSettings,
   type ElevenLabsKeyRecord,
   type ElevenLabsVoicePreset,
+  type SpeechEngineSettings,
+  type VoiceEngine,
   type VoicevoxVoicePreset,
   type VoiceSettingsRecord,
 } from '../../infrastructure/tts/voice-settings.store.js';
@@ -42,6 +44,19 @@ export type VoicePresetInput = Omit<ElevenLabsVoicePreset, 'id' | 'createdAt' | 
 export type VoicevoxPresetInput = Omit<VoicevoxVoicePreset, 'id' | 'createdAt' | 'updatedAt' | 'speakerName'> & {
   speakerName?: string;
 };
+
+/** Applies `change` to one engine's settings, leaving everything else as it is. */
+function withEngine(
+  current: VoiceSettingsRecord,
+  engine: VoiceEngine,
+  change: (settings: SpeechEngineSettings) => SpeechEngineSettings,
+): VoiceSettingsRecord {
+  return engine === 'aivisspeech'
+    ? { ...current, aivisspeech: change(current.aivisspeech) }
+    : { ...current, voicevox: change(current.voicevox) };
+}
+
+const ENGINE_LABEL: Record<VoiceEngine, string> = { voicevox: 'VOICEVOX', aivisspeech: 'AivisSpeech' };
 
 function presetNotFound(): AppError {
   return new AppError('Không tìm thấy voice đã lưu', 404, 'VOICE_PRESET_NOT_FOUND');
@@ -123,8 +138,13 @@ export const voiceService = {
     return {
       voicevox: {
         ...settings.voicevox,
-        effectiveUrl: resolveVoicevoxUrl(),
-        effectiveDefaultSpeaker: resolveVoicevoxDefaultSpeaker(),
+        effectiveUrl: resolveEngineUrl('voicevox'),
+        effectiveDefaultSpeaker: resolveEngineDefaultSpeaker('voicevox'),
+      },
+      aivisspeech: {
+        ...settings.aivisspeech,
+        effectiveUrl: resolveEngineUrl('aivisspeech'),
+        effectiveDefaultSpeaker: resolveEngineDefaultSpeaker('aivisspeech'),
       },
       elevenlabs: { ...settings.elevenlabs, keys: settings.elevenlabs.keys.map(toKeyView) },
     };
@@ -132,10 +152,12 @@ export const voiceService = {
 
   updateSettings(input: {
     voicevox?: Partial<VoiceSettingsRecord['voicevox']>;
+    aivisspeech?: Partial<VoiceSettingsRecord['aivisspeech']>;
     elevenlabs?: Partial<Omit<VoiceSettingsRecord['elevenlabs'], 'keys'>>;
   }): VoiceSettingsView {
     updateVoiceSettings(current => ({
       voicevox: { ...current.voicevox, ...input.voicevox },
+      aivisspeech: { ...current.aivisspeech, ...input.aivisspeech },
       elevenlabs: { ...current.elevenlabs, ...input.elevenlabs, keys: current.elevenlabs.keys },
     }));
     return this.getSettings();
@@ -200,12 +222,12 @@ export const voiceService = {
     return this.updateSettings({ elevenlabs: { defaultPresetId: id } });
   },
 
-  listVoicevoxPresets(): VoicevoxVoicePreset[] {
-    return readVoiceSettings().voicevox.presets;
+  listVoicevoxPresets(engine: VoiceEngine = 'voicevox'): VoicevoxVoicePreset[] {
+    return readVoiceSettings()[engine].presets;
   },
 
-  /** Saves a named VOICEVOX voice. The first one saved becomes the default. */
-  createVoicevoxPreset(input: VoicevoxPresetInput): VoicevoxVoicePreset {
+  /** Saves a named VOICEVOX / AivisSpeech voice. The first one saved becomes the default. */
+  createVoicevoxPreset(input: VoicevoxPresetInput, engine: VoiceEngine = 'voicevox'): VoicevoxVoicePreset {
     const now = new Date().toISOString();
     const preset: VoicevoxVoicePreset = {
       ...input,
@@ -214,48 +236,47 @@ export const voiceService = {
       createdAt: now,
       updatedAt: now,
     };
-    updateVoiceSettings(current => ({
-      ...current,
-      voicevox: {
-        ...current.voicevox,
-        presets: [...current.voicevox.presets, preset],
-        defaultPresetId: current.voicevox.defaultPresetId ?? preset.id,
-      },
-    }));
+    updateVoiceSettings(current =>
+      withEngine(current, engine, settings => ({
+        ...settings,
+        presets: [...settings.presets, preset],
+        defaultPresetId: settings.defaultPresetId ?? preset.id,
+      })),
+    );
     return preset;
   },
 
-  updateVoicevoxPreset(id: string, patch: Partial<VoicevoxPresetInput>): VoicevoxVoicePreset {
+  updateVoicevoxPreset(id: string, patch: Partial<VoicevoxPresetInput>, engine: VoiceEngine = 'voicevox'): VoicevoxVoicePreset {
     let updated: VoicevoxVoicePreset | undefined;
-    updateVoiceSettings(current => ({
-      ...current,
-      voicevox: {
-        ...current.voicevox,
-        presets: current.voicevox.presets.map(preset => {
+    updateVoiceSettings(current =>
+      withEngine(current, engine, settings => ({
+        ...settings,
+        presets: settings.presets.map(preset => {
           if (preset.id !== id) return preset;
           updated = { ...preset, ...patch, updatedAt: new Date().toISOString() };
           return updated;
         }),
-      },
-    }));
+      })),
+    );
     if (!updated) throw presetNotFound();
     return updated;
   },
 
   /** Removing the default hands the default to the next saved voice. */
-  deleteVoicevoxPreset(id: string): void {
-    if (!readVoiceSettings().voicevox.presets.some(preset => preset.id === id)) throw presetNotFound();
-    updateVoiceSettings(settings => {
-      const presets = settings.voicevox.presets.filter(preset => preset.id !== id);
-      const defaultPresetId =
-        settings.voicevox.defaultPresetId === id ? (presets[0]?.id ?? null) : settings.voicevox.defaultPresetId;
-      return { ...settings, voicevox: { ...settings.voicevox, presets, defaultPresetId } };
-    });
+  deleteVoicevoxPreset(id: string, engine: VoiceEngine = 'voicevox'): void {
+    if (!readVoiceSettings()[engine].presets.some(preset => preset.id === id)) throw presetNotFound();
+    updateVoiceSettings(current =>
+      withEngine(current, engine, settings => {
+        const presets = settings.presets.filter(preset => preset.id !== id);
+        const defaultPresetId = settings.defaultPresetId === id ? (presets[0]?.id ?? null) : settings.defaultPresetId;
+        return { ...settings, presets, defaultPresetId };
+      }),
+    );
   },
 
-  setDefaultVoicevoxPreset(id: string): VoiceSettingsView {
-    if (!readVoiceSettings().voicevox.presets.some(preset => preset.id === id)) throw presetNotFound();
-    return this.updateSettings({ voicevox: { defaultPresetId: id } });
+  setDefaultVoicevoxPreset(id: string, engine: VoiceEngine = 'voicevox'): VoiceSettingsView {
+    if (!readVoiceSettings()[engine].presets.some(preset => preset.id === id)) throw presetNotFound();
+    return this.updateSettings({ [engine]: { defaultPresetId: id } });
   },
 
   /** Verifies the key against ElevenLabs before saving it. */
@@ -360,11 +381,11 @@ export const voiceService = {
     return this.withElevenLabsKey(listElevenLabsModels);
   },
 
-  async voicevoxStatus() {
-    const url = resolveVoicevoxUrl();
-    const defaultSpeaker = resolveVoicevoxDefaultSpeaker();
+  async voicevoxStatus(engine: VoiceEngine = 'voicevox') {
+    const url = resolveEngineUrl(engine);
+    const defaultSpeaker = resolveEngineDefaultSpeaker(engine);
     try {
-      const [version, speakers] = await Promise.all([getVoicevoxVersion(), listVoicevoxSpeakers()]);
+      const [version, speakers] = await Promise.all([getVoicevoxVersion(engine), listVoicevoxSpeakers(engine)]);
       return { available: true, url, version, defaultSpeaker, speakers };
     } catch (err) {
       return {
@@ -379,21 +400,23 @@ export const voiceService = {
 
   /** Single entry point for text-to-speech, whichever provider. */
   async synthesize(input: SynthesizeSpeechInput): Promise<SynthesizedSpeech> {
-    if (input.provider === 'voicevox') {
-      const { voicevox } = readVoiceSettings();
-      const presetId = input.presetId?.trim() || voicevox.defaultPresetId;
-      const preset = presetId ? voicevox.presets.find(item => item.id === presetId) : undefined;
+    if (input.provider === 'voicevox' || input.provider === 'aivisspeech') {
+      const engine: VoiceEngine = input.provider;
+      const settings = readVoiceSettings()[engine];
+      const presetId = input.presetId?.trim() || settings.defaultPresetId;
+      const preset = presetId ? settings.presets.find(item => item.id === presetId) : undefined;
       if (input.presetId && !preset) throw presetNotFound();
       const base = preset ?? DEFAULT_VOICEVOX_PRESET_SETTINGS;
       const audio = await synthesizeVoicevox(input.text, {
-        speaker: input.speaker ?? preset?.speaker ?? resolveVoicevoxDefaultSpeaker(),
+        engine,
+        speaker: input.speaker ?? preset?.speaker ?? resolveEngineDefaultSpeaker(engine),
         speedScale: input.speed ?? base.speedScale,
         pitchScale: input.pitchScale ?? base.pitchScale,
         intonationScale: input.intonationScale ?? base.intonationScale,
         volumeScale: input.volumeScale ?? base.volumeScale,
         pauseLengthScale: input.pauseLengthScale ?? base.pauseLengthScale,
       });
-      return { audio, contentType: 'audio/wav', provider: 'voicevox' };
+      return { audio, contentType: 'audio/wav', provider: input.provider };
     }
 
     const { elevenlabs } = readVoiceSettings();

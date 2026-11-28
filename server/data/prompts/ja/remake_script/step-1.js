@@ -7,6 +7,12 @@ Originality:
 - Include at least one new angle that the reference video does not have.
 - The title must use different words from the reference title.
 
+What kind of reference video this is (decide from the transcript before planning):
+- A narrated explainer or a fictional story: plan as usual.
+- A real-life vlog (real people filming their own trip, meals, home, work or money, talking about "we" and "today"): our channel cannot film real people. Borrow ONLY the theme and why viewers enjoy it. Do not retell their life, places or words, and do not turn them into a case study. Build the video from psychology, studies and your own fictional named person.
+- Speaking in the first person as a real famous person (for example a video titled 【斎藤一人】 that talks as him): never speak as that person and never put their name in the title. Do not quote or paraphrase the sayings in the transcript as their words; such videos are often AI voices and the sayings may be invented. Borrow only the theme. If you cite a real person, use only well-known words you are sure of and say whose they are.
+- Presented by a real expert or host: their personal experiences and opinions are theirs. Do not reuse them or present them as facts.
+
 No repetition between chapters (the most common failure):
 - Every chapter has its own takeaway, and no two chapters may lead to the same conclusion. Two studies that prove the same point (for example "people like you more than you think" and "people notice your mistakes less than you think") belong in ONE chapter.
 - The first keyPoint of each chapter is its takeaway in one sentence. Compare the takeaways: if two say the same thing in other words, merge those chapters.

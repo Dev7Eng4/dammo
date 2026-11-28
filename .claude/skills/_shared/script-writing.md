@@ -27,7 +27,7 @@ Các công cụ nghiên cứu dùng lại của skill khác: `npm run -s trends 
 - Nghiên cứu: chỉ dùng khi đã **xác minh bằng WebSearch** (tên nhà nghiên cứu, nơi, năm, cách làm, kết quả), có ít nhất một nguồn đáng tin (bài báo, trường, sách, báo lớn). Ghi URL vào `research.md`. Không xác minh được thì dùng tình huống đời thường, không viết 「ある大学の研究」.
 - Không nói quá kết quả: tương quan không viết thành nhân quả; không 「証明された」「劇的に」. Không chẩn đoán, không hứa chữa khỏi hay làm giàu.
 - Điều một video nguồn nói về nghiên cứu **không phải là nguồn**. Phải kiểm tra lại.
-- Nhân vật là hư cấu, tên thường gặp (田中さん, 佐藤さん), không 〇〇さん. Không gán câu nói cho người thật.
+- Nhân vật là hư cấu, tên thường gặp (田中さん, 佐藤さん), không 〇〇さん. Không gán câu nói cho người thật. Không nói ở ngôi thứ nhất như một người nổi tiếng có thật, không đưa tên họ vào title; chỉ trích câu đã kiểm chứng nguồn và ghi rõ ai nói.
 
 ## 3. Dàn ý
 Ghi vào `research.md`:

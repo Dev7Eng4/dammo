@@ -7,6 +7,7 @@ import type { ImageBrowserProvider, LlmTextProvider, VideoBrowserProvider } from
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { runWithFlowRetries } from '../llm-browser/flow/flow-retry.js';
 import { metaBrowserService } from '../llm-browser/meta/meta.service.js';
+import { museBrowserService } from '../llm-browser/muse/muse.service.js';
 import { llmBrowserService } from '../llm-browser/text/text.service.js';
 import { resolvePromptOutputType } from '../prompts/prompt-output-type.js';
 import { promptsRepository } from '../prompts/prompts.repository.js';
@@ -115,6 +116,8 @@ async function runImagePlayground(
             ...generateOptions,
             mediaKind: 'image',
           })
+        : imageProvider === 'muse'
+        ? await museBrowserService.generateImage(input.userPrompt, { ...generateOptions, profileId: profile.id })
         : (
             await runWithFlowRetries({
               profileId: profile.id,
@@ -163,8 +166,8 @@ async function runVideoPlayground(
 ): Promise<PromptPlaygroundRunResult> {
   // Meta has no LLM Video option: a Meta login is the same account, so use profiles with Meta in LLM Image.
   const profile =
-    videoProvider === 'flow'
-      ? chromeProfilesService.requireProfileForLlm('video', 'flow')
+    videoProvider === 'flow' || videoProvider === 'muse'
+      ? chromeProfilesService.requireProfileForLlm('video', videoProvider)
       : chromeProfilesService.requireProfileForLlm('image', 'meta');
   const startedAt = Date.now();
   const runDir = path.join(paths.playgroundDir, generateId());
@@ -186,10 +189,13 @@ async function runVideoPlayground(
       );
     }
 
-    const response = await metaBrowserService.generateMedia(profile.id, input.userPrompt, {
-      ...generateOptions,
-      mediaKind: 'video',
-    });
+    const response =
+      videoProvider === 'muse'
+        ? await museBrowserService.generateVideo(input.userPrompt, { ...generateOptions, profileId: profile.id })
+        : await metaBrowserService.generateMedia(profile.id, input.userPrompt, {
+            ...generateOptions,
+            mediaKind: 'video',
+          });
 
     const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
     if (!savedPath) {

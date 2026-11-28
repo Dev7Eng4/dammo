@@ -5,6 +5,8 @@ import type {
   ElevenLabsModel,
   ElevenLabsVoicePreset,
   VoicePresetPayload,
+  VoiceEngine,
+  VoiceProvider,
   VoicevoxPresetPayload,
   VoicevoxVoicePreset,
   ElevenLabsVoice,
@@ -30,8 +32,8 @@ export function updateVoiceSettings(payload: UpdateVoiceSettingsPayload) {
   })
 }
 
-export function fetchVoicevoxEngineStatus(options?: FetchOptions) {
-  return fetchJson<VoicevoxEngineStatus>(`${BASE}/voicevox/status`, withSignal(undefined, options))
+export function fetchVoicevoxEngineStatus(options?: FetchOptions, engine: VoiceEngine = 'voicevox') {
+  return fetchJson<VoicevoxEngineStatus>(`${BASE}/${engine}/status`, withSignal(undefined, options))
 }
 
 export function addElevenLabsKey(payload: { label?: string; apiKey: string }) {
@@ -98,35 +100,35 @@ export function setDefaultVoicePreset(id: string) {
   })
 }
 
-export function createVoicevoxPreset(payload: VoicevoxPresetPayload) {
-  return fetchJson<{ item: VoicevoxVoicePreset }>(`${BASE}/voicevox/presets`, {
+export function createVoicevoxPreset(payload: VoicevoxPresetPayload, engine: VoiceEngine = 'voicevox') {
+  return fetchJson<{ item: VoicevoxVoicePreset }>(`${BASE}/${engine}/presets`, {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify(payload),
   })
 }
 
-export function updateVoicevoxPreset(id: string, payload: Partial<VoicevoxPresetPayload>) {
-  return fetchJson<{ item: VoicevoxVoicePreset }>(`${BASE}/voicevox/presets/${encodeURIComponent(id)}`, {
+export function updateVoicevoxPreset(id: string, payload: Partial<VoicevoxPresetPayload>, engine: VoiceEngine = 'voicevox') {
+  return fetchJson<{ item: VoicevoxVoicePreset }>(`${BASE}/${engine}/presets/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     headers: JSON_HEADERS,
     body: JSON.stringify(payload),
   })
 }
 
-export function deleteVoicevoxPreset(id: string) {
-  return fetchJson<{ ok: true }>(`${BASE}/voicevox/presets/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export function deleteVoicevoxPreset(id: string, engine: VoiceEngine = 'voicevox') {
+  return fetchJson<{ ok: true }>(`${BASE}/${engine}/presets/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
-export function setDefaultVoicevoxPreset(id: string) {
-  return fetchJson<{ item: VoiceSettings }>(`${BASE}/voicevox/presets/${encodeURIComponent(id)}/default`, {
+export function setDefaultVoicevoxPreset(id: string, engine: VoiceEngine = 'voicevox') {
+  return fetchJson<{ item: VoiceSettings }>(`${BASE}/${engine}/presets/${encodeURIComponent(id)}/default`, {
     method: 'POST',
   })
 }
 
 /** A sample read exactly as the narration step will read it (same saved voice, pacing and speed). */
 export async function previewNarrationVoice(payload: {
-  provider: 'voicevox' | 'elevenlabs'
+  provider: VoiceProvider
   presetId?: string
   /** Settings for this video only (same fields as a saved voice, without its name). */
   custom?: Record<string, unknown>

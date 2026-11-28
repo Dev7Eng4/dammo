@@ -8,8 +8,8 @@ Mỗi bộ não trong dammo (`server/src/modules/brains/`) có một skill Claud
 | competitors | jp-psy-competitors | jp-psy-trends | channel, video, pattern |
 | audience | jp-psy-audience | jp-psy-trends, competitors | insight, keyword |
 | ideas | jp-psy-ideas | jp-psy-trends, competitors, audience | idea |
-| title-seo | jp-psy-ctr | jp-psy-trends, competitors, audience, ideas (và brief của script nếu đã có) | pattern, title, keyword |
-| thumbnail | jp-psy-ctr | jp-psy-trends, competitors | pattern |
+| title-seo | jp-psy-ctr | studio (CTR thật, ưu tiên), jp-psy-trends, competitors, audience, ideas (và brief của script nếu đã có) | pattern, title, keyword |
+| thumbnail | jp-psy-ctr | studio (CTR thật, ưu tiên), jp-psy-trends, competitors | pattern |
 | script | jp-psy-script-niche (từ mã cụm), jp-psy-script-remake (từ link video) | jp-psy-trends, competitors, audience, ideas, title-seo | brief |
 | voice | jp-psy-voice | audience, jp-psy-trends | recipe, insight |
 | images | jp-psy-images (hướng hình), jp-psy-scene-split (tách cảnh + vẽ lại ảnh từng video), jp-psy-motion (chọn cảnh làm clip chuyển động) | jp-psy-trends, competitors, script | pattern, recipe |
@@ -76,7 +76,7 @@ Ghi vào scratchpad, dạng:
 - `label` và `detail` viết tiếng Việt; `labelJa` giữ cụm tiếng Nhật. Với video, tiêu đề và số liệu lấy từ cache nên `label` để `-` cũng được.
 - `heat` 0–100 theo ý nghĩa mà `prompt` của từng bộ não định nghĩa.
 - `links` trỏ tới nơ-ron khác dạng `<kind>:<key>` (`video:<id>`, `channel:<UC id>`, `topic:<key>`, `idea:<key>`…), kể cả nơ-ron của bộ não khác đã đọc qua `read_memory`.
-- `cluster` / `subCluster` / `format` là tuỳ chọn (bắt buộc cho video của jp-psy-trends). Dùng khi gắn được với cụm K1–K11.
+- `cluster` / `subCluster` / `format` / `sourceType` là tuỳ chọn (cluster bắt buộc cho video của jp-psy-trends; `sourceType` xem cuối `trends -- clusters`). Dùng khi gắn được với cụm K1–K11.
 
 ## Quy trình chung
 

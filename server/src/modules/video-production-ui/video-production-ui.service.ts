@@ -17,6 +17,7 @@ import {
   IMAGE_REFERENCES_DIRNAME,
   findOverlappingScenes,
   generateAiSceneSlideImages,
+  generateCharacterReferenceImagesFromList,
   isTitleScene,
   loadAiRenderConfig,
   resolveAiScenePromptsFilePath,
@@ -752,6 +753,38 @@ export class VideoProductionUiService {
       videoId: safeVideoId,
       source,
       cues,
+    };
+  }
+
+  /** Draw (via Flow / Meta) every character in character-references.json that has a prompt but no image yet. */
+  async generateMissingCharacterImages(
+    channelId: string,
+    videoId: string,
+    basePath: string,
+  ): Promise<ProductionCharactersResponse & { generatedCount: number; failedCount: number; skippedCount: number }> {
+    const safeChannelId = assertSafeId(channelId, 'channel id');
+    const safeVideoId = assertSafeId(videoId, 'video id');
+    const workDir = resolveProductionVideoFolder(safeChannelId, safeVideoId);
+    const file = readCharacterReferencesFile(workDir);
+    const characters = (file?.characters ?? [])
+      .filter((item) => typeof item.id === 'string' && item.id.trim() && typeof item.prompt === 'string' && item.prompt.trim())
+      .map((item) => ({
+        id: String(item.id),
+        name: typeof item.name === 'string' && item.name.trim() ? item.name : String(item.id),
+        description: typeof item.description === 'string' ? item.description : '',
+        prompt: String(item.prompt),
+      }));
+    if (characters.length === 0) {
+      throw new AppError('No characters with a prompt', 400, 'CHARACTERS_NOT_FOUND');
+    }
+    const result = await runExclusiveSceneImageJob(safeChannelId, safeVideoId, () =>
+      generateCharacterReferenceImagesFromList({ workDir, youtubeVideoId: safeVideoId, characters }),
+    );
+    return {
+      ...this.getCharacters(safeChannelId, safeVideoId, basePath),
+      generatedCount: result.generatedCount,
+      failedCount: result.failedCount,
+      skippedCount: result.skippedCount,
     };
   }
 

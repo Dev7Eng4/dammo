@@ -17,6 +17,7 @@ const scriptSchema = z.object({ text: z.string().min(1).max(200_000) });
 const motionSchema = z.object({
   mode: z.enum(['intro', 'full', 'interleaved', 'scenes']),
   indexes: z.array(z.number().int().min(0)).max(500).optional(),
+  provider: z.enum(['flow', 'muse', 'meta']).optional(),
 });
 const voiceSchema = z.object({
   speaker: z.number().int().min(0),
@@ -185,7 +186,7 @@ export function createVideoProductionUiRoutes() {
   app.post('/videos/:channelId/:videoId/motion', async (c) => {
     const body = motionSchema.parse(await c.req.json());
     return c.json(
-      channelVideoMotionService.generate(c.req.param('channelId'), c.req.param('videoId'), body.mode, body.indexes),
+      channelVideoMotionService.generate(c.req.param('channelId'), c.req.param('videoId'), body.mode, body.indexes, body.provider),
       202,
     );
   });
@@ -287,6 +288,15 @@ export function createVideoProductionUiRoutes() {
       c.req.path,
     );
     return c.json(result, 201);
+  });
+
+  app.post('/videos/:channelId/:videoId/characters/generate-missing', async (c) => {
+    const result = await videoProductionUiService.generateMissingCharacterImages(
+      c.req.param('channelId'),
+      c.req.param('videoId'),
+      c.req.path.replace(/\/generate-missing$/, ''),
+    );
+    return c.json(result);
   });
 
   app.post('/videos/:channelId/:videoId/characters/:characterId/image', async (c) => {

@@ -91,7 +91,7 @@
       "desc": "Đọc từng câu bằng voice đã lưu (VOICEVOX hoặc ElevenLabs) và tạo phụ đề từ chính thời lượng thật. Nếu đã có ảnh scene, thời gian scene tự khớp lại theo giọng mới.",
       "run": "Đọc giọng",
       "again": "Đọc lại",
-      "unavailable": "Chưa kết nối được VOICEVOX ({{url}}). Trang tự kiểm tra lại mỗi 10 giây.",
+      "unavailable": "Chưa kết nối được {{name}} ({{url}}). Trang tự kiểm tra lại mỗi 10 giây.",
       "result": "Đọc xong: {{duration}} ({{actual}} phút), kế hoạch {{planned}} phút, cho phép {{min}}–{{max}} phút.",
       "outside": "ngoài khoảng cho phép — sửa kịch bản ngắn/dài lại rồi đọc lại",
       "recheck": "Kiểm tra lại"
@@ -116,7 +116,7 @@
     },
     "motion": {
       "title": "Ảnh → video",
-      "desc": "Tuỳ chọn: biến ảnh scene thành clip chuyển động ~8 giây bằng Google Flow (Veo), chạy qua Chrome và dùng lượt Flow của các profile có tick Flow ở cột LLM Video. Cảnh có clip sẽ phát clip khi dựng video, cảnh còn lại vẫn là ảnh với Ken Burns. Bỏ qua bước này thì video ghép từ ảnh như cũ."
+      "desc": "Tuỳ chọn: biến ảnh scene thành clip chuyển động ngắn bằng Google Flow (Veo) hoặc Muse, chạy qua Chrome bằng các profile có tick Flow / Muse ở cột LLM Video. Cảnh có clip sẽ phát clip khi dựng video, cảnh còn lại vẫn là ảnh với Ken Burns. Bỏ qua bước này thì video ghép từ ảnh như cũ."
     },
     "metadata": {
       "title": "Metadata & thumbnail",
@@ -207,7 +207,7 @@
     "modes": {
       "intro": "Chỉ intro ({{sec}}s đầu)",
       "full": "Toàn bộ cảnh",
-      "interleaved": "Intro + 1 clip mỗi {{min}}–{{max}} ảnh",
+      "interleaved": "Intro + 1 clip mỗi {{min}}–{{max}} phút",
       "scenes": "Tự chọn cảnh"
     },
     "channelImages": "Kênh này đang để kiểu video từ ảnh — chọn intro hoặc toàn bộ nếu muốn có chuyển động.",
@@ -220,9 +220,22 @@
     "badgeImage": "Ảnh",
     "remove": "Bỏ clip",
     "replace": "Đổi clip",
+    "copyPrompt": "Copy prompt",
+    "promptCopied": "Đã copy prompt clip cảnh #{{index}} — dán vào Flow cùng ảnh cảnh, rồi bấm Đổi clip để đưa mp4 vào.",
     "one": "Tạo clip",
     "titleCard": "Thẻ tiêu đề — giữ nguyên",
-    "replaced": "Đã đổi clip cảnh #{{index}}. Dựng lại video để dùng clip."
+    "replaced": "Đã đổi clip cảnh #{{index}}. Dựng lại video để dùng clip.",
+    "provider": "Tạo clip bằng",
+    "providers": {
+      "flow": "Google Flow (Veo)",
+      "muse": "Muse",
+      "meta": "Meta AI"
+    },
+    "providerHint": {
+      "flow": "Dùng lượt Flow của các profile có tick Flow ở cột LLM Video; hết lượt thì tự chuyển profile.",
+      "muse": "Chạy trên muse.ai bằng profile có tick Muse ở cột LLM Video (phải đăng nhập muse.ai). Mỗi clip 3–10 giây, làm lần lượt từng cảnh; Muse báo dịch vụ video lỗi thì các cảnh còn lại giữ ảnh.",
+      "meta": "Chạy trên Meta AI bằng profile có tick Meta ở cột LLM Image (cùng tài khoản Meta). Gửi ảnh cảnh kèm prompt \"Create video 16:9 …\", làm lần lượt từng cảnh; profile hết lượt thì tự chuyển. Meta tự chọn độ dài clip, lúc ghép sẽ cắt cho khớp cảnh."
+    }
   },
   "source": {
     "none": "Không có nhóm",
@@ -230,6 +243,8 @@
     "channelVideos": "Video đang chuẩn bị / đã chuẩn bị / đã tạo"
   },
   "channelVideo": {
+    "search": "Tìm video theo tiêu đề hoặc ID…",
+    "noMatch": "Không có video nào khớp.",
     "status": {
       "Prepared": "Đã chuẩn bị",
       "Created": "Đã tạo",

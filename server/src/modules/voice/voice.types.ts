@@ -1,6 +1,6 @@
 import type { ElevenLabsKeyRecord, VoiceSettingsRecord } from '../../infrastructure/tts/voice-settings.store.js';
 
-export type VoiceProvider = 'voicevox' | 'elevenlabs';
+export type VoiceProvider = 'voicevox' | 'aivisspeech' | 'elevenlabs';
 
 /** An ElevenLabs key as the API returns it: the secret is masked. */
 export type ElevenLabsKeyView = Omit<ElevenLabsKeyRecord, 'apiKey'> & { maskedKey: string };
@@ -11,13 +11,18 @@ export interface VoiceSettingsView {
     effectiveUrl: string;
     effectiveDefaultSpeaker: number;
   };
+  aivisspeech: VoiceSettingsRecord['aivisspeech'] & {
+    /** URL actually used (Settings value or AIVISSPEECH_URL env). */
+    effectiveUrl: string;
+    effectiveDefaultSpeaker: number;
+  };
   elevenlabs: Omit<VoiceSettingsRecord['elevenlabs'], 'keys'> & { keys: ElevenLabsKeyView[] };
 }
 
 export interface SynthesizeSpeechInput {
   provider: VoiceProvider;
   text: string;
-  /** VOICEVOX style id; defaults to the Settings default speaker. */
+  /** VOICEVOX / AivisSpeech style id; defaults to the Settings default speaker. */
   speaker?: number;
   /** Saved voice (preset) of the chosen provider; defaults to that provider's default preset. */
   presetId?: string;

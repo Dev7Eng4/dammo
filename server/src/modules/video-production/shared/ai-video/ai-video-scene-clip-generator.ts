@@ -7,8 +7,8 @@ import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.run
 import type { FlowImageToVideoJob } from '../../../llm-browser/flow/flow.types.js';
 import { emitDetailLog } from '../video-log.js';
 import {
-  AI_INTERLEAVED_MAX_IMAGES,
-  AI_INTERLEAVED_MIN_IMAGES,
+  AI_INTERLEAVED_MAX_GAP_SEC,
+  AI_INTERLEAVED_MIN_GAP_SEC,
   AI_INTRO_VIDEO_SEC,
   AI_VIDEO_CLIP_SEC,
   AI_VIDEOS_DIRNAME,
@@ -70,16 +70,17 @@ function clipFitCost(durationSec: number): number {
 }
 
 /**
- * Interleaved pick over eligible scenes (in order): every intro scene, then one clip after each
- * run of `minImages`–`maxImages` image scenes, choosing the candidate whose length fits a clip best.
+ * Interleaved pick over eligible scenes (in order): every intro scene, then one clip whose start is
+ * `minGapSec`–`maxGapSec` after the previous clip's start, choosing the candidate whose length fits a
+ * clip best. When no scene starts inside the window (long scenes), the first one after it is taken.
  */
 export function selectInterleavedScenes<T>(
   eligible: T[],
   startSec: (scene: T) => number,
   durationSec: (scene: T) => number,
   introSec: number = AI_INTRO_VIDEO_SEC,
-  minImages: number = AI_INTERLEAVED_MIN_IMAGES,
-  maxImages: number = AI_INTERLEAVED_MAX_IMAGES,
+  minGapSec: number = AI_INTERLEAVED_MIN_GAP_SEC,
+  maxGapSec: number = AI_INTERLEAVED_MAX_GAP_SEC,
 ): T[] {
   const picked: T[] = [];
   let cursor = 0;
@@ -87,15 +88,17 @@ export function selectInterleavedScenes<T>(
     picked.push(eligible[cursor]!);
     cursor += 1;
   }
+  // No intro scene: the first gap counts from the start of the video.
+  let lastStart = picked.length > 0 ? startSec(picked[picked.length - 1]!) : 0;
   for (;;) {
-    const first = cursor + minImages;
-    if (first >= eligible.length) break;
-    const last = Math.min(cursor + maxImages, eligible.length - 1);
-    let best = first;
-    for (let i = first + 1; i <= last; i += 1) {
+    while (cursor < eligible.length && startSec(eligible[cursor]!) < lastStart + minGapSec) cursor += 1;
+    if (cursor >= eligible.length) break;
+    let best = cursor;
+    for (let i = cursor + 1; i < eligible.length && startSec(eligible[i]!) <= lastStart + maxGapSec; i += 1) {
       if (clipFitCost(durationSec(eligible[i]!)) < clipFitCost(durationSec(eligible[best]!))) best = i;
     }
     picked.push(eligible[best]!);
+    lastStart = startSec(eligible[best]!);
     cursor = best + 1;
   }
   return picked;

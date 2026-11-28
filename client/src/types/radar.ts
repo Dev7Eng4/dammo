@@ -1,5 +1,8 @@
 export type RadarTier = 'spike' | 'burst' | 'super'
 
+/** Remake gates: nên làm / có thể làm / không nên làm. */
+export type RemakeVerdict = 'do' | 'maybe' | 'skip'
+
 export interface RadarItem {
   videoId: string
   title: string
@@ -14,6 +17,9 @@ export interface RadarItem {
   expectedViews: number
   ratio: number
   tier: RadarTier
+  momentum?: number
+  verdict: RemakeVerdict
+  verdictReasons: string[]
 }
 
 export interface RadarListResponse {
@@ -46,6 +52,7 @@ export interface RadarScanResult {
 export interface RadarFilters {
   maxAgeHours: number
   minRatio: number
+  verdict?: RemakeVerdict
 }
 
 /** Hot video found by the jp-psy-trends brain or Claude Code skill, tagged with a K1–K11 cluster. */
@@ -67,11 +74,18 @@ export interface TrendRadarItem {
   clusterUnsure: boolean
   subCluster?: string
   format?: string
+  /** narrated / manga / real-host / real-vlog / persona */
+  sourceType?: string
+  sourceTypeName?: string
+  /** Real-life vlog or speaks as a real famous person: only the topic may be reused. */
+  topicOnly: boolean
   reason: string
   source: 'brain' | 'skill' | 'unknown'
   hits: number
   firstSeenAt: string
   lastSeenAt: string
+  verdict: RemakeVerdict
+  verdictReasons: string[]
 }
 
 export interface TrendClusterCount {
@@ -85,6 +99,8 @@ export interface TrendClusterCount {
 export interface TrendRadarResponse {
   items: TrendRadarItem[]
   clusters: TrendClusterCount[]
+  /** Counts per remake verdict, within the selected cluster. */
+  verdicts: Record<RemakeVerdict, number>
   total: number
   lastRunAt?: string
 }
@@ -92,4 +108,5 @@ export interface TrendRadarResponse {
 export interface TrendRadarFilters {
   days: number
   cluster?: string
+  verdict?: RemakeVerdict
 }

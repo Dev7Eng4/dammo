@@ -1,8 +1,11 @@
 export type LlmTextProvider = 'gpt' | 'gemini' | 'claude';
-export type ImageBrowserProvider = 'flow' | 'meta';
-/** `flow`: Google Flow (Veo), image → video. `meta`: Meta AI text → video, kept for the API only. */
-export type VideoBrowserProvider = 'flow' | 'meta';
-export type LlmBrowserProvider = LlmTextProvider | ImageBrowserProvider | VideoBrowserProvider;
+/** `muse`: muse.ai (Meta's agent), one image at a time on a profile ticked Muse in LLM Image. */
+export type ImageBrowserProvider = 'flow' | 'meta' | 'muse';
+/** `flow`: Google Flow (Veo), image → video. `muse`: muse.ai, image → video. `meta`: Meta AI text → video, kept for the API only. */
+export type VideoBrowserProvider = 'flow' | 'meta' | 'muse';
+/** `muse`: muse.ai (Meta's agent). */
+export type MuseBrowserProvider = 'muse';
+export type LlmBrowserProvider = LlmTextProvider | ImageBrowserProvider | VideoBrowserProvider | MuseBrowserProvider;
 export type LlmSessionStatus = 'idle' | 'sending' | 'waiting';
 export interface LlmSetupSelectors {
   modeButton?: string;

@@ -359,7 +359,7 @@
       }
     },
     "voice": {
-      "hint": "Cấu hình giọng đọc: ElevenLabs (nhiều API key, tự xoay key khi hết quota) và VOICEVOX Engine chạy local.",
+      "hint": "Cấu hình giọng đọc: ElevenLabs (nhiều API key, tự xoay key khi hết quota) và các engine chạy local: VOICEVOX, AivisSpeech.",
       "keyPlaceholder": "ElevenLabs API key (sk_...)",
       "addKey": "Thêm key",
       "keyHint": "Key được kiểm tra với ElevenLabs trước khi lưu. Khi tạo giọng, server dùng key còn nhiều ký tự nhất và tự chuyển key nếu key lỗi/hết quota.",
@@ -391,6 +391,13 @@
       "connected": "Đã kết nối",
       "disconnected": "Không kết nối",
       "checkConnection": "Kiểm tra",
+      "aivis": {
+        "url": "AivisSpeech Engine URL",
+        "urlHint": "Để trống = dùng AIVISSPEECH_URL trong env (mặc định http://127.0.0.1:10101). Đang dùng: {{url}}",
+        "empty": "Chưa có voice nào — bấm \"Thêm voice\" để chọn giọng AivisSpeech, chỉnh và lưu lại với tên riêng.",
+        "needEngine": "AivisSpeech Engine chưa chạy nên không tải được danh sách giọng. Mở AivisSpeech rồi bấm Kiểm tra.",
+        "intro": "AivisSpeech Engine chạy local (mặc định cổng 10101), dùng chung API với VOICEVOX. Cần mở app AivisSpeech trước; mỗi giọng (model) có điều khoản dùng riêng, hãy xem giấy phép của giọng trước khi đăng video."
+      },
       "vv": {
         "url": "VOICEVOX Engine URL",
         "urlHint": "Để trống = dùng VOICEVOX_URL trong env. Đang dùng: {{url}}"

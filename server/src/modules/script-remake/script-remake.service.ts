@@ -19,6 +19,22 @@ import { youtubeChannelsRepository } from '../youtube-channels/youtube-channels.
 import { DEFAULT_REMAKE_BASE_KEY, assertRemakeStep1Current, ensureDefaultRemakePrompts } from './script-remake.default-prompts.js';
 import { chapterFixPrompt, chapterProblems } from './script-remake.quality.js';
 import { contentTaskProvider, pickContentTaskProfile } from '../prompts/content-task.js';
+import { sourceTypeName, sourceTypeRemakeNote } from '../brains/psy-clusters.js';
+import { trendVideoSourceType } from '../radar/radar-trends.js';
+
+/** Planner notes for sources the trend hunter tagged as something other than a narrated explainer. */
+function sourceTypeNotes(videoIds: string[]): { notes: string[]; log: string[] } {
+  const notes = new Set<string>();
+  const log: string[] = [];
+  for (const id of videoIds) {
+    const type = trendVideoSourceType(id);
+    const note = sourceTypeRemakeNote(type);
+    if (!type || !note) continue;
+    notes.add(note);
+    log.push(`Nguồn ${id} là "${sourceTypeName(type)}" (theo bộ não săn xu hướng): dặn LLM chỉ mượn những gì được phép`);
+  }
+  return { notes: [...notes], log };
+}
 
 /** Narration pace used for length planning, same as the video agent (see NARRATION_CHARS_PER_MIN). */
 export const REMAKE_CHARS_PER_MIN = NARRATION_CHARS_PER_MIN;
@@ -104,6 +120,8 @@ export interface StartRemakeInput {
   outputDir?: string;
   language: PromptLanguage;
   notes?: string;
+  /** YouTube ids of the source videos: a real-life vlog or a "speaks as a famous person" source steers the plan. */
+  sourceVideoIds?: string[];
   promptSetId?: string;
   provider?: LlmTextProvider;
 }
@@ -241,7 +259,10 @@ class ScriptRemakeService {
     this.jobs.set(job.id, job);
     this.activeJobId = job.id;
 
-    const finished = this.run(job, set, transcript, input.notes?.trim() ?? '', input.outputDir)
+    const sourceNotes = sourceTypeNotes(input.sourceVideoIds ?? []);
+    for (const line of sourceNotes.log) this.log(job, line);
+    const notes = [input.notes?.trim(), ...sourceNotes.notes].filter(Boolean).join('\n');
+    const finished = this.run(job, set, transcript, notes, input.outputDir)
       .catch(err => {
         job.status = 'failed';
         job.error = err instanceof Error ? err.message : String(err);

@@ -1,4 +1,7 @@
-export type VoiceProvider = 'voicevox' | 'elevenlabs'
+export type VoiceProvider = 'voicevox' | 'aivisspeech' | 'elevenlabs'
+
+/** Local engines that speak the VOICEVOX Engine API (AivisSpeech answers the same calls on its own URL). */
+export type VoiceEngine = 'voicevox' | 'aivisspeech'
 
 export type ElevenLabsKeyStatus = 'ok' | 'invalid' | 'quota_exceeded' | 'error'
 
@@ -53,15 +56,18 @@ export interface VoicevoxVoicePreset {
 
 export type VoicevoxPresetPayload = Omit<VoicevoxVoicePreset, 'id' | 'createdAt' | 'updatedAt'>
 
+export interface SpeechEngineSettings {
+  url: string
+  defaultSpeaker: number | null
+  presets: VoicevoxVoicePreset[]
+  defaultPresetId: string | null
+  effectiveUrl: string
+  effectiveDefaultSpeaker: number
+}
+
 export interface VoiceSettings {
-  voicevox: {
-    url: string
-    defaultSpeaker: number | null
-    presets: VoicevoxVoicePreset[]
-    defaultPresetId: string | null
-    effectiveUrl: string
-    effectiveDefaultSpeaker: number
-  }
+  voicevox: SpeechEngineSettings
+  aivisspeech: SpeechEngineSettings
   elevenlabs: {
     keys: ElevenLabsKey[]
     presets: ElevenLabsVoicePreset[]
@@ -72,6 +78,7 @@ export interface VoiceSettings {
 
 export interface UpdateVoiceSettingsPayload {
   voicevox?: { url?: string; defaultSpeaker?: number | null; defaultPresetId?: string | null }
+  aivisspeech?: { url?: string; defaultSpeaker?: number | null; defaultPresetId?: string | null }
   elevenlabs?: { defaultPresetId?: string | null; outputFormat?: string }
 }
 

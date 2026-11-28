@@ -20,6 +20,11 @@ description: Nhận link video YouTube, đọc hết nội dung video đó, nghi
 **1. Đọc nguồn.** `npm run -s script -- source <link>`
 - Đọc **hết** transcript. Không có transcript thì báo và dừng (đừng đoán nội dung từ title). Transcript tiếng khác vẫn dùng được; kịch bản luôn viết tiếng Nhật.
 - Ghi: chủ đề thật, các ý (đếm), ví dụ, nghiên cứu được nhắc, cấu trúc, lời hứa của title có được trả không.
+- **Xác định loại nguồn** (`narrated`, `manga`, `real-host`, `real-vlog`, `persona`; luật ở cuối `npm run -s trends -- clusters`). `script source` in ra loại mà bộ não săn xu hướng đã gắn, nếu có; chưa có thì tự xác định từ title, kênh, thời lượng và transcript. Kênh mình là thuyết minh + minh hoạ, không quay người thật, nên:
+  - `real-vlog` (người thật quay chuyến đi, bữa ăn, nhà, tiền của họ): **chỉ mượn chủ đề** và lý do người xem thích. Không kể lại đời sống, nơi chốn, lời của họ, không biến họ thành "ví dụ". Báo người dùng: sức hút của vlog (con người thật, cảnh thật) không chuyển sang kịch bản được, nên chọn góc tâm lý đủ mạnh để tự đứng.
+  - `persona` (nói ngôi thứ nhất như một người nổi tiếng có thật, kiểu 【斎藤一人】): **không nhập vai**, không để tên người đó trong title, không dùng các "danh ngôn" trong transcript như lời của họ (thường là giọng AI, lời có thể bịa). Chỉ mượn chủ đề. Muốn trích người thật thì chỉ dùng câu đã kiểm chứng được nguồn bằng WebSearch, ghi rõ ai nói.
+  - `real-host`: trải nghiệm và ý kiến riêng của người dẫn là của họ; kiểm lại mọi khẳng định trước khi dùng.
+  - Ghi loại nguồn và cách xử lý vào `research.md`.
 
 **2. Vì sao video này chạy.** Trả lời bằng số liệu, không phỏng đoán:
 - `npm run -s trends -- channel <channelId>`: video này gấp mấy lần median view/giờ của kênh. Dưới x2 thì nói với người dùng là nguồn không nổi trội, và vẫn làm tiếp.
@@ -60,6 +65,7 @@ Video nguồn có bản dùng được (`check.json` ĐẠT, khớp `script.txt`
    - Không có transcript: bỏ video, ghi vào báo cáo.
    - Nguồn không nổi trội, chủ đề đứng: vẫn làm. Chủ đề đã nguội: đi nhánh đang lên gần nhất.
    - Cụm: theo `trendClusters` / `niche` của kênh và nội dung nguồn; ngoài cụm thì `off`.
+   - Nguồn `real-vlog` / `persona`: vẫn làm, nhưng chỉ mượn chủ đề theo bước 1; ghi vào cột lý do của báo cáo.
 3. Lưu vào `dir` của queue (không phải `docs/scripts/`): `script.txt`, `research.md`, `meta.json` như `script-writing.md` mục 6, thêm các trường giống dàn ý remake của app: `"angle"` (góc mới, một câu tiếng Nhật), `"hook"` (30 giây đầu nói gì), `"story"` (nhân vật xuyên suốt và mạch từ chương đầu tới cuối, tiếng Nhật), `"lengthReason"` (vì sao độ dài này, tiếng Việt), cùng `"channelId"`, `"sourceVideoId"`, `"mode": "remake"`. App dùng `title`, `angle`, `hook` để làm metadata.
 4. `npm run -s script -- check <dir>/script.txt --source <videoId nguồn> [--source …] --save`. Phải **ĐẠT**; chưa đạt thì sửa và chạy lại, tối đa 3 vòng. Vẫn chưa đạt thì để nguyên (`check.json` ghi `passed: false`, app sẽ remake bằng LLM cho video đó) và sang video sau. Sửa `script.txt` sau khi kiểm thì phải kiểm lại, nếu không app sẽ không dùng.
 5. Kiểm cách đọc: `npm run -s script -- readings <dir>/script.txt` rồi xử lý theo `script-writing.md` mục 5 bước 4. Lệnh này chỉ hỏi VOICEVOX cách đọc, không đọc giọng. VOICEVOX chưa mở thì bỏ qua và ghi vào báo cáo. Sửa `script.txt` thì chạy lại `check --save`.
@@ -73,6 +79,7 @@ Không tự bấm "Chuẩn bị video", không sửa `script.txt` trong thư m�
 |---|---|
 | chủ đề, điều người xem quan tâm, khái niệm tâm lý phổ biến | câu chữ, cách nói, title, chữ trên bìa |
 | nghiên cứu có thật (đã tự xác minh, kể lại bằng lời mình) | ví dụ, nhân vật, câu thoại, trải nghiệm riêng của người làm video |
+| | đời sống người thật trong vlog; giọng ngôi thứ nhất và "danh ngôn" của video nhập vai người nổi tiếng |
 | dạng nội dung (danh sách, đối lập, câu chuyện) | thứ tự các ý, trọn bộ danh sách các mục |
 
 Danh sách của mình phải khác ít nhất một nửa số mục so với nguồn. Bộ kiểm đo câu chữ, không đo ý: phần này tự chịu trách nhiệm.

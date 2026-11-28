@@ -8,7 +8,7 @@ import {
   type SpeechTiming,
   type VoicevoxSynthOptions,
 } from '../../infrastructure/tts/voicevox.client.js';
-import { readVoiceSettings } from '../../infrastructure/tts/voice-settings.store.js';
+import { readVoiceSettings, resolveEngineDefaultSpeaker } from '../../infrastructure/tts/voice-settings.store.js';
 import { encodeWav, silencePcm } from '../../infrastructure/tts/wav.js';
 import { NARRATION_PACING } from '../video-agent/narration.js';
 import { voiceService } from './voice.service.js';
@@ -84,12 +84,14 @@ function hash(value: unknown): string {
 }
 
 function voicevoxNarrationOptions(
+  engine: 'voicevox' | 'aivisspeech',
   speaker: number,
   speedScale: number,
   pauseSec: number | undefined,
   preset?: { speedScale: number; pitchScale: number; intonationScale: number; volumeScale: number; pauseLengthScale: number },
 ): VoicevoxSynthOptions {
   return {
+    engine,
     speaker,
     speedScale: speedScale * NARRATION_PACING.baseSpeed * (preset?.speedScale ?? 1),
     pauseLengthScale: NARRATION_PACING.commaPauseScale * (preset?.pauseLengthScale ?? 1),
@@ -136,12 +138,16 @@ export function resolveNarrationVoice(ref: NarrationVoiceRef, speedScale: number
     };
   }
 
-  const saved = ref.custom || !ref.presetId ? undefined : settings.voicevox.presets.find(item => item.id === ref.presetId);
+  // VOICEVOX and AivisSpeech share the engine API: same options, only the engine (URL) differs.
+  const engine: 'voicevox' | 'aivisspeech' = provider === 'aivisspeech' ? 'aivisspeech' : 'voicevox';
+  const engineName = engine === 'aivisspeech' ? 'AivisSpeech' : 'VOICEVOX';
+  const saved =
+    ref.custom || !ref.presetId ? undefined : settings[engine].presets.find(item => item.id === ref.presetId);
   if (!ref.custom && ref.presetId && !saved) {
-    throw new AppError('Voice VOICEVOX đã chọn không còn — chọn lại voice ở bước Giọng đọc', 400, 'VOICE_PRESET_NOT_FOUND');
+    throw new AppError(`Voice ${engineName} đã chọn không còn — chọn lại voice ở bước Giọng đọc`, 400, 'VOICE_PRESET_NOT_FOUND');
   }
   const voice: VoicevoxCustomVoice | undefined = isVoicevoxCustom(ref.custom) ? ref.custom : saved;
-  const speaker = voice?.speaker ?? ref.voicevoxSpeaker;
+  const speaker = voice?.speaker ?? (engine === 'aivisspeech' ? resolveEngineDefaultSpeaker(engine) : ref.voicevoxSpeaker);
   const prosody = voice && {
     speedScale: voice.speedScale,
     pitchScale: voice.pitchScale,
@@ -150,24 +156,30 @@ export function resolveNarrationVoice(ref: NarrationVoiceRef, speedScale: number
     pauseLengthScale: voice.pauseLengthScale,
   };
   return {
-    provider: 'voicevox',
+    provider: engine,
     label: saved
-      ? `VOICEVOX · ${saved.name}`
+      ? `${engineName} · ${saved.name}`
       : voice
-        ? `VOICEVOX · ${voice.speakerName ?? `#${speaker}`} (tùy chỉnh)`
-        : `VOICEVOX #${speaker}`,
-    voicevoxSpeaker: speaker,
+        ? `${engineName} · ${voice.speakerName ?? `#${speaker}`} (tùy chỉnh)`
+        : `${engineName} #${speaker}`,
+    // The VOICEVOX credit in the description is only for VOICEVOX voices.
+    ...(engine === 'voicevox' ? { voicevoxSpeaker: speaker } : {}),
     ...(voice?.speakerName ? { speakerName: voice.speakerName } : {}),
     // Bare-speaker runs keep their old key shape so their cached sentences stay valid.
-    cacheKey: prosody ? `vv-${hash({ speaker, producerSpeed: speedScale, ...prosody })}` : `${speaker}|${speedScale}`,
+    cacheKey:
+      engine === 'aivisspeech'
+        ? `av-${hash({ speaker, producerSpeed: speedScale, ...(prosody ?? {}) })}`
+        : prosody
+          ? `vv-${hash({ speaker, producerSpeed: speedScale, ...prosody })}`
+          : `${speaker}|${speedScale}`,
     synthesize(sentence, pauseSec) {
-      return synthesizeVoicevoxTimed(sentence, voicevoxNarrationOptions(speaker, speedScale, pauseSec, prosody));
+      return synthesizeVoicevoxTimed(sentence, voicevoxNarrationOptions(engine, speaker, speedScale, pauseSec, prosody));
     },
     timing(sentence, pauseSec) {
-      return voicevoxSpeechTiming(sentence, voicevoxNarrationOptions(speaker, speedScale, pauseSec, prosody));
+      return voicevoxSpeechTiming(sentence, voicevoxNarrationOptions(engine, speaker, speedScale, pauseSec, prosody));
     },
     reading(sentence) {
-      return voicevoxReading(sentence, speaker);
+      return voicevoxReading(sentence, speaker, engine);
     },
   };
 }

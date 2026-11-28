@@ -1,7 +1,7 @@
 /** LLMs a profile is logged into, per capability. */
 export const LLM_CONTENT_OPTIONS = ['chatgpt', 'gemini', 'claude'] as const;
-export const LLM_IMAGE_OPTIONS = ['meta', 'flow'] as const;
-export const LLM_VIDEO_OPTIONS = ['flow'] as const;
+export const LLM_IMAGE_OPTIONS = ['meta', 'flow', 'muse'] as const;
+export const LLM_VIDEO_OPTIONS = ['flow', 'muse'] as const;
 
 export type LlmContent = (typeof LLM_CONTENT_OPTIONS)[number];
 export type LlmImage = (typeof LLM_IMAGE_OPTIONS)[number];

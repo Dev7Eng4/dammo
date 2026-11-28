@@ -91,7 +91,7 @@ function loadSettings(): PromptsSettings {
     ),
     defaultThumbnailProvider: stored?.defaultThumbnailProvider ?? DEFAULT_SETTINGS.defaultThumbnailProvider,
     // Meta AI is no longer offered for video; a stored `meta` becomes Flow, which the video steps use.
-    defaultVideoProvider: stored?.defaultVideoProvider === 'meta' ? 'flow' : (stored?.defaultVideoProvider ?? DEFAULT_SETTINGS.defaultVideoProvider),
+    defaultVideoProvider: stored?.defaultVideoProvider ?? DEFAULT_SETTINGS.defaultVideoProvider,
   };
 }
 

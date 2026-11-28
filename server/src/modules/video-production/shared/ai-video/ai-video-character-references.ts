@@ -8,6 +8,7 @@ import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow/flow-profile-failover.js';
 import { llmBrowserService } from '../../../llm-browser/text/text.service.js';
 import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
+import { generateImagesWithMuse } from '../../../llm-browser/muse/muse-image-batch.js';
 import { executePromptTemplate } from '../../../prompts/prompts.file-store.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import type { PromptLanguage } from '../../../prompts/prompts.types.js';
@@ -289,6 +290,28 @@ async function generateCharacterImagesViaMeta(
   };
 }
 
+/** Muse: the missing character images at once, on 3 tabs per profile ticked Muse in LLM Image. */
+async function generateCharacterImagesViaMuse(
+  characters: AiVideoCharacterReference[],
+  imageReferencesDir: string,
+  log: (msg: string) => void,
+): Promise<{ generatedCount: number; failedCount: number }> {
+  const missing: AiVideoCharacterReference[] = [];
+  for (const character of characters) {
+    if (!(await findExistingCharacterImage(imageReferencesDir, character.id))) missing.push(character);
+  }
+  if (missing.length === 0) return { generatedCount: 0, failedCount: 0 };
+
+  const result = await generateImagesWithMuse(
+    missing.map(character => {
+      const name = sanitizeCharacterId(character.id);
+      return { id: name, prompt: character.prompt, outputDir: imageReferencesDir, fileName: `${name}.jpg` };
+    }),
+    { onLog: log },
+  );
+  return { generatedCount: result.generatedCount, failedCount: result.failedCount };
+}
+
 async function attachCharacterImagePaths(
   characters: AiVideoCharacterReference[],
   workDir: string,
@@ -389,6 +412,10 @@ export async function generateCharacterReferenceImagesFromList(
         } finally {
           await closeChromeProfiles(mains.map(profile => profile.id));
         }
+      } else if (imageProvider === 'muse') {
+        const museResult = await generateCharacterImagesViaMuse(characters, imageReferencesDir, log);
+        generatedCount = museResult.generatedCount;
+        failedCount = museResult.failedCount;
       } else {
         const metaResult = await generateCharacterImagesViaMeta(
           characters,

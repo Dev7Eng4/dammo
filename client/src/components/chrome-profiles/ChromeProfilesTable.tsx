@@ -24,6 +24,7 @@ const LLM_LABELS: Record<string, string> = {
   claude: 'Claude',
   meta: 'Meta',
   flow: 'Flow',
+  muse: 'Muse',
 };
 
 const LLM_COLUMNS: {

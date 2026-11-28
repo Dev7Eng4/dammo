@@ -131,7 +131,7 @@ export const AI_FLOW_TOOL_BATCH_SIZE = 10;
 export const AI_VIDEOS_DIRNAME = 'videos';
 
 /** `ai_intro_video`: scenes starting before this many seconds become video clips, the rest stay images. */
-export const AI_INTRO_VIDEO_SEC = 30;
+export const AI_INTRO_VIDEO_SEC = 60;
 
 /** Length of one Flow video clip; longer scenes hold the last frame. */
 export const AI_VIDEO_CLIP_SEC = 8;
@@ -144,11 +144,11 @@ export const FLOW_CLIP_MIN_SEC = 3;
 export const FLOW_CLIP_MAX_SEC = 10;
 
 /**
- * `ai_interleaved_video`: after the intro clips, one scene becomes a clip, then this many image
- * scenes play before the next clip (the clip is the best-fitting scene in that range).
+ * `ai_interleaved_video`: after the intro clips, the next clip starts this many seconds after the
+ * previous clip starts (the clip is the best-fitting scene starting inside that window).
  */
-export const AI_INTERLEAVED_MIN_IMAGES = 4;
-export const AI_INTERLEAVED_MAX_IMAGES = 6;
+export const AI_INTERLEAVED_MIN_GAP_SEC = 90;
+export const AI_INTERLEAVED_MAX_GAP_SEC = 150;
 
 /** Max reference images attached to one scene image when the channel has a mascot (mascot first). */
 export const AI_SCENE_MAX_REFERENCE_IMAGES = 3;

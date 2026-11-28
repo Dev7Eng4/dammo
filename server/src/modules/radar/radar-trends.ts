@@ -1,7 +1,8 @@
 import { brainsRepository } from '../brains/brains.repository.js';
 import { TREND_BRAIN_ID } from '../brains/brains.registry.js';
 import type { Neuron } from '../brains/brains.types.js';
-import { clusterName, OFF_NICHE, PSY_CLUSTERS } from '../brains/psy-clusters.js';
+import { clusterName, isTopicOnlySource, OFF_NICHE, PSY_CLUSTERS, sourceTypeName } from '../brains/psy-clusters.js';
+import { compareVerdicts, evaluateRemakeGates, type RemakeVerdict } from './remake-gates.js';
 
 const HOUR_MS = 3_600_000;
 
@@ -26,12 +27,20 @@ export interface TrendRadarItem {
   clusterUnsure: boolean;
   subCluster?: string;
   format?: string;
+  /** narrated / manga / real-host / real-vlog / persona (see SOURCE_TYPES). */
+  sourceType?: string;
+  sourceTypeName?: string;
+  /** Our channels may only borrow this video's topic (real-life vlog, speaks as a real famous person). */
+  topicOnly: boolean;
   /** Why it is hot / why this cluster. */
   reason: string;
   source: 'brain' | 'skill' | 'unknown';
   hits: number;
   firstSeenAt: string;
   lastSeenAt: string;
+  /** Remake gates: nên làm / có thể làm / không nên làm. */
+  verdict: RemakeVerdict;
+  verdictReasons: string[];
 }
 
 export interface TrendRadarOptions {
@@ -39,6 +48,7 @@ export interface TrendRadarOptions {
   days?: number;
   /** K1–K11, "off", or "none" (not tagged yet). */
   cluster?: string;
+  verdict?: RemakeVerdict;
   limit?: number;
 }
 
@@ -55,6 +65,21 @@ function toItem(neuron: Neuron, now: number): TrendRadarItem {
   const publishedAt = str(meta.publishedAt);
   const cluster = str(meta.cluster);
   const source = str(meta.source);
+  const ageHours = publishedAt ? Math.max(0, (now - Date.parse(publishedAt)) / HOUR_MS) : undefined;
+  const measuredAgeHours = publishedAt
+    ? Math.max(0, (Date.parse(neuron.lastSeenAt) - Date.parse(publishedAt)) / HOUR_MS)
+    : undefined;
+  const gate = evaluateRemakeGates({
+    minutes: num(meta.minutes),
+    ageHours,
+    measuredAgeHours,
+    views: num(meta.views),
+    ratio: num(meta.channelRatio),
+    heat: neuron.heat,
+    cluster,
+    clusterUnsure: meta.clusterUnsure === 1,
+    topicOnly: isTopicOnlySource(str(meta.sourceType)),
+  });
   return {
     videoId: neuron.key.replace(/^video:/, ''),
     title: neuron.label,
@@ -62,7 +87,7 @@ function toItem(neuron: Neuron, now: number): TrendRadarItem {
     channel: str(meta.channel) ?? '',
     channelId: str(meta.channelId) ?? '',
     publishedAt,
-    ageHours: publishedAt ? Math.max(0, (now - Date.parse(publishedAt)) / HOUR_MS) : undefined,
+    ageHours,
     minutes: num(meta.minutes) ?? 0,
     views: num(meta.views) ?? 0,
     viewsPerHour: num(meta.viewsPerHour) ?? 0,
@@ -73,17 +98,22 @@ function toItem(neuron: Neuron, now: number): TrendRadarItem {
     clusterUnsure: meta.clusterUnsure === 1,
     subCluster: str(meta.subCluster),
     format: str(meta.format),
+    sourceType: str(meta.sourceType),
+    sourceTypeName: str(meta.sourceType) ? sourceTypeName(str(meta.sourceType)!) : undefined,
+    topicOnly: isTopicOnlySource(str(meta.sourceType)),
     reason: neuron.detail,
     source: source === 'brain' || source === 'skill' ? source : 'unknown',
     hits: neuron.hits,
     firstSeenAt: neuron.firstSeenAt,
     lastSeenAt: neuron.lastSeenAt,
+    verdict: gate.verdict,
+    verdictReasons: gate.reasons,
   };
 }
 
 /** Hot videos the trend hunter (brain or skill) stored, newest finding first, with per-cluster counts. */
 export function listTrendRadar(options: TrendRadarOptions = {}) {
-  const { days = 7, cluster, limit = 200 } = options;
+  const { days = 7, cluster, verdict, limit = 200 } = options;
   const now = Date.now();
   const since = now - days * 24 * HOUR_MS;
   const store = brainsRepository.read();
@@ -101,11 +131,35 @@ export function listTrendRadar(options: TrendRadarOptions = {}) {
     };
   });
 
-  const items = all
-    .filter(item => !cluster || (cluster === 'none' ? !item.cluster : item.cluster === cluster))
-    .sort((a, b) => b.lastSeenAt.slice(0, 10).localeCompare(a.lastSeenAt.slice(0, 10)) || b.heat - a.heat || b.viewsPerHour - a.viewsPerHour)
+  const inCluster = all.filter(item => !cluster || (cluster === 'none' ? !item.cluster : item.cluster === cluster));
+  const verdicts = { do: 0, maybe: 0, skip: 0 } satisfies Record<RemakeVerdict, number>;
+  for (const item of inCluster) verdicts[item.verdict] += 1;
+
+  const items = inCluster
+    .filter(item => !verdict || item.verdict === verdict)
+    .sort(
+      (a, b) =>
+        compareVerdicts(a.verdict, b.verdict) ||
+        b.lastSeenAt.slice(0, 10).localeCompare(a.lastSeenAt.slice(0, 10)) ||
+        b.heat - a.heat ||
+        b.viewsPerHour - a.viewsPerHour,
+    )
     .slice(0, limit);
 
   const brain = store.brains[TREND_BRAIN_ID];
-  return { items, clusters, total: all.length, lastRunAt: brain?.lastRunAt };
+  return { items, clusters, verdicts, total: all.length, lastRunAt: brain?.lastRunAt };
+}
+
+/** Remake gate verdict of one trend-brain video neuron (same rules as the Radar). */
+export function trendNeuronGate(neuron: Neuron, now = Date.now()): { verdict: RemakeVerdict; reasons: string[] } {
+  const item = toItem(neuron, now);
+  return { verdict: item.verdict, reasons: item.verdictReasons };
+}
+
+/** The source type the trend hunter gave a video, if it saved one (used to warn and steer remakes). */
+export function trendVideoSourceType(videoId: string): string | undefined {
+  const neuron = brainsRepository
+    .read()
+    .neurons.find(n => n.brainId === TREND_BRAIN_ID && n.kind === 'video' && n.key === `video:${videoId}`);
+  return str(neuron?.meta?.sourceType);
 }

@@ -7,7 +7,7 @@ Phân tích title và thumbnail **trên cùng một bộ video**, để thấy �
 2. Đọc bộ nhớ:
    - `title-seo` (`pattern`, `title`, `keyword`) và `thumbnail` (`pattern`): mẫu cũ, dùng lại key. Mẫu theo cặp có key bắt đầu bằng `pair-`.
    - `jp-psy-trends` (`video`, `keyword`), `competitors` (`video`, `pattern`).
-   - `docs/brains/ctr/ctr-log.csv` nếu có.
+   - `docs/brains/ctr/ctr-log.csv` nếu có, và bộ não `studio` (`metric`, `insight`): CTR thật của kênh mình. Mẫu từ đối thủ chỉ là giả thuyết khi mâu thuẫn với CTR thật của kênh.
    
    Ví dụ: `npm run -s brain -- call thumbnail read_memory '{"brainId":"jp-psy-trends","kind":"video","limit":40}'`.
 3. Chọn **một** bộ video: 12–16 video nóng hoặc vượt chuẩn, cộng 4–6 video bình thường, ưu tiên **cùng kênh** với video thắng để loại ảnh hưởng của cỡ kênh. Có `K{n}` thì chỉ lấy cụm đó. Ưu tiên hệ số `channelRatio` (x so với median kênh) hơn view/giờ tuyệt đối.

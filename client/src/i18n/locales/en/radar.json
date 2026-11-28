@@ -82,6 +82,23 @@
       "skill": "Skill",
       "unknown": "—"
     },
-    "empty": "No data yet. Run the Japanese psychology trend brain on the Brains page, or type \"trends\" in Claude Code and save the result."
+    "empty": "No data yet. Run the Japanese psychology trend brain on the Brains page, or type \"trends\" in Claude Code and save the result.",
+    "topicOnly": "topic only",
+    "topicOnlyHint": "Our channels cannot remake this video's content (real people filmed for real, or speaking as a famous person). Borrow the topic only.",
+    "sourceType": {
+      "narrated": "Narrated",
+      "manga": "Manga / story",
+      "real-host": "Real host",
+      "real-vlog": "Real-life vlog",
+      "persona": "Speaks as a real person"
+    }
+  },
+  "verdict": {
+    "label": "Remake?",
+    "all": "All",
+    "do": "Do",
+    "maybe": "Maybe",
+    "skip": "Skip",
+    "hint": "Gates: 10–35 min long, enough real views for its age, in niche; \"Do\" needs ≥ ×8 (or heat ≥ 80) and ≤ 72h. \"Skip\" videos never enter the automatic remake queue."
   }
 }

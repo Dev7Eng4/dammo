@@ -1,5 +1,7 @@
 # Luật ghép cặp title × thumbnail
 
+> Luật ghép cặp làm việc **bên trong khuôn của kênh**, không thay khuôn. Kênh đã có CTR thật (`channel.measured` trong `ctr info`) thì bối cảnh, tông, nhân vật, biểu cảm, nhãn và khuôn title của nhóm CTR cao là cố định; cặp mới chỉ thay câu chữ, móc và đạo cụ.
+
 ## Một câu: cùng một móc, khác thông tin
 
 - **Móc** là điều khiến người xem dừng lại: một tình huống, lựa chọn, câu nói, đồ vật hay ý ngược lẽ thường **có thật trong kịch bản**. Cả cặp chỉ có **một** móc.

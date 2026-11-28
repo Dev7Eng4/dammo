@@ -52,6 +52,11 @@ export interface RadarItem {
   /** viewCount ÷ expectedViews at this age. */
   ratio: number;
   tier: RadarTier;
+  /** Recent views/hour ÷ lifetime views/hour (needs two snapshots ≥ 3h apart). */
+  momentum?: number;
+  /** Remake gates: nên làm / có thể làm / không nên làm. */
+  verdict: 'do' | 'maybe' | 'skip';
+  verdictReasons: string[];
 }
 
 export interface RadarScanResult {

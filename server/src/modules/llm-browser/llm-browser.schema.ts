@@ -44,7 +44,9 @@ export const llmBrowserChatSchema = z.object({
 
 export const llmBrowserGenerateImageSchema = z.object({
   prompt: z.string().min(1),
-  provider: imageBrowserProviderSchema.default('flow'),
+  provider: z.union([imageBrowserProviderSchema, z.literal('muse')]).default('flow'),
+  aspectRatio: z.enum(['16:9', '3:4']).optional(),
+  skipResize: z.boolean().optional(),
   outputPath: z.string().min(1).optional(),
   outputDir: z.string().min(1).optional(),
   fileName: z.string().min(1).optional(),
@@ -59,7 +61,11 @@ export const llmBrowserGenerateImageSchema = z.object({
 
 export const llmBrowserGenerateVideoSchema = z.object({
   prompt: z.string().min(1),
-  provider: videoBrowserProviderSchema.default('meta'),
+  provider: z.union([videoBrowserProviderSchema, z.literal('muse')]).default('meta'),
+  /** Muse only: clip length, 3–10 s. */
+  durationSeconds: z.number().int().min(3).max(10).optional(),
+  /** Muse only: image(s) to animate. */
+  referenceImagePaths: z.array(z.string().min(1)).optional(),
   outputPath: z.string().min(1).optional(),
   outputDir: z.string().min(1).optional(),
   fileName: z.string().min(1).optional(),

@@ -101,13 +101,19 @@ export function buildXfadeChain(params: BuildXfadeChainParams): XfadeChainResult
     throw new Error('transitions length must equal clipCount - 1');
   }
 
-  const labels = resolveInputLabels(clipCount, params.inputLabels);
+  let labels = resolveInputLabels(clipCount, params.inputLabels);
 
   if (clipCount === 1) {
     return { filter: '', outLabel: labels[0]!, totalDuration: durations[0] };
   }
 
   const parts: string[] = [];
+  const hasCut = transitions.some((t, i) => Math.min(t.durationSec, durations[i], durations[i + 1]) <= 0);
+  if (hasCut) {
+    // concat outputs time base 1/1000000; xfade needs both inputs on the same time base.
+    parts.push(...labels.map((label, i) => `[${label}]settb=AVTB[tb${i}]`));
+    labels = labels.map((_, i) => `tb${i}`);
+  }
   let prevLabel = labels[0]!;
 
   for (let i = 0; i < transitions.length; i++) {
@@ -118,6 +124,13 @@ export function buildXfadeChain(params: BuildXfadeChainParams): XfadeChainResult
     // offset_i = sum(durations[0..i]) - sum(clampedTransitions[0..i])
     const offsetSec = sumRange(durations, 0, i) - sumTransitions(transitions, 0, i, durations);
     const outLabel = i === transitions.length - 1 ? 'xfout' : `xf${i}`;
+
+    if (transDur <= 0) {
+      // No transition here (e.g. between two video clips): a plain cut.
+      parts.push(`[${prevLabel}][${labels[i + 1]!}]concat=n=2:v=1:a=0[${outLabel}]`);
+      prevLabel = outLabel;
+      continue;
+    }
 
     parts.push(
       `[${prevLabel}][${labels[i + 1]!}]xfade=transition=${transitions[i].type}:` +

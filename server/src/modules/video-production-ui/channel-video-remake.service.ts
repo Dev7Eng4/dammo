@@ -216,6 +216,7 @@ class ChannelVideoRemakeService {
       outputDir: path.join(workDir, 'remake'),
       language: 'ja',
       notes: input.notes,
+      sourceVideoIds: [videoId],
       promptSetId: input.promptSetId,
       provider: input.provider,
     });
@@ -395,7 +396,7 @@ class ChannelVideoRemakeService {
     source?: { channelId: string; sourceVideoId: string },
   ): Promise<{ subtitlePath: string; voice: ChannelVideoVoice; outline: RemakeOutlineHint }> {
     const ready = await this.useReadyScript(workDir, hooks.log, source);
-    const outline = ready?.outline ?? (await this.remakeWithLlm(workDir, transcriptPath, config, hooks.log));
+    const outline = ready?.outline ?? (await this.remakeWithLlm(workDir, transcriptPath, config, hooks.log, source?.sourceVideoId));
     hooks.onRemakeDone?.();
 
     this.assertVoiceFree();
@@ -504,6 +505,7 @@ class ChannelVideoRemakeService {
     transcriptPath: string,
     config: RemakeAutoConfig,
     log: (message: string) => void,
+    sourceVideoId?: string,
   ): Promise<RemakeOutlineHint> {
     if (scriptRemakeService.isBusy()) {
       throw new AppError('Đang có một lượt remake khác chạy — chờ xong rồi chuẩn bị lại', 409, 'REMAKE_BUSY');
@@ -512,6 +514,7 @@ class ChannelVideoRemakeService {
       transcript: await fsp.readFile(transcriptPath, 'utf8'),
       outputDir: path.join(workDir, 'remake'),
       language: 'ja',
+      ...(sourceVideoId ? { sourceVideoIds: [sourceVideoId] } : {}),
       ...(config.promptSetId ? { promptSetId: config.promptSetId } : {}),
       ...(config.provider ? { provider: config.provider } : {}),
     });

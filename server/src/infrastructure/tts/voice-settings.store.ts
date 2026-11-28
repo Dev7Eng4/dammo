@@ -59,16 +59,22 @@ export const DEFAULT_VOICEVOX_PRESET_SETTINGS = {
   pauseLengthScale: 1,
 };
 
+/** Local engines that speak the VOICEVOX Engine API. AivisSpeech uses the same preset shape. */
+export type VoiceEngine = 'voicevox' | 'aivisspeech';
+
+export interface SpeechEngineSettings {
+  /** Engine base URL. Empty → the engine's env URL (VOICEVOX_URL / AIVISSPEECH_URL). */
+  url: string;
+  /** Default style id; null → the engine's env speaker. Superseded by the default preset. */
+  defaultSpeaker: number | null;
+  presets: VoicevoxVoicePreset[];
+  /** Preset used when a caller names none. */
+  defaultPresetId: string | null;
+}
+
 export interface VoiceSettingsRecord {
-  voicevox: {
-    /** VOICEVOX Engine base URL. Empty → VOICEVOX_URL env. */
-    url: string;
-    /** Default style id; null → VOICEVOX_SPEAKER env. Superseded by the default preset. */
-    defaultSpeaker: number | null;
-    presets: VoicevoxVoicePreset[];
-    /** Preset used when a caller names none. */
-    defaultPresetId: string | null;
-  };
+  voicevox: SpeechEngineSettings;
+  aivisspeech: SpeechEngineSettings;
   elevenlabs: {
     keys: ElevenLabsKeyRecord[];
     presets: ElevenLabsVoicePreset[];
@@ -93,6 +99,7 @@ export const DEFAULT_ELEVENLABS_OUTPUT_FORMAT = 'mp3_44100_128';
 
 export const DEFAULT_VOICE_SETTINGS: VoiceSettingsRecord = {
   voicevox: { url: '', defaultSpeaker: null, presets: [], defaultPresetId: null },
+  aivisspeech: { url: '', defaultSpeaker: null, presets: [], defaultPresetId: null },
   elevenlabs: {
     keys: [],
     presets: [],
@@ -131,21 +138,23 @@ function migrateLegacy(stored: LegacyElevenLabsSettings | undefined): Pick<Voice
 
 export function readVoiceSettings(): VoiceSettingsRecord {
   const stored = readJson<{
-    voicevox?: Partial<VoiceSettingsRecord['voicevox']>;
+    voicevox?: Partial<SpeechEngineSettings>;
+    aivisspeech?: Partial<SpeechEngineSettings>;
     elevenlabs?: Partial<VoiceSettingsRecord['elevenlabs']> & LegacyElevenLabsSettings;
   }>(paths.voiceSettings);
   const el = stored?.elevenlabs;
   const presetState = Array.isArray(el?.presets)
     ? { presets: el.presets, defaultPresetId: el.defaultPresetId ?? null }
     : migrateLegacy(el);
-  const vv = stored?.voicevox;
+  const engine = (value: Partial<SpeechEngineSettings> | undefined): SpeechEngineSettings => ({
+    url: value?.url ?? '',
+    defaultSpeaker: value?.defaultSpeaker ?? null,
+    presets: Array.isArray(value?.presets) ? value.presets : [],
+    defaultPresetId: value?.defaultPresetId ?? null,
+  });
   return {
-    voicevox: {
-      url: vv?.url ?? '',
-      defaultSpeaker: vv?.defaultSpeaker ?? null,
-      presets: Array.isArray(vv?.presets) ? vv.presets : [],
-      defaultPresetId: vv?.defaultPresetId ?? null,
-    },
+    voicevox: engine(stored?.voicevox),
+    aivisspeech: engine(stored?.aivisspeech),
     elevenlabs: {
       keys: Array.isArray(el?.keys) ? el.keys : [],
       ...presetState,
@@ -163,19 +172,36 @@ export function updateVoiceSettings(updater: (current: VoiceSettingsRecord) => V
   return writeVoiceSettings(updater(readVoiceSettings()));
 }
 
+/** Engine URL: the Settings value, else the engine's env URL. */
+export function resolveEngineUrl(engine: VoiceEngine = 'voicevox'): string {
+  const fallback = engine === 'aivisspeech' ? env.aivisspeechUrl : env.voicevoxUrl;
+  const url = readVoiceSettings()[engine].url.trim() || fallback;
+  return url.replace(/\/+$/, '');
+}
+
+/** The engine's default saved voice, if any. */
+export function resolveEngineDefaultPreset(engine: VoiceEngine = 'voicevox'): VoicevoxVoicePreset | undefined {
+  const { presets, defaultPresetId } = readVoiceSettings()[engine];
+  return presets.find(preset => preset.id === defaultPresetId) ?? presets[0];
+}
+
+/** Default style id: the default saved voice, else the Settings value, else the engine's env speaker. */
+export function resolveEngineDefaultSpeaker(engine: VoiceEngine = 'voicevox'): number {
+  const fallback = engine === 'aivisspeech' ? env.aivisspeechSpeaker : env.voicevoxSpeaker;
+  return resolveEngineDefaultPreset(engine)?.speaker ?? readVoiceSettings()[engine].defaultSpeaker ?? fallback;
+}
+
 /** VOICEVOX Engine URL: the Settings value, else the VOICEVOX_URL env. */
 export function resolveVoicevoxUrl(): string {
-  const url = readVoiceSettings().voicevox.url.trim() || env.voicevoxUrl;
-  return url.replace(/\/+$/, '');
+  return resolveEngineUrl('voicevox');
 }
 
 /** The default saved VOICEVOX voice, if any. */
 export function resolveVoicevoxDefaultPreset(): VoicevoxVoicePreset | undefined {
-  const { presets, defaultPresetId } = readVoiceSettings().voicevox;
-  return presets.find(preset => preset.id === defaultPresetId) ?? presets[0];
+  return resolveEngineDefaultPreset('voicevox');
 }
 
 /** Default VOICEVOX style id: the default saved voice, else the Settings value, else VOICEVOX_SPEAKER env. */
 export function resolveVoicevoxDefaultSpeaker(): number {
-  return resolveVoicevoxDefaultPreset()?.speaker ?? readVoiceSettings().voicevox.defaultSpeaker ?? env.voicevoxSpeaker;
+  return resolveEngineDefaultSpeaker('voicevox');
 }

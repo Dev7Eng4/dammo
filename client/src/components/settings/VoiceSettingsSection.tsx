@@ -18,15 +18,30 @@ import type {
   ElevenLabsKey,
   ElevenLabsModel,
   ElevenLabsVoice,
+  SpeechEngineSettings,
+  VoiceEngine,
   VoicevoxEngineStatus,
   VoiceSettings,
 } from '../../types/voice'
-import { Button, DropdownSelect, Input, StatusBadge, Switch, Tooltip, TooltipProvider, useToast } from '../ui'
+import { Button, DropdownSelect, Input, PageTabs, StatusBadge, Switch, Tooltip, TooltipProvider, useToast } from '../ui'
 import { ElevenLabsVoicePresets } from './ElevenLabsVoicePresets'
 import { VoicevoxVoicePresets } from './VoicevoxVoicePresets'
 import { ConfirmDeleteModal } from './ConfirmDeleteModal'
 import { appLocale } from '../../utils/locale'
 
+
+type VoiceProviderTab = 'elevenlabs' | VoiceEngine
+/** Remembered per browser: the provider tab last opened. */
+const TAB_STORAGE_KEY = 'settings.voice.tab'
+
+function readStoredTab(): VoiceProviderTab {
+  try {
+    const value = window.localStorage.getItem(TAB_STORAGE_KEY)
+    return value === 'voicevox' || value === 'aivisspeech' ? value : 'elevenlabs'
+  } catch {
+    return 'elevenlabs'
+  }
+}
 
 const OUTPUT_FORMATS = ['mp3_44100_128', 'mp3_44100_192', 'mp3_22050_32', 'pcm_24000', 'pcm_44100']
 
@@ -126,6 +141,108 @@ function KeyRow({
 }
 
 /**
+ * One local speech engine (VOICEVOX or AivisSpeech: same API): its URL, connection check and saved voices.
+ * The speaker list comes from the running engine, so it is loaded here when the tab opens.
+ */
+function SpeechEngineCard({
+  engine,
+  settings,
+  onChange,
+}: {
+  engine: VoiceEngine
+  settings: SpeechEngineSettings
+  onChange: (patch: Partial<SpeechEngineSettings>) => void
+}) {
+  const { t } = useTranslation(['factory', 'common'])
+  const { toast } = useToast()
+  const [url, setUrl] = useState(settings.url)
+  const [status, setStatus] = useState<VoicevoxEngineStatus | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const name = engine === 'aivisspeech' ? 'AivisSpeech' : 'VOICEVOX'
+  const strings = engine === 'aivisspeech' ? 'factory:settings.voice.aivis' : 'factory:settings.voice.vv'
+
+  useAbortableEffect(
+    async (signal) => {
+      const next = await fetchVoicevoxEngineStatus({ signal }, engine).catch(() => null)
+      if (!signal.aborted) setStatus(next)
+    },
+    [engine],
+  )
+
+  async function check() {
+    setChecking(true)
+    try {
+      setStatus(await fetchVoicevoxEngineStatus(undefined, engine))
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function saveUrl() {
+    setSaving(true)
+    try {
+      const { item } = await updateVoiceSettings({ [engine]: { url: url.trim() } })
+      onChange(item[engine])
+      setUrl(item[engine].url)
+      toast.success(t('factory:settings.toast.saved'))
+      void check()
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card
+      title={name}
+      icon={<Mic className="size-4 text-primary-400" />}
+      actions={
+        <div className="flex items-center gap-2">
+          {status?.available ? (
+            <span className="flex items-center gap-1 text-xs text-success">
+              <CheckCircle2 className="size-4" />
+              {t('factory:settings.voice.connected')}
+              {status.version ? ` · v${status.version}` : ''}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-xs text-danger">
+              <XCircle className="size-4" />
+              {t('factory:settings.voice.disconnected')}
+            </span>
+          )}
+          <Button size="sm" variant="outlined" onClick={check} disabled={checking}>
+            {checking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            {t('factory:settings.voice.checkConnection')}
+          </Button>
+        </div>
+      }
+    >
+      {engine === 'aivisspeech' ? (
+        <p className="text-xs text-muted-foreground">{t('factory:settings.voice.aivis.intro')}</p>
+      ) : null}
+      {status && !status.available && status.error ? <p className="text-xs text-danger">{status.error}</p> : null}
+      <Field label={t(`${strings}.url`)} hint={t(`${strings}.urlHint`, { url: settings.effectiveUrl })}>
+        <div className="flex gap-2">
+          <Input
+            className="h-9 min-w-0 flex-1"
+            placeholder={engine === 'aivisspeech' ? 'http://127.0.0.1:10101' : 'http://127.0.0.1:50021'}
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+          />
+          <Button size="sm" className="h-9 shrink-0" onClick={saveUrl} disabled={saving}>
+            {saving ? t('factory:settings.saving') : t('factory:settings.save')}
+          </Button>
+        </div>
+      </Field>
+
+      <VoicevoxVoicePresets settings={settings} engine={status} provider={engine} onChange={onChange} />
+    </Card>
+  )
+}
+
+/**
  * Settings → Voice: VOICEVOX Engine connection + default speaker, ElevenLabs API keys (a pool the
  * server rotates through when one runs out of quota) and the saved voices of each provider.
  */
@@ -134,12 +251,17 @@ export function VoiceSettingsSection() {
   const { toast } = useToast()
   const [settings, setSettings] = useState<VoiceSettings | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [savingPart, setSavingPart] = useState<'voicevox' | null>(null)
+  const [tab, setTab] = useState<VoiceProviderTab>(readStoredTab)
 
-  // VOICEVOX
-  const [vvUrl, setVvUrl] = useState('')
-  const [vvStatus, setVvStatus] = useState<VoicevoxEngineStatus | null>(null)
-  const [vvChecking, setVvChecking] = useState(false)
+  function changeTab(next: string) {
+    const value: VoiceProviderTab = next === 'voicevox' || next === 'aivisspeech' ? next : 'elevenlabs'
+    setTab(value)
+    try {
+      window.localStorage.setItem(TAB_STORAGE_KEY, value)
+    } catch {
+      // Blocked storage: the tab just is not remembered.
+    }
+  }
 
   // ElevenLabs
   const [newKey, setNewKey] = useState('')
@@ -155,18 +277,23 @@ export function VoiceSettingsSection() {
 
   function applySettings(item: VoiceSettings) {
     setSettings(item)
-    setVvUrl(item.voicevox.url)
+  }
+
+  function patchEngine(engine: VoiceEngine, patch: Partial<SpeechEngineSettings>) {
+    setSettings((prev) =>
+      prev
+        ? engine === 'aivisspeech'
+          ? { ...prev, aivisspeech: { ...prev.aivisspeech, ...patch } }
+          : { ...prev, voicevox: { ...prev.voicevox, ...patch } }
+        : prev,
+    )
   }
 
   useAbortableEffect(async (signal) => {
     try {
-      const [{ item }, status] = await Promise.all([
-        fetchVoiceSettings({ signal }),
-        fetchVoicevoxEngineStatus({ signal }).catch(() => null),
-      ])
+      const { item } = await fetchVoiceSettings({ signal })
       if (signal.aborted) return
       applySettings(item)
-      setVvStatus(status)
     } catch (err) {
       if (!signal.aborted) setLoadError(errorMessage(err))
     }
@@ -199,29 +326,6 @@ export function VoiceSettingsSection() {
         ? { ...prev, elevenlabs: { ...prev.elevenlabs, keys: prev.elevenlabs.keys.map((k) => (k.id === next.id ? next : k)) } }
         : prev,
     )
-  }
-
-  async function checkVoicevox() {
-    setVvChecking(true)
-    try {
-      setVvStatus(await fetchVoicevoxEngineStatus())
-    } finally {
-      setVvChecking(false)
-    }
-  }
-
-  async function saveVoicevox() {
-    setSavingPart('voicevox')
-    try {
-      const { item } = await updateVoiceSettings({ voicevox: { url: vvUrl.trim() } })
-      applySettings(item)
-      toast.success(t('factory:settings.toast.saved'))
-      void checkVoicevox()
-    } catch (err) {
-      toast.error(errorMessage(err))
-    } finally {
-      setSavingPart(null)
-    }
   }
 
   async function saveOutputFormat(outputFormat: string) {
@@ -300,7 +404,18 @@ export function VoiceSettingsSection() {
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{t('factory:settings.voice.hint')}</p>
 
+      <PageTabs
+        value={tab}
+        onValueChange={changeTab}
+        items={[
+          { id: 'elevenlabs', label: 'ElevenLabs' },
+          { id: 'voicevox', label: 'VOICEVOX' },
+          { id: 'aivisspeech', label: 'AivisSpeech' },
+        ]}
+      />
+
       {/* ElevenLabs */}
+      {tab === 'elevenlabs' ? (
       <Card
         title="ElevenLabs"
         icon={<KeyRound className="size-4 text-primary-400" />}
@@ -405,60 +520,17 @@ export function VoiceSettingsSection() {
           />
         </div>
       </Card>
+      ) : null}
 
-      {/* VOICEVOX */}
-      <Card
-        title="VOICEVOX"
-        icon={<Mic className="size-4 text-primary-400" />}
-        actions={
-          <div className="flex items-center gap-2">
-            {vvStatus?.available ? (
-              <span className="flex items-center gap-1 text-xs text-success">
-                <CheckCircle2 className="size-4" />
-                {t('factory:settings.voice.connected')}
-                {vvStatus.version ? ` · v${vvStatus.version}` : ''}
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-xs text-danger">
-                <XCircle className="size-4" />
-                {t('factory:settings.voice.disconnected')}
-              </span>
-            )}
-            <Button size="sm" variant="outlined" onClick={checkVoicevox} disabled={vvChecking}>
-              {vvChecking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-              {t('factory:settings.voice.checkConnection')}
-            </Button>
-          </div>
-        }
-      >
-        {vvStatus && !vvStatus.available && vvStatus.error ? (
-          <p className="text-xs text-danger">{vvStatus.error}</p>
-        ) : null}
-        <Field
-          label={t('factory:settings.voice.vv.url')}
-          hint={t('factory:settings.voice.vv.urlHint', { url: settings.voicevox.effectiveUrl })}
-        >
-          <div className="flex gap-2">
-            <Input
-              className="h-9 min-w-0 flex-1"
-              placeholder="http://127.0.0.1:50021"
-              value={vvUrl}
-              onChange={(event) => setVvUrl(event.target.value)}
-            />
-            <Button size="sm" className="h-9 shrink-0" onClick={saveVoicevox} disabled={savingPart !== null}>
-              {savingPart === 'voicevox' ? t('factory:settings.saving') : t('factory:settings.save')}
-            </Button>
-          </div>
-        </Field>
-
-        <VoicevoxVoicePresets
-          settings={settings.voicevox}
-          engine={vvStatus}
-          onChange={(patch) =>
-            setSettings((prev) => (prev ? { ...prev, voicevox: { ...prev.voicevox, ...patch } } : prev))
-          }
+      {/* VOICEVOX / AivisSpeech: same engine API, one card per engine (remounts per tab, so its status is fresh) */}
+      {tab === 'voicevox' || tab === 'aivisspeech' ? (
+        <SpeechEngineCard
+          key={tab}
+          engine={tab}
+          settings={settings[tab]}
+          onChange={(patch) => patchEngine(tab, patch)}
         />
-      </Card>
+      ) : null}
 
       <ConfirmDeleteModal
         open={pendingDeleteKey !== null}

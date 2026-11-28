@@ -57,7 +57,7 @@ export interface VideoAgentRunInput {
   /** Bare VOICEVOX style id; used only when no saved voice (`voicePresetId`) is chosen. */
   voicevoxSpeaker: number;
   /** Provider of the saved voice in `voicePresetId` (default VOICEVOX). */
-  voiceProvider?: 'voicevox' | 'elevenlabs';
+  voiceProvider?: 'voicevox' | 'aivisspeech' | 'elevenlabs';
   /** Saved voice from Settings → Giọng đọc. */
   voicePresetId?: string;
   /** Voice settings picked for this run only; wins over voicePresetId. */

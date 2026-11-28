@@ -5,6 +5,7 @@ import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.servic
 import { normalizeReferenceImagePaths } from './core/reference-images.js';
 import { runWithFlowRetries } from './flow/flow-retry.js';
 import { metaBrowserService } from './meta/meta.service.js';
+import { museBrowserService } from './muse/muse.service.js';
 import {
   llmBrowserChatSchema,
   llmBrowserGenerateImageSchema,
@@ -70,6 +71,21 @@ export function createLlmBrowserRoutes() {
       ...(body.referenceImagePath ? [body.referenceImagePath] : []),
     ]);
 
+    if (body.provider === 'muse') {
+      const item = await museBrowserService.generateImage(body.prompt, {
+        profileId,
+        outputPath: body.outputPath,
+        outputDir: body.outputDir,
+        fileName: body.fileName,
+        debugScreenshotPath: body.debugScreenshotPath,
+        timeoutMs: body.timeoutMs,
+        aspectRatio: body.aspectRatio,
+        skipResize: body.skipResize,
+        referenceImagePaths,
+      });
+      return c.json({ item });
+    }
+
     if (body.provider === 'meta') {
       const item = await metaBrowserService.generateMedia(profileId, body.prompt, {
         mediaKind: 'image',
@@ -107,6 +123,19 @@ export function createLlmBrowserRoutes() {
 
   app.post('/:profileId/generate-video', zValidator('json', llmBrowserGenerateVideoSchema), async (c) => {
     const body = c.req.valid('json');
+    if (body.provider === 'muse') {
+      const item = await museBrowserService.generateVideo(body.prompt, {
+        profileId: c.req.param('profileId'),
+        durationSeconds: body.durationSeconds,
+        referenceImagePaths: normalizeReferenceImagePaths(body.referenceImagePaths),
+        outputPath: body.outputPath,
+        outputDir: body.outputDir,
+        fileName: body.fileName,
+        debugScreenshotPath: body.debugScreenshotPath,
+        timeoutMs: body.timeoutMs,
+      });
+      return c.json({ item });
+    }
     const item = await metaBrowserService.generateMedia(c.req.param('profileId'), body.prompt, {
       mediaKind: 'video',
       outputPath: body.outputPath,

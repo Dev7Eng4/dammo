@@ -10,6 +10,7 @@ const listQuerySchema = z.object({
   minDurationSeconds: z.coerce.number().int().min(0).optional(),
   minRatio: z.coerce.number().positive().optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
+  verdict: z.enum(['do', 'maybe', 'skip']).optional(),
 });
 
 export function createRadarRoutes() {
@@ -18,6 +19,7 @@ export function createRadarRoutes() {
   const trendsQuerySchema = z.object({
     days: z.coerce.number().positive().max(90).optional(),
     cluster: z.string().regex(/^(K([1-9]|1[01])|off|none)$/).optional(),
+    verdict: z.enum(['do', 'maybe', 'skip']).optional(),
     limit: z.coerce.number().int().min(1).max(600).optional(),
   });
 

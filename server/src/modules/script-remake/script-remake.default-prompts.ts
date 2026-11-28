@@ -12,7 +12,7 @@ export const DEFAULT_REMAKE_BASE_KEY = 'remake_script';
  * same chat, so the LLM sees every chapter it already wrote and can avoid repeating itself.
  * Both are plain prompt templates: edit them on the Prompts page like any other prompt.
  */
-const STEP_1 = [
+const STEP_1_BEFORE_SOURCE_KINDS = [
   'export default (transcript, notes, minMinutes, maxMinutes) => `You are the planner for a Japanese YouTube channel about psychology and brain science. The audience is mainly Japanese viewers aged 50-70. Write the Japanese fields of your output (title, angle, hook, headings, key points) in natural Japanese.',
   '',
   'Below is the transcript of a reference video that is trending now. Use it to plan a NEW video on the same theme.',
@@ -70,6 +70,21 @@ const STEP_1 = [
   '${transcript}`;',
 ].join('\n');
 
+const ORIGINALITY_ANCHOR = '- The title must use different words from the reference title.\n';
+
+/** Reference videos our narrated channels cannot copy: real people filmed for real, or AI voices posing as a celebrity. */
+const SOURCE_KIND_RULES = [
+  '',
+  'What kind of reference video this is (decide from the transcript before planning):',
+  '- A narrated explainer or a fictional story: plan as usual.',
+  '- A real-life vlog (real people filming their own trip, meals, home, work or money, talking about "we" and "today"): our channel cannot film real people. Borrow ONLY the theme and why viewers enjoy it. Do not retell their life, places or words, and do not turn them into a case study. Build the video from psychology, studies and your own fictional named person.',
+  '- Speaking in the first person as a real famous person (for example a video titled 【斎藤一人】 that talks as him): never speak as that person and never put their name in the title. Do not quote or paraphrase the sayings in the transcript as their words; such videos are often AI voices and the sayings may be invented. Borrow only the theme. If you cite a real person, use only well-known words you are sure of and say whose they are.',
+  '- Presented by a real expert or host: their personal experiences and opinions are theirs. Do not reuse them or present them as facts.',
+].join('\n');
+
+const STEP_1 = STEP_1_BEFORE_SOURCE_KINDS.replace(ORIGINALITY_ANCHOR, `${ORIGINALITY_ANCHOR}${SOURCE_KIND_RULES}\n`);
+if (STEP_1 === STEP_1_BEFORE_SOURCE_KINDS) throw new Error('Remake step 1: source kind rules anchor not found');
+
 const STEP_2 = [
   'export default (chapterNumber, totalChapters, heading, keyPoints, chapterChars, context = {}) => `では、上の企画の第${chapterNumber}章（全${totalChapters}章）「${heading}」のナレーション本文を書いてください。',
   '',
@@ -126,7 +141,11 @@ const DEFAULT_HISTORY: { step: number; previous: string[]; current: string }[] =
   // The previous default differed from the current one only in the planning pace (330 → 300 chars/min).
   {
     step: 1,
-    previous: [...PREVIOUS_STEP_1_DEFAULTS, STEP_1.replace('(about 300 characters', '(about 330 characters')],
+    previous: [
+      ...PREVIOUS_STEP_1_DEFAULTS,
+      STEP_1_BEFORE_SOURCE_KINDS.replace('(about 300 characters', '(about 330 characters'),
+      STEP_1_BEFORE_SOURCE_KINDS,
+    ],
     current: STEP_1,
   },
   { step: 2, previous: PREVIOUS_STEP_2_DEFAULTS, current: STEP_2 },

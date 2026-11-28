@@ -5,7 +5,7 @@ import { describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const PROVIDERS = ['flow', 'meta', 'text'] as const;
+const PROVIDERS = ['flow', 'meta', 'muse', 'text'] as const;
 
 function listTsFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {

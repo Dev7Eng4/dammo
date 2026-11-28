@@ -6,13 +6,16 @@ import { fetchTrendRadar } from "../../api/radar";
 import { useAbortableEffect } from "../../hooks";
 import { cn } from "../../lib/cn";
 import type {
+  RemakeVerdict,
   TrendRadarFilters,
   TrendRadarItem,
   TrendRadarResponse,
 } from "../../types/radar";
 import { Select, StatusBadge, type StatusTone } from "../ui";
+import { RemakeVerdictCell } from "./RemakeVerdictCell";
 
 const DAY_OPTIONS = [1, 3, 7, 30] as const;
+const VERDICTS: RemakeVerdict[] = ["do", "maybe", "skip"];
 
 function formatViews(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
@@ -77,6 +80,13 @@ export function TrendRadarPanel() {
     return /^K\d+$/.test(id) ? `${id} ${label}` : label;
   }
 
+  function selectVerdict(verdict?: RemakeVerdict) {
+    setFilters((prev) => ({
+      ...prev,
+      verdict: prev.verdict === verdict ? undefined : verdict,
+    }));
+  }
+
   function selectCluster(id?: string) {
     setFilters((prev) => ({
       ...prev,
@@ -115,6 +125,36 @@ export function TrendRadarPanel() {
             }
           />
         </label>
+        <div className="flex flex-wrap items-center gap-2" title={t("verdict.hint")}>
+          <span className="text-sm text-muted-foreground">{t("verdict.label")}</span>
+          <button
+            type="button"
+            onClick={() => selectVerdict(undefined)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs transition-colors",
+              !filters.verdict
+                ? "border-primary-500 bg-primary-500/15 text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t("verdict.all")}
+          </button>
+          {VERDICTS.map((verdict) => (
+            <button
+              key={verdict}
+              type="button"
+              onClick={() => selectVerdict(verdict)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs transition-colors",
+                filters.verdict === verdict
+                  ? "border-primary-500 bg-primary-500/15 text-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t(`verdict.${verdict}`)} · {data?.verdicts?.[verdict] ?? 0}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -182,6 +222,9 @@ export function TrendRadarPanel() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="px-4 py-3" title={t("verdict.hint")}>
+                  {t("verdict.label")}
+                </th>
                 <th className="px-4 py-3">{t("trends.heat")}</th>
                 <th className="px-4 py-3">{t("table.video")}</th>
                 <th className="px-4 py-3">{t("trends.cluster")}</th>
@@ -198,6 +241,12 @@ export function TrendRadarPanel() {
                   key={item.videoId}
                   className={loading ? "opacity-60" : undefined}
                 >
+                  <td className="px-4 py-3 align-top">
+                    <RemakeVerdictCell
+                      verdict={item.verdict}
+                      reasons={item.verdictReasons}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge
                       tone={heatTone(item.heat)}
@@ -225,6 +274,21 @@ export function TrendRadarPanel() {
                     {item.format ? (
                       <span className="mt-1 inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                         {item.format}
+                      </span>
+                    ) : null}
+                    {item.sourceType && item.sourceType !== "narrated" ? (
+                      <span
+                        className={
+                          item.topicOnly
+                            ? "ml-1 mt-1 inline-block rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                            : "ml-1 mt-1 inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                        }
+                        title={item.topicOnly ? t("trends.topicOnlyHint") : undefined}
+                      >
+                        {t(`trends.sourceType.${item.sourceType}`, {
+                          defaultValue: item.sourceTypeName ?? item.sourceType,
+                        })}
+                        {item.topicOnly ? ` · ${t("trends.topicOnly")}` : ""}
                       </span>
                     ) : null}
                   </td>

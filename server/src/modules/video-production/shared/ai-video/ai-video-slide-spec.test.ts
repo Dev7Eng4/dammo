@@ -145,3 +145,45 @@ describe('buildAiTimelineSlides', () => {
     });
   }
 });
+
+describe('video clips', () => {
+  test('a video clip cuts straight in and out; only image to image keeps its transition', async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'slide-spec-'));
+    try {
+      fs.mkdirSync(path.join(workDir, 'clips'));
+      for (const name of ['scene-001', 'scene-002', 'scene-005']) {
+        fs.writeFileSync(path.join(workDir, 'clips', `${name}.mp4`), '');
+      }
+      setTransitions(true);
+      const scenes = makeScenes([[0, 5], [5, 10], [10, 15], [15, 20], [20, 25]]);
+      scenes[0]!.videoPath = 'clips/scene-001.mp4';
+      scenes[1]!.videoPath = 'clips/scene-002.mp4';
+      scenes[2]!.videoPath = 'clips/missing.mp4';
+      scenes[4]!.videoPath = 'clips/scene-005.mp4';
+      const slides = buildAiTimelineSlides(workDir, scenes);
+
+      assert.equal(slides[0]!.transitionDurationSec, 0, 'clip → clip');
+      assert.equal(slides[0]!.transitionToNext, undefined);
+      assert.equal(slides[1]!.transitionDurationSec, 0, 'clip → image');
+      assert.ok((slides[2]!.transitionDurationSec ?? 0) > 0, 'image → image (a missing clip file counts as an image)');
+      assert.equal(slides[3]!.transitionDurationSec, 0, 'image → clip');
+
+      const durations = slides.map(slideVisibleDuration);
+      const chain = buildXfadeChain({
+        clipCount: slides.length,
+        durations,
+        transitions: slides.slice(0, -1).map(slide => ({
+          type: slide.transitionToNext ?? 'fade',
+          durationSec: slide.transitionDurationSec ?? 1,
+        })),
+      });
+      assert.match(chain.filter, /\[tb0\]\[tb1\]concat=n=2:v=1:a=0\[xf0\];\[xf0\]\[tb2\]concat=n=2:v=1:a=0\[xf1\];\[xf1\]\[tb3\]xfade=[^;]+\[xf2\];\[xf2\]\[tb4\]concat=/);
+      assert.ok(Math.abs(chain.totalDuration - 25) < 0.01, `total ${chain.totalDuration}`);
+    } finally {
+      fs.rmSync(workDir, { recursive: true, force: true });
+    }
+  });
+});

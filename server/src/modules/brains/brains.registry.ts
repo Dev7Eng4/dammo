@@ -56,7 +56,7 @@ export const BRAIN_DEFINITIONS: BrainDefinition[] = [
     description:
       'Bóc công thức tiêu đề của video đang thắng (độ dài, 【】, con số, đối tượng, lời hứa), kiểm tra từ khoá bằng gợi ý YouTube, rồi viết 3 phương án tiêu đề + tag cho các ý tưởng nóng nhất.',
     active: true,
-    feeds: [TREND_BRAIN_ID, 'ideas'],
+    feeds: ['studio', TREND_BRAIN_ID, 'ideas'],
   },
   {
     id: 'thumbnail',
@@ -66,7 +66,7 @@ export const BRAIN_DEFINITIONS: BrainDefinition[] = [
     description:
       'Nhìn thumbnail của video nóng và video vượt chuẩn (thị giác máy), tìm mẫu đang thắng: bố cục, màu, chữ, nhân vật/mascot, biểu cảm — và chỉ ra điều video ít view làm khác.',
     active: true,
-    feeds: [TREND_BRAIN_ID, 'competitors'],
+    feeds: ['studio', TREND_BRAIN_ID, 'competitors'],
   },
   {
     id: 'script',

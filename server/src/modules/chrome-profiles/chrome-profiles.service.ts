@@ -31,6 +31,7 @@ const LLM_LABEL: Record<string, string> = {
   claude: 'Claude',
   meta: 'Meta',
   flow: 'Flow',
+  muse: 'Muse',
 };
 
 /** Text-chat provider id used by the LLM browser (`gpt`, `gemini`, …) → content LLM on the profile. */

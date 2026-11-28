@@ -101,7 +101,15 @@ const endsSentence = (cue: TranscriptCue) => SENTENCE_END.test(cueText(cue));
 const endsClause = (cue: TranscriptCue) => endsSentence(cue) || CLAUSE_END.test(cueText(cue));
 const boundaryMark = (cue: TranscriptCue) => (endsSentence(cue) ? ' ●' : CLAUSE_END.test(cueText(cue)) ? ' ○' : '');
 
+/**
+ * `--clip-intro=60`: the video turns its first N seconds into motion clips (intro / interleaved mode).
+ * A clip moves, so it may run 5–10 s (one Muse/Flow clip) instead of the 2.5–6 s a still image needs.
+ */
+const CLIP_INTRO_SEC = Number(argv.find(arg => arg.startsWith('--clip-intro='))?.split('=')[1]) || 0;
+const CLIP_INTRO_PACE = { untilSec: CLIP_INTRO_SEC, min: 5, max: 10, label: `clip mở đầu (0–${CLIP_INTRO_SEC} giây)` } as const;
+
 function band(startSec: number) {
+  if (startSec < CLIP_INTRO_SEC) return CLIP_INTRO_PACE;
   return PACE.find(entry => startSec < entry.untilSec)!;
 }
 
@@ -291,14 +299,21 @@ function checkPlan(plan: PlanScene[], cues: TranscriptCue[], flow: Flow, speed: 
     if (part.length < 120) warnings.push(`${at(index)}: phần mô tả cảnh ngắn (${part.length} ký tự), dễ ra ảnh chung chung`);
     const entry: AiVideoScenePrompt = { prompt, startTime, endTime };
     if (flow.mode === 'reference') {
+      // [] is valid (the channel rule: "no listed character in the scene → references []"); the key itself is required.
+      if (!Array.isArray(scene.references)) errors.push(`${at(index)}: luồng tham chiếu cần "references" (id nhân vật: ${[...characterIds].join(', ')}, hoặc [] khi cảnh không có ai trong danh sách)`);
       const refs = (scene.references ?? []).filter(id => characterIds.has(id));
-      if (refs.length === 0) errors.push(`${at(index)}: luồng tham chiếu cần "references" là id nhân vật (${[...characterIds].join(', ')})`);
       const unknown = (scene.references ?? []).filter(id => !characterIds.has(id));
       if (unknown.length) errors.push(`${at(index)}: id nhân vật không có: ${unknown.join(', ')}`);
       entry.references = refs;
     }
     scenes.push(entry);
   });
+
+  if (flow.mode === 'reference') {
+    const images = scenes.filter(scene => scene.type !== 'title');
+    const bare = images.filter(scene => !scene.references?.length).length;
+    if (images.length && bare / images.length > 0.4) warnings.push(`${bare}/${images.length} cảnh không có nhân vật tham chiếu: nhân vật chính dễ lệch mặt giữa các cảnh`);
+  }
 
   // The app's own parser must accept the result exactly as the LLM path would.
   const parsed = tryParseAiVideoSceneResponse({ content: JSON.stringify(scenes), codeBlocks: [] } as any, { requireReferences: flow.mode === 'reference' });
@@ -338,11 +353,15 @@ function checkPlan(plan: PlanScene[], cues: TranscriptCue[], flow: Flow, speed: 
   timed.forEach((entry, index) => {
     const scene = plan[index]!;
     const rule = band(entry.startSec);
-    const single = scene.from === scene.to;
+    // TTS subtitles split numbers into sub-second fragments ("75", "8"): they ride along, the scene is still one sentence.
+    const single =
+      cues
+        .slice(scene.from - 1, scene.to)
+        .filter(cue => srtTimestampToMs(cue.endTime) - srtTimestampToMs(cue.startTime) >= 1000).length <= 1;
     const where = `${at(index)} (${clock(entry.startSec)}, ${r1(entry.shownSec)}s)`;
     if (entry.shownSec < HARD_MIN_SEC) errors.push(`${where}: quá ngắn, gộp với câu bên cạnh`);
     else if (entry.shownSec < rule.min) warnings.push(`${where}: ngắn hơn ${rule.min}s của đoạn ${rule.label}`);
-    const max = scene.hold && entry.startSec >= 30 ? HOLD_MAX_SEC : rule.max;
+    const max = scene.hold && entry.startSec >= Math.max(30, CLIP_INTRO_SEC) ? HOLD_MAX_SEC : rule.max;
     if (entry.shownSec > max) {
       if (single) warnings.push(`${where}: một câu dài hơn ${max}s, không cắt giữa câu được; cân nhắc viết lại câu ngắn hơn`);
       else errors.push(`${where}: dài hơn ${max}s cho đoạn ${rule.label}${scene.hold ? ' (kể cả hold)' : ''}, tách thành 2–3 ảnh`);

@@ -94,4 +94,8 @@ export const env = {
   voicevoxUrl: process.env.VOICEVOX_URL ?? 'http://127.0.0.1:50021',
   /** Default VOICEVOX style id (see GET /speakers). Remember the voice credit when publishing. */
   voicevoxSpeaker: optionalNumber(process.env.VOICEVOX_SPEAKER) ?? 13,
+  /** Local AivisSpeech Engine (https://aivis-project.com/): same API as VOICEVOX Engine, port 10101. */
+  aivisspeechUrl: process.env.AIVISSPEECH_URL ?? 'http://127.0.0.1:10101',
+  /** Default AivisSpeech style id (see GET /speakers); the default is Anneli (ノーマル). */
+  aivisspeechSpeaker: optionalNumber(process.env.AIVISSPEECH_SPEAKER) ?? 888753760,
 };

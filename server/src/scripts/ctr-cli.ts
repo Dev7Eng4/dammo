@@ -19,7 +19,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { env } from '../config/env.js';
 import { resolveVoicevoxCredit, withVoicevoxCredit } from '../modules/voice/voicevox-credit.js';
-import { paths, resolveYoutubeChannelVideoDir } from '../config/paths.js';
+import { paths, resolveYoutubeChannelUploadedVideoDir, resolveYoutubeChannelVideoDir } from '../config/paths.js';
 import { readJson, writeJson } from '../infrastructure/storage/json-store.js';
 import { nichesRepository } from '../modules/niches/niches.repository.js';
 import { resolveChannelMascotImagePath } from '../modules/video-production/shared/ai-video/ai-video-channel-mascots.js';
@@ -42,8 +42,8 @@ const DRAWN_FILENAME = 'thumbnail.jpg';
 /** Points per criterion (sum 100). Names match .claude/skills/jp-psy-ctr/references/review.md. */
 const MAX_POINTS = {
   C1: 10, C2: 10, C3: 8, C4: 6, C5: 6,
-  T1: 8, T2: 6, T3: 8, T4: 4, T5: 4,
-  B1: 8, B2: 5, B3: 5, B4: 7, B5: 5,
+  T1: 8, T2: 8, T3: 6, T4: 4, T5: 4,
+  B1: 7, B2: 4, B3: 9, B4: 6, B5: 4,
 } as const;
 type Criterion = keyof typeof MAX_POINTS;
 const CRITERIA = Object.keys(MAX_POINTS) as Criterion[];
@@ -261,6 +261,64 @@ function channelPromptFiles(channel: YoutubeChannel): string[] {
   return [];
 }
 
+const CTR_LOG = path.resolve(paths.dataDir, '../..', 'docs', 'brains', 'ctr', 'ctr-log.csv');
+
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { cells.push(cell); cell = ''; }
+    else cell += ch;
+  }
+  cells.push(cell);
+  return cells;
+}
+
+interface MeasuredVideo {
+  videoId: string; title: string; hookLines: string; ctrPercent: number; impressions: number | null;
+  hoursSincePublish: number | null; measuredOn: string; thumbnail: string | null;
+}
+
+/**
+ * Real Studio CTR of this channel's own published videos (docs/brains/ctr/ctr-log.csv, written by jp-psy-studio),
+ * best first. The thumbnails of the top rows are the channel's proven look: keep it.
+ */
+function measuredVideos(channel: YoutubeChannel): { videos: MeasuredVideo[]; medianCtr: number | null } {
+  if (!fs.existsSync(CTR_LOG)) return { videos: [], medianCtr: null };
+  const [header, ...lines] = fs.readFileSync(CTR_LOG, 'utf8').trim().split(/\r?\n/);
+  const cols = parseCsvLine(header);
+  const col = (cells: string[], name: string) => cells[cols.indexOf(name)] ?? '';
+  const latest = new Map<string, MeasuredVideo>();
+  for (const line of lines) {
+    const cells = parseCsvLine(line);
+    const id = col(cells, 'videoId').trim();
+    const ctr = Number(col(cells, 'ctr_phan_tram'));
+    if (!id || !Number.isFinite(ctr) || col(cells, 'ctr_phan_tram') === '') continue;
+    const dir = resolveYoutubeChannelUploadedVideoDir(channel.id, id) ?? resolveYoutubeChannelVideoDir(channel.id, id);
+    if (!dir) continue;
+    const day = col(cells, 'ngay');
+    const prev = latest.get(id);
+    if (prev && prev.measuredOn > day) continue;
+    const num = (name: string) => (col(cells, name) === '' ? null : Number(col(cells, name)));
+    const thumb = findThumbnailPath(dir);
+    latest.set(id, {
+      videoId: id, title: col(cells, 'title'), hookLines: col(cells, 'chu_bia'), ctrPercent: ctr,
+      impressions: num('luot_hien_thi'), hoursSincePublish: num('gio_sau_dang'), measuredOn: day, thumbnail: thumb ? rel(thumb) : null,
+    });
+  }
+  const videos = [...latest.values()].sort((a, b) => b.ctrPercent - a.ctrPercent);
+  const ctrs = videos.map(v => v.ctrPercent).sort((a, b) => a - b);
+  const medianCtr = ctrs.length ? (ctrs.length % 2 ? ctrs[(ctrs.length - 1) / 2] : (ctrs[ctrs.length / 2 - 1] + ctrs[ctrs.length / 2]) / 2) : null;
+  return { videos, medianCtr };
+}
+
 function siblingVideos(channel: YoutubeChannel, videoId: string, limit = 6): Array<{ videoId: string; title: string; hookLines: string[]; thumbnail: string | null }> {
   return videoPrepareRepository
     .read(channel.id)
@@ -361,6 +419,12 @@ async function info(args: string[]) {
           promptIsOwn: hasNicheMetadataPrompt(channel.language, channel.niche),
           /** Newest other thumbnails of the channel, to keep one look and to see repeated title moulds. */
           siblings: siblingVideos(channel, videoId),
+          /**
+           * Real Studio CTR of the channel's published videos, best first (jp-psy-studio → ctr-log.csv).
+           * Read before scoring or drawing: the look and title mould of the top rows is the channel's proven
+           * template (B3, T2); a new pair must stay inside it. Empty = no Studio data yet.
+           */
+          measured: measuredVideos(channel),
         },
         files: {
           transcript: transcript ? rel(transcript) : null,

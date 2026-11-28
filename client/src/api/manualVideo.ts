@@ -8,6 +8,8 @@ const BASE = `${API_V1}/manual-video`
 
 export type ManualStep = 'sources' | 'voice' | 'scenes' | 'video'
 export type ManualMotionMode = 'intro' | 'full' | 'interleaved' | 'scenes'
+/** Who turns scene images into clips: Google Flow (Veo) or Muse (muse.ai). */
+export type MotionClipProvider = 'flow' | 'muse' | 'meta'
 
 export interface ManualProjectDetail {
   run: VideoAgentRun
@@ -109,6 +111,8 @@ export interface ManualSceneItem {
   /** The scene plays a Flow video clip instead of its still image. */
   hasClip: boolean
   clipVersion: number
+  /** The exact Flow (Veo) prompt the app sends for this scene's clip, to copy and make it by hand. */
+  motionPrompt?: string
 }
 
 export function fetchManualScenes(id: string, options?: FetchOptions) {
@@ -153,8 +157,8 @@ export function setManualChannel(id: string, channelId: string) {
   return send<VideoAgentRun>(`${BASE}/projects/${id}/channel`, 'PUT', { channelId })
 }
 
-export function generateManualClips(id: string, mode: ManualMotionMode, indexes?: number[]) {
-  return send<VideoAgentRun>(`${BASE}/projects/${id}/motion`, 'POST', { mode, indexes })
+export function generateManualClips(id: string, mode: ManualMotionMode, indexes?: number[], provider?: MotionClipProvider) {
+  return send<VideoAgentRun>(`${BASE}/projects/${id}/motion`, 'POST', { mode, indexes, provider })
 }
 
 export function removeManualClip(id: string, index: number) {

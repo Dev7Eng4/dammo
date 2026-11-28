@@ -70,6 +70,14 @@ Mỗi prompt viết **tiếng Anh**, theo công thức trong `rules.md`, dùng p
 
 Phần mô tả cảnh (150–500 ký tự): ai, biểu cảm, tư thế, làm gì với vật gì, bối cảnh, góc máy, ánh sáng. Vẽ **đúng điều câu đang nói**, cụ thể như tên nơi chốn, đồ vật trong lời. Không chữ, số, logo, người thật; nhắc tới người thật (nhà nghiên cứu) thì vẽ bối cảnh hay vật, không vẽ chân dung. Hai cảnh liền nhau đổi góc máy, tư thế hoặc bố cục (CLI nhắc khi 75% từ trùng).
 
+### 3b. Video kể chuyện (có nhân vật, nhiều nơi chốn): giữ mạch
+Bài học từ Rub1EvMdvwM: ảnh đẹp từng tấm mà xem liền vẫn rời rạc khi thiếu ba thứ dưới.
+- **Ai lộ mặt đều có ảnh tham chiếu.** Lập bộ vai trước khi chia cảnh: nhân vật chính, phụ lặp lại (kể cả vai nhỏ lặp 2 lần trở lên như người buôn chuyện, bác sĩ, hàng xóm), bản trẻ của nhân vật cho hồi tưởng (ảnh tham chiếu kéo mặt về tuổi già). Viết "những quý bà" chung chung thì Muse vẽ mặt lạ: gọi đúng tên người có tham chiếu, người nền thì "seen from behind". Tối đa 3 tham chiếu một cảnh.
+- **Địa điểm cố định.** Mỗi nơi lặp lại (nhà cũ, phòng riêng, phòng ăn, sảnh…) có một câu mô tả dùng nguyên văn ở mọi cảnh tại đó. Không đưa "cozy everyday Japanese setting" vào đuôi phong cách khi truyện có nơi kiểu Tây: nó biến khách sạn thành phòng tatami.
+- **Chia theo trường đoạn, ít ẩn dụ.** Trong một trường đoạn giữ nơi, giờ, trang phục; chỉ đổi góc máy. Ẩn dụ tối đa ~4, ở bước ngoặt. Cảm xúc ("nhớ tiếng cười") không viết như vật thể, Muse sẽ vẽ thật ra.
+- Cảnh không có ai: ghi "no people", nếu không Muse tự thêm người.
+- Video dùng clip mở đầu / xen kẽ (`AI_INTRO_VIDEO_SEC`): cảnh trong đoạn mở đầu dài 5–10 giây cho vừa một clip (Muse trả clip 10s), kiểm bằng `check <video> --clip-intro=<giây>` và `apply … --clip-intro=<giây>`. Sau đoạn mở đầu, mỗi cửa sổ 1:30–2:30 nên có một cảnh hành động ~8s (app chọn cảnh gần 8s nhất).
+
 ### 4. Kế hoạch
 Ghi vào `data/scene-skill/<kênh>/<video>/plan.json`, hoặc chia `plan-01.json`, `plan-02.json`… theo chương khi video dài (CLI tự nối theo tên):
 ```json

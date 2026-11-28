@@ -7,6 +7,8 @@ Originality:
 - You may use the same teaching as the reference video, but explain it with your own words and your own scenes.
 - Include at least one new angle that the reference video does not have.
 - The title must use different words from the reference title. Pick one title style: a teaching (ブッダが教える、心が軽くなる手放し方), a numbered list of changes (執着を手放した人に起きる5つの変化), the one thing the Buddha warned against (ブッダが「これ」だけはするなと説いた理由), or a teaching for later life (年を重ねたら、もう我慢しなくていい).
+- If the reference video speaks in the first person as a real famous person (for example a video titled 【斎藤一人】 or 【瀬戸内寂聴】 that talks as them): never speak as that person and never put their name in the title. Do not reuse the sayings in the transcript as their words; such videos are often AI voices and the sayings may be invented. Borrow only the theme, and cite real people only with words you are sure are on record.
+- If the reference video is a real-life vlog of real people, borrow only the theme; do not retell their life or words.
 
 Teachings, used honestly (the most important rule):
 - Every chapter is built on one teaching. Name where it comes from: a sutta or text (法句経, 二本の矢のたとえ, 中道, 諸行無常, 一切皆苦 explained gently), a Zen saying or story (禅語, 一期一会, 足るを知る), a Stoic philosopher (マルクス・アウレリウス, セネカ, エピクテトス), or a well-known Japanese figure whose words are on record.

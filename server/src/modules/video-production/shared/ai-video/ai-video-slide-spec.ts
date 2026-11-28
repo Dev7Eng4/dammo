@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { getAudioDurationSeconds } from '../../../../infrastructure/ffmpeg/ffmpeg-probe.js';
 import { AppError } from '../../../../shared/http/errors.js';
@@ -60,6 +61,15 @@ export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]
     throw new AppError('AI slideshow requires at least one scene with an image path', 400, 'AI_SLIDESHOW_NO_IMAGES');
   }
 
+  // A scene that plays a video clip (the file exists, as the clip renderer checks).
+  const clipPathOf = (scene: AiVideoScenePrompt): string | undefined => {
+    const rel = scene.videoPath?.trim();
+    if (!rel) return undefined;
+    const abs = path.isAbsolute(rel) ? rel : path.join(workDir, rel);
+    return fs.existsSync(abs) ? abs : undefined;
+  };
+  const hasClip = usable.map(scene => Boolean(clipPathOf(scene)));
+
   return usable.map((scene, usableIndex) => {
     const durationSec = sceneDurationSec(scene);
     const absoluteIndex = scene.path?.trim()
@@ -79,7 +89,10 @@ export function buildAiTimedSlides(workDir: string, scenes: AiVideoScenePrompt[]
       fit: 'cover',
     };
 
-    if (isImageTransitionsEnabled() && !isLast && transitionDurationSec > 0) {
+    if (!isLast && (hasClip[usableIndex] || hasClip[usableIndex + 1])) {
+      // Into or out of a video clip: cut straight, no transition effect.
+      slide.transitionDurationSec = 0;
+    } else if (isImageTransitionsEnabled() && !isLast && transitionDurationSec > 0) {
       slide.transitionToNext = AUTO_TRANSITION_ROTATION[usableIndex % AUTO_TRANSITION_ROTATION.length];
       slide.transitionDurationSec = transitionDurationSec;
     }

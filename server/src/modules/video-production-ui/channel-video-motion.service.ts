@@ -7,6 +7,13 @@ import { closeChromeProfiles } from '../chrome-profiles/chrome-profile.runner.js
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { generateVideosFromImagesWithFailover } from '../llm-browser/flow/flow-profile-failover.js';
 import { FLOW_VIDEO_SETTINGS_ONLY, FLOW_VIDEO_SETTINGS_ONLY_REASON } from '../llm-browser/flow/flow-video-ui.js';
+import { generateVideosFromImagesWithMuse } from '../llm-browser/muse/muse-video-batch.js';
+import { generateVideosFromImagesWithMeta } from '../llm-browser/meta/meta-video-batch.js';
+import {
+  defaultMotionClipProvider,
+  MOTION_CLIP_PROVIDER_LABEL,
+  type MotionClipProvider,
+} from '../video-production/shared/ai-video/motion-provider.js';
 import { resolveSceneVideoMode } from '../video-production/pipelines/reup-audio/steps/scene-video-clips.step.js';
 import { sceneClipJobLengthSec } from '../video-production/shared/ai-video/ai-video-clip-span.js';
 import { buildSceneMotionPrompt, selectScenesForVideo } from '../video-production/shared/ai-video/ai-video-scene-clip-generator.js';
@@ -33,6 +40,8 @@ export interface ChannelVideoMotionScene {
   imageVersion: number;
   hasClip: boolean;
   clipVersion: number;
+  /** The exact Flow (Veo) prompt the app sends for this scene's clip, to copy and make it by hand. */
+  motionPrompt: string;
 }
 
 export interface ChannelVideoMotionJob {
@@ -100,6 +109,7 @@ class ChannelVideoMotionService {
         imageVersion: image?.mtimeMs ? Math.round(image.mtimeMs) : 0,
         hasClip: Boolean(clip?.isFile()),
         clipVersion: clip?.mtimeMs ? Math.round(clip.mtimeMs) : 0,
+        motionPrompt: buildSceneMotionPrompt(scene.prompt ?? '', scene.motionPrompt),
       };
     });
     return {
@@ -110,7 +120,13 @@ class ChannelVideoMotionService {
   }
 
   /** Starts making clips in the background; scenes that already have one keep it. */
-  generate(channelId: string, videoId: string, mode: ChannelVideoMotionMode, indexes: number[] = []): ChannelVideoMotionState {
+  generate(
+    channelId: string,
+    videoId: string,
+    mode: ChannelVideoMotionMode,
+    indexes: number[] = [],
+    provider: MotionClipProvider = defaultMotionClipProvider(),
+  ): ChannelVideoMotionState {
     const key = this.key(channelId, videoId);
     if (this.jobs.get(key)?.status === 'running') {
       throw new AppError('Đang tạo clip cho video này — chờ xong rồi thử lại', 409, 'MOTION_BUSY');
@@ -132,33 +148,55 @@ class ChannelVideoMotionService {
       throw new AppError(wanted.length === 0 ? 'Không có cảnh nào để tạo video' : 'Các cảnh đã chọn đều có clip rồi', 400, 'NOTHING_TO_DO');
     }
 
-    const job: ChannelVideoMotionJob = { status: 'running', message: `Đang tạo ${todo.length} clip qua Google Flow` };
+    const job: ChannelVideoMotionJob = {
+      status: 'running',
+      message: `Đang tạo ${todo.length} clip qua ${MOTION_CLIP_PROVIDER_LABEL[provider]}`,
+    };
     this.jobs.set(key, job);
 
     void (async () => {
-      const mains = chromeProfilesService.listProfilesForLlm('video', 'flow');
+      const clipJobs = todo.map(index => ({
+        name: sceneClipName(index),
+        imagePath: resolveSceneImageAbsolutePath(workDir, scenes[index]!),
+        prompt: buildSceneMotionPrompt(scenes[index]!.prompt, scenes[index]!.motionPrompt),
+        lengthSec: sceneClipJobLengthSec(workDir, scenes, index),
+      }));
       try {
         let failed: { name: string; reason: string }[] = [];
-        try {
-          const result = await generateVideosFromImagesWithFailover(
-            todo.map(index => ({
-              name: sceneClipName(index),
-              imagePath: resolveSceneImageAbsolutePath(workDir, scenes[index]!),
-              prompt: buildSceneMotionPrompt(scenes[index]!.prompt, scenes[index]!.motionPrompt),
-              lengthSec: sceneClipJobLengthSec(workDir, scenes, index),
-            })),
-            { outputDir: path.join(workDir, AI_VIDEOS_DIRNAME) },
-            {
-              onProfileSwitch: (from, to, remaining) => {
-                job.message = `Flow hết lượt ở ${from.name}, chuyển sang ${to.name} (còn ${remaining} clip)`;
-              },
+        if (provider === 'muse') {
+          const result = await generateVideosFromImagesWithMuse(clipJobs, {
+            outputDir: path.join(workDir, AI_VIDEOS_DIRNAME),
+            onProgress: (done, total) => {
+              job.message = `Muse: ${done}/${total} clip`;
             },
-          );
+          });
           failed = result.failed;
-        } finally {
-          if (!FLOW_VIDEO_SETTINGS_ONLY) await closeChromeProfiles(mains.map(profile => profile.id));
+        } else if (provider === 'meta') {
+          const result = await generateVideosFromImagesWithMeta(clipJobs, {
+            outputDir: path.join(workDir, AI_VIDEOS_DIRNAME),
+            onProgress: (done, total) => {
+              job.message = `Meta AI: ${done}/${total} clip`;
+            },
+          });
+          failed = result.failed;
+        } else {
+          const mains = chromeProfilesService.listProfilesForLlm('video', 'flow');
+          try {
+            const result = await generateVideosFromImagesWithFailover(
+              clipJobs,
+              { outputDir: path.join(workDir, AI_VIDEOS_DIRNAME) },
+              {
+                onProfileSwitch: (from, to, remaining) => {
+                  job.message = `Flow hết lượt ở ${from.name}, chuyển sang ${to.name} (còn ${remaining} clip)`;
+                },
+              },
+            );
+            failed = result.failed;
+          } finally {
+            if (!FLOW_VIDEO_SETTINGS_ONLY) await closeChromeProfiles(mains.map(profile => profile.id));
+          }
         }
-        if (FLOW_VIDEO_SETTINGS_ONLY) {
+        if (provider === 'flow' && FLOW_VIDEO_SETTINGS_ONLY) {
           Object.assign(job, { status: 'done', message: FLOW_VIDEO_SETTINGS_ONLY_REASON });
           return;
         }
@@ -172,7 +210,9 @@ class ChannelVideoMotionService {
         }
         await persistAiScenePromptsFile(workDir, latest.youtubeVideoId ?? videoId, latest.scenes);
         const made = todo.filter(index => latest.scenes[index]?.videoPath).length;
-        if (made === 0) throw new Error(`Không tạo được clip nào (${failed[0]?.reason ?? 'Flow không trả video'})`);
+        if (made === 0) {
+          throw new Error(`Không tạo được clip nào (${failed[0]?.reason ?? `${MOTION_CLIP_PROVIDER_LABEL[provider]} không trả video`})`);
+        }
         Object.assign(job, {
           status: 'done',
           message: `Đã tạo ${made}/${todo.length} clip${failed.length ? ` — ${failed.length} cảnh giữ ảnh` : ''}. Dựng lại video để dùng clip.`,

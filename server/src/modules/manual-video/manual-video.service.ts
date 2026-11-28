@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { resolveVoicevoxDefaultSpeaker } from '../../infrastructure/tts/voice-settings.store.js';
+import type { VoiceProvider } from '../voice/voice.types.js';
 import {
   resolveNarrationVoice,
   type ElevenLabsCustomVoice,
@@ -36,6 +37,13 @@ import { resolveSceneImageAbsolutePath } from '../video-production/shared/ai-vid
 import { isTitleScene } from '../video-production/shared/ai-video/ai-video-title-card.js';
 import { resolveSceneVideoMode } from '../video-production/pipelines/reup-audio/steps/scene-video-clips.step.js';
 import { generateVideosFromImagesWithFailover } from '../llm-browser/flow/flow-profile-failover.js';
+import { generateVideosFromImagesWithMuse } from '../llm-browser/muse/muse-video-batch.js';
+import { generateVideosFromImagesWithMeta } from '../llm-browser/meta/meta-video-batch.js';
+import {
+  defaultMotionClipProvider,
+  MOTION_CLIP_PROVIDER_LABEL,
+  type MotionClipProvider,
+} from '../video-production/shared/ai-video/motion-provider.js';
 import { FLOW_VIDEO_SETTINGS_ONLY, FLOW_VIDEO_SETTINGS_ONLY_REASON } from '../llm-browser/flow/flow-video-ui.js';
 import { chromeProfilesService } from '../chrome-profiles/chrome-profiles.service.js';
 import { closeChromeProfiles } from '../chrome-profiles/chrome-profile.runner.js';
@@ -121,7 +129,7 @@ const MIN_SCRIPT_CHARS = 300;
 export interface ManualNarration {
   durationSec: number;
   speaker: number;
-  voiceProvider: 'voicevox' | 'elevenlabs';
+  voiceProvider: VoiceProvider;
   voicePresetId: string | null;
   voiceCustom: VoicevoxCustomVoice | ElevenLabsCustomVoice | null;
   speedScale: number;
@@ -151,6 +159,8 @@ export interface ManualSceneItem {
   /** The scene plays a Flow video clip instead of its still image. */
   hasClip: boolean;
   clipVersion: number;
+  /** The exact Flow (Veo) prompt the app sends for this scene's clip, to copy and make it by hand. */
+  motionPrompt: string;
 }
 
 function sceneImageFile(workDir: string, index: number): string {
@@ -333,7 +343,7 @@ class ManualVideoService {
       urls?: string[];
       voicevoxSpeaker?: number;
       speedScale?: number;
-      voiceProvider?: 'voicevox' | 'elevenlabs';
+      voiceProvider?: VoiceProvider;
       voicePresetId?: string | null;
       voiceCustom?: VoicevoxCustomVoice | ElevenLabsCustomVoice | null;
     } = {},
@@ -567,6 +577,7 @@ class ManualVideoService {
         imageVersion: stat?.mtimeMs ? Math.round(stat.mtimeMs) : 0,
         hasClip: Boolean(clip?.isFile()),
         clipVersion: clip?.mtimeMs ? Math.round(clip.mtimeMs) : 0,
+        motionPrompt: buildSceneMotionPrompt(scene.prompt ?? '', scene.motionPrompt),
       };
     });
   }
@@ -706,11 +717,16 @@ class ManualVideoService {
   }
 
   /**
-   * Animates scene images into Flow (Veo) clips. `intro` = scenes starting in the first
+   * Animates scene images into clips with Google Flow (Veo) or Muse. `intro` = scenes starting in the first
    * AI_INTRO_VIDEO_SEC seconds, `full` = every scene, `scenes` = the given ones. Scenes that already
    * have a clip keep it (remove it first to make a new one); scenes whose clip fails keep their image.
    */
-  generateClips(id: string, mode: ManualMotionMode, indexes: number[] = []): VideoAgentRun {
+  generateClips(
+    id: string,
+    mode: ManualMotionMode,
+    indexes: number[] = [],
+    provider: MotionClipProvider = defaultMotionClipProvider(),
+  ): VideoAgentRun {
     const run = requireRun(id);
     if (!run.stagesDone.includes('scenes')) throw new AppError('Chưa có scene — chạy bước Scene & ảnh trước', 409, 'STAGE_ORDER');
     this.assertCanStart(run, 'motion');
@@ -725,26 +741,41 @@ class ManualVideoService {
       if (todo.length === 0) return wanted.length === 0 ? 'Không có cảnh nào để tạo video' : 'Các cảnh đã chọn đều có clip rồi';
 
       const videosDir = path.join(ctx.workDir, AI_VIDEOS_DIRNAME);
-      ctx.note(`Tạo ${todo.length} clip qua Google Flow (Veo)`, todo.map(index => `#${index + 1}`).join(', '));
-      const mains = chromeProfilesService.listProfilesForLlm('video', 'flow');
+      ctx.note(`Tạo ${todo.length} clip qua ${MOTION_CLIP_PROVIDER_LABEL[provider]}`, todo.map(index => `#${index + 1}`).join(', '));
+      const clipJobs = todo.map(index => ({
+        name: sceneClipName(index),
+        imagePath: resolveSceneImageAbsolutePath(ctx.workDir, scenes[index]!),
+        prompt: buildSceneMotionPrompt(scenes[index]!.prompt, scenes[index]!.motionPrompt),
+        lengthSec: sceneClipJobLengthSec(ctx.workDir, scenes, index),
+      }));
       let failed: { name: string; reason: string }[] = [];
-      try {
-        const result = await generateVideosFromImagesWithFailover(
-          todo.map(index => ({
-            name: sceneClipName(index),
-            imagePath: resolveSceneImageAbsolutePath(ctx.workDir, scenes[index]!),
-            prompt: buildSceneMotionPrompt(scenes[index]!.prompt, scenes[index]!.motionPrompt),
-            lengthSec: sceneClipJobLengthSec(ctx.workDir, scenes, index),
-          })),
-          { outputDir: videosDir },
-          { onProfileSwitch: (from, to, remaining) => ctx.note(`Flow hết lượt ở ${from.name}, chuyển sang ${to.name} (còn ${remaining} clip)`) },
-        );
+      if (provider === 'muse') {
+        const result = await generateVideosFromImagesWithMuse(clipJobs, {
+          outputDir: videosDir,
+          onLog: msg => console.log(msg),
+          onProgress: (done, total, name, ok) => ctx.note(`Muse ${done}/${total}: ${name} ${ok ? 'xong' : 'không tạo được'}`),
+        });
         failed = result.failed;
-      } finally {
-        // Settings-only check mode leaves Chrome open on the Flow prompt bar.
-        if (!FLOW_VIDEO_SETTINGS_ONLY) await closeChromeProfiles(mains.map(profile => profile.id));
+      } else if (provider === 'meta') {
+        const result = await generateVideosFromImagesWithMeta(clipJobs, {
+          outputDir: videosDir,
+          onLog: msg => console.log(msg),
+          onProgress: (done, total, name, ok) => ctx.note(`Meta ${done}/${total}: ${name} ${ok ? 'xong' : 'không tạo được'}`),
+        });
+        failed = result.failed;
+      } else {
+        const mains = chromeProfilesService.listProfilesForLlm('video', 'flow');
+        try {
+          const result = await generateVideosFromImagesWithFailover(clipJobs, { outputDir: videosDir }, {
+            onProfileSwitch: (from, to, remaining) => ctx.note(`Flow hết lượt ở ${from.name}, chuyển sang ${to.name} (còn ${remaining} clip)`),
+          });
+          failed = result.failed;
+        } finally {
+          // Settings-only check mode leaves Chrome open on the Flow prompt bar.
+          if (!FLOW_VIDEO_SETTINGS_ONLY) await closeChromeProfiles(mains.map(profile => profile.id));
+        }
       }
-      if (FLOW_VIDEO_SETTINGS_ONLY) {
+      if (provider === 'flow' && FLOW_VIDEO_SETTINGS_ONLY) {
         return `${FLOW_VIDEO_SETTINGS_ONLY_REASON} — Chrome đang mở ở thanh prompt của Flow để bạn kiểm tra`;
       }
 
@@ -761,7 +792,13 @@ class ManualVideoService {
       // The rendered video still shows the stills.
       if (made > 0) run.stagesDone = run.stagesDone.filter(stage => stage !== 'video');
       for (const failure of failed) ctx.note(`${failure.name}: không tạo được clip, giữ ảnh — ${failure.reason}`);
-      if (made === 0) throw new AppError(`Không tạo được clip nào (${failed[0]?.reason ?? 'Flow không trả video'})`, 502, 'FLOW_VIDEO_FAILED');
+      if (made === 0) {
+        throw new AppError(
+          `Không tạo được clip nào (${failed[0]?.reason ?? `${MOTION_CLIP_PROVIDER_LABEL[provider]} không trả video`})`,
+          502,
+          provider === 'muse' ? 'MUSE_VIDEO_FAILED' : provider === 'meta' ? 'META_VIDEO_FAILED' : 'FLOW_VIDEO_FAILED',
+        );
+      }
       return `Đã tạo ${made}/${todo.length} clip${failed.length ? ` — ${failed.length} cảnh giữ ảnh` : ''}`;
     });
   }
@@ -911,6 +948,7 @@ class ManualVideoService {
       outputDir: path.join(videoAgentRunDir(run.id), 'remake'),
       language: 'ja',
       notes: [run.input.notes, input.notes].filter(Boolean).join('\n') || undefined,
+      sourceVideoIds: run.artifacts.sources.map(source => source.videoId),
       promptSetId: input.promptSetId,
       provider: input.provider,
     });

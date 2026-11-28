@@ -1,17 +1,39 @@
-import { Clapperboard, Film, ImageIcon, Replace, Undo2 } from 'lucide-react'
+import { Clapperboard, Copy, Film, ImageIcon, Replace, Undo2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ManualMotionMode, ManualSceneItem } from '../../api/manualVideo'
+import type { ManualMotionMode, ManualSceneItem, MotionClipProvider } from '../../api/manualVideo'
+import { fetchPromptSettings } from '../../api/prompts'
 import { useAbortableEffect } from '../../hooks'
 import { cn } from '../../lib/cn'
-import { Button } from '../ui'
+import { Button, useToast } from '../ui'
 
 /** Same values as the server: intro window, length of one Flow clip, image run between interleaved clips. */
-const INTRO_SEC = 30
+const INTRO_SEC = 60
 const CLIP_SEC = 8
-const INTERLEAVED_MIN_IMAGES = 4
-const INTERLEAVED_MAX_IMAGES = 6
+/** After the intro, the next clip starts this long after the previous clip starts. */
+const INTERLEAVED_MIN_GAP_SEC = 90
+const INTERLEAVED_MAX_GAP_SEC = 150
 const MODES: ManualMotionMode[] = ['intro', 'interleaved', 'full', 'scenes']
+const PROVIDERS: MotionClipProvider[] = ['flow', 'muse', 'meta']
+/** Remembered per browser: the last clip maker picked in this step. Unset → the "Tạo video" choice in Settings. */
+const PROVIDER_STORAGE_KEY = 'motion.clipProvider'
+
+function readStoredProvider(): MotionClipProvider | null {
+  try {
+    const value = window.localStorage.getItem(PROVIDER_STORAGE_KEY)
+    return value === 'muse' || value === 'flow' || value === 'meta' ? value : null
+  } catch {
+    return null
+  }
+}
+
+function storeProvider(provider: MotionClipProvider): void {
+  try {
+    window.localStorage.setItem(PROVIDER_STORAGE_KEY, provider)
+  } catch {
+    // Private window or blocked storage: the choice just is not remembered.
+  }
+}
 
 function toSec(srt: string): number {
   const match = /(\d+):(\d+):(\d+)[,.](\d+)/.exec(srt)
@@ -30,18 +52,25 @@ function interleavedIndexes(eligible: ManualSceneItem[]): Set<number> {
     picked.add(eligible[cursor]!.index)
     cursor += 1
   }
+  const start = (i: number) => toSec(eligible[i]!.startTime)
+  let lastStart = cursor > 0 ? start(cursor - 1) : 0
   for (;;) {
-    const first = cursor + INTERLEAVED_MIN_IMAGES
-    if (first >= eligible.length) break
-    const last = Math.min(cursor + INTERLEAVED_MAX_IMAGES, eligible.length - 1)
-    let best = first
-    for (let i = first + 1; i <= last; i += 1) {
+    while (cursor < eligible.length && start(cursor) < lastStart + INTERLEAVED_MIN_GAP_SEC) cursor += 1
+    if (cursor >= eligible.length) break
+    let best = cursor
+    for (let i = cursor + 1; i < eligible.length && start(i) <= lastStart + INTERLEAVED_MAX_GAP_SEC; i += 1) {
       if (clipFitCost(eligible[i]!.durationSec) < clipFitCost(eligible[best]!.durationSec)) best = i
     }
     picked.add(eligible[best]!.index)
+    lastStart = start(best)
     cursor = best + 1
   }
   return picked
+}
+
+/** 90 → "1:30", 150 → "2:30". */
+function fmtGap(sec: number): string {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
 }
 
 function shortTime(srt: string): string {
@@ -59,13 +88,13 @@ export interface MotionStepProps {
   /** True while clips are being made on this project. */
   working: boolean
   disabled: boolean
-  onGenerate: (mode: ManualMotionMode, indexes?: number[]) => void
+  onGenerate: (mode: ManualMotionMode, indexes: number[] | undefined, provider: MotionClipProvider) => void
   onRemove: (index: number) => void
   /** When set, each scene gets a "replace clip" button that takes an mp4 from disk. */
   onReplace?: (index: number, file: File) => void
 }
 
-/** Turns scene images into short Flow (Veo) clips: the intro, every scene, or hand-picked ones. */
+/** Turns scene images into short clips with Flow (Veo) or Muse: the intro, every scene, or hand-picked ones. */
 export function MotionStep({
   loadScenes,
   imageUrl,
@@ -79,9 +108,23 @@ export function MotionStep({
   onReplace,
 }: MotionStepProps) {
   const { t } = useTranslation('manual')
+  const { toast } = useToast()
   const [scenes, setScenes] = useState<ManualSceneItem[] | null>(null)
   const [mode, setMode] = useState<ManualMotionMode>(motionDefault === 'none' ? 'intro' : motionDefault)
   const [picked, setPicked] = useState<Set<number>>(() => new Set())
+  const [provider, setProvider] = useState<MotionClipProvider>(() => readStoredProvider() ?? 'flow')
+
+  // No choice made in this browser yet: start on the clip maker picked in Settings → Công cụ AI.
+  useAbortableEffect(async (signal) => {
+    if (readStoredProvider()) return
+    const { item } = await fetchPromptSettings({ signal })
+    if (!signal.aborted && !readStoredProvider()) setProvider(item.defaultVideoProvider)
+  }, [])
+
+  function pickProvider(value: MotionClipProvider) {
+    setProvider(value)
+    storeProvider(value)
+  }
 
   useAbortableEffect(
     async (signal) => {
@@ -97,7 +140,7 @@ export function MotionStep({
   const eligible = (scene: ManualSceneItem) => scene.hasImage && scene.title === undefined
   const interleaved = mode === 'interleaved' ? interleavedIndexes(scenes.filter(eligible)) : null
   const modeLabel = (value: ManualMotionMode) =>
-    t(`motion.modes.${value}`, { sec: INTRO_SEC, min: INTERLEAVED_MIN_IMAGES, max: INTERLEAVED_MAX_IMAGES })
+    t(`motion.modes.${value}`, { sec: INTRO_SEC, min: fmtGap(INTERLEAVED_MIN_GAP_SEC), max: fmtGap(INTERLEAVED_MAX_GAP_SEC) })
   const targets = scenes.filter(
     (scene) =>
       eligible(scene) &&
@@ -110,6 +153,14 @@ export function MotionStep({
   const frozen = targets.filter((scene) => scene.durationSec > CLIP_SEC)
   const frozenSec = Math.round(frozen.reduce((sum, scene) => sum + scene.durationSec - CLIP_SEC, 0))
   const clipCount = scenes.filter((scene) => scene.hasClip).length
+
+  function copyPrompt(scene: ManualSceneItem) {
+    const text = scene.motionPrompt ?? ''
+    void navigator.clipboard.writeText(text).then(
+      () => toast.success(t('motion.promptCopied', { index: scene.index + 1 })),
+      () => toast.error(text),
+    )
+  }
 
   function toggle(index: number) {
     setPicked((current) => {
@@ -126,7 +177,7 @@ export function MotionStep({
         <span className="section-label">{t('motion.mode')}</span>
         <div className="flex flex-wrap gap-1.5">
           {MODES.map((value) => (
-            <Button key={value} size="sm" variant={mode === value ? 'primary' : 'secondary'} onClick={() => setMode(value)}>
+            <Button key={value} size="sm" className="h-7 px-2.5" variant={mode === value ? 'primary' : 'secondary'} onClick={() => setMode(value)}>
               {modeLabel(value)}
             </Button>
           ))}
@@ -136,11 +187,23 @@ export function MotionStep({
         </p>
       </div>
 
+      <div className="space-y-1.5">
+        <span className="section-label">{t('motion.provider')}</span>
+        <div className="flex flex-wrap gap-1.5">
+          {PROVIDERS.map((value) => (
+            <Button key={value} size="sm" className="h-7 px-2.5" variant={provider === value ? 'primary' : 'secondary'} onClick={() => pickProvider(value)}>
+              {t(`motion.providers.${value}`)}
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">{t(`motion.providerHint.${provider}`)}</p>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <Button
-          size="sm"
+          size="sm" className="h-7 px-2.5"
           disabled={disabled || todo.length === 0}
-          onClick={() => onGenerate(mode, mode === 'scenes' ? todo.map((scene) => scene.index) : undefined)}
+          onClick={() => onGenerate(mode, mode === 'scenes' ? todo.map((scene) => scene.index) : undefined, provider)}
         >
           <Clapperboard className="size-4" />
           {working ? t('motion.working') : t('motion.run', { count: todo.length })}
@@ -197,12 +260,12 @@ export function MotionStep({
               </div>
               <div className="mt-auto flex flex-wrap gap-1.5">
                 {scene.hasClip ? (
-                  <Button size="sm" variant="ghost" disabled={disabled} onClick={() => onRemove(scene.index)}>
+                  <Button size="sm" className="h-7 px-2.5" variant="ghost" disabled={disabled} onClick={() => onRemove(scene.index)}>
                     <Undo2 className="size-3.5" />
                     {t('motion.remove')}
                   </Button>
                 ) : eligible(scene) ? (
-                  <Button size="sm" variant="secondary" disabled={disabled} onClick={() => onGenerate('scenes', [scene.index])}>
+                  <Button size="sm" className="h-7 px-2.5" variant="secondary" disabled={disabled} onClick={() => onGenerate('scenes', [scene.index], provider)}>
                     <Clapperboard className="size-3.5" />
                     {t('motion.one')}
                   </Button>
@@ -230,6 +293,12 @@ export function MotionStep({
                       }}
                     />
                   </label>
+                ) : null}
+                {scene.motionPrompt && eligible(scene) ? (
+                  <Button size="sm" className="h-7 px-2.5" variant="ghost" title={scene.motionPrompt} onClick={() => copyPrompt(scene)}>
+                    <Copy className="size-3.5" />
+                    {t('motion.copyPrompt')}
+                  </Button>
                 ) : null}
               </div>
             </li>

@@ -49,18 +49,34 @@ describe('selectInterleavedScenes', () => {
     });
   };
   const pick = (list: S[]) =>
-    selectInterleavedScenes(list, s => s.start, s => s.dur, 30, 4, 6).map(s => s.i);
+    selectInterleavedScenes(list, s => s.start, s => s.dur, 30, 90, 150).map(s => s.i);
 
-  test('intro clips, then one clip after every 4-6 images, best clip fit wins', () => {
-    // Scenes 0-2 start inside the 30s intro.
-    const list = build([10, 10, 10, 12, 12, 12, 12, 15, 8, 5, 12, 12, 12, 12, 3, 9, 12, 12]);
-    // After intro (0-2): candidates 7,8,9 -> 8 (8s fits exactly). Then 13,14,15 -> 15 (9s).
-    assert.deepEqual(pick(list), [0, 1, 2, 8, 15]);
+  test('intro clips, then the next clip starts 90-150s after the previous one', () => {
+    // 10s scenes: intro = 0,1,2 (start 0-20s). Next window from 20s: 110-170s -> scene 11 (earliest tie).
+    // Then 200-260s -> scene 20.
+    const list = build(Array.from({ length: 25 }, () => 10));
+    assert.deepEqual(pick(list), [0, 1, 2, 11, 20]);
   });
 
-  test('ties keep the earliest candidate, so the gap stays at the minimum', () => {
-    const list = build([40, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]);
-    assert.deepEqual(pick(list), [0, 5, 10]);
+  test('best clip fit wins inside the window', () => {
+    const list: S[] = [
+      { i: 0, start: 0, dur: 40 },
+      { i: 1, start: 95, dur: 15 },
+      { i: 2, start: 120, dur: 8 },
+      { i: 3, start: 140, dur: 4 },
+      { i: 4, start: 160, dur: 8 },
+    ];
+    // Window 90-150s: scenes 1-3; 8s fits best. Scene 4 (160s) is outside it.
+    assert.deepEqual(pick(list), [0, 2]);
+  });
+
+  test('when no scene starts in the window, the first one after it is taken', () => {
+    const list: S[] = [
+      { i: 0, start: 0, dur: 40 },
+      { i: 1, start: 40, dur: 200 },
+      { i: 2, start: 240, dur: 10 },
+    ];
+    assert.deepEqual(pick(list), [0, 2]);
   });
 
   test('a tail shorter than the minimum gap gets no clip', () => {

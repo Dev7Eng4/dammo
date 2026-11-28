@@ -437,7 +437,7 @@ export function ProjectDetail({ run, scriptText, motionDefault, voicevox, onRefr
               motionDefault={motionDefault}
               working={isActive('motion')}
               disabled={stepLocked('motion')}
-              onGenerate={(mode, indexes) => void act(() => generateManualClips(run.id, mode, indexes))}
+              onGenerate={(mode, indexes, provider) => void act(() => generateManualClips(run.id, mode, indexes, provider))}
               onRemove={(index) => void act(() => removeManualClip(run.id, index))}
             />
           ) : null}

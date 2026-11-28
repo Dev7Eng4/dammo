@@ -216,7 +216,11 @@ export class ReupAudioPipeline {
     if (fromTrendBrain) {
       // Hot videos found by the trend brain, minus those another trend-mode channel already took.
       const claimed = trendVideoIdsClaimedByOthers(destination.id);
-      allVideos = listTrendSourceVideos({ clusters: destination.trendClusters })
+      // Hand-picked videos may include ones the remake gates would skip.
+      allVideos = listTrendSourceVideos({
+        clusters: destination.trendClusters,
+        includeSkipped: Boolean(options?.videoIds?.length),
+      })
         .filter(video => !claimed.has(video.id))
         .map(({ id, title, url, viewCount, duration, sourceId }) => ({ id, title, url, viewCount, duration, sourceId }));
       if (allVideos.length === 0) {

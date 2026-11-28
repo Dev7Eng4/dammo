@@ -18,6 +18,7 @@ export function fetchRadar(filters: RadarFilters, options?: FetchOptions) {
     maxAgeHours: String(filters.maxAgeHours),
     minRatio: String(filters.minRatio),
   });
+  if (filters.verdict) params.set('verdict', filters.verdict);
   return fetchJson<RadarListResponse>(`${API_V1}/radar?${params}`, withSignal(undefined, options));
 }
 
@@ -29,5 +30,6 @@ export function scanRadar() {
 export function fetchTrendRadar(filters: TrendRadarFilters, options?: FetchOptions) {
   const params = new URLSearchParams({ days: String(filters.days) });
   if (filters.cluster) params.set('cluster', filters.cluster);
+  if (filters.verdict) params.set('verdict', filters.verdict);
   return fetchJson<TrendRadarResponse>(`${API_V1}/radar/trends?${params}`, withSignal(undefined, options));
 }

@@ -12,7 +12,7 @@ import {
 } from './brain-tools.js';
 import { COMMON_RULES, NICHE } from './brain-prompt-common.js';
 import { PRODUCTION_BRAIN_AGENTS } from './brain-production-agents.js';
-import { CLUSTER_RULES } from './psy-clusters.js';
+import { CLUSTER_RULES, SOURCE_TYPE_RULES } from './psy-clusters.js';
 import { TREND_BRAIN_ID } from './brains.registry.js';
 
 const trend: BrainAgentSpec = {
@@ -28,11 +28,13 @@ How to work:
 3. Use youtube_suggest on 4-8 promising seed words to see what viewers type right now.
 4. Use web_search (Japanese queries) 2-4 times for outside signals: news, books, TV, social talk in Japan this week that could feed psychology videos for older viewers.
 5. For 2-4 small channels with a high views/h video, call channel_snapshot to check the video beats the channel's own median (the ratio is stored with the video automatically).
-6. Judge heat by views per hour and by repetition across channels, not by raw views of old videos. A small channel with a high views/h (or a high ratio) is a strong signal. Heat 80+ = clearly blowing up across channels, 50-79 = rising, <50 = weak or fading.
-7. Tag every video with cluster (main), optional subCluster and format, following the cluster rules below.
-8. save_findings (in 2-3 calls) with: 20-40 hottest videos (videoId, cluster, subCluster, format, heat, detail = one line: why it is hot + why this cluster), including the top video of each sub-niche so every cluster with data shows up, and off-niche videos with a high views/h tagged "off"; 5-12 topics (key, label, labelJa, cluster, detail = why it rises with evidence, heat, links to evidence "video:<id>"); 5-15 rising keywords (labelJa = the Japanese phrase, label = meaning, cluster if clear, heat).
+6. Judge heat by views per hour and by repetition across channels, not by raw views of old videos. A small channel with a high views/h (or a high ratio) is a strong signal. Heat 80+ = clearly blowing up across channels, 50-79 = rising, <50 = weak or fading. Remake gates (the app re-checks them with radar/remake-gates.ts): prefer videos 10-35 minutes long — longer or shorter ones are "do not remake" and never enter the automatic remake queue, so keep them only as topic evidence; also "do not remake" when off-niche or when real views are below 15,000 x the age curve (about 3,400 at 22h, 5,700 at 48h, 9,750 at 7 days). "Remake now" needs ratio >= 8 (or heat >= 80 when the ratio is unknown) and age <= 72h.
+7. Tag every video with cluster (main), optional subCluster, format and sourceType, following the cluster and source type rules below. sourceType matters: real-life vlogs of real people and videos that speak as a real famous person can only lend their topic to our channels, never their content.
+8. save_findings (in 2-3 calls) with: 20-40 hottest videos (videoId, cluster, subCluster, format, sourceType, heat, detail = one line: why it is hot + why this cluster), including the top video of each sub-niche so every cluster with data shows up, and off-niche videos with a high views/h tagged "off"; 5-12 topics (key, label, labelJa, cluster, detail = why it rises with evidence, heat, links to evidence "video:<id>"); 5-15 rising keywords (labelJa = the Japanese phrase, label = meaning, cluster if clear, heat).
 
 ${CLUSTER_RULES}
+
+${SOURCE_TYPE_RULES}
 
 ${COMMON_RULES} In the summary, list per cluster how many videos you saved and the strongest one.`,
   tools: [youtubeSearchTool, youtubeSuggestTool, channelSnapshotTool, readMemoryTool, webSearchTool(6)],
@@ -108,6 +110,7 @@ const titleSeo: BrainAgentSpec = {
 Your job: learn which Japanese title formulas win right now and write titles for the best ideas.
 
 How to work:
+0. read_memory of studio (metric, insight, video): the real YouTube Studio CTR of OUR OWN published videos. This outranks anything learned from competitors. When a channel has CTR for 5+ videos, the title mould and thumbnail look of its high-CTR group are proven: keep them for that channel, and only change wording and hook inside them. Never recommend a look or mould that its low-CTR group used.
 1. read_memory of ${TREND_BRAIN_ID} (videos, keywords) and of competitors (videos). Compare the titles of the hottest videos with ordinary ones: length, 【】 brackets and their content, numbers ("7選", "3つ"), who it is for ("50代から", "60歳以上"), the promise / fear, question vs statement, use of 心理学 / 脳科学 / ブッダ as a label, separators (｜). youtube_search a couple of queries if you need more contrast.
 2. Use youtube_suggest to check which phrasings people actually type.
 3. read_memory of ideas; take the 5-8 hottest ideas.
@@ -129,9 +132,10 @@ const thumbnail: BrainAgentSpec = {
 Your job: look at thumbnails and find what wins right now in this niche.
 
 How to work:
+0. read_memory of studio (metric, insight, video): the real YouTube Studio CTR of OUR OWN published videos. This outranks anything learned from competitors. When a channel has CTR for 5+ videos, the title mould and thumbnail look of its high-CTR group are proven: keep them for that channel, and only change wording and hook inside them. Never recommend a look or mould that its low-CTR group used.
 1. read_memory of ${TREND_BRAIN_ID} (videos) and competitors (videos). Pick about 10-16 hot/outlier videos and, for contrast, a few ordinary ones (youtube_search, or low views/h ones from memory).
 2. view_thumbnails in batches (max 12 per call). Look at: layout, number of text lines and characters, text colour/outline, highlight words, faces/characters (real person, illustration, mascot, old person, Buddha...), expression, background colour and mood, arrows/frames, how readable it is at small size.
-3. save_findings with 5-10 pattern neurons: key slug, label (Vietnamese, the pattern in one line), detail (what exactly, which videos show it with their views/h, what the weaker thumbnails do differently, how to apply it to our mascot-style channels), heat (strength of evidence), links to the "video:<id>" examples.
+3. save_findings with 5-10 pattern neurons: key slug, label (Vietnamese, the pattern in one line), detail (what exactly, which videos show it with their views/h, what the weaker thumbnails do differently, how to apply it to our mascot-style channels), heat (strength of evidence), links to the "video:<id>" examples. Patterns proven by our own Studio CTR get key "own-<channel slug>-..." and the highest heat; competitor patterns that contradict them are hypotheses (heat under 50).
 
 ${COMMON_RULES}`,
   tools: [readMemoryTool, youtubeSearchTool, viewThumbnailsTool],

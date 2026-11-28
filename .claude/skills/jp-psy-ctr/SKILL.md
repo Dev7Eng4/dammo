@@ -67,7 +67,12 @@ Cặp phải sạch `pipelineGuard`, có `thumbnailAddsSomething`, `titleCheck.l
 
 ## Ghi CTR thật
 
-Chỉ YouTube Studio có CTR. Skill `jp-psy-studio` tự ghi số đọc được vào file này. Khi người dùng đưa số tay, thêm một dòng vào `docs/brains/ctr/ctr-log.csv` (dòng đầu là tên cột): `ngay,videoId,cum,title,chu_bia,kieu_cap,ctr_phan_tram,luot_hien_thi,gio_sau_dang,ghi_chu`. Ô thiếu để trống. Đọc file này khi viết cặp mới; dưới 5 video cùng kênh thì chỉ nêu số, chưa kết luận.
+Chỉ YouTube Studio có CTR. Skill `jp-psy-studio` tự ghi số đọc được vào file này. Khi người dùng đưa số tay, thêm một dòng vào `docs/brains/ctr/ctr-log.csv` (dòng đầu là tên cột): `ngay,videoId,cum,title,chu_bia,kieu_cap,ctr_phan_tram,luot_hien_thi,gio_sau_dang,ghi_chu`. Ô thiếu để trống. `ctr info` đưa số của kênh vào `channel.measured` (cao nhất trước, kèm đường dẫn bìa); dưới 5 video cùng kênh thì chỉ nêu số, chưa kết luận.
+
+**CTR thật đứng trên điểm của skill.** Bài học 2026-11-25 (kênh 黄金色のノート): khuôn bìa sáng của kênh đạt CTR 10–12.6%, hai video đổi sang bìa tối, mặt lo âu chỉ còn 2.8% và 3.6% dù skill chấm 8+. Vì vậy:
+- kênh có số đo thì giữ khuôn bìa và khuôn title của nhóm CTR cao (`references/review.md`, B3, T2);
+- **video đã đăng**: chỉ đề xuất đổi khi CTR thật dưới trung vị kênh sau ít nhất 48 giờ và 1.000 lượt hiển thị; đề xuất dạng A/B (Test & compare trong Studio), không thay hẳn;
+- sau khi đổi, nhờ người dùng chạy `jp-psy-studio` lại sau 3–7 ngày để so.
 
 ## Credit VOICEVOX
 Video đọc bằng VOICEVOX phải ghi credit nhân vật, ví dụ `VOICEVOX:青山龍星`, ở chỗ người xem thấy được. Đây là điều khoản sử dụng của VOICEVOX.

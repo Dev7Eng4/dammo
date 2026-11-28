@@ -2,14 +2,15 @@ import { z } from 'zod';
 
 const unit = z.number().min(0).max(1);
 
+const speechEngineSettingsSchema = z.object({
+  url: z.string().trim().max(500).optional(),
+  defaultSpeaker: z.number().int().min(0).nullable().optional(),
+  defaultPresetId: z.string().trim().max(100).nullable().optional(),
+});
+
 export const updateVoiceSettingsSchema = z.object({
-  voicevox: z
-    .object({
-      url: z.string().trim().max(500).optional(),
-      defaultSpeaker: z.number().int().min(0).nullable().optional(),
-      defaultPresetId: z.string().trim().max(100).nullable().optional(),
-    })
-    .optional(),
+  voicevox: speechEngineSettingsSchema.optional(),
+  aivisspeech: speechEngineSettingsSchema.optional(),
   elevenlabs: z
     .object({
       defaultPresetId: z.string().trim().max(100).nullable().optional(),
@@ -33,6 +34,7 @@ export const updateVoicePresetSchema = voicePresetSchema.partial();
 
 export const voicevoxPresetSchema = z.object({
   name: z.string().trim().min(1).max(100),
+  // AivisSpeech style ids are large (e.g. 888753760).
   speaker: z.number().int().min(0),
   speakerName: z.string().trim().max(200).optional(),
   speedScale: z.number().min(0.5).max(2),
@@ -60,7 +62,7 @@ export const updateElevenLabsKeySchema = z.object({
 });
 
 export const synthesizeSpeechSchema = z.object({
-  provider: z.enum(['voicevox', 'elevenlabs']),
+  provider: z.enum(['voicevox', 'aivisspeech', 'elevenlabs']),
   text: z.string().trim().min(1).max(5000),
   speaker: z.number().int().min(0).optional(),
   /** ElevenLabs saved voice; falls back to the default preset. */

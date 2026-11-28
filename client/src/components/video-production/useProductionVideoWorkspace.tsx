@@ -443,31 +443,28 @@ export function useProductionVideoWorkspace(
           {metadataSaving ? t('production.metadata.saving') : t('production.metadata.save')}
         </Button>
       </>
-    ) : activeTab === 'video' ? (
-      <Button type="button" disabled={toolbarBusy} onClick={handleCreateVideoClick}>
-        {assembleInProgress || enqueueingCreateVideo
-          ? t('production.createVideo.creating')
-          : t('production.createVideo.button')}
-      </Button>
     ) : null;
 
-  const hasToolbar = Boolean(tabActions) || (activeTab === 'scenes' && missingImageCount > 0);
-  const toolbarActions = selectedVideo && hasToolbar ? (
-    <>
-      {activeTab === 'scenes' && missingImageCount > 0 ? (
-        <Button
-          type="button"
-          disabled={toolbarBusy || regeneratingMissing}
-          onClick={() => void handleGenerateMissingImages()}
-        >
-          {regeneratingMissing
-            ? t('production.scene.generatingMissing')
-            : t('production.scene.generateMissingCount', { count: missingImageCount })}
-        </Button>
-      ) : null}
-      {tabActions}
-    </>
-  ) : null;
+  const toolbarActions = selectedVideo && tabActions ? tabActions : null;
+
+  // Shown at the top of the box, so it is seen and reachable without scrolling past the player or every scene.
+  const topActions = !selectedVideo ? null : activeTab === 'video' ? (
+    <Button type="button" disabled={toolbarBusy} onClick={handleCreateVideoClick}>
+      {assembleInProgress || enqueueingCreateVideo
+        ? t('production.createVideo.creating')
+        : t('production.createVideo.button')}
+    </Button>
+  ) : activeTab === 'scenes' && missingImageCount > 0 ? (
+      <Button
+        type="button"
+        disabled={toolbarBusy || regeneratingMissing}
+        onClick={() => void handleGenerateMissingImages()}
+      >
+        {regeneratingMissing
+          ? t('production.scene.generatingMissing')
+          : t('production.scene.generateMissingCount', { count: missingImageCount })}
+      </Button>
+    ) : null;
 
   const detailPanel = (
     <VideoProductionDetailPanel
@@ -495,6 +492,7 @@ export function useProductionVideoWorkspace(
       onMetadataSaveStateChange={handleMetadataSaveStateChange}
       onVoiced={() => setReloadKey((key) => key + 1)}
       actions={toolbarActions}
+      topActions={topActions}
       onCharactersUpdated={(data) => {
         setCharactersData(data);
         setCharactersError(null);

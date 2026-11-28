@@ -9,10 +9,11 @@ import {
   updateVoicevoxPreset,
 } from '../../api/voice'
 import type {
+  SpeechEngineSettings,
+  VoiceEngine,
   VoicevoxEngineStatus,
   VoicevoxPresetPayload,
   VoicevoxVoicePreset,
-  VoiceSettings,
 } from '../../types/voice'
 import { Button, Input, Modal, useToast } from '../ui'
 import { ConfirmDeleteModal } from './ConfirmDeleteModal'
@@ -24,9 +25,11 @@ function emptyDraft(speaker: number): VoicevoxPresetPayload {
 }
 
 export interface VoicevoxVoicePresetsProps {
-  settings: VoiceSettings['voicevox']
+  settings: SpeechEngineSettings
   engine: VoicevoxEngineStatus | null
-  onChange: (patch: Partial<Pick<VoiceSettings['voicevox'], 'presets' | 'defaultPresetId'>>) => void
+  /** Which engine these voices belong to; default VOICEVOX. */
+  provider?: VoiceEngine
+  onChange: (patch: Partial<Pick<SpeechEngineSettings, 'presets' | 'defaultPresetId'>>) => void
 }
 
 /**
@@ -34,7 +37,7 @@ export interface VoicevoxVoicePresetsProps {
  * pitch / intonation / volume / pauses and saves it under a name; the default one is used whenever a
  * caller doesn't pick a voice.
  */
-export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoicePresetsProps) {
+export function VoicevoxVoicePresets({ settings, engine, provider = 'voicevox', onChange }: VoicevoxVoicePresetsProps) {
   const { t } = useTranslation(['factory', 'common'])
   const { toast } = useToast()
   const player = useAudioPlayer()
@@ -87,10 +90,10 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
     const payload = { ...draft, name: draft.name.trim(), speakerName: speakerLabel(draft.speaker) ?? draft.speakerName }
     try {
       if (editing === 'new') {
-        const { item } = await createVoicevoxPreset(payload)
+        const { item } = await createVoicevoxPreset(payload, provider)
         onChange({ presets: [...presets, item], defaultPresetId: defaultPresetId ?? item.id })
       } else if (editing) {
-        const { item } = await updateVoicevoxPreset(editing.id, payload)
+        const { item } = await updateVoicevoxPreset(editing.id, payload, provider)
         onChange({ presets: presets.map((preset) => (preset.id === item.id ? item : preset)) })
       }
       toast.success(t('factory:settings.toast.saved'))
@@ -105,7 +108,7 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
   async function remove(preset: VoicevoxVoicePreset) {
     setBusyId(preset.id)
     try {
-      await deleteVoicevoxPreset(preset.id)
+      await deleteVoicevoxPreset(preset.id, provider)
       const rest = presets.filter((item) => item.id !== preset.id)
       onChange({
         presets: rest,
@@ -122,8 +125,8 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
   async function makeDefault(preset: VoicevoxVoicePreset) {
     setBusyId(preset.id)
     try {
-      const { item } = await setDefaultVoicevoxPreset(preset.id)
-      onChange({ defaultPresetId: item.voicevox.defaultPresetId })
+      const { item } = await setDefaultVoicevoxPreset(preset.id, provider)
+      onChange({ defaultPresetId: item[provider].defaultPresetId })
     } catch (err) {
       toast.error(errorMessage(err))
     } finally {
@@ -175,7 +178,7 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
                     title={t('factory:settings.voice.play')}
                     disabled={!engineUp || (testing !== null && testing !== preset.id)}
                     onClick={() =>
-                      void speak(preset.id, { provider: 'voicevox', text: testText.trim() || SAMPLE_TEXT, presetId: preset.id })
+                      void speak(preset.id, { provider, text: testText.trim() || SAMPLE_TEXT, presetId: preset.id })
                     }
                   >
                     {testing === preset.id ? (
@@ -208,7 +211,9 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
         </div>
       ) : (
         <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-sm text-muted-foreground">
-          {engineUp ? t('factory:settings.voice.vvp.empty') : t('factory:settings.voice.vvp.needEngine')}
+          {provider === 'aivisspeech'
+            ? t(engineUp ? 'factory:settings.voice.aivis.empty' : 'factory:settings.voice.aivis.needEngine')
+            : t(engineUp ? 'factory:settings.voice.vvp.empty' : 'factory:settings.voice.vvp.needEngine')}
         </p>
       )}
 
@@ -254,6 +259,7 @@ export function VoicevoxVoicePresets({ settings, engine, onChange }: VoicevoxVoi
           <VoicevoxVoiceEditor
             draft={draft}
             engine={engine}
+            provider={provider}
             onChange={(patch) =>
               setDraft((prev) => ({
                 ...prev,

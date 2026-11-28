@@ -88,7 +88,7 @@ export function ChannelVideoMotionStep({ channelId, videoId }: ChannelVideoMotio
         motionDefault={state.motionDefault === 'scenes' ? 'intro' : state.motionDefault}
         working={running}
         disabled={busy || running}
-        onGenerate={(mode, indexes) => void act(() => generateChannelVideoClips(channelId, videoId, mode, indexes))}
+        onGenerate={(mode, indexes, provider) => void act(() => generateChannelVideoClips(channelId, videoId, mode, indexes, provider))}
         onRemove={(index) =>
           void act(async () => {
             const next = await removeChannelVideoClip(channelId, videoId, index);

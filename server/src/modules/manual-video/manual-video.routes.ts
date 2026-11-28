@@ -37,7 +37,7 @@ const createSchema = z.object({
 const stepSchema = z.object({
   urls: z.array(z.string().min(1)).min(1).max(5).optional(),
   voicevoxSpeaker: z.number().int().min(0).optional(),
-  voiceProvider: z.enum(['voicevox', 'elevenlabs']).optional(),
+  voiceProvider: z.enum(['voicevox', 'aivisspeech', 'elevenlabs']).optional(),
   /** Saved voice of `voiceProvider`; null clears it (back to the bare VOICEVOX speaker). */
   voicePresetId: z.string().trim().min(1).max(100).nullable().optional(),
   /** Settings for this run only; null clears them (back to the saved voice). */
@@ -129,10 +129,17 @@ export function createManualVideoRoutes() {
 
   app.post(
     '/projects/:id/motion',
-    zValidator('json', z.object({ mode: z.enum(['intro', 'full', 'interleaved', 'scenes']), indexes: z.array(z.number().int().min(0)).max(500).optional() })),
+    zValidator(
+      'json',
+      z.object({
+        mode: z.enum(['intro', 'full', 'interleaved', 'scenes']),
+        indexes: z.array(z.number().int().min(0)).max(500).optional(),
+        provider: z.enum(['flow', 'muse', 'meta']).optional(),
+      }),
+    ),
     c => {
       const body = c.req.valid('json');
-      return c.json(manualVideoService.generateClips(c.req.param('id'), body.mode, body.indexes), 202);
+      return c.json(manualVideoService.generateClips(c.req.param('id'), body.mode, body.indexes, body.provider), 202);
     },
   );
 

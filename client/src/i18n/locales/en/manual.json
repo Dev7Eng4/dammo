@@ -91,7 +91,7 @@
       "desc": "The saved voice (VOICEVOX or ElevenLabs) reads each sentence; subtitles come from the real audio timing. If scene images already exist, their timing is re-matched to the new voice.",
       "run": "Voice it",
       "again": "Voice again",
-      "unavailable": "Cannot reach VOICEVOX ({{url}}). The page re-checks every 10 seconds.",
+      "unavailable": "Cannot reach {{name}} ({{url}}). The page re-checks every 10 seconds.",
       "result": "Voiced: {{duration}} ({{actual}} min), planned {{planned}} min, allowed {{min}}–{{max}} min.",
       "outside": "outside the allowed window — shorten or extend the script and voice again",
       "recheck": "Check again"
@@ -116,7 +116,7 @@
     },
     "motion": {
       "title": "Image → video",
-      "desc": "Optional: animate scene images into ~8 s clips with Google Flow (Veo), run in Chrome on the Flow quota of profiles with Flow ticked in LLM Video. Scenes with a clip play it in the video; the rest stay images with Ken Burns. Skip this step to build the video from images as before."
+      "desc": "Optional: animate scene images into short clips with Google Flow (Veo) or Muse, run in Chrome on profiles with Flow / Muse ticked in LLM Video. Scenes with a clip play it in the video; the rest stay images with Ken Burns. Skip this step to build the video from images as before."
     },
     "metadata": {
       "title": "Metadata & thumbnail",
@@ -207,7 +207,7 @@
     "modes": {
       "intro": "Intro only (first {{sec}}s)",
       "full": "Every scene",
-      "interleaved": "Intro + 1 clip every {{min}}–{{max}} images",
+      "interleaved": "Intro + 1 clip every {{min}}–{{max}} min",
       "scenes": "Pick scenes"
     },
     "channelImages": "This channel is set to image-based video — pick intro or every scene to add motion.",
@@ -220,9 +220,22 @@
     "badgeImage": "Image",
     "remove": "Remove clip",
     "replace": "Replace clip",
+    "copyPrompt": "Copy prompt",
+    "promptCopied": "Copied the clip prompt for scene #{{index}} — paste it into Flow with the scene image, then use Replace clip to bring the mp4 in.",
     "one": "Make clip",
     "titleCard": "Title card — unchanged",
-    "replaced": "Replaced the clip for scene #{{index}}. Rebuild the video to use it."
+    "replaced": "Replaced the clip for scene #{{index}}. Rebuild the video to use it.",
+    "provider": "Make clips with",
+    "providers": {
+      "flow": "Google Flow (Veo)",
+      "muse": "Muse",
+      "meta": "Meta AI"
+    },
+    "providerHint": {
+      "flow": "Uses the Flow quota of profiles with Flow ticked in LLM Video; switches profile when one runs out.",
+      "muse": "Runs on muse.ai with a profile that has Muse ticked in LLM Video (must be logged into muse.ai). Clips are 3–10 s, made one scene at a time; if Muse reports its video service is down, the remaining scenes keep their image.",
+      "meta": "Runs on Meta AI with a profile that has Meta ticked in LLM Image (same Meta account). Sends the scene image with the prompt \"Create video 16:9 …\", one scene at a time; switches profile when one runs out of quota. Meta picks the clip length; assembly cuts it to fit the scene."
+    }
   },
   "source": {
     "none": "No group",
@@ -230,6 +243,8 @@
     "channelVideos": "Preparing / prepared / created videos"
   },
   "channelVideo": {
+    "search": "Search videos by title or ID…",
+    "noMatch": "No videos match.",
     "status": {
       "Prepared": "Prepared",
       "Created": "Created",

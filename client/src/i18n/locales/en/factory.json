@@ -359,7 +359,7 @@
       }
     },
     "voice": {
-      "hint": "Voice setup: ElevenLabs (multiple API keys, rotated automatically when one runs out of quota) and the local VOICEVOX Engine.",
+      "hint": "Voice setup: ElevenLabs (multiple API keys, rotated automatically when one runs out of quota) and the local engines: VOICEVOX and AivisSpeech.",
       "keyPlaceholder": "ElevenLabs API key (sk_...)",
       "addKey": "Add key",
       "keyHint": "Keys are verified with ElevenLabs before saving. When generating speech the server uses the key with the most characters left and falls over to the next key on errors or exhausted quota.",
@@ -391,6 +391,13 @@
       "connected": "Connected",
       "disconnected": "Not connected",
       "checkConnection": "Check",
+      "aivis": {
+        "url": "AivisSpeech Engine URL",
+        "urlHint": "Leave empty to use AIVISSPEECH_URL from env (default http://127.0.0.1:10101). In use: {{url}}",
+        "empty": "No voices yet — click \"Add voice\" to pick an AivisSpeech voice, tune it and save it under a name.",
+        "needEngine": "AivisSpeech Engine isn't running, so the voice list can't load. Open AivisSpeech and click Check.",
+        "intro": "AivisSpeech Engine runs locally (port 10101 by default) and shares VOICEVOX's API. Open the AivisSpeech app first; each voice (model) has its own terms of use, so check a voice's licence before publishing a video."
+      },
       "vv": {
         "url": "VOICEVOX Engine URL",
         "urlHint": "Leave empty to use VOICEVOX_URL from env. In use: {{url}}"

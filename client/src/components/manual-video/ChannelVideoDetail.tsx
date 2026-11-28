@@ -1,7 +1,7 @@
-import { X } from 'lucide-react'
+import { Copy, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ProductionVideoListItem } from '../../types/videoProductionScenes'
-import { Button, StatusBadge } from '../ui'
+import { Button, StatusBadge, useToast } from '../ui'
 import {
   useProductionVideoWorkspace,
   type ProductionVideoPatch,
@@ -16,7 +16,30 @@ interface ChannelVideoDetailProps {
 /** A prepared/created channel video opened inside the Video production page: scenes, transcript, metadata, assembled video. */
 export function ChannelVideoDetail({ video, onPatched, onClose }: ChannelVideoDetailProps) {
   const { t } = useTranslation('manual')
+  const { t: tf } = useTranslation('factory')
+  const { toast } = useToast()
   const workspace = useProductionVideoWorkspace(video, onPatched)
+
+  async function copyPath(path: string) {
+    try {
+      await navigator.clipboard.writeText(path)
+    } catch {
+      // Clipboard API refused (permission / embedded browser): fall back to a hidden textarea.
+      const area = document.createElement('textarea')
+      area.value = path
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      const ok = document.execCommand('copy')
+      area.remove()
+      if (!ok) {
+        toast.error(tf('production.toolbar.copyPathError'))
+        return
+      }
+    }
+    toast.success(tf('production.toolbar.copyPathSuccess'))
+  }
 
   return (
     <div className="space-y-3">
@@ -33,9 +56,23 @@ export function ChannelVideoDetail({ video, onPatched, onClose }: ChannelVideoDe
                 .join(' · ')}
             </span>
           </div>
-          <Button size="sm" variant="ghost" aria-label={t('form.close')} onClick={onClose}>
-            <X className="size-4" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            {video.videoFolderPath ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 px-2.5"
+                title={video.videoFolderPath}
+                onClick={() => void copyPath(video.videoFolderPath as string)}
+              >
+                <Copy className="size-4" />
+                {tf('production.toolbar.copyPath')}
+              </Button>
+            ) : null}
+            <Button size="sm" variant="ghost" aria-label={t('form.close')} onClick={onClose}>
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
         <h2 lang="ja" className="text-base font-semibold break-words text-foreground">
           {video.title}

@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { fetchRadar, fetchRadarStatus, scanRadar } from "../api/radar";
+import { RemakeVerdictCell } from "../components/radar/RemakeVerdictCell";
 import { TrendRadarPanel } from "../components/radar/TrendRadarPanel";
 import { PageHeader, PageShell } from "../components/layout";
 import {
@@ -21,11 +22,13 @@ import type {
   RadarListResponse,
   RadarStatus,
   RadarTier,
+  RemakeVerdict,
 } from "../types/radar";
 
 const DEFAULT_FILTERS: RadarFilters = { maxAgeHours: 168, minRatio: 3 };
 const MAX_AGE_OPTIONS = [24, 72, 168, 720] as const;
 const MIN_RATIO_OPTIONS = ["3", "8", "20"] as const;
+const VERDICT_OPTIONS = ["", "do", "maybe", "skip"] as const;
 
 const TIER_TONE: Record<RadarTier, StatusTone> = {
   spike: "info",
@@ -112,6 +115,11 @@ export function RadarPage() {
   const ratioOptions = MIN_RATIO_OPTIONS.map((ratio) => ({
     value: ratio,
     label: `≥ ×${ratio}`,
+  }));
+
+  const verdictOptions = VERDICT_OPTIONS.map((verdict) => ({
+    value: verdict,
+    label: verdict ? t(`verdict.${verdict}`) : t("verdict.all"),
   }));
 
   const quotaPercent =
@@ -235,6 +243,23 @@ export function RadarPage() {
                 }
               />
             </label>
+            <label
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+              title={t("verdict.hint")}
+            >
+              {t("verdict.label")}
+              <Select
+                className="w-36"
+                options={verdictOptions}
+                value={filters.verdict ?? ""}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    verdict: (value || undefined) as RemakeVerdict | undefined,
+                  }))
+                }
+              />
+            </label>
           </div>
 
           {error ? (
@@ -266,6 +291,9 @@ export function RadarPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <th className="px-4 py-3" title={t("verdict.hint")}>
+                      {t("verdict.label")}
+                    </th>
                     <th className="px-4 py-3">{t("table.ratio")}</th>
                     <th className="px-4 py-3">{t("table.video")}</th>
                     <th className="px-4 py-3">{t("table.channel")}</th>
@@ -286,6 +314,12 @@ export function RadarPage() {
                       key={item.videoId}
                       className={loading ? "opacity-60" : undefined}
                     >
+                      <td className="px-4 py-3 align-top">
+                        <RemakeVerdictCell
+                          verdict={item.verdict}
+                          reasons={item.verdictReasons}
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col items-start gap-1">
                           <span className="text-base font-bold tabular-nums text-foreground">

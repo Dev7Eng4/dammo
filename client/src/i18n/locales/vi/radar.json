@@ -82,6 +82,23 @@
       "skill": "Skill",
       "unknown": "—"
     },
-    "empty": "Chưa có dữ liệu. Chạy bộ não Săn xu hướng tâm lý Nhật ở trang Bộ não, hoặc gõ \"trends\" trong Claude Code rồi lưu kết quả."
+    "empty": "Chưa có dữ liệu. Chạy bộ não Săn xu hướng tâm lý Nhật ở trang Bộ não, hoặc gõ \"trends\" trong Claude Code rồi lưu kết quả.",
+    "topicOnly": "chỉ lấy chủ đề",
+    "topicOnlyHint": "Kênh mình không remake được nội dung video này (người thật quay thật, hoặc nhập vai người nổi tiếng). Chỉ mượn chủ đề.",
+    "sourceType": {
+      "narrated": "Thuyết minh",
+      "manga": "漫画 / truyện",
+      "real-host": "Người thật dẫn",
+      "real-vlog": "Vlog quay thật",
+      "persona": "Nhập vai người thật"
+    }
+  },
+  "verdict": {
+    "label": "Nên làm?",
+    "all": "Tất cả",
+    "do": "Nên làm",
+    "maybe": "Có thể làm",
+    "skip": "Không nên làm",
+    "hint": "Cổng lọc: dài 10–35 phút, đủ view thật theo tuổi, đúng ngách; \"Nên làm\" cần nổ ≥ ×8 (hoặc độ nóng ≥ 80) và ≤ 72 giờ. Video \"Không nên làm\" không vào hàng chờ remake tự động."
   }
 }

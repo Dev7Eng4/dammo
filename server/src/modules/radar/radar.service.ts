@@ -9,7 +9,8 @@ import { sourceChannelsRepository } from '../source-channels/source-channels.rep
 import type { SourceChannel } from '../source-channels/source-channels.types.js';
 import { classifyTier, computeChannelBaseline, expectedViewsAtAge } from './radar-scoring.js';
 import { radarRepository } from './radar.repository.js';
-import type { RadarItem, RadarScanResult, RadarStore } from './radar.types.js';
+import type { RadarItem, RadarScanResult, RadarSnapshot, RadarStore } from './radar.types.js';
+import { compareVerdicts, evaluateRemakeGates, type RemakeVerdict } from './remake-gates.js';
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -19,6 +20,8 @@ const MAX_SNAPSHOTS_PER_VIDEO = 60;
 const MIN_FEED_AGE_HOURS = 1;
 /** A channel costs 2 units (playlistItems + videos); stop before exceeding the soft cap. */
 const UNITS_PER_CHANNEL = 2;
+/** Momentum compares the latest snapshot with one at least this many hours earlier. */
+const MOMENTUM_WINDOW_HOURS = 3;
 
 export interface RadarListOptions {
   /** Only videos at most this old (hours). Default 168 (7 days). */
@@ -27,7 +30,21 @@ export interface RadarListOptions {
   /** Skip Shorts (anything under this many seconds). Default 61. */
   minDurationSeconds?: number;
   minRatio?: number;
+  /** Only this remake verdict. */
+  verdict?: RemakeVerdict;
   limit?: number;
+}
+
+/** Recent views/hour ÷ lifetime views/hour; undefined without two snapshots far enough apart. */
+function momentumOf(snapshots: RadarSnapshot[], publishedAt: string): number | undefined {
+  const latest = snapshots[snapshots.length - 1];
+  if (!latest) return undefined;
+  const latestAt = Date.parse(latest.at);
+  const earlier = [...snapshots].reverse().find(s => latestAt - Date.parse(s.at) >= MOMENTUM_WINDOW_HOURS * HOUR_MS);
+  if (!earlier) return undefined;
+  const recentPerHour = (latest.views - earlier.views) / ((latestAt - Date.parse(earlier.at)) / HOUR_MS);
+  const lifetimePerHour = latest.views / ((latestAt - Date.parse(publishedAt)) / HOUR_MS);
+  return lifetimePerHour > 0 ? Math.max(0, recentPerHour) / lifetimePerHour : undefined;
 }
 
 function scannableSources(): SourceChannel[] {
@@ -142,7 +159,7 @@ export class RadarService {
   }
 
   list(options: RadarListOptions = {}) {
-    const { maxAgeHours = 168, minViews = 1000, minDurationSeconds = 61, minRatio = 3, limit = 50 } = options;
+    const { maxAgeHours = 168, minViews = 1000, minDurationSeconds = 61, minRatio = 3, verdict, limit = 50 } = options;
     const store = radarRepository.read();
     const now = Date.now();
     const sourceNames = new Map(sourceChannelsRepository.findAll().map(s => [s.id, s.name]));
@@ -166,6 +183,18 @@ export class RadarService {
       const tier = classifyTier(ratio);
       if (!tier || ratio < minRatio) continue;
 
+      const momentum = momentumOf(video.snapshots, video.publishedAt);
+      const latestAgeHours = (Date.parse(latest.at) - Date.parse(video.publishedAt)) / HOUR_MS;
+      const gate = evaluateRemakeGates({
+        minutes: video.durationSeconds / 60,
+        ageHours,
+        measuredAgeHours: latestAgeHours,
+        views: latest.views,
+        ratio,
+        momentum,
+      });
+      if (verdict && gate.verdict !== verdict) continue;
+
       items.push({
         videoId: video.id,
         title: video.title,
@@ -180,10 +209,13 @@ export class RadarService {
         expectedViews,
         ratio,
         tier,
+        momentum,
+        verdict: gate.verdict,
+        verdictReasons: gate.reasons,
       });
     }
 
-    items.sort((a, b) => b.ratio - a.ratio);
+    items.sort((a, b) => compareVerdicts(a.verdict, b.verdict) || b.ratio - a.ratio);
     return {
       items: items.slice(0, limit),
       lastScanAt: store.lastScanAt,

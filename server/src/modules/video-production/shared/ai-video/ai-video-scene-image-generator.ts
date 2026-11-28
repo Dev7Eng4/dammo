@@ -9,6 +9,7 @@ import { closeChromeProfiles } from '../../../chrome-profiles/chrome-profile.run
 import { chromeProfilesService } from '../../../chrome-profiles/chrome-profiles.service.js';
 import { generateImagesViaToolWithFailover } from '../../../llm-browser/flow/flow-profile-failover.js';
 import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
+import { generateImagesWithMuse } from '../../../llm-browser/muse/muse-image-batch.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 import { resolveSlideClipCachePath } from '../slideshow/slideshow-clip-renderer.js';
 import { runFlowImageGenerations } from '../thumbnail/hero-image.js';
@@ -397,6 +398,50 @@ async function generateFlowReferencedSceneImages(
   return { generatedCount, failedCount };
 }
 
+/**
+ * Muse: several scenes at once (with their reference images), on 3 tabs per profile ticked Muse in
+ * LLM Image (the app's tabs-per-profile setting), each image in its own side chat.
+ */
+async function generateMuseSceneImages(
+  pending: SceneVisualJob[],
+  totalScenes: number,
+  log: (msg: string) => void,
+  onProgress?: GenerateAiSceneSlideImagesInput['onProgress'],
+  onImageSaved?: (jobName: string) => void,
+): Promise<{ generatedCount: number; failedCount: number }> {
+  const byName = new Map(pending.map(job => [job.name, job]));
+  for (const job of pending) await fs.mkdir(jobWriteDir(job), { recursive: true });
+
+  await generateImagesWithMuse(
+    pending.map(job => ({
+      id: job.name,
+      prompt: job.prompt,
+      outputDir: jobWriteDir(job),
+      fileName: `${job.name}.jpg`,
+      ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
+    })),
+    {
+      onLog: log,
+      onJobProgress: ({ jobId, status }) => {
+        const job = byName.get(jobId);
+        if (!job) return;
+        if (status === 'generating') onProgress?.({ sceneIndex: job.index + 1, totalScenes, sceneName: job.name, status });
+        else if (status === 'done' && !job.writePath) onImageSaved?.(job.name);
+      },
+    },
+  );
+
+  // Forced jobs are counted by commitForcedSceneImages.
+  let generatedCount = 0;
+  let failedCount = 0;
+  for (const job of pending) {
+    if (job.writePath) continue;
+    if (await fileExists(job.outputPath)) generatedCount += 1;
+    else failedCount += 1;
+  }
+  return { generatedCount, failedCount };
+}
+
 async function generateMetaSceneImages(
   slidesDir: string,
   pending: SceneVisualJob[],
@@ -656,6 +701,16 @@ export async function generateAiSceneSlideImages(
           log(`[ai-video] Closed Chrome profile ${name} after scene images`);
         }
       }
+    } else if (imageProvider === 'muse') {
+      const museResult = await generateMuseSceneImages(
+        aiPending,
+        input.scenes.length,
+        log,
+        input.onProgress,
+        enqueuePrebake,
+      );
+      generatedCount += museResult.generatedCount;
+      failedCount += museResult.failedCount;
     } else {
       const metaResult = await generateMetaSceneImages(
         slidesDir,

@@ -275,11 +275,12 @@ export function generateChannelVideoClips(
   videoId: string,
   mode: 'intro' | 'full' | 'interleaved' | 'scenes',
   indexes?: number[],
+  provider?: 'flow' | 'muse',
 ) {
   return fetchJson<ChannelVideoMotionState>(`${productionVideoBase(channelId, videoId)}/motion`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode, indexes }),
+    body: JSON.stringify({ mode, indexes, provider }),
   });
 }
 

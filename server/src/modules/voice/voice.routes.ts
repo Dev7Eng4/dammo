@@ -15,6 +15,10 @@ import { z } from 'zod';
 import { applyNarrationReadings, readNarrationReadings, removeNarrationReading, upsertNarrationReading } from './narration-readings.js';
 import { resolveNarrationVoice } from './narration-voice.js';
 import { voiceService } from './voice.service.js';
+import type { VoiceEngine } from '../../infrastructure/tts/voice-settings.store.js';
+
+/** `:engine` in the engine routes below: VOICEVOX Engine or AivisSpeech Engine (same API). */
+const engineOf = (value: string): VoiceEngine => (value === 'aivisspeech' ? 'aivisspeech' : 'voicevox');
 
 /** /api/v1/voice — voice settings (VOICEVOX, ElevenLabs keys) and text-to-speech. */
 export function createVoiceRoutes() {
@@ -26,7 +30,7 @@ export function createVoiceRoutes() {
     c.json({ item: voiceService.updateSettings(c.req.valid('json')) }),
   );
 
-  app.get('/voicevox/status', async c => c.json(await voiceService.voicevoxStatus()));
+  app.get('/:engine{voicevox|aivisspeech}/status', async c => c.json(await voiceService.voicevoxStatus(engineOf(c.req.param('engine')))));
 
   /** Reading dictionary: words the narration voice reads as the given katakana (script and captions unchanged). */
   app.get('/readings', c => c.json({ items: readNarrationReadings() }));
@@ -46,24 +50,28 @@ export function createVoiceRoutes() {
 
   app.delete('/readings/:surface', c => c.json({ items: removeNarrationReading(c.req.param('surface')) }));
 
-  /** Saved VOICEVOX voices: a speaker style + its own prosody settings. */
-  app.get('/voicevox/presets', c => c.json({ items: voiceService.listVoicevoxPresets() }));
-
-  app.post('/voicevox/presets', zValidator('json', voicevoxPresetSchema), c =>
-    c.json({ item: voiceService.createVoicevoxPreset(c.req.valid('json')) }, 201),
+  /** Saved VOICEVOX / AivisSpeech voices: a speaker style + its own prosody settings. */
+  app.get('/:engine{voicevox|aivisspeech}/presets', c =>
+    c.json({ items: voiceService.listVoicevoxPresets(engineOf(c.req.param('engine'))) }),
   );
 
-  app.patch('/voicevox/presets/:id', zValidator('json', updateVoicevoxPresetSchema), c =>
-    c.json({ item: voiceService.updateVoicevoxPreset(c.req.param('id'), c.req.valid('json')) }),
+  app.post('/:engine{voicevox|aivisspeech}/presets', zValidator('json', voicevoxPresetSchema), c =>
+    c.json({ item: voiceService.createVoicevoxPreset(c.req.valid('json'), engineOf(c.req.param('engine'))) }, 201),
   );
 
-  app.delete('/voicevox/presets/:id', c => {
-    voiceService.deleteVoicevoxPreset(c.req.param('id'));
+  app.patch('/:engine{voicevox|aivisspeech}/presets/:id', zValidator('json', updateVoicevoxPresetSchema), c =>
+    c.json({
+      item: voiceService.updateVoicevoxPreset(c.req.param('id'), c.req.valid('json'), engineOf(c.req.param('engine'))),
+    }),
+  );
+
+  app.delete('/:engine{voicevox|aivisspeech}/presets/:id', c => {
+    voiceService.deleteVoicevoxPreset(c.req.param('id'), engineOf(c.req.param('engine')));
     return c.json({ ok: true });
   });
 
-  app.post('/voicevox/presets/:id/default', c =>
-    c.json({ item: voiceService.setDefaultVoicevoxPreset(c.req.param('id')) }),
+  app.post('/:engine{voicevox|aivisspeech}/presets/:id/default', c =>
+    c.json({ item: voiceService.setDefaultVoicevoxPreset(c.req.param('id'), engineOf(c.req.param('engine'))) }),
   );
 
   app.post('/elevenlabs/keys', zValidator('json', addElevenLabsKeySchema), async c =>
@@ -115,7 +123,7 @@ export function createVoiceRoutes() {
     zValidator(
       'json',
       z.object({
-        provider: z.enum(['voicevox', 'elevenlabs']),
+        provider: z.enum(['voicevox', 'aivisspeech', 'elevenlabs']),
         presetId: z.string().trim().min(1).max(100).optional(),
         custom: customNarrationVoiceSchema.optional(),
         voicevoxSpeaker: z.number().int().min(0).optional(),

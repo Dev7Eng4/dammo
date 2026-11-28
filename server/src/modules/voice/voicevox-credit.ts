@@ -13,7 +13,7 @@ import type { NarrationVoice } from './narration-voice.js';
 export const NARRATION_VOICE_FILE = 'narration-voice.json';
 
 export interface NarrationVoiceRecord {
-  provider: 'voicevox' | 'elevenlabs';
+  provider: 'voicevox' | 'aivisspeech' | 'elevenlabs';
   label: string;
   /** VOICEVOX style id that read the narration. */
   voicevoxSpeaker?: number;

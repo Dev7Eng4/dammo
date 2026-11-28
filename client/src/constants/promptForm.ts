@@ -19,10 +19,13 @@ export const PROMPT_PLATFORM_ALL: PromptPlatform = 'all';
 export const IMAGE_PROVIDER_OPTIONS: { value: ImageBrowserProvider; label: string }[] = [
   { value: 'flow', label: 'Google Flow' },
   { value: 'meta', label: 'Meta AI' },
+  { value: 'muse', label: 'Muse' },
 ];
 
 export const VIDEO_PROVIDER_OPTIONS: { value: VideoBrowserProvider; label: string }[] = [
   { value: 'flow', label: 'Google Flow' },
+  { value: 'muse', label: 'Muse' },
+  { value: 'meta', label: 'Meta AI' },
 ];
 
 export const PLAYGROUND_PROVIDER_OPTIONS: { value: PlaygroundProvider; label: string }[] = [

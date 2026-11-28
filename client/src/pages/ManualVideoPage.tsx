@@ -11,7 +11,7 @@ import { ChannelVideoDetail } from '../components/manual-video/ChannelVideoDetai
 import { ChannelVideoThumb } from '../components/manual-video/ChannelVideoThumb'
 import { NewProjectForm } from '../components/manual-video/NewProjectForm'
 import { ProjectDetail } from '../components/manual-video/ProjectDetail'
-import { Button, Select, StatusBadge, useToast } from '../components/ui'
+import { Button, SearchInput, Select, StatusBadge, useToast } from '../components/ui'
 import type { ProductionVideoPatch } from '../components/video-production/useProductionVideoWorkspace'
 import { RUN_STATUS_TONE } from '../components/video-agent/runStatus'
 import { useAbortableEffect } from '../hooks'
@@ -68,6 +68,8 @@ export function ManualVideoPage() {
   const [openedVideoKey, setOpenedVideoKey] = useState<string | null>(null)
   /** Key of a skill-script video whose folder is being created before its tabs open. */
   const [startingKey, setStartingKey] = useState<string | null>(null)
+  /** Filters the channel's video list by title or videoId. */
+  const [videoQuery, setVideoQuery] = useState('')
   const { toast } = useToast()
   const selectedRef = useRef<string | undefined>(selectedId)
 
@@ -227,8 +229,15 @@ export function ManualVideoPage() {
   ]
   const listedProjects =
     source === NO_GROUP ? ungrouped : projects.filter((project) => project.input.channelId === source)
-  const listedVideos =
+  const channelListVideos =
     source === NO_GROUP ? [] : (channelVideos ?? []).filter((video) => video.channelId === source)
+  const videoNeedle = videoQuery.trim().toLowerCase()
+  const listedVideos = videoNeedle
+    ? channelListVideos.filter(
+        (video) =>
+          (video.title ?? '').toLowerCase().includes(videoNeedle) || video.videoId.toLowerCase().includes(videoNeedle),
+      )
+    : channelListVideos
 
   return (
     <PageShell>
@@ -296,11 +305,20 @@ export function ManualVideoPage() {
           {source !== NO_GROUP ? (
             <>
               <p className="section-label pt-2">
-                {t('manual:source.channelVideos')} ({listedVideos.length})
+                {t('manual:source.channelVideos')} (
+                {videoNeedle ? `${listedVideos.length}/${channelListVideos.length}` : channelListVideos.length})
               </p>
+              {channelListVideos.length > 0 ? (
+                <SearchInput
+                  value={videoQuery}
+                  onChange={(event) => setVideoQuery(event.target.value)}
+                  placeholder={t('manual:channelVideo.search')}
+                  className="h-9"
+                />
+              ) : null}
               {listedVideos.length === 0 ? (
                 <div className="card-surface p-4 text-sm text-muted-foreground">
-                  {t('manual:channelVideo.empty')}
+                  {videoNeedle ? t('manual:channelVideo.noMatch') : t('manual:channelVideo.empty')}
                 </div>
               ) : (
                 listedVideos.map((video) => {

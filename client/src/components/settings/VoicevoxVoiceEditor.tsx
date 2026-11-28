@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Play, Square } from 'lucide-react'
 import { synthesizeSpeech } from '../../api/voice'
-import type { VoicevoxEngineStatus, VoicevoxPresetPayload } from '../../types/voice'
+import type { VoiceEngine, VoicevoxEngineStatus, VoicevoxPresetPayload } from '../../types/voice'
 import { Button, DropdownSelect, Input, useToast } from '../ui'
 import { Field, SAMPLE_TEXT, errorMessage, useAudioPlayer } from './voicePresetShared'
 
@@ -39,12 +39,14 @@ export interface VoicevoxVoiceEditorProps {
   draft: VoicevoxVoiceDraft
   onChange: (patch: Partial<VoicevoxVoiceDraft>) => void
   engine: VoicevoxEngineStatus | null
+  /** Which engine the speakers come from; default VOICEVOX. */
+  provider?: VoiceEngine
   /** How the test button makes audio; defaults to plain text-to-speech with the draft settings. */
   synthesizeTest?: (draft: VoicevoxVoiceDraft, text: string) => Promise<Blob>
 }
 
 /** Speaker + prosody sliders + a test player. Used by the saved-voice modal and per-video settings. */
-export function VoicevoxVoiceEditor({ draft, onChange, engine, synthesizeTest }: VoicevoxVoiceEditorProps) {
+export function VoicevoxVoiceEditor({ draft, onChange, engine, provider = 'voicevox', synthesizeTest }: VoicevoxVoiceEditorProps) {
   const { t } = useTranslation(['factory', 'common'])
   const { toast } = useToast()
   const player = useAudioPlayer()
@@ -65,7 +67,7 @@ export function VoicevoxVoiceEditor({ draft, onChange, engine, synthesizeTest }:
       const blob = synthesizeTest
         ? await synthesizeTest(draft, text)
         : await synthesizeSpeech({
-            provider: 'voicevox',
+            provider,
             text,
             speaker: draft.speaker,
             speed: draft.speedScale,
@@ -86,7 +88,7 @@ export function VoicevoxVoiceEditor({ draft, onChange, engine, synthesizeTest }:
     <div className="space-y-4">
       {!engineUp ? (
         <p className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-          {t('factory:settings.voice.vvp.needEngine')}
+          {provider === 'aivisspeech' ? t('factory:settings.voice.aivis.needEngine') : t('factory:settings.voice.vvp.needEngine')}
         </p>
       ) : null}
 

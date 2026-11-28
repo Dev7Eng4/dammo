@@ -44,6 +44,57 @@ export function clusterName(id: string): string {
   return PSY_CLUSTERS.find(c => c.id === id)?.name ?? id;
 }
 
+/**
+ * What kind of production the source video is. The cluster says WHAT it is about; the source type says
+ * whether our channels (narrated, illustrated, no real people on camera) can remake it, or only borrow its topic.
+ */
+export const SOURCE_TYPES = [
+  { id: 'narrated', name: 'Thuyết minh', remake: 'full', hint: 'giọng đọc giải thích + ảnh minh hoạ / mascot / stock (dạng của kênh mình)' },
+  { id: 'manga', name: '漫画 / truyện', remake: 'full', hint: 'truyện tranh, visual novel, kể chuyện nhân vật hư cấu' },
+  { id: 'real-host', name: 'Người thật dẫn', remake: 'claims', hint: 'chuyên gia, host thật nói trước camera hoặc podcast; ý kiến và trải nghiệm là của người đó' },
+  { id: 'real-vlog', name: 'Vlog quay thật', remake: 'topic', hint: 'quay đời sống thật của người thật (vợ chồng đi du lịch, nấu ăn, đi làm), sức hút nằm ở con người và cảnh thật' },
+  { id: 'persona', name: 'Nhập vai người thật', remake: 'topic', hint: 'nói ở ngôi thứ nhất như thể là một người nổi tiếng có thật (【斎藤一人】, 【瀬戸内寂聴】…), thường là giọng AI; lời "trích" có thể bịa' },
+] as const;
+
+export type SourceTypeId = (typeof SOURCE_TYPES)[number]['id'];
+
+export function parseSourceType(raw: string | undefined): SourceTypeId | null {
+  const text = raw?.trim().toLowerCase();
+  if (!text) return null;
+  return SOURCE_TYPES.find(type => type.id === text)?.id ?? null;
+}
+
+export function sourceTypeName(id: string): string {
+  return SOURCE_TYPES.find(type => type.id === id)?.name ?? id;
+}
+
+/** True when only the topic of the source may be reused, not its content. */
+export function isTopicOnlySource(id: string | undefined): boolean {
+  return SOURCE_TYPES.find(type => type.id === id)?.remake === 'topic';
+}
+
+/**
+ * Extra instruction for the remake planner when the source is not a narrated explainer (English, like the
+ * remake prompts). Empty for sources our channels can remake as they are.
+ */
+export function sourceTypeRemakeNote(id: string | undefined): string {
+  switch (id) {
+    case 'real-vlog':
+      return 'The reference video is a real-life vlog: real people filmed in their own daily life. Our channel cannot film real people, so borrow ONLY the theme and what viewers enjoy about it. Do not retell their trip, meals, home, money or words, and do not present their life as a case study. Build the video from psychology, studies and your own fictional named person instead.';
+    case 'persona':
+      return 'The reference video speaks in the first person as a real famous person (for example 斎藤一人). Do NOT speak as that person, do not use their name in the title, and do not quote or paraphrase sayings from the transcript as their words: such videos are often AI voices and the sayings may be invented. Borrow only the theme. Our narrator speaks as the channel itself; if you cite a real person, use only well-known, verifiable words and say whose they are.';
+    case 'real-host':
+      return 'The reference video is presented by a real expert or host. Their personal experiences and opinions are theirs: do not reuse them or present them as facts. Re-check any claim before using it.';
+    default:
+      return '';
+  }
+}
+
+export const SOURCE_TYPE_RULES = `# Loại nguồn (sourceType)
+Ngoài cụm, gắn mỗi video một loại nguồn. Loại nguồn quyết định kênh mình (thuyết minh, minh hoạ, không quay người thật) remake được tới đâu:
+${SOURCE_TYPES.map(type => `- \`${type.id}\` (${type.name}): ${type.hint}. Remake: ${type.remake === 'full' ? 'được' : type.remake === 'claims' ? 'được, nhưng không lấy trải nghiệm / ý kiến riêng của người dẫn' : 'CHỈ lấy chủ đề'}.`).join('\n')}
+Nhìn tiêu đề, tên kênh, thời lượng và mô tả: 【旅暮らし】【夫婦vlog】, kênh mang tên đôi vợ chồng, 40+ phút đời sống → \`real-vlog\`. Tên người nổi tiếng trong 【】 ở đầu tiêu đề kiểu "【斎藤一人】…" mà kênh không phải của người đó → \`persona\`. Không chắc thì chọn \`narrated\`.`;
+
 export const CLUSTER_RULES = `# Xếp video vào cụm K1–K11
 
 Mỗi video được gán **1 cụm chính** và có thể thêm **1 cụm phụ** khi video rõ ràng chạm sang cụm khác. Xếp theo **chủ đề của nội dung**, không theo format. Format (寝ながら聴く, 実は〇〇です, 漫画, 名言朗読, 脳トレ…) ghi ở một trường riêng.

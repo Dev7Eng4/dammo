@@ -1,5 +1,5 @@
 import { AppError } from '../../shared/http/errors.js';
-import { resolveVoicevoxUrl } from './voice-settings.store.js';
+import { resolveEngineUrl, type VoiceEngine } from './voice-settings.store.js';
 
 export interface VoicevoxStyle {
   id: number;
@@ -12,6 +12,8 @@ export interface VoicevoxSpeaker {
 }
 
 export interface VoicevoxSynthOptions {
+  /** Which engine speaks; default VOICEVOX. AivisSpeech answers the same API on its own URL. */
+  engine?: VoiceEngine;
   speaker: number;
   /** 1.0 = engine default. */
   speedScale?: number;
@@ -114,35 +116,39 @@ function speechTiming(query: Record<string, unknown>, breaths: Set<number>): Spe
   return { totalSec: t, speechStartSec, speechEndSec, pauses };
 }
 
-function baseUrl(): string {
-  return resolveVoicevoxUrl();
-}
+const ENGINE_NAME: Record<VoiceEngine, string> = { voicevox: 'VOICEVOX', aivisspeech: 'AivisSpeech' };
 
-async function request(pathname: string, init?: RequestInit): Promise<Response> {
+async function request(pathname: string, init?: RequestInit, engine: VoiceEngine = 'voicevox'): Promise<Response> {
+  const name = ENGINE_NAME[engine];
+  const base = resolveEngineUrl(engine);
   let res: Response;
   try {
-    res = await fetch(`${baseUrl()}${pathname}`, init);
+    res = await fetch(`${base}${pathname}`, init);
   } catch (err) {
     throw new AppError(
-      `Không kết nối được VOICEVOX Engine tại ${baseUrl()} — hãy mở VOICEVOX trước (${err instanceof Error ? err.message : err})`,
+      `Không kết nối được ${name} Engine tại ${base} — hãy mở ${name} trước (${err instanceof Error ? err.message : err})`,
       503,
-      'VOICEVOX_UNAVAILABLE',
+      engine === 'aivisspeech' ? 'AIVISSPEECH_UNAVAILABLE' : 'VOICEVOX_UNAVAILABLE',
     );
   }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new AppError(`VOICEVOX ${pathname} lỗi ${res.status}: ${body.slice(0, 300)}`, 502, 'VOICEVOX_ERROR');
+    throw new AppError(
+      `${name} ${pathname} lỗi ${res.status}: ${body.slice(0, 300)}`,
+      502,
+      engine === 'aivisspeech' ? 'AIVISSPEECH_ERROR' : 'VOICEVOX_ERROR',
+    );
   }
   return res;
 }
 
-export async function getVoicevoxVersion(): Promise<string> {
-  const res = await request('/version');
+export async function getVoicevoxVersion(engine: VoiceEngine = 'voicevox'): Promise<string> {
+  const res = await request('/version', undefined, engine);
   return (await res.json()) as string;
 }
 
-export async function listVoicevoxSpeakers(): Promise<VoicevoxSpeaker[]> {
-  const res = await request('/speakers');
+export async function listVoicevoxSpeakers(engine: VoiceEngine = 'voicevox'): Promise<VoicevoxSpeaker[]> {
+  const res = await request('/speakers', undefined, engine);
   const raw = (await res.json()) as Array<{ name: string; styles: Array<{ id: number; name: string }> }>;
   return raw.map(speaker => ({
     name: speaker.name,
@@ -154,6 +160,7 @@ async function buildQuery(text: string, options: VoicevoxSynthOptions) {
   const queryRes = await request(
     `/audio_query?${new URLSearchParams({ text, speaker: String(options.speaker) })}`,
     { method: 'POST' },
+    options.engine,
   );
   const query = (await queryRes.json()) as Record<string, unknown>;
   if (options.speedScale !== undefined) query.speedScale = options.speedScale;
@@ -180,11 +187,15 @@ export async function synthesizeVoicevoxTimed(
   options: VoicevoxSynthOptions,
 ): Promise<{ wav: Buffer; timing: SpeechTiming }> {
   const { query, breaths } = await buildQuery(text, options);
-  const wavRes = await request(`/synthesis?${new URLSearchParams({ speaker: String(options.speaker) })}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(query),
-  });
+  const wavRes = await request(
+    `/synthesis?${new URLSearchParams({ speaker: String(options.speaker) })}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(query),
+    },
+    options.engine,
+  );
   return { wav: Buffer.from(await wavRes.arrayBuffer()), timing: speechTiming(query, breaths) };
 }
 
@@ -198,8 +209,8 @@ export async function voicevoxSpeechTiming(text: string, options: VoicevoxSynthO
  * How VOICEVOX will read `text`, in katakana: accent phrases separated by spaces, pauses as 、.
  * Used to check numbers and names before narrating.
  */
-export async function voicevoxReading(text: string, speaker: number): Promise<string> {
-  const { query } = await buildQuery(text, { speaker });
+export async function voicevoxReading(text: string, speaker: number, engine: VoiceEngine = 'voicevox'): Promise<string> {
+  const { query } = await buildQuery(text, { speaker, engine });
   const phrases = (Array.isArray(query.accent_phrases) ? query.accent_phrases : []) as AccentPhrase[];
   return phrases
     .map(phrase => phrase.moras.map(mora => mora.text).join('') + (phrase.pause_mora ? '、' : ''))

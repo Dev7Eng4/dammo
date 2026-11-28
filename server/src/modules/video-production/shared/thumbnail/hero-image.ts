@@ -6,6 +6,7 @@ import type { ChromeProfile } from '../../../chrome-profiles/chrome-profiles.typ
 import { FLOW_MAX_RETRIES, runWithFlowRetries, type FlowRetryProgress } from '../../../llm-browser/flow/flow-retry.js';
 import { isMetaProfileQuotaExhausted } from '../../../llm-browser/meta/meta-quota.js';
 import { metaBrowserService } from '../../../llm-browser/meta/meta.service.js';
+import { museBrowserService } from '../../../llm-browser/muse/muse.service.js';
 import { promptsSettingsService } from '../../../prompts/prompts-settings.service.js';
 
 export const DEFAULT_HERO_IMAGE_FILENAME = 'background.jpg';
@@ -280,9 +281,71 @@ async function runMetaImageGenerations(
   }
 }
 
+/** Muse: one image at a time on the given profile or the first one ticked Muse in LLM Image. */
+async function runMuseImageGenerations(
+  outputDir: string,
+  jobs: BrowserImageJob[],
+  options?: RunBrowserImageGenerationsOptions,
+): Promise<BrowserImageGenerationResult[]> {
+  const profile = options?.profileId
+    ? chromeProfilesService.getById(options.profileId)
+    : chromeProfilesService.requireProfileForLlm('image', 'muse');
+  const results: BrowserImageGenerationResult[] = [];
+  const progress: HeroImageProgress = {
+    attempt: 1,
+    profileId: profile.id,
+    profileName: profile.name,
+    status: 'started',
+  };
+  options?.onProgress?.(progress);
+
+  try {
+    for (let jobIndex = 0; jobIndex < jobs.length; jobIndex += 1) {
+      const job = jobs[jobIndex]!;
+      const promptUsed = buildFlowPrompt(job.prompt);
+      const logPrefix = job.logPrefix ?? `[hero-image] muse job ${jobIndex + 1}/${jobs.length}`;
+      const failureCode = job.failureCode ?? 'MUSE_IMAGE_FAILED';
+      options?.onJobProgress?.(jobIndex, progress);
+      console.log(`${logPrefix}: generating via Muse...`);
+
+      try {
+        const response = await museBrowserService.generateImage(promptUsed, {
+          profileId: profile.id,
+          outputDir,
+          fileName: job.fileName,
+          debugScreenshotPath: path.join(outputDir, 'muse-debug.png'),
+          ...(job.referenceImagePaths?.length ? { referenceImagePaths: job.referenceImagePaths } : {}),
+          ...(job.skipResize ? { skipResize: true } : {}),
+        });
+        const savedPath = response.mediaAssets?.find(asset => asset.localPath)?.localPath;
+        if (!savedPath) {
+          throw new AppError(
+            job.buildFailureMessage?.('no local image path returned', 1) ?? 'Muse image generation produced no local file',
+            502,
+            failureCode,
+          );
+        }
+        console.log(`${logPrefix} saved: ${savedPath} (${response.elapsedMs}ms)`);
+        results.push({ imagePath: savedPath, promptUsed });
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        const reason = err instanceof Error ? err.message : String(err);
+        throw new AppError(
+          job.buildFailureMessage?.(reason, 1) ?? `Muse image generation failed: ${reason}`,
+          502,
+          failureCode,
+        );
+      }
+    }
+    return results;
+  } finally {
+    await chromeProfilesService.closeProfiles([profile.id]);
+  }
+}
+
 /**
  * Generate one or more images via the configured thumbnail provider
- * (`defaultThumbnailProvider`: flow | meta).
+ * (`defaultThumbnailProvider`: flow | meta | muse).
  */
 export async function runBrowserImageGenerations(
   outputDir: string,
@@ -292,6 +355,9 @@ export async function runBrowserImageGenerations(
   const provider = resolveThumbnailImageProvider(options?.provider);
   if (provider === 'meta') {
     return runMetaImageGenerations(outputDir, jobs, options);
+  }
+  if (provider === 'muse') {
+    return runMuseImageGenerations(outputDir, jobs, options);
   }
   return runFlowImageGenerations(outputDir, jobs, options);
 }
